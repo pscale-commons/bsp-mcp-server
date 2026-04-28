@@ -2,7 +2,7 @@
 
 ## To the next instance — read this before touching anything
 
-This repo is one function — `bsp()` — and six substrate-stateful primitives. That is the WHOLE surface. If you find yourself adding a 9th or a 12th tool, stop. The geometry is the program. The function walks. Read sunstone before you read any code.
+This repo is one function — `bsp()` — and five substrate-stateful primitives. That is the WHOLE surface. If you find yourself adding a 7th or 8th tool, stop. The geometry is the program. The function walks. Read sunstone before you read any code.
 
 You are stepping into a project where the JSON nesting level IS the data, not a container for it. Depth encodes scale and resolution. Position encodes relationships. The underscore chain encodes the semantic spine. The star operator encodes cross-references. The bsp walker just walks. The structure does the work.
 
@@ -41,31 +41,40 @@ bsp(
     spindle,            # S — address path; "" or null = at root
     pscale_attention,   # P — pscale level of attention; null = at spindle terminus
     content?,           # omit for read; provide for write
+    secret?,            # PROOF OF CURRENT AUTHORITY (verifies against existing lock)
+    new_lock?,          # TARGET LOCK VALUE (sets or rotates lock on ordinary blocks)
+    gray?,              # explicit opt-in for self-encryption on unlocked ordinary blocks
     face?,              # CADO modifier (Character/Author/Designer/Observer)
-    tier?,              # SMH modifier (Soft/Medium/Hard)
-    secret?,            # write-lock proof on locked positions
-    gray?               # explicit opt-in for self-encryption on unlocked ordinary blocks
+    tier?               # SMH modifier (Soft/Medium/Hard)
 ) → result | ack
 ```
 
-Read when content is null. Write when content is provided. The selection shape (point / ring / subtree / disc / whole-block / star-composition) DERIVES from the relationship between spindle length (terminal pscale `P_end`) and `pscale_attention` (`P_att`). See `src/sunstone.json` branch 2 for the geometry, `src/whetstone.json` branch 2 for the derivation table.
+Read when content AND new_lock are both omitted. Write when content is provided. Set/rotate lock when new_lock is provided. The selection shape (point / ring / subtree / disc / whole-block / star-composition) DERIVES from the relationship between spindle length (terminal pscale `P_end`) and `pscale_attention` (`P_att`). See `src/sunstone.json` branch 2 for the geometry, `src/whetstone.json` branch 2 for the derivation table.
 
-There is no mode parameter. There are no separate read and write functions. There is one function, two coordinates, one optional payload. Everything else is sugar that doesn't belong in the surface.
+**Lock semantics — four rules.** `secret` is ALWAYS proof of current authority; `new_lock` is ALWAYS the target lock value. They never overlap.
 
-## The six surviving substrate-stateful primitives
+- (R1) Block doesn't exist + `new_lock`            → create locked, no `secret` needed.
+- (R2) Block unlocked       + `new_lock`            → set lock, no `secret` needed.
+- (R3) Block locked         + `secret`              → secret proves authority for content writes.
+- (R4) Block locked         + `secret` + `new_lock` → rotate lock (with optional content in same call).
+
+`new_lock` is only valid on ordinary blocks. sed: blocks use `pscale_register` (atomic create-lock-write); grain: blocks use `pscale_grain_reach` (atomic per-side create-lock-write). The substrates handle position-and-lock together because they have to.
+
+There is no mode parameter. There are no separate read and write functions. There is no separate lock_block function. One function, two coordinates, one optional payload, optional lock change. Everything else is sugar that doesn't belong in the surface.
+
+## The five surviving substrate-stateful primitives
 
 These have atomic state machines that bsp() alone cannot subsume:
 
 1. `pscale_create_collective` — admin operation on a sed: substrate (passphrase hashing, conventions setup)
 2. `pscale_register` — server-assigned position in a sed: substrate (atomic next-position allocation, passphrase hash storage)
 3. `pscale_grain_reach` — bilateral commitment via the symmetric reach/accept state machine across pair_id
-4. `pscale_lock_block` — block-level lock state change (set, rotate, applies to ordinary blocks)
-5. `pscale_key_publish` — Argon2id key derivation, public key publication for gray encryption
-6. `pscale_verify_rider` — deterministic arithmetic check on ecosquared riders (sha256 chain, credit conservation, SQ recompute)
+4. `pscale_key_publish` — Argon2id key derivation, public key publication for gray encryption
+5. `pscale_verify_rider` — deterministic arithmetic check on ecosquared riders (sha256 chain, credit conservation, SQ recompute)
 
-Each has a real server-side state machine. None of them can be reduced to "just a bsp() call." Substrate dispatch (sed:, grain:, ordinary) is encoded in block names and routed inside bsp() and these six. The caller never picks a substrate-specific function.
+Each has a real server-side state machine that requires more than `(content, lock)` arguments — atomic next-position allocation, bilateral pair-id derivation, Argon2id derivation, ecosquared arithmetic. Lock-state changes on ordinary blocks are NOT in this list — they're a `new_lock` argument to `bsp()`. Locking was originally a sixth primitive; it folded back in once we asked the inversion test ("is this a state machine or a convention?") and got "it's a property change with the same authority proof as a content write."
 
-That's the whole surface: `bsp()` plus six primitives. Seven entry points total. Resist the urge to grow it.
+That's the whole surface: `bsp()` plus five primitives. Six entry points total. Resist the urge to grow it.
 
 ## The address invariant — locked
 
@@ -116,11 +125,10 @@ src/
   sunstone.json       — The teaching block (eight branches; read first)
   whetstone.json      — The operational reference (five branches; signature, derivation, modifiers, storage, translation)
   tools/
-    bsp.ts            — bsp() handler (the one function)
+    bsp.ts            — bsp() handler (the one function — handles content + lock changes)
     collective.ts     — pscale_create_collective, pscale_register
     grain.ts          — pscale_grain_reach
-    lock.ts           — pscale_lock_block
-    crypto.ts         — pscale_key_publish
+    keys.ts           — pscale_key_publish
     verify.ts         — pscale_verify_rider
   resources/
     sunstone.ts       — pscale://sunstone
@@ -192,6 +200,6 @@ If a new agent-facing runbook is needed, it goes IN A BLOCK on the substrate, no
 
 The shift in numbers:
 - pscale-mcp-server: 25 tools, 5 navigation modes, asymmetric read/write, mode-as-enum
-- bsp-mcp-server: 7 tools (bsp + 6 primitives), shape derived from (S, P) coordinates, symmetric read/write, modes as derived selection shapes
+- bsp-mcp-server: 6 tools (bsp + 5 primitives), shape derived from (S, P) coordinates, symmetric read/write, lock-as-argument, modes as derived selection shapes
 
 The geometry didn't change. The function surface caught up to it.

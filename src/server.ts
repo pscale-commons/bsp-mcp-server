@@ -10,7 +10,6 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { handleBsp, bspParamsSchema } from './tools/bsp.js';
 import { handleCreateCollective, createCollectiveParamsSchema, handleRegister, registerParamsSchema } from './tools/collective.js';
 import { handleGrainReach, grainReachParamsSchema } from './tools/grain.js';
-import { handleLockBlock, lockBlockParamsSchema } from './tools/lock.js';
 import { handleKeyPublish, keyPublishParamsSchema } from './tools/keys.js';
 import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
 
@@ -46,9 +45,11 @@ function installErrorWrapper(server: McpServer): void {
   };
 }
 
-const INSTRUCTIONS = `bsp-mcp-server — one function and six substrate primitives, operating on pscale JSON blocks.
+const INSTRUCTIONS = `bsp-mcp-server — one function and five substrate primitives, operating on pscale JSON blocks.
 
-THE PRIMITIVE: bsp(agent_id, block, spindle, pscale_attention, content?, secret?, gray?, face?, tier?). One signature, two coordinates, one optional payload. Read when content is omitted; write when content is provided. Selection shape derives from the relationship between spindle length (terminal pscale P_end) and pscale_attention (P_att):
+THE PRIMITIVE: bsp(agent_id, block, spindle, pscale_attention, content?, secret?, new_lock?, gray?, face?, tier?). One signature, two coordinates, one optional payload, optional lock change. Read when content is omitted (and no new_lock); write when content is provided; rotate/set lock when new_lock is provided.
+
+Selection shape derives from (spindle length P_end, pscale_attention P_att):
   P_att == P_end       → point   (string at terminus)
   P_att == P_end - 1   → ring    (digit children of terminus, {1: ..., 2: ...})
   P_att <  P_end - 1   → subtree (full subtree from terminus down)
@@ -56,15 +57,21 @@ THE PRIMITIVE: bsp(agent_id, block, spindle, pscale_attention, content?, secret?
   spindle empty + null → block   (whole tree)
   spindle ends '*'     → star    (enter hidden directory, recurse)
 
+LOCK SEMANTICS (four rules):
+  R1: block does not exist + new_lock           → create locked, no secret needed.
+  R2: block unlocked       + new_lock           → set lock, no secret needed.
+  R3: block locked         + secret             → secret proves authority for content writes.
+  R4: block locked         + secret + new_lock  → rotate lock (with optional content).
+  secret is ALWAYS proof of current authority. new_lock is ALWAYS the target lock value. They never overlap.
+
 ADDRESS INVARIANT: pscale 0 is anchored at the floor (decimal point), not at the top of the tree. Floor = depth of the underscore chain. Walk algorithm: parse, pad LEFT to floor width with zeros, strip TRAILING zeros, then walk one digit at a time. Digit 0 → key '_'. Single decimal point as floor marker (stripped before walking). Trailing zeros are floor-width notation, not walk steps.
 
-SUBSTRATE DISPATCH: implicit via the agent_id prefix. "sed:{collective}" → sedimentary collective. "grain:{pair_id}" → bilateral grain. Anything else → ordinary block. The same bsp() function handles all three; locks dispatch by prefix.
+SUBSTRATE DISPATCH: implicit via the agent_id prefix. "sed:{collective}" → sedimentary collective. "grain:{pair_id}" → bilateral grain. Anything else → ordinary block. The same bsp() function handles all three; locks dispatch by prefix. new_lock is only valid on ordinary blocks — sed:/grain: substrates handle position-and-lock atomically through their own lifecycle tools.
 
-THE SIX PRIMITIVES (substrate state machines that bsp() alone cannot subsume):
+THE FIVE PRIMITIVES (substrate state machines bsp() alone cannot subsume):
   pscale_create_collective — create a sed: substrate with conventions in the root underscore.
-  pscale_register          — server-assigned position in a sed: collective (proof-of-presence-in-time).
-  pscale_grain_reach       — symmetric reach/accept across a bilateral pair_id.
-  pscale_lock_block        — set or rotate a write-lock on an ordinary block.
+  pscale_register          — server-assigned position in a sed: collective (proof-of-presence-in-time, atomic create-lock-write).
+  pscale_grain_reach       — symmetric reach/accept across a bilateral pair_id (atomic create-lock-write per side).
   pscale_key_publish       — derive Argon2id keypair, publish public half to passport position 9.
   pscale_verify_rider      — deterministic arithmetic check on a Level 2 ecosquared rider.
 
@@ -83,7 +90,7 @@ export function createServer(): McpServer {
   // ── The unified function ──
   server.tool(
     'bsp',
-    'The unified bsp() function. Read when content omitted, write when content provided. Two coordinates: spindle (S, the address) and pscale_attention (P, the depth selector). Shape derives from (S, P). See pscale://whetstone branch 2 for the derivation table, branch 3 for modifier composition, branch 4 for storage. agent_id, block — load (owner_id=agent_id, name=block). Substrate dispatch via agent_id prefix.',
+    'The unified bsp() function. Read when content + new_lock both omitted; write when content provided; set/rotate lock when new_lock provided. Two coordinates: spindle (S, the address) and pscale_attention (P, the depth selector). Shape derives from (S, P). Lock semantics: secret = proof of current authority; new_lock = target lock value (the two never overlap). See pscale://whetstone branch 2 for shape derivation, branch 3 for modifiers, branch 4 for storage. Substrate dispatch via agent_id prefix (sed:, grain:, ordinary).',
     bspParamsSchema,
     handleBsp,
   );
@@ -108,13 +115,6 @@ export function createServer(): McpServer {
     'Establish a grain — first durable bilateral commitment. Symmetric: same call from either side. Server detects state — first call creates the block and writes one side; second call (from the partner) writes the other side and completes. Lex-smaller agent_id occupies side 1; lex-larger occupies side 2. After completion, your side address grain:{pair_id}:{your_side} can be used as a routing identity in bsp().',
     grainReachParamsSchema,
     handleGrainReach,
-  );
-
-  server.tool(
-    'pscale_lock_block',
-    'Lock an ordinary block (or rotate the lock). Whole-block lock at position_hashes["_"]. After locking, every bsp() write to this block requires the same secret. sed:/grain: blocks have their own lifecycle and cannot be locked through this tool.',
-    lockBlockParamsSchema,
-    handleLockBlock,
   );
 
   server.tool(

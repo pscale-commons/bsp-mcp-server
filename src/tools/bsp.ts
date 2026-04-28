@@ -21,7 +21,7 @@ import {
   BspReadResult,
   BspWriteResult,
 } from '../bsp-fn.js';
-import { loadBlock, saveBlock, BlockRow } from '../db.js';
+import { loadBlock, saveBlock, updatePositionHashes, BlockRow } from '../db.js';
 import { hashByOwnerId } from '../locks.js';
 
 // ── Schemas ──
@@ -51,7 +51,11 @@ export const bspParamsSchema = {
   secret: z
     .string()
     .optional()
-    .describe('Write-lock proof. Required when writing to a locked position (sed: registrant, grain: side, locked ordinary block).'),
+    .describe('Proof of current authority. Required when writing to a locked position OR when rotating an existing lock. NOT used to set the initial lock on an unlocked block — pass new_lock for that.'),
+  new_lock: z
+    .string()
+    .optional()
+    .describe('Target lock value. Sets or rotates the write-lock at the addressed position. Four cases: (1) block does not exist + new_lock → create locked, no secret needed; (2) block unlocked + new_lock → lock with new_lock, no secret needed; (3) block locked + secret + new_lock → rotate from current to new_lock (secret proves current authority); (4) without new_lock, lock state is unchanged. Only valid on ordinary blocks — sed: blocks use pscale_register, grain: blocks use pscale_grain_reach.'),
   gray: z
     .boolean()
     .optional()
@@ -73,6 +77,7 @@ export type BspToolParams = {
   pscale_attention?: number | null;
   content?: any;
   secret?: string;
+  new_lock?: string;
   gray?: boolean;
   face?: 'character' | 'author' | 'designer' | 'observer';
   tier?: 'soft' | 'medium' | 'hard';
@@ -130,59 +135,111 @@ function lockPositionForWrite(spindle: string | null | undefined): string {
 
 // ── The handler ──
 
+/**
+ * Four-rule semantics for content + new_lock interaction:
+ *   (R1) Block doesn't exist + new_lock     → create locked at new_lock, no secret needed.
+ *   (R2) Block unlocked       + new_lock     → set lock to new_lock, no secret needed.
+ *   (R3) Block locked         + secret       → secret proves current authority for content writes.
+ *   (R4) Block locked         + secret + new_lock → rotate current→new_lock (with optional content).
+ *
+ * `secret` is ALWAYS proof of current authority. Never the initial lock value.
+ * `new_lock` is ALWAYS the target lock value. Never used as proof.
+ *
+ * sed:/grain: blocks reject new_lock — they have their own lifecycle tools
+ * (pscale_register, pscale_grain_reach) which handle position-and-lock atomically.
+ */
 export async function handleBsp(params: BspToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { agent_id, block: blockName, spindle, pscale_attention, content, secret, face, tier } = params;
+  const { agent_id, block: blockName, spindle, pscale_attention, content, secret, new_lock, face, tier } = params;
 
-  // v0.1: face/tier advisory only (logged, not enforced).
   if (face || tier) {
     console.error(`[bsp] face=${face} tier=${tier} advisory (v0.1 — enforcement deferred)`);
   }
 
-  // Load (or create on write) the block.
   let row: BlockRow | null = await loadBlock(agent_id, blockName);
 
-  if (content === undefined) {
-    // ── READ ──
+  // ── READ ── (no content, no lock change)
+  if (content === undefined && new_lock === undefined) {
     if (!row) {
-      return {
-        content: [{ type: 'text', text: `Block "${agent_id}/${blockName}" not found.` }],
-      };
+      return { content: [{ type: 'text', text: `Block "${agent_id}/${blockName}" not found.` }] };
     }
     const result = bspRead(row.block, spindle ?? '', pscale_attention ?? null);
+    return { content: [{ type: 'text', text: formatRead(result) }] };
+  }
+
+  // ── WRITE and/or LOCK ──
+
+  // new_lock is only valid on ordinary blocks.
+  if (new_lock !== undefined && (agent_id.startsWith('sed:') || agent_id.startsWith('grain:'))) {
     return {
-      content: [{ type: 'text', text: formatRead(result) }],
+      content: [{ type: 'text', text: `Rejected: new_lock is only valid on ordinary blocks. sed: blocks use pscale_register; grain: blocks use pscale_grain_reach.` }],
     };
   }
 
-  // ── WRITE ──
-  // Lock check before geometry.
-  if (row) {
+  // Lock check for content writes (R3, R4).
+  if (content !== undefined && row) {
     const position = lockPositionForWrite(spindle);
     const check = verifyLock(row, position, secret);
     if (!check.allowed) {
-      return {
-        content: [{ type: 'text', text: `Write rejected: ${check.reason}` }],
-      };
+      return { content: [{ type: 'text', text: `Write rejected: ${check.reason}` }] };
     }
   }
 
-  // Determine starting block — load existing or seed empty.
-  const block: Block = row?.block ?? {};
-
-  // Apply the write.
-  let writeResult: BspWriteResult;
-  try {
-    writeResult = bspWrite(block, spindle ?? '', pscale_attention ?? null, content);
-  } catch (e: any) {
-    return {
-      content: [{ type: 'text', text: `Write rejected: ${e.message}` }],
-    };
+  // Lock-rotation authority (R4): if block has a current lock and new_lock is set,
+  // secret must prove current authority.
+  if (new_lock !== undefined && row) {
+    const lockKey = '_'; // ordinary blocks: whole-block lock at '_'
+    const currentHash = row.position_hashes?.[lockKey];
+    if (currentHash) {
+      // Locked → secret required to rotate.
+      if (!secret) {
+        return {
+          content: [{ type: 'text', text: `Lock rotation rejected: block is currently locked. Pass secret to prove current authority.` }],
+        };
+      }
+      const computedCurrent = hashByOwnerId(agent_id, blockName, lockKey, secret);
+      if (computedCurrent !== currentHash) {
+        return {
+          content: [{ type: 'text', text: `Lock rotation rejected: secret does not match current lock.` }],
+        };
+      }
+    }
+    // R1, R2: no current lock → no secret needed for new_lock.
   }
 
-  // Persist.
-  await saveBlock(agent_id, blockName, writeResult.block, row?.block_type ?? 'general');
+  // Determine starting block — existing or empty seed.
+  const block: Block = row?.block ?? {};
 
-  return {
-    content: [{ type: 'text', text: formatWrite(writeResult) }],
-  };
+  // Apply content write if provided.
+  let writeResult: BspWriteResult | null = null;
+  if (content !== undefined) {
+    try {
+      writeResult = bspWrite(block, spindle ?? '', pscale_attention ?? null, content);
+    } catch (e: any) {
+      return { content: [{ type: 'text', text: `Write rejected: ${e.message}` }] };
+    }
+  }
+
+  // Persist content (or seed empty block if locking-only on a new block).
+  const blockToSave = writeResult?.block ?? block;
+  await saveBlock(agent_id, blockName, blockToSave, row?.block_type ?? 'general');
+
+  // Apply lock change if provided.
+  let lockNote = '';
+  if (new_lock !== undefined) {
+    const lockKey = '_';
+    const newHash = hashByOwnerId(agent_id, blockName, lockKey, new_lock);
+    const updated = { ...(row?.position_hashes ?? {}), [lockKey]: newHash };
+    await updatePositionHashes(agent_id, blockName, updated);
+    const wasLocked = !!row?.position_hashes?.['_'];
+    lockNote = wasLocked
+      ? `\nLock rotated.`
+      : (row ? `\nLock applied (block previously unlocked).` : `\nBlock created and locked.`);
+  }
+
+  // Format response.
+  if (writeResult) {
+    return { content: [{ type: 'text', text: formatWrite(writeResult) + lockNote }] };
+  }
+  // Lock-only operation.
+  return { content: [{ type: 'text', text: `[lock @ "${agent_id}/${blockName}"]${lockNote}` }] };
 }

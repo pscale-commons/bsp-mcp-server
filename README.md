@@ -1,6 +1,6 @@
 # bsp-mcp-server
 
-The unified `bsp()` function as an MCP server. Block-Spindle-Pscale: two polar coordinates over pscale JSON blocks. One function, six substrate primitives, two foundational resources. That is the whole surface.
+The unified `bsp()` function as an MCP server. Block-Spindle-Pscale: two polar coordinates over pscale JSON blocks. One function, five substrate primitives, two foundational resources. That is the whole surface.
 
 ## Why
 
@@ -11,10 +11,13 @@ This is square 2 of the architecture. Square 1 is the pscale block itself.
 ## The function
 
 ```
-bsp(agent_id, block, spindle, pscale_attention, content?, secret?, gray?, face?, tier?)
+bsp(agent_id, block, spindle, pscale_attention,
+    content?, secret?, new_lock?, gray?, face?, tier?)
 ```
 
-Read when `content` is omitted. Write when `content` is provided. Selection shape derives from the relationship between spindle length (`P_end`) and `pscale_attention` (`P_att`):
+Read when `content` and `new_lock` are both omitted. Write when `content` is provided. Set or rotate a lock when `new_lock` is provided (ordinary blocks only — sed:/grain: handle locking through their own lifecycle tools).
+
+Selection shape derives from the relationship between spindle length (`P_end`) and `pscale_attention` (`P_att`):
 
 | Relation | Shape | Read returns | Write payload |
 |---|---|---|---|
@@ -30,7 +33,20 @@ Substrate dispatch is implicit in the `agent_id` prefix:
 - `grain:{pair_id}` — bilateral grain
 - bare — ordinary block
 
-## The six substrate primitives
+## Lock semantics — four rules
+
+`secret` is ALWAYS proof of current authority. `new_lock` is ALWAYS the target lock value. They never overlap.
+
+| State | Args | Effect |
+|---|---|---|
+| Block doesn't exist | `new_lock` | Create locked, no `secret` needed |
+| Block unlocked | `new_lock` | Set lock, no `secret` needed |
+| Block locked | `secret` | Proves authority for content writes |
+| Block locked | `secret` + `new_lock` | Rotate lock (with optional content) |
+
+`new_lock` is ordinary-blocks only. sed: and grain: substrates handle locking atomically through `pscale_register` and `pscale_grain_reach`.
+
+## The five substrate primitives
 
 These have atomic state machines `bsp()` alone cannot subsume:
 
@@ -39,7 +55,6 @@ These have atomic state machines `bsp()` alone cannot subsume:
 | `pscale_create_collective` | Create a sed: substrate with conventions in the root underscore |
 | `pscale_register` | Server-assigned position in a sed: collective (proof-of-presence-in-time) |
 | `pscale_grain_reach` | Symmetric reach/accept across a bilateral pair |
-| `pscale_lock_block` | Set or rotate a write-lock on an ordinary block |
 | `pscale_key_publish` | Argon2id keypair derivation; public half lands at passport position 9 |
 | `pscale_verify_rider` | Deterministic arithmetic on a Level 2 ecosquared rider |
 
@@ -112,10 +127,9 @@ src/
   sunstone.json       — teaching block
   whetstone.json      — operational reference
   tools/
-    bsp.ts            — the one function handler
+    bsp.ts            — the one function handler (content + lock changes)
     collective.ts     — pscale_create_collective, pscale_register
     grain.ts          — pscale_grain_reach
-    lock.ts           — pscale_lock_block
     keys.ts           — pscale_key_publish
     verify.ts         — pscale_verify_rider
   resources/

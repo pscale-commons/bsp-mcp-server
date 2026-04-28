@@ -13,7 +13,6 @@
  */
 
 import { handleBsp } from '../src/tools/bsp.js';
-import { handleLockBlock } from '../src/tools/lock.js';
 import { getClient } from '../src/db.js';
 
 const TEST_AGENT = `bsp-smoke-${Date.now()}`;
@@ -65,33 +64,90 @@ async function main() {
   const r6 = await handleBsp({ agent_id: TEST_AGENT, block: TEST_BLOCK, spindle: '1', pscale_attention: null });
   assert(getText(r6).includes('updated child'), 'point read after write');
 
-  console.log(`\n=== Lock the block ===`);
+  console.log(`\n=== R2: Lock unlocked block via new_lock (no secret needed) ===`);
   const SECRET = 'smoke-test-secret-9842';
-  const r7 = await handleLockBlock({ agent_id: TEST_AGENT, block: TEST_BLOCK, secret: SECRET });
-  assert(getText(r7).includes('now locked'), 'lock applied');
+  const r7 = await handleBsp({ agent_id: TEST_AGENT, block: TEST_BLOCK, new_lock: SECRET });
+  assert(getText(r7).includes('Lock applied') || getText(r7).includes('lock'), 'R2 lock applied');
 
-  console.log(`\n=== Locked write without secret → rejected ===`);
+  console.log(`\n=== R3: Locked write without secret → rejected ===`);
   const r8 = await handleBsp({
     agent_id: TEST_AGENT, block: TEST_BLOCK, spindle: '1', pscale_attention: null, content: 'should fail',
   });
-  assert(getText(r8).includes('locked') || getText(r8).includes('rejected'), 'unlocked write rejected');
+  assert(getText(r8).includes('locked') || getText(r8).includes('rejected'), 'R3 unlocked write rejected');
 
-  console.log(`\n=== Locked write WITH secret → accepted ===`);
+  console.log(`\n=== R3: Locked write WITH secret → accepted ===`);
   const r9 = await handleBsp({
     agent_id: TEST_AGENT, block: TEST_BLOCK, spindle: '1', pscale_attention: null,
     content: 'authorised update', secret: SECRET,
   });
-  assert(getText(r9).includes('wrote'), 'authorised write succeeded');
+  assert(getText(r9).includes('wrote'), 'R3 authorised write succeeded');
 
   const r10 = await handleBsp({ agent_id: TEST_AGENT, block: TEST_BLOCK, spindle: '1', pscale_attention: null });
-  assert(getText(r10).includes('authorised update'), 'authorised content readable');
+  assert(getText(r10).includes('authorised update'), 'R3 authorised content readable');
 
-  console.log(`\n=== Locked write WITH WRONG secret → rejected ===`);
+  console.log(`\n=== R3: Locked write WITH WRONG secret → rejected ===`);
   const r11 = await handleBsp({
     agent_id: TEST_AGENT, block: TEST_BLOCK, spindle: '1', pscale_attention: null,
     content: 'imposter update', secret: 'wrong-secret',
   });
-  assert(getText(r11).includes('rejected') || getText(r11).includes('match'), 'wrong-secret write rejected');
+  assert(getText(r11).includes('rejected') || getText(r11).includes('match'), 'R3 wrong-secret write rejected');
+
+  console.log(`\n=== R4: Lock rotation requires current secret ===`);
+  const NEW_SECRET = 'smoke-test-rotated-2103';
+
+  // R4a: rotation without secret → rejected
+  const r12 = await handleBsp({ agent_id: TEST_AGENT, block: TEST_BLOCK, new_lock: NEW_SECRET });
+  assert(getText(r12).includes('rotation rejected') || getText(r12).includes('locked'), 'R4 rotation without secret rejected');
+
+  // R4b: rotation with WRONG secret → rejected
+  const r13 = await handleBsp({ agent_id: TEST_AGENT, block: TEST_BLOCK, secret: 'wrong', new_lock: NEW_SECRET });
+  assert(getText(r13).includes('not match') || getText(r13).includes('rejected'), 'R4 rotation with wrong secret rejected');
+
+  // R4c: rotation with CORRECT secret → accepted
+  const r14 = await handleBsp({ agent_id: TEST_AGENT, block: TEST_BLOCK, secret: SECRET, new_lock: NEW_SECRET });
+  assert(getText(r14).includes('rotated'), 'R4 rotation with correct secret accepted');
+
+  // R4d: old secret no longer works
+  const r15 = await handleBsp({
+    agent_id: TEST_AGENT, block: TEST_BLOCK, spindle: '1', pscale_attention: null,
+    content: 'after rotation', secret: SECRET,
+  });
+  assert(getText(r15).includes('rejected') || getText(r15).includes('match'), 'R4 old secret no longer works');
+
+  // R4e: new secret works
+  const r16 = await handleBsp({
+    agent_id: TEST_AGENT, block: TEST_BLOCK, spindle: '1', pscale_attention: null,
+    content: 'after rotation', secret: NEW_SECRET,
+  });
+  assert(getText(r16).includes('wrote'), 'R4 new secret works');
+
+  console.log(`\n=== R1: Create-locked in single call ===`);
+  const FRESH_AGENT = `bsp-smoke-r1-${Date.now()}`;
+  const FRESH_SECRET = 'fresh-r1-secret';
+  const r17 = await handleBsp({
+    agent_id: FRESH_AGENT, block: 'created-locked',
+    spindle: '', pscale_attention: null,
+    content: { _: 'born locked', '1': 'first' },
+    new_lock: FRESH_SECRET,
+  });
+  assert(getText(r17).includes('wrote') && getText(r17).includes('locked'), 'R1 create-and-lock atomic');
+
+  // Verify the new block is locked
+  const r18 = await handleBsp({
+    agent_id: FRESH_AGENT, block: 'created-locked', spindle: '1', pscale_attention: null,
+    content: 'imposter', // no secret
+  });
+  assert(getText(r18).includes('locked') || getText(r18).includes('rejected'), 'R1 new block actually locked');
+
+  // Cleanup the R1 fresh block
+  await getClient().from('pscale_blocks').delete().eq('owner_id', FRESH_AGENT);
+
+  console.log(`\n=== sed: rejects new_lock ===`);
+  const r19 = await handleBsp({
+    agent_id: 'sed:commons', block: 'commons',
+    new_lock: 'should-be-rejected',
+  });
+  assert(getText(r19).includes('only valid on ordinary'), 'sed: blocks reject new_lock');
 
   // Cleanup
   console.log(`\n=== Cleanup ===`);
