@@ -69,13 +69,27 @@ Locks use legacy-compatible salt namespaces:
 
 so locks set under either MCP verify under the other.
 
-## Run
+## Connect
 
-```bash
-SUPABASE_ANON_KEY=sb_publishable_rjE-rjL8kPCkXDK1ZcXauA_D84USWp9 npx tsx src/index.ts
+**Hosted (via Railway):**
+```json
+{
+  "bsp": {
+    "command": "npx",
+    "args": ["-y", "mcp-remote@0.1.38", "https://bsp.hermitcrab.me/mcp/v1"]
+  }
+}
 ```
 
-Default port `3001`, MCP path `/mcp/v1`. Override with `PORT` and `MCP_PATH`.
+Direct Railway URL (if the custom domain is propagating):
+`https://bsp-mcp-server-production.up.railway.app/mcp/v1`
+
+**Local (the scaling path):**
+```bash
+SUPABASE_ANON_KEY=sb_publishable_rjE-rjL8kPCkXDK1ZcXauA_D84USWp9 npm run dev
+```
+
+Default local port `3001`, MCP path `/mcp/v1`. Override with `PORT` and `MCP_PATH`.
 
 ## Smoke tests
 

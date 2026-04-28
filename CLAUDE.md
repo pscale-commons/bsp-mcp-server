@@ -16,8 +16,19 @@ This iteration takes that lesson all the way. The function surface IS bsp(). Nam
 
 A new MCP server that operationalises pscale JSON blocks through a single unified function — `bsp(B, S, P, content?, ...)`. Block-Spindle-Pscale where spindle is the semantic-number address (extending into JSON nesting depth) and pscale is the transversal attention coordinate. These are polar coordinates, not cartesian: radial depth × transversal breadth.
 
-**Repo**: `pscale-commons/bsp-mcp-server`
+**Repo**: https://github.com/pscale-commons/bsp-mcp-server
+**Hosted**: `https://bsp.hermitcrab.me/mcp/v1` (custom domain) or `https://bsp-mcp-server-production.up.railway.app/mcp/v1` (Railway direct)
 **Lineage**: rebuilds the function surface of `pscale-mcp-server` (https://github.com/pscale-commons/pscale-mcp-server) on the same Supabase substrate. Same blocks, same agents, same passphrases, same grains. Different API.
+
+Connect config:
+```json
+{
+  "bsp": {
+    "command": "npx",
+    "args": ["-y", "mcp-remote@0.1.38", "https://bsp.hermitcrab.me/mcp/v1"]
+  }
+}
+```
 **Foundational reading**: `src/sunstone.json` (the teaching block — read this first), `src/whetstone.json` (the operational reference)
 **Reference implementation**: `bsp2-star.py` from CORSAIR — the Python source-of-truth for the walker. `src/bsp.ts` is a faithful TypeScript port. DO NOT MODIFY without going to the Python first.
 
