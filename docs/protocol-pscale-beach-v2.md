@@ -255,6 +255,22 @@ The substrate primitives (`bsp`, `pscale_create_collective`, `pscale_register`, 
 
 The pscale-mcp era shipped convenience tools for each convention. bsp-mcp ships none of those — agents using the protocol read the conventions (§6.1–6.5 here, and `sed:conventions` on the substrate) and call `bsp()` accordingly.
 
+### 6.7 Presence via marks
+
+"Who is at this address right now?" is a pure pscale operation: walk the marks position, filter by recency. No separate relay, no separate pubsub.
+
+Convention: a presence mark is a structured mark with three required tags — `1` agent_id, `2` address, `3` ISO 8601 timestamp. Heartbeat at 2-10s by overwriting at the same digit position. Read-side staleness filter (default 30s) decides who's currently visible.
+
+Full spec at [presence-via-marks.md](./presence-via-marks.md). Replaces per-application presence relays (e.g. xstream-play's `relay_blocks` table).
+
+### 6.8 Agent shell — the operational manifest
+
+An agent's shell is the constellation of named blocks at its `agent_id` that constitute "what this agent is" — passport, faces, watched-beach list, block manifest, purpose, concern, memory, relationships. Walkable through `bsp()`.
+
+Canonical layout: `block="passport"` for outward-facing identity; `block="shell"` for the operational manifest with face definitions, watched beaches, and a block-manifest pointer at `shell:1`, `shell:2`, `shell:3` respectively.
+
+Full spec at [protocol-agent-shell.md](./protocol-agent-shell.md). Used by xstream-class interfaces (face switcher reads `shell:1`, address bar walks within face-permitted paths) and beach-crabs (rung 0/1/2 read `shell:2` for watch-list).
+
 ---
 
 ## 7. Federation and trust
