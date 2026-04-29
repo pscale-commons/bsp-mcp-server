@@ -335,12 +335,15 @@ This produces:
 
 | Stage | Artifact | Owner | Status |
 |---|---|---|---|
-| 1 | This protocol spec | bsp-mcp-server reference instance | **Done — this document** |
-| 2 | `evolution.json` + `state.json` restructure to five-level framing | bsp-mcp-server | **Done** |
-| 3 | `WellKnownAdapter` in `db.ts` — URL-prefix dispatch | bsp-mcp-server | **Next** |
-| 4 | Update `happyseaurchin.com/.well-known/pscale-beach` to v2 (block-shaped responses) | David / happyseaurchin Claude Code session | After Stage 3 |
-| 5 | Onen RPG / Thornkeep / GRIT port — convention layer + script update; substrate primitives unchanged | David | Independent |
-| 6 | Inbox replacement in grain_reach — write reach mark to a beach instead of `sand_inbox` | bsp-mcp-server | After Stage 4 |
+| 1 | This protocol spec | bsp-mcp-server reference instance | **Done — 28 April 2026** |
+| 2 | `evolution.json` + `state.json` restructure to five-level framing | bsp-mcp-server | **Done — 28 April 2026** |
+| 3 | `WellKnownAdapter` in `db.ts` — URL-prefix dispatch | bsp-mcp-server | **Done — 28 April 2026** (commits `ed4a7f8`, `7c83d0a`) |
+| 4 | Update `happyseaurchin.com/.well-known/pscale-beach` to v2 (block-shaped responses) | David / happyseaurchin Claude Code session | **Done — 29 April 2026** (live federation smoke confirmed) |
+| 5 | Onen RPG / Thornkeep / GRIT port — convention layer + script update; substrate primitives unchanged | David | **Pending** |
+| 6 | Inbox replacement in grain_reach — write reach mark to a beach instead of `sand_inbox` | bsp-mcp-server | **Pending** |
+| 7 | Dashboard rewrite for v2 framing labels | bsp-mcp-server | **Pending** (low priority) |
+
+**Live federation as of 29 April 2026.** `bsp(agent_id="https://happyseaurchin.com", block="beach")` round-trips through the WellKnownAdapter to the origin-hosted endpoint. Read, write, lock-rotate all verified. Other developers can replicate the federation pattern using the template in [happyseaurchin-v2-implementation.md](./happyseaurchin-v2-implementation.md).
 
 **Deferred indefinitely**: bsp-mcp serving its own `/.well-known/pscale-beach` (commons-as-federated-beach). The commons stays as direct substrate access via bsp-mcp's existing primitives. Federation is an outward-facing concern — happyseaurchin.com is the federation testcase, not the commons.
 
