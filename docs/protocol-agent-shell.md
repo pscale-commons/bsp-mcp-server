@@ -100,18 +100,48 @@ Field semantics:
 
 For v0.1, an interface MAY treat the four CADO faces as the full set; future faces (e.g. observer-with-rider for SAND verification) can be added at digits 5+ without breaking existing readers.
 
-### 3.1 Knowledge gates and commit gates are CLIENT-SIDE in v0.1
+### 3.1 Faces are CONTEXT MODES, not access gates
 
-**The substrate does not enforce face.** `bsp()` is open by default. Lock state gates writes; gray gates read-decryption; face is advisory and is logged, not enforced. A determined user can call `bsp()` directly from Claude Desktop and bypass any face restriction.
+**Critical framing.** Faces are about the user's mode of engagement and what context the soft-LLM is given in that mode. They are NOT substrate access controls. The substrate is open by default; lock state gates writes; gray gates read-decryption; face is purely advisory.
+
+The same `field 2`/`field 3` mechanism serves two different purposes depending on application:
+
+| Application | What `field 2` does | What `field 3` does |
+|---|---|---|
+| **Fantasy / RPG** | Restricts soft-LLM context to what the character would know — narrative integrity. | Restricts commit affordance to what the role permits — fairness. |
+| **Real-world / non-fantasy** | Focuses soft-LLM context to what's relevant for the current mode — sharp chats. | Surfaces commit affordance where it makes sense for the mode — clean UI. |
+
+In fantasy use, the mechanism doubles as restriction because the user is playing a role and in-character ignorance matters. In real-world use, there's nothing to hide — the user is themselves, the soft-LLM should be as informed as helps. The mechanism still applies, but as FOCUS not restriction.
+
+### 3.2 Field semantics are client-side in v0.1
+
+**The substrate does not enforce face.** Lock state gates writes; face is logged, not enforced. A determined user can call `bsp()` directly from Claude Desktop and bypass any face restriction. That's correct: hard-blocking at the UI is futile (the user can always step around it) and unnecessary in real-world use (they have no reason to).
 
 So in v0.1:
 
-- **Knowledge gates (`field 2`)** are a FILTER applied at prompt-build time by the xstream-class client. The soft-LLM is fed only content from paths the active face permits. If the user navigates outside (via the address bar), they SEE the content in solid (mechanical bsp walk); the soft-LLM CONTEXT does not include it.
-- **Commit gates (`field 3`)** are an AFFORDANCE HINT. The xstream UI surfaces the "commit" / "post" button only when the user is at an address inside the active face's permitted paths. Outside, no button — but the user can still write via direct `bsp()` calls if they choose to step around the convention.
+- **`field 2` (context paths)** — paths whose content xstream feeds to the soft-LLM in this face. Filter applied at prompt-build time. The user retains full agency to navigate the substrate via the address bar; the soft-LLM context shifts based on the active face.
+- **`field 3` (commit paths)** — paths where xstream surfaces the "commit" / "post" affordance. Outside these paths, no button. The user can still write via direct `bsp()` calls if they choose to step around the convention.
 
-UX recommendation: when the user navigates outside the active face's permitted paths, surface a small hint ("this path is outside Character's purview — soft-LLM context is filtered"). Don't hide the content. Preserves agency; surfaces the convention.
+UX recommendation **for fantasy use**: when the user navigates outside the active face's `field 2` paths, surface a small hint ("this path is outside Character's purview — soft-LLM context is filtered"). Don't hide the content. Preserves agency; surfaces the role convention.
 
-**v0.2+ direction (not implemented)**: substrate-enforced face. `bsp()` would validate the caller against `sed:{role}-cast` (or analogous) membership before traversal, rejecting calls that don't match the face's permitted paths. The same `field 2/3` paths in the agent shell would then act as BOTH client-side filter AND substrate-side gate. Backward-compatible — clients written for v0.1 client-side filtering keep working unchanged when v0.2 substrate enforcement lands.
+UX recommendation **for real-world use**: don't surface that hint. The face is just shaping context, not enforcing a role. The user simply gets a different soft-LLM focus when they change addresses.
+
+### 3.3 Real-world faces vs fantasy faces
+
+CADO (Character / Author / Designer / Observer) is the fantasy default — seeded into game-context shells. Real-world users define their own faces. The agent-shell layout supports any number of faces at digits 1–9 with the same field shape.
+
+Example real-world face set:
+
+- **Work** — current purpose, today's concerns, active projects. `field 2` = ["purpose", "concern", "memory:1"].
+- **Publish** — drafts being prepared for others. `field 2` = ["passport", "drafts"], `field 3` = ["passport", "drafts"].
+- **Configure** — managing the agent setup. `field 2` = ["shell"], `field 3` = ["shell"].
+- **Wander** — looking around the beach with no focus. `field 2` = [] (everything), `field 3` = [] (no commit).
+
+The xstream face switcher renders whatever's in `shell:1` — CADO defaults work for game contexts; real-world users edit `shell:1` and define modes that match their own engagement patterns.
+
+### 3.4 v0.2+ direction (not implemented)
+
+Substrate-enforced face. `bsp()` would validate the caller against `sed:{role}-cast` (or analogous) membership before traversal, rejecting calls that don't match the face's permitted paths. Useful for fantasy / multi-player coordination; less relevant for solo real-world use. The same `field 2/3` paths in the agent shell would then act as BOTH client-side filter AND substrate-side gate. Backward-compatible — clients written for v0.1 client-side filtering keep working unchanged when v0.2 substrate enforcement lands.
 
 Build for v0.1 now. Don't pre-engineer v0.2.
 
