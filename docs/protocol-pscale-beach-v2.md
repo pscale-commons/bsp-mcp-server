@@ -271,6 +271,20 @@ Canonical layout: `block="passport"` for outward-facing identity; `block="shell"
 
 Full spec at [protocol-agent-shell.md](./protocol-agent-shell.md). Used by xstream-class interfaces (face switcher reads `shell:1`, address bar walks within face-permitted paths) and beach-crabs (rung 0/1/2 read `shell:2` for watch-list).
 
+### 6.9 Block references — composition via the star operator
+
+A hidden directory at any node can carry block references — strings whose value is the address of another block. The star operator follows them. References take five canonical forms, dispatched by string prefix:
+
+- `https://...` → federated beach (via WellKnownAdapter)
+- `sed:{collective}:{position}` → registrant declaration in a sed: collective
+- `grain:{pair_id}:{side}` → a side of a grain block
+- `agent_id:block` or `agent_id:block:spindle` → fully qualified
+- bare name (e.g. `"purpose"`) → same-agent fallback (resolves against the containing block's agent_id)
+
+This is what makes pscale a composition system rather than a flat block store — agents wire themselves to ecologies in DATA, not in code. The wiring is mutable at runtime via ordinary `bsp()` writes, so dynamic context (current beach, active grain partner) lives as block content that gets edited as state changes.
+
+Full spec at [protocol-block-references.md](./protocol-block-references.md). Used by xstream prompt builders following star refs in agent blocks, by beach-crabs traversing reference chains, and by any client implementing pscale composition.
+
 ---
 
 ## 7. Federation and trust
