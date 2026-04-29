@@ -93,12 +93,12 @@ Field semantics:
 |---|---|
 | `_` | Human-readable label. The face switcher displays this. |
 | `1` | The default address the face starts at when activated. Empty = root. |
-| `2` | **Knowledge gates** — pscale paths whose content this face's soft-LLM is fed. CLIENT-SIDE FILTER, not substrate access check (see §3.1 below). |
-| `3` | **Commit gates** — pscale paths the xstream UI surfaces as writable affordances for this face. CLIENT-SIDE AFFORDANCE HINT, not substrate access check (see §3.1 below). |
+| `2` | **Context paths** — pscale paths whose content this face's soft-LLM is fed. CLIENT-SIDE FILTER, not substrate access check (see §3.1 below). |
+| `3` | **Commit paths** — pscale paths the xstream UI surfaces as writable affordances for this face. CLIENT-SIDE AFFORDANCE HINT, not substrate access check (see §3.1 below). |
 | `4` | Chat persona — either an inline prompt string, or a block reference like `"shell-prompts:character"` that the soft-LLM resolves. |
 | `9` | Per-face metadata. Optional. |
 
-For v0.1, an interface MAY treat the four CADO faces as the full set; future faces (e.g. observer-with-rider for SAND verification) can be added at digits 5+ without breaking existing readers.
+CADO is structural: there are exactly four faces, anchored at `shell:1.1` (Character), `shell:1.2` (Author), `shell:1.3` (Designer), `shell:1.4` (Observer). See §3.3.
 
 ### 3.1 Faces are CONTEXT MODES, not access gates
 
@@ -126,18 +126,37 @@ UX recommendation **for fantasy use**: when the user navigates outside the activ
 
 UX recommendation **for real-world use**: don't surface that hint. The face is just shaping context, not enforcing a role. The user simply gets a different soft-LLM focus when they change addresses.
 
-### 3.3 Real-world faces vs fantasy faces
+### 3.3 CADO is structural — exactly four faces, domain-renamable
 
-CADO (Character / Author / Designer / Observer) is the fantasy default — seeded into game-context shells. Real-world users define their own faces. The agent-shell layout supports any number of faces at digits 1–9 with the same field shape.
+CADO (Character / Author / Designer / Observer) is universal, not a fantasy default. The four emerge from the structural question "what can you do in any content-bearing system?" — every system with users, content, rules, and audience has these four operational roles:
 
-Example real-world face set:
+- **C — Character** — operate with content as an individual (use).
+- **A — Author** — make and edit content (produce).
+- **D — Designer** — edit the rules under which C and A operate (meta — content rules, behaviour rules, UI rules, game rules).
+- **O — Observer** — view solid content created by users/characters; pumpable through external API for audiences.
 
-- **Work** — current purpose, today's concerns, active projects. `field 2` = ["purpose", "concern", "memory:1"].
-- **Publish** — drafts being prepared for others. `field 2` = ["passport", "drafts"], `field 3` = ["passport", "drafts"].
-- **Configure** — managing the agent setup. `field 2` = ["shell"], `field 3` = ["shell"].
-- **Wander** — looking around the beach with no focus. `field 2` = [] (everything), `field 3` = [] (no commit).
+The agent shell's `shell:1` holds **exactly four** faces, one per CADO type. Position assignments are conventional:
 
-The xstream face switcher renders whatever's in `shell:1` — CADO defaults work for game contexts; real-world users edit `shell:1` and define modes that match their own engagement patterns.
+```
+shell:1
+  1: <Character face>
+  2: <Author face>
+  3: <Designer face>
+  4: <Observer face>
+```
+
+Users MAY rename each face's `_` for their domain — but the underlying category is structurally one of CADO. Examples:
+
+| CADO | Fantasy / RPG label | Real-world label | Editorial label |
+|---|---|---|---|
+| Character | Player | Work / Self | Reader |
+| Author | Author | Publish / Compose | Writer |
+| Designer | GM | Configure | Editor-in-chief |
+| Observer | Spectator | Browse | Audience |
+
+The `bsp()` face parameter is enum-bound to `character / author / designer / observer` — the canonical names. The shell's `_` text is the user's domain rename. The xstream face switcher displays the rename; the `bsp()` calls send the canonical CADO type.
+
+**Implementation**: a face switcher renders the four entries at `shell:1.{1,2,3,4}` in CADO order. If the user has not seeded all four, the missing positions render as defaults (face inactive / not configured). v0.2 substrate enforcement validates against `sed:{role}-cast` membership where role is one of CADO.
 
 ### 3.4 v0.2+ direction (not implemented)
 
