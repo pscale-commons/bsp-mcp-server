@@ -165,9 +165,15 @@ async function saveBlockToBeach(
   opts: WriteOptions = {},
 ): Promise<BlockRow> {
   const url = beachEndpoint(ownerId, blockName);
+  // bsp-mcp follows the dumb-beach model: GET → local bspWrite → POST whole
+  // modified block. The user's original spindle/pscale_attention has already
+  // been applied to `block` before saveBlock was called, so the federated
+  // POST always uses spindle="" (whole-block replace). Sending the user's
+  // spindle alongside the whole block would corrupt the receiver — they'd
+  // try to point-write the whole block at that spindle.
   const body: Record<string, any> = {
-    spindle: opts.spindle ?? '',
-    pscale_attention: opts.pscale_attention ?? null,
+    spindle: '',
+    pscale_attention: null,
     content: block,
   };
   if (opts.secret !== undefined) body.secret = opts.secret;

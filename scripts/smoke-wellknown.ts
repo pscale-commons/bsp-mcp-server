@@ -170,6 +170,24 @@ try {
   assert(getText(r7).includes('wrote'), 'authorised write succeeded');
   assert(beach.block._ === 'correctly authorised', 'mock content updated under auth');
 
+  console.log('\n=== bsp() POINT write through federated path (regression: spindle must NOT corrupt receiver) ===');
+  // Reset mock to a known shape, no lock.
+  beach.block = { _: 'mock', '1': { _: 'marks', '1': 'old' } };
+  beach.position_hashes = {};
+  // User issues a point write at "1.1" — bsp-mcp must POST the whole modified
+  // block with spindle="" (otherwise the receiver tries to point-write the
+  // whole block AT 1.1 which would corrupt the structure).
+  const r8 = await handleBsp({
+    agent_id: beachOrigin, block: 'beach',
+    spindle: '1.1', pscale_attention: null,
+    content: 'updated mark',
+  });
+  assert(getText(r8).includes('wrote'), 'federated point write returned wrote');
+  assert(beach.block?.['1']?.['1'] === 'updated mark', 'federated point landed at correct address');
+  assert(beach.block?._ === 'mock', 'underscore preserved (not overwritten by whole-block-as-content)');
+  assert(beach.block?.['1']?._ === 'marks', 'parent underscore preserved');
+  assert(typeof beach.block?.['1']?.['1'] === 'string', 'leaf is a string, NOT a whole-block object');
+
   console.log('\n=== unreachable beach (404 endpoint) ===');
   const dead = `http://127.0.0.1:${port}/no-such-path`;  // wrong path
   // Simulate: try a different agent_id that points at a non-existent server
