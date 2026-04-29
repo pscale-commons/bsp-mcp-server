@@ -1,7 +1,7 @@
 {
   "meta": {
     "updated": "2026-04-28",
-    "source": "bsp-mcp-server v0.1+ — five-level relational framing, rock: substrate, no-inbox model, /.well-known/pscale-beach v2 protocol",
+    "source": "bsp-mcp-server v0.1+ — five-level relational framing, no-inbox model, /.well-known/pscale-beach v2 protocol, sed: substrate retained from pscale-mcp",
     "framing": "Pscale is substrate, not a level. Levels 1-5 are the relational acts that constitute the ecology. Walk evolution.json for the canonical structure."
   },
   "evos": [
@@ -52,8 +52,8 @@
       "question": "do we hold a channel?",
       "status": "live",
       "agent": "event responder",
-      "human": "forms grains, registers in rocks",
-      "activity": { "grains": "5+", "rock_registrants": 7, "rocks_active": 3 },
+      "human": "forms grains, registers in sed: collectives",
+      "activity": { "grains": "5+", "sed_registrants": 7, "sed_collectives_active": 3 },
       "nodes": [
         {
           "id": "2.1", "label": "form a grain", "status": "live", "kind": "practice",
@@ -66,14 +66,13 @@
           "note": "design lands once .well-known v2 is implemented"
         },
         {
-          "id": "2.3", "label": "register in a rock", "status": "live", "kind": "practice",
-          "desc": "Multilateral commitment. Server-assigned position (floor-2 minimum) in a rock: collective. Position-locked with passphrase. Proof-of-presence-in-time.",
-          "tools": ["pscale_register"],
-          "note": "rock: replaces sed: — sedimentary rock metaphor restored"
+          "id": "2.3", "label": "register in a sed: collective", "status": "live", "kind": "practice",
+          "desc": "Multilateral commitment. Server-assigned position (floor-2 minimum) in a sed: collective. Position-locked with passphrase. Proof-of-presence-in-time.",
+          "tools": ["pscale_register"]
         },
         {
           "id": "2.4", "label": "address conventions", "status": "live", "kind": "convention",
-          "desc": "grain:{pair_id}:{side} routes through a grain. rock:{collective}:{position} routes through a rock. These addresses become identities for higher-level acts."
+          "desc": "grain:{pair_id}:{side} routes through a grain. sed:{collective}:{position} routes through a sed: collective. These addresses become identities for higher-level acts."
         },
         {
           "id": "2.5", "label": "beach-crab v1", "status": "spec", "kind": "agent-rung",
@@ -97,7 +96,7 @@
       "nodes": [
         {
           "id": "3.1", "label": "send a probe", "status": "spec", "kind": "practice",
-          "desc": "Write content into a grain side or rock position with a SAND rider (probe_id, chain hops, credit claim, SQ claim, topic_coordinate).",
+          "desc": "Write content into a grain side or sed: position with a SAND rider (probe_id, chain hops, credit claim, SQ claim, topic_coordinate).",
           "tools": ["bsp"]
         },
         {
@@ -144,7 +143,7 @@
         },
         {
           "id": "4.3", "label": "Onen RPG / Thornkeep", "status": "live (prototype)", "kind": "application",
-          "desc": "First GRIT-based coordination application. Players (humans + NPC agents) take roles via rock:thornkeep-cast. Authors take roles via rock:thornkeep-authors. World canon at thornkeep-world (locked ordinary block; GM holds lock)."
+          "desc": "First GRIT-based coordination application. Players (humans + NPC agents) take roles via sed:thornkeep-cast. Authors take roles via sed:thornkeep-authors. World canon at thornkeep-world (locked ordinary block; GM holds lock)."
         },
         {
           "id": "4.4", "label": "generalised coordination", "status": "spec", "kind": "future",
@@ -210,12 +209,7 @@
     "count": 6,
     "list": ["bsp", "pscale_create_collective", "pscale_register", "pscale_grain_reach", "pscale_key_publish", "pscale_verify_rider"]
   },
-  "naming": {
-    "rock": {
-      "replaces": "sed:",
-      "rationale": "Sedimentary rock — registrations are layered sediments accumulated in landing order. 'sed:' lost the metaphor; 'rock:' restores it.",
-      "status": "naming change planned; existing sed: blocks remain walkable; new collectives use rock: prefix"
-    },
+  "removals": {
     "no_inbox": {
       "replaces": "sand_inbox / pscale_inbox_send / pscale_inbox_check",
       "rationale": "An inbox was a relic of email-shaped thinking. In a pscale beach, there are only blocks. To message someone, you write at a beach they watch.",

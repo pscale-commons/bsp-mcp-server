@@ -215,9 +215,9 @@ Pscale is the substrate, not a level. Every agent that uses bsp-mcp operates on 
 | Level | Activity | Substrate primitive |
 |---|---|---|
 | 1 — Signal | Leave marks on beaches; publish passport; declare keys | `bsp()` write at the beach block |
-| 2 — Commitment | Form a grain (bilateral private) OR register in a rock (multilateral public) | `pscale_grain_reach` / `pscale_register` |
+| 2 — Commitment | Form a grain (bilateral private) OR register in a sed: collective (multilateral public) | `pscale_grain_reach` / `pscale_register` |
 | 3 — Semantic networks | Send/route/verify content via SAND riders; semantic networks form contingently from usage | `bsp()` + `pscale_verify_rider` |
-| 4 — Mutual objectives | Coordinate via pools and role-rocks (Onen RPG / Thornkeep is the prototype) | `bsp()` + GRIT convention |
+| 4 — Mutual objectives | Coordinate via pools and role-collectives (Onen RPG / Thornkeep is the prototype) | `bsp()` + GRIT convention |
 | 5 — Shared context | MAGI (agents) + xstream (humans) operate concurrently on shared pscale blocks | future primitives |
 
 Canonical reference: `src/evolution.json` (walkable as `pscale://evolution`); machine-readable snapshot: `site/state.json`.
@@ -226,12 +226,13 @@ Canonical reference: `src/evolution.json` (walkable as `pscale://evolution`); ma
 
 A beach IS a pscale block hosted at a URL. The endpoint mirrors `bsp()` over HTTP. **The internet becomes the beach** — any site that serves `/.well-known/pscale-beach` is a meeting point. Spec at `docs/protocol-pscale-beach-v2.md`. Local-beach-first design — happyseaurchin.com is the smallest working instance; commons catch-all (Supabase, served by bsp-mcp's HTTP entry) is a "simulator" of many local beaches for agents that haven't yet adopted federation.
 
-### Renames and removals (to land progressively)
+### Removals (to land progressively)
 
-- **`rock:` replaces `sed:`** — sedimentary rock metaphor restored. Tool names unchanged. Existing `sed:` blocks remain walkable. New collectives use `rock:` prefix.
 - **No inbox primitive.** Messages are stigmergy at agent-tagged URLs. Reaches for grain land at beach position 3 per the canonical block shape. `sand_inbox` is deprecated; v0.1 grain_reach still writes there transiently for partner-notification, replaced once WellKnownAdapter ships.
 - **Open by default.** Every beach is publicly readable. Privacy is opt-in (gray). Sovereignty is opt-in (lock).
 - **Tide-clearing.** Marks are random and transient. Don't depend on persistence at the beach level.
+
+(A `rock:` rename of the sed: prefix was considered and shelved — the `sed:` name is retained because the supporting layers, salt namespaces, conventions, and existing data all use it. Renaming would be cosmetic with substantial churn cost and no functional benefit. The metaphor of sedimentary accumulation continues to apply conceptually; the prefix stays.)
 
 ### Beach-crab ladder
 
@@ -262,8 +263,8 @@ The `state.json` schema preserves field names from the pscale-mcp dashboard (`ev
 
 1. **WellKnownAdapter** in `src/db.ts` — when `agent_id` looks like `https?://...`, route to `/.well-known/pscale-beach` instead of Supabase. Validates the protocol against happyseaurchin.com.
 2. **Update happyseaurchin.com** to serve v2-shape responses (David hands a prompt to that site's Claude Code).
-3. **bsp-mcp serves its own `.well-known/pscale-beach`** at the same hostname as `/mcp/v1`. Same code, two protocols.
-4. **rock: rename in code paths** — `collective.ts` accepts both `sed:` and `rock:` prefixes; new docs use `rock:`.
-5. **Inbox elimination in grain_reach** — replace `sand_inbox` insert with a beach mark at partner's watched beach.
-6. **Port Thornkeep / GRIT** to bsp-mcp once pools-as-blocks land.
-7. **Dashboard rewrite** for v2 framing labels (currently uses pscale-mcp era node descriptions).
+3. **Port Thornkeep / GRIT** — convention-layer + script update; no new substrate primitives. Pools become blocks, GRIT remains a daemon, sed:-conventions-block guidance updates.
+4. **Inbox elimination in grain_reach** — replace `sand_inbox` insert with a beach mark at partner's watched beach. Lands after WellKnownAdapter so beaches are reachable.
+5. **Dashboard rewrite** for v2 framing labels (currently uses pscale-mcp era node descriptions).
+
+**Deferred indefinitely**: bsp-mcp serving its own `/.well-known/pscale-beach` (commons-as-federation-peer). The commons stays as direct substrate access via bsp-mcp's existing primitives. happyseaurchin.com is the federation testcase — the commons doesn't need to wrap itself.
