@@ -2,11 +2,21 @@
  * db.ts — storage adapter for the bsp-mcp.
  *
  * The membrane between the geometry and the substrate. Above this line: BSP
- * operates on JSON. Below this line: persistence (Supabase, filesystem,
- * in-memory). Geometry is invariant; storage is variant.
+ * operates on JSON. Below this line: persistence — Supabase (commons) or a
+ * remote /.well-known/pscale-beach (federated). Geometry is invariant;
+ * storage is variant.
+ *
+ * Dispatch by owner_id prefix:
+ *   sed:{collective} / grain:{pair_id} / bare agent_id  → Supabase commons
+ *   https?://{origin}                                    → federated beach
  *
  * Same Supabase project as pscale-mcp-server. Same blocks, same agents,
  * same passphrases, same grains. Interoperability is at the data layer.
+ *
+ * Federation per docs/protocol-pscale-beach-v2.md:
+ *   GET  https://<origin>/.well-known/pscale-beach[?block=<name>]
+ *   POST https://<origin>/.well-known/pscale-beach[?block=<name>]
+ *        body: { spindle, pscale_attention?, content, secret?, new_lock?, gray? }
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -44,9 +54,168 @@ export interface BlockRow {
   updated_at: string;
 }
 
+// ── Write options (for federated POST passthrough) ──
+
+/**
+ * Optional write parameters that pass through to a federated beach via the
+ * /.well-known POST body. For Supabase-backed owners these are ignored —
+ * locks are validated locally before saveBlock is called, and lock changes
+ * happen via updatePositionHashes. For federated owners, the remote site
+ * validates secret and applies new_lock server-side.
+ */
+export interface WriteOptions {
+  spindle?: string | null;
+  pscale_attention?: number | null;
+  secret?: string;
+  new_lock?: string;
+  gray?: boolean;
+}
+
+// ── URL-prefix dispatch helpers ──
+
+const URL_PREFIX_RE = /^https?:\/\//i;
+
+/** True if the owner_id is a URL — federated beach storage applies. */
+export function isFederatedOwner(ownerId: string): boolean {
+  return URL_PREFIX_RE.test(ownerId);
+}
+
+/**
+ * Canonicalise a URL to its origin form per protocol §2.1:
+ *   - Lowercase scheme and host
+ *   - Strip default ports (:443/:80)
+ *   - Drop fragments and query
+ *   - Strip trailing slash
+ */
+export function canonicaliseOrigin(rawUrl: string): string {
+  const url = new URL(rawUrl);
+  const scheme = url.protocol.toLowerCase();
+  const host = url.hostname.toLowerCase();
+  const port = url.port;
+  const isDefaultPort =
+    (scheme === 'https:' && (port === '' || port === '443')) ||
+    (scheme === 'http:' && (port === '' || port === '80'));
+  const portPart = isDefaultPort ? '' : `:${port}`;
+  return `${scheme}//${host}${portPart}`;
+}
+
+function beachEndpoint(ownerId: string, blockName: string): string {
+  const origin = canonicaliseOrigin(ownerId);
+  const url = `${origin}/.well-known/pscale-beach`;
+  if (blockName !== 'beach') {
+    return `${url}?block=${encodeURIComponent(blockName)}`;
+  }
+  return url;
+}
+
+// ── Federated beach adapter (HTTP) ──
+
+const BEACH_TIMEOUT_MS = parseInt(process.env.BEACH_TIMEOUT_MS || '8000', 10);
+
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), BEACH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<BlockRow | null> {
+  const url = beachEndpoint(ownerId, blockName);
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
+  } catch (e: any) {
+    throw new Error(`Beach fetch failed (${url}): ${e?.message ?? e}`);
+  }
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    let detail = '';
+    try { detail = ' — ' + (await res.text()).slice(0, 200); } catch {}
+    throw new Error(`Beach load failed (${res.status} ${res.statusText})${detail}`);
+  }
+  let block: any;
+  try {
+    block = await res.json();
+  } catch (e: any) {
+    throw new Error(`Beach response was not JSON: ${e?.message ?? e}`);
+  }
+  // Synthesise a BlockRow shape. position_hashes is intentionally empty —
+  // remote beaches manage their own locks; bsp-mcp's local verifyLock will
+  // see an empty map and pass through, leaving authority to the remote.
+  const now = new Date().toISOString();
+  return {
+    id: `${ownerId}/${blockName}`,
+    owner_id: ownerId,
+    name: blockName,
+    block_type: 'beach',
+    block: (block ?? {}) as Block,
+    position_hashes: {},
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+async function saveBlockToBeach(
+  ownerId: string,
+  blockName: string,
+  block: Block,
+  opts: WriteOptions = {},
+): Promise<BlockRow> {
+  const url = beachEndpoint(ownerId, blockName);
+  const body: Record<string, any> = {
+    spindle: opts.spindle ?? '',
+    pscale_attention: opts.pscale_attention ?? null,
+    content: block,
+  };
+  if (opts.secret !== undefined) body.secret = opts.secret;
+  if (opts.new_lock !== undefined) body.new_lock = opts.new_lock;
+  if (opts.gray !== undefined) body.gray = opts.gray;
+
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (e: any) {
+    throw new Error(`Beach POST failed (${url}): ${e?.message ?? e}`);
+  }
+  if (!res.ok) {
+    let errMsg = `Beach save rejected (${res.status} ${res.statusText})`;
+    try {
+      const txt = await res.text();
+      try {
+        const parsed = JSON.parse(txt);
+        if (parsed?.error) errMsg = `Beach save rejected: ${parsed.error}`;
+      } catch {
+        if (txt) errMsg += ` — ${txt.slice(0, 200)}`;
+      }
+    } catch {}
+    throw new Error(errMsg);
+  }
+  const now = new Date().toISOString();
+  return {
+    id: `${ownerId}/${blockName}`,
+    owner_id: ownerId,
+    name: blockName,
+    block_type: 'beach',
+    block,
+    position_hashes: {},
+    created_at: now,
+    updated_at: now,
+  };
+}
+
 // ── Adapter primitives — load_block, save_block, locks ──
 
 export async function loadBlock(ownerId: string, name: string): Promise<BlockRow | null> {
+  if (isFederatedOwner(ownerId)) {
+    return loadBlockFromBeach(ownerId, name);
+  }
   const { data, error } = await getClient()
     .from('pscale_blocks')
     .select('*')
@@ -63,7 +232,11 @@ export async function saveBlock(
   name: string,
   block: Block,
   blockType: string = 'general',
+  opts: WriteOptions = {},
 ): Promise<BlockRow> {
+  if (isFederatedOwner(ownerId)) {
+    return saveBlockToBeach(ownerId, name, block, opts);
+  }
   const { data, error } = await getClient()
     .from('pscale_blocks')
     .upsert(
@@ -87,6 +260,11 @@ export async function updatePositionHashes(
   name: string,
   hashes: Record<string, string>,
 ): Promise<void> {
+  if (isFederatedOwner(ownerId)) {
+    // Federated beaches manage their own locks. The lock change was
+    // forwarded inside the saveBlock POST body (as new_lock + secret).
+    return;
+  }
   const { error } = await getClient()
     .from('pscale_blocks')
     .update({ position_hashes: hashes, updated_at: new Date().toISOString() })
@@ -96,6 +274,9 @@ export async function updatePositionHashes(
 }
 
 export async function listBlocks(ownerId: string): Promise<BlockRow[]> {
+  if (isFederatedOwner(ownerId)) {
+    throw new Error('listBlocks is not supported on federated beaches.');
+  }
   const { data, error } = await getClient()
     .from('pscale_blocks')
     .select('*')

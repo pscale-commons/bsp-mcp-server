@@ -220,8 +220,27 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   }
 
   // Persist content (or seed empty block if locking-only on a new block).
+  // For federated beaches (owner_id is a URL), saveBlock forwards the spindle,
+  // pscale_attention, secret, new_lock, and gray to the remote /.well-known
+  // endpoint as the POST body — the remote handles auth + lock state.
   const blockToSave = writeResult?.block ?? block;
-  await saveBlock(agent_id, blockName, blockToSave, row?.block_type ?? 'general');
+  try {
+    await saveBlock(
+      agent_id,
+      blockName,
+      blockToSave,
+      row?.block_type ?? 'general',
+      {
+        spindle: spindle ?? '',
+        pscale_attention: pscale_attention ?? null,
+        secret,
+        new_lock: params.new_lock,
+        gray: params.gray,
+      },
+    );
+  } catch (e: any) {
+    return { content: [{ type: 'text', text: `Write rejected: ${e?.message ?? String(e)}` }] };
+  }
 
   // Apply lock change if provided.
   let lockNote = '';
