@@ -93,12 +93,27 @@ Field semantics:
 |---|---|
 | `_` | Human-readable label. The face switcher displays this. |
 | `1` | The default address the face starts at when activated. Empty = root. |
-| `2` | Walking permissions. Either a list of allowed prefixes, or a single prefix everything starts at. Convention TBD; at minimum a single string here. |
-| `3` | Write permissions. Same shape. The xstream UI uses this to show/hide the commit affordance. |
+| `2` | **Knowledge gates** — pscale paths whose content this face's soft-LLM is fed. CLIENT-SIDE FILTER, not substrate access check (see §3.1 below). |
+| `3` | **Commit gates** — pscale paths the xstream UI surfaces as writable affordances for this face. CLIENT-SIDE AFFORDANCE HINT, not substrate access check (see §3.1 below). |
 | `4` | Chat persona — either an inline prompt string, or a block reference like `"shell-prompts:character"` that the soft-LLM resolves. |
 | `9` | Per-face metadata. Optional. |
 
 For v0.1, an interface MAY treat the four CADO faces as the full set; future faces (e.g. observer-with-rider for SAND verification) can be added at digits 5+ without breaking existing readers.
+
+### 3.1 Knowledge gates and commit gates are CLIENT-SIDE in v0.1
+
+**The substrate does not enforce face.** `bsp()` is open by default. Lock state gates writes; gray gates read-decryption; face is advisory and is logged, not enforced. A determined user can call `bsp()` directly from Claude Desktop and bypass any face restriction.
+
+So in v0.1:
+
+- **Knowledge gates (`field 2`)** are a FILTER applied at prompt-build time by the xstream-class client. The soft-LLM is fed only content from paths the active face permits. If the user navigates outside (via the address bar), they SEE the content in solid (mechanical bsp walk); the soft-LLM CONTEXT does not include it.
+- **Commit gates (`field 3`)** are an AFFORDANCE HINT. The xstream UI surfaces the "commit" / "post" button only when the user is at an address inside the active face's permitted paths. Outside, no button — but the user can still write via direct `bsp()` calls if they choose to step around the convention.
+
+UX recommendation: when the user navigates outside the active face's permitted paths, surface a small hint ("this path is outside Character's purview — soft-LLM context is filtered"). Don't hide the content. Preserves agency; surfaces the convention.
+
+**v0.2+ direction (not implemented)**: substrate-enforced face. `bsp()` would validate the caller against `sed:{role}-cast` (or analogous) membership before traversal, rejecting calls that don't match the face's permitted paths. The same `field 2/3` paths in the agent shell would then act as BOTH client-side filter AND substrate-side gate. Backward-compatible — clients written for v0.1 client-side filtering keep working unchanged when v0.2 substrate enforcement lands.
+
+Build for v0.1 now. Don't pre-engineer v0.2.
 
 ---
 
