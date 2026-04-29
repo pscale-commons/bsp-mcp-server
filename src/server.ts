@@ -15,6 +15,7 @@ import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
 
 import { registerSunstone } from './resources/sunstone.js';
 import { registerWhetstone } from './resources/whetstone.js';
+import { registerEvolution } from './resources/evolution.js';
 
 /**
  * Wrap every tool handler so exceptions surface as `isError: true` content
@@ -134,6 +135,7 @@ export function createServer(): McpServer {
   // ── Foundational resources ──
   registerSunstone(server);
   registerWhetstone(server);
+  registerEvolution(server);
 
   return server;
 }

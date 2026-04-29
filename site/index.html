@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pscale Network — State of Play</title>
+<meta name="description" content="Live map of the pscale high-trust agent network: five evolutions, relational practices, human and agent types, cost structure, and what is live versus planned. Machine-readable data at state.json.">
+<meta property="og:title" content="Pscale Network — State of Play">
+<meta property="og:description" content="Live map of the pscale high-trust agent network — evolutions, practices, actors, cost. Data at state.json.">
+<meta property="og:type" content="website">
+<link rel="alternate" type="application/json" title="state data (machine-readable)" href="state.json">
+<script>
+  // Early theme init — avoids FOUC by setting data-theme before CSS evaluates.
+  (function () {
+    try {
+      var saved = localStorage.getItem('theme');
+      var systemLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      var theme = saved || (systemLight ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
+<style>
+  /* Dark theme (default fallback + explicit) */
+  :root,
+  :root[data-theme="dark"] {
+    --bg: #0f1114;
+    --panel: #161a20;
+    --panel-2: #1d222a;
+    --ink: #d6dae0;
+    --ink-dim: #8a929c;
+    --line: #2a313b;
+    --live: #3c8a3c;
+    --partial: #c78a2a;
+    --spec: #5078b0;
+    --vision: #666c76;
+    --abandoned: #a04040;
+    --accent: #4fc3d4;
+    --node-fill-opacity: 0.18;
+    --node-fill-opacity-vision: 0.10;
+    color-scheme: dark;
+  }
+  /* Light theme */
+  :root[data-theme="light"] {
+    --bg: #f6f4ee;
+    --panel: #ffffff;
+    --panel-2: #ebe8e0;
+    --ink: #1f2328;
+    --ink-dim: #5b636d;
+    --line: #d9d5cd;
+    --live: #2f7a36;
+    --partial: #a96613;
+    --spec: #2a5fa6;
+    --vision: #5b636d;
+    --abandoned: #9a3333;
+    --accent: #0e7c8c;
+    --node-fill-opacity: 0.22;
+    --node-fill-opacity-vision: 0.14;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+               font: 14px/1.4 -apple-system, system-ui, sans-serif; }
+  body { min-height: 100vh; }
+  header { padding: 18px 24px 10px; border-bottom: 1px solid var(--line); }
+  h1 { margin: 0 0 6px; font-size: 20px; font-weight: 600;
+       font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .subtitle { color: var(--ink-dim); font-size: 12px; }
+  .subtitle a, .subtitle code { color: var(--ink); }
+  .subtitle code { background: var(--panel-2); padding: 1px 5px; border-radius: 3px;
+                   font-size: 11px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px;
+              font-size: 12px; }
+  .ctrl-group { display: flex; gap: 10px; align-items: center;
+                padding: 6px 10px; background: var(--panel);
+                border: 1px solid var(--line); border-radius: 4px; }
+  .ctrl-group > b { color: var(--ink-dim); font-weight: 500; letter-spacing: 0.04em;
+                    text-transform: uppercase; font-size: 11px; }
+  .ctrl-group label { cursor: pointer; user-select: none; }
+  .ctrl-group input { margin-right: 4px; accent-color: var(--accent); }
+  .theme-btn { background: transparent; color: var(--ink-dim);
+               border: 1px solid var(--line); border-radius: 4px;
+               padding: 5px 10px; font: inherit; font-size: 11px;
+               cursor: pointer; letter-spacing: 0.04em;
+               font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .theme-btn:hover { background: var(--panel); color: var(--ink); }
+  main { display: block; }
+  #map-wrap { padding: 12px 16px 16px; overflow-x: auto; overflow-y: visible; }
+  /* Map has a fixed minimum width; narrower viewports scroll. Details on hover via SVG <title>. */
+  svg#map { display: block; min-width: 2400px; height: auto; }
+  footer { padding: 14px 24px; border-top: 1px solid var(--line);
+           color: var(--ink-dim); font-size: 11px; display: flex; flex-wrap: wrap;
+           gap: 18px; justify-content: space-between; }
+  .legend { display: flex; gap: 14px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+  .swatch.live { background: var(--live); }
+  .swatch.partial { background: var(--partial); }
+  .swatch.spec { background: var(--spec); }
+  .swatch.vision { background: var(--vision); }
+  .swatch.abandoned { background: var(--abandoned); }
+  .error-banner { background: var(--abandoned); color: white; padding: 10px 20px;
+                  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+                  font-size: 12px; }
+
+  /* Noscript fallback — visible when JS is off (also nice for plain fetchers) */
+  .noscript-fallback { padding: 30px; color: var(--ink); font-size: 14px;
+                       line-height: 1.5; max-width: 700px; margin: 0 auto; }
+  .noscript-fallback a { color: var(--accent); }
+  .noscript-fallback code { background: var(--panel); padding: 2px 6px;
+                            border-radius: 3px; }
+
+  /* SVG node styling */
+  .evo-band { fill: var(--panel); stroke: var(--line); }
+  .evo-title { fill: var(--ink); font-family: ui-monospace, "SF Mono", Menlo, monospace;
+               font-size: 15px; font-weight: 600; }
+  .evo-title-sub { fill: var(--ink); font-size: 13px;
+                   font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .evo-question { fill: var(--ink-dim); font-size: 12px; font-style: italic; }
+  .pos-header { fill: var(--ink-dim); font-size: 14px; font-weight: 600;
+                font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .pos-thread { fill: var(--ink-dim); font-size: 11px; font-style: italic; }
+  .grid-line { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.5; }
+  .node-rect { stroke-width: 1.5; cursor: pointer; rx: 4; ry: 4;
+               transition: opacity 0.2s, transform 0.15s; }
+  .node-rect:hover { filter: brightness(1.2); }
+  .node[data-status="live"] .node-rect { fill: var(--live); stroke: var(--live); fill-opacity: var(--node-fill-opacity); }
+  .node[data-status="partial"] .node-rect { fill: var(--partial); stroke: var(--partial); fill-opacity: var(--node-fill-opacity); }
+  .node[data-status="spec"] .node-rect { fill: var(--spec); stroke: var(--spec); fill-opacity: var(--node-fill-opacity); stroke-dasharray: 4 3; }
+  .node[data-status="vision"] .node-rect { fill: var(--vision); stroke: var(--vision); fill-opacity: var(--node-fill-opacity-vision); stroke-dasharray: 2 3; }
+  .node[data-status="abandoned"] .node-rect { fill: var(--abandoned); stroke: var(--abandoned); fill-opacity: var(--node-fill-opacity); stroke-dasharray: 1 3; }
+  .node-id { fill: var(--ink-dim); font-size: 12px;
+             font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .node-label { fill: var(--ink); font-size: 14px; font-weight: 500; }
+  .node-note { fill: var(--ink-dim); font-size: 11px; font-style: italic; }
+  .node[data-next="true"] .node-rect { stroke: var(--accent); stroke-width: 2.5; }
+  .next-pulse { fill: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* Filter modes */
+  /* done = shipped and settled: live/partial AND NOT still on the "next" priority list */
+  svg#map.filter-done .node:not([data-status="live"]):not([data-status="partial"]),
+  svg#map.filter-done .node[data-next="true"] { opacity: 0.18; }
+  /* next = what's currently being worked on */
+  svg#map.filter-next .node:not([data-next="true"]) { opacity: 0.25; }
+  svg#map.filter-next .node[data-next="true"] { opacity: 1; }
+  /* full plan = everything */
+  svg#map.filter-all .node { opacity: 1; }
+
+  /* Layers — only practices & tools are toggleable overlays (inside node cards). */
+  /* Metadata columns (agent/human/cost/activity) are always rendered as layout. */
+  .layer { display: none; }
+  svg#map.layer-practices-on .layer-practices { display: block; }
+  svg#map.layer-tools-on .layer-tools { display: block; }
+
+  .tool-chip { fill: var(--panel-2); stroke: var(--line); stroke-width: 1; }
+  .tool-chip-text { fill: var(--ink-dim); font-size: 11px;
+                    font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .meta-col-header { fill: var(--ink-dim); font-size: 13px; font-weight: 600;
+                     letter-spacing: 0.04em; text-transform: uppercase;
+                     font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .cost-text { fill: var(--accent); font-size: 13px;
+               font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .agent-rung, .human-type { fill: var(--ink); font-size: 13px;
+                              font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .activity-num { fill: var(--accent); font-size: 14px; font-weight: 600;
+                  font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .activity-label { fill: var(--ink-dim); font-size: 12px;
+                    font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>pscale network — state of play</h1>
+  <div class="subtitle">
+    live map of the ecology. data at
+    <a href="state.json"><code>state.json</code></a>
+    (edited session-by-session like
+    <a href="https://github.com/pscale-commons/pscale-mcp-server/blob/main/CLAUDE.md">CLAUDE.md</a>).
+    hover any node for detail. map scrolls horizontally — nothing is hidden.
+  </div>
+  <div class="controls">
+    <div class="ctrl-group">
+      <b>filter</b>
+      <label><input type="radio" name="filter" value="done"> done</label>
+      <label><input type="radio" name="filter" value="next" checked> next</label>
+      <label><input type="radio" name="filter" value="all"> full plan</label>
+    </div>
+    <div class="ctrl-group">
+      <b>overlays</b>
+      <label><input type="checkbox" data-layer="practices" checked> practices</label>
+      <label><input type="checkbox" data-layer="tools"> tools</label>
+    </div>
+    <div class="ctrl-group">
+      <button id="theme-toggle" type="button" class="theme-btn" aria-label="Toggle light/dark theme"></button>
+    </div>
+  </div>
+</header>
+
+<noscript>
+  <div class="noscript-fallback">
+    <h2>pscale network — state of play</h2>
+    <p>This page renders an interactive map of the pscale high-trust agent network with JavaScript.</p>
+    <p>The complete structured data — five evolutions, their relational practices, agent and human types,
+       cost structure, and live/planned status — is a single JSON file:</p>
+    <p><strong><a href="state.json">state.json</a></strong></p>
+    <p>Machine readers and LLM fetchers should prefer the JSON; it is the source of truth.
+       The renderer here is a visualization of that file.</p>
+    <p>Source: <a href="https://github.com/pscale-commons/pscale-mcp-server">pscale-commons/pscale-mcp-server</a></p>
+  </div>
+</noscript>
+
+<div id="error" hidden class="error-banner"></div>
+
+<main>
+  <div id="map-wrap">
+    <svg id="map" viewBox="0 0 2420 820" preserveAspectRatio="xMinYMin meet"></svg>
+  </div>
+</main>
+
+<footer>
+  <div class="legend">
+    <span><span class="swatch live"></span> live</span>
+    <span><span class="swatch partial"></span> partial</span>
+    <span><span class="swatch spec"></span> spec</span>
+    <span><span class="swatch vision"></span> vision</span>
+    <span><span class="swatch abandoned"></span> abandoned</span>
+  </div>
+  <div>
+    <span id="updated-stamp">loading state.json&hellip;</span> &middot;
+    <a href="https://github.com/pscale-commons/pscale-mcp-server">repo</a> &middot;
+    <a href="https://hermitcrab.me">hermitcrab.me</a>
+  </div>
+</footer>
+
+<script>
+(async () => {
+  const svg = document.getElementById('map');
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs = {}, children = []) => {
+    const n = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v === null || v === undefined) continue;
+      n.setAttribute(k, v);
+    }
+    for (const c of [].concat(children)) {
+      if (c === null || c === undefined) continue;
+      n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
+    return n;
+  };
+
+  let state;
+  try {
+    const res = await fetch('state.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    state = await res.json();
+  } catch (err) {
+    const banner = document.getElementById('error');
+    banner.hidden = false;
+    banner.textContent = 'could not load state.json — ' + err.message +
+      '. ensure the file is served alongside this html.';
+    return;
+  }
+
+  // ─── TRANSPOSED LAYOUT ───
+  // Rows = evolutions (Evo 4 at top, Evo 0 at bottom — foundation at bottom).
+  // Columns 1-9 = positions. Same position across rows = a "thread" (role across time).
+  // Position 0 (e.g. 4.0 Murmuration) spans the full row width.
+  // Right side: four explicit columns — agent ladder, humans, cost/revenue, activity.
+  // Map is deliberately wider than most screens — map-wrap scrolls horizontally.
+  const VB_W = 2420, VB_H = 820;
+  const LEFT_W = 180;               // evo label gutter
+  const COL_HEADER_H = 48;
+  const CELL_COUNT = 9;
+  const CELL_W = 140;
+  const POS_X = LEFT_W;
+  const POS_W = CELL_COUNT * CELL_W; // 1260
+  const META_X = POS_X + POS_W;      // 1440
+  const ROW_H = 148;
+  const ROW_GAP = 4;
+  const ROWS_Y = COL_HEADER_H + 10;
+  const NODE_PAD = 6;                // internal padding inside a cell
+
+  // Four named metadata columns on the right. Each toggleable via overlay.
+  const META_COLS = [
+    { key: 'agents',   label: 'agent ladder',   width: 200 },
+    { key: 'humans',   label: 'humans',         width: 220 },
+    { key: 'cost',     label: 'cost / revenue', width: 220 },
+    { key: 'activity', label: 'activity',       width: 240 },
+  ];
+  // Pre-compute each column's x offset.
+  {
+    let mx = META_X;
+    for (const c of META_COLS) { c._x = mx; mx += c.width; }
+  }
+
+  // Column-header labels identifying the structural threads.
+  const threadLabels = {
+    1: 'initiation',
+    5: 'crab / middle',
+    9: 'infrastructure',
+  };
+
+  // Helper: extract position digit from node id. "1.5a" → 5, "4.0" → 0.
+  const positionOf = (id) => {
+    const m = String(id).match(/^\d+\.(\d+)/);
+    return m ? parseInt(m[1], 10) : 0;
+  };
+
+  // Helper: truncate string to n chars with ellipsis.
+  const truncate = (s, n) => (s && s.length > n ? s.slice(0, n - 1) + '…' : (s || ''));
+
+  // ─── Column headers: positions 1..9 + four metadata columns ───
+  const headerG = el('g', { class: 'col-headers' });
+
+  // Position headers 1-9 (with thread labels below)
+  for (let p = 1; p <= CELL_COUNT; p++) {
+    const cx = POS_X + (p - 1) * CELL_W + CELL_W / 2;
+    headerG.appendChild(el('text', {
+      class: 'pos-header', x: cx, y: COL_HEADER_H - 26, 'text-anchor': 'middle'
+    }, String(p)));
+    if (threadLabels[p]) {
+      headerG.appendChild(el('text', {
+        class: 'pos-thread', x: cx, y: COL_HEADER_H - 10, 'text-anchor': 'middle'
+      }, threadLabels[p]));
+    }
+    headerG.appendChild(el('line', {
+      class: 'grid-line',
+      x1: POS_X + (p - 1) * CELL_W, y1: COL_HEADER_H,
+      x2: POS_X + (p - 1) * CELL_W, y2: VB_H - 6,
+    }));
+  }
+  // Stronger divider between positions and metadata columns
+  headerG.appendChild(el('line', {
+    class: 'grid-line',
+    x1: META_X, y1: COL_HEADER_H, x2: META_X, y2: VB_H - 6,
+    'stroke-width': 1.5, 'stroke-dasharray': 'none',
+  }));
+
+  // Metadata column headers — always visible (no overlay toggle).
+  META_COLS.forEach(col => {
+    headerG.appendChild(el('text', {
+      class: 'meta-col-header', x: col._x + 14, y: COL_HEADER_H - 14
+    }, col.label));
+    headerG.appendChild(el('line', {
+      class: 'grid-line',
+      x1: col._x + col.width, y1: COL_HEADER_H,
+      x2: col._x + col.width, y2: VB_H - 6,
+    }));
+  });
+  svg.appendChild(headerG);
+
+  // Helper: wrap text to fit a given width; returns array of lines.
+  function wrapLines(text, maxChars) {
+    const words = String(text).split(' ');
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+      if ((cur ? cur + ' ' + w : w).length <= maxChars) cur = cur ? cur + ' ' + w : w;
+      else { if (cur) lines.push(cur); cur = w; }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  // Helper: render a single node card into parent, at the given rect.
+  // Full detail is exposed via an SVG <title> element (native browser tooltip on hover).
+  function renderNode(node, evo, parent, rect) {
+    const { x, y, w, h } = rect;
+    const ng = el('g', {
+      class: 'node',
+      'data-id': node.id,
+      'data-status': node.status,
+      'data-kind': node.kind,
+      'data-next': node.next ? 'true' : 'false',
+    });
+
+    // Hover tooltip — all the info that used to be in the side panel.
+    const tooltipLines = [
+      `${node.id} · ${node.label}`,
+      `[${node.status}${node.next ? ' · on next list' : ''}] ${node.kind}`,
+      `Evo ${evo.id} — ${evo.title}`,
+    ];
+    if (node.desc) tooltipLines.push('', node.desc);
+    if (node.note) tooltipLines.push('', 'Note: ' + node.note);
+    if (node.cost) tooltipLines.push('', 'Cost: ' + node.cost);
+    if (node.tools && node.tools.length) tooltipLines.push('', 'Tools: ' + node.tools.join(', '));
+    ng.appendChild(el('title', {}, tooltipLines.join('\n')));
+
+    ng.appendChild(el('rect', {
+      class: 'node-rect', x, y, width: w, height: h
+    }));
+    const kindTag = node.kind === 'agent-rung' ? ' (crab)'
+                  : node.kind === 'infrastructure' ? ' (infra)'
+                  : node.kind === 'emergent' ? ' (emergent)' : '';
+    ng.appendChild(el('text', {
+      class: 'node-id', x: x + 8, y: y + 16
+    }, node.id + kindTag));
+
+    // Label — wrap to up to 2 lines if long.
+    const labelMaxChars = Math.max(6, Math.floor((w - 12) / 7));
+    const labelLines = wrapLines(node.label, labelMaxChars).slice(0, 2);
+    labelLines.forEach((line, i) => {
+      ng.appendChild(el('text', {
+        class: 'node-label', x: x + 8, y: y + 34 + i * 16
+      }, line));
+    });
+    const labelBottomY = 34 + (labelLines.length - 1) * 16;
+
+    // Practices overlay: note text inside card, below the label
+    if (node.note) {
+      const noteG = el('g', { class: 'layer layer-practices' });
+      const noteMaxChars = Math.max(10, Math.floor((w - 12) / 5.4));
+      const noteLines = wrapLines(node.note, noteMaxChars).slice(0, 2);
+      noteLines.forEach((line, i) => {
+        noteG.appendChild(el('text', {
+          class: 'node-note', x: x + 8, y: y + labelBottomY + 16 + i * 13
+        }, line));
+      });
+      ng.appendChild(noteG);
+    }
+
+    // Next marker pulse
+    if (node.next) {
+      ng.appendChild(el('circle', {
+        class: 'next-pulse', cx: x + w - 10, cy: y + 10, r: 4
+      }));
+    }
+
+    // Tools overlay — bottom strip
+    if (node.tools && node.tools.length) {
+      const toolsG = el('g', { class: 'layer layer-tools' });
+      const chipH = 14;
+      const cy = y + h - 8;
+      const rightEdge = x + w - 4;
+      let cx = x + 8;
+      let shown = 0;
+      for (let idx = 0; idx < node.tools.length; idx++) {
+        const t = node.tools[idx];
+        const cw = Math.max(24, t.length * 5.6 + 6);
+        const reserve = (idx < node.tools.length - 1) ? 32 : 0;
+        if (cx + cw + reserve > rightEdge) break;
+        toolsG.appendChild(el('rect', {
+          class: 'tool-chip', x: cx, y: cy - chipH + 3, width: cw, height: chipH, rx: 2
+        }));
+        toolsG.appendChild(el('text', {
+          class: 'tool-chip-text', x: cx + 4, y: cy + 2
+        }, t));
+        cx += cw + 3;
+        shown++;
+      }
+      const remaining = node.tools.length - shown;
+      if (remaining > 0) {
+        const label = '+' + remaining;
+        const cw = Math.max(24, label.length * 7 + 6);
+        toolsG.appendChild(el('rect', {
+          class: 'tool-chip', x: cx, y: cy - chipH + 3, width: cw, height: chipH, rx: 2
+        }));
+        toolsG.appendChild(el('text', {
+          class: 'tool-chip-text', x: cx + 4, y: cy + 2
+        }, label));
+      }
+      ng.appendChild(toolsG);
+    }
+
+    parent.appendChild(ng);
+  }
+
+  // ─── Render each evolution as a row, bottom-up (Evo 4 at top, Evo 0 at bottom) ───
+  const orderedEvos = [...state.evos].slice().reverse();
+  orderedEvos.forEach((evo, rowIdx) => {
+    const y = ROWS_Y + rowIdx * (ROW_H + ROW_GAP);
+    const g = el('g', { class: 'evo-row', 'data-evo': evo.id });
+
+    // Row background band (spans full width).
+    g.appendChild(el('rect', {
+      class: 'evo-band', x: 4, y, width: VB_W - 8, height: ROW_H, rx: 4
+    }));
+
+    // Left gutter: evo label + question
+    g.appendChild(el('text', {
+      class: 'evo-title', x: 14, y: y + 24
+    }, 'Evo ' + evo.id));
+    g.appendChild(el('text', {
+      class: 'evo-title-sub', x: 14, y: y + 44
+    }, truncate(evo.title, 20)));
+    g.appendChild(el('text', {
+      class: 'evo-question', x: 14, y: y + 64
+    }, '"' + truncate(evo.question, 22) + '"'));
+
+    // Group nodes by their position digit.
+    const byPos = {};
+    evo.nodes.forEach(n => {
+      const p = positionOf(n.id);
+      (byPos[p] = byPos[p] || []).push(n);
+    });
+
+    // Position 0 — full-row-width card (e.g. 4.0 Murmuration), spans only the
+    // position-columns area, not the metadata columns.
+    if (byPos[0]) {
+      byPos[0].forEach(node => {
+        renderNode(node, evo, g, {
+          x: POS_X + NODE_PAD,
+          y: y + NODE_PAD,
+          w: POS_W - NODE_PAD * 2,
+          h: ROW_H - NODE_PAD * 2,
+        });
+      });
+    }
+
+    // Positions 1..9 — one cell per column, stack if multiple nodes at same position
+    for (let p = 1; p <= CELL_COUNT; p++) {
+      const nodesHere = byPos[p] || [];
+      if (!nodesHere.length) continue;
+      const cellX = POS_X + (p - 1) * CELL_W;
+      const usableH = ROW_H - NODE_PAD * 2;
+      const subH = (usableH - (nodesHere.length - 1) * 3) / nodesHere.length;
+      nodesHere.forEach((node, ni) => {
+        renderNode(node, evo, g, {
+          x: cellX + NODE_PAD,
+          y: y + NODE_PAD + ni * (subH + 3),
+          w: CELL_W - NODE_PAD * 2,
+          h: subH,
+        });
+      });
+    }
+
+    // Right metadata — four always-visible columns: agent ladder, humans, cost, activity.
+    // Flat text (no boxes), wrapped to fit its column width.
+    const renderMetaLines = (colKey, textContent, cls, glyph) => {
+      const col = META_COLS.find(c => c.key === colKey);
+      const maxChars = Math.floor((col.width - 28) / 7.2);
+      const rendered = glyph ? (glyph + ' ' + textContent) : textContent;
+      const lines = wrapLines(rendered, maxChars).slice(0, 3);
+      lines.forEach((line, i) => {
+        g.appendChild(el('text', {
+          class: cls, x: col._x + 14, y: y + 24 + i * 17
+        }, line));
+      });
+    };
+
+    // Agent ladder column
+    if (evo.agent && evo.agent !== '—') {
+      renderMetaLines('agents', evo.agent, 'agent-rung', '◎');
+    }
+    // Humans column
+    if (evo.human && evo.human !== '—') {
+      renderMetaLines('humans', evo.human, 'human-type', '☺');
+    }
+    // Cost / revenue column — pull from any infra/emergent node with a cost string
+    const infraNode = evo.nodes.find(n => (n.kind === 'infrastructure' || n.kind === 'emergent') && n.cost);
+    if (infraNode) {
+      renderMetaLines('cost', infraNode.cost, 'cost-text', '◆');
+    }
+    // Activity column — render each key-value pair on its own line
+    const actCol = META_COLS.find(c => c.key === 'activity');
+    const actEntries = Object.entries(evo.activity || {});
+    actEntries.forEach(([k, v], i) => {
+      g.appendChild(el('text', {
+        class: 'activity-num', x: actCol._x + 14, y: y + 24 + i * 20
+      }, String(v)));
+      g.appendChild(el('text', {
+        class: 'activity-label', x: actCol._x + 48, y: y + 24 + i * 20
+      }, k.replace(/_/g, ' ')));
+    });
+
+    svg.appendChild(g);
+  });
+
+  const setFilter = (v) => {
+    svg.classList.remove('filter-done', 'filter-next', 'filter-all');
+    svg.classList.add('filter-' + v);
+  };
+  document.querySelectorAll('input[name="filter"]').forEach(r => {
+    r.addEventListener('change', () => setFilter(r.value));
+  });
+  setFilter(document.querySelector('input[name="filter"]:checked').value);
+
+  const setLayer = (name, on) => {
+    svg.classList.toggle('layer-' + name + '-on', on);
+  };
+  document.querySelectorAll('input[data-layer]').forEach(cb => {
+    setLayer(cb.dataset.layer, cb.checked);
+    cb.addEventListener('change', () => setLayer(cb.dataset.layer, cb.checked));
+  });
+
+  document.getElementById('updated-stamp').textContent =
+    'updated ' + state.meta.updated + ' · ' + state.meta.source;
+
+  // ----- Theme toggle -----
+  const themeBtn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  const setBtnLabel = () => {
+    const theme = root.getAttribute('data-theme');
+    themeBtn.textContent = theme === 'light' ? '☾ dark' : '☀ light';
+  };
+  setBtnLabel();
+  themeBtn.addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    setBtnLabel();
+  });
+})();
+</script>
+
+</body>
+</html>

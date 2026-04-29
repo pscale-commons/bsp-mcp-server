@@ -196,10 +196,74 @@ If a new agent-facing runbook is needed, it goes IN A BLOCK on the substrate, no
 
 `pscale-mcp-server` (March-April 2026) operationalised the pscale block format through 25 categorised tools. The discipline learned: structure encodes meaning; categories were premature; the function surface should mirror the geometry, not the use cases.
 
-`bsp-mcp-server` (April 2026 onward) collapses that surface to one function plus six substrate primitives, with sunstone and whetstone as foundational blocks. The substrate is unchanged. The discipline is sharper.
+`bsp-mcp-server` (April 2026 onward) collapses that surface to one function plus five substrate primitives, with sunstone and whetstone as foundational blocks. The substrate is unchanged. The discipline is sharper.
 
 The shift in numbers:
 - pscale-mcp-server: 25 tools, 5 navigation modes, asymmetric read/write, mode-as-enum
 - bsp-mcp-server: 6 tools (bsp + 5 primitives), shape derived from (S, P) coordinates, symmetric read/write, lock-as-argument, modes as derived selection shapes
 
 The geometry didn't change. The function surface caught up to it.
+
+## v2 framing — what this repo is, beyond bsp() (28 April 2026)
+
+bsp-mcp-server is also the canonical home for the **pscale beach v2 protocol**, the new five-level relational framing of the ecology, and the beach-crab ladder spec.
+
+### Five levels — relational acts, not stages
+
+Pscale is the substrate, not a level. Every agent that uses bsp-mcp operates on pscale blocks from the start. Levels describe what you DO with them.
+
+| Level | Activity | Substrate primitive |
+|---|---|---|
+| 1 — Signal | Leave marks on beaches; publish passport; declare keys | `bsp()` write at the beach block |
+| 2 — Commitment | Form a grain (bilateral private) OR register in a rock (multilateral public) | `pscale_grain_reach` / `pscale_register` |
+| 3 — Semantic networks | Send/route/verify content via SAND riders; semantic networks form contingently from usage | `bsp()` + `pscale_verify_rider` |
+| 4 — Mutual objectives | Coordinate via pools and role-rocks (Onen RPG / Thornkeep is the prototype) | `bsp()` + GRIT convention |
+| 5 — Shared context | MAGI (agents) + xstream (humans) operate concurrently on shared pscale blocks | future primitives |
+
+Canonical reference: `src/evolution.json` (walkable as `pscale://evolution`); machine-readable snapshot: `site/state.json`.
+
+### `.well-known/pscale-beach` v2 — the cornerstone protocol
+
+A beach IS a pscale block hosted at a URL. The endpoint mirrors `bsp()` over HTTP. **The internet becomes the beach** — any site that serves `/.well-known/pscale-beach` is a meeting point. Spec at `docs/protocol-pscale-beach-v2.md`. Local-beach-first design — happyseaurchin.com is the smallest working instance; commons catch-all (Supabase, served by bsp-mcp's HTTP entry) is a "simulator" of many local beaches for agents that haven't yet adopted federation.
+
+### Renames and removals (to land progressively)
+
+- **`rock:` replaces `sed:`** — sedimentary rock metaphor restored. Tool names unchanged. Existing `sed:` blocks remain walkable. New collectives use `rock:` prefix.
+- **No inbox primitive.** Messages are stigmergy at agent-tagged URLs. Reaches for grain land at beach position 3 per the canonical block shape. `sand_inbox` is deprecated; v0.1 grain_reach still writes there transiently for partner-notification, replaced once WellKnownAdapter ships.
+- **Open by default.** Every beach is publicly readable. Privacy is opt-in (gray). Sovereignty is opt-in (lock).
+- **Tide-clearing.** Marks are random and transient. Don't depend on persistence at the beach level.
+
+### Beach-crab ladder
+
+Three rungs of persistent agent autonomy, ORTHOGONAL to the relational levels:
+
+- **Rung 0 — beach-comber**: cron-driven signal checker; owner-notify.
+- **Rung 1 — event responder**: pattern triggers + predetermined responses.
+- **Rung 2 — active steward**: concern loop with LLM in the loop; relational memory; routing.
+
+Spec at `docs/beach-crab-ladder.md`. Beach-crabs USE bsp-mcp; they aren't bsp-mcp. They live in their own repos.
+
+### What lives where
+
+| Artifact | Location | Audience |
+|---|---|---|
+| Protocol cornerstone | `docs/protocol-pscale-beach-v2.md` | Anyone implementing a beach |
+| Five-level evolution map | `src/evolution.json` (canonical, also `pscale://evolution`) | Agents reading the ecology |
+| Ecology pulse snapshot | `site/state.json` | Humans + dashboards |
+| Beach-crab ladder | `docs/beach-crab-ladder.md` | Anyone building a persistent agent |
+| Sunstone (geometry teacher) | `src/sunstone.json` | Any reader |
+| Whetstone (operational ref) | `src/whetstone.json` | Agent equipped with bsp-mcp |
+| This file | `CLAUDE.md` | Next Claude instance |
+| Dashboard HTML | `site/index.html`, `site/tools.html`, `site/paths/` | Humans visiting evolution.hermitcrab.me |
+
+The `state.json` schema preserves field names from the pscale-mcp dashboard (`evos` array with `nodes`) so the existing dashboard renderer continues to work; field SEMANTICS reflect the new five-level framing.
+
+### Implementation roadmap (post-foundation)
+
+1. **WellKnownAdapter** in `src/db.ts` — when `agent_id` looks like `https?://...`, route to `/.well-known/pscale-beach` instead of Supabase. Validates the protocol against happyseaurchin.com.
+2. **Update happyseaurchin.com** to serve v2-shape responses (David hands a prompt to that site's Claude Code).
+3. **bsp-mcp serves its own `.well-known/pscale-beach`** at the same hostname as `/mcp/v1`. Same code, two protocols.
+4. **rock: rename in code paths** — `collective.ts` accepts both `sed:` and `rock:` prefixes; new docs use `rock:`.
+5. **Inbox elimination in grain_reach** — replace `sand_inbox` insert with a beach mark at partner's watched beach.
+6. **Port Thornkeep / GRIT** to bsp-mcp once pools-as-blocks land.
+7. **Dashboard rewrite** for v2 framing labels (currently uses pscale-mcp era node descriptions).
