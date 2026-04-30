@@ -211,6 +211,42 @@ Tier scopes within whatever face permits.
 
 The synthesis daemon typically runs at Hard for whatever face it represents (it must see everything to synthesise). Player clients run at Medium. Spectators run at Soft on the Observer face.
 
+### 5.6 The viewer — objective consultation layer
+
+Xstream is a reflexive tool. The V-L-S canvas is what you see *while you are imagining*, not what is the case. Vapour is the soft-LLM's impression of your intent rendered back to you; liquid is your intention exposed to coordinate-proximate others before commitment; solid is the moment imagination becomes fact and stops being interesting. Traditional web tools invert this — they render an objective external world plus a small contribution input. Xstream's proportions reverse: the canvas is the imaginative frame; consultation of the objective beach is **secondary** and lives behind a toggleable drawer.
+
+**The viewer is not a new pscale block shape.** It is a UI affordance — a slide-down drawer overlay — composed from `bsp()` reads scoped by:
+
+1. The active face (CADO) — picks the kind of content rendered.
+2. The current frame's coordinates — picks proximity (you see things proximate to where you are working).
+3. The user's followed addresses — beach URLs, agent passports, sed: collectives, pinned blocks. Listed in the user's shell or passport.
+4. The current liquid in the active frame — viewers may be responsive to what you're presently liquid-ing.
+
+The drawer obscures solid below it when open; the user manoeuvres separators to balance how much of the frame remains visible. **Closing the drawer is the imaginative-mind default.** Opening it is a deliberate consultation act, like looking up to check the world, then putting it away to focus on co-creation.
+
+#### Viewer content per face
+
+| Face | Drawer renders |
+|---|---|
+| Character | Own passport, character sheet, inventory, location, party, world-canon proximate to position |
+| Author | Authored spatial blocks, document tree, sibling contributions awaiting merge, version history |
+| Designer | Rule blocks, convention blocks, skill blocks, design-frame proposals in flight |
+| Observer | The whole beach scoped to what's followed; passports, marks, pools, anyone's solid output |
+
+Observer is the widest aperture because Observer is the *civilised-mind face* — the third-party view of the objective beach. Every traditional web tool ever built renders this view. An Observer-only client would be a perfectly valid xstream UI: a beach browser without imagination. The reflexive V-L-S layer is what makes a client xstream rather than a generic browser.
+
+#### Viewer narrowing across evolutionary levels
+
+The viewer's *necessity* decreases as the relational level rises. At Level 1 the viewer is most of what xstream does (you watch beaches; little else). At Level 5 the viewer is the drawer you toggle off to do imaginative work — V-L-S takes the canvas. This is the evolutionary curve of imagination-vs-civilisation in the tool itself: lower levels are civilised-mind territory; higher levels are imaginative-mind territory. See [src/evolution.json](../src/evolution.json) digit 7 at each level for what the viewer surfaces level by level.
+
+#### What the viewer is NOT
+
+- Not a frame block. No persistent state. No commitment.
+- Not in scope for the synthesis daemon. The daemon synthesises liquid into solid; the viewer just renders solid (and, where the active face permits, others' liquid).
+- Not a permission boundary. Face authorisation already governs what `bsp()` returns; the viewer cannot show what `bsp()` would refuse to read.
+
+The viewer is the lens xstream offers onto Levels 1–4 from within a Level 5 frame. It is necessary, secondary, and dismissible.
+
 ---
 
 ## 6. The block-shape derivation in one table

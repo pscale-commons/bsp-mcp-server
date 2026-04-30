@@ -234,6 +234,15 @@ A beach IS a pscale block hosted at a URL. The endpoint mirrors `bsp()` over HTT
 
 (A `rock:` rename of the sed: prefix was considered and shelved — the `sed:` name is retained because the supporting layers, salt namespaces, conventions, and existing data all use it. Renaming would be cosmetic with substantial churn cost and no functional benefit. The metaphor of sedimentary accumulation continues to apply conceptually; the prefix stays.)
 
+### Xstream — reflexive canvas plus objective viewer
+
+The xstream interface (Level 5 of the evolution map) has two layers in **reverse proportion** to traditional web tools.
+
+- **The V-L-S canvas (primary).** Vapour-liquid-solid is the imaginative-mind surface — what the user sees while engaged in concurrent creation with others. Vapour is out-of-band (realtime transport, not pscale). Liquid and solid are pscale block positions inside a frame block. The canvas is reflexive: the soft-LLM's response in vapour is an *impression* of the user's intent rendered back to them, not a query against an objective world.
+- **The viewer drawer (secondary).** A toggleable slide-down overlay that renders the objective beach via `bsp()` reads, scoped by the active CADO face. It is what the user looks UP at to consult the world (passport, world-canon, document tree, rule blocks) before dismissing it to return to imaginative work below. Observer face renders it widest (the civilised-mind third-party view); other faces filter to face-relevant content.
+
+This is the inversion that defines xstream. Every traditional web tool is 99% objective viewer plus 1% input box. Xstream reverses those proportions: the canvas is the imaginative frame; the viewer is consultable context. The viewer's necessity decreases as evolutionary level rises — at Level 1 the viewer is most of what xstream shows; at Level 5 it is the drawer one closes to do imaginative work. See `docs/protocol-xstream-frame.md` §5.6 for the protocol-level spec, and `src/evolution.json` digit 7 at each level for what the viewer surfaces level by level.
+
 ### Beach-crab ladder
 
 Three rungs of persistent agent autonomy, ORTHOGONAL to the relational levels:
@@ -252,6 +261,7 @@ Spec at `docs/beach-crab-ladder.md`. Beach-crabs USE bsp-mcp; they aren't bsp-mc
 | Five-level evolution map | `src/evolution.json` (canonical, also `pscale://evolution`) | Agents reading the ecology |
 | Ecology pulse snapshot | `site/state.json` | Humans + dashboards |
 | Beach-crab ladder | `docs/beach-crab-ladder.md` | Anyone building a persistent agent |
+| Xstream frame protocol | `docs/protocol-xstream-frame.md` | Anyone implementing the V-L-S interface |
 | Sunstone (geometry teacher) | `src/sunstone.json` | Any reader |
 | Whetstone (operational ref) | `src/whetstone.json` | Agent equipped with bsp-mcp |
 | This file | `CLAUDE.md` | Next Claude instance |
