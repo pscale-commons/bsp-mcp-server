@@ -1,7 +1,7 @@
 /**
  * server.ts — MCP server factory.
  *
- * Surface: bsp() + six substrate primitives + two foundational resources.
+ * Surface: bsp() + six substrate primitives + four foundational resources.
  * Seven tools total. Resist additions. The geometry IS the program.
  */
 
@@ -16,6 +16,7 @@ import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
 import { registerSunstone } from './resources/sunstone.js';
 import { registerWhetstone } from './resources/whetstone.js';
 import { registerEvolution } from './resources/evolution.js';
+import { registerXstreamFrame } from './resources/xstream-frame.js';
 
 /**
  * Wrap every tool handler so exceptions surface as `isError: true` content
@@ -136,6 +137,7 @@ export function createServer(): McpServer {
   registerSunstone(server);
   registerWhetstone(server);
   registerEvolution(server);
+  registerXstreamFrame(server);
 
   return server;
 }
