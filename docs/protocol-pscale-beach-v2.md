@@ -366,8 +366,8 @@ This produces:
 | 5 | Onen RPG / Thornkeep / GRIT port — convention layer + script update; substrate primitives unchanged | David | **Pending** |
 | 6 | Inbox replacement in grain_reach — in-block reach hint at grain `block['8']` (Path 2, sub-option b, dual-write) | bsp-mcp-server | **Done — 2 May 2026** (per `proposals/2026-04-30-stage-6-inbox-replacement.md`; sand_inbox kept transiently for pscale-mcp-server compatibility) |
 | 7 | Dashboard rewrite for v2 framing labels | bsp-mcp-server | **Pending** (low priority) |
-| 8 | Sibling-block handler at happyseaurchin — multi-block per origin, site-hosted sed:/grain: substrates | David / happyseaurchin Claude Code session | **Pending** (handoff at [happyseaurchin-sibling-blocks-implementation.md](./happyseaurchin-sibling-blocks-implementation.md)) |
-| 9 | `host` parameter on `pscale_register` and `pscale_grain_reach` — dispatch to a federated sed:/grain: substrate by URL | bsp-mcp-server | **Pending** (depends on Stage 8) |
+| 8 | Sibling-block handler at happyseaurchin — multi-block per origin, site-hosted sed:/grain: substrates | David / happyseaurchin Claude Code session | **Implementation done — 2 May 2026** (happyseaurchin commit `433d943`, pending Vercel deploy + sibling-list root-underscore write). Spec at [happyseaurchin-sibling-blocks-implementation.md](./happyseaurchin-sibling-blocks-implementation.md). |
+| 9 | `host` parameter on `pscale_register` and `pscale_grain_reach` — dispatch to a federated sed:/grain: substrate by URL | bsp-mcp-server | **Pending** (depends on Stage 8 deploy). Until then, agents POST the substrate action shapes directly (`{action: "register", ...}` / `{action: "reach", ...}`) or write per-position via standard `bsp()` with substrate-prefixed block names. |
 
 **Live federation as of 29 April 2026.** `bsp(agent_id="https://happyseaurchin.com", block="beach")` round-trips through the WellKnownAdapter to the origin-hosted endpoint. Read, write, lock-rotate all verified. Other developers can replicate the federation pattern using the template in [happyseaurchin-v2-implementation.md](./happyseaurchin-v2-implementation.md).
 
