@@ -12,7 +12,7 @@
  */
 
 import { z } from 'zod';
-import { Block } from '../bsp.js';
+import { Block, writeAt } from '../bsp.js';
 import {
   bspRead,
   bspWrite,
@@ -23,6 +23,23 @@ import {
 } from '../bsp-fn.js';
 import { loadBlock, saveBlock, updatePositionHashes, BlockRow } from '../db.js';
 import { hashByOwnerId } from '../locks.js';
+import { selfEncrypt, decryptBlockNodes } from '../keys.js';
+
+// ── Gray-encryption helpers (Stage 10) ──
+
+/**
+ * Serialise a write payload into a string for gray self-encryption.
+ *
+ * Strings pass through verbatim. Objects, arrays, and primitives are
+ * JSON-stringified so they can survive the round-trip through the gray
+ * envelope's ciphertext. The decrypt path returns the raw string; callers
+ * that produced structured payloads are responsible for re-parsing on read
+ * (the substrate doesn't track input shape beyond the envelope wrapper).
+ */
+function stringifyForGray(content: any): string {
+  if (typeof content === 'string') return content;
+  return JSON.stringify(content);
+}
 
 // ── Schemas ──
 
@@ -162,7 +179,15 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     if (!row) {
       return { content: [{ type: 'text', text: `Block "${agent_id}/${blockName}" not found.` }] };
     }
-    const result = bspRead(row.block, spindle ?? '', pscale_attention ?? null);
+    // Stage 10 — when secret is provided on a read, walk the block through
+    // decryptBlockNodes so any _gray envelopes anywhere in the tree are
+    // rehydrated to plaintext before bspRead computes the requested shape.
+    // Without a secret, the raw envelope passes through unchanged (existing
+    // behaviour preserved — peer reads see opaque envelopes).
+    const blockForRead = secret
+      ? await decryptBlockNodes(row.block, secret, agent_id)
+      : row.block;
+    const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
     return { content: [{ type: 'text', text: formatRead(result) }] };
   }
 
@@ -212,10 +237,45 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   // Apply content write if provided.
   let writeResult: BspWriteResult | null = null;
   if (content !== undefined) {
-    try {
-      writeResult = bspWrite(block, spindle ?? '', pscale_attention ?? null, content);
-    } catch (e: any) {
-      return { content: [{ type: 'text', text: `Write rejected: ${e.message}` }] };
+    // Stage 10 — gray-encryption: encrypt-at-source, write the envelope object
+    // directly at the target position, bypassing bspWrite's shape strictness.
+    // The envelope is structurally an object {_gray, nonce, ciphertext}; it
+    // substitutes for the typed payload at any shape (point/ring/subtree alike).
+    // Lock and gray are orthogonal: the lock check above (R3) already authorised
+    // the writer if locked; secret here doubles as the encryption key.
+    if (params.gray === true) {
+      if (!secret) {
+        return {
+          content: [{ type: 'text', text: 'Write rejected: gray=true requires secret (used as encryption key).' }],
+        };
+      }
+      if (!spindle || spindle === '') {
+        return {
+          content: [{ type: 'text', text: 'Write rejected: gray=true requires a non-empty spindle (gray-encrypt at a leaf, not the whole block).' }],
+        };
+      }
+      try {
+        const envelope = await selfEncrypt(stringifyForGray(content), secret, agent_id);
+        // writeAt walks the spindle and stuffs the envelope object at the leaf.
+        // It accepts any value type — bypasses the point/ring/subtree shape check
+        // that would otherwise reject an object payload at point shape.
+        writeAt(block, spindle, envelope);
+        writeResult = {
+          shape: 'point',
+          written: true,
+          block,
+          spindle: String(spindle),
+          pscale_attention: pscale_attention ?? null,
+        };
+      } catch (e: any) {
+        return { content: [{ type: 'text', text: `Write rejected: gray-encryption failed (${e?.message ?? String(e)})` }] };
+      }
+    } else {
+      try {
+        writeResult = bspWrite(block, spindle ?? '', pscale_attention ?? null, content);
+      } catch (e: any) {
+        return { content: [{ type: 'text', text: `Write rejected: ${e.message}` }] };
+      }
     }
   }
 
