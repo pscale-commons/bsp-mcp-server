@@ -116,3 +116,38 @@ The block-reference convention is what makes pscale a COMPOSITION SYSTEM rather 
 - **Dynamic context** (the user's current beach, the active grain partner, the relevant collective) lives as ordinary block content that gets edited as state changes.
 
 This is the operational realisation of *"the structure does the work"* — wiring stops being build-time TypeScript and becomes substrate-walked at runtime.
+
+---
+
+## 7. Beach sibling discoverability — the canonical use of hidden-directory references
+
+The same hidden-directory + star-walk mechanism solves "what other blocks does this origin host?" without any new endpoint or protocol. Convention:
+
+A beach that hosts sibling blocks at the same origin (per [protocol-pscale-beach-v2.md](./protocol-pscale-beach-v2.md) §3.5) lists those siblings in the beach's root-underscore hidden directory using the standard reference forms from §1:
+
+```json
+{
+  "_": {
+    "_": "Beach at hsc.com — public commons. Open by default.",
+    "1": "sed:hsc-commons",          // site-hosted sed: collective
+    "2": "frame:scene-thornkeep",    // a scene frame (xstream-class)
+    "3": "book-club",                // a named pool (bare name → same agent_id, i.e. https://hsc.com)
+    "4": "https://other-site.com"    // a reference OUT to another origin's beach
+  },
+  "1": { ... marks ... },
+  "2": { ... conversations ... },
+  "3": { ... reaches ... }
+}
+```
+
+A walker discovering siblings calls:
+
+```
+bsp(agent_id="https://hsc.com", block="beach", spindle="0*", pscale_attention=null)
+```
+
+The star walk enters the root underscore's hidden directory and returns its contents. Each digit child is a string per §1 — qualified, sed:, grain:, URL, or bare name. The walker resolves each via the standard dispatch (§3) and follows. Sibling blocks at the same origin resolve by appending `?block=<name>` to the same `.well-known/pscale-beach` endpoint.
+
+A beach with no siblings has a plain string underscore (no hidden directory). The walker's `getHiddenDirectory(terminal)` returns null; nothing to follow. Backward-compatible — existing single-block beaches need no change.
+
+**This is the canonical discoverability pattern.** No `/index` endpoint. No `?list=true` query. No new convention. Just the same star-walk machinery used for agent shells, cross-block composition, and reflexive seeds in sunstone. Walkers that already follow stars (xstream prompt builders, beach-crabs) get sibling discovery for free.

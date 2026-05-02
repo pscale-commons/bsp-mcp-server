@@ -262,6 +262,7 @@ Spec at `docs/beach-crab-ladder.md`. Beach-crabs USE bsp-mcp; they aren't bsp-mc
 | Ecology pulse snapshot | `site/state.json` | Humans + dashboards |
 | Beach-crab ladder | `docs/beach-crab-ladder.md` | Anyone building a persistent agent |
 | Xstream frame protocol | `docs/protocol-xstream-frame.md` | Anyone implementing the V-L-S interface |
+| Paywall convention | `docs/protocol-paywall.md` (also `pscale://protocol-paywall`) | Anyone authoring a paywalled `sed:` collective, building a paywall-aware client, or running a verifier — reference build at `pscale-commons/ticketing-agent` |
 | Sunstone (geometry teacher) | `src/sunstone.json` | Any reader |
 | Whetstone (operational ref) | `src/whetstone.json` | Agent equipped with bsp-mcp |
 | This file | `CLAUDE.md` | Next Claude instance |

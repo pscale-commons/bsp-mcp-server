@@ -17,6 +17,7 @@ import { registerSunstone } from './resources/sunstone.js';
 import { registerWhetstone } from './resources/whetstone.js';
 import { registerEvolution } from './resources/evolution.js';
 import { registerXstreamFrame } from './resources/xstream-frame.js';
+import { registerPaywall } from './resources/paywall.js';
 
 /**
  * Wrap every tool handler so exceptions surface as `isError: true` content
@@ -138,6 +139,7 @@ export function createServer(): McpServer {
   registerWhetstone(server);
   registerEvolution(server);
   registerXstreamFrame(server);
+  registerPaywall(server);
 
   return server;
 }

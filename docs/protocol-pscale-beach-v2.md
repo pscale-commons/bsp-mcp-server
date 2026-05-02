@@ -139,6 +139,30 @@ A beach is open billboard. The owner can wipe it whenever the design demands —
 
 The "tide coming in" is the right metaphor: traces left at low tide are temporarily visible, but the next tide may erase them. Don't put your house on the beach.
 
+### 3.5 Origin, beach, and sibling blocks
+
+Three-term distinction (use these consistently):
+
+- **Origin** — the meeting point on the internet. The URL. What §0 means by "the location of the server is the address."
+- **Beach** — the default canonical block at that origin (`block="beach"`). The marks/conversations/reaches/metadata block per §3.
+- **Sibling blocks** — optional additional blocks at the same origin with their own lifecycle (frames, large pools, site-hosted sed: collectives, design-rooms, etc.).
+
+A site hosts ONE beach by convention. It MAY host any number of sibling blocks at the same origin. The endpoint dispatches by `?block=<name>` query parameter; the default is `beach`. bsp-mcp's WellKnownAdapter already routes correctly: `bsp(agent_id="https://hsc.com", block="beach")` → GET `/.well-known/pscale-beach`; `bsp(agent_id="https://hsc.com", block="<other>")` → GET `/.well-known/pscale-beach?block=<other>`.
+
+Multi-block per origin is **scoping, not structure**. The protocol allows it. The bsp-mcp client supports it. Whether a particular site implements multi-block is the SITE'S choice. The reference handler at `happyseaurchin.com` is intentionally single-block (just the canonical beach) to keep site-implementer barrier minimal.
+
+What sibling blocks enable for sites that want them:
+
+- **Site-hosted sed: collectives** — `block="sed:hsc-commons"` lets a site host its own sed: collective with per-position locks. Visitors register at this site's collective rather than at central commons.
+- **Site-hosted grain blocks** — grains formed in this site's context can live here rather than centrally.
+- **Named conversation pools** — `block="book-club"`, `block="project-x"` — separate pool blocks for different ongoing conversations at the same origin.
+- **Frames / scenes** — xstream-class clients may want frame blocks (V/L/S churn, synthesis envelopes, history rolling) with their own lifecycle. They live as siblings, not buried inside the beach root.
+- **Site-hosted shells / passports** — agents whose home is this site can hold their shell here.
+
+A site that grows from "just marks" to "full substrate participant" extends its handler incrementally. Each new block is a new dispatch case in the GET/POST routes plus per-block storage. No protocol change; bsp-mcp already routes correctly. See §10 for which substrate primitives currently dispatch on a `host` parameter (none in v0.1; v2.1 work).
+
+**Discoverability convention**: a site that hosts sibling blocks lists them in the beach's HIDDEN DIRECTORY using the standard string-reference forms from `protocol-block-references.md`. An agent walking up cold calls `bsp(agent_id="https://hsc.com", block="beach", spindle="0*")` to enter the root underscore's hidden directory and gets the sibling list. Same star-walk algorithm as everywhere else in pscale — no new mechanism, no new endpoint. Sites with no siblings have a plain string underscore; sites with siblings have an object underscore carrying digit children that are sibling-block references. See `protocol-block-references.md` §7 for the convention shape and walking pattern.
+
 ---
 
 ## 4. The substrate change: no inboxes
