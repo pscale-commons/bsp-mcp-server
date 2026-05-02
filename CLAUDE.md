@@ -228,7 +228,7 @@ A beach IS a pscale block hosted at a URL. The endpoint mirrors `bsp()` over HTT
 
 ### Removals (to land progressively)
 
-- **No inbox primitive.** Messages are stigmergy at agent-tagged URLs. Reaches for grain land at beach position 3 per the canonical block shape. `sand_inbox` is deprecated; v0.1 grain_reach still writes there transiently for partner-notification, replaced once WellKnownAdapter ships.
+- **No inbox primitive.** Messages are stigmergy at agent-tagged URLs. Reaches for grain land at beach position 3 per the canonical block shape. As of Stage 6 (2 May 2026) `grain_reach` writes the reach hint in-block at `grain:{pid}/8._reach_pending` — partner discovers by walking grain blocks they appear at position 9 of. The `sand_inbox` insert is retained as a transient dual-write for pscale-mcp-server backward compatibility; removed once those readers move to the in-block path. See `proposals/2026-04-30-stage-6-inbox-replacement.md`.
 - **Open by default.** Every beach is publicly readable. Privacy is opt-in (gray). Sovereignty is opt-in (lock).
 - **Tide-clearing.** Marks are random and transient. Don't depend on persistence at the beach level.
 
@@ -263,6 +263,7 @@ Spec at `docs/beach-crab-ladder.md`. Beach-crabs USE bsp-mcp; they aren't bsp-mc
 | Beach-crab ladder | `docs/beach-crab-ladder.md` | Anyone building a persistent agent |
 | Xstream frame protocol | `docs/protocol-xstream-frame.md` | Anyone implementing the V-L-S interface |
 | Paywall convention | `docs/protocol-paywall.md` (also `pscale://protocol-paywall`) | Anyone authoring a paywalled `sed:` collective, building a paywall-aware client, or running a verifier — reference build at `pscale-commons/ticketing-agent` |
+| Sibling-block beach upgrade | `docs/happyseaurchin-sibling-blocks-implementation.md` | Anyone extending a v2 single-block beach to host site-hosted sed:/grain: substrates and named pools. Companion to `happyseaurchin-v2-implementation.md`. |
 | Sunstone (geometry teacher) | `src/sunstone.json` | Any reader |
 | Whetstone (operational ref) | `src/whetstone.json` | Agent equipped with bsp-mcp |
 | This file | `CLAUDE.md` | Next Claude instance |
@@ -272,10 +273,12 @@ The `state.json` schema preserves field names from the pscale-mcp dashboard (`ev
 
 ### Implementation roadmap (post-foundation)
 
-1. **WellKnownAdapter** in `src/db.ts` — when `agent_id` looks like `https?://...`, route to `/.well-known/pscale-beach` instead of Supabase. Validates the protocol against happyseaurchin.com.
-2. **Update happyseaurchin.com** to serve v2-shape responses (David hands a prompt to that site's Claude Code).
-3. **Port Thornkeep / GRIT** — convention-layer + script update; no new substrate primitives. Pools become blocks, GRIT remains a daemon, sed:-conventions-block guidance updates.
-4. **Inbox elimination in grain_reach** — replace `sand_inbox` insert with a beach mark at partner's watched beach. Lands after WellKnownAdapter so beaches are reachable.
-5. **Dashboard rewrite** for v2 framing labels (currently uses pscale-mcp era node descriptions).
+1. **WellKnownAdapter** in `src/db.ts` — DONE 28 Apr 2026 (commits `ed4a7f8`, `7c83d0a`).
+2. **Update happyseaurchin.com** to serve v2-shape responses — DONE 29 Apr 2026 (live federation smoke confirmed).
+3. **Port Thornkeep / GRIT** — convention-layer + script update; no new substrate primitives. Pools become blocks, GRIT remains a daemon, sed:-conventions-block guidance updates. PENDING.
+4. **Inbox elimination in grain_reach** — DONE 2 May 2026 (Stage 6, Path 2 sub-option b dual-write per `proposals/2026-04-30-stage-6-inbox-replacement.md`). In-block reach hint at `grain:{pid}/8._reach_pending` is now the canonical notification path. `sand_inbox` insert kept transiently for pscale-mcp-server backward compatibility.
+5. **Dashboard rewrite** for v2 framing labels (currently uses pscale-mcp era node descriptions). PENDING (low priority).
+6. **Sibling-block handler at happyseaurchin** — extend the v2 single-block handler to dispatch on `?block=<name>`, host site-hosted sed:/grain: substrates and named pools. Handoff doc at `docs/happyseaurchin-sibling-blocks-implementation.md`. PENDING (David's call to hand off).
+7. **`host` parameter on `pscale_register`/`pscale_grain_reach`** — once Stage 6 lands, bsp-mcp can grow a `host` parameter so substrate-stateful primitives dispatch to a federated sed:/grain: substrate by URL. Until then, agents wanting site-hosted SAND write directly via `bsp()` with substrate-prefixed block names (e.g. `block="sed:hsc-commons"`). PENDING (depends on Stage 6).
 
 **Deferred indefinitely**: bsp-mcp serving its own `/.well-known/pscale-beach` (commons-as-federation-peer). The commons stays as direct substrate access via bsp-mcp's existing primitives. happyseaurchin.com is the federation testcase — the commons doesn't need to wrap itself.

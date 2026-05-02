@@ -8,10 +8,22 @@
  * Grain block shape:
  *   { _: description,
  *     "1": { _: A_content }, "2": { _: B_content },
+ *     "8": { _reach_pending: {...} }   // present only between establish and accept
  *     "9": { "1": A_agent_id, "2": B_agent_id } }
  *
  * Position 9's hidden directory maps side → underlying agent_id.
+ * Position 8 carries a transient reach hint (Stage 6 inbox replacement) so
+ * the partner can discover the incoming reach by walking grain blocks they
+ * appear at position 9 of, without needing a separate inbox primitive. The
+ * hint is cleared when the partner's accept call completes the grain.
+ *
  * pair_id = sha256(sort(A_id, B_id) | join('|')).slice(0, 16).
+ *
+ * Notification: dual-write during the v2 transition. Both an in-block hint
+ * (block['8']._reach_pending, beach-native discoverable) and a sand_inbox row
+ * (legacy, still consumed by pscale-mcp-server). The inbox write will be
+ * removed in a follow-up commit once pscale_network and other readers move
+ * to the in-block path. Per proposals/2026-04-30-stage-6-inbox-replacement.md.
  */
 
 import { z } from 'zod';
@@ -67,9 +79,21 @@ export async function handleGrainReach(params: {
   let stateNote: string;
 
   if (!existing) {
+    // Establish: write reaching side AND in-block reach hint at position 8.
+    // Partner discovers the reach by walking grain blocks where their
+    // agent_id appears at position 9 and finding _reach_pending at 8.
+    const reachHint = {
+      from: agent_id,
+      pair_id: pid,
+      grain_address_yours: `grain:${pid}:${partnerSide}`,
+      grain_address_mine: `grain:${pid}:${mySide}`,
+      description,
+      reached_at: new Date().toISOString(),
+    };
     block = {
       _: description,
       [mySide]: { _: my_side_content },
+      '8': { _reach_pending: reachHint },
       '9': { [mySide]: agent_id },
     };
     hashes = { [mySide]: hashGrainPassphrase(my_passphrase, pid, mySide) };
@@ -92,6 +116,9 @@ export async function handleGrainReach(params: {
     block = { ...existingBlock };
     block[mySide] = { _: my_side_content };
     block['9'] = { ...existingAgents, [mySide]: agent_id };
+    // Accept: clear the position-8 reach hint, the grain is now complete.
+    // Safe no-op if the establish call predates Stage 6 and never wrote a hint.
+    delete block['8'];
     hashes = {
       ...existingHashes,
       [mySide]: hashGrainPassphrase(my_passphrase, pid, mySide),
@@ -103,7 +130,13 @@ export async function handleGrainReach(params: {
   await saveBlock(owner, GRAIN_BLOCK_NAME, block, 'sedimentary');
   await updatePositionHashes(owner, GRAIN_BLOCK_NAME, hashes);
 
-  // Notify the partner via inbox.
+  // Dual-write notification path during the v2 transition:
+  //   (1) in-block hint at block['8']._reach_pending (already written above) —
+  //       beach-native, partner discovers by walking grain blocks they appear
+  //       at position 9 of. This is the v2 path; sand_inbox is legacy.
+  //   (2) sand_inbox row — for backward compatibility with pscale-mcp-server
+  //       readers (e.g. pscale_network's "emerging" listing). Will be dropped
+  //       in a follow-up commit once those readers move to the in-block path.
   const client = getClient();
   const { error: inboxError } = await client.from('sand_inbox').insert({
     from_agent: agent_id,
@@ -120,11 +153,11 @@ export async function handleGrainReach(params: {
   });
 
   const inboxNote = inboxError
-    ? `\n\nNote: inbox notification to ${partner_agent_id} failed — ${inboxError.message}.`
+    ? `\n\nNote: inbox notification to ${partner_agent_id} failed — ${inboxError.message}. (In-block hint at grain:${pid}/8 still landed — partner can discover via walk.)`
     : '';
 
   const guidance = messageType === 'grain_establish'
-    ? `Partner ${partner_agent_id} notified. They call pscale_grain_reach with you as their partner_agent_id to accept.`
+    ? `Partner ${partner_agent_id} notified two ways: in-block at grain:${pid}/8 (walk-discoverable) and via legacy sand_inbox. They call pscale_grain_reach with you as their partner_agent_id to accept.`
     : `Both sides written. Walk with bsp(agent_id="${owner}", block="grain"). Send through your side via bsp() with agent_id="grain:${pid}:${mySide}" + secret.`;
 
   return {

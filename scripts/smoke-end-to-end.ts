@@ -13,6 +13,8 @@
  */
 
 import { handleBsp } from '../src/tools/bsp.js';
+import { handleGrainReach } from '../src/tools/grain.js';
+import { pairId } from '../src/locks.js';
 import { getClient } from '../src/db.js';
 
 const TEST_AGENT = `bsp-smoke-${Date.now()}`;
@@ -149,12 +151,74 @@ async function main() {
   });
   assert(getText(r19).includes('only valid on ordinary'), 'sed: blocks reject new_lock');
 
+  // ── Stage 6: in-block reach hint (no-inbox path) ──
+  console.log(`\n=== Stage 6: grain establish writes in-block reach hint at position 8 ===`);
+  const GRAIN_A = `bsp-smoke-grain-a-${Date.now()}`;
+  const GRAIN_B = `bsp-smoke-grain-b-${Date.now()}`;
+  const PASS_A = 'grain-a-secret-481';
+  const PASS_B = 'grain-b-secret-572';
+  const pid = pairId(GRAIN_A, GRAIN_B);
+  const grainOwner = `grain:${pid}`;
+
+  // A reaches first
+  const g1 = await handleGrainReach({
+    agent_id: GRAIN_A,
+    partner_agent_id: GRAIN_B,
+    description: 'smoke test grain — Stage 6 reach-hint demo',
+    my_side_content: 'A side content',
+    my_passphrase: PASS_A,
+  });
+  assert(getText(g1).includes('reached'), 'grain_reach establish returned "reached"');
+  assert(getText(g1).includes('in-block at grain:'), 'guidance mentions in-block discovery');
+
+  // Walk the grain block — block['8']._reach_pending must be present
+  const g2 = await handleBsp({
+    agent_id: grainOwner, block: 'grain', spindle: '', pscale_attention: null,
+  });
+  const g2text = getText(g2);
+  assert(g2text.includes('_reach_pending'), 'block[8]._reach_pending visible after establish');
+  assert(g2text.includes(GRAIN_A), 'reach hint carries reaching agent_id');
+
+  // Partner-discovery walk: a reader at GRAIN_B can find this grain by walking
+  // to position 8 of grain blocks they appear at position 9 of. Subtree read
+  // returns the _reach_pending metadata directly.
+  const g3 = await handleBsp({
+    agent_id: grainOwner, block: 'grain', spindle: '8', pscale_attention: -3,
+  });
+  assert(getText(g3).includes('_reach_pending') && getText(g3).includes('grain_address_yours'),
+         'subtree walk to 8 returns the reach hint payload');
+
+  // B accepts
+  const g4 = await handleGrainReach({
+    agent_id: GRAIN_B,
+    partner_agent_id: GRAIN_A,
+    description: 'ignored on accept',
+    my_side_content: 'B side content',
+    my_passphrase: PASS_B,
+  });
+  assert(getText(g4).includes('completed') || getText(g4).includes('Both sides'),
+         'grain_reach accept completed the grain');
+
+  // After accept, block['8'] should be cleared
+  const g5 = await handleBsp({
+    agent_id: grainOwner, block: 'grain', spindle: '', pscale_attention: null,
+  });
+  const g5text = getText(g5);
+  assert(!g5text.includes('_reach_pending'), 'block[8]._reach_pending cleared on accept');
+  assert(g5text.includes('A side content') && g5text.includes('B side content'),
+         'both sides present after completion');
+
   // Cleanup
   console.log(`\n=== Cleanup ===`);
   const client = getClient();
   const { error } = await client.from('pscale_blocks').delete().eq('owner_id', TEST_AGENT);
   if (error) console.log(`  cleanup error: ${error.message}`);
   else console.log(`  ✓ deleted ${TEST_AGENT} rows`);
+
+  // Cleanup grain block + sand_inbox rows from the Stage 6 test
+  await client.from('pscale_blocks').delete().eq('owner_id', grainOwner);
+  await client.from('sand_inbox').delete().in('from_agent', [GRAIN_A, GRAIN_B]);
+  console.log(`  ✓ cleaned up grain:${pid} + sand_inbox rows`);
 
   console.log(`\n=== ${pass}/${pass + fail} passed ===`);
   process.exit(fail > 0 ? 1 : 0);

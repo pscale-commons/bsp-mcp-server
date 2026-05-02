@@ -364,8 +364,10 @@ This produces:
 | 3 | `WellKnownAdapter` in `db.ts` — URL-prefix dispatch | bsp-mcp-server | **Done — 28 April 2026** (commits `ed4a7f8`, `7c83d0a`) |
 | 4 | Update `happyseaurchin.com/.well-known/pscale-beach` to v2 (block-shaped responses) | David / happyseaurchin Claude Code session | **Done — 29 April 2026** (live federation smoke confirmed) |
 | 5 | Onen RPG / Thornkeep / GRIT port — convention layer + script update; substrate primitives unchanged | David | **Pending** |
-| 6 | Inbox replacement in grain_reach — write reach mark to a beach instead of `sand_inbox` | bsp-mcp-server | **Pending** |
+| 6 | Inbox replacement in grain_reach — in-block reach hint at grain `block['8']` (Path 2, sub-option b, dual-write) | bsp-mcp-server | **Done — 2 May 2026** (per `proposals/2026-04-30-stage-6-inbox-replacement.md`; sand_inbox kept transiently for pscale-mcp-server compatibility) |
 | 7 | Dashboard rewrite for v2 framing labels | bsp-mcp-server | **Pending** (low priority) |
+| 8 | Sibling-block handler at happyseaurchin — multi-block per origin, site-hosted sed:/grain: substrates | David / happyseaurchin Claude Code session | **Pending** (handoff at [happyseaurchin-sibling-blocks-implementation.md](./happyseaurchin-sibling-blocks-implementation.md)) |
+| 9 | `host` parameter on `pscale_register` and `pscale_grain_reach` — dispatch to a federated sed:/grain: substrate by URL | bsp-mcp-server | **Pending** (depends on Stage 8) |
 
 **Live federation as of 29 April 2026.** `bsp(agent_id="https://happyseaurchin.com", block="beach")` round-trips through the WellKnownAdapter to the origin-hosted endpoint. Read, write, lock-rotate all verified. Other developers can replicate the federation pattern using the template in [happyseaurchin-v2-implementation.md](./happyseaurchin-v2-implementation.md).
 
