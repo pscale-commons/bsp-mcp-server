@@ -22,6 +22,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Block } from './bsp.js';
 import { bspRead } from './bsp-fn.js';
+import sunstone from './sunstone.json' with { type: 'json' };
+import whetstone from './whetstone.json' with { type: 'json' };
 
 const supabaseUrl = process.env.SUPABASE_URL || 'https://piqxyfmzzywxzqkzmpmm.supabase.co';
 const supabaseKey =
@@ -78,6 +80,41 @@ const URL_PREFIX_RE = /^https?:\/\//i;
 /** True if the owner_id is a URL — federated beach storage applies. */
 export function isFederatedOwner(ownerId: string): boolean {
   return URL_PREFIX_RE.test(ownerId);
+}
+
+// ── Sentinel owner (server-bundled teaching blocks) ──
+//
+// agent_id="pscale" is reserved as a read-only sentinel that exposes the
+// teaching/reference blocks shipped inside this server. Walking these via
+// bsp() is the function reading its own manual — the call frame surrounds
+// the read, which is the situated condition under which the enactive
+// sentence in whetstone:_ is true. Writes to this owner_id reject.
+
+const SENTINEL_OWNERS = new Set(['pscale']);
+const SENTINEL_BLOCKS: Record<string, Block> = {
+  'pscale/sunstone': sunstone as unknown as Block,
+  'pscale/whetstone': whetstone as unknown as Block,
+};
+
+/** True if the owner_id is the bundled-blocks sentinel ("pscale"). */
+export function isSentinelOwner(ownerId: string): boolean {
+  return SENTINEL_OWNERS.has(ownerId);
+}
+
+function loadSentinelBlock(ownerId: string, name: string): BlockRow | null {
+  const block = SENTINEL_BLOCKS[`${ownerId}/${name}`];
+  if (!block) return null;
+  const now = new Date().toISOString();
+  return {
+    id: `${ownerId}/${name}`,
+    owner_id: ownerId,
+    name,
+    block_type: 'sentinel',
+    block,
+    position_hashes: {},
+    created_at: now,
+    updated_at: now,
+  };
 }
 
 /**
@@ -256,6 +293,9 @@ async function saveBlockToBeach(
 // ── Adapter primitives — load_block, save_block, locks ──
 
 export async function loadBlock(ownerId: string, name: string): Promise<BlockRow | null> {
+  if (isSentinelOwner(ownerId)) {
+    return loadSentinelBlock(ownerId, name);
+  }
   if (isFederatedOwner(ownerId)) {
     return loadBlockFromBeach(ownerId, name);
   }
@@ -277,6 +317,9 @@ export async function saveBlock(
   blockType: string = 'general',
   opts: WriteOptions = {},
 ): Promise<BlockRow> {
+  if (isSentinelOwner(ownerId)) {
+    throw new Error(`"${ownerId}" is a read-only sentinel; the bundled teaching blocks are server-fixed.`);
+  }
   if (isFederatedOwner(ownerId)) {
     return saveBlockToBeach(ownerId, name, block, opts);
   }
@@ -303,6 +346,9 @@ export async function updatePositionHashes(
   name: string,
   hashes: Record<string, string>,
 ): Promise<void> {
+  if (isSentinelOwner(ownerId)) {
+    throw new Error(`"${ownerId}" is a read-only sentinel; lock changes rejected.`);
+  }
   if (isFederatedOwner(ownerId)) {
     // Federated beaches manage their own locks. The lock change was
     // forwarded inside the saveBlock POST body (as new_lock + secret).
