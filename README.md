@@ -8,7 +8,7 @@ The unified `bsp()` function as an MCP server. Block-Spindle-Pscale: two polar c
 
 This is square 2 of the architecture. Square 1 is the pscale block itself.
 
-## The function
+## The function 
 
 ```
 bsp(agent_id, block, spindle, pscale_attention,
