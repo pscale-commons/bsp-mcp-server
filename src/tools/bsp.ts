@@ -21,7 +21,7 @@ import {
   BspReadResult,
   BspWriteResult,
 } from '../bsp-fn.js';
-import { loadBlock, saveBlock, updatePositionHashes, BlockRow } from '../db.js';
+import { loadBlock, saveBlock, updatePositionHashes, BlockRow, isFederatedOwner, canonicaliseOrigin } from '../db.js';
 import { hashByOwnerId } from '../locks.js';
 import { selfEncrypt, decryptBlockNodes } from '../keys.js';
 
@@ -177,6 +177,15 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   // ── READ ── (no content, no lock change)
   if (content === undefined && new_lock === undefined) {
     if (!row) {
+      if (isFederatedOwner(agent_id)) {
+        const origin = canonicaliseOrigin(agent_id);
+        return {
+          content: [{
+            type: 'text',
+            text: `No beach at ${origin}/.well-known/pscale-beach (404). The site is not federated. Alternatives: try the commons by bare name (bsp(agent_id="<bare-name>", ...)) or consult a known federated-beach list.`,
+          }],
+        };
+      }
       return { content: [{ type: 'text', text: `Block "${agent_id}/${blockName}" not found.` }] };
     }
     // Stage 10 — when secret is provided on a read, walk the block through
