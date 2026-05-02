@@ -46,10 +46,10 @@ function stringifyForGray(content: any): string {
 export const bspParamsSchema = {
   agent_id: z
     .string()
-    .describe('Caller identity. Can be a bare agent_id ("weft"), a sed: collective ("sed:commons"), or a grain pair ("grain:abc123def456")'),
+    .describe('Addressed namespace — substrate dispatched by prefix. Four accepted forms: bare name ("weft") → bsp-mcp commons (pscale_blocks table); "sed:<collective>" ("sed:commons") → sedimentary substrate; "grain:<pair_id>" ("grain:abc123def456") → grain substrate; URL ("https://happyseaurchin.com") → federated beach at <origin>/.well-known/pscale-beach via the WellKnownAdapter (db.ts:isFederatedOwner). The URL form requires the scheme — "happyseaurchin.com" without "https://" is treated as a bare name and routes to the commons. A single caller addresses multiple agent_ids in normal use — e.g. their own passport at "weft" AND their federated beach at "https://example.com". Authority to write is proven by the `secret` param, independent of agent_id.'),
   block: z
     .string()
-    .describe('Block name within the agent_id\'s storage. For sed: addresses this is usually the collective name; for grain: it is "grain"; for bare agents it is whatever the agent named the block.'),
+    .describe('Block name within the agent_id\'s storage. For sed: addresses this is usually the collective name; for grain: it is "grain"; for URL addresses it is conventionally "beach" (a site-hosted sibling block is selected via the standard `block` param, which the WellKnownAdapter forwards as ?block=<name>); for bare agents it is whatever the agent named the block.'),
   spindle: z
     .string()
     .nullable()
