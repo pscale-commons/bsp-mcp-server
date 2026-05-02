@@ -28,7 +28,7 @@
 
 import { z } from 'zod';
 import { Block } from '../bsp.js';
-import { loadBlock, saveBlock, updatePositionHashes, getClient } from '../db.js';
+import { loadBlock, saveBlock, updatePositionHashes, getClient, postActionToBeach, isFederatedOwner } from '../db.js';
 import { hashGrainPassphrase, pairId, determineSide } from '../locks.js';
 
 const GRAIN_PREFIX = 'grain:';
@@ -46,6 +46,7 @@ export const grainReachParamsSchema = {
   description: z.string().describe('Mutual description — becomes the root underscore. Used only on first reach; ignored on accept.'),
   my_side_content: z.string().describe("What you write at your side's underscore. Your synthesis or commitment statement."),
   my_passphrase: z.string().describe('Write-lock passphrase for your side. Hashed and stored. Sensitive — never repeat in conversation.'),
+  host: z.string().optional().describe("Federated dispatch: when set to a URL like https://example.com, the grain lives at that site's /.well-known/pscale-beach?block=grain:<pair_id> rather than central commons. Site implements the symmetric two-phase reach/accept. Both sides must use the same host (the grain block has one home). Omit for central commons."),
 };
 
 // ── Handler ──
@@ -56,8 +57,9 @@ export async function handleGrainReach(params: {
   description: string;
   my_side_content: string;
   my_passphrase: string;
+  host?: string;
 }): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { agent_id, partner_agent_id, description, my_side_content, my_passphrase } = params;
+  const { agent_id, partner_agent_id, description, my_side_content, my_passphrase, host } = params;
 
   if (!agent_id || !partner_agent_id) {
     return { content: [{ type: 'text', text: 'agent_id and partner_agent_id are required.' }] };
@@ -70,6 +72,52 @@ export async function handleGrainReach(params: {
   const mySide = determineSide(agent_id, partner_agent_id);
   const partnerSide = mySide === '1' ? '2' : '1';
   const owner = grainOwner(pid);
+
+  // Federated dispatch: site-hosted grain: substrate handles the symmetric
+  // two-phase reach/accept server-side. Both sides must use the same host.
+  if (host) {
+    if (!isFederatedOwner(host)) {
+      return { content: [{ type: 'text', text: `host must be an http(s):// URL (got "${host}")` }] };
+    }
+    const blockName = `grain:${pid}`;
+    const body: Record<string, any> = {
+      action: 'reach',
+      side: mySide,
+      agent_id,
+      partner_agent_id,
+      description,
+      my_side_content,
+      my_passphrase,
+    };
+    let result: any;
+    try {
+      result = await postActionToBeach(host, blockName, body);
+    } catch (e: any) {
+      return { content: [{ type: 'text', text: `Federated grain reach failed: ${e?.message ?? e}` }] };
+    }
+    if (!result?.ok) {
+      return { content: [{ type: 'text', text: `Federated grain reach rejected: ${result?.error ?? 'unknown reason'}` }] };
+    }
+    const stateNote = result.state === 'completed'
+      ? 'completed (both sides written and locked at the federated grain)'
+      : result.state === 'updated'
+        ? 'updated (own-side rewrite)'
+        : 'reached (awaiting partner acceptance at the federated grain)';
+    return {
+      content: [{
+        type: 'text',
+        text: `Grain ${stateNote}.
+
+pair_id:        ${pid}
+your side:      grain:${pid}:${mySide}
+partner side:   grain:${pid}:${partnerSide}
+host:           ${host}
+state:          ${result.state}
+
+Walk with bsp(agent_id="${host}", block="${blockName}"). Read the partner's reach hint at block['8'] until they accept.`,
+      }],
+    };
+  }
 
   const existing = await loadBlock(owner, GRAIN_BLOCK_NAME);
 

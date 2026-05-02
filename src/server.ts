@@ -108,14 +108,14 @@ export function createServer(): McpServer {
 
   server.tool(
     'pscale_register',
-    'Register in a sedimentary collective. The server assigns the next valid position (digits 1-9 only, floor-2 minimum: 11, 12, ..., 19, 21, ..., 99, 111, ...). Your declaration becomes your underscore at that position. The position is write-locked with your passphrase. Subsequent writes via bsp() require the same passphrase as `secret`.',
+    'Register in a sedimentary collective. The server assigns the next valid position (digits 1-9 only, floor-2 minimum: 11, 12, ..., 19, 21, ..., 99, 111, ...). Your declaration becomes your underscore at that position. The position is write-locked with your passphrase. Subsequent writes via bsp() require the same passphrase as `secret`. Optional `host` param dispatches to a site-hosted sed: substrate at the given URL instead of central commons.',
     registerParamsSchema,
     handleRegister,
   );
 
   server.tool(
     'pscale_grain_reach',
-    'Establish a grain — first durable bilateral commitment. Symmetric: same call from either side. Server detects state — first call creates the block and writes one side; second call (from the partner) writes the other side and completes. Lex-smaller agent_id occupies side 1; lex-larger occupies side 2. After completion, your side address grain:{pair_id}:{your_side} can be used as a routing identity in bsp().',
+    'Establish a grain — first durable bilateral commitment. Symmetric: same call from either side. Server detects state — first call creates the block and writes one side; second call (from the partner) writes the other side and completes. Lex-smaller agent_id occupies side 1; lex-larger occupies side 2. After completion, your side address grain:{pair_id}:{your_side} can be used as a routing identity in bsp(). Optional `host` param dispatches to a site-hosted grain: substrate at the given URL instead of central commons.',
     grainReachParamsSchema,
     handleGrainReach,
   );

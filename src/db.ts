@@ -158,6 +158,43 @@ async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<B
   };
 }
 
+/**
+ * POST an action-shaped body to a federated beach endpoint. Used by
+ * substrate-stateful primitives (pscale_register, pscale_grain_reach) when
+ * dispatching to a site-hosted sed:/grain: substrate via the `host`
+ * parameter. Distinct from saveBlockToBeach which sends the standard
+ * bsp-mcp write shape — this passes the body through as-is so the receiver
+ * can dispatch on its own action discriminator.
+ */
+export async function postActionToBeach(
+  origin: string,
+  blockName: string,
+  body: Record<string, any>,
+): Promise<any> {
+  const url = beachEndpoint(origin, blockName);
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (e: any) {
+    throw new Error(`Beach action POST failed (${url}): ${e?.message ?? e}`);
+  }
+  let parsed: any;
+  try {
+    parsed = await res.json();
+  } catch {
+    parsed = null;
+  }
+  if (!res.ok) {
+    const reason = parsed?.error ?? `${res.status} ${res.statusText}`;
+    throw new Error(`Beach action rejected: ${reason}`);
+  }
+  return parsed;
+}
+
 async function saveBlockToBeach(
   ownerId: string,
   blockName: string,

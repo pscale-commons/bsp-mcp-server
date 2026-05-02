@@ -13,7 +13,7 @@
 import { z } from 'zod';
 import { Block, writeAt } from '../bsp.js';
 import { bspRead, formatRead } from '../bsp-fn.js';
-import { loadBlock, saveBlock, updatePositionHashes } from '../db.js';
+import { loadBlock, saveBlock, updatePositionHashes, postActionToBeach, isFederatedOwner } from '../db.js';
 import { hashSedPassphrase } from '../locks.js';
 
 const SED_PREFIX = 'sed:';
@@ -51,6 +51,7 @@ export const registerParamsSchema = {
   declaration: z.string().describe("Who you are and what you offer/need — becomes the underscore at your position"),
   shell_ref: z.string().optional().describe("URL or block reference to your sovereign shell (optional)"),
   passphrase: z.string().describe("Write-lock passphrase for your position. Hashed. Never stored raw. Sensitive — never repeat in conversation."),
+  host: z.string().optional().describe("Federated dispatch: when set to a URL like https://example.com, registration goes to that site's /.well-known/pscale-beach?block=sed:<collective> (site-hosted sed: substrate) rather than to central commons. Site implements the atomic position allocation. Returns the site-assigned address (sed:<collective>:<position>). Omit for central commons registration."),
 };
 
 // ── Handlers ──
@@ -92,8 +93,42 @@ export async function handleRegister(params: {
   declaration: string;
   shell_ref?: string;
   passphrase: string;
+  host?: string;
 }): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { collective, declaration, shell_ref, passphrase } = params;
+  const { collective, declaration, shell_ref, passphrase, host } = params;
+
+  // Federated dispatch: site-hosted sed: substrate handles atomic position
+  // allocation server-side. The site's /.well-known/pscale-beach receives
+  // {action: "register", ...} and returns {ok, position, address}.
+  if (host) {
+    if (!isFederatedOwner(host)) {
+      return {
+        content: [{ type: 'text', text: `host must be an http(s):// URL (got "${host}")` }],
+      };
+    }
+    const blockName = `sed:${collective}`;
+    const body: Record<string, any> = { action: 'register', declaration, passphrase };
+    if (shell_ref) body.shell_ref = shell_ref;
+    let result: any;
+    try {
+      result = await postActionToBeach(host, blockName, body);
+    } catch (e: any) {
+      return { content: [{ type: 'text', text: `Federated registration failed: ${e?.message ?? e}` }] };
+    }
+    if (!result?.ok) {
+      return { content: [{ type: 'text', text: `Federated registration rejected: ${result?.error ?? 'unknown reason'}` }] };
+    }
+    return {
+      content: [{
+        type: 'text',
+        text: `Registered at ${result.address} on ${host}.
+
+Site-hosted sed: collective. Position assigned by ${host}'s handler in landing order. Your position is write-locked with your passphrase. Subsequent writes via bsp(agent_id="${host}", block="${blockName}", spindle="${result.position}", ..., secret=...) require the same passphrase.`,
+      }],
+    };
+  }
+
+  // Central commons path (existing behaviour).
   const owner = sedOwner(collective);
   const row = await loadBlock(owner, collective);
 
