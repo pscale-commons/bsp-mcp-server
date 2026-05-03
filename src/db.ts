@@ -27,6 +27,7 @@ import whetstone from './whetstone.json' with { type: 'json' };
 import agentId from './agent-id.json' with { type: 'json' };
 import evolution from './evolution.json' with { type: 'json' };
 import manifest from './manifest.json' with { type: 'json' };
+import progression from './progression.json' with { type: 'json' };
 
 const supabaseUrl = process.env.SUPABASE_URL || 'https://piqxyfmzzywxzqkzmpmm.supabase.co';
 const supabaseKey =
@@ -100,6 +101,7 @@ const SENTINEL_BLOCKS: Record<string, Block> = {
   'pscale/agent-id': agentId as unknown as Block,
   'pscale/evolution': evolution as unknown as Block,
   'pscale/manifest': manifest as unknown as Block,
+  'pscale/progression': progression as unknown as Block,
 };
 
 /** True if the owner_id is the bundled-blocks sentinel ("pscale"). */

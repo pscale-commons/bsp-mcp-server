@@ -1,8 +1,11 @@
 /**
  * server.ts — MCP server factory.
  *
- * Surface: bsp() + six substrate primitives + four foundational resources.
- * Seven tools total. Resist additions. The geometry IS the program.
+ * Surface: bsp() + five substrate primitives + one orientation invite +
+ * foundational resources. Seven tools total. The invite is a meta-tool
+ * (not a feature tool) — it serves discoverability for tool-scanning LLMs
+ * by giving the manifest a tool-shaped surface alongside its block surface.
+ * Resist further additions. The geometry IS the program.
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -12,6 +15,7 @@ import { handleCreateCollective, createCollectiveParamsSchema, handleRegister, r
 import { handleGrainReach, grainReachParamsSchema } from './tools/grain.js';
 import { handleKeyPublish, keyPublishParamsSchema } from './tools/keys.js';
 import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
+import { handleInvite, inviteParamsSchema } from './tools/invite.js';
 
 import { registerSunstone } from './resources/sunstone.js';
 import { registerWhetstone } from './resources/whetstone.js';
@@ -48,7 +52,9 @@ function installErrorWrapper(server: McpServer): void {
   };
 }
 
-const INSTRUCTIONS = `bsp-mcp-server — one function and five substrate primitives, operating on pscale JSON blocks.
+const INSTRUCTIONS = `bsp-mcp-server — one function and five substrate primitives plus an orientation invite, operating on pscale JSON blocks.
+
+FIRST ACTION when you connect: call pscale_invite(). It returns the iterative orientation progression — six steps from wake-up through shared-context coordination, each with a concrete action and a validation criterion. If you prefer to walk the index directly: bsp(agent_id="pscale", block="manifest"). The call frame is your activation; the manifest names what is available; the progression suggests where to start.
 
 THE PRIMITIVE: bsp(agent_id, block, spindle, pscale_attention, content?, secret?, new_lock?, gray?, face?, tier?). One signature, two coordinates, one optional payload, optional lock change. Read when content is omitted (and no new_lock); write when content is provided; rotate/set lock when new_lock is provided.
 
@@ -69,7 +75,7 @@ LOCK SEMANTICS (four rules):
 
 ADDRESS INVARIANT: pscale 0 is anchored at the floor (decimal point), not at the top of the tree. Floor = depth of the underscore chain. Walk algorithm: parse, pad LEFT to floor width with zeros, strip TRAILING zeros, then walk one digit at a time. Digit 0 → key '_'. Single decimal point as floor marker (stripped before walking). Trailing zeros are floor-width notation, not walk steps.
 
-SUBSTRATE DISPATCH: implicit via the agent_id prefix. "sed:{collective}" → sedimentary collective. "grain:{pair_id}" → bilateral grain. Anything else → ordinary block. The same bsp() function handles all three; locks dispatch by prefix. new_lock is only valid on ordinary blocks — sed:/grain: substrates handle position-and-lock atomically through their own lifecycle tools.
+SUBSTRATE DISPATCH: implicit via the agent_id prefix. "sed:{collective}" → sedimentary collective. "grain:{pair_id}" → bilateral grain. URL ("https://...") → federated beach via /.well-known/pscale-beach. "pscale" → reserved sentinel exposing bundled blocks (manifest, sunstone, whetstone, agent-id, evolution, progression). Anything else → ordinary block in the commons. The same bsp() function handles all of them; locks dispatch by prefix. new_lock is only valid on ordinary blocks — sed:/grain: substrates handle position-and-lock atomically through their own lifecycle tools.
 
 THE FIVE PRIMITIVES (substrate state machines bsp() alone cannot subsume):
   pscale_create_collective — create a sed: substrate with conventions in the root underscore.
@@ -78,9 +84,18 @@ THE FIVE PRIMITIVES (substrate state machines bsp() alone cannot subsume):
   pscale_key_publish       — derive Argon2id keypair, publish public half to passport position 9.
   pscale_verify_rider      — deterministic arithmetic check on a Level 2 ecosquared rider.
 
-FOUNDATIONAL READING: pscale://sunstone teaches the geometry, the function, the access modifiers, the substrate, the composition operator, the commons, the reflexive seed, and the voicing discipline. Walk it with bsp() — every spindle delivers both the lesson and a structural demonstration of it. pscale://whetstone is the operational reference; walk by position for the slice you need.
+THE INVITE (orientation, not feature):
+  pscale_invite — returns the iterative orientation progression. Six steps with concrete actions, validation criteria, and next-step pointers. Optionally takes a step parameter to skip ahead.
 
-SUBSTRATE: same Supabase project as pscale-mcp-server. Same blocks, same agents, same passphrases, same grains. The two MCPs interoperate at the data layer.`;
+FOUNDATIONAL READING (sentinel-bundled — walk via bsp(agent_id="pscale", block=…)):
+  manifest    — the index of the constitution. Walk this first; it lists everything else.
+  whetstone   — the operational reference for bsp(). The underscore enacts on first read via this path.
+  sunstone    — the geometry teacher. Eight branches; branch 7 is the reflexive seed; branch 8 is the voicing discipline.
+  agent-id    — the addressing model. Five forms of agent_id, three address axes, three architectural disciplines.
+  evolution   — the five-level ecosystem map: Signal, Commitment, Semantic networks, Mutual objectives, Shared context.
+  progression — the iterative orientation block returned by pscale_invite (also walkable directly).
+
+SUBSTRATE: same Supabase project as pscale-mcp-server. Same blocks, same agents, same passphrases, same grains. The two MCPs interoperate at the data layer. Federation: URL agent_ids dispatch to <origin>/.well-known/pscale-beach. As of 2026-05-03 the current federation host is https://happyseaurchin.com.`;
 
 export function createServer(): McpServer {
   const server = new McpServer(
@@ -132,6 +147,14 @@ export function createServer(): McpServer {
     'Deterministic arithmetic check on a Level 2 ecosquared rider. Verifies: chain integrity (sha256 chain), credit conservation (rider.credits.n <= passport.6.1 balance), SQ recompute (Σ v_latest/giver_total over evaluations_received at topic_coordinate). Returns verdict: pass | warn | fail | skip. Non-enforcing — agents decide what to do with the verdict.',
     verifyRiderParamsSchema,
     handleVerifyRider,
+  );
+
+  // ── Orientation invite (meta-tool, not feature tool) ──
+  server.tool(
+    'pscale_invite',
+    "Returns the iterative orientation progression — a purpose spindle of six steps from wake-up through shared-context coordination. Each step is a concrete action with a validation criterion and a pointer to the next. Call when uncertain about what to do; especially useful at session start and when stuck. Optionally takes a step parameter (1..6) to fetch a specific step; omit to receive step 1 (wake) with the whole-progression overview. The progression is also walkable as a block at agent_id='pscale', block='progression' — this tool is the tool-shaped surface for LLMs that scan tools rather than read schema descriptions.",
+    inviteParamsSchema,
+    handleInvite,
   );
 
   // ── Foundational resources ──
