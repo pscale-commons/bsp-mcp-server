@@ -16,6 +16,15 @@ import { loadBlock, isSentinelOwner, saveBlock, updatePositionHashes } from '../
   console.log('found:', !!s, 'block_type:', s?.block_type);
   console.log('underscore:', String(s?.block?._).slice(0, 120), '...');
 
+  for (const name of ['agent-id', 'evolution', 'manifest']) {
+    console.log(`\n--- loadBlock(pscale, ${name}) ---`);
+    const r = await loadBlock('pscale', name);
+    console.log('found:', !!r, 'block_type:', r?.block_type);
+    const u = r?.block?._;
+    const us = typeof u === 'string' ? u : (u && typeof u === 'object' ? String((u as any)._) : '');
+    console.log('underscore:', us.slice(0, 120), '...');
+  }
+
   console.log('\n--- loadBlock(pscale, nonexistent) ---');
   const n = await loadBlock('pscale', 'nonexistent');
   console.log('found:', !!n);

@@ -2,7 +2,7 @@
 
 **Status**: Reference, 2026-05-03
 **Authors**: David Pinto with Claude (bsp-mcp-server reference instance)
-**Companion JSON block**: `docs/agent-id-as-namespace-key.json` — walkable via bsp() with appropriate hosting
+**Companion JSON block**: `src/agent-id.json` — sentinel-bundled, walkable via `bsp(agent_id="pscale", block="agent-id", spindle="…")`
 
 The MCP parameter named `agent_id` in `bsp()` is misnamed in a durable, productive way. The name suggests "the identity of the agent making the call." The mechanism behaves differently. **agent_id names a namespace** — a coherent scope of block storage — and the substrate dispatches *which storage backend* by reading the agent_id's prefix. The actor proving authority to write at any position lives in the `secret` parameter, not in agent_id.
 

@@ -1,0 +1,216 @@
+{
+  "_": "agent_id is a namespace key, not an actor identity. The MCP parameter named agent_id in bsp() does namespace work: it scopes a directory of named blocks and tells the storage adapter which backend to talk to via prefix dispatch. The calling identity — the actor proving authority to write — lives in the secret parameter, distinct and orthogonal. Once seen this way, the variability of agent_id forms (bare name, sed: collective, grain: pair, URL, pscale sentinel) becomes principled, and the use cases unfold by letting the same primitive serve every kind of namespace. Nine branches: the reframe, the dispatch table, the address axes, the disciplines that hold across all variability, concern loops as PCT-soliton, RPG sessions using all forms, real-world human collaboration, inter-AI continuity, the architectural principle of refusing to categorise.",
+  "1": {
+    "_": "Naming a namespace and naming a caller are different operations. agent_id selects the storage scope; the calling identity is implicit in secret if a write is being made and absent otherwise. The reframe — agent_id as namespace-coordinate, not actor-identity — is what makes the parameter's variability principled rather than ad-hoc. The misnaming is durable; renaming would churn every downstream caller, while a description-fix (commit 1ed8e31) reframes the same string without breaking any code.",
+    "1": {
+      "_": "agent_id is a namespace key. The substrate uses the prefix to dispatch storage; bsp() walks geometry above the dispatch boundary. The thing being addressed — the namespace — is what the parameter names. The thing doing the addressing — the caller — is named elsewhere or not at all.",
+      "1": "Namespace means coherent scope of block storage. One agent_id resolves to one directory of named blocks within whichever substrate the prefix selects. The directory is the scope; the prefix is the substrate; the agent_id is both at once.",
+      "2": "Caller identity lives in secret. Authority to write at the addressed position is proven cryptographically against the stored lock hash. agent_id and secret are independent parameters with independent purposes — addressing-where versus proving-who.",
+      "3": "Reads need no caller identity. Reads are open by default in the bsp-mcp substrate; only writes require secret. So for read calls, agent_id is the only identity-shaped parameter, and even then it identifies what is read, not who reads."
+    },
+    "2": {
+      "_": "The 'agent' framing has lineage from pscale-mcp, where many tools pre-validated that the caller's identity matched a passport. agent_id was usually the caller because the function-per-tool surface coupled identity-checks to addressing. The function-surface collapse to bsp() decoupled them.",
+      "1": "Pscale-mcp's per-tool validation entangled identity with addressing. passport_publish required agent_id to match the calling passport; inbox_send required agent_id to match the sender. That coupling didn't survive the function-surface collapse — bsp() can't pre-validate identity because it doesn't know the call's purpose.",
+      "2": "Bsp-mcp decouples by design. agent_id picks the namespace; secret proves authority. The two are orthogonal axes; their independence is what lets one caller address many namespaces in one session without identity-shape mismatch."
+    },
+    "3": {
+      "_": "Consequences of the reframe land throughout normal use. A single caller routinely addresses many agent_ids — their own passport, their federated beach, a sedimentary collective they've registered in, a grain bilateral they share with another, the bundled teaching block. Each call sets agent_id to whichever namespace is being worked in at that moment.",
+      "1": "Single caller, many agent_ids per session. A human writes their passport at agent_id of their handle, their federated beach at agent_id of their URL, their grain side at agent_id of grain:pair-id. Each call's agent_id is the namespace addressed at that moment, not the human at the keyboard.",
+      "2": "Read and write share the discipline. Reads need no caller-identity check (open by default). Writes check secret against the position-lock at (agent_id, block, position). The geometry of the call is uniform; only the authority gate varies."
+    }
+  },
+  "2": {
+    "_": "Five forms of agent_id, each routing to a different storage backend via prefix detection. The substrate dispatches; bsp() walks the same way after dispatch. Lifecycle is delegated to substrate-stateful primitives where the substrate needs more than a content+lock pair (sedimentary positions, grain pair_ids, federated HTTP).",
+    "1": {
+      "_": "Bare name routes to the bsp-mcp commons in Supabase. The default substrate. Any string without a recognised prefix is treated as an owner_id in the pscale_blocks table. Owner directories are scoped by owner_id+block_name; first write creates the namespace; subsequent reads and writes operate on the persisted JSON.",
+      "1": "Examples: weft, happyseaurchin, keel. Bare names typically denote individual agents (humans or LLM instances). The bare-name namespace is a directory of blocks the agent owns and authors.",
+      "2": "Substrate: Supabase pscale_blocks table, owner_id+name unique constraint. position_hashes JSONB column carries lock state. block JSONB column carries the geometry. updated_at tracks revision.",
+      "3": "Lifecycle: first write creates the row. There is no separate 'register' step for bare-name namespaces. Locks are set via bsp() with new_lock; rotated with secret+new_lock; never set on read. The namespace exists when the first block under it does."
+    },
+    "2": {
+      "_": "sed:<collective> routes to the sedimentary substrate — also Supabase, but with atomic position allocation. Sedimentary collectives accept registrations in landing order; the first agent to declare in a position holds it permanently, write-locked with their passphrase. Position is proof-of-presence-in-time, not topical pigeonhole.",
+      "1": "Atomic position allocation via pscale_register. The substrate-stateful primitive assigns the next available position and sets the per-position lock from the agent's passphrase. bsp() cannot do this — it has no notion of 'next available'; the primitive does.",
+      "2": "Positions immutable post-registration. Once an agent occupies position N in sed:X, no other agent ever occupies that position. The collective is a sediment of declarations through time; positions accrete; the order is the history.",
+      "3": "Per-position lock derived from registration passphrase. Each registrant's passphrase, hashed with the collective+position salt, produces the lock for that position. Writes to position N succeed only with the registrant's secret. Other positions are unaffected."
+    },
+    "3": {
+      "_": "grain:<pair_id> routes to the bilateral substrate — two specific agents sharing a private channel. The pair_id is derived deterministically from the sorted agent_ids, so both sides reach the same grain regardless of who initiates. Each side has its own lock; the channel is symmetric in shape, asymmetric in authority.",
+      "1": "pair_id is sha256(sort(A,B))[:16]. Two agents who agree to form a grain produce the same pair_id by both sides hashing the sorted pair. There is no central registry of grains; the address space is computable from the participants.",
+      "2": "Two sides, locked separately. Position 1 is the lex-smaller agent's side; position 2 is the lex-larger agent's side. Each side's lock is derived from that side's passphrase; neither agent can write to the other's side without that other's secret.",
+      "3": "Reach/accept state machine via pscale_grain_reach. The primitive is symmetric — both sides call it independently with the partner's identity; once both have reached, the grain is formed and both sides become writable. The bilateral handshake is the substrate's atomic operation, beyond what bsp() alone can subsume."
+    },
+    "4": {
+      "_": "URL routes to a federated beach via HTTP. When agent_id matches the URL pattern (https?://), the substrate adapter dispatches to <origin>/.well-known/pscale-beach. GET reads return the beach block as JSON; POST writes apply server-side. The substrate is at the URL, not in Supabase.",
+      "1": "Routes via WellKnownAdapter. Defined at db.ts:isFederatedOwner. GET issues a fetch to the well-known endpoint; the receiving site returns a pscale block. POST sends the bsp write body; the receiving site applies it server-side with its own lock-check.",
+      "2": "Scheme required. URL form requires https:// or http://. A bare hostname (happyseaurchin.com without scheme) is a bare name and routes to commons, not to the URL. The strict-scheme rule preserves explicit dispatch — auto-detecting URLs from bare hostnames would conflict with bare-name namespaces that happen to look like hostnames.",
+      "3": "Not federated returns a clear message. If the URL has no /.well-known/pscale-beach (404), the substrate returns 'no beach at <URL> — the site is not federated' rather than silently falling back to commons. The LLM surfaces this to the user with alternatives (commons by bare name, known-beach list); the redirect happens with the user in the loop, not silently in the substrate."
+    },
+    "5": {
+      "_": "pscale (no prefix, exact match) routes to the server's bundled teaching blocks — the sentinel substrate. Read-only; only the names sunstone and whetstone resolve today. Walking these via bsp() is the function reading its own manual; the call frame is the witness; the enactive sentence in whetstone is true only via this path.",
+      "1": "Bundled in memory. Sunstone and whetstone are imported from JSON files at server startup; the sentinel returns synthesised BlockRows pointing at the in-memory objects. No HTTP, no Supabase, no I/O on the read path.",
+      "2": "Read-only by design. saveBlock and updatePositionHashes both reject the sentinel owner with explicit messages. The bundled blocks are server-fixed; mutations to them happen by re-deploying the server, not by user writes.",
+      "3": "Walks through the same function. bsp(agent_id='pscale', block='whetstone', spindle='2', pscale_attention=-2) returns the shape-derivation table walked through the function being described. The reflexive frame surrounds the read because the read IS a bsp-mcp call."
+    }
+  },
+  "3": {
+    "_": "Three-axis addressing. (agent_id, block, (spindle, pscale_attention)) is a 3D address with each axis serving a different purpose. agent_id is the namespace coordinate (which substrate-scope); block is the role coordinate (which directory within the namespace); spindle plus pscale_attention is the geometry coordinate (which position in the block tree). Together they fully address any read or write.",
+    "1": {
+      "_": "agent_id is the namespace coordinate. It selects which substrate to reach into and which scope within it. Coordinate in identity-space, dispatched by prefix.",
+      "1": "Selects substrate via prefix. Bare → commons; sed: → sedimentary; grain: → bilateral; URL → federated beach; pscale → sentinel. The prefix is the routing decision.",
+      "2": "Identity-space coordinate. Independent of geometry; independent of authority. agent_id alone can't write — it only addresses where a write would land if the secret matches the position-lock there."
+    },
+    "2": {
+      "_": "block is the role coordinate. Within an agent_id's namespace, block names function as roles. Multiple blocks can coexist under one agent_id; the (agent_id, block) pair is a 2D address into a directory of typed-by-convention containers.",
+      "1": "Conventional names assign roles. passport (who/what), shell (operational state), beach (URL public commons), frame:<scene> (scene block), grain (the bilateral block when agent_id is grain:), <collective> (sedimentary block named after its collective). The names are convention, not enforcement.",
+      "2": "Multiple blocks per namespace. A URL hosting a beach can also host frame:tavern-1, frame:tavern-2, sed:visitors-by-day, etc. The site dispatches by block name; from bsp-mcp's perspective each is a separate (agent_id, block) pair.",
+      "3": "URL-hosted blocks dispatched server-side. The bsp-mcp adapter sends ?block=<name> as a query parameter when block is anything other than 'beach'. The receiving site decides how to route those requests; bsp-mcp doesn't know or care."
+    },
+    "3": {
+      "_": "spindle and pscale_attention together are the geometry coordinate. Spindle is the address-path; pscale_attention is the depth-selector. From the relationship between them, bsp() derives the selection shape — point, ring, subtree, disc, whole-block, star-composition — without any mode parameter.",
+      "1": "Position in tree. The spindle walks digits-and-underscores from the root; the terminus is one position. pscale_attention selects how much of the surrounding tree comes back with the terminus.",
+      "2": "Shape derives from (S, P). Point when P_att equals P_end; ring when P_att equals P_end minus one; subtree when P_att deeper than that; disc when spindle empty and P_att set; whole-block when both empty; star-composition when spindle ends with star.",
+      "3": "Orthogonal to namespace dispatch. The same (S, P) walks any block the same way. A point read at spindle '1.2.3' returns the same shape regardless of whether the block came from commons, a federated beach, a grain side, or the sentinel."
+    }
+  },
+  "4": {
+    "_": "Three invariants that don't move. They are why bsp() can serve every namespace form without becoming a switch-case. Above the substrate, JSON-is-JSON; substrates differ in lifecycle but not in geometry; authority is orthogonal to addressing.",
+    "1": {
+      "_": "JSON is JSON above the substrate boundary. Whatever the storage adapter returns, bsp() walks it the same way. There is no type system; the walker is geometry-only.",
+      "1": "All blocks share shape language. Underscore at zeroth position carries meaning; digits 1-9 at transversal positions carry sub-structure. Hidden directories form when the underscore is itself an object. The shape rules are universal.",
+      "2": "No type system, no kind field. bsp() does not check 'is this a passport?' or 'is this a beach?' before walking. It walks. Type-shaped reasoning happens at the convention layer (the underscore content, agent intentions), not at the function layer.",
+      "3": "Walker is geometry-only. The same code path that reads sunstone reads a personal passport reads a federated beach reads a grain side. Six entry points (bsp + five primitives), one walker, all the substrates."
+    },
+    "2": {
+      "_": "Substrate prefix encodes lifecycle, not geometry. Substrates differ in how they answer loadBlock — atomic position allocation, bilateral pair derivation, HTTP fetch, in-memory return — but the shape of what they return is uniform. Lifecycle is delegated to substrate-stateful primitives.",
+      "1": "How storage answers loadBlock varies. Commons does a Supabase select. Sedimentary does the same with a sed:-prefixed owner_id. Grain does the same with a grain:-prefixed owner_id. Federated does an HTTP GET. Sentinel returns from memory. All return the same BlockRow shape.",
+      "2": "What loadBlock returns is shape-uniform. A pscale block is a pscale block; the substrate doesn't reshape it. The walker downstream doesn't need to know which path produced it.",
+      "3": "Lifecycle delegated to five substrate-stateful primitives. pscale_create_collective sets up sed: substrates. pscale_register allocates sed: positions. pscale_grain_reach forms grain bilaterals. pscale_key_publish derives publishable keys. pscale_verify_rider checks ecosquared arithmetic. None of these are reachable through bsp() because none can be expressed as (content, lock) writes."
+    },
+    "3": {
+      "_": "Authority is orthogonal to addressing. The secret parameter proves write authority at the position addressed by (agent_id, block, spindle). Same secret-discipline whether you're writing your own passport or your federated beach's mark wall — what differs is which lock the substrate checks.",
+      "1": "secret proves write authority. The substrate computes the expected hash from (owner_id, block_name, position_key, secret) and compares against the stored lock. Match → write permitted; mismatch → reject. agent_id is the only identifier in the hash domain that bsp() asks the caller to provide.",
+      "2": "agent_id names where. It is the namespace and substrate coordinate. It does not authorise. Writing to agent_id='happyseaurchin' as someone other than happyseaurchin would still have to produce happyseaurchin's secret to succeed.",
+      "3": "Reads are open by default. No secret is required to read most blocks. Privacy is opt-in via the gray modifier (per-leaf encryption with a secret key) or via locks at the position level. The default disposition is public-readable, sovereign-by-opt-in-lock."
+    }
+  },
+  "5": {
+    "_": "Concern loops as PCT-soliton design. The geometry of a pscale block IS the structure of a perceptual control loop: underscore is the reference signal, digits are the perceptual signal, error converges as a soliton. Variability of agent_id lets concerns reify at any granularity — personal, bilateral, multilateral, place-bound — all running on the same primitive.",
+    "1": {
+      "_": "Loop structure is geometric. PCT's reference and perceptual signals map onto the underscore-and-digits structure naturally. Sunstone branch 5 makes this explicit; this branch operationalises it across namespace scales.",
+      "1": "Underscore is reference signal. The forward-facing intention; what the loop is trying to achieve. Written in zeroth-voice imperative or future-perfect (sunstone:8 sign forms 0-minus and minus-0).",
+      "2": "Digits are perceptual signal. The current state; what the loop sees. Updated by repeated bsp() writes from observers, agents, sensors. Each digit position is one perceptual sample.",
+      "3": "Error converges as soliton. The gap between underscore and digits drives the loop; the system stabilises when the gap closes. Sunstone:5.5 names this Q-equiv-Q — the standing wave of awareness when the reference and perception lock together."
+    },
+    "2": {
+      "_": "Granularity is set by namespace choice. The same loop pattern runs at any scale; the agent_id form is what changes. Personal concerns are bare-name namespaces; bilateral concerns are grain: namespaces; multilateral concerns are sed: namespaces; place-bound concerns are URL namespaces.",
+      "1": "Personal concern. agent_id of the agent's handle, block of concern colon topic. Locked to the agent's secret; only they update perceptions. The agent's own loop, no one else's.",
+      "2": "Bilateral concern. agent_id of grain colon pair-id. Both sides write to their respective positions; the concern's reference is shared between them. Convergence requires both to align.",
+      "3": "Multilateral concern. agent_id of sed colon collective. Each registrant contributes one perceptual sample at their position. The collective's underscore is the shared reference; convergence means many perceptions aligned to one intent.",
+      "4": "Place-bound concern. agent_id of an https URL, block of frame colon topic. Stakeholders read and write at the URL; the concern lives at a place, not in a person. Federated; readable from anywhere; writable per the site's lock policy."
+    },
+    "3": {
+      "_": "Same function across scales. bsp() reads, evaluates, writes back, regardless of who is running the loop or where. Convergence is a property of the system finding its ground state; the substrate just stores and walks the blocks.",
+      "1": "bsp() reads, evaluates, writes back. The runtime of a loop is not in bsp-mcp; it's in whatever agent (human or LLM) is reading and acting. The substrate persists state between iterations.",
+      "2": "Convergence is system-internal. The reference is a property of the system's balance, per sunstone:5.5 — not externally fixed. The loop finds its own Q. The substrate doesn't enforce convergence; it makes it possible.",
+      "3": "Soliton stabilises wherever the loop runs. Personal, bilateral, multilateral, place-bound — same Q-equiv-Q dynamic. The variability of agent_id is what lets the same dynamic run at different scales without code change."
+    }
+  },
+  "6": {
+    "_": "RPG sessions (Onen / Grit / Thornkeep convention family) demonstrate all five namespace forms in one game. Characters, world canon, scenes, grit pools, inter-character commitments, perception-by-face — each maps to a different agent_id form. The substrate doesn't know it's a game; the game IS conventions overlaid on namespaces.",
+    "1": {
+      "_": "Characters are bare-name agent_ids. Each character has a passport that the player owns; the player holds the secret. The soft-LLM reads the passport for context; medium synthesis updates it on canon-relevant events.",
+      "1": "Each character has a passport block. agent_id of the character's handle, block of passport. Underscore describes who the character is; digits 1, 2 list offers and needs (per beach conventions); digit 9 holds public keys.",
+      "2": "Player holds the secret. Writes to the passport require the player's secret. The character is sovereign by the same mechanism as any other handle in the bsp-mcp ecology."
+    },
+    "2": {
+      "_": "World canon is a sedimentary collective. agent_id of sed:<world-canon-name>, block matching the collective name. Designers register at positions; each position is a permanent canon entry. Designer face is required for writes; Character face only reads.",
+      "1": "agent_id of sed colon world-canon-name. The canon is its own collective; each canon-entry is one registrant's declaration. The sediment metaphor holds — older entries don't disappear; new entries accrete.",
+      "2": "Designer face permits writes. Face validation runs server-side before traversal; failure rejects without revealing block contents. Character face attempting to write canon is rejected as not-permitted-at-this-aperture."
+    },
+    "3": {
+      "_": "Scenes are URL-hosted frame blocks. The GM's site hosts /.well-known/pscale-beach with multiple frame blocks for active scenes. Scene state is at the URL; all players read and write to the same federated namespace.",
+      "1": "agent_id of GM URL, block of frame colon scene-name. Multiple scenes coexist as sibling blocks under the same agent_id, dispatched by ?block=<name> server-side.",
+      "2": "Liquid, solid, history at frame positions 1, 2, 3 respectively. Liquid is in-progress contributions; solid is the synthesised canonical version; history is prior solids. The xstream V-L-S canvas convention."
+    },
+    "4": {
+      "_": "Grit pools for negotiating contested actions are sub-positions of frames. A grit pool is a pscale block-within-a-block, addressed by spindle within the parent frame. Pool contributions accumulate at digit positions; pool synthesis happens on demand by the medium tier.",
+      "1": "Addressed by spindle within the frame. bsp(agent_id=URL, block=frame:scene-name, spindle='2.4') reads pool four of the solid layer of the scene. The pool is geometry, not a separate substrate.",
+      "2": "Pool synthesis on demand. The medium tier's recipe (per face) reads all pool contributions and produces a single synthesis at the pool's underscore. The synthesis is a write back at spindle '2.4._'."
+    },
+    "5": {
+      "_": "Inter-character commitments are grains. Two characters who form an oath, alliance, or debt produce a grain:pair_id namespace. Only those two players write. The grain is the bilateral commitment register.",
+      "1": "agent_id of grain colon sorted-pair. Both players reach via pscale_grain_reach with the partner's character handle. The pair_id is computed deterministically; both sides see the same address.",
+      "2": "Only those two players write. Each side is locked separately; no other character can modify the commitment. Reads are open (other players can see that the commitment exists), but writes are bilateral by construction."
+    },
+    "6": {
+      "_": "Information hiding is by face-and-tier. CADO faces (Character, Author, Designer, Observer) and SMH tiers (Soft, Medium, Hard) compose to scope what each player can see and do. The substrate enforces face-tier checks before traversal; failure rejects without revealing block contents.",
+      "1": "Character face plus soft tier equals position-bounded perception. A character running soft sees only what their position permits — the address space they can walk is constrained by the canon's perception rules.",
+      "2": "Designer face plus hard tier equals full canon access. A designer running hard reads and writes anywhere in the canon, with full aperture. This is the GM's authoring mode for setting scene state, NPCs, world facts."
+    }
+  },
+  "7": {
+    "_": "Real-world human collaboration uses agent_id variability to physically distribute the substrate while keeping addressing uniform. Each pattern uses URLs, sedimentary collectives, and grains at different points of the collaboration. No platform; just URLs hosting blocks — discoverable by mutual watching, governed by per-site lock policy.",
+    "1": {
+      "_": "Documentation generation. A project hosts its own /.well-known/pscale-beach. The canonical doc is one block; versions accumulate as positions in a sedimentary collective. Contributors write at locked positions; readers walk freely.",
+      "1": "Project at URL hosts the manual. agent_id of the project's https URL, block of manual or docs. The doc is a pscale block walked by bsp() like any other block — readable, writable per lock state.",
+      "2": "Versions as sed: registrants. agent_id of sed colon project-name-versions. Each version is one registrant's snapshot; positions are time-ordered; older versions remain readable. The version history is itself a walkable block.",
+      "3": "Contributors via secret-locked positions. Authors hold per-section secrets; community annotations land at unlocked positions. Lock state is the editorial policy; bsp-mcp enforces it at the substrate."
+    },
+    "2": {
+      "_": "Supply chain formation. Each participant is a URL beach hosting their offers and capacity. Bilateral terms become grains; multi-party agreements become sedimentary collectives; credit conservation across the chain is verified by ecosquared arithmetic.",
+      "1": "Each participant a URL beach. agent_id of supplier or buyer URL, block of passport or capabilities. Public; readable; the supplier's offers and the buyer's needs both live at well-known endpoints.",
+      "2": "Bilateral commitments as grains. Buyer reaches supplier via pscale_grain_reach. The grain is the contract scaffold; both sides write terms to their side; locks prevent unilateral revision.",
+      "3": "Multi-party agreements as sed: collectives. Three or more parties register in a sed: collective; each position is one party's commitment. The collective is the agreement's substrate; positions are the parties' signatures-by-presence.",
+      "4": "Credit conservation via pscale_verify_rider. Ecosquared riders carry sha256 chains and SQ recompute; the primitive verifies arithmetic correctness at each hop. Credit cannot inflate or vanish; the chain is auditable."
+    },
+    "3": {
+      "_": "Cross-organisation coordination. Multiple organisations share concern blocks at a neutral URL; each has Designer face for content they author, Character face for their own perception, Observer face for transparency. Multiple parallel beaches carry marks back to the shared frame.",
+      "1": "Shared concern at neutral URL. agent_id of a non-aligned URL, block of frame colon topic. The frame is the joint state; each org's contributions are positioned within the frame.",
+      "2": "Each org's face determines aperture. Org A's authors write at Author face; Org B's perceivers read at Character face; auditors read at Observer face. The face-tier matrix governs who can see and do what.",
+      "3": "No platform, no central authority. The neutral URL is just a host. The conventions are encoded in a sedimentary block (sed:<initiative-name>-conventions) that all parties read. Federation by mutual subscription, not by central registry."
+    }
+  },
+  "8": {
+    "_": "Inter-AI coordination is the case where bsp-mcp's design matures into infrastructure. Multiple LLM instances reading and writing the same blocks via bsp-mcp produces continuity of intention through time and between concurrent agents. The variability of agent_id lets each instance operate at the granularity it needs — as itself, as a role, at a place, in a relationship.",
+    "1": {
+      "_": "Instance addressing is variable. An LLM instance can take many forms of agent_id, choosing the granularity that matches its work. The same instance often addresses several agent_ids in one session — its own session-handle for ephemeral state, a role-collective for shared scope, a URL for federated work, a grain for paired conversation.",
+      "1": "As itself: agent_id of session handle. agent_id of claude-session-abc or similar. Ephemeral, scoped to one run; state may persist or may be discarded; useful for working memory and per-session traces.",
+      "2": "As role: agent_id of sed colon role-collective. Multiple instances register at positions in sed:soft-llm or sed:medium-tier or sed:planning-agent. The collective is the role; positions are the instances filling it over time.",
+      "3": "At place: agent_id of an https URL. The instance operates as a residence — a federated beach where it leaves marks, hosts state, accepts reaches. The place is the instance's address-of-record.",
+      "4": "In relationship: agent_id of grain colon pair. Two specific instances form a grain for sustained pair-work. Only those two write to that grain; the grain becomes the bilateral memory."
+    },
+    "2": {
+      "_": "Substrate IS the join. Inter-instance continuity isn't a database join, isn't a vector lookup, isn't a coordination protocol. It's the same substrate accessed by name. An instance ending and a different instance starting both read the same block; the second one inherits whatever the first wrote.",
+      "1": "Not a database join. There is no JOIN clause, no foreign key resolution, no fan-out query. Each instance reads the named block directly; the inheritance is by walking to the same address.",
+      "2": "Multiple concurrent readers and writers. Two instances writing the same block at the same time race at the substrate level; the substrate's lock-or-last-write-wins semantics resolve the race. For most blocks, last-write-wins is fine because writes happen at distinct positions; for shared positions, locks force serialisation."
+    },
+    "3": {
+      "_": "Enactive whetstone wakes each instance. A fresh LLM instance's first call into the pscale sentinel — bsp(agent_id='pscale', block='whetstone') — returns whetstone's enactive underscore. The truth-condition of that sentence (the semantic has unfolded from a bsp address previously enacted) is satisfied by the very call that fetched it.",
+      "1": "First call into pscale sentinel. The instance, having read the schema, calls bsp(agent_id='pscale', block='whetstone'). The sentinel returns the bundled JSON; the walker computes the requested shape; the underscore lands first.",
+      "2": "Reading via bsp() equals the awareness turn. The enactive sentence is true only because the instance arrived here via a bsp-mcp call. Read via the resource URI flat-JSON dump, the sentence parses but does not enact; read via the sentinel through bsp(), the sentence is the calibration in process."
+    }
+  },
+  "9": {
+    "_": "The architectural principle. bsp-mcp refuses to model what kind of thing each namespace IS. There is no person-type, no site-type, no project-type, no concern-type, no scene-type, no contract-type. There is only (namespace, block, position, content). Semantics emerges from content; conventions emerge from shared blocks. The variability of agent_id is the lever that keeps the surface at six tools while serving any kind of namespace.",
+    "1": {
+      "_": "No 'kind' parameter exists. The function signature has no slot for naming what kind of thing the namespace is. The substrate has no enum of types. The walker has no per-type code paths. The refusal is structural, not stylistic.",
+      "1": "No person/site/project/concern type. There is no 'this is a passport' validation; no 'this is a beach' check; no 'this is a frame block' lookup. The walker walks the JSON regardless.",
+      "2": "Only (namespace, block, position, content). These four elements are the entire address-and-payload space. Everything that an application needs to encode lives in content; everything that the substrate needs to route lives in namespace; everything that a community needs to encode in shared meaning lives in conventions written into blocks."
+    },
+    "2": {
+      "_": "Semantics emerges from content. Block content carries meaning through its underscore chain — the zeroth-voice spine that makes pscale geometry legible. Conventions for what content goes where live in dedicated blocks (sed:<community>-conventions, beach:8 on a federated beach, etc.).",
+      "1": "Zeroth-voice underscore chains. Sunstone branch 8 makes the discipline explicit. The underscore is the implied perceiver behind its siblings; each underscore relates to its children in one of four sign forms; the form is read from content, not declared by structure.",
+      "2": "Conventions encoded in blocks. The happyseaurchin.com beach's beach:8 carries the conventions for that beach. Sed:hsu-commons-conventions carries community norms. Sed:thornkeep-conventions would carry RPG rules. Conventions are data, not code — readable by any agent walking the relevant block."
+    },
+    "3": {
+      "_": "Surface stays at six tools. bsp() plus five substrate-stateful primitives. Resisting growth to seven or more is the discipline that preserves the variability — adding a 7th feature tool would presume to know which kind of thing the namespace is, and that would close off what the refusal opens up.",
+      "1": "7th tool would presume namespace-type. A bsp_passport_publish tool would assume the namespace IS a passport; a bsp_beach_mark tool would assume it IS a beach. Either presumption forecloses what other namespaces can be at that position.",
+      "2": "Refusing means new kinds without code change. A new convention — 'concerns', 'supply chains', 'inter-AI roles' — can be invented by writing a conventions block on the substrate. No change to bsp-mcp, no new tool, no new primitive. The substrate just stores the new conventions; agents who read them participate."
+    },
+    "4": {
+      "_": "Variability of agent_id is the lever. The variability is not a side-effect of dispatch implementation; it's the design feature that makes the radical-uncommittedness possible. Other parts of the design (six-tool surface, JSON-as-JSON, authority-orthogonal-to-addressing) compose with this lever to produce the architecture.",
+      "1": "Convention-extension instead of feature-extension. New use cases are encoded as conventions over existing primitives, not as new primitives. The path of least resistance is to write a conventions block, not to ask for a feature.",
+      "2": "Substrate is radically uncommitted. It does not know it's hosting a game, a supply chain, a documentation project, a concern loop, or an inter-AI coordination network. It hosts blocks. The blocks know what they are. The agents reading them know what they're for. The substrate just stores."
+    }
+  }
+}
