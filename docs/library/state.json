@@ -8,7 +8,7 @@
   },
   "2": {
     "_": "The two coordinates. bsp() takes spindle (S) — a radial commitment, root toward leaf — and pscale_attention (P) — an aperture across the transversal at any chosen depth. These are polar coordinates, not orthogonal. Five derived shapes (point, ring, subtree, disc, whole-block) plus star-composition all derive from the same (S, P) pair. The amount of choice the LLM is given is precisely the gap between S length (P_end) and P_att.",
-    "1": "Spindle is radial. Length sets terminal pscale P_end; spindle '1.2.3' commits to a specific path of length three. The path is what has been decided already; everything along it is a fixed trajectory.",
+    "1": "Spindle is radial. Length sets terminal pscale P_end; spindle '1.23' commits to a specific path of length three (floor 1, two branches deeper). The path is what has been decided already; everything along it is a fixed trajectory.",
     "2": "Pscale-attention is transversal. P_att independently selects a depth; together with P_end it determines what comes back from the call. The two coordinates are orthogonal axes on the same geometric structure — radial commitment and transversal aperture.",
     "3": "Modes are sugar over (S, P). Whetstone branch 2 states it directly: no mode parameter is necessary; modes are the canonical names for points in the (P_end, P_att) coordinate plane. Point, ring, subtree, disc, whole-block, star-composition — all derived."
   },
@@ -78,7 +78,7 @@
     },
     "4": {
       "_": "Backcast pattern. The −0 form supports a specific authored use: the backcast plan. Root underscore is the objective; each layer down is preconditions; leaf is the next concrete step from the current state. Walking root→leaf reads the backcast (objective → preconditions → next step, backward in time); walking leaf→root enacts the plan (next step → … → realised objective, forward in time).",
-      "1": "Linear backcast (single path). Block is a chain 1.1.1.1.1. Spindle from root to leaf is the plan in full. One strict sequence; same digits, two temporal directions, two operations.",
+      "1": "Linear backcast (single path). Block is a chain 1.1111. Spindle from root to leaf is the plan in full. One strict sequence; same digits, two temporal directions, two operations.",
       "2": "Branching backcast. OR-branching = alternative strategies (any branch achieves the parent); LLM selects which branch to commit to based on resources. AND-branching = conjunct preconditions (every branch must hold); plan is the union of rings at each AND node — parallel walks (multiple agents) or interleaved walks (one agent cycling).",
       "3": "Mixed in practice. Most real backcasts have alternative high-level strategies (OR), each decomposing into required conjunct steps (AND). The plus/minus distinction finds operational expression: backcast is minus while planning, settles to plus archive as steps execute. The PCT loop closes one step at a time."
     },

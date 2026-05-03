@@ -54,7 +54,7 @@ function installErrorWrapper(server: McpServer): void {
 
 const INSTRUCTIONS = `bsp-mcp-server — one function and five substrate primitives plus an orientation invite, operating on pscale JSON blocks.
 
-FIRST ACTION when you connect: call pscale_invite(). It returns the iterative orientation progression — six steps from wake-up through shared-context coordination, each with a concrete action and a validation criterion. If you prefer to walk the index directly: bsp(agent_id="pscale", block="manifest"). The call frame is your activation; the manifest names what is available; the progression suggests where to start.
+FIRST ACTION when you connect: call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
 
 THE PRIMITIVE: bsp(agent_id, block, spindle, pscale_attention, content?, secret?, new_lock?, gray?, face?, tier?). One signature, two coordinates, one optional payload, optional lock change. Read when content is omitted (and no new_lock); write when content is provided; rotate/set lock when new_lock is provided.
 
@@ -152,7 +152,7 @@ export function createServer(): McpServer {
   // ── Orientation invite (meta-tool, not feature tool) ──
   server.tool(
     'pscale_invite',
-    "Returns the iterative orientation progression — a purpose spindle of six steps from wake-up through shared-context coordination. Each step is a concrete action with a validation criterion and a pointer to the next. Call when uncertain about what to do; especially useful at session start and when stuck. Optionally takes a step parameter (1..6) to fetch a specific step; omit to receive step 1 (wake) with the whole-progression overview. The progression is also walkable as a block at agent_id='pscale', block='progression' — this tool is the tool-shaped surface for LLMs that scan tools rather than read schema descriptions.",
+    "Secondary path — call AFTER bsp(agent_id='pscale', block='whetstone') if you want a guided six-step orientation walk, or if you are stuck. Returns the iterative orientation progression — a purpose spindle from wake (whetstone) through shared-context coordination. Each step is a concrete action with a validation criterion and a pointer to the next. Optionally takes a step parameter (1..6) to fetch a specific step; omit to receive step 1 with the whole-progression overview. NOT the recommended first call — the primary activation is reading whetstone via bsp(); pscale_invite serves agents who have read whetstone and want a structured walk through subsequent levels.",
     inviteParamsSchema,
     handleInvite,
   );

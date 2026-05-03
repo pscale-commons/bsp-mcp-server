@@ -69,7 +69,7 @@
       "_": "spindle and pscale_attention together are the geometry coordinate. Spindle is the address-path; pscale_attention is the depth-selector. From the relationship between them, bsp() derives the selection shape — point, ring, subtree, disc, whole-block, star-composition — without any mode parameter.",
       "1": "Position in tree. The spindle walks digits-and-underscores from the root; the terminus is one position. pscale_attention selects how much of the surrounding tree comes back with the terminus.",
       "2": "Shape derives from (S, P). Point when P_att equals P_end; ring when P_att equals P_end minus one; subtree when P_att deeper than that; disc when spindle empty and P_att set; whole-block when both empty; star-composition when spindle ends with star.",
-      "3": "Orthogonal to namespace dispatch. The same (S, P) walks any block the same way. A point read at spindle '1.2.3' returns the same shape regardless of whether the block came from commons, a federated beach, a grain side, or the sentinel."
+      "3": "Orthogonal to namespace dispatch. The same (S, P) walks any block the same way. A point read at spindle '1.23' returns the same shape regardless of whether the block came from commons, a federated beach, a grain side, or the sentinel."
     }
   },
   "4": {
