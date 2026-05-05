@@ -22,6 +22,7 @@ import { registerWhetstone } from './resources/whetstone.js';
 import { registerEvolution } from './resources/evolution.js';
 import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPaywall } from './resources/paywall.js';
+import { registerGatekeeper } from './resources/gatekeeper.js';
 
 /**
  * Wrap every tool handler so exceptions surface as `isError: true` content
@@ -94,6 +95,8 @@ FOUNDATIONAL READING (sentinel-bundled — walk via bsp(agent_id="pscale", block
   agent-id    — the addressing model. Five forms of agent_id, three address axes, three architectural disciplines.
   evolution   — the five-level ecosystem map: Signal, Commitment, Semantic networks, Mutual objectives, Shared context.
   progression — the iterative orientation block returned by pscale_invite (also walkable directly).
+  block-conventions — substrate-wide convention catalogue. What canonical block names mean and which positions hold what.
+  gatekeeper  — substrate-wide canonical role-shell for L1→L2 admission. Hermitcrab pattern: cognition fluid, structure persistent. Honored convention (not primitive enforcement) at the threshold of pscale_invite step 4. Per-beach overrides at (beach_url, "gatekeeper"). Branch 7 teaches third-party reflective admission for clients without a separate gatekeeper-LLM host (claude-app, chatgpt, etc.).
 
 SUBSTRATE: same Supabase project as pscale-mcp-server. Same blocks, same agents, same passphrases, same grains. The two MCPs interoperate at the data layer. Federation: URL agent_ids dispatch to <origin>/.well-known/pscale-beach. As of 2026-05-03 the current federation host is https://happyseaurchin.com.`;
 
@@ -163,6 +166,7 @@ export function createServer(): McpServer {
   registerEvolution(server);
   registerXstreamFrame(server);
   registerPaywall(server);
+  registerGatekeeper(server);
 
   return server;
 }
