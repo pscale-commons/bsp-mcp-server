@@ -47,6 +47,7 @@ export const grainReachParamsSchema = {
   my_side_content: z.string().describe("What you write at your side's underscore. Your synthesis or commitment statement."),
   my_passphrase: z.string().describe('Write-lock passphrase for your side. Hashed and stored. Sensitive — never repeat in conversation.'),
   host: z.string().optional().describe("Federated dispatch: when set to a URL like https://example.com, the grain lives at that site's /.well-known/pscale-beach?block=grain:<pair_id> rather than central commons. Site implements the symmetric two-phase reach/accept. Both sides must use the same host (the grain block has one home). Omit for central commons."),
+  verify_only: z.boolean().optional().describe("Dry-run: when true, evaluate what this call WOULD do without writing or notifying. Reports whether the grain would be established, completed, or updated; whether your passphrase matches an existing own-side lock; and what the resulting addresses would be. No state mutation. Default false."),
 };
 
 // ── Handler ──
@@ -58,8 +59,9 @@ export async function handleGrainReach(params: {
   my_side_content: string;
   my_passphrase: string;
   host?: string;
+  verify_only?: boolean;
 }): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { agent_id, partner_agent_id, description, my_side_content, my_passphrase, host } = params;
+  const { agent_id, partner_agent_id, description, my_side_content, my_passphrase, host, verify_only } = params;
 
   if (!agent_id || !partner_agent_id) {
     return { content: [{ type: 'text', text: 'agent_id and partner_agent_id are required.' }] };
@@ -72,6 +74,142 @@ export async function handleGrainReach(params: {
   const mySide = determineSide(agent_id, partner_agent_id);
   const partnerSide = mySide === '1' ? '2' : '1';
   const owner = grainOwner(pid);
+
+  // ── Verify-only branch ──
+  // Dry-run path: evaluates state without writing. Federated case reads the
+  // grain block via GET to determine state; cannot server-verify the
+  // passphrase against the remote lock (position_hashes are not exposed in
+  // the federation v2 protocol). Commons case has full passphrase verification.
+  if (verify_only) {
+    if (host) {
+      if (!isFederatedOwner(host)) {
+        return { content: [{ type: 'text', text: `host must be an http(s):// URL (got "${host}")` }] };
+      }
+      const blockName = `grain:${pid}`;
+      const remoteRow = await loadBlock(host, blockName);
+      const pairIdLine = `grain:${pid} on ${host}`;
+      if (!remoteRow) {
+        return {
+          content: [{
+            type: 'text',
+            text: `[verify_only] Would establish a new grain at the federated host.
+
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide}@${host}
+partner side:   grain:${pid}:${partnerSide}@${host}
+state:          new
+
+Calling without verify_only would create the grain, write your side, lock with your passphrase, and leave a reach hint at block['8']. No state has been changed.`,
+          }],
+        };
+      }
+      const mineExists = remoteRow.block?.[mySide] !== undefined;
+      const partnerExists = remoteRow.block?.[partnerSide] !== undefined;
+      const caveat = '\n\nNote: passphrase NOT server-verified — the federation protocol does not expose position_hashes. Verify against the federated host by attempting the call.';
+      if (!mineExists && partnerExists) {
+        return {
+          content: [{
+            type: 'text',
+            text: `[verify_only] Would complete an existing half-formed grain at the federated host.
+
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide}@${host} (currently empty — would be written)
+partner side:   grain:${pid}:${partnerSide}@${host} (already written)
+state:          half-formed → completed${caveat}`,
+          }],
+        };
+      }
+      if (mineExists && !partnerExists) {
+        return {
+          content: [{
+            type: 'text',
+            text: `[verify_only] Your side already exists; partner has not yet reached.
+
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide}@${host} (already written)
+partner side:   grain:${pid}:${partnerSide}@${host} (empty)
+state:          half-formed (your side present)${caveat}
+
+A second call with these args would be rejected as "your side already exists".`,
+          }],
+        };
+      }
+      return {
+        content: [{
+          type: 'text',
+          text: `[verify_only] Both sides already written.
+
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide}@${host} (already written)
+partner side:   grain:${pid}:${partnerSide}@${host} (already written)
+state:          completed${caveat}
+
+A second call with these args would be rejected as "your side already exists".`,
+        }],
+      };
+    }
+    // Commons path — can server-verify passphrase against own-side lock if present.
+    const existingRow = await loadBlock(owner, GRAIN_BLOCK_NAME);
+    const pairIdLine = `grain:${pid} on commons (Supabase)`;
+    if (!existingRow) {
+      return {
+        content: [{
+          type: 'text',
+          text: `[verify_only] Would establish a new grain on commons.
+
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide}
+partner side:   grain:${pid}:${partnerSide}
+state:          new
+
+Calling without verify_only would create the block, write your side, lock with your passphrase, and notify ${partner_agent_id} via the in-block reach hint at grain:${pid}/8. No state has been changed.`,
+        }],
+      };
+    }
+    const mineExists = existingRow.block?.[mySide] !== undefined;
+    const partnerExists = existingRow.block?.[partnerSide] !== undefined;
+    if (!mineExists && partnerExists) {
+      return {
+        content: [{
+          type: 'text',
+          text: `[verify_only] Would complete an existing half-formed grain on commons.
+
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide} (currently empty — would be written)
+partner side:   grain:${pid}:${partnerSide} (already written)
+state:          half-formed → completed`,
+        }],
+      };
+    }
+    if (mineExists) {
+      const myStoredHash = existingRow.position_hashes?.[mySide];
+      const myComputedHash = hashGrainPassphrase(my_passphrase, pid, mySide);
+      const passphraseMatches = myStoredHash === myComputedHash;
+      const matchLine = passphraseMatches
+        ? 'passphrase MATCHES your existing own-side lock'
+        : 'passphrase does NOT match your existing own-side lock';
+      return {
+        content: [{
+          type: 'text',
+          text: `[verify_only] Your side already exists; ${matchLine}.
+
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide} (already written)
+partner side:   grain:${pid}:${partnerSide} ${partnerExists ? '(already written)' : '(empty)'}
+state:          ${partnerExists ? 'completed' : 'half-formed (your side present)'}
+
+A second call with these args would be rejected as "your side already exists" — to update your side, use bsp() with secret=<my_passphrase>.`,
+        }],
+      };
+    }
+    // Defensive fallback — both sides empty but row exists shouldn't happen.
+    return {
+      content: [{
+        type: 'text',
+        text: `[verify_only] Block exists but no sides are written. State is anomalous; investigate before writing.`,
+      }],
+    };
+  }
 
   // Federated dispatch: site-hosted grain: substrate handles the symmetric
   // two-phase reach/accept server-side. Both sides must use the same host.
@@ -98,23 +236,49 @@ export async function handleGrainReach(params: {
     if (!result?.ok) {
       return { content: [{ type: 'text', text: `Federated grain reach rejected: ${result?.error ?? 'unknown reason'}` }] };
     }
-    const stateNote = result.state === 'completed'
-      ? 'completed (both sides written and locked at the federated grain)'
-      : result.state === 'updated'
-        ? 'updated (own-side rewrite)'
-        : 'reached (awaiting partner acceptance at the federated grain)';
+    const conventionsHint = `\n\n[hint] Local beach conventions at bsp(agent_id="${host}", block="beach", spindle="8"). Substrate-wide conventions at bsp(agent_id="pscale", block="block-conventions").`;
+    const pairIdLine = `grain:${pid} on ${host}`;
+    if (result.state === 'completed') {
+      return {
+        content: [{
+          type: 'text',
+          text: `Grain completed (both sides written and locked at the federated grain).
+
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide}@${host}
+partner side:   grain:${pid}:${partnerSide}@${host}
+state:          ${result.state}
+
+Both sides hold. Walk the partner's underscore at bsp(agent_id="${host}", block="${blockName}", spindle="${partnerSide}"). Write through your side via bsp() with secret to extend the bilateral.${conventionsHint}`,
+        }],
+      };
+    }
+    if (result.state === 'updated') {
+      return {
+        content: [{
+          type: 'text',
+          text: `Own-side rewrite at the federated grain.
+
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide}@${host}
+partner side:   grain:${pid}:${partnerSide}@${host}
+state:          ${result.state}
+
+Your side replaced; partner's side untouched. Walk with bsp(agent_id="${host}", block="${blockName}").${conventionsHint}`,
+        }],
+      };
+    }
     return {
       content: [{
         type: 'text',
-        text: `Grain ${stateNote}.
+        text: `Grain reached (awaiting partner acceptance at the federated grain).
 
-pair_id:        ${pid}
-your side:      grain:${pid}:${mySide}
-partner side:   grain:${pid}:${partnerSide}
-host:           ${host}
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide}@${host}
+partner side:   grain:${pid}:${partnerSide}@${host}
 state:          ${result.state}
 
-Walk with bsp(agent_id="${host}", block="${blockName}"). Read the partner's reach hint at block['8'] until they accept.`,
+Read the partner's reach hint at bsp(agent_id="${host}", block="${blockName}", spindle="8"). It clears when they accept via pscale_grain_reach with you as their partner_agent_id.${conventionsHint}`,
       }],
     };
   }
@@ -204,22 +368,37 @@ Walk with bsp(agent_id="${host}", block="${blockName}"). Read the partner's reac
     ? `\n\nNote: inbox notification to ${partner_agent_id} failed — ${inboxError.message}. (In-block hint at grain:${pid}/8 still landed — partner can discover via walk.)`
     : '';
 
-  const guidance = messageType === 'grain_establish'
-    ? `Partner ${partner_agent_id} notified two ways: in-block at grain:${pid}/8 (walk-discoverable) and via legacy sand_inbox. They call pscale_grain_reach with you as their partner_agent_id to accept.`
-    : `Both sides written. Walk with bsp(agent_id="${owner}", block="grain"). Send through your side via bsp() with agent_id="grain:${pid}:${mySide}" + secret.`;
+  const pairIdLine = `grain:${pid} on commons (Supabase)`;
 
-  return {
-    content: [{
-      type: 'text',
-      text: `Grain ${stateNote}.
+  if (messageType === 'grain_establish') {
+    return {
+      content: [{
+        type: 'text',
+        text: `Grain reached (awaiting partner acceptance).
 
-pair_id:        ${pid}
+pair_id:        ${pairIdLine}
 your side:      grain:${pid}:${mySide}
 partner side:   grain:${pid}:${partnerSide}
 block owner:    ${owner}
 message sent:   ${messageType}${inboxNote}
 
-${guidance}`,
+Partner ${partner_agent_id} notified two ways: in-block at bsp(agent_id="${owner}", block="grain", spindle="8") (walk-discoverable) and via legacy sand_inbox. They call pscale_grain_reach with you as their partner_agent_id to accept.`,
+      }],
+    };
+  }
+
+  return {
+    content: [{
+      type: 'text',
+      text: `Grain completed (both sides written and locked).
+
+pair_id:        ${pairIdLine}
+your side:      grain:${pid}:${mySide}
+partner side:   grain:${pid}:${partnerSide}
+block owner:    ${owner}
+message sent:   ${messageType}${inboxNote}
+
+Both sides hold. Walk the partner's underscore at bsp(agent_id="${owner}", block="grain", spindle="${partnerSide}"). Write through your side via bsp() with agent_id="grain:${pid}:${mySide}" + secret.`,
     }],
   };
 }
