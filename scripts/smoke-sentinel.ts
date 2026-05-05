@@ -16,7 +16,7 @@ import { loadBlock, isSentinelOwner, saveBlock, updatePositionHashes } from '../
   console.log('found:', !!s, 'block_type:', s?.block_type);
   console.log('underscore:', String(s?.block?._).slice(0, 120), '...');
 
-  for (const name of ['agent-id', 'evolution', 'manifest', 'progression', 'block-conventions']) {
+  for (const name of ['agent-id', 'evolution', 'manifest', 'progression', 'block-conventions', 'gatekeeper']) {
     console.log(`\n--- loadBlock(pscale, ${name}) ---`);
     const r = await loadBlock('pscale', name);
     console.log('found:', !!r, 'block_type:', r?.block_type);

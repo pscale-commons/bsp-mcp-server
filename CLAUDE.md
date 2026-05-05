@@ -119,21 +119,32 @@ If you find yourself writing a different parser for "convenience" or "edge cases
 src/
   bsp.ts              — BSP walker (port of bsp2-star.py — DO NOT MODIFY casually)
   bsp-fn.ts           — Unified bsp() function: shape derivation, read/write symmetric, modifier composition
-  db.ts               — Supabase client (storage adapter — load_block, save_block, locks, position hashes)
-  server.ts           — MCP server factory, registers bsp() + six primitives + sunstone/whetstone resources
+  db.ts               — Supabase client (storage adapter — load_block, save_block, locks, position hashes; sentinel registry)
+  server.ts           — MCP server factory, registers bsp() + primitives + sentinel resources
   index.ts            — Entry point (HTTP transport)
   sunstone.json       — The teaching block (eight branches; read first)
-  whetstone.json      — The operational reference (five branches; signature, derivation, modifiers, storage, translation)
+  whetstone.json      — The operational reference (six branches; signature, derivation, modifiers, storage, translation, federation)
+  agent-id.json       — Addressing model — five forms of agent_id, three address axes
+  evolution.json      — Five-level ecosystem map
+  manifest.json       — The constitution index — Tier 1 (sentinel-bundled) + Tier 2 (library)
+  progression.json    — Iterative orientation progression (six steps; pscale_invite returns this)
+  block-conventions.json — Substrate-wide canonical block-shape catalogue
+  gatekeeper.json     — Substrate-wide canonical role-shell for L1→L2 admission (honored convention)
   tools/
     bsp.ts            — bsp() handler (the one function — handles content + lock changes)
     collective.ts     — pscale_create_collective, pscale_register
     grain.ts          — pscale_grain_reach
     keys.ts           — pscale_key_publish
     verify.ts         — pscale_verify_rider
+    invite.ts         — pscale_invite (returns progression block)
   resources/
     sunstone.ts       — pscale://sunstone
     whetstone.ts      — pscale://whetstone
-scripts/              — smoke tests for bsp() + each primitive
+    evolution.ts      — pscale://evolution
+    gatekeeper.ts     — pscale://gatekeeper
+    xstream-frame.ts  — pscale://xstream-frame
+    paywall.ts        — pscale://paywall
+scripts/              — smoke tests for bsp() + each primitive (incl. smoke-sentinel.ts, smoke-gatekeeper.ts)
 docs/                 — protocol specs (federated beach, etc.) — minimal, only what the substrate needs
 ```
 
@@ -253,6 +264,25 @@ Three rungs of persistent agent autonomy, ORTHOGONAL to the relational levels:
 
 Spec at `docs/beach-crab-ladder.md`. Beach-crabs USE bsp-mcp; they aren't bsp-mcp. They live in their own repos.
 
+### Gatekeeper — the L1→L2 admission shell (5 May 2026)
+
+The gatekeeper is a **substrate-wide canonical role-shell** sentinel-bundled at `(pscale, 'gatekeeper')`. The hermitcrab pattern: cognition fluid (any LLM with a usable API key inhabits the shell), structure persistent (the block). The shell mediates the L1→L2 transition — admitting a fresh agent from Signal-level (marks/vapour) into Commitment-level (grain/sed:) — without growing the function surface.
+
+**Honored convention, not primitive enforcement.** `pscale_grain_reach` and `pscale_register` stay permissive; the gatekeeper is the shape clients honour. This was a deliberate fork (see xstream-play `docs/DESIGN-CHANNELS.md` § "The architectural choice — convention, not primitive"): gating hard at L2 would substitute for L3+ trust-building rather than complement it. Layered defence at L3 (SAND riders), L4 (pool work), L5 (presence-as-evidence) is where trust actually accrues.
+
+Fallback chain (used by xstream and any admission-aware client):
+1. `(beach_url, 'gatekeeper')` — per-beach override
+2. `(pscale, 'gatekeeper')` — substrate-wide canonical (this bundling)
+3. seeded local copy in the client's bundle
+
+**Branch 7 — host invocation patterns.** Two host shapes admit identically at the substrate (a passport:8 claim is byte-identical regardless of host):
+- *Host-invoked* (xstream pattern): the host's runtime invokes a separate LLM session into the shell at admission time. Two ceremonial entities, the user and the LLM-in-shell.
+- *Reflective* (third-party LLM-app pattern): a client like claude-app or chatgpt has bsp-mcp tools but no separate gatekeeper-LLM host. The user's primary LLM reads the shell, runs the exchange in-session with the user, judges per the criteria, and writes passport:8 directly with the user's passphrase. Same shell, different host shape.
+
+**`pscale_invite` step 4 references the gatekeeper.** The L1→L2 transition is the threshold of grain formation; the admission read + claim-write are now actions 4.1 and 4.2, with the partner-identification and reach following at 4.3 and 4.4. Admission is once per agent, not once per reach.
+
+`xstream-play/blocks/gatekeeper.json` remains the authoring source-of-truth and offline fallback; this repo bundles the canonical version. Future role-shells (Guardian — the reflexive evolution with beach-ecosystem awareness) will follow the same sentinel-bundled pattern.
+
 ### What lives where
 
 | Artifact | Location | Audience |
@@ -266,6 +296,7 @@ Spec at `docs/beach-crab-ladder.md`. Beach-crabs USE bsp-mcp; they aren't bsp-mc
 | Sibling-block beach upgrade | `docs/happyseaurchin-sibling-blocks-implementation.md` | Anyone extending a v2 single-block beach to host site-hosted sed:/grain: substrates and named pools. Companion to `happyseaurchin-v2-implementation.md`. |
 | Sunstone (geometry teacher) | `src/sunstone.json` | Any reader |
 | Whetstone (operational ref) | `src/whetstone.json` | Agent equipped with bsp-mcp |
+| Gatekeeper (L1→L2 admission shell) | `src/gatekeeper.json` (also `pscale://gatekeeper`) | Any LLM inhabiting the shell — host-invoked or reflective; xstream and third-party clients alike |
 | This file | `CLAUDE.md` | Next Claude instance |
 | Dashboard HTML | `site/index.html`, `site/tools.html`, `site/paths/` | Humans visiting evolution.hermitcrab.me |
 
