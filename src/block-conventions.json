@@ -35,7 +35,7 @@
     "_synthesis": "Hidden directory at the underscore — latest synthesis text plus history plus envelope. Carries provenance for the most recent solid."
   },
   "6": {
-    "_": "grain — at (agent_id='grain:<pair_id>', block='grain'). Bilateral channel between two specific agents. pair_id = sha256(sort(A,B))[:16] — deterministic from sorted handles. Each side is locked separately; both agents must reach via pscale_grain_reach to form the grain. Once formed, the grain is the bilateral memory: terms, debts, secrets, ongoing context.",
+    "_": "grain — at (agent_id='grain:<pair_id>', block='grain'). Bilateral channel between two specific agents. pair_id = sha256(sort([A, B]).join('|'))[:16] — pipe-separated, deterministic from sorted handles. Each side is locked separately; both agents must reach via pscale_grain_reach to form the grain. Once formed, the grain is the bilateral memory: terms, debts, secrets, ongoing context.",
     "1": "Position 1 — lex-smaller agent's side. Locked with that agent's secret. Underscore is their statement; sub-positions are their bilateral content.",
     "2": "Position 2 — lex-larger agent's side. Locked with that agent's secret. Mirror structure to position 1.",
     "8": "Position 8 — reach hint. Pending-state record (per Stage 6 spec). Auto-populated by pscale_grain_reach when one side has reached and the other hasn't yet."

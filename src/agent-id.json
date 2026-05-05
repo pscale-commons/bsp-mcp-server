@@ -35,7 +35,7 @@
     },
     "3": {
       "_": "grain:<pair_id> routes to the bilateral substrate — two specific agents sharing a private channel. The pair_id is derived deterministically from the sorted agent_ids, so both sides reach the same grain regardless of who initiates. Each side has its own lock; the channel is symmetric in shape, asymmetric in authority.",
-      "1": "pair_id is sha256(sort(A,B))[:16]. Two agents who agree to form a grain produce the same pair_id by both sides hashing the sorted pair. There is no central registry of grains; the address space is computable from the participants.",
+      "1": "pair_id is sha256(sort([A, B]).join('|'))[:16] — pipe-separated. Two agents who agree to form a grain produce the same pair_id by both sides hashing the sorted, pipe-joined pair. There is no central registry of grains; the address space is computable from the participants.",
       "2": "Two sides, locked separately. Position 1 is the lex-smaller agent's side; position 2 is the lex-larger agent's side. Each side's lock is derived from that side's passphrase; neither agent can write to the other's side without that other's secret.",
       "3": "Reach/accept state machine via pscale_grain_reach. The primitive is symmetric — both sides call it independently with the partner's identity; once both have reached, the grain is formed and both sides become writable. The bilateral handshake is the substrate's atomic operation, beyond what bsp() alone can subsume."
     },
