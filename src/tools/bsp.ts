@@ -150,6 +150,53 @@ function lockPositionForWrite(spindle: string | null | undefined): string {
   return spindle.replace(/\*$/, '');
 }
 
+/**
+ * Determine which lock key applies to the write a read might next perform.
+ * Mirrors verifyLock's dispatch:
+ *   ordinary block → '_' (whole-block)
+ *   sed:           → spindle root (position key)
+ *   grain:         → spindle root (side digit)
+ *
+ * For a root read on a sed:/grain: block where the spindle is empty, returns
+ * '_' (the conventions/root lock). Otherwise the first walk digit.
+ */
+function lockKeyForRead(row: BlockRow, spindle: string | null | undefined): string {
+  const raw = lockPositionForWrite(spindle);
+  if (row.owner_id.startsWith('sed:') || row.owner_id.startsWith('grain:')) {
+    if (!raw || raw === '_' || raw === '') return '_';
+    const m = raw.match(/^[1-9]+/);
+    return m ? m[0] : '_';
+  }
+  return '_';
+}
+
+/**
+ * Surface the lock state of the position a write at this spindle would touch.
+ * Non-destructive: read-only inspection, no secret accepted, no comparison done.
+ * The fingerprint is the first 8 hex chars of the stored hash — enough for an
+ * agent to recognise "this is the lock I expect" without exposing the full hash.
+ */
+function formatLockState(row: BlockRow, spindle: string | null | undefined): string {
+  const key = lockKeyForRead(row, spindle);
+  const stored = row.position_hashes?.[key];
+  if (!stored) {
+    return `\n[lock] unlocked at position "${key}"`;
+  }
+  return `\n[lock] locked at position "${key}" (fingerprint: ${stored.slice(0, 8)})`;
+}
+
+/**
+ * First-contact conventions hint for federated beach reads at root.
+ * Suppressed for non-federated reads, non-beach blocks, or non-root walks
+ * (where the agent has already moved past landing into specific spindles).
+ */
+function federatedRootHint(agentId: string, blockName: string, spindle: string | null | undefined): string {
+  if (!isFederatedOwner(agentId)) return '';
+  if (blockName !== 'beach') return '';
+  if (spindle && spindle !== '' && spindle !== '0') return '';
+  return `\n\n[hint] Local beach conventions at bsp(agent_id="${agentId}", block="beach", spindle="8"). Substrate-wide conventions at bsp(agent_id="pscale", block="block-conventions").`;
+}
+
 // ── The handler ──
 
 /**
@@ -197,7 +244,9 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       ? await decryptBlockNodes(row.block, secret, agent_id)
       : row.block;
     const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
-    return { content: [{ type: 'text', text: formatRead(result) }] };
+    const lockLine = formatLockState(row, spindle);
+    const hintLine = federatedRootHint(agent_id, blockName, spindle);
+    return { content: [{ type: 'text', text: formatRead(result) + lockLine + hintLine }] };
   }
 
   // ── WRITE and/or LOCK ──
