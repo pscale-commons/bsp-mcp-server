@@ -32,6 +32,16 @@ Connect config:
 **Foundational reading**: `src/sunstone.json` (the teaching block — read this first), `src/whetstone.json` (the operational reference)
 **Reference implementation**: `bsp2-star.py` from CORSAIR — the Python source-of-truth for the walker. `src/bsp.ts` is a faithful TypeScript port. DO NOT MODIFY without going to the Python first.
 
+## Substrate access — how to read and write blocks
+
+Sessions repeatedly hit the same access-pattern errors. Read this once.
+
+- **bsp-mcp speaks MCP only.** `bsp.hermitcrab.me/mcp/v1` is JSON-RPC over HTTP+SSE — not a REST endpoint. You cannot `curl 'bsp.hermitcrab.me/...?agent_id=X'` to invoke a tool. Use an MCP client (Claude Code's tools, Claude.ai connector, claude-app, mcp-remote, the @modelcontextprotocol/sdk).
+- **Sentinel blocks (`agent_id="pscale"`) are bundled inside bsp-mcp itself.** They aren't HTTP-fetchable from anywhere. To read them: call `bsp(agent_id="pscale", block="<name>")` through an MCP client — OR read the source file at `src/<name>.json` in this repo (same content). Examples: `pscale://block-conventions`, `pscale://whetstone`, `pscale://gatekeeper`.
+- **Federated beach blocks (`agent_id="https://..."`) are reachable via two paths.** Through bsp-mcp by `bsp(agent_id="https://example.com", block="beach")` — OR direct HTTP at `<origin>/.well-known/pscale-beach[?block=<name>&spindle=<addr>]`. The HTTP path is curl-able. happyseaurchin is the live example.
+
+When in doubt: tool call > read the source file > don't curl bsp-mcp. A 404 against happyseaurchin tells you nothing about what's deployed at bsp.hermitcrab.me — they're different services hosting different surfaces.
+
 ## The unified function
 
 ```
