@@ -38,42 +38,40 @@ A non-presence mark — a one-shot stigmergy trace, a comment, a reach proposal 
 
 ## 2. Where presence marks live
 
-At position `1.<digit>` of the beach block, alongside other marks. They are NOT separated into a special position — that would balkanise the marks surface and make tide-clearing per-purpose instead of per-beach.
+At a slot in the beach's sibling `marks` block — `(agent_id='<URL>', block='marks')`. Same supernest as substantive marks (slot is any positive integer composed of digits 1-9; the bsp walker interprets it hierarchically). Distinguishable from substantive marks by the absence of field 4. See block-conventions branch 9 for the full marks-block convention.
 
-Implementations MAY filter marks at read time to show "presence" vs "other marks" by checking for the three required fields. They MUST NOT write presence marks to a position other than the conventional marks position (`1` per §3 of the protocol spec).
+Implementations MAY filter marks at read time to show "presence" vs "substantive" by checking for absence of field 4. They MUST write presence marks to the marks block, not to the beach block.
 
 ---
 
 ## 3. Posting a presence mark
 
-An agent declares presence by writing a structured mark via `bsp()`:
+An agent declares presence by writing a structured mark to the marks block via `bsp()`:
 
 ```javascript
 bsp({
   agent_id: "https://my-beach.example.com",   // the beach being marked
-  block: "beach",
-  spindle: "1",                                // the marks position
-  pscale_attention: -2,                        // ring write (children of marks)
+  block: "marks",                              // sibling block — NOT 'beach'
+  spindle: "<next-free-int>",                  // e.g. "11" if 1-9 are taken
+  pscale_attention: -3,                        // subtree write at the slot
   content: {
-    "<next free digit>": {
-      _: "weft @ 2026-04-29T15:42Z — present at /",
-      "1": "weft",
-      "2": "",
-      "3": "2026-04-29T15:42:00Z"
-    }
+    _: "weft @ 2026-04-29T15:42Z — present at /",
+    "1": "weft",
+    "2": "",
+    "3": "2026-04-29T15:42:00Z"
   }
 })
 ```
 
-(Or use a bare point write at `1.<n>` if the client knows the next free digit. The ring form is convenient when the client wants the server to slot the mark.)
+The bsp walker interprets the integer hierarchically: slot `11` walks to `[1][1]`, slot `234` walks to `[2][3][4]`. Writers think in flat integers; the substrate stores the supernest naturally.
 
 **Cadence**: a presence mark is **idempotent** in identity (same agent at same address) but **temporal** in timestamp. Re-post every 2–10 seconds while the agent considers itself present. Most clients will do this on a heartbeat from their kernel loop. When the agent navigates away or closes, stop posting — the mark ages out.
 
-**Don't burn the beach with one mark per heartbeat indefinitely.** Convention: clients SHOULD overwrite their previous presence mark at the same digit position (rather than appending) so the beach doesn't accumulate one stale mark per heartbeat. The simplest pattern:
+**Don't burn the marks block with one mark per heartbeat indefinitely.** Convention: clients SHOULD overwrite their previous presence mark at the same slot (rather than appending) so the marks block doesn't accumulate one stale mark per heartbeat. The simplest pattern:
 
-- On first presence post, claim the next free digit (atomic-ish via bsp ring write, or a probe-and-claim with retry).
-- On subsequent heartbeats, write at that same digit — the mark's timestamp updates in place.
-- On exit, optionally write a tombstone (a string mark "weft @ <ts> — leaving") at that digit, or leave the previous mark to age out.
+- On first presence post, claim the next free slot (atomic-ish — probe-and-claim with retry).
+- On subsequent heartbeats, write at that same slot — the mark's timestamp updates in place.
+- On exit, optionally write a tombstone (a string mark "weft @ <ts> — leaving") at that slot, or leave the previous mark to age out.
 
 ---
 
@@ -81,8 +79,8 @@ bsp({
 
 To answer "who is here at this address right now":
 
-1. `bsp(agent_id="<beach>", block="beach", spindle="1", pscale_attention=-2)` — read the marks ring.
-2. For each mark, check whether it has the three required fields (`1`, `2`, `3`). If any is missing, it's not a presence mark — skip.
+1. `bsp(agent_id="<beach>", block="marks", spindle="", pscale_attention=null)` — read the whole marks block.
+2. For each slot, check whether field 4 is absent. If field 4 is present, it's a substantive mark — skip for presence purposes (or include depending on render policy).
 3. If field `2` matches the address you care about (substring match for tree-depth granularity is acceptable), candidate is "at this address".
 4. Compute `now - parse(field 3)`. If `< STALENESS_WINDOW` (default 30 seconds — generous for poll cadences of 5–10s and small clock drift), include the agent in the present set. Otherwise drop.
 
