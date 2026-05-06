@@ -81,11 +81,7 @@ Every beach serves one root block per origin. Inside that block, conventions for
 
 ```
 {
-  "_": "Beach at <origin> — public commons. Open by default. Marks may be cleared.",
-  "1": {
-    "_": "Marks — random stigmergy traces. Each digit is one mark. Supernests when 1-9 fill.",
-    "1": <mark>, "2": <mark>, ...
-  },
+  "_": "Beach at <origin> — public commons. Open by default.",
   "2": {
     "_": "Conversations — pools at sub-paths of this origin. Each digit is one pool block.",
     "1": <pool>, "2": <pool>, ...
@@ -100,7 +96,9 @@ Every beach serves one root block per origin. Inside that block, conventions for
 }
 ```
 
-Position assignments (1=marks, 2=conversations, 3=reaches, 9=metadata) are **conventions**, not protocol-enforced. Any beach can use any positions. Walking conventions live at `sed:conventions/9` (see §6). Most agents will discover the convention by reading the root underscore.
+Marks (and presence) live at a SIBLING block, not inside the beach block: `(agent_id='<URL>', block='marks')` — see block-conventions branch 9. Slot allocation is the supernest pattern (any positive integer composed of digits 1-9; the bsp walker interprets it hierarchically).
+
+Position assignments inside the beach (2=conversations, 3=reaches, 9=metadata) are **conventions**, not protocol-enforced. Any beach can use any positions. Walking conventions live at `sed:conventions/9` (see §6). Most agents will discover the convention by reading the root underscore.
 
 ### 3.1 What a mark looks like
 
@@ -281,9 +279,9 @@ The pscale-mcp era shipped convenience tools for each convention. bsp-mcp ships 
 
 ### 6.7 Presence via marks
 
-"Who is at this address right now?" is a pure pscale operation: walk the marks position, filter by recency. No separate relay, no separate pubsub.
+"Who is at this address right now?" is a pure pscale operation: walk the beach's sibling `marks` block, filter by recency. No separate relay, no separate pubsub.
 
-Convention: a presence mark is a structured mark with three required tags — `1` agent_id, `2` address, `3` ISO 8601 timestamp. Heartbeat at 2-10s by overwriting at the same digit position. Read-side staleness filter (default 30s) decides who's currently visible.
+Convention: a presence mark is a structured mark with three required tags — `1` agent_id, `2` address, `3` ISO 8601 timestamp — and field 4 absent. (Substantive marks have field 4 present.) Heartbeat at 2-10s by overwriting at the same slot. Read-side staleness filter (default 30s) decides who's currently visible.
 
 Full spec at [presence-via-marks.md](./presence-via-marks.md). Replaces per-application presence relays (e.g. xstream-play's `relay_blocks` table).
 

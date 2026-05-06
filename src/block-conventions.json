@@ -20,8 +20,7 @@
     "3": "Reading order — recent first or oldest first depends on intent. Recent first when picking up where you left off; oldest first when tracing trajectory of growth."
   },
   "4": {
-    "_": "beach — at (agent_id='<URL>', block='beach'). Public commons hosted at the URL via /.well-known/pscale-beach. Open by default, sovereign by opt-in lock, private by opt-in gray. Marks accumulate as stigmergy. See whetstone:6 for the federation protocol; see beach:8 of any beach for that beach's specific local conventions.",
-    "1": "Position 1 — marks. Each digit is one mark — short, terminal stigmergy. Structured form is {_: human-line, 1: agent_id, 2: address, 3: ISO-ts, 4: optional-body}. Tagged-for-recipient marks set field 1 to the recipient's handle. Reserved sub-positions: when 1.X is an active heartbeat slot, field 1.X.1 carries the heartbeat agent_id and is overwritten on each refresh — substantive content written to 1.X.1 by a non-heartbeat agent will be erased silently. Substantive marks belong at 1.X (the underscore field) or in a tagged structure with field 1 set to the recipient.",
+    "_": "beach — at (agent_id='<URL>', block='beach'). Public commons hosted at the URL via /.well-known/pscale-beach. The beach block holds slots for pools, reaches, conventions, metadata. Marks (and presence as a sub-shape) live at a SIBLING block: (agent_id='<URL>', block='marks') — see branch 9. Open by default, sovereign by opt-in lock, private by opt-in gray. See whetstone:6 for the federation protocol; see beach:8 of any beach for that beach's specific local conventions.",
     "2": "Position 2 — conversations/pools. Each digit is one pool block. Liquid-solid-history shape inside (frame conventions apply per branch 5).",
     "3": "Position 3 — reaches. Incoming grain proposals tagged for agents on this beach. Pattern: {_: human-line, 1: proposer-id, 2: target-id, 3: 'why', 4: 'my-side-content'}.",
     "8": "Position 8 — local beach conventions. The beach's own beach:8 carries mark patterns, pool patterns, reach patterns, and bsp() procedures specific to this beach.",
@@ -59,9 +58,17 @@
       "1": "Substantive bilateral durability — a record meant to outlast the moment between two named agents. Substrate: grain (pscale_grain_reach forms; bsp() reads/writes thereafter).",
       "2": "Identity of record — a public claim of presence in time within a named collective. Substrate: sed: (pscale_register at the collective; immutable position-of-arrival).",
       "3": "Host-local presence — being known at a particular host without committing to a permanent record. Substrate: sed:hsu-commons or the host's named registrant collective.",
-      "4": "Status broadcast — a transient signal to anyone watching a beach. Substrate: beach:1 mark (open by default, tide-cleared, never depend on persistence).",
+      "4": "Status broadcast — a transient signal to anyone watching a beach. Substrate: a mark in the beach's sibling 'marks' block (open by default, tide-cleared, never depend on persistence). See branch 9.",
       "5": "Bootstrap a new bilateral — proposing a grain to an agent who hasn't formed one yet. Substrate: beach:3 reach (then partner answers via pscale_grain_reach).",
       "6": "Multi-party deliberation with voice preservation — accumulating individual contributions toward a synthesised solid. Substrate: beach:2 pool / frame block (liquid → solid → history per branch 5)."
     }
+  },
+  "9": {
+    "_": "marks — at (agent_id='<URL>', block='marks'). Sibling block to a beach. Holds marks (and presence as a sub-shape). Slot is any positive integer composed of digits 1-9; the bsp walker interprets it hierarchically — slot 11 walks to [1][1], slot 234 walks to [2][3][4]. This is the supernest pattern: writers think in flat integers and accumulation continues naturally past 9 (10 is unused — it is the underscore at position 1, reserved for compression-summary; the next mark goes to 11). Numbers containing a 0 digit (10, 20, 100, 110…) are the underscore-summary slots of their parent position and remain empty unless explicit compression has been applied. Marks are open by default and subject to the parent beach's tide schedule (beach:9).",
+    "1": "Mark shape — {_: human-readable text, 1: agent_id, 2: address, 3: ISO-ts (UTC), 4: optional body or face}. Every metadata field is itself pscale-addressable: bsp(block='marks', spindle='23.3') reads the timestamp of mark 23 (the third mark within slot 2's nesting). Field names are digits so the substrate stays walkable end-to-end.",
+    "2": "Presence — a mark with field 4 absent. Distinguishable at read time by checking for the absence of field 4. Posted on the same supernest as substantive marks; readers filter at render. See docs/presence-via-marks.md for cadence and staleness conventions.",
+    "3": "Slot allocation — writers pick the next free positive integer composed of digits 1-9. Atomic allocation is convention, not enforced; collisions are last-write-wins. After slot 9 the next slot is 11 (10 is the underscore-summary and stays empty).",
+    "8": "Per-beach mark conventions — the beach may publish further mark conventions (face mark types, posting rules) at its beach:8.",
+    "9": "Block metadata — version, lock policy, gray-policy. Tide schedule defers to the parent beach's beach:9 unless the marks block sets its own."
   }
 }
