@@ -80,13 +80,28 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    // Apply content
+    // Apply content — mirrors the happyseaurchin-sibling-blocks reference impl
+    // writeAt: parse spindle as a dotted address, walk to the parent, set the
+    // value at the final digit. Empty spindle → whole-block replace (when
+    // body.confirm is set, per the new dumb-beach contract).
     if (body.content !== undefined) {
       if (!body.spindle) {
+        if (body.confirm !== true) {
+          res.writeHead(409, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'whole-block replace requires {confirm: true}' }));
+          return;
+        }
         beach.block = body.content;
       } else {
-        // Simple point write at spindle for the mock
-        beach.block[body.spindle] = body.content;
+        const digits = String(body.spindle).replace(/\./g, '');
+        let node: any = beach.block;
+        for (let i = 0; i < digits.length - 1; i++) {
+          const k = digits[i] === '0' ? '_' : digits[i];
+          if (typeof node[k] !== 'object' || node[k] === null) node[k] = {};
+          node = node[k];
+        }
+        const last = digits[digits.length - 1];
+        node[last === '0' ? '_' : last] = body.content;
       }
     }
     if (body.new_lock !== undefined) {
