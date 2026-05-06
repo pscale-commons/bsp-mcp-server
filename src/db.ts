@@ -20,8 +20,8 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Block } from './bsp.js';
-import { bspRead } from './bsp-fn.js';
+import { Block, floorDepth, walk } from './bsp.js';
+import { bspRead, parseSpindle } from './bsp-fn.js';
 import sunstone from './sunstone.json' with { type: 'json' };
 import whetstone from './whetstone.json' with { type: 'json' };
 import agentId from './agent-id.json' with { type: 'json' };
@@ -251,17 +251,37 @@ async function saveBlockToBeach(
   opts: WriteOptions = {},
 ): Promise<BlockRow> {
   const url = beachEndpoint(ownerId, blockName);
-  // bsp-mcp follows the dumb-beach model: GET → local bspWrite → POST whole
-  // modified block. The user's original spindle/pscale_attention has already
-  // been applied to `block` before saveBlock was called, so the federated
-  // POST always uses spindle="" (whole-block replace). Sending the user's
-  // spindle alongside the whole block would corrupt the receiver — they'd
-  // try to point-write the whole block at that spindle.
-  const body: Record<string, any> = {
-    spindle: '',
-    pscale_attention: null,
-    content: block,
-  };
+  // The federated POST contract has two modes:
+  //   - Surgical: send {spindle, content: <subtree at spindle>}. The receiver's
+  //     writeAt sets block[<spindle>] = subtree, applying just this change.
+  //   - Whole-block: send {spindle: '', content: <whole block>, confirm: true}.
+  //     The confirm flag opts past the receiver's clobber-guard. Reserved for
+  //     genuine whole-block intent (empty user spindle, or shapes the surgical
+  //     path can't represent).
+  // The local bspWrite has already merged the user's write into `block`, so the
+  // subtree at the user's spindle reflects the merged result. A ring write that
+  // added one digit to a parent yields a subtree carrying all original siblings
+  // plus the new one — replacing the receiver's parent with that subtree is
+  // equivalent to the merge, modulo the standard read-modify-write race.
+  const userSpindle = opts.spindle;
+  const isWholeBlock = !userSpindle || userSpindle === '' || userSpindle === '*';
+  const body: Record<string, any> = {};
+  if (isWholeBlock) {
+    body.spindle = '';
+    body.pscale_attention = null;
+    body.content = block;
+    body.confirm = true;
+  } else {
+    // Strip trailing star — receivers don't implement star semantics; the
+    // post-write subtree at the cleaned spindle already encodes the change.
+    const cleanedSpindle = userSpindle.replace(/\*$/, '');
+    const floor = floorDepth(block);
+    const { digits } = parseSpindle(cleanedSpindle, floor);
+    const { terminal } = walk(block, digits);
+    body.spindle = cleanedSpindle;
+    body.pscale_attention = opts.pscale_attention ?? null;
+    body.content = terminal;
+  }
   if (opts.secret !== undefined) body.secret = opts.secret;
   if (opts.new_lock !== undefined) body.new_lock = opts.new_lock;
   if (opts.gray !== undefined) body.gray = opts.gray;

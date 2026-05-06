@@ -69,7 +69,7 @@ interface ParsedSpindle {
   rawDigits: string[];   // pre-padding digits (for diagnostics)
 }
 
-function parseSpindle(spindle: string | null | undefined, floor: number): ParsedSpindle {
+export function parseSpindle(spindle: string | null | undefined, floor: number): ParsedSpindle {
   if (spindle == null || spindle === '') {
     return { digits: [], hasStar: false, rawDigits: [] };
   }
