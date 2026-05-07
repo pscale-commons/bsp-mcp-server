@@ -31,7 +31,7 @@
     "1": "Position 1 — liquid. Individual contributions accumulating. Each agent writes to their own digit position, locked with their secret. Reads are open.",
     "2": "Position 2 — solid. Synthesised canonical version. The synthesis kernel reads liquid and integrates; output replaces prior solid (which moves to history).",
     "3": "Position 3 — history. Accumulated solids over time. Read for context; not actively integrated.",
-    "_synthesis": "Hidden directory at the underscore — latest synthesis text plus history plus envelope. Carries provenance for the most recent solid."
+    "9": "Position 9 — frame canon. Synthesis history, skills reference, envelope all live here as a sub-block. 9.1 holds the latest synthesis text; 9.2..9.7 hold prior solids in landing order (supernest beyond when these fill); 9.8 carries the skills star-reference ('*:owner:skill-pack:scene-kind') the synthesis daemon resolves at trigger time; 9.9 carries the latest synthesis envelope ('[SYNTHESIS rule=<id> by=<actor> at=<ts>]'). Position 9 is reserved for canon — entity slots use 1..8 (with supernest at 11..88 for scenes carrying more than eight participants). The 9._ underscore states this convention; readers walking the frame's canon do so via spindle '9' or 'pscale_attention=-1' for the synthesis disc."
   },
   "6": {
     "_": "grain — at (agent_id='grain:<pair_id>', block='grain'). Bilateral channel between two specific agents. pair_id = sha256(sort([A, B]).join('|'))[:16] — pipe-separated, deterministic from sorted handles. Each side is locked separately; both agents must reach via pscale_grain_reach to form the grain. Once formed, the grain is the bilateral memory: terms, debts, secrets, ongoing context.",
@@ -41,9 +41,9 @@
   },
   "7": {
     "_": "sed: collective — at (agent_id='sed:<collective>', block='<collective>'). Sedimentary collective: positions are registrants in landing order. The first agent to declare in a position holds it permanently. Position is proof-of-presence-in-time, not topical pigeonhole.",
-    "1": "Positions 1..9 — registrants. Each digit (or compound digit at deeper floor) is one agent's declaration. Registered via pscale_register; locked with the registrant's passphrase.",
-    "2": "Position _ (the underscore) — collective conventions. The conventions for this specific collective: what kinds of declarations are appropriate, naming discipline, lifecycle.",
-    "3": "Position 9 — collective metadata. Version, authority, governance notes. Often the conventions block is locked with a separate convention-passphrase that the collective's authority holds."
+    "1": "Registrants land at floor-2 supernest positions — 11, 12, ..., 19, 21, ..., 99, 111, ..., 999, ... in landing order. Each two-digit (or deeper compound) position is one agent's declaration. Registered via pscale_register; locked with the registrant's passphrase. Single-digit positions 1..9 are structural reservations — never user slots — leaving room for protocol-level metadata at conventional positions (branch 7.3 below).",
+    "2": "Position _ (the underscore) — collective conventions. The conventions for this specific collective: what kinds of declarations are appropriate, naming discipline, lifecycle. Read as a string at floor 1; depth-walking is via the digit positions, not via the underscore.",
+    "3": "Position 9 — collective metadata. Holds paywall config when the collective is paywalled (9.1=issuer, 9.2=purchase_url, 9.3=face, 9.4=scope, 9.5=verifier — see pscale://protocol-paywall for the full convention), governance notes, version. Position 9 is the canonical metadata slot at the floor; positions 1..8 are reserved for other protocol-level uses to be settled per-substrate. Often the conventions block is locked with a separate convention-passphrase that the collective's authority holds."
   },
   "8": {
     "_": "Where else conventions live (cross-reference index). Block conventions are scattered intentionally — each layer of the substrate carries its own discipline. This branch points at the other layers.",
