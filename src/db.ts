@@ -30,6 +30,7 @@ import manifest from './manifest.json' with { type: 'json' };
 import progression from './progression.json' with { type: 'json' };
 import blockConventions from './block-conventions.json' with { type: 'json' };
 import gatekeeper from './gatekeeper.json' with { type: 'json' };
+import protocolPaywall from './protocol-paywall.json' with { type: 'json' };
 
 const supabaseUrl = process.env.SUPABASE_URL || 'https://piqxyfmzzywxzqkzmpmm.supabase.co';
 const supabaseKey =
@@ -106,6 +107,7 @@ const SENTINEL_BLOCKS: Record<string, Block> = {
   'pscale/progression': progression as unknown as Block,
   'pscale/block-conventions': blockConventions as unknown as Block,
   'pscale/gatekeeper': gatekeeper as unknown as Block,
+  'pscale/protocol-paywall': protocolPaywall as unknown as Block,
 };
 
 /** True if the owner_id is the bundled-blocks sentinel ("pscale"). */
