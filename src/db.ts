@@ -20,8 +20,8 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Block, floorDepth, walk } from './bsp.js';
-import { bspRead, parseSpindle } from './bsp-fn.js';
+import { Block, readAt } from './bsp.js';
+import { bspRead } from './bsp-fn.js';
 import sunstone from './sunstone.json' with { type: 'json' };
 import whetstone from './whetstone.json' with { type: 'json' };
 import agentId from './agent-id.json' with { type: 'json' };
@@ -274,13 +274,15 @@ async function saveBlockToBeach(
   } else {
     // Strip trailing star — receivers don't implement star semantics; the
     // post-write subtree at the cleaned spindle already encodes the change.
+    // Use readAt (not walk): readAt mirrors writeAt's digit-as-key semantics
+    // without the floor-spine special case that bites point-writes at the
+    // underscore (spindle="0"). For spindle="0", readAt returns block._
+    // (the underscore string after the local write) — which is what the
+    // receiver's writeAt expects to set at block._.
     const cleanedSpindle = userSpindle.replace(/\*$/, '');
-    const floor = floorDepth(block);
-    const { digits } = parseSpindle(cleanedSpindle, floor);
-    const { terminal } = walk(block, digits);
     body.spindle = cleanedSpindle;
     body.pscale_attention = opts.pscale_attention ?? null;
-    body.content = terminal;
+    body.content = readAt(block, cleanedSpindle);
   }
   if (opts.secret !== undefined) body.secret = opts.secret;
   if (opts.new_lock !== undefined) body.new_lock = opts.new_lock;
