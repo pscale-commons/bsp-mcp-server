@@ -203,6 +203,21 @@ try {
   assert(beach.block?.['1']?._ === 'marks', 'parent underscore preserved');
   assert(typeof beach.block?.['1']?.['1'] === 'string', 'leaf is a string, NOT a whole-block object');
 
+  console.log('\n=== bsp() POINT write at spindle="0" lands the underscore string, not whole block ===');
+  // Reset mock to a state with NO root underscore — like happyseaurchin's marks block was
+  beach.block = { '1': { _: 'mark one' }, '2': { _: 'mark two' } };
+  beach.position_hashes = {};
+  // Point-write a string at spindle="0" (which maps to the underscore key)
+  const r9 = await handleBsp({
+    agent_id: beachOrigin, block: 'beach',
+    spindle: '0', pscale_attention: null,
+    content: 'fresh root underscore description',
+  });
+  assert(getText(r9).includes('wrote'), 'point write at "0" returned wrote');
+  assert(beach.block?._ === 'fresh root underscore description', 'block._ is the STRING, not a copy of whole block');
+  assert(beach.block?.['1']?._ === 'mark one', 'existing digit 1 preserved');
+  assert(beach.block?.['2']?._ === 'mark two', 'existing digit 2 preserved');
+
   console.log('\n=== unreachable beach (404 endpoint) ===');
   const dead = `http://127.0.0.1:${port}/no-such-path`;  // wrong path
   // Simulate: try a different agent_id that points at a non-existent server

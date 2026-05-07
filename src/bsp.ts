@@ -408,6 +408,32 @@ export function fmtResult(result: BspResult): string {
 
 // ── Write ──
 
+/** Read the raw value at an address — the symmetric counterpart to writeAt.
+ *
+ * Mirrors writeAt's digit-as-key semantics with NO floor-spine special case:
+ * digit '0' maps to key '_'; the walker descends through the addressed
+ * key regardless of whether the value is a string or object. Used for
+ * surgical extraction during federated POST forwarding (where the receiver
+ * applies the value at the user's spindle directly).
+ *
+ * Returns undefined when the address doesn't resolve (any intermediate
+ * non-object terminates the walk).
+ */
+export function readAt(block: Block, address: string | null | undefined): any {
+  if (address == null || address === '' || address === '_') return block._;
+  const parts = String(address).includes('.')
+    ? String(address).split('.').filter(Boolean)
+    : [...String(address)];
+  let node: any = block;
+  for (const part of parts) {
+    if (!node || typeof node !== 'object') return undefined;
+    const key = part === '0' ? '_' : part;
+    if (!(key in node)) return undefined;
+    node = node[key];
+  }
+  return node;
+}
+
 /** Write value at address, creating intermediate nodes as needed.
  *
  * Growth migration: when an intermediate node is a string, the string is
