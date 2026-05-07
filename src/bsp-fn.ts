@@ -426,12 +426,22 @@ function bspWriteInPlace(
   );
 }
 
-/** Walk to a node, creating intermediate objects as needed. */
+/** Walk to a node, creating intermediate objects as needed.
+ *
+ * Growth migration: when a node along the walk is a string, the string is
+ * preserved as the underscore of the new sub-block before descending. The
+ * digit's existing semantic migrates to its underscore at the moment of
+ * growth — supernest-on-growth — rather than being silently nuked.
+ */
 function walkOrCreate(block: Block, digits: string[]): Record<string, any> {
   let node: any = block;
   for (const d of digits) {
     const key = d === '0' ? '_' : d;
-    if (!(key in node) || typeof node[key] !== 'object' || node[key] === null) {
+    const existing = node[key];
+    if (typeof existing === 'string') {
+      // Migration: preserve parent semantic at the underscore of the new sub-block
+      node[key] = { _: existing };
+    } else if (!(key in node) || typeof existing !== 'object' || existing === null) {
       node[key] = {};
     }
     node = node[key];

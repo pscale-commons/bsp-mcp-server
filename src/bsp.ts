@@ -408,7 +408,15 @@ export function fmtResult(result: BspResult): string {
 
 // ── Write ──
 
-/** Write value at address, creating intermediate nodes as needed. */
+/** Write value at address, creating intermediate nodes as needed.
+ *
+ * Growth migration: when an intermediate node is a string, the string is
+ * preserved as the underscore of the new sub-block before descending. This
+ * implements the supernest-on-growth rule — a digit's existing semantic
+ * migrates to its underscore the moment it gains children, instead of being
+ * silently nuked. Final-key writes still replace whatever's at the leaf
+ * (a write at "7" still replaces block[7]; only intermediate nodes migrate).
+ */
 export function writeAt(block: Block, address: string, value: any): Block {
   if (address === '_' || address === '' || address == null) {
     block._ = value;
@@ -422,7 +430,11 @@ export function writeAt(block: Block, address: string, value: any): Block {
   let node: any = block;
   for (const part of parts.slice(0, -1)) {
     const key = part === '0' ? '_' : part;
-    if (!(key in node) || typeof node[key] !== 'object') {
+    const existing = node[key];
+    if (typeof existing === 'string') {
+      // Migration: preserve parent semantic at the underscore of the new sub-block
+      node[key] = { _: existing };
+    } else if (!(key in node) || typeof existing !== 'object' || existing === null) {
       node[key] = {};
     }
     node = node[key];
