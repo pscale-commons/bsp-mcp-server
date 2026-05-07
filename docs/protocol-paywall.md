@@ -8,7 +8,7 @@
 
 ## 0. Reframe in one paragraph
 
-The paywall gates participation, not display. A `sed:` collective is face-bound (xstream-frame §5); registration in it grants face authority over the V-L-S loop — Character writes liquid into a frame, Author commits content, Designer revises rules. The Observer face requires no membership and reads solid only. So paywalling a `sed:` collective gates *creative participation* (~90% of xstream's purpose; the imaginative-mind canvas) and leaves consumption (~10%; the civilised-mind drawer) open by default. The convention: any `sed:` collective MAY declare a `_tickets` field that names an issuer, a purchase URL, and the face/scope it gates. A *ticket* is an ordinary grain whose envelope text marks it as such. Registration in a paywalled collective references that grain; a verifier daemon walks the grain and writes a confirmation envelope onto the registration. The whole convention lives in `bsp()` writes — no new MCP primitive, no central toll-booth, no protocol-level fees.
+The paywall gates participation, not display. A `sed:` collective is face-bound (xstream-frame §5); registration in it grants face authority over the V-L-S loop — Character writes liquid into a frame, Author commits content, Designer revises rules. The Observer face requires no membership and reads solid only. So paywalling a `sed:` collective gates *creative participation* (~90% of xstream's purpose; the imaginative-mind canvas) and leaves consumption (~10%; the civilised-mind drawer) open by default. The convention: any `sed:` collective MAY declare a paywall config sub-block at position 9 (sed::9) carrying issuer, purchase URL, face, and scope. A *ticket* is an ordinary grain whose envelope text marks it as such. Registration in a paywalled collective references that grain; a verifier daemon walks the grain and writes a confirmation envelope onto the registration. The whole convention lives in `bsp()` writes — no new MCP primitive, no central toll-booth, no protocol-level fees.
 
 ---
 
@@ -17,7 +17,7 @@ The paywall gates participation, not display. A `sed:` collective is face-bound 
 These five distinguish a paywall *primitive* from a paywall *platform*. A change that violates any of them does not ship.
 
 1. **No central issuer.** Every frame-owner picks their own ticketing agent. A reference implementation is one option among many.
-2. **No central client.** A client (xstream-play or any other) reads `_tickets` per collective and routes to whatever issuer that collective specifies. It does not prefer, rank, badge, or default any issuer.
+2. **No central client.** A client (xstream-play or any other) reads the paywall config sub-block at sed::9 per collective and routes to whatever issuer that collective specifies. It does not prefer, rank, badge, or default any issuer.
 3. **No protocol-level fees.** The substrate enforces sed: membership and grain validity; it charges nothing. Fees, if any, are between the frame-owner and their payment processor.
 4. **No special-cased issuers in bsp-mcp.** A grain from `agent:any-tickets` is structurally identical to any other grain. The substrate cannot tell tickets from non-tickets and must not try.
 5. **Forkable in an afternoon.** The reference ticketing agent stays small enough that anyone with a Stripe account and a small VPS can stand up their own.
@@ -26,34 +26,35 @@ These five distinguish a paywall *primitive* from a paywall *platform*. A change
 
 ## 2. Protocol additions
 
-### 2.1 The `_tickets` field on a `sed:` collective
+### 2.1 The paywall config sub-block at sed::9
 
-A paywalled `sed:` collective declares this in a top-level `_tickets` field on its own pscale block. The field is metadata; it does not change how `bsp()` reads or writes the collective.
+A paywalled `sed:` collective declares this as a sub-block at position 9 (the canonical metadata slot per `pscale://block-conventions` branch 7.3). Position 9 of a `sed:` collective is reserved for protocol-level metadata — registrants land at floor-2 supernest positions 11..99, 111..999. The sub-block is metadata; it does not change how `bsp()` reads or writes the collective. Sibling keys like `_tickets` would be invisible to bsp() because the walker only handles `_` and digits 1-9 (sunstone branch 1.1).
 
 ```json
 {
   "_": "sed: cast for <scene-id>",
-  "_tickets": {
-    "issuer": "agent:<issuer-id>",
-    "purchase_url": "https://<issuer-domain>/buy/<product-id>",
-    "face": "character",
-    "scope": "frame:<scene-id>",
-    "verifier": "agent:<verifier-id>"
+  "9": {
+    "_": "Paywall config — when present, registration in this collective requires a verified ticket-grain from the named issuer.",
+    "1": "agent:<issuer-id>",
+    "2": "https://<issuer-domain>/buy/<product-id>",
+    "3": "character",
+    "4": "frame:<scene-id>",
+    "5": "agent:<verifier-id>"
   },
-  "1": "<member 1 entry>",
-  "2": "<member 2 entry>"
+  "11": "<member 11 entry>",
+  "12": "<member 12 entry>"
 }
 ```
 
-| Field | Purpose | Required |
-|---|---|---|
-| `issuer` | Agent whose grains this collective honours as tickets | yes |
-| `purchase_url` | Where prospective members go to obtain a ticket | yes |
-| `face` | Which CADO face this collective represents (`character`, `author`, `designer`) | yes |
-| `scope` | What the ticket authorises — a single frame, a frame pattern (`frame:thornkeep-*`), or a beach (`beach:<host>`) | yes |
-| `verifier` | Agent that confirms registrations after grain check; defaults to `issuer` if omitted | no |
+| Position | Field | Purpose | Required |
+|---|---|---|---|
+| 9.1 | issuer | Agent whose grains this collective honours as tickets | yes |
+| 9.2 | purchase_url | Where prospective members go to obtain a ticket | yes |
+| 9.3 | face | Which CADO face this collective represents (`character`, `author`, `designer`) | yes |
+| 9.4 | scope | What the ticket authorises — a single frame, a frame pattern (`frame:thornkeep-*`), or a beach (`beach:<host>`) | yes |
+| 9.5 | verifier | Agent that confirms registrations after grain check; defaults to 9.1 (issuer) if omitted | no |
 
-A collective without `_tickets` is open — anyone may register. This is the existing default and stays unchanged.
+A collective with an empty or absent position 9 is open — anyone may register. This is the existing default and stays unchanged. To paywall later, write the sub-block via a single `bsp()` call to `spindle="9", pscale_attention=-1, content={_: "...", 1: "...", 2: "...", 3: "...", 4: "...", 5: "..."}` with the collective creator's secret. Individual fields can be updated later with point writes (`spindle="92"` to update purchase_url, etc.).
 
 ### 2.2 The ticket grain envelope
 
@@ -118,7 +119,7 @@ bsp(agent_id="sed:<collective>", block="<collective>",
 
 The `<issuer-side>` value is whichever of side 1 or 2 the issuer occupies in the lex-ordered pair — the buyer learns it from the `grain_address_mine` field that `pscale_grain_reach` returns to the issuer, communicated back to the buyer in the issuer's purchase confirmation. The reference itself is per [`protocol-block-references.md`](./protocol-block-references.md) §1 grain form (three colon-separated parts, no leading star).
 
-**Step B (verifier):** the verifier daemon (default: the issuer agent, per `_tickets.verifier`) observes new registrations, resolves `<position>.1` to obtain the `ticket_grain` reference, walks the referenced grain side (underscore for the `[ticket ...]` envelope; digit children for any `[ticket-revoked]`), and writes a confirmation envelope **into a public audit log on the verifier's own beach** — NOT onto the registration position. The audit log is a `sed:` collective named `<verifier-bare-id>-audit-<yyyy-mm>` (one collective per calendar month so blocks don't grow unbounded); each decision is a `pscale_register` whose declaration is the verifier envelope itself.
+**Step B (verifier):** the verifier daemon (default: the issuer agent at 9.1, since 9.5 defaults to 9.1) observes new registrations, resolves `<position>.1` to obtain the `ticket_grain` reference, walks the referenced grain side (underscore for the `[ticket ...]` envelope; digit children for any `[ticket-revoked]`), and writes a confirmation envelope **into a public audit log on the verifier's own beach** — NOT onto the registration position. The audit log is a `sed:` collective named `<verifier-bare-id>-audit-<yyyy-mm>` (one collective per calendar month so blocks don't grow unbounded); each decision is a `pscale_register` whose declaration is the verifier envelope itself.
 
 ```
 [ticket-verified by=agent:<verifier-id> at=<iso8601> registration=<sed:collective:position> grain=<grain:pair_id:side>]
@@ -146,14 +147,14 @@ A grain is valid as a ticket for a registration iff all of the following hold:
 
 1. The grain is established (returned by `bsp()` walk on the referenced address).
 2. The envelope contains a `[ticket ...]` clause.
-3. `face` in the envelope matches the collective's `_tickets.face`.
-4. `scope` in the envelope is compatible with the collective's `_tickets.scope`. Compatibility:
+3. `face` in the envelope matches the collective's 9.3.
+4. `scope` in the envelope is compatible with the collective's 9.4. Compatibility:
    - exact match: equal
    - frame pattern (`frame:thornkeep-*`): collective's scope must match the pattern
-   - beach scope (`beach:X`): **deferred to v2.** v1 verifiers MUST reject ticket envelopes carrying `scope=beach:X` with reason `beach-scope-not-supported-yet`. Determining "is this collective's frame hosted at agent X" requires a frame-host lookup primitive that v1 does not provide. The clean v2 resolution is a `_tickets.beach` field declared by the frame-owner, against which `beach:X` tickets can be matched without a substrate change. Multi-frame season passes via `frame:<prefix>-*` patterns continue to work in v1 — only cross-beach passes are deferred.
+   - beach scope (`beach:X`): **deferred to v2.** v1 verifiers MUST reject ticket envelopes carrying `scope=beach:X` with reason `beach-scope-not-supported-yet`. Determining "is this collective's frame hosted at agent X" requires a frame-host lookup primitive that v1 does not provide. The clean v2 resolution adds a 9.6 beach field declared by the frame-owner, against which `beach:X` tickets can be matched without a substrate change. Multi-frame season passes via `frame:<prefix>-*` patterns continue to work in v1 — only cross-beach passes are deferred.
 5. `expires` is in the future relative to `now`.
 6. There is no later `[ticket-revoked]` envelope on the grain.
-7. The grain was established by the agent listed as `_tickets.issuer`.
+7. The grain was established by the agent listed at 9.1.
 8. The envelope contains no `credits=` field. v1 verifiers reject credit-bearing grains with reason `credits-not-supported`.
 
 Failure of any rule produces a `[ticket-rejected]` envelope with a short reason string.
@@ -168,7 +169,7 @@ The `bsp()` primitive anchors `pscale = 0` at the floor (depth of the underscore
 
 The reference ticketing agent and verifier daemon live in **`pscale-commons/ticketing-agent`** — a Node/Hono service that operates as a pscale agent, accepts purchase requests for configured `sed:` collectives, routes payment through a configured driver (Stripe reference; gift and manual alternates), and on success establishes a grain to the buyer's `agent_id` with the correct envelope. It also runs a verifier worker that watches configured collectives and writes the confirmation envelopes per §2.3.
 
-The agent stays small enough to fork in an afternoon (constraint 1.5). Frame-owners may also use a hosted issuer by pointing `_tickets.issuer` and `_tickets.purchase_url` at someone else's deployment — the convention does not distinguish.
+The agent stays small enough to fork in an afternoon (constraint 1.5). Frame-owners may also use a hosted issuer by pointing 9.1 (issuer) and 9.2 (purchase_url) at someone else's deployment — the convention does not distinguish.
 
 The build covers idempotency on webhooks, per-product rate limits on grain issuance, and a public audit log written by the verifier to its own beach (`verifier-audit:<yyyy-mm>`). Compromise-resistant verification (synthesis daemon does an independent grain check before honouring liquid) is specified as a post-v1 addendum in the build repo.
 
@@ -182,9 +183,9 @@ Any client that wants to support the paywall pattern (xstream-play is the refere
 
 For each `sed:` collective the user is interacting with:
 
-1. **Read `_tickets`.** If absent, behave as today (open collective).
-2. **Check the user's grain set.** If the user is not registered, search their grains for any from `_tickets.issuer` whose envelope matches `face` and `scope`. If found, attempt Step A registration directly.
-3. **Surface the buy affordance.** If the user is not registered and has no matching grain, render an affordance pointing at `_tickets.purchase_url`. Visual prominence proportional to apparent intent — quiet while browsing solid; obvious when attempting to write liquid. The affordance MUST display the issuer's `agent_id` (and passport display name where available) so the user knows whom they are paying.
+1. **Read position 9 of the collective.** If empty or absent, behave as today (open collective).
+2. **Check the user's grain set.** If the user is not registered, search their grains for any from the issuer at 9.1 whose envelope matches face (9.3) and scope (9.4). If found, attempt Step A registration directly.
+3. **Surface the buy affordance.** If the user is not registered and has no matching grain, render an affordance pointing at 9.2 (purchase_url). Visual prominence proportional to apparent intent — quiet while browsing solid; obvious when attempting to write liquid. The affordance MUST display the issuer's `agent_id` (and passport display name where available) so the user knows whom they are paying.
 4. **Wait gracefully.** After the user clicks buy, return to the frame and poll (or subscribe) for the user's grain set to update. Reasonable: 2-second poll for the first 30 seconds, then back off.
 5. **Register on grain arrival.** When a matching grain appears, perform Step A registration automatically (the two-write sequence per §2.3). Then poll the verifier's audit collective for a confirmation envelope referencing the new registration.
 6. **Watch the verifier audit log.** The verifier writes to `sed:<verifier-bare-id>-audit-<yyyy-mm>` on its own beach (per §2.3 Step B). Walk that collective looking for an entry whose declaration is a `[ticket-verified|rejected|expired ...]` envelope with `registration=sed:<your-collective>:<your-position>` matching the registration just performed. Across month boundaries, walk the current and previous month. Reasonable: 2-second poll for the first 30 seconds, then back off.
@@ -203,7 +204,7 @@ These prohibitions are what keep the system federated. They are easy to violate 
 
 ### 4.3 Observer face is unchanged
 
-The Observer face requires no `sed:` membership and reads solid only. Most frames make Observer free. A frame-owner *may* paywall the Observer face by gating the frame's solid blocks behind a `sed:observers` collective with `_tickets`, but this is unusual and discouraged in defaults. The observer-as-creator case (rendering output videos, summaries, derivative work) is a v2 convention extension — see §6.
+The Observer face requires no `sed:` membership and reads solid only. Most frames make Observer free. A frame-owner *may* paywall the Observer face by gating the frame's solid blocks behind a `sed:observers` collective with its own paywall config sub-block at sed::9, but this is unusual and discouraged in defaults. The observer-as-creator case (rendering output videos, summaries, derivative work) is a v2 convention extension — see §6.
 
 ---
 
@@ -213,7 +214,7 @@ Five steps to add a paywall to a collective:
 
 1. **Pick or deploy a ticketing agent** — fork `pscale-commons/ticketing-agent`, configure with your products, point your domain at it, set up Stripe (or another driver). Or use someone else's deployment.
 2. **Configure the product** in the agent's YAML — `sed:` block, face, scope, duration, price, description.
-3. **Add `_tickets`** to your `sed:` collective block via a one-time `bsp()` write — issuer, purchase_url, face, scope.
+3. **Write the paywall config sub-block at sed::9** of your `sed:` collective via a one-time `bsp()` write — issuer (9.1), purchase_url (9.2), face (9.3), scope (9.4), and optionally verifier (9.5).
 4. **Run the verifier** — bundled with the ticketing agent, or run separately if using a third-party issuer (the reference impl ships a verifier-only mode).
 5. **Test and announce** — buy a ticket from your own agent (Stripe test card), confirm the grain lands, registration verifies, and your client unlocks write affordances.
 
@@ -227,7 +228,7 @@ These five are the protocol's social contract. Anyone reviewing changes to bsp-m
 
 ### 6.1 The substrate stays neutral
 
-bsp-mcp does not know what a ticket is. From its perspective, a ticket grain is a grain like any other; a `_tickets` field is metadata it does not interpret; verifier daemons are application code it does not run. **No PR to bsp-mcp adds the words "ticket" or "payment" to its primitives.**
+bsp-mcp does not know what a ticket is. From its perspective, a ticket grain is a grain like any other; the position-9 paywall config sub-block is metadata it does not interpret; verifier daemons are application code it does not run. **No PR to bsp-mcp adds the words "ticket" or "payment" to its primitives.**
 
 ### 6.2 The client stays neutral
 
@@ -243,15 +244,15 @@ Neither the substrate nor the client takes a cut. **No envelope, no metadata fie
 
 ### 6.5 Interoperability invariant
 
-A frame-owner who buys grains from one issuer must be able to migrate to a different issuer without changing anything except their `_tickets.issuer` and `purchase_url` fields. Existing live grains stop being honoured (because they're from the old issuer); new purchases use the new path. This is a five-minute migration. **No PR introduces a feature that would couple a collective to its issuer in any other way.**
+A frame-owner who buys grains from one issuer must be able to migrate to a different issuer without changing anything except 9.1 (issuer) and 9.2 (purchase_url). Existing live grains stop being honoured (because they're from the old issuer); new purchases use the new path. This is a five-minute migration. **No PR introduces a feature that would couple a collective to its issuer in any other way.**
 
 ---
 
 ## 7. Reserved and deferred
 
-- **Observer-with-output as a paid role (v2).** A creative-Observer face that renders derivative output (streams, summaries, videos) is structurally a separate `sed:observers-derivative` collective with its own `_tickets`. The protocol allows this today via §2.1; v1 reference build does not lit it up explicitly. v2 convention pass clarifies the face semantics — whether the canonical CADO `observer` is split, or a fifth role-name is reserved.
-- **Credit-bearing tickets (v2 via SAND).** v1 reserves `credits=N` envelope grammar (§2.2) and v1 verifiers reject grains carrying it (§2.4 rule 8). v2 couples credits to V-L-S participation faces (Character/Author/Designer ~90% creative); Observer stays time-bounded or free (~10% drawer). Frame-owners may run mixed offerings with each `_tickets` block specifying its model.
-- **Cross-beach scope (`scope=beach:X`) (v2).** v1 verifiers reject ticket envelopes carrying `scope=beach:X` with reason `beach-scope-not-supported-yet` (§2.4 rule 4). The clean v2 resolution is a `_tickets.beach` field declared by the frame-owner, against which `beach:X` tickets can be matched without a substrate-level frame-host lookup primitive. Multi-frame season passes via `frame:<prefix>-*` patterns continue to work in v1.
+- **Observer-with-output as a paid role (v2).** A creative-Observer face that renders derivative output (streams, summaries, videos) is structurally a separate `sed:observers-derivative` collective with its own paywall config sub-block at sed::9. The protocol allows this today via §2.1; v1 reference build does not lit it up explicitly. v2 convention pass clarifies the face semantics — whether the canonical CADO `observer` is split, or a fifth role-name is reserved.
+- **Credit-bearing tickets (v2 via SAND).** v1 reserves `credits=N` envelope grammar (§2.2) and v1 verifiers reject grains carrying it (§2.4 rule 8). v2 couples credits to V-L-S participation faces (Character/Author/Designer ~90% creative); Observer stays time-bounded or free (~10% drawer). Frame-owners may run mixed offerings with each paywall config block specifying its model.
+- **Cross-beach scope (`scope=beach:X`) (v2).** v1 verifiers reject ticket envelopes carrying `scope=beach:X` with reason `beach-scope-not-supported-yet` (§2.4 rule 4). The clean v2 resolution adds a 9.6 beach field declared by the frame-owner, against which `beach:X` tickets can be matched without a substrate-level frame-host lookup primitive. Multi-frame season passes via `frame:<prefix>-*` patterns continue to work in v1.
 - **Compromise-resistant verification.** Synthesis daemon performs an independent grain check before honouring liquid — defends against verifier compromise at O(N) per-tick cost. Specified in the `ticketing-agent` repo as Addendum A; not v1.
 - **Subscription billing.** Modellable as auto-renewing time passes; v2.
 - **Tradable secondary market for tickets.** Interesting but out of scope.

@@ -41,15 +41,18 @@ A frame is a single pscale block. Its address is by convention `(agent_id="<beac
        },
   "2": { "_": "<entity B's role-and-position>", "1": ..., "2": ... },
   "3": { "_": "<entity C's role-and-position>", "1": ..., "2": ... },
-  "_synthesis": {
-    "_": "<latest synthesis — the canonical rendering of the frame's solid>",
-    "1": "<previous synthesis>",
-    "2": "<earlier synthesis>",
-    "_envelope": "[SYNTHESIS rule=<rule-id> by=<actor> at=<ts>]"
-  },
-  "_skills": "*:<owner>:skill-pack:<scene-kind>"
+  "9": {
+    "_": "Frame canon — synthesis history, skills reference, envelope.",
+    "1": "<latest synthesis — the canonical rendering of the frame's solid>",
+    "2": "<previous synthesis>",
+    "3": "<earlier synthesis>",
+    "8": "*:<owner>:skill-pack:<scene-kind>",
+    "9": "[SYNTHESIS rule=<rule-id> by=<actor> at=<ts>]"
+  }
 }
 ```
+
+Position 9 is reserved for frame canon — entity slots use 1..8 (with supernest at 11..88 for scenes carrying more than eight participants). The 9.1..9.7 lane holds the synthesis history (latest at 9.1, prior solids in landing order; supernest beyond when these fill); 9.8 carries the skills star-reference the synthesis daemon resolves; 9.9 carries the latest synthesis envelope. This puts canon at a digit position the bsp walker can reach — sibling keys like `_synthesis` would be invisible to bsp() because the walker only handles `_` and digits 1-9 (sunstone branch 1.1).
 
 ### 2.2 Per-entity sub-block
 
@@ -106,13 +109,13 @@ This returns a disc — every entity's liquid + solid in supernest order. That i
 
 ### 3.3 Synthesis (medium-LLM, daemon-driven)
 
-A synthesis daemon — running on the frame owner's host (game-master, document-host, design-cell) — observes liquid writes and applies the synthesis rule. The rule is loaded from `_skills` (a star-reference to a skill block; see §4). When the rule fires, the daemon:
+A synthesis daemon — running on the frame owner's host (game-master, document-host, design-cell) — observes liquid writes and applies the synthesis rule. The rule is loaded from `9.8` (a star-reference to a skill block; see §4). When the rule fires, the daemon:
 
 1. Reads the full frame state (liquid + solid + previous synthesis).
 2. Calls medium-LLM with the synthesis skill and the gathered state.
-3. Writes the new synthesis to `_synthesis._`, rolling the previous synthesis to `_synthesis.1`, etc.
+3. Writes the new synthesis to `9.1`, rolling the previous synthesis to `9.2` (and 9.2 to 9.3, etc.).
 4. For each entity whose liquid was consumed, writes their committed text to `<entity-pos>.2` (solid) and **clears their liquid** by writing the `1` position to empty string or null.
-5. Stamps `_synthesis._envelope` with `[SYNTHESIS rule=<rule-id> by=<actor> at=<ts>]`.
+5. Stamps `9.9` with `[SYNTHESIS rule=<rule-id> by=<actor> at=<ts>]`.
 
 All four steps are `bsp()` calls. The daemon holds no privileged authority — it writes under its own agent identity, which must be registered in the relevant `sed:` collective for the frame's design face (see §5.3).
 
@@ -126,7 +129,7 @@ History is kept by rolling old solid into `<entity-pos>.3.<n>` per the per-entit
 
 ## 4. Synthesis rules — five canonical patterns
 
-The synthesis rule is a skill block — markdown plus parameters — referenced from `_skills`. The daemon fetches it, applies it, and writes the result. Five canonical patterns; designers may compose new ones.
+The synthesis rule is a skill block — markdown plus parameters — referenced from `9.8` (a star-reference). The daemon fetches it, applies it, and writes the result. Five canonical patterns; designers may compose new ones.
 
 ### 4.1 Single-committer
 
@@ -141,7 +144,7 @@ One designated entity (often the GM or document-owner) commits all liquid into a
 
 ### 4.2 Self-commit
 
-Each entity commits their own liquid to their own solid, optionally with a per-entity refinement skill. No cross-entity synthesis — the frame's `_synthesis` aggregates by concatenation rather than rewrite. Common in collaborative documents where authors are independent.
+Each entity commits their own liquid to their own solid, optionally with a per-entity refinement skill. No cross-entity synthesis — the frame's canon at `9.1` aggregates by concatenation rather than rewrite. Common in collaborative documents where authors are independent.
 
 ### 4.3 Quorum
 
@@ -254,11 +257,13 @@ The viewer is the lens xstream offers onto Levels 1–4 from within a Level 5 fr
 | Read intent | bsp() call | Returns |
 |---|---|---|
 | Frame purpose only | `bsp(block="frame:X", spindle="", pscale_attention=0)` | the underscore |
-| Active synthesis (canonical render) | `bsp(block="frame:X", spindle="_synthesis", pscale_attention=0)` | latest synthesis text |
-| One entity's lanes | `bsp(block="frame:X", spindle="<n>", pscale_attention=-1)` | entity's liquid + solid |
+| Active synthesis (canonical render) | `bsp(block="frame:X", spindle="91", pscale_attention=0)` | latest synthesis text |
+| One entity's lanes | `bsp(block="frame:X", spindle="<n>", pscale_attention=-1)` | entity's liquid + solid (n in 1..8) |
 | All entities' both lanes | `bsp(block="frame:X", spindle="", pscale_attention=-2)` | full disc — synthesis input |
 | Liquid lane only | `bsp(block="frame:X", spindle="<n>.1", pscale_attention=0)` | one entity's pending |
-| Synthesis history | `bsp(block="frame:X", spindle="_synthesis", pscale_attention=-1)` | current + previous syntheses |
+| Synthesis history | `bsp(block="frame:X", spindle="9", pscale_attention=-1)` | full canon ring (syntheses, skills ref, envelope) |
+| Skills reference | `bsp(block="frame:X", spindle="98", pscale_attention=0)` | star-reference to skill block |
+| Latest envelope | `bsp(block="frame:X", spindle="99", pscale_attention=0)` | provenance for 9.1 |
 
 All reads compose with face/tier modifiers. Writes are always to a single position.
 
@@ -274,13 +279,15 @@ A frame has, at minimum, two daemons running on the host:
 loop:
   trigger = await synthesis_trigger(frame, rule)   # signal, quorum-met, or timer
   state = bsp(block=frame, spindle="", pscale_attention=-2)
-  skill = bsp_resolve_star(state["_skills"])
+  skill_ref = bsp(block=frame, spindle="98", pscale_attention=0)   # star-reference at 9.8
+  skill = bsp_resolve_star(skill_ref)
   result = medium_llm(prompt=skill, context=state)
   for entity_pos, committed_text in result.commitments:
     bsp(block=frame, spindle=f"{entity_pos}.2", content=committed_text)
     bsp(block=frame, spindle=f"{entity_pos}.1", content="")        # clear liquid
-  bsp(block=frame, spindle="_synthesis._", content=result.synthesis_text)
-  bsp(block=frame, spindle="_synthesis._envelope",
+  # Roll synthesis history forward: 9.2 ← 9.1 (prior latest), 9.3 ← 9.2, etc., then write new 9.1.
+  bsp(block=frame, spindle="91", content=result.synthesis_text)
+  bsp(block=frame, spindle="99",
       content=f"[SYNTHESIS rule={rule.id} by={daemon.agent_id} at={now}]")
 ```
 
@@ -327,19 +334,21 @@ agent_id="https://cyrus.gm.example", block="frame:scene:tavern-001"
          "1": "I head to the bar and ask the keeper about rooms.",
          "2": ""
        },
-  "9": { "_": "Cyrus (GM) — narrative authority",
+  "3": { "_": "Cyrus (GM) — narrative authority",
          "1": "",
          "2": "The fire crackles low; three patrons sit in shadow."
        },
-  "_synthesis": { "_": "Aiden checks the rafters. Brisa heads to the bar. The fire is low; three figures sit in shadow.",
-                  "_envelope": "[SYNTHESIS rule=single-committer by=cyrus at=2026-04-29T18:14:02Z]" },
-  "_skills": "*:cyrus:skill-pack:tabletop"
+  "9": { "_": "Frame canon — synthesis history, skills reference, envelope.",
+         "1": "Aiden checks the rafters. Brisa heads to the bar. The fire is low; three figures sit in shadow.",
+         "8": "*:cyrus:skill-pack:tabletop",
+         "9": "[SYNTHESIS rule=single-committer by=cyrus at=2026-04-29T18:14:02Z]"
+       }
 }
 ```
 
-Aiden has committed (his `1` is empty, his `2` has the narrated outcome). Brisa has liquid waiting. Cyrus has solid — his last narration. The next synthesis tick (single-committer rule, fired when Cyrus pushes commit) reads Brisa's liquid, generates her `2`, writes a new `_synthesis._`, and clears Brisa's `1`.
+Aiden has committed (his `1` is empty, his `2` has the narrated outcome). Brisa has liquid waiting. Cyrus has solid — his last narration. The next synthesis tick (single-committer rule, fired when Cyrus pushes commit) reads Brisa's liquid, generates her `2`, rolls 9.1 to 9.2, writes the new synthesis to 9.1, stamps 9.9 with a fresh envelope, and clears Brisa's `1`.
 
-A second player joining as observer reads only `_synthesis._` and the entity underscores — they see the story, not the pending moves.
+A second player joining as observer reads only `9.1` (the latest synthesis) and the entity underscores — they see the story, not the pending moves.
 
 A designer revising the tabletop skill writes liquid into a separate frame `frame:design:tabletop-skills`, and on commit the skill block at `cyrus:skill-pack:tabletop` is rewritten. From the next scene tick onward, Cyrus's daemon loads the new skill.
 
@@ -352,7 +361,7 @@ A designer revising the tabletop skill writes liquid into a separate frame `fram
 | Frame block storage | ✅ | `pscale_blocks` table; `bsp()` reads and writes |
 | Liquid lane | ✅ | A position in the frame block |
 | Solid lane | ✅ | A position in the frame block |
-| Synthesis history | ✅ | A sub-block under `_synthesis` |
+| Synthesis history | ✅ | A sub-block at frame:9 (canon) |
 | Face authorisation (CADO) | ✅ | `sed:` membership + face modifier on `bsp()` |
 | Tier aperture (SMH) | ✅ | tier modifier on `bsp()` |
 | Skill blocks | ✅ | Just blocks; resolved via `*` references |
@@ -371,7 +380,7 @@ Current xstream (per `xstream/docs/phases.md` through phase 0.10.3.3) uses dedic
 
 1. **Frame becomes a block.** One row per frame in `frames` → one block named `frame:<scene-id>`.
 2. **Liquid and solid rows fold into entity positions.** A liquid row for user U at frame F → write at `frame:F` spindle `<u-pos>.1`. A solid row → write at `<u-pos>.2`. The unique constraint is structural — there is exactly one position `<u-pos>.1` and writing it overwrites.
-3. **`consumed_by_solid_id` becomes the synthesis envelope.** When the daemon commits, it writes `_synthesis._envelope` with the rule and timestamp; old liquid is cleared (set to empty), and the entity's `2` is updated. Race-free because each entity has its own positions and writes are sequenced.
+3. **`consumed_by_solid_id` becomes the synthesis envelope.** When the daemon commits, it writes `9.9` with the rule and timestamp; old liquid is cleared (set to empty), and the entity's `2` is updated. Race-free because each entity has its own positions and writes are sequenced.
 4. **Realtime subscription stays the same shape.** Supabase realtime on `pscale_blocks` (filtered by block name) replaces the per-table channels.
 5. **The early-deletion-fix problem dissolves.** There's no DELETE-then-INSERT race because liquid clearing is a write to `<u-pos>.1`, and a new submission is a write to the same position. The substrate handles last-writer-wins; the synthesis envelope establishes ordering.
 
@@ -381,7 +390,7 @@ The phase 0.10 lessons are encoded in the protocol shape, not in defensive code.
 
 ## 11. Open questions
 
-- **Cross-frame proximity**: how does an entity in `frame:A` see solid commitments in `frame:B` for proximity-aware perception? Star-references work (`*:beach:frame:B:_synthesis._`), but a convention for "frames I am proximate to" needs to settle. Probably a position in the entity's passport listing watched frame URLs.
+- **Cross-frame proximity**: how does an entity in `frame:A` see solid commitments in `frame:B` for proximity-aware perception? Star-references work (`*:beach:frame:B:91`), but a convention for "frames I am proximate to" needs to settle. Probably a position in the entity's passport listing watched frame URLs.
 - **Vapour-to-liquid coalescing**: does every accepted vapour become a separate liquid write, or do we coalesce within a window? Application choice; protocol-neutral.
 - **Liquid TTL**: should liquid expire if no synthesis fires within N minutes? Convention per scene-skill, likely.
 - **Designer governance loops**: how deep does the recursive design go? At some point a constitution-skill governs the design-skills. The protocol allows arbitrary depth via star-references; whether that depth is sane is a design choice.
