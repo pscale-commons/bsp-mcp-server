@@ -210,6 +210,30 @@ async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<B
 }
 
 /**
+ * Probe whether a URL hosts a federated beach. Used to disambiguate "block
+ * not found at federated host" from "host not federated at all" after a 404
+ * on a per-block load. GETs `<origin>/.well-known/pscale-beach` (no ?block=)
+ * with Accept: application/json and treats any 2xx as evidence of federation;
+ * 404 / network error as evidence that the host is not federated.
+ *
+ * Returns "federated" when the bare endpoint responds successfully, "absent"
+ * when it 404s or fails. The "unknown" case (5xx, timeout) is reported as
+ * "absent" — the LLM should treat ambiguous probes as host-not-reachable
+ * rather than asserting federation that may not exist.
+ */
+export async function probeFederation(ownerId: string): Promise<'federated' | 'absent'> {
+  if (!isFederatedOwner(ownerId)) return 'absent';
+  const origin = canonicaliseOrigin(ownerId);
+  const url = `${origin}/.well-known/pscale-beach`;
+  try {
+    const res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
+    return res.ok ? 'federated' : 'absent';
+  } catch {
+    return 'absent';
+  }
+}
+
+/**
  * POST an action-shaped body to a federated beach endpoint. Used by
  * substrate-stateful primitives (pscale_register, pscale_grain_reach) when
  * dispatching to a site-hosted sed:/grain: substrate via the `host`

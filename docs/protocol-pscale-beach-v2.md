@@ -179,8 +179,8 @@ What sibling blocks enable for sites that want them:
 - **Site-hosted sed: collectives** — `block="sed:hsc-commons"` lets a site host its own sed: collective with per-position locks. Visitors register at this site's collective rather than at central commons.
 - **Site-hosted grain blocks** — grains formed in this site's context can live here rather than centrally.
 - **Named conversation pools** — `block="book-club"`, `block="project-x"` — separate pool blocks for different ongoing conversations at the same origin.
-- **Frames / scenes** — xstream-class clients may want frame blocks (V/L/S churn, synthesis envelopes, history rolling) with their own lifecycle. They live as siblings, not buried inside the beach root.
-- **Site-hosted shells / passports** — agents whose home is this site can hold their shell here.
+- **Frames / scenes** — xstream-class clients may want frame blocks (V/L/S churn, synthesis envelopes, history rolling) with their own lifecycle. They live as siblings, not buried inside the beach root. Naming: `block="frame:<scene>"`.
+- **Site-hosted shells / passports** — agents whose home is this site hold per-agent blocks here. Naming: `block="shell:<handle>"`, `block="passport:<handle>"`, `block="history:<handle>"` — colon-separated role-with-handle, matching `frame:<scene>` and `concern:<topic>`. Single-agent URLs MAY drop the discriminator (`block="shell"`) but the role-with-handle form is forward-compatible. See `block-conventions:1`, `:2`, `:3` (position 8 in each branch) for the federated form spec; `protocol-agent-shell.md` §1 for the reading. Observed alternatives in early practice — `<agent>__<role>` and `<agent>-<role>` — work but introduce a separator the substrate doesn't use elsewhere.
 
 A site that grows from "just marks" to "full substrate participant" extends its handler incrementally. Each new block is a new dispatch case in the GET/POST routes plus per-block storage. No protocol change; bsp-mcp already routes correctly. See §10 for which substrate primitives currently dispatch on a `host` parameter (none in v0.1; v2.1 work).
 

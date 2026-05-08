@@ -21,7 +21,7 @@ import {
   BspReadResult,
   BspWriteResult,
 } from '../bsp-fn.js';
-import { loadBlock, saveBlock, updatePositionHashes, BlockRow, isFederatedOwner, canonicaliseOrigin } from '../db.js';
+import { loadBlock, saveBlock, updatePositionHashes, BlockRow, isFederatedOwner, canonicaliseOrigin, probeFederation } from '../db.js';
 import { hashByOwnerId } from '../locks.js';
 import { selfEncrypt, decryptBlockNodes } from '../keys.js';
 
@@ -226,6 +226,20 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     if (!row) {
       if (isFederatedOwner(agent_id)) {
         const origin = canonicaliseOrigin(agent_id);
+        // Probe the bare endpoint to distinguish "host not federated" from
+        // "host federated but block missing". A 404 on ?block=<name> alone
+        // can't tell them apart; the bare /.well-known/pscale-beach answers
+        // the question — 200 means the host follows the protocol, 404 / network
+        // failure means it doesn't.
+        const status = await probeFederation(agent_id);
+        if (status === 'federated') {
+          return {
+            content: [{
+              type: 'text',
+              text: `Block "${blockName}" not found at federated host ${origin}. The host is federated and serves /.well-known/pscale-beach, but does not host this block. If you intended a per-agent block at this URL, the canonical name is "<role>:<handle>" — e.g. shell:happyseaurchin, passport:happyseaurchin (per block-conventions branches 1, 2, 3 position 8).`,
+            }],
+          };
+        }
         return {
           content: [{
             type: 'text',
