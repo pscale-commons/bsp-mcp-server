@@ -34,6 +34,7 @@ import progression from './progression.json' with { type: 'json' };
 import blockConventions from './block-conventions.json' with { type: 'json' };
 import gatekeeper from './gatekeeper.json' with { type: 'json' };
 import protocolPaywall from './protocol-paywall.json' with { type: 'json' };
+import ecologyRouter from './ecology-router.json' with { type: 'json' };
 
 // ── Default beach ──
 //
@@ -98,6 +99,7 @@ const SENTINEL_BLOCKS: Record<string, Block> = {
   'pscale/block-conventions': blockConventions as unknown as Block,
   'pscale/gatekeeper': gatekeeper as unknown as Block,
   'pscale/protocol-paywall': protocolPaywall as unknown as Block,
+  'pscale/ecology-router': ecologyRouter as unknown as Block,
 };
 
 export function isSentinelOwner(ownerId: string): boolean {

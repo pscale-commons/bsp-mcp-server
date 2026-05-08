@@ -110,6 +110,7 @@ FOUNDATIONAL READING (sentinel-bundled — walk via bsp(agent_id="pscale", block
   progression — the iterative orientation block returned by pscale_invite (also walkable directly).
   block-conventions — substrate-wide convention catalogue. What canonical block names mean and which positions hold what.
   gatekeeper  — substrate-wide canonical role-shell for L1→L2 admission. Hermitcrab pattern: cognition fluid, structure persistent. Honored convention at the threshold of pscale_invite step 4.
+  ecology-router — the hard tier of SMH as routing intelligence. Constitutes an agent's lived ecology by reading shell + purpose + watched beaches and surfacing routing decisions. Defines the minimal package (five components for a runnable pscale node). Per-agent locality; federation IS the P2P. Walk this when authoring a hard-tier process, designing a minimal-package reference build, or reasoning about how an agent climbs the five evolutionary levels.
 
 ARCHITECTURE: bsp-mcp is a router + sentinel server. The walker (bsp.ts/bsp-fn.ts) runs in-process for sentinel reads and for client-side merge during federated writes. The block content lives at federated beaches — JSON KV stores with locks. Default beach: ${DEFAULT_BEACH_URL}. To change it, set the DEFAULT_BEACH env var.`;
 
