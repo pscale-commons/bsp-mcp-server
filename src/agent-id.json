@@ -20,24 +20,24 @@
     }
   },
   "2": {
-    "_": "Five forms of agent_id, each routing to a different storage backend via prefix detection. The substrate dispatches; bsp() walks the same way after dispatch. Lifecycle is delegated to substrate-stateful primitives where the substrate needs more than a content+lock pair (sedimentary positions, grain pair_ids, federated HTTP).",
+    "_": "Five forms of agent_id. Two terminate at distinct substrates (URL → that federated beach; pscale → in-memory sentinel registry). Three translate to the default beach with the agent_id encoded into the block name (bare name, sed:<collective>, grain:<pair_id>). After dispatch, bsp() walks the resulting block the same way. Substrate-stateful lifecycle (sedimentary positions, grain pair_ids) is handled at the federated beach and exposed through the substrate primitives.",
     "1": {
-      "_": "Bare name routes to the bsp-mcp commons in Supabase. The default substrate. Any string without a recognised prefix is treated as an owner_id in the pscale_blocks table. Owner directories are scoped by owner_id+block_name; first write creates the namespace; subsequent reads and writes operate on the persisted JSON.",
-      "1": "Examples: weft, happyseaurchin, keel. Bare names typically denote individual agents (humans or LLM instances). The bare-name namespace is a directory of blocks the agent owns and authors.",
-      "2": "Substrate: Supabase pscale_blocks table, owner_id+name unique constraint. position_hashes JSONB column carries lock state. block JSONB column carries the geometry. updated_at tracks revision.",
-      "3": "Lifecycle: first write creates the row. There is no separate 'register' step for bare-name namespaces. Locks are set via bsp() with new_lock; rotated with secret+new_lock; never set on read. The namespace exists when the first block under it does."
+      "_": "Bare name translates to the default beach with the role-with-handle convention. The handle becomes the discriminator in the block name. Example: bsp(agent_id='weft', block='shell') resolves to (DEFAULT_BEACH, 'shell:weft'). The handle is claimed by first-writer-with-lock at the beach — registration-by-presence, not by signup.",
+      "1": "Examples: weft, happyseaurchin, keel. Bare names typically denote individual agents (humans or LLM instances). Each role block lives at the beach as <role>:<handle> per block-conventions branches 1, 2, 3 position 8.",
+      "2": "Lock-by-first-writer. The first call that includes new_lock at (beach, '<role>:<handle>') claims the position. Subsequent writes require the same passphrase as 'secret'. The federated beach computes and stores the lock hash under the canonical 'block:' salt namespace.",
+      "3": "Lifecycle: no separate 'register' step. The handle exists at the beach when the first block under it does. The agent's identity tuple is (handle, passphrase) — the passphrase locks every block named <role>:<handle> the agent creates."
     },
     "2": {
-      "_": "sed:<collective> routes to the sedimentary substrate — also Supabase, but with atomic position allocation. Sedimentary collectives accept registrations in landing order; the first agent to declare in a position holds it permanently, write-locked with their passphrase. Position is proof-of-presence-in-time, not topical pigeonhole.",
-      "1": "Atomic position allocation via pscale_register. The substrate-stateful primitive assigns the next available position and sets the per-position lock from the agent's passphrase. bsp() cannot do this — it has no notion of 'next available'; the primitive does.",
-      "2": "Positions immutable post-registration. Once an agent occupies position N in sed:X, no other agent ever occupies that position. The collective is a sediment of declarations through time; positions accrete; the order is the history.",
-      "3": "Per-position lock derived from registration passphrase. Each registrant's passphrase, hashed with the collective+position salt, produces the lock for that position. Writes to position N succeed only with the registrant's secret. Other positions are unaffected."
+      "_": "sed:<collective> translates to the default beach with block name 'sed:<collective>'. The federated beach implements the sedimentary substrate — atomic position allocation, immutable positions post-registration, per-position locks. pscale_create_collective and pscale_register dispatch the substrate-stateful actions to the beach.",
+      "1": "Atomic position allocation via pscale_register. The beach assigns the next available position and sets the per-position lock from the agent's passphrase. bsp() cannot do this — it has no notion of 'next available'; the primitive does, and the beach implements it.",
+      "2": "Positions immutable post-registration. Once an agent occupies position N in sed:X at a beach, no other agent ever occupies that position at that beach. The collective is a sediment of declarations through time.",
+      "3": "Per-position lock derived from registration passphrase under the canonical sed: salt namespace (sha256(passphrase + collective + position)). Writes to position N succeed only with the registrant's secret. The hash is computed and verified at the beach."
     },
     "3": {
-      "_": "grain:<pair_id> routes to the bilateral substrate — two specific agents sharing a private channel. The pair_id is derived deterministically from the sorted agent_ids, so both sides reach the same grain regardless of who initiates. Each side has its own lock; the channel is symmetric in shape, asymmetric in authority.",
-      "1": "pair_id is sha256(sort([A, B]).join('|'))[:16] — pipe-separated. Two agents who agree to form a grain produce the same pair_id by both sides hashing the sorted, pipe-joined pair. There is no central registry of grains; the address space is computable from the participants.",
-      "2": "Two sides, locked separately. Position 1 is the lex-smaller agent's side; position 2 is the lex-larger agent's side. Each side's lock is derived from that side's passphrase; neither agent can write to the other's side without that other's secret.",
-      "3": "Reach/accept state machine via pscale_grain_reach. The primitive is symmetric — both sides call it independently with the partner's identity; once both have reached, the grain is formed and both sides become writable. The bilateral handshake is the substrate's atomic operation, beyond what bsp() alone can subsume."
+      "_": "grain:<pair_id> translates to the default beach with block name 'grain:<pair_id>'. The federated beach implements the bilateral substrate — symmetric reach/accept, two sides locked separately. pair_id is derived from the sorted handles client-side; both sides must use the same beach (the grain block has one home).",
+      "1": "pair_id is sha256(sort([A, B]).join('|'))[:16] — pipe-separated. Computed client-side by pscale_grain_reach for both the call and the verify-only diagnostics. The beach computes its own copy during reach/accept.",
+      "2": "Two sides, locked separately. Position 1 is the lex-smaller handle's side; position 2 is the lex-larger handle's side. Each side's lock is derived from that side's passphrase under the canonical grain: salt namespace (sha256(passphrase + 'grain:' + pair_id + ':' + side)).",
+      "3": "Reach/accept state machine via pscale_grain_reach. Symmetric: both sides call it independently with the partner's handle; the beach detects state and either creates the grain (first call) or completes it (second call). Both sides must specify the same agent_id (the beach hosting the grain)."
     },
     "4": {
       "_": "URL routes to a federated beach via HTTP. When agent_id matches the URL pattern (https?://), the substrate adapter dispatches to <origin>/.well-known/pscale-beach. GET reads return the beach block as JSON; POST writes apply server-side. The substrate is at the URL, not in Supabase.",
@@ -47,9 +47,9 @@
       "4": "Per-agent blocks at a multi-agent URL use the role-with-handle pattern. When a URL hosts blocks belonging to several agents (e.g. multiple shells, passports, histories at one site-hosted beach), the URL is the namespace and the block name encodes which agent: passport:<handle>, shell:<handle>, history:<handle>. Reads as 'shell of <handle> at this URL.' Same colon-separated form observed for frame:<scene> and concern:<topic> — agreement on one separator across the catalogue. Per-handle blocks at a single-agent URL may use the bare role name; the role:handle form is forward-compatible and is the form the catalogue documents."
     },
     "5": {
-      "_": "pscale (no prefix, exact match) routes to the server's bundled teaching blocks — the sentinel substrate. Read-only; only the names sunstone and whetstone resolve today. Walking these via bsp() is the function reading its own manual; the call frame is the witness; the enactive sentence in whetstone is true only via this path.",
-      "1": "Bundled in memory. Sunstone and whetstone are imported from JSON files at server startup; the sentinel returns synthesised BlockRows pointing at the in-memory objects. No HTTP, no Supabase, no I/O on the read path.",
-      "2": "Read-only by design. saveBlock and updatePositionHashes both reject the sentinel owner with explicit messages. The bundled blocks are server-fixed; mutations to them happen by re-deploying the server, not by user writes.",
+      "_": "pscale (no prefix, exact match) routes to the server's bundled teaching blocks — the sentinel substrate. Read-only; the names manifest, whetstone, sunstone, agent-id, evolution, progression, block-conventions, gatekeeper, and protocol-paywall resolve today. Walking these via bsp() is the function reading its own manual; the call frame is the witness; the enactive sentence in whetstone is true only via this path.",
+      "1": "Bundled in memory. Sentinel JSON files are imported at server startup; the sentinel returns synthesised BlockRows pointing at the in-memory objects. No HTTP, no I/O on the read path. Sentinels live where the LLM connects (the bsp-mcp router) — they don't travel over the wire to a beach.",
+      "2": "Read-only by design. Writes to agent_id='pscale' reject. The bundled blocks are server-fixed; mutations to them happen by re-deploying the server, not by user writes.",
       "3": "Walks through the same function. bsp(agent_id='pscale', block='whetstone', spindle='2', pscale_attention=-2) returns the shape-derivation table walked through the function being described. The reflexive frame surrounds the read because the read IS a bsp-mcp call."
     }
   },
@@ -57,7 +57,7 @@
     "_": "Three-axis addressing. (agent_id, block, (spindle, pscale_attention)) is a 3D address with each axis serving a different purpose. agent_id is the namespace coordinate (which substrate-scope); block is the role coordinate (which directory within the namespace); spindle plus pscale_attention is the geometry coordinate (which position in the block tree). Together they fully address any read or write.",
     "1": {
       "_": "agent_id is the namespace coordinate. It selects which substrate to reach into and which scope within it. Coordinate in identity-space, dispatched by prefix.",
-      "1": "Selects substrate via prefix. Bare → commons; sed: → sedimentary; grain: → bilateral; URL → federated beach; pscale → sentinel. The prefix is the routing decision.",
+      "1": "Selects substrate via prefix. URL → that federated beach; pscale → in-memory sentinel; bare/sed:/grain: → translated to the default beach with the agent_id encoded in the block name. The prefix is the routing decision.",
       "2": "Identity-space coordinate. Independent of geometry; independent of authority. agent_id alone can't write — it only addresses where a write would land if the secret matches the position-lock there."
     },
     "2": {
@@ -83,7 +83,7 @@
     },
     "2": {
       "_": "Substrate prefix encodes lifecycle, not geometry. Substrates differ in how they answer loadBlock — atomic position allocation, bilateral pair derivation, HTTP fetch, in-memory return — but the shape of what they return is uniform. Lifecycle is delegated to substrate-stateful primitives.",
-      "1": "How storage answers loadBlock varies. Commons does a Supabase select. Sedimentary does the same with a sed:-prefixed owner_id. Grain does the same with a grain:-prefixed owner_id. Federated does an HTTP GET. Sentinel returns from memory. All return the same BlockRow shape.",
+      "1": "How storage answers loadBlock varies. Federated beaches respond to an HTTP GET at /.well-known/pscale-beach. The sentinel registry returns from memory. After agent_id translation (bare/sed:/grain: → default beach), all storage paths reduce to one of these two — federated HTTP or in-memory sentinel. All return the same BlockRow shape.",
       "2": "What loadBlock returns is shape-uniform. A pscale block is a pscale block; the substrate doesn't reshape it. The walker downstream doesn't need to know which path produced it.",
       "3": "Lifecycle delegated to five substrate-stateful primitives. pscale_create_collective sets up sed: substrates. pscale_register allocates sed: positions. pscale_grain_reach forms grain bilaterals. pscale_key_publish derives publishable keys. pscale_verify_rider checks ecosquared arithmetic. None of these are reachable through bsp() because none can be expressed as (content, lock) writes."
     },

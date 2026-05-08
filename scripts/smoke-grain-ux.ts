@@ -120,12 +120,12 @@ try {
   const pid = pairId(agentA, agentB);
   const mySide = determineSide(agentA, agentB);
   const r3 = await handleGrainReach({
-    agent_id: agentA,
-    partner_agent_id: agentB,
+    handle: agentA,
+    partner_handle: agentB,
     description: 'smoke',
     my_side_content: 'A side',
     my_passphrase: 'apass',
-    host: beachOrigin,
+    agent_id: beachOrigin,
     verify_only: true,
   });
   assert(getText(r3).includes('[verify_only]'), 'response prefixed with [verify_only]');
@@ -144,12 +144,12 @@ try {
     '9': { [partnerSide]: agentB },
   };
   const r4 = await handleGrainReach({
-    agent_id: agentA,
-    partner_agent_id: agentB,
+    handle: agentA,
+    partner_handle: agentB,
     description: 'smoke',
     my_side_content: 'A side',
     my_passphrase: 'apass',
-    host: beachOrigin,
+    agent_id: beachOrigin,
     verify_only: true,
   });
   assert(getText(r4).includes('Would complete'), 'narrates would-complete for half-formed grain');
@@ -165,12 +165,12 @@ try {
     '9': { [mySide]: agentA },
   };
   const r5 = await handleGrainReach({
-    agent_id: agentA,
-    partner_agent_id: agentB,
+    handle: agentA,
+    partner_handle: agentB,
     description: 'smoke',
     my_side_content: 'A side',
     my_passphrase: 'apass',
-    host: beachOrigin,
+    agent_id: beachOrigin,
     verify_only: true,
   });
   assert(getText(r5).includes('side already exists'), 'narrates own-side-exists rejection path');
@@ -180,12 +180,12 @@ try {
   state.postReceived = [];
   delete state.grainBlocks[`grain:${pid}`];
   const r6 = await handleGrainReach({
-    agent_id: agentA,
-    partner_agent_id: agentB,
+    handle: agentA,
+    partner_handle: agentB,
     description: 'smoke',
     my_side_content: 'A side',
     my_passphrase: 'apass',
-    host: beachOrigin,
+    agent_id: beachOrigin,
   });
   assert(state.postReceived.length === 1, 'real reach POSTed once');
   assert(getText(r6).includes('completed'), 'mock returned completed state, response reflects it');

@@ -1,6 +1,6 @@
 {
   "name": "bsp-mcp-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP server for the unified bsp() function over pscale JSON blocks — Block-Spindle-Pscale as polar coordinates",
   "type": "module",
   "scripts": {
@@ -8,11 +8,12 @@
     "build": "tsc",
     "start": "tsx src/index.ts",
     "smoke:unit": "tsx scripts/smoke-bsp.ts",
-    "smoke:e2e": "tsx scripts/smoke-end-to-end.ts"
+    "smoke:sentinel": "tsx scripts/smoke-sentinel.ts",
+    "smoke:wellknown": "tsx scripts/smoke-wellknown.ts",
+    "smoke:federated": "tsx scripts/smoke-federated-live.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@supabase/supabase-js": "^2.89.0",
     "hash-wasm": "^4.12.0",
     "tsx": "^4.19.0",
     "tweetnacl": "^1.0.3",

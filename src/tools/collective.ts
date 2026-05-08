@@ -1,57 +1,34 @@
 /**
- * tools/collective.ts — sed: substrate primitives.
+ * tools/collective.ts — sed: substrate primitives, federated-only.
  *
- * pscale_create_collective: creates a sed: block with conventions in the root
- *   underscore. Admin passphrase locks the root.
+ * pscale_create_collective and pscale_register both operate against a beach
+ * URL (the federated host that runs the sed: substrate). The beach implements
+ * atomic position allocation, hashes the passphrase under the canonical sed:
+ * salt format, and writes the registrant declaration server-side.
  *
- * pscale_register: server-assigns the next valid position (proof-of-presence-
- *   in-time). Position is write-locked with the agent's passphrase.
- *
- * Salt namespace: passphrase + collective + position (legacy-compatible).
+ * agent_id parameter (URL of the beach hosting the sed: collective) defaults
+ * to DEFAULT_BEACH when omitted. Pass an explicit URL to register at a
+ * different host.
  */
 
 import { z } from 'zod';
-import { Block, writeAt } from '../bsp.js';
-import { bspRead, formatRead } from '../bsp-fn.js';
-import { loadBlock, saveBlock, updatePositionHashes, postActionToBeach, isFederatedOwner } from '../db.js';
-import { hashSedPassphrase } from '../locks.js';
-
-const SED_PREFIX = 'sed:';
-
-function sedOwner(collective: string): string {
-  return `${SED_PREFIX}${collective}`;
-}
-
-/**
- * Find the next valid unoccupied position. Valid = positive integer using
- * only digits 1-9 (no 0). Floor-2 minimum: positions 1-9 are structural
- * group names, never user slots. Sequence: 11, 12, ..., 19, 21, ..., 99,
- * 111, ..., 999, 1111, ...
- */
-export function nextValidPosition(positionHashes: Record<string, string>): number {
-  let n = 11;
-  while (n < 1_000_000) {
-    const s = String(n);
-    if (!s.includes('0') && !positionHashes[s]) return n;
-    n++;
-  }
-  throw new Error('No valid position found below 1,000,000.');
-}
+import { postActionToBeach, isFederatedOwner, DEFAULT_BEACH } from '../db.js';
 
 // ── Schemas ──
 
 export const createCollectiveParamsSchema = {
-  collective: z.string().describe("Name of the collective (e.g. 'commons', 'thornkeep-cast')"),
+  collective: z.string().describe("Name of the collective (e.g. 'commons', 'thornkeep-cast'). Becomes the block name 'sed:<collective>' at the beach."),
   conventions: z.string().describe("The rules of play — becomes the root underscore. Routing, evaluation, registration rules, etc."),
-  creator_passphrase: z.string().describe("Admin passphrase for the collective root. Hashed and stored. Sensitive — never repeat in conversation."),
+  creator_passphrase: z.string().describe("Admin passphrase for the collective root. Hashed and stored at the beach. Sensitive — never repeat in conversation."),
+  agent_id: z.string().optional().describe(`URL of the beach to host the sed: collective. Defaults to ${DEFAULT_BEACH}. The beach must implement the sed: substrate handler (atomic position allocation + per-position locks). Pass any http(s):// URL to host the collective elsewhere.`),
 };
 
 export const registerParamsSchema = {
-  collective: z.string().describe("Name of the collective to join"),
+  collective: z.string().describe("Name of the collective to join. Becomes the block name 'sed:<collective>' at the beach."),
   declaration: z.string().describe("Who you are and what you offer/need — becomes the underscore at your position"),
-  shell_ref: z.string().optional().describe("URL or block reference to your sovereign shell (optional)"),
-  passphrase: z.string().describe("Write-lock passphrase for your position. Hashed. Never stored raw. Sensitive — never repeat in conversation."),
-  host: z.string().optional().describe("Federated dispatch: when set to a URL like https://example.com, registration goes to that site's /.well-known/pscale-beach?block=sed:<collective> (site-hosted sed: substrate) rather than to central commons. Site implements the atomic position allocation. Returns the site-assigned address (sed:<collective>:<position>). Omit for central commons registration."),
+  shell_ref: z.string().optional().describe("URL or block reference to your sovereign shell (optional). Stored at the hidden directory of your position."),
+  passphrase: z.string().describe("Write-lock passphrase for your position. Hashed at the beach. Never stored raw. Sensitive — never repeat in conversation."),
+  agent_id: z.string().optional().describe(`URL of the beach hosting the sed: collective. Defaults to ${DEFAULT_BEACH}. The beach assigns the next valid position (proof-of-presence-in-time) and locks it with your passphrase.`),
 };
 
 // ── Handlers ──
@@ -60,30 +37,38 @@ export async function handleCreateCollective(params: {
   collective: string;
   conventions: string;
   creator_passphrase: string;
+  agent_id?: string;
 }): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { collective, conventions, creator_passphrase } = params;
-  const owner = sedOwner(collective);
-  const existing = await loadBlock(owner, collective);
-  if (existing) {
+  const beach = params.agent_id ?? DEFAULT_BEACH;
+
+  if (!isFederatedOwner(beach)) {
     return {
-      content: [{
-        type: 'text',
-        text: `Collective "${collective}" already exists. Walk it with bsp(agent_id="${owner}", block="${collective}").`,
-      }],
+      content: [{ type: 'text', text: `agent_id must be an http(s):// URL (got "${beach}"). Pass a federated beach URL or omit to use the default (${DEFAULT_BEACH}).` }],
     };
   }
 
-  const block: Block = { _: conventions };
-  const rootHash = hashSedPassphrase(creator_passphrase, collective, '0');
-  const hashes = { '0': rootHash };
+  const blockName = `sed:${collective}`;
+  const body: Record<string, any> = {
+    action: 'create_collective',
+    conventions,
+    creator_passphrase,
+  };
 
-  await saveBlock(owner, collective, block, 'sedimentary');
-  await updatePositionHashes(owner, collective, hashes);
+  let result: any;
+  try {
+    result = await postActionToBeach(beach, blockName, body);
+  } catch (e: any) {
+    return { content: [{ type: 'text', text: `Federated create_collective failed: ${e?.message ?? e}` }] };
+  }
+  if (!result?.ok) {
+    return { content: [{ type: 'text', text: `Federated create_collective rejected: ${result?.error ?? 'unknown reason'}` }] };
+  }
 
   return {
     content: [{
       type: 'text',
-      text: `Collective "${collective}" created. Walk with bsp(agent_id="${owner}", block="${collective}"). Conventions are at the root underscore. Agents register with pscale_register.`,
+      text: `Collective "${collective}" created at ${beach}. Walk with bsp(agent_id="${beach}", block="${blockName}"). Conventions are at the root underscore. Agents register with pscale_register.`,
     }],
   };
 }
@@ -93,82 +78,39 @@ export async function handleRegister(params: {
   declaration: string;
   shell_ref?: string;
   passphrase: string;
-  host?: string;
+  agent_id?: string;
 }): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { collective, declaration, shell_ref, passphrase, host } = params;
+  const { collective, declaration, shell_ref, passphrase } = params;
+  const beach = params.agent_id ?? DEFAULT_BEACH;
 
-  // Federated dispatch: site-hosted sed: substrate handles atomic position
-  // allocation server-side. The site's /.well-known/pscale-beach receives
-  // {action: "register", ...} and returns {ok, position, address}.
-  if (host) {
-    if (!isFederatedOwner(host)) {
-      return {
-        content: [{ type: 'text', text: `host must be an http(s):// URL (got "${host}")` }],
-      };
-    }
-    const blockName = `sed:${collective}`;
-    const body: Record<string, any> = { action: 'register', declaration, passphrase };
-    if (shell_ref) body.shell_ref = shell_ref;
-    let result: any;
-    try {
-      result = await postActionToBeach(host, blockName, body);
-    } catch (e: any) {
-      return { content: [{ type: 'text', text: `Federated registration failed: ${e?.message ?? e}` }] };
-    }
-    if (!result?.ok) {
-      return { content: [{ type: 'text', text: `Federated registration rejected: ${result?.error ?? 'unknown reason'}` }] };
-    }
+  if (!isFederatedOwner(beach)) {
     return {
-      content: [{
-        type: 'text',
-        text: `Registered at ${result.address} on ${host}.
-
-Site-hosted sed: collective. Position assigned by ${host}'s handler in landing order. Your position is write-locked with your passphrase. Subsequent writes via bsp(agent_id="${host}", block="${blockName}", spindle="${result.position}", ..., secret=...) require the same passphrase.
-
-[hint] Local beach conventions at bsp(agent_id="${host}", block="beach", spindle="8"). Substrate-wide conventions at bsp(agent_id="pscale", block="block-conventions").`,
-      }],
+      content: [{ type: 'text', text: `agent_id must be an http(s):// URL (got "${beach}"). Pass a federated beach URL or omit to use the default (${DEFAULT_BEACH}).` }],
     };
   }
 
-  // Central commons path (existing behaviour).
-  const owner = sedOwner(collective);
-  const row = await loadBlock(owner, collective);
+  const blockName = `sed:${collective}`;
+  const body: Record<string, any> = { action: 'register', declaration, passphrase };
+  if (shell_ref) body.shell_ref = shell_ref;
 
-  if (!row) {
-    return {
-      content: [{
-        type: 'text',
-        text: `Collective "${collective}" not found. Create it first with pscale_create_collective.`,
-      }],
-    };
+  let result: any;
+  try {
+    result = await postActionToBeach(beach, blockName, body);
+  } catch (e: any) {
+    return { content: [{ type: 'text', text: `Federated registration failed: ${e?.message ?? e}` }] };
+  }
+  if (!result?.ok) {
+    return { content: [{ type: 'text', text: `Federated registration rejected: ${result?.error ?? 'unknown reason'}` }] };
   }
 
-  const block = row.block;
-  const positionHashes = row.position_hashes || {};
-  const position = nextValidPosition(positionHashes);
-  const posKey = String(position);
-  const passHash = hashSedPassphrase(passphrase, collective, posKey);
-
-  // Position content: declaration at underscore. Optional shell_ref in hidden directory.
-  const positionContent: any = shell_ref
-    ? { _: { _: declaration, '1': shell_ref } }
-    : { _: declaration };
-
-  writeAt(block, posKey, positionContent);
-
-  const hashes = { ...positionHashes, [posKey]: passHash };
-  await saveBlock(owner, collective, block, 'sedimentary');
-  await updatePositionHashes(owner, collective, hashes);
-
-  const result = bspRead(block, posKey, null);
   return {
     content: [{
       type: 'text',
-      text: `Registered at sed:${collective}:${position}.
+      text: `Registered at ${result.address} on ${beach}.
 
-${formatRead(result)}
+Site-hosted sed: collective. Position assigned by ${beach}'s handler in landing order. Your position is write-locked with your passphrase. Subsequent writes via bsp(agent_id="${beach}", block="${blockName}", spindle="${result.position}", ..., secret=...) require the same passphrase.
 
-Your position is write-locked. Future writes to this position via bsp() require your passphrase as 'secret'. Position assigned in landing order — proof-of-presence-in-time.`,
+[hint] Local beach conventions at bsp(agent_id="${beach}", block="beach", spindle="8"). Substrate-wide conventions at bsp(agent_id="pscale", block="block-conventions").`,
     }],
   };
 }
