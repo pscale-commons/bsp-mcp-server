@@ -1,8 +1,10 @@
 # Upgrade happyseaurchin.com to host sibling blocks (sed:, grain:, named pools)
 
+**Status**: HISTORICAL — captures the spec at the time of the May 2026 sibling-block upgrade. The reference `writeAt` shown in §"Reference implementation" below has been updated to the post-PR-#4 form (supernest-on-growth migration) — the original spec clobbered string-leaves on intermediate descent and was a source of confusion. For the canonical wire contract see [protocol-pscale-beach-v2.md §2.3](./protocol-pscale-beach-v2.md). The beach is dumb placement; the walker lives at the client (bsp-mcp). No changes are required at happyseaurchin to honour the canonical contract — the deployed handler at `api/pscale-beach.js` already has the correct migration and matches the contract.
+
 **Audience**: David, handing this to the Claude Code session that has happyseaurchin.com's codebase open.
 **Goal**: Extend the existing v2 single-block beach handler to dispatch on `?block=<name>` and host sibling blocks at the same origin — including site-hosted `sed:` collectives and `grain:` blocks.
-**Protocol reference**: [docs/protocol-pscale-beach-v2.md](./protocol-pscale-beach-v2.md) §3.5 (origin / beach / sibling-block distinction), [docs/protocol-block-references.md](./protocol-block-references.md) §7 (sibling discoverability).
+**Protocol reference**: [docs/protocol-pscale-beach-v2.md](./protocol-pscale-beach-v2.md) §2.3 (wire contract), §3.5 (origin / beach / sibling-block distinction), [docs/protocol-block-references.md](./protocol-block-references.md) §7 (sibling discoverability).
 **Companion to**: [docs/happyseaurchin-v2-implementation.md](./happyseaurchin-v2-implementation.md) (the v2 single-block reference this builds on).
 
 ---
@@ -106,30 +108,48 @@ async function saveHashes(name: string, hashes: Record<string, string>): Promise
   await kv.set(locksKey(name), hashes);
 }
 
-// ── BSP write logic — unchanged from v2 single-block reference ──
+// ── BSP placement logic ──
+//
+// Per protocol-pscale-beach-v2.md §2.3, the beach treats `content` as the value
+// to place at `spindle`. Shape derivation is the client's job; the beach just
+// places. Supernest-on-growth migration is the one geometric concession: when
+// an intermediate node along the descent path is a string-leaf, migrate it to
+// {_: <old-string>} before continuing — preserving the prior semantic instead
+// of clobbering it.
 
 function writeAt(block: Record<string, any>, address: string, value: any): Record<string, any> {
-  if (!address) return value;
-  const digits = address.replace(/\./g, '');
+  if (!address || address === '_') {
+    if (!address) return value;        // empty address = whole-block replace
+    block._ = value;                    // address "_" = set underscore
+    return block;
+  }
+  const parts = address.includes('.') ? address.split('.') : [...address];
   let node: any = block;
-  for (let i = 0; i < digits.length - 1; i++) {
-    const key = digits[i] === '0' ? '_' : digits[i];
-    if (typeof node[key] !== 'object' || node[key] === null) node[key] = {};
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+    const key = part === '0' ? '_' : part;
+    const existing = node[key];
+    if (typeof existing === 'string') {
+      // Supernest-on-growth: preserve the string at the underscore of the new sub-block
+      node[key] = { _: existing };
+    } else if (typeof existing !== 'object' || existing === null) {
+      node[key] = {};
+    }
     node = node[key];
   }
-  const lastDigit = digits[digits.length - 1];
-  const lastKey = lastDigit === '0' ? '_' : lastDigit;
+  const lastPart = parts[parts.length - 1];
+  const lastKey = lastPart === '0' ? '_' : lastPart;
   node[lastKey] = value;
   return block;
 }
 
 function readAt(block: Record<string, any>, address: string): any {
   if (!address) return block;
-  const digits = address.replace(/\./g, '');
+  const parts = address.includes('.') ? address.split('.') : [...address];
   let node: any = block;
-  for (const d of digits) {
+  for (const part of parts) {
     if (!node || typeof node !== 'object') return null;
-    const key = d === '0' ? '_' : d;
+    const key = part === '0' ? '_' : part;
     node = node[key];
   }
   return node ?? null;
