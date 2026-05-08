@@ -59,6 +59,11 @@ export interface BspWriteResult {
   // For diagnostics:
   spindle?: string;
   pscale_attention?: number | null;
+  // Soft advisory surfaced to the caller when the write succeeds but the input
+  // shape suggests a likely intent mismatch (e.g. a JSON-encoded string passed
+  // at point shape where a subtree was probably wanted). Non-fatal; the write
+  // is committed regardless.
+  warning?: string;
 }
 
 // ── Spindle parsing ──
@@ -322,13 +327,28 @@ export function bspWrite(
 
   // Direct write — no star.
   const shape = bspWriteInPlace(block, spindle ?? '', pscaleAttention, content);
-  return {
+  const result: BspWriteResult = {
     shape,
     written: true,
     block,
     spindle: String(spindle ?? ''),
     pscale_attention: pscaleAttention,
   };
+  // Soft advisory: detect the most common shape-intent mismatch — a string at
+  // point shape that LOOKS like a serialized object/array. The write is
+  // committed (point writes accept strings); we just nudge the caller in case
+  // they meant to pass an object at subtree shape (pscale_attention <= P_end-2)
+  // or build the structure with deep spindle writes. Threshold is intentionally
+  // narrow: must be a string AND start with '{' or '[' AND parse as JSON.
+  if (shape === 'point' && typeof content === 'string' && /^\s*[{\[]/.test(content)) {
+    let looksLikeJson = false;
+    try { JSON.parse(content); looksLikeJson = true; } catch {}
+    if (looksLikeJson) {
+      result.warning =
+        `Stored as a string-leaf at "${spindle}". The content parses as JSON — if you meant to write a subtree, pass the OBJECT (not a JSON-encoded string) and set pscale_attention <= P_end - 2 for subtree shape, or use a whole-block write (empty spindle, pscale_attention=null). String-leaf writes succeed but cannot be walked deeper.`;
+    }
+  }
+  return result;
 }
 
 /** Apply a write to a block in place; returns the determined shape. */
@@ -528,5 +548,6 @@ export function formatRead(r: BspReadResult): string {
 }
 
 export function formatWrite(r: BspWriteResult): string {
-  return `[wrote ${r.shape} @ "${r.spindle}"${r.pscale_attention != null ? ` pscale ${r.pscale_attention}` : ''}]`;
+  const head = `[wrote ${r.shape} @ "${r.spindle}"${r.pscale_attention != null ? ` pscale ${r.pscale_attention}` : ''}]`;
+  return r.warning ? `${head}\n[warning] ${r.warning}` : head;
 }

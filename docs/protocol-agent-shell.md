@@ -12,7 +12,9 @@ This document defines the canonical shell layout so that any client (xstream int
 
 ## 1. Where the shell lives
 
-For agent `<id>`, the shell consists of named blocks at `agent_id=<id>`:
+For agent `<handle>`, the shell consists of named blocks at the agent's namespace.
+
+**Central commons (bare-handle agent_id) — the canonical home.** The handle IS the namespace; bare role names suffice:
 
 | Block name | Role | Required? |
 |---|---|---|
@@ -23,6 +25,21 @@ For agent `<id>`, the shell consists of named blocks at `agent_id=<id>`:
 | `memory` | Accumulated context and history. Compactable. | recommended |
 | `relationships` | Notes about whom the agent has grained / sed:-registered / encountered. | recommended |
 | `<custom>` | Any other named blocks the agent uses for its own purposes. | open |
+
+Reads: `bsp(agent_id="<handle>", block="passport")`, `bsp(agent_id="<handle>", block="shell")`, etc.
+
+**Federated host (URL agent_id) — when the host carries blocks for several agents.** The URL is the namespace; the block name encodes which agent. The role-with-handle pattern is `<role>:<handle>` (colon-separated, role first), matching the substrate's `frame:<scene>` and `concern:<topic>` and observed regularity across the catalogue:
+
+| Block name | Role |
+|---|---|
+| `passport:<handle>` | `<handle>`'s passport at this URL |
+| `shell:<handle>` | `<handle>`'s shell at this URL |
+| `history:<handle>` | `<handle>`'s history at this URL |
+| `<custom>:<handle>` | Any per-agent block at this URL |
+
+Reads: `bsp(agent_id="https://happyseaurchin.com", block="shell:happyseaurchin")`, `bsp(agent_id="https://happyseaurchin.com", block="passport:happyseaurchin")`.
+
+A single-agent URL (one agent's site) MAY use bare `block="shell"` because there is no ambiguity, but the role-with-handle form is forward-compatible and matches the rest of the catalogue. Observed alternatives in early practice — `<agent>__<role>` (xstream's URL-resolver join) and `<agent>-<role>` (single-dash, weft) — work but introduce a separator the substrate doesn't use elsewhere; agreement on one separator improves inter-agent legibility.
 
 The `passport` is what other agents read to discover the agent. The `shell` is what the agent itself (and its tools) walk to operate. They are different blocks for different audiences.
 
