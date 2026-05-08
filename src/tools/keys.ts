@@ -120,7 +120,7 @@ export async function handleKeyPublish(params: {
   const block = row.block as Block;
   writeAt(block, '9', newPubKeys as any);
   // Surgical write at spindle "9" with the new key object.
-  await saveBlock(beach, blockName, block, row.block_type, {
+  await saveBlock(beach, blockName, block, {
     spindle: '9',
     pscale_attention: null,
     secret,

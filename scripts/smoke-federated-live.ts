@@ -28,10 +28,16 @@ function getText(r: any): string {
 
 console.log(`Smoke against ${BEACH}\n  handle=${HANDLE}  ts=${NOW}\n`);
 
-console.log('=== Tier A — anon presence write at beach:1.7 ===');
+// Each smoke run writes marks at unique slots (timestamp suffix folded into supernest)
+// to avoid collision across runs. Marks live at the 'marks' sibling block per
+// block-conventions branch 9 — the URL surface has no "beach" block.
+const SLOT_PRESENCE = String(7000 + (Date.now() % 1000));   // e.g. 7321 → walks 7,3,2,1
+const SLOT_SUBSTANTIVE = String(8000 + (Date.now() % 1000));
+
+console.log(`=== Tier A — anon presence at marks slot ${SLOT_PRESENCE} ===`);
 const r1 = await handleBsp({
-  agent_id: BEACH, block: 'beach',
-  spindle: '1.7', pscale_attention: -3,
+  agent_id: BEACH, block: 'marks',
+  spindle: SLOT_PRESENCE, pscale_attention: -SLOT_PRESENCE.length,
   content: {
     _: `${HANDLE} @ ${NOW} — present at /`,
     '1': HANDLE, '2': '', '3': NOW,
@@ -39,10 +45,10 @@ const r1 = await handleBsp({
 });
 assert(getText(r1).includes('wrote'), `bsp() write returned: ${getText(r1).slice(0,120)}`);
 
-console.log('\n=== Tier B — handle-only substantive mark at beach:1.8 ===');
+console.log(`\n=== Tier B — handle-only substantive mark at marks slot ${SLOT_SUBSTANTIVE} ===`);
 const r2 = await handleBsp({
-  agent_id: BEACH, block: 'beach',
-  spindle: '1.8', pscale_attention: -3,
+  agent_id: BEACH, block: 'marks',
+  spindle: SLOT_SUBSTANTIVE, pscale_attention: -SLOT_SUBSTANTIVE.length,
   content: {
     _: `pipe smoke from bsp-mcp at ${NOW} — handle-only substantive mark`,
     '1': HANDLE, '2': '', '3': NOW, '4': 'character',
@@ -51,13 +57,13 @@ const r2 = await handleBsp({
 assert(getText(r2).includes('wrote'), `bsp() write returned: ${getText(r2).slice(0,120)}`);
 
 console.log('\n=== Verify both landed on happyseaurchin (live curl) ===');
-const cur1 = await fetch(`${BEACH}/.well-known/pscale-beach?spindle=1.7`).then(r => r.json());
-assert(cur1?.['1'] === HANDLE, `beach:1.7 has agent_id=${HANDLE}`);
-assert(!('4' in (cur1 ?? {})), 'beach:1.7 has no field 4 (presence shape)');
+const cur1 = await fetch(`${BEACH}/.well-known/pscale-beach?block=marks&spindle=${SLOT_PRESENCE}`).then(r => r.json());
+assert(cur1?.['1'] === HANDLE, `marks:${SLOT_PRESENCE} has agent_id=${HANDLE}`);
+assert(!('4' in (cur1 ?? {})), `marks:${SLOT_PRESENCE} has no field 4 (presence shape)`);
 
-const cur2 = await fetch(`${BEACH}/.well-known/pscale-beach?spindle=1.8`).then(r => r.json());
-assert(cur2?.['1'] === HANDLE, `beach:1.8 has agent_id=${HANDLE}`);
-assert(cur2?.['4'] === 'character', 'beach:1.8 has field 4 (substantive)');
+const cur2 = await fetch(`${BEACH}/.well-known/pscale-beach?block=marks&spindle=${SLOT_SUBSTANTIVE}`).then(r => r.json());
+assert(cur2?.['1'] === HANDLE, `marks:${SLOT_SUBSTANTIVE} has agent_id=${HANDLE}`);
+assert(cur2?.['4'] === 'character', `marks:${SLOT_SUBSTANTIVE} has field 4 (substantive)`);
 
 console.log('\n=== Tier C — handle+passphrase locked sibling block on happyseaurchin ===');
 const SCRATCH = `claude-pipe-test-${Date.now()}`;  // unique to avoid lock-conflict on reruns

@@ -8,18 +8,18 @@ import { loadBlock, isSentinelOwner, saveBlock, updatePositionHashes } from '../
 
   console.log('\n--- loadBlock(pscale, whetstone) ---');
   const w = await loadBlock('pscale', 'whetstone');
-  console.log('found:', !!w, 'block_type:', w?.block_type);
+  console.log('found:', !!w);
   console.log('underscore:', String(w?.block?._).slice(0, 120), '...');
 
   console.log('\n--- loadBlock(pscale, sunstone) ---');
   const s = await loadBlock('pscale', 'sunstone');
-  console.log('found:', !!s, 'block_type:', s?.block_type);
+  console.log('found:', !!s);
   console.log('underscore:', String(s?.block?._).slice(0, 120), '...');
 
   for (const name of ['agent-id', 'evolution', 'manifest', 'progression', 'block-conventions', 'gatekeeper']) {
     console.log(`\n--- loadBlock(pscale, ${name}) ---`);
     const r = await loadBlock('pscale', name);
-    console.log('found:', !!r, 'block_type:', r?.block_type);
+    console.log('found:', !!r);
     const u = r?.block?._;
     const us = typeof u === 'string' ? u : (u && typeof u === 'object' ? String((u as any)._) : '');
     console.log('underscore:', us.slice(0, 120), '...');

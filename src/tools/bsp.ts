@@ -63,7 +63,7 @@ export const bspParamsSchema = {
     .describe(`Addressed namespace — substrate dispatched by form. Three real targets after dispatch: (1) URL ("https://happyseaurchin.com") → that federated beach at <origin>/.well-known/pscale-beach; (2) "pscale" → the in-memory sentinel registry (bundled teaching blocks: manifest, whetstone, sunstone, agent-id, evolution, progression, block-conventions, gatekeeper, protocol-paywall — read-only); (3) anything else → translated to the default beach (${DEFAULT_BEACH}) with the agent_id encoded into the block name. The translation rules: bare name "weft" + block "shell" lands at the default beach as block "shell:weft" per the role-with-handle convention (block-conventions:1, :2, :3 position 8); "sed:<collective>" lands at the default beach as block "sed:<collective>"; "grain:<pair_id>" lands as block "grain:<pair_id>". Translation is internal — callers just pass the agent_id form they have. **Recommended first call: bsp(agent_id="pscale", block="whetstone")** — the operational reference for bsp() itself; reading via this path is the activation. Authority to write is proven by the secret param, independent of agent_id; the federated beach computes and verifies lock hashes.`),
   block: z
     .string()
-    .describe('Block name within the agent_id\'s namespace. For URL agent_id this is whatever the beach has named the block (typically "beach", "marks", or a per-agent block like "shell:happyseaurchin"). For sed:/grain: agent_id any block argument is dropped during translation (the prefix-typed agent_id IS the block on the beach). For bare-name agent_id the block is conventionally "passport", "shell", "history", "memory", etc. — translated to "<block>:<handle>" at the default beach.'),
+    .describe('Block name within the agent_id\'s namespace. For URL agent_id this is whatever the host has named the block — common names per substrate-wide convention include "marks" (the URL\'s mark wall), "passport:<handle>", "shell:<handle>", "history:<handle>", "pool:<name>", "frame:<scene>", "sed:<collective>", "grain:<pair_id>". The host serves whichever named blocks it hosts. For sed:/grain: agent_id any block argument is dropped during translation (the prefix-typed agent_id IS the block on the beach). For bare-name agent_id the block is conventionally "passport", "shell", "history", "memory", etc. — translated to "<block>:<handle>" at the default beach.'),
   spindle: z
     .string()
     .nullable()
@@ -133,17 +133,6 @@ function formatLockStateLine(_row: BlockRow, _spindle: string | null | undefined
   // Federation v2 doesn't surface lock state on GET. If the beach starts
   // returning a {block, locks} envelope we'd render here.
   return '';
-}
-
-/**
- * First-contact conventions hint for federated beach reads at root.
- * Suppressed for non-federated reads, non-beach blocks, or non-root walks.
- */
-function federatedRootHint(agentId: string, blockName: string, spindle: string | null | undefined): string {
-  if (!isFederatedOwner(agentId)) return '';
-  if (blockName !== 'beach') return '';
-  if (spindle && spindle !== '' && spindle !== '0') return '';
-  return `\n\n[hint] Local beach conventions at bsp(agent_id="${agentId}", block="beach", spindle="8"). Substrate-wide conventions at bsp(agent_id="pscale", block="block-conventions").`;
 }
 
 // ── The handler ──
@@ -220,8 +209,7 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       : row.block;
     const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
     const lockLine = formatLockStateLine(row, spindle);
-    const hintLine = federatedRootHint(target.agent_id, target.block, spindle);
-    return { content: [{ type: 'text', text: formatRead(result) + lockLine + hintLine }] };
+    return { content: [{ type: 'text', text: formatRead(result) + lockLine }] };
   }
 
   // ── WRITE and/or LOCK ──
@@ -278,7 +266,6 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       agent_id,
       blockName,
       blockToSave,
-      row?.block_type ?? 'general',
       {
         spindle: spindle ?? '',
         pscale_attention: pscale_attention ?? null,
