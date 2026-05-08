@@ -1,27 +1,30 @@
 /**
- * db.ts — storage adapter for the bsp-mcp.
+ * db.ts — storage adapter for bsp-mcp.
  *
- * The membrane between the geometry and the substrate. Above this line: BSP
- * operates on JSON. Below this line: persistence — Supabase (commons) or a
- * remote /.well-known/pscale-beach (federated). Geometry is invariant;
- * storage is variant.
+ * Two substrates only: federated beaches (over HTTP) and the sentinel registry
+ * (in-memory bundled JSON). No central Supabase. agent_id values that are not
+ * URLs and not the "pscale" sentinel translate to a default beach with the
+ * original agent_id encoded into the block name.
  *
- * Dispatch by owner_id prefix:
- *   sed:{collective} / grain:{pair_id} / bare agent_id  → Supabase commons
- *   https?://{origin}                                    → federated beach
+ * Translation table for non-URL, non-sentinel agent_id:
+ *   bare name "weft"      + block "shell"     → (DEFAULT_BEACH, "shell:weft")
+ *   bare name "weft"      + block "passport"  → (DEFAULT_BEACH, "passport:weft")
+ *   "sed:hsu-commons"     + block "<any>"     → (DEFAULT_BEACH, "sed:hsu-commons")
+ *   "grain:abc123def4"    + block "<any>"     → (DEFAULT_BEACH, "grain:abc123def4")
  *
- * Same Supabase project as pscale-mcp-server. Same blocks, same agents,
- * same passphrases, same grains. Interoperability is at the data layer.
+ * For bare names, the role-with-handle convention scopes per-agent blocks at
+ * the shared beach (see block-conventions branches 1, 2, 3 position 8). For
+ * sed:/grain: the prefix-typed name IS the block on the beach (see
+ * block-conventions branch 7 and 6 respectively); the original block argument
+ * is dropped during translation since the substrate-shape carries enough.
  *
  * Federation per docs/protocol-pscale-beach-v2.md:
- *   GET  https://<origin>/.well-known/pscale-beach[?block=<name>]
+ *   GET  https://<origin>/.well-known/pscale-beach[?block=<name>][&spindle=<addr>]
  *   POST https://<origin>/.well-known/pscale-beach[?block=<name>]
- *        body: { spindle, pscale_attention?, content, secret?, new_lock?, gray? }
+ *        body: { spindle, pscale_attention?, content?, secret?, new_lock?, gray? }
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Block, readAt } from './bsp.js';
-import { bspRead } from './bsp-fn.js';
 import sunstone from './sunstone.json' with { type: 'json' };
 import whetstone from './whetstone.json' with { type: 'json' };
 import agentId from './agent-id.json' with { type: 'json' };
@@ -32,25 +35,21 @@ import blockConventions from './block-conventions.json' with { type: 'json' };
 import gatekeeper from './gatekeeper.json' with { type: 'json' };
 import protocolPaywall from './protocol-paywall.json' with { type: 'json' };
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://piqxyfmzzywxzqkzmpmm.supabase.co';
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  '';
+// ── Default beach ──
+//
+// The federated host that bare-name, sed:, and grain: agent_ids translate to.
+// Override via DEFAULT_BEACH env var. https://happyseaurchin.com is the
+// reference federated host; any beach URL works as a default.
 
-let client: SupabaseClient | null = null;
+export const DEFAULT_BEACH = process.env.DEFAULT_BEACH || 'https://happyseaurchin.com';
 
-export function getClient(): SupabaseClient {
-  if (!client) {
-    if (!supabaseKey) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY is required');
-    }
-    client = createClient(supabaseUrl, supabaseKey);
-  }
-  return client;
-}
-
-// ── Block row ──
+// ── Block row shape ──
+//
+// Carries through from the previous Supabase era; federated reads synthesise
+// this shape so downstream code doesn't need to know which substrate served
+// the block. position_hashes is intentionally empty for federated rows —
+// remote beaches manage their own locks and the bsp-mcp's lock-state lives at
+// the beach, not here.
 
 export interface BlockRow {
   id: string;
@@ -63,15 +62,8 @@ export interface BlockRow {
   updated_at: string;
 }
 
-// ── Write options (for federated POST passthrough) ──
+// ── Write options (federated POST passthrough) ──
 
-/**
- * Optional write parameters that pass through to a federated beach via the
- * /.well-known POST body. For Supabase-backed owners these are ignored —
- * locks are validated locally before saveBlock is called, and lock changes
- * happen via updatePositionHashes. For federated owners, the remote site
- * validates secret and applies new_lock server-side.
- */
 export interface WriteOptions {
   spindle?: string | null;
   pscale_attention?: number | null;
@@ -84,18 +76,16 @@ export interface WriteOptions {
 
 const URL_PREFIX_RE = /^https?:\/\//i;
 
-/** True if the owner_id is a URL — federated beach storage applies. */
+/** True if the agent_id is a URL — federated beach storage applies. */
 export function isFederatedOwner(ownerId: string): boolean {
   return URL_PREFIX_RE.test(ownerId);
 }
 
-// ── Sentinel owner (server-bundled teaching blocks) ──
+// ── Sentinel registry (bundled teaching blocks) ──
 //
 // agent_id="pscale" is reserved as a read-only sentinel that exposes the
 // teaching/reference blocks shipped inside this server. Walking these via
-// bsp() is the function reading its own manual — the call frame surrounds
-// the read, which is the situated condition under which the enactive
-// sentence in whetstone:_ is true. Writes to this owner_id reject.
+// bsp() is the function reading its own manual.
 
 const SENTINEL_OWNERS = new Set(['pscale']);
 const SENTINEL_BLOCKS: Record<string, Block> = {
@@ -110,7 +100,6 @@ const SENTINEL_BLOCKS: Record<string, Block> = {
   'pscale/protocol-paywall': protocolPaywall as unknown as Block,
 };
 
-/** True if the owner_id is the bundled-blocks sentinel ("pscale"). */
 export function isSentinelOwner(ownerId: string): boolean {
   return SENTINEL_OWNERS.has(ownerId);
 }
@@ -130,6 +119,54 @@ function loadSentinelBlock(ownerId: string, name: string): BlockRow | null {
     updated_at: now,
   };
 }
+
+// ── agent_id translation ──
+//
+// Non-URL, non-sentinel agent_ids translate to (DEFAULT_BEACH, encoded-block).
+// The translation preserves the user's intent — bare-name handles, sed:
+// collectives, grain: pairs all live as siblings at the shared default beach,
+// distinguished by block name.
+
+export interface TranslatedAddress {
+  agent_id: string;     // URL of the beach (or "pscale")
+  block: string;        // block name on the beach
+  translated: boolean;  // true if a translation actually happened
+  original: { agent_id: string; block: string };
+}
+
+/**
+ * Resolve any agent_id form to a (beach_url, block_name) pair the storage
+ * layer can act on. URL agent_id passes through. "pscale" passes through.
+ * Everything else translates to the default beach with the agent_id encoded
+ * into the block name per substrate convention.
+ */
+export function translateAddress(agentId: string, blockName: string): TranslatedAddress {
+  const original = { agent_id: agentId, block: blockName };
+  if (isFederatedOwner(agentId)) {
+    return { agent_id: agentId, block: blockName, translated: false, original };
+  }
+  if (isSentinelOwner(agentId)) {
+    return { agent_id: agentId, block: blockName, translated: false, original };
+  }
+  if (agentId.startsWith('sed:')) {
+    // Sed: collective lives at the default beach as block "sed:<collective>".
+    // The block argument is dropped — sed: blocks are self-naming.
+    return { agent_id: DEFAULT_BEACH, block: agentId, translated: true, original };
+  }
+  if (agentId.startsWith('grain:')) {
+    // Grain pair lives at the default beach as block "grain:<pair_id>".
+    return { agent_id: DEFAULT_BEACH, block: agentId, translated: true, original };
+  }
+  // Bare name → role:<handle> convention at the default beach.
+  return {
+    agent_id: DEFAULT_BEACH,
+    block: `${blockName}:${agentId}`,
+    translated: true,
+    original,
+  };
+}
+
+// ── URL canonicalisation ──
 
 /**
  * Canonicalise a URL to its origin form per protocol §2.1:
@@ -193,9 +230,6 @@ async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<B
   } catch (e: any) {
     throw new Error(`Beach response was not JSON: ${e?.message ?? e}`);
   }
-  // Synthesise a BlockRow shape. position_hashes is intentionally empty —
-  // remote beaches manage their own locks; bsp-mcp's local verifyLock will
-  // see an empty map and pass through, leaving authority to the remote.
   const now = new Date().toISOString();
   return {
     id: `${ownerId}/${blockName}`,
@@ -212,14 +246,8 @@ async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<B
 /**
  * Probe whether a URL hosts a federated beach. Used to disambiguate "block
  * not found at federated host" from "host not federated at all" after a 404
- * on a per-block load. GETs `<origin>/.well-known/pscale-beach` (no ?block=)
- * with Accept: application/json and treats any 2xx as evidence of federation;
- * 404 / network error as evidence that the host is not federated.
- *
- * Returns "federated" when the bare endpoint responds successfully, "absent"
- * when it 404s or fails. The "unknown" case (5xx, timeout) is reported as
- * "absent" — the LLM should treat ambiguous probes as host-not-reachable
- * rather than asserting federation that may not exist.
+ * on a per-block load. Returns "federated" when the bare /.well-known endpoint
+ * responds successfully, "absent" when it 404s or fails.
  */
 export async function probeFederation(ownerId: string): Promise<'federated' | 'absent'> {
   if (!isFederatedOwner(ownerId)) return 'absent';
@@ -235,11 +263,10 @@ export async function probeFederation(ownerId: string): Promise<'federated' | 'a
 
 /**
  * POST an action-shaped body to a federated beach endpoint. Used by
- * substrate-stateful primitives (pscale_register, pscale_grain_reach) when
- * dispatching to a site-hosted sed:/grain: substrate via the `host`
- * parameter. Distinct from saveBlockToBeach which sends the standard
- * bsp-mcp write shape — this passes the body through as-is so the receiver
- * can dispatch on its own action discriminator.
+ * substrate-stateful primitives (pscale_register, pscale_grain_reach) to
+ * dispatch atomic state transitions to a site-hosted sed:/grain: substrate.
+ * The body shape carries an `action` discriminator; the receiver dispatches
+ * on it.
  */
 export async function postActionToBeach(
   origin: string,
@@ -277,18 +304,6 @@ async function saveBlockToBeach(
   opts: WriteOptions = {},
 ): Promise<BlockRow> {
   const url = beachEndpoint(ownerId, blockName);
-  // The federated POST contract has two modes:
-  //   - Surgical: send {spindle, content: <subtree at spindle>}. The receiver's
-  //     writeAt sets block[<spindle>] = subtree, applying just this change.
-  //   - Whole-block: send {spindle: '', content: <whole block>, confirm: true}.
-  //     The confirm flag opts past the receiver's clobber-guard. Reserved for
-  //     genuine whole-block intent (empty user spindle, or shapes the surgical
-  //     path can't represent).
-  // The local bspWrite has already merged the user's write into `block`, so the
-  // subtree at the user's spindle reflects the merged result. A ring write that
-  // added one digit to a parent yields a subtree carrying all original siblings
-  // plus the new one — replacing the receiver's parent with that subtree is
-  // equivalent to the merge, modulo the standard read-modify-write race.
   const userSpindle = opts.spindle;
   const isWholeBlock = !userSpindle || userSpindle === '' || userSpindle === '*';
   const body: Record<string, any> = {};
@@ -298,13 +313,6 @@ async function saveBlockToBeach(
     body.content = block;
     body.confirm = true;
   } else {
-    // Strip trailing star — receivers don't implement star semantics; the
-    // post-write subtree at the cleaned spindle already encodes the change.
-    // Use readAt (not walk): readAt mirrors writeAt's digit-as-key semantics
-    // without the floor-spine special case that bites point-writes at the
-    // underscore (spindle="0"). For spindle="0", readAt returns block._
-    // (the underscore string after the local write) — which is what the
-    // receiver's writeAt expects to set at block._.
     const cleanedSpindle = userSpindle.replace(/\*$/, '');
     body.spindle = cleanedSpindle;
     body.pscale_attention = opts.pscale_attention ?? null;
@@ -350,24 +358,18 @@ async function saveBlockToBeach(
   };
 }
 
-// ── Adapter primitives — load_block, save_block, locks ──
+// ── Public adapter primitives ──
+//
+// loadBlock and saveBlock take an agent_id + block_name pair, translate the
+// agent_id, and dispatch. The translation is internal — callers can pass any
+// agent_id form and get the right substrate.
 
 export async function loadBlock(ownerId: string, name: string): Promise<BlockRow | null> {
-  if (isSentinelOwner(ownerId)) {
-    return loadSentinelBlock(ownerId, name);
+  const t = translateAddress(ownerId, name);
+  if (isSentinelOwner(t.agent_id)) {
+    return loadSentinelBlock(t.agent_id, t.block);
   }
-  if (isFederatedOwner(ownerId)) {
-    return loadBlockFromBeach(ownerId, name);
-  }
-  const { data, error } = await getClient()
-    .from('pscale_blocks')
-    .select('*')
-    .eq('owner_id', ownerId)
-    .eq('name', name)
-    .single();
-  if (error && error.code === 'PGRST116') return null;
-  if (error) throw new Error(`DB error: ${error.message}`);
-  return data as BlockRow;
+  return loadBlockFromBeach(t.agent_id, t.block);
 }
 
 export async function saveBlock(
@@ -377,87 +379,63 @@ export async function saveBlock(
   blockType: string = 'general',
   opts: WriteOptions = {},
 ): Promise<BlockRow> {
-  if (isSentinelOwner(ownerId)) {
-    throw new Error(`"${ownerId}" is a read-only sentinel; the bundled teaching blocks are server-fixed.`);
+  const t = translateAddress(ownerId, name);
+  if (isSentinelOwner(t.agent_id)) {
+    throw new Error(`"${t.agent_id}" is a read-only sentinel; the bundled teaching blocks are server-fixed.`);
   }
-  if (isFederatedOwner(ownerId)) {
-    return saveBlockToBeach(ownerId, name, block, opts);
-  }
-  const { data, error } = await getClient()
-    .from('pscale_blocks')
-    .upsert(
-      {
-        owner_id: ownerId,
-        name,
-        block_type: blockType,
-        block,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'owner_id,name' },
-    )
-    .select()
-    .single();
-  if (error) throw new Error(`DB error: ${error.message}`);
-  return data as BlockRow;
+  return saveBlockToBeach(t.agent_id, t.block, block, opts);
 }
 
+/**
+ * No-op for federated beaches. The lock change rides inside the saveBlock
+ * POST body as new_lock + secret; the beach computes and stores the hash.
+ * Kept as a function for callsite compatibility — bsp-mcp itself never
+ * computes lock hashes anymore.
+ */
 export async function updatePositionHashes(
   ownerId: string,
   name: string,
-  hashes: Record<string, string>,
+  _hashes: Record<string, string>,
 ): Promise<void> {
-  if (isSentinelOwner(ownerId)) {
-    throw new Error(`"${ownerId}" is a read-only sentinel; lock changes rejected.`);
+  const t = translateAddress(ownerId, name);
+  if (isSentinelOwner(t.agent_id)) {
+    throw new Error(`"${t.agent_id}" is a read-only sentinel; lock changes rejected.`);
   }
-  if (isFederatedOwner(ownerId)) {
-    // Federated beaches manage their own locks. The lock change was
-    // forwarded inside the saveBlock POST body (as new_lock + secret).
-    return;
-  }
-  const { error } = await getClient()
-    .from('pscale_blocks')
-    .update({ position_hashes: hashes, updated_at: new Date().toISOString() })
-    .eq('owner_id', ownerId)
-    .eq('name', name);
-  if (error) throw new Error(`DB error: ${error.message}`);
+  // Federated: lock change was forwarded inside saveBlock POST body. Nothing
+  // for bsp-mcp to do here.
+  return;
 }
 
-export async function listBlocks(ownerId: string): Promise<BlockRow[]> {
-  if (isFederatedOwner(ownerId)) {
-    throw new Error('listBlocks is not supported on federated beaches.');
-  }
-  const { data, error } = await getClient()
-    .from('pscale_blocks')
-    .select('*')
-    .eq('owner_id', ownerId)
-    .order('updated_at', { ascending: false });
-  if (error) throw new Error(`DB error: ${error.message}`);
-  return (data || []) as BlockRow[];
-}
+// ── Passport lookup helpers (used by pscale_verify_rider) ──
 
-// ── Address resolution for cross-substrate passport lookup ──
-
-export async function getPassportBlock(agentId: string): Promise<Block | null> {
-  const row = await loadBlock(agentId, 'passport');
+/**
+ * Read an agent's passport block. The handle's passport is at:
+ *   - URL agent: (handle, "passport") — handle is the URL itself
+ *   - sed:/grain: agent: handle is the namespace; passport at "passport:<handle>" on the default beach
+ *   - bare handle: (handle, "passport") — translates to ("passport:<handle>") at default beach
+ */
+export async function getPassportBlock(agentHandle: string): Promise<Block | null> {
+  const row = await loadBlock(agentHandle, 'passport');
   return row ? row.block : null;
 }
 
 /**
- * Resolve a sed:, grain:, or bare agent address to a passport-shaped block.
- * Substrate dispatch via the address prefix.
+ * Resolve a sed:, grain:, URL, or bare handle to a passport-shaped block.
+ * For sed:<collective>:<position>, returns the registrant's position content
+ * (which has the same {_, 1, 2, ...} shape as a passport).
  */
 export async function getPassportFromAddress(addr: string): Promise<Block | null> {
   if (addr.startsWith('grain:')) {
     const parts = addr.split(':');
     if (parts.length !== 3) return null;
-    const [, pairId, side] = parts;
+    const [, pid, side] = parts;
     if (side !== '1' && side !== '2') return null;
-    const grainRow = await loadBlock(`grain:${pairId}`, 'grain');
+    const grainRow = await loadBlock(`grain:${pid}`, 'grain');
     if (!grainRow) return null;
     const sideMap = grainRow.block?.['9'] as Record<string, string> | undefined;
-    const underlying = sideMap?.[side];
-    if (!underlying) return null;
-    return getPassportBlock(underlying);
+    const underlyingHandle = sideMap?.[side];
+    if (!underlyingHandle) return null;
+    return getPassportBlock(underlyingHandle);
   }
   if (addr.startsWith('sed:')) {
     const parts = addr.split(':');
@@ -465,17 +443,14 @@ export async function getPassportFromAddress(addr: string): Promise<Block | null
     const [, collective, position] = parts;
     const row = await loadBlock(`sed:${collective}`, collective);
     if (!row) return null;
-    const result = bspRead(row.block, position, null);
-    // Subtree → return as passport
-    if (result.shape === 'subtree' && result.subtree) {
-      return typeof result.subtree === 'string'
-        ? { _: result.subtree }
-        : (result.subtree as Block);
+    // Walk the position digits.
+    let node: any = row.block;
+    for (const d of position) {
+      if (!node || typeof node !== 'object') return null;
+      node = node[d];
     }
-    if (result.shape === 'point' && result.point) {
-      return { _: result.point };
-    }
-    return null;
+    if (!node) return null;
+    return typeof node === 'string' ? { _: node } : (node as Block);
   }
   return getPassportBlock(addr);
 }
@@ -483,8 +458,8 @@ export async function getPassportFromAddress(addr: string): Promise<Block | null
 /**
  * Get an agent's published public keys from their passport block (address 9).
  */
-export async function getPublicKeys(agentId: string): Promise<{ x25519: string; ed25519: string } | null> {
-  const block = await getPassportBlock(agentId);
+export async function getPublicKeys(agentHandle: string): Promise<{ x25519: string; ed25519: string } | null> {
+  const block = await getPassportBlock(agentHandle);
   if (!block) return null;
   const keys = block['9'];
   if (!keys || typeof keys !== 'object' || !keys.x25519 || !keys.ed25519) return null;

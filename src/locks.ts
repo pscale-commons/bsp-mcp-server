@@ -1,16 +1,17 @@
 /**
- * crypto.ts — hash primitives for write-lock verification.
+ * locks.ts — pair_id derivation only.
  *
- * Salt formats are LEGACY-COMPATIBLE with pscale-mcp-server. Same Supabase,
- * same blocks, same passphrases — locks set under one MCP must verify under
- * the other.
+ * Lock-hashing now lives at the federated beach. bsp-mcp does not compute
+ * lock hashes — it forwards `secret` and `new_lock` in the POST body and the
+ * beach computes/verifies under the canonical salt namespaces:
  *
- *   sed:     sha256(passphrase + collective + position)
- *   grain:   sha256(passphrase + "grain:" + pair_id + ":" + side)
- *   block:   sha256(passphrase + "block:" + agent_id + ":" + name + ":" + position)
+ *   sed:    sha256(passphrase + collective + position)
+ *   grain:  sha256(passphrase + "grain:" + pair_id + ":" + side)
+ *   block:  sha256(passphrase + "block:" + agent_id + ":" + name + ":" + position)
  *
- * Salt namespaces are distinct so the same passphrase never collides across
- * substrates.
+ * Kept here: pair_id and side derivation, which are pure functions of agent
+ * handles. Used client-side by pscale_grain_reach to compute the grain block
+ * name and side index before posting the action to the beach.
  */
 
 import { createHash } from 'node:crypto';
@@ -19,47 +20,10 @@ function sha256Hex(data: string): string {
   return createHash('sha256').update(data).digest('hex');
 }
 
-export function hashSedPassphrase(passphrase: string, collective: string, position: string): string {
-  return sha256Hex(passphrase + collective + position);
-}
-
-export function hashGrainPassphrase(passphrase: string, pairId: string, side: string): string {
-  return sha256Hex(passphrase + 'grain:' + pairId + ':' + side);
-}
-
-export function hashBlockPassphrase(
-  passphrase: string,
-  agentId: string,
-  name: string,
-  position: string,
-): string {
-  return sha256Hex(passphrase + 'block:' + agentId + ':' + name + ':' + position);
-}
-
 /**
- * Determine which hash function applies given an owner_id.
- * Returns the hashed value for the given (passphrase, position).
- */
-export function hashByOwnerId(
-  ownerId: string,
-  name: string,
-  position: string,
-  passphrase: string,
-): string {
-  if (ownerId.startsWith('sed:')) {
-    const collective = ownerId.slice(4);
-    return hashSedPassphrase(passphrase, collective, position);
-  }
-  if (ownerId.startsWith('grain:')) {
-    const pairId = ownerId.slice(6);
-    return hashGrainPassphrase(passphrase, pairId, position);
-  }
-  return hashBlockPassphrase(passphrase, ownerId, name, position);
-}
-
-/**
- * Pair-id from two agent_ids: sha256 of sorted-and-joined, truncated to 16 hex.
- * Lex-smaller agent_id gets side 1; lex-larger gets side 2.
+ * pair_id from two agent handles: sha256 of sorted-and-pipe-joined,
+ * truncated to 16 hex chars. Lex-smaller handle gets side 1; lex-larger
+ * gets side 2.
  */
 export function pairId(a: string, b: string): string {
   if (a === b) throw new Error('Cannot form a grain with yourself.');
@@ -67,7 +31,7 @@ export function pairId(a: string, b: string): string {
   return sha256Hex(`${lo}|${hi}`).slice(0, 16);
 }
 
-export function determineSide(myId: string, otherId: string): '1' | '2' {
-  if (myId === otherId) throw new Error('Cannot determine side: agent_ids identical.');
-  return myId < otherId ? '1' : '2';
+export function determineSide(myHandle: string, otherHandle: string): '1' | '2' {
+  if (myHandle === otherHandle) throw new Error('Cannot determine side: handles identical.');
+  return myHandle < otherHandle ? '1' : '2';
 }

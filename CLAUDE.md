@@ -18,7 +18,7 @@ A new MCP server that operationalises pscale JSON blocks through a single unifie
 
 **Repo**: https://github.com/pscale-commons/bsp-mcp-server
 **Hosted**: `https://bsp.hermitcrab.me/mcp/v1` (custom domain) or `https://bsp-mcp-server-production.up.railway.app/mcp/v1` (Railway direct)
-**Lineage**: rebuilds the function surface of `pscale-mcp-server` (https://github.com/pscale-commons/pscale-mcp-server) on the same Supabase substrate. Same blocks, same agents, same passphrases, same grains. Different API.
+**Lineage**: rebuilds the function surface of `pscale-mcp-server` (https://github.com/pscale-commons/pscale-mcp-server) — but federated-only. The pscale-mcp era used a single Supabase substrate. bsp-mcp uses federated beaches: URL agent_ids dispatch to that beach; bare/sed:/grain: agent_ids translate to a default beach. No central database. Pscale-mcp continues to run against Supabase for its own use cases; bsp-mcp does not share a substrate with it.
 
 Connect config:
 ```json
@@ -130,7 +130,7 @@ If you find yourself writing a different parser for "convenience" or "edge cases
 src/
   bsp.ts              — BSP walker (port of bsp2-star.py — DO NOT MODIFY casually)
   bsp-fn.ts           — Unified bsp() function: shape derivation, read/write symmetric, modifier composition
-  db.ts               — Supabase client (storage adapter — load_block, save_block, locks, position hashes; sentinel registry)
+  db.ts               — storage adapter: federated beach over HTTP + sentinel registry. No Supabase. Includes agent_id translation (bare/sed:/grain: → default beach) and probeFederation helper for distinguishing host-not-federated from block-not-found.
   server.ts           — MCP server factory, registers bsp() + primitives + sentinel resources
   index.ts            — Entry point (HTTP transport)
   sunstone.json       — The teaching block (eight branches; read first)
@@ -159,28 +159,29 @@ scripts/              — smoke tests for bsp() + each primitive (incl. smoke-se
 docs/                 — protocol specs (federated beach, etc.) — minimal, only what the substrate needs
 ```
 
-## Storage
+## Storage — federated beaches only
 
-**Same Supabase project as pscale-mcp-server** (`piqxyfmzzywxzqkzmpmm`). Same tables. Same blocks. Same agents. Same passphrases.
+bsp-mcp does not host data. It is a router + sentinel server. All persistent block storage lives at federated beaches — JSON KV stores with locks, accessed via `<origin>/.well-known/pscale-beach`.
 
-The substrate does not change between MCPs — only the function surface that operates on it. An agent registered at `sed:commons:14` via pscale-mcp-server is at `sed:commons:14` via bsp-mcp-server. A grain block formed by `pscale_grain_reach` from one MCP is reachable by bsp() from the other. Interoperability is at the data layer, not the API layer.
+Two terminating substrates after dispatch:
+- **Federated beach** — URL agent_id (`https://...`) → that beach. Data + lock state live there. The beach computes lock hashes under the canonical salt namespaces and stores them.
+- **Sentinel registry** — agent_id `"pscale"` → in-memory bundled JSON (sunstone, whetstone, manifest, agent-id, evolution, progression, block-conventions, gatekeeper, protocol-paywall). Read-only, served from process memory.
 
-Tables in use:
-- `pscale_blocks` — the substrate (owner_id + name = unique, position_hashes JSONB, gray-encrypted leaves)
-- `sand_inbox` — message routing
-- `beach_marks` — stigmergy at URLs
-- `pool_state`, `pool_contributions`, `pool_read_markers` — liquid pools
+Three translating forms:
+- Bare name (`weft`) → default beach with role-with-handle block name (`shell:weft`, `passport:weft`, `history:weft`, etc.)
+- `sed:<collective>` → default beach with block name `sed:<collective>`
+- `grain:<pair_id>` → default beach with block name `grain:<pair_id>`
 
-If a future feature needs a new table, ask whether the existing tables can serve it through naming conventions. Most can.
+The default beach is configurable via the `DEFAULT_BEACH` env var. Reference value: `https://happyseaurchin.com`.
+
+**No Supabase.** bsp-mcp does not connect to a database. The pscale-mcp-server (separate process) continues to run against Supabase for its own use cases; the two MCPs are separate. Any agent block still in Supabase needs to be migrated to a beach to be reachable via bsp-mcp.
 
 ## DESIGN PRINCIPLE — SCALE WITHOUT CENTRAL COST
 
-Carry forward from pscale-mcp-server:
-
-1. **Railway is convenience, not architecture.** The MCP server runs locally. Never bake in a Railway URL as the only path. Test against `npx tsx src/index.ts` not just remote.
-2. **Supabase is shared coordination only.** Things that MUST be shared. Not personal blocks, not passports.
-3. **`.well-known` is the scaling mechanism.** Each site hosts its own beach.
-4. **Every feature must ask: who pays at scale?** If "David" or "one central server" — the design is wrong.
+1. **Railway is convenience, not architecture.** The MCP router runs locally — on a thumbdrive, on a developer machine, on Railway as a default. The walker (bsp.ts/bsp-fn.ts) lives wherever bsp-mcp is hosted; sentinels are bundled. Multiple bsp-mcp instances are normal.
+2. **Beaches are the shared coordination layer.** Personal blocks (passports, shells, histories) live at a beach scoped per-handle via the role-with-handle convention. Multi-party state (sed: collectives, grain: pairs, pools) lives at a beach as named blocks.
+3. **`.well-known` is the scaling mechanism.** Each site hosts its own beach via `/.well-known/pscale-beach`. Anyone can host one in an afternoon; the protocol is small (GET/POST whole-block or surgical, with locks).
+4. **Every feature must ask: who pays at scale?** If "David" or "one central server" — the design is wrong. The router does compute at the user's edge; the beach does storage. Federation distributes the storage cost to whoever wants to host.
 
 ## Voicing discipline
 

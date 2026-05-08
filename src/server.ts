@@ -53,7 +53,9 @@ function installErrorWrapper(server: McpServer): void {
   };
 }
 
-const INSTRUCTIONS = `bsp-mcp-server — one function and five substrate primitives plus an orientation invite, operating on pscale JSON blocks.
+const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://happyseaurchin.com';
+
+const INSTRUCTIONS = `bsp-mcp-server — one function and five substrate primitives plus an orientation invite, operating on pscale JSON blocks served from federated beaches.
 
 FIRST ACTION when you connect: call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
 
@@ -67,23 +69,34 @@ Selection shape derives from (spindle length P_end, pscale_attention P_att):
   spindle empty + null → block   (whole tree)
   spindle ends '*'     → star    (enter hidden directory, recurse)
 
-LOCK SEMANTICS (four rules):
+LOCK SEMANTICS (four rules — enforced at the federated beach):
   R1: block does not exist + new_lock           → create locked, no secret needed.
   R2: block unlocked       + new_lock           → set lock, no secret needed.
   R3: block locked         + secret             → secret proves authority for content writes.
   R4: block locked         + secret + new_lock  → rotate lock (with optional content).
   secret is ALWAYS proof of current authority. new_lock is ALWAYS the target lock value. They never overlap.
+  bsp-mcp does not compute or verify lock hashes — it forwards secret/new_lock to the beach, which hashes under the canonical salt namespaces and stores/verifies.
 
 ADDRESS INVARIANT: pscale 0 is anchored at the floor (decimal point), not at the top of the tree. Floor = depth of the underscore chain. Walk algorithm: parse, pad LEFT to floor width with zeros, strip TRAILING zeros, then walk one digit at a time. Digit 0 → key '_'. Single decimal point as floor marker (stripped before walking). Trailing zeros are floor-width notation, not walk steps.
 
-SUBSTRATE DISPATCH: implicit via the agent_id prefix. "sed:{collective}" → sedimentary collective. "grain:{pair_id}" → bilateral grain. URL ("https://...") → federated beach via /.well-known/pscale-beach. "pscale" → reserved sentinel exposing bundled blocks (manifest, sunstone, whetstone, agent-id, evolution, progression). Anything else → ordinary block in the commons. The same bsp() function handles all of them; locks dispatch by prefix. new_lock is only valid on ordinary blocks — sed:/grain: substrates handle position-and-lock atomically through their own lifecycle tools.
+SUBSTRATE DISPATCH: three real targets after dispatch.
+  - URL ("https://example.com")        → that federated beach at <origin>/.well-known/pscale-beach
+  - "pscale"                            → reserved sentinel: bundled teaching blocks served in-memory (read-only)
+  - anything else                       → translated to the default beach (${DEFAULT_BEACH_URL}) with the agent_id encoded into the block name:
+      bare "weft" + block "shell"       → (default beach, block "shell:weft") per role-with-handle convention
+      "sed:<collective>"                → (default beach, block "sed:<collective>"), sed: substrate
+      "grain:<pair_id>"                 → (default beach, block "grain:<pair_id>"), grain substrate
+
+The translation happens inside bsp-mcp; callers just pass the agent_id form they have. To target a specific federated beach, pass its URL as agent_id; otherwise the default beach handles bare/sed:/grain: forms.
 
 THE FIVE PRIMITIVES (substrate state machines bsp() alone cannot subsume):
-  pscale_create_collective — create a sed: substrate with conventions in the root underscore.
-  pscale_register          — server-assigned position in a sed: collective (proof-of-presence-in-time, atomic create-lock-write).
-  pscale_grain_reach       — symmetric reach/accept across a bilateral pair_id (atomic create-lock-write per side).
-  pscale_key_publish       — derive Argon2id keypair, publish public half to passport position 9.
-  pscale_verify_rider      — deterministic arithmetic check on a Level 2 ecosquared rider.
+  pscale_create_collective — create a sed: substrate at a federated beach (atomic create-lock-write at the beach's site-hosted sed: handler).
+  pscale_register          — register at a sed: collective on a federated beach. Server-assigned position; per-position lock; proof-of-presence-in-time.
+  pscale_grain_reach       — symmetric reach/accept across a bilateral pair_id, hosted at a federated beach.
+  pscale_key_publish       — derive Argon2id keypair, publish public half to passport:<handle> position 9 at a federated beach.
+  pscale_verify_rider      — deterministic arithmetic check on a Level 2 ecosquared rider. Pure math.
+
+Each primitive that talks to a beach takes an optional agent_id parameter (URL of the beach). When omitted, the default beach is used. pscale_grain_reach and pscale_key_publish use a separate "handle" parameter for the agent's bare-name identity.
 
 THE INVITE (orientation, not feature):
   pscale_invite — returns the iterative orientation progression. Six steps with concrete actions, validation criteria, and next-step pointers. Optionally takes a step parameter to skip ahead.
@@ -91,14 +104,14 @@ THE INVITE (orientation, not feature):
 FOUNDATIONAL READING (sentinel-bundled — walk via bsp(agent_id="pscale", block=…)):
   manifest    — the index of the constitution. Walk this first; it lists everything else.
   whetstone   — the operational reference for bsp(). The underscore enacts on first read via this path.
-  sunstone    — the geometry teacher. Eight branches; branch 7 is the reflexive seed; branch 8 is the voicing discipline.
+  sunstone    — the geometry teacher. Nine branches; branch 7 is the reflexive seed; branch 8 is the voicing discipline; branch 9 is the design discipline.
   agent-id    — the addressing model. Five forms of agent_id, three address axes, three architectural disciplines.
   evolution   — the five-level ecosystem map: Signal, Commitment, Semantic networks, Mutual objectives, Shared context.
   progression — the iterative orientation block returned by pscale_invite (also walkable directly).
   block-conventions — substrate-wide convention catalogue. What canonical block names mean and which positions hold what.
-  gatekeeper  — substrate-wide canonical role-shell for L1→L2 admission. Hermitcrab pattern: cognition fluid, structure persistent. Honored convention (not primitive enforcement) at the threshold of pscale_invite step 4. Per-beach overrides at (beach_url, "gatekeeper"). Branch 7 teaches third-party reflective admission for clients without a separate gatekeeper-LLM host (claude-app, chatgpt, etc.).
+  gatekeeper  — substrate-wide canonical role-shell for L1→L2 admission. Hermitcrab pattern: cognition fluid, structure persistent. Honored convention at the threshold of pscale_invite step 4.
 
-SUBSTRATE: same Supabase project as pscale-mcp-server. Same blocks, same agents, same passphrases, same grains. The two MCPs interoperate at the data layer. Federation: URL agent_ids dispatch to <origin>/.well-known/pscale-beach. As of 2026-05-03 the current federation host is https://happyseaurchin.com.`;
+ARCHITECTURE: bsp-mcp is a router + sentinel server. The walker (bsp.ts/bsp-fn.ts) runs in-process for sentinel reads and for client-side merge during federated writes. The block content lives at federated beaches — JSON KV stores with locks. Default beach: ${DEFAULT_BEACH_URL}. To change it, set the DEFAULT_BEACH env var.`;
 
 export function createServer(): McpServer {
   const server = new McpServer(
@@ -116,31 +129,34 @@ export function createServer(): McpServer {
     handleBsp,
   );
 
-  // ── Six substrate-stateful primitives ──
+  // ── Five substrate-stateful primitives ──
+  // All operate against a federated beach. agent_id parameter is the beach URL
+  // (defaults to ${DEFAULT_BEACH_URL}). The beach implements the substrate
+  // state machine (atomic position alloc, bilateral handshake, key write).
   server.tool(
     'pscale_create_collective',
-    'Create a sedimentary collective — a sed: block where agents register at permanent, write-locked positions in landing order. The conventions string becomes the root underscore. The creator_passphrase locks position 0 (the root) for future convention edits.',
+    `Create a sedimentary collective at a federated beach — a "sed:<collective>" block where agents register at permanent, write-locked positions in landing order. The conventions string becomes the root underscore; creator_passphrase locks the root. Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to host elsewhere.`,
     createCollectiveParamsSchema,
     handleCreateCollective,
   );
 
   server.tool(
     'pscale_register',
-    'Register in a sedimentary collective. The server assigns the next valid position (digits 1-9 only, floor-2 minimum: 11, 12, ..., 19, 21, ..., 99, 111, ...). Your declaration becomes your underscore at that position. The position is write-locked with your passphrase. Subsequent writes via bsp() require the same passphrase as `secret`. Optional `host` param dispatches to a site-hosted sed: substrate at the given URL instead of central commons.',
+    `Register in a sedimentary collective at a federated beach. The beach assigns the next valid position (digits 1-9 only, floor-2 minimum: 11, 12, ..., 19, 21, ..., 99, 111, ...). Your declaration becomes your underscore at that position. The position is write-locked with your passphrase. Subsequent writes via bsp() require the same passphrase as \`secret\`. Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to register at a different beach.`,
     registerParamsSchema,
     handleRegister,
   );
 
   server.tool(
     'pscale_grain_reach',
-    'Establish a grain — first durable bilateral commitment. Symmetric: same call from either side. Server detects state — first call creates the block and writes one side; second call (from the partner) writes the other side and completes. Lex-smaller agent_id occupies side 1; lex-larger occupies side 2. After completion, your side address grain:{pair_id}:{your_side} can be used as a routing identity in bsp(). Optional `host` param dispatches to a site-hosted grain: substrate at the given URL instead of central commons.',
+    `Establish a grain at a federated beach — first durable bilateral commitment. Symmetric: same call from either side. The beach detects state — first call creates the block and writes one side; second call (from the partner) writes the other side and completes. Lex-smaller handle occupies side 1; lex-larger occupies side 2. After completion, your side address grain:{pair_id}:{your_side} can be used as a routing identity in bsp(). Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to host the grain at a different beach (both sides must agree on the host).`,
     grainReachParamsSchema,
     handleGrainReach,
   );
 
   server.tool(
     'pscale_key_publish',
-    'Derive an X25519+Ed25519 keypair from your secret + agent_id (Argon2id). Publish the public half at passport position 9. Private half is never stored. Same secret + agent_id always produces the same keys. Passport block must exist first. Rotation requires proof of prior key ownership (prior_secret OR signature).',
+    `Derive an X25519+Ed25519 keypair from your secret + handle (Argon2id). Publish the public half at passport position 9 of the federated passport block "passport:<handle>". Private half is never stored. Same secret + handle always produces the same keys. Passport block must exist at the beach first. Rotation requires proof of prior key ownership (prior_secret OR signature). Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to publish at a different beach.`,
     keyPublishParamsSchema,
     handleKeyPublish,
   );

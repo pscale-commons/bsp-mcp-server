@@ -2,13 +2,23 @@
  * tools/bsp.ts — the unified bsp() MCP tool handler.
  *
  * One function. Read when content is null. Write when content is provided.
- * Substrate dispatch is implicit via the agent_id prefix:
- *   sed:{collective} / grain:{pair_id} / bare agent_id.
+ * Substrate dispatch is implicit via the agent_id form:
+ *   - URL ("https://...")        → that federated beach
+ *   - "pscale"                   → in-memory sentinel registry
+ *   - bare name ("weft")         → DEFAULT_BEACH with block "<role>:<handle>"
+ *   - "sed:<collective>"         → DEFAULT_BEACH with block "sed:<collective>"
+ *   - "grain:<pair_id>"          → DEFAULT_BEACH with block "grain:<pair_id>"
  *
- * Locks are checked before write. Face/tier modifiers are accepted as
- * parameters for forward compatibility but treated as advisory in v0.1
- * (logged, not enforced — full enforcement requires the face-tier matrix
- * and sed:-collective membership checks; deferred to v0.2).
+ * The translation happens inside db.ts:translateAddress; this handler operates
+ * on the user's original agent_id/block pair and forwards to the storage layer
+ * which does the dispatch.
+ *
+ * Locks: bsp-mcp does not compute lock hashes. The federated beach computes
+ * and stores hashes server-side; bsp-mcp forwards `secret` and `new_lock` in
+ * the POST body. Sentinel reads are open and have no lock state.
+ *
+ * Face/tier modifiers are accepted as parameters for forward compatibility but
+ * treated as advisory in v0.1 (logged, not enforced).
  */
 
 import { z } from 'zod';
@@ -18,23 +28,27 @@ import {
   bspWrite,
   formatRead,
   formatWrite,
-  BspReadResult,
   BspWriteResult,
 } from '../bsp-fn.js';
-import { loadBlock, saveBlock, updatePositionHashes, BlockRow, isFederatedOwner, canonicaliseOrigin, probeFederation } from '../db.js';
-import { hashByOwnerId } from '../locks.js';
+import {
+  loadBlock,
+  saveBlock,
+  BlockRow,
+  isFederatedOwner,
+  isSentinelOwner,
+  canonicaliseOrigin,
+  probeFederation,
+  translateAddress,
+  DEFAULT_BEACH,
+} from '../db.js';
 import { selfEncrypt, decryptBlockNodes } from '../keys.js';
 
-// ── Gray-encryption helpers (Stage 10) ──
+// ── Gray-encryption helpers ──
 
 /**
  * Serialise a write payload into a string for gray self-encryption.
- *
- * Strings pass through verbatim. Objects, arrays, and primitives are
- * JSON-stringified so they can survive the round-trip through the gray
- * envelope's ciphertext. The decrypt path returns the raw string; callers
- * that produced structured payloads are responsible for re-parsing on read
- * (the substrate doesn't track input shape beyond the envelope wrapper).
+ * Strings pass through verbatim. Objects/arrays/primitives are JSON-encoded
+ * so they survive the round-trip through the gray envelope's ciphertext.
  */
 function stringifyForGray(content: any): string {
   if (typeof content === 'string') return content;
@@ -46,10 +60,10 @@ function stringifyForGray(content: any): string {
 export const bspParamsSchema = {
   agent_id: z
     .string()
-    .describe('Addressed namespace — substrate dispatched by prefix. Four substrate forms: bare name ("weft") → bsp-mcp commons (pscale_blocks table); "sed:<collective>" ("sed:commons") → sedimentary substrate; "grain:<pair_id>" ("grain:abc123def456") → grain substrate; URL ("https://happyseaurchin.com") → federated beach at <origin>/.well-known/pscale-beach via the WellKnownAdapter (db.ts:isFederatedOwner). The URL form requires the scheme — "happyseaurchin.com" without "https://" is treated as a bare name and routes to the commons. Plus one reserved sentinel: agent_id="pscale" exposes the server\'s bundled reference blocks — read-only, walked through bsp() like any other block. **Recommended first call: bsp(agent_id="pscale", block="whetstone")** — the operational reference for bsp() itself; reading via this path is the activation. Other bundled blocks (manifest=index, sunstone=geometry, agent-id=addressing, evolution=ecosystem, progression=six-step orientation) are reachable via the same pattern after whetstone has set the calibration. A single caller addresses multiple agent_ids in normal use — e.g. their own passport at "weft" AND their federated beach at "https://example.com". Authority to write is proven by the `secret` param, independent of agent_id.'),
+    .describe(`Addressed namespace — substrate dispatched by form. Three real targets after dispatch: (1) URL ("https://happyseaurchin.com") → that federated beach at <origin>/.well-known/pscale-beach; (2) "pscale" → the in-memory sentinel registry (bundled teaching blocks: manifest, whetstone, sunstone, agent-id, evolution, progression, block-conventions, gatekeeper, protocol-paywall — read-only); (3) anything else → translated to the default beach (${DEFAULT_BEACH}) with the agent_id encoded into the block name. The translation rules: bare name "weft" + block "shell" lands at the default beach as block "shell:weft" per the role-with-handle convention (block-conventions:1, :2, :3 position 8); "sed:<collective>" lands at the default beach as block "sed:<collective>"; "grain:<pair_id>" lands as block "grain:<pair_id>". Translation is internal — callers just pass the agent_id form they have. **Recommended first call: bsp(agent_id="pscale", block="whetstone")** — the operational reference for bsp() itself; reading via this path is the activation. Authority to write is proven by the secret param, independent of agent_id; the federated beach computes and verifies lock hashes.`),
   block: z
     .string()
-    .describe('Block name within the agent_id\'s storage. For sed: addresses this is usually the collective name; for grain: it is "grain"; for URL addresses it is conventionally "beach" (a site-hosted sibling block is selected via the standard `block` param, which the WellKnownAdapter forwards as ?block=<name>); for bare agents it is whatever the agent named the block.'),
+    .describe('Block name within the agent_id\'s namespace. For URL agent_id this is whatever the beach has named the block (typically "beach", "marks", or a per-agent block like "shell:happyseaurchin"). For sed:/grain: agent_id any block argument is dropped during translation (the prefix-typed agent_id IS the block on the beach). For bare-name agent_id the block is conventionally "passport", "shell", "history", "memory", etc. — translated to "<block>:<handle>" at the default beach.'),
   spindle: z
     .string()
     .nullable()
@@ -68,15 +82,15 @@ export const bspParamsSchema = {
   secret: z
     .string()
     .optional()
-    .describe('Proof of current authority. Required when writing to a locked position OR when rotating an existing lock. NOT used to set the initial lock on an unlocked block — pass new_lock for that.'),
+    .describe('Proof of current authority. Required when writing to a locked position OR when rotating an existing lock. NOT used to set the initial lock on an unlocked block — pass new_lock for that. Forwarded to the federated beach which computes the hash and verifies.'),
   new_lock: z
     .string()
     .optional()
-    .describe('Target lock value. Sets or rotates the write-lock at the addressed position. Four cases: (1) block does not exist + new_lock → create locked, no secret needed; (2) block unlocked + new_lock → lock with new_lock, no secret needed; (3) block locked + secret + new_lock → rotate from current to new_lock (secret proves current authority); (4) without new_lock, lock state is unchanged. Only valid on ordinary blocks — sed: blocks use pscale_register, grain: blocks use pscale_grain_reach.'),
+    .describe('Target lock value. Sets or rotates the write-lock at the addressed position. Four cases: (1) block does not exist + new_lock → create locked, no secret needed; (2) block unlocked + new_lock → lock with new_lock, no secret needed; (3) block locked + secret + new_lock → rotate from current to new_lock (secret proves current authority); (4) without new_lock, lock state is unchanged. Forwarded to the federated beach.'),
   gray: z
     .boolean()
     .optional()
-    .describe('Explicit opt-in for self-encryption on unlocked ordinary blocks. Default false.'),
+    .describe('Explicit opt-in for self-encryption on unlocked ordinary blocks. Default false. Encryption happens client-side at bsp-mcp; the encrypted envelope is what lands at the beach.'),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
@@ -100,50 +114,9 @@ export type BspToolParams = {
   tier?: 'soft' | 'medium' | 'hard';
 };
 
-// ── Lock verification ──
-
 /**
- * Verify the secret matches the position lock for the given block row.
- * Empty position_hashes = no lock, allowed.
- *
- * For ordinary blocks the lock lives at position_hashes['_'] (whole-block).
- * For sed: blocks the lock lives at position_hashes['{position}'].
- * For grain: blocks the lock lives at position_hashes['{side}'].
- */
-function verifyLock(
-  row: BlockRow,
-  position: string,
-  secret: string | undefined,
-): { allowed: boolean; reason?: string } {
-  // Determine which lock key applies.
-  let lockKey: string;
-  if (row.owner_id.startsWith('sed:')) {
-    // sed: per-position locks. The position parameter (the spindle root) is the key.
-    lockKey = position === '_' ? '_' : position;
-  } else if (row.owner_id.startsWith('grain:')) {
-    // grain: per-side locks. The side digit is the key.
-    lockKey = position === '_' ? '_' : position;
-  } else {
-    // Ordinary block: whole-block lock at '_'.
-    lockKey = '_';
-  }
-
-  const stored = row.position_hashes?.[lockKey];
-  if (!stored) return { allowed: true };
-  if (!secret) {
-    return { allowed: false, reason: `"${row.owner_id}/${row.name}" position "${lockKey}" is locked. Provide secret.` };
-  }
-  const computed = hashByOwnerId(row.owner_id, row.name, lockKey, secret);
-  if (computed !== stored) {
-    return { allowed: false, reason: 'Secret does not match position lock.' };
-  }
-  return { allowed: true };
-}
-
-/**
- * Determine which lock position a write would touch, based on the spindle.
- * For empty spindle (whole-block / disc) returns '_'. Otherwise returns the
- * spindle as the position key (matches sed: registration convention).
+ * Determine which lock position a write would touch. Used only for the
+ * fingerprint in formatLockState (informational, not for verification).
  */
 function lockPositionForWrite(spindle: string | null | undefined): string {
   if (!spindle || spindle === '') return '_';
@@ -151,44 +124,20 @@ function lockPositionForWrite(spindle: string | null | undefined): string {
 }
 
 /**
- * Determine which lock key applies to the write a read might next perform.
- * Mirrors verifyLock's dispatch:
- *   ordinary block → '_' (whole-block)
- *   sed:           → spindle root (position key)
- *   grain:         → spindle root (side digit)
- *
- * For a root read on a sed:/grain: block where the spindle is empty, returns
- * '_' (the conventions/root lock). Otherwise the first walk digit.
+ * For a federated read, surface a brief lock-line if the beach included a
+ * fingerprint in its response. Today the beach doesn't expose position_hashes
+ * in v2 GET responses, so this is a no-op placeholder for future protocol
+ * extension. Reads that find a block return a clean line.
  */
-function lockKeyForRead(row: BlockRow, spindle: string | null | undefined): string {
-  const raw = lockPositionForWrite(spindle);
-  if (row.owner_id.startsWith('sed:') || row.owner_id.startsWith('grain:')) {
-    if (!raw || raw === '_' || raw === '') return '_';
-    const m = raw.match(/^[1-9]+/);
-    return m ? m[0] : '_';
-  }
-  return '_';
-}
-
-/**
- * Surface the lock state of the position a write at this spindle would touch.
- * Non-destructive: read-only inspection, no secret accepted, no comparison done.
- * The fingerprint is the first 8 hex chars of the stored hash — enough for an
- * agent to recognise "this is the lock I expect" without exposing the full hash.
- */
-function formatLockState(row: BlockRow, spindle: string | null | undefined): string {
-  const key = lockKeyForRead(row, spindle);
-  const stored = row.position_hashes?.[key];
-  if (!stored) {
-    return `\n[lock] unlocked at position "${key}"`;
-  }
-  return `\n[lock] locked at position "${key}" (fingerprint: ${stored.slice(0, 8)})`;
+function formatLockStateLine(_row: BlockRow, _spindle: string | null | undefined): string {
+  // Federation v2 doesn't surface lock state on GET. If the beach starts
+  // returning a {block, locks} envelope we'd render here.
+  return '';
 }
 
 /**
  * First-contact conventions hint for federated beach reads at root.
- * Suppressed for non-federated reads, non-beach blocks, or non-root walks
- * (where the agent has already moved past landing into specific spindles).
+ * Suppressed for non-federated reads, non-beach blocks, or non-root walks.
  */
 function federatedRootHint(agentId: string, blockName: string, spindle: string | null | undefined): string {
   if (!isFederatedOwner(agentId)) return '';
@@ -200,7 +149,7 @@ function federatedRootHint(agentId: string, blockName: string, spindle: string |
 // ── The handler ──
 
 /**
- * Four-rule semantics for content + new_lock interaction:
+ * Four-rule semantics for content + new_lock interaction (enforced at the beach):
  *   (R1) Block doesn't exist + new_lock     → create locked at new_lock, no secret needed.
  *   (R2) Block unlocked       + new_lock     → set lock to new_lock, no secret needed.
  *   (R3) Block locked         + secret       → secret proves current authority for content writes.
@@ -209,8 +158,8 @@ function federatedRootHint(agentId: string, blockName: string, spindle: string |
  * `secret` is ALWAYS proof of current authority. Never the initial lock value.
  * `new_lock` is ALWAYS the target lock value. Never used as proof.
  *
- * sed:/grain: blocks reject new_lock — they have their own lifecycle tools
- * (pscale_register, pscale_grain_reach) which handle position-and-lock atomically.
+ * bsp-mcp forwards both to the beach without local hash computation. The
+ * sentinel registry has no lock semantics (read-only).
  */
 export async function handleBsp(params: BspToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { agent_id, block: blockName, spindle, pscale_attention, content, secret, new_lock, face, tier } = params;
@@ -219,31 +168,45 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     console.error(`[bsp] face=${face} tier=${tier} advisory (v0.1 — enforcement deferred)`);
   }
 
+  // Resolve the actual storage target. For sentinel and URL forms this is a
+  // pass-through; for bare/sed:/grain: it translates to the default beach
+  // with the agent_id encoded into the block name.
+  const target = translateAddress(agent_id, blockName);
+
+  // Sentinels reject writes — they are read-only.
+  if (isSentinelOwner(target.agent_id) && (content !== undefined || new_lock !== undefined)) {
+    return {
+      content: [{
+        type: 'text',
+        text: `"${target.agent_id}" is a read-only sentinel. The bundled teaching blocks are server-fixed.`,
+      }],
+    };
+  }
+
   let row: BlockRow | null = await loadBlock(agent_id, blockName);
 
   // ── READ ── (no content, no lock change)
   if (content === undefined && new_lock === undefined) {
     if (!row) {
-      if (isFederatedOwner(agent_id)) {
-        const origin = canonicaliseOrigin(agent_id);
-        // Probe the bare endpoint to distinguish "host not federated" from
-        // "host federated but block missing". A 404 on ?block=<name> alone
-        // can't tell them apart; the bare /.well-known/pscale-beach answers
-        // the question — 200 means the host follows the protocol, 404 / network
-        // failure means it doesn't.
-        const status = await probeFederation(agent_id);
+      // Federated host: distinguish "host not federated" from "block missing".
+      if (isFederatedOwner(target.agent_id)) {
+        const origin = canonicaliseOrigin(target.agent_id);
+        const status = await probeFederation(target.agent_id);
         if (status === 'federated') {
+          const translationNote = target.translated
+            ? ` (resolved from agent_id="${target.original.agent_id}" + block="${target.original.block}")`
+            : '';
           return {
             content: [{
               type: 'text',
-              text: `Block "${blockName}" not found at federated host ${origin}. The host is federated and serves /.well-known/pscale-beach, but does not host this block. If you intended a per-agent block at this URL, the canonical name is "<role>:<handle>" — e.g. shell:happyseaurchin, passport:happyseaurchin (per block-conventions branches 1, 2, 3 position 8).`,
+              text: `Block "${target.block}" not found at federated host ${origin}${translationNote}. The host is federated and serves /.well-known/pscale-beach, but does not host this block. If you intended a per-agent block, the canonical name is "<role>:<handle>" — e.g. shell:happyseaurchin, passport:happyseaurchin (per block-conventions branches 1, 2, 3 position 8).`,
             }],
           };
         }
         return {
           content: [{
             type: 'text',
-            text: `No beach at ${origin}/.well-known/pscale-beach (404). The site is not federated. Alternatives: try the commons by bare name (bsp(agent_id="<bare-name>", ...)) or consult a known federated-beach list.`,
+            text: `No beach at ${origin}/.well-known/pscale-beach (404). The site is not federated. Alternatives: try the default beach (${DEFAULT_BEACH}) by passing a bare-name or sed:/grain: agent_id, or consult a known federated-beach list.`,
           }],
         };
       }
@@ -252,56 +215,20 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     // Stage 10 — when secret is provided on a read, walk the block through
     // decryptBlockNodes so any _gray envelopes anywhere in the tree are
     // rehydrated to plaintext before bspRead computes the requested shape.
-    // Without a secret, the raw envelope passes through unchanged (existing
-    // behaviour preserved — peer reads see opaque envelopes).
     const blockForRead = secret
       ? await decryptBlockNodes(row.block, secret, agent_id)
       : row.block;
     const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
-    const lockLine = formatLockState(row, spindle);
-    const hintLine = federatedRootHint(agent_id, blockName, spindle);
+    const lockLine = formatLockStateLine(row, spindle);
+    const hintLine = federatedRootHint(target.agent_id, target.block, spindle);
     return { content: [{ type: 'text', text: formatRead(result) + lockLine + hintLine }] };
   }
 
   // ── WRITE and/or LOCK ──
-
-  // new_lock is only valid on ordinary blocks.
-  if (new_lock !== undefined && (agent_id.startsWith('sed:') || agent_id.startsWith('grain:'))) {
-    return {
-      content: [{ type: 'text', text: `Rejected: new_lock is only valid on ordinary blocks. sed: blocks use pscale_register; grain: blocks use pscale_grain_reach.` }],
-    };
-  }
-
-  // Lock check for content writes (R3, R4).
-  if (content !== undefined && row) {
-    const position = lockPositionForWrite(spindle);
-    const check = verifyLock(row, position, secret);
-    if (!check.allowed) {
-      return { content: [{ type: 'text', text: `Write rejected: ${check.reason}` }] };
-    }
-  }
-
-  // Lock-rotation authority (R4): if block has a current lock and new_lock is set,
-  // secret must prove current authority.
-  if (new_lock !== undefined && row) {
-    const lockKey = '_'; // ordinary blocks: whole-block lock at '_'
-    const currentHash = row.position_hashes?.[lockKey];
-    if (currentHash) {
-      // Locked → secret required to rotate.
-      if (!secret) {
-        return {
-          content: [{ type: 'text', text: `Lock rotation rejected: block is currently locked. Pass secret to prove current authority.` }],
-        };
-      }
-      const computedCurrent = hashByOwnerId(agent_id, blockName, lockKey, secret);
-      if (computedCurrent !== currentHash) {
-        return {
-          content: [{ type: 'text', text: `Lock rotation rejected: secret does not match current lock.` }],
-        };
-      }
-    }
-    // R1, R2: no current lock → no secret needed for new_lock.
-  }
+  //
+  // The federated beach is the lock authority. bsp-mcp does not verify or
+  // compute hashes — it forwards `secret` and `new_lock` and the beach
+  // accepts or rejects. For sentinel writes, we already rejected above.
 
   // Determine starting block — existing or empty seed.
   const block: Block = row?.block ?? {};
@@ -309,12 +236,6 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   // Apply content write if provided.
   let writeResult: BspWriteResult | null = null;
   if (content !== undefined) {
-    // Stage 10 — gray-encryption: encrypt-at-source, write the envelope object
-    // directly at the target position, bypassing bspWrite's shape strictness.
-    // The envelope is structurally an object {_gray, nonce, ciphertext}; it
-    // substitutes for the typed payload at any shape (point/ring/subtree alike).
-    // Lock and gray are orthogonal: the lock check above (R3) already authorised
-    // the writer if locked; secret here doubles as the encryption key.
     if (params.gray === true) {
       if (!secret) {
         return {
@@ -328,9 +249,6 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       }
       try {
         const envelope = await selfEncrypt(stringifyForGray(content), secret, agent_id);
-        // writeAt walks the spindle and stuffs the envelope object at the leaf.
-        // It accepts any value type — bypasses the point/ring/subtree shape check
-        // that would otherwise reject an object payload at point shape.
         writeAt(block, spindle, envelope);
         writeResult = {
           shape: 'point',
@@ -352,9 +270,8 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   }
 
   // Persist content (or seed empty block if locking-only on a new block).
-  // For federated beaches (owner_id is a URL), saveBlock forwards the spindle,
-  // pscale_attention, secret, new_lock, and gray to the remote /.well-known
-  // endpoint as the POST body — the remote handles auth + lock state.
+  // saveBlock translates the agent_id internally and forwards to the beach
+  // with secret/new_lock in the POST body.
   const blockToSave = writeResult?.block ?? block;
   try {
     await saveBlock(
@@ -374,23 +291,18 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     return { content: [{ type: 'text', text: `Write rejected: ${e?.message ?? String(e)}` }] };
   }
 
-  // Apply lock change if provided.
+  // Lock-only operation acknowledgement.
   let lockNote = '';
   if (new_lock !== undefined) {
-    const lockKey = '_';
-    const newHash = hashByOwnerId(agent_id, blockName, lockKey, new_lock);
-    const updated = { ...(row?.position_hashes ?? {}), [lockKey]: newHash };
-    await updatePositionHashes(agent_id, blockName, updated);
-    const wasLocked = !!row?.position_hashes?.['_'];
-    lockNote = wasLocked
-      ? `\nLock rotated.`
-      : (row ? `\nLock applied (block previously unlocked).` : `\nBlock created and locked.`);
+    lockNote = '\nLock change forwarded to beach.';
   }
 
   // Format response.
   if (writeResult) {
     return { content: [{ type: 'text', text: formatWrite(writeResult) + lockNote }] };
   }
-  // Lock-only operation.
-  return { content: [{ type: 'text', text: `[lock @ "${agent_id}/${blockName}"]${lockNote}` }] };
+  return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${lockNote}` }] };
 }
+
+// Suppress unused-import warning when lockPositionForWrite isn't called above.
+void lockPositionForWrite;
