@@ -158,7 +158,7 @@ A second call with these args would be rejected as "your side already exists".`,
     return { content: [{ type: 'text', text: `Federated grain reach rejected: ${result?.error ?? 'unknown reason'}` }] };
   }
 
-  const conventionsHint = `\n\n[hint] Local beach conventions at bsp(agent_id="${beach}", block="beach", spindle="8"). Substrate-wide conventions at bsp(agent_id="pscale", block="block-conventions").`;
+  const conventionsHint = `\n\n[hint] Substrate-wide conventions at bsp(agent_id="pscale", block="block-conventions").`;
   const pairIdLine = `grain:${pid} on ${beach}`;
 
   if (result.state === 'completed') {

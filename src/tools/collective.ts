@@ -110,7 +110,7 @@ export async function handleRegister(params: {
 
 Site-hosted sed: collective. Position assigned by ${beach}'s handler in landing order. Your position is write-locked with your passphrase. Subsequent writes via bsp(agent_id="${beach}", block="${blockName}", spindle="${result.position}", ..., secret=...) require the same passphrase.
 
-[hint] Local beach conventions at bsp(agent_id="${beach}", block="beach", spindle="8"). Substrate-wide conventions at bsp(agent_id="pscale", block="block-conventions").`,
+[hint] Substrate-wide conventions at bsp(agent_id="pscale", block="block-conventions").`,
     }],
   };
 }

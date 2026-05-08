@@ -24,7 +24,6 @@ function assert(cond: boolean, label: string) {
   console.log('=== loadBlock(pscale, gatekeeper) ===');
   const row = await loadBlock('pscale', 'gatekeeper');
   assert(!!row, 'sentinel resolves');
-  assert(row?.block_type === 'sentinel', 'block_type is sentinel');
   if (!row) {
     console.log('FAIL — no row, aborting'); process.exit(1);
   }

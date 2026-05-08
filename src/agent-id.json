@@ -62,9 +62,9 @@
     },
     "2": {
       "_": "block is the role coordinate. Within an agent_id's namespace, block names function as roles. Multiple blocks can coexist under one agent_id; the (agent_id, block) pair is a 2D address into a directory of typed-by-convention containers.",
-      "1": "Conventional names assign roles. passport (who/what), shell (operational state), beach (URL public commons), frame:<scene> (scene block), grain (the bilateral block when agent_id is grain:), <collective> (sedimentary block named after its collective). The names are convention, not enforcement.",
-      "2": "Multiple blocks per namespace. A URL hosting a beach can also host frame:tavern-1, frame:tavern-2, sed:visitors-by-day, etc. The site dispatches by block name; from bsp-mcp's perspective each is a separate (agent_id, block) pair.",
-      "3": "URL-hosted blocks dispatched server-side. The bsp-mcp adapter sends ?block=<name> as a query parameter when block is anything other than 'beach'. The receiving site decides how to route those requests; bsp-mcp doesn't know or care."
+      "1": "Conventional names assign roles. marks (the URL's open mark wall), passport:<handle> (who/what for an agent at this host), shell:<handle> (operational state), history:<handle> (chronological journal), pool:<name> (voice-preserving accumulator), frame:<scene> (scene block), grain:<pair_id> (the bilateral block), sed:<collective> (sedimentary block). There is no canonical 'beach' block — the URL surface holds these named siblings; each block is independent. Names are convention, not enforcement.",
+      "2": "Multiple blocks per namespace. A URL surface hosts marks, passport:<handle>, frame:tavern-1, frame:tavern-2, sed:visitors-by-day, etc. The site dispatches by block name; from bsp-mcp's perspective each is a separate (agent_id, block) pair.",
+      "3": "URL-hosted blocks dispatched server-side. The bsp-mcp adapter sends ?block=<name> as a query parameter for every URL-routed read or write. The receiving site decides how to route those requests; bsp-mcp doesn't know or care."
     },
     "3": {
       "_": "spindle and pscale_attention together are the geometry coordinate. Spindle is the address-path; pscale_attention is the depth-selector. From the relationship between them, bsp() derives the selection shape — point, ring, subtree, disc, whole-block, star-composition — without any mode parameter.",
@@ -199,9 +199,9 @@
       "2": "Only (namespace, block, position, content). These four elements are the entire address-and-payload space. Everything that an application needs to encode lives in content; everything that the substrate needs to route lives in namespace; everything that a community needs to encode in shared meaning lives in conventions written into blocks."
     },
     "2": {
-      "_": "Semantics emerges from content. Block content carries meaning through its underscore chain — the zeroth-voice spine that makes pscale geometry legible. Conventions for what content goes where live in dedicated blocks (sed:<community>-conventions, beach:8 on a federated beach, etc.).",
+      "_": "Semantics emerges from content. Block content carries meaning through its underscore chain — the zeroth-voice spine that makes pscale geometry legible. Conventions for what content goes where live in dedicated blocks (sed:<community>-conventions, optional sibling 'conventions' block at a federated host, the substrate-wide block-conventions sentinel).",
       "1": "Zeroth-voice underscore chains. Sunstone branch 8 makes the discipline explicit. The underscore is the implied perceiver behind its siblings; each underscore relates to its children in one of four sign forms; the form is read from content, not declared by structure.",
-      "2": "Conventions encoded in blocks. The happyseaurchin.com beach's beach:8 carries the conventions for that beach. Sed:hsu-commons-conventions carries community norms. Sed:thornkeep-conventions would carry RPG rules. Conventions are data, not code — readable by any agent walking the relevant block."
+      "2": "Conventions encoded in blocks. The substrate-wide block-conventions sentinel is the default; a host MAY publish a sibling 'conventions' block to override locally. Sed:hsu-commons-conventions carries community norms. Sed:thornkeep-conventions would carry RPG rules. Conventions are data, not code — readable by any agent walking the relevant block."
     },
     "3": {
       "_": "Surface stays at six tools. bsp() plus five substrate-stateful primitives. Resisting growth to seven or more is the discipline that preserves the variability — adding a 7th feature tool would presume to know which kind of thing the namespace is, and that would close off what the refusal opens up.",

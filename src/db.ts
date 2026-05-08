@@ -56,7 +56,6 @@ export interface BlockRow {
   id: string;
   owner_id: string;
   name: string;
-  block_type: string;
   block: Block;
   position_hashes: Record<string, string>;
   created_at: string;
@@ -114,7 +113,6 @@ function loadSentinelBlock(ownerId: string, name: string): BlockRow | null {
     id: `${ownerId}/${name}`,
     owner_id: ownerId,
     name,
-    block_type: 'sentinel',
     block,
     position_hashes: {},
     created_at: now,
@@ -191,11 +189,7 @@ export function canonicaliseOrigin(rawUrl: string): string {
 
 function beachEndpoint(ownerId: string, blockName: string): string {
   const origin = canonicaliseOrigin(ownerId);
-  const url = `${origin}/.well-known/pscale-beach`;
-  if (blockName !== 'beach') {
-    return `${url}?block=${encodeURIComponent(blockName)}`;
-  }
-  return url;
+  return `${origin}/.well-known/pscale-beach?block=${encodeURIComponent(blockName)}`;
 }
 
 // ── Federated beach adapter (HTTP) ──
@@ -237,7 +231,6 @@ async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<B
     id: `${ownerId}/${blockName}`,
     owner_id: ownerId,
     name: blockName,
-    block_type: 'beach',
     block: (block ?? {}) as Block,
     position_hashes: {},
     created_at: now,
@@ -352,7 +345,6 @@ async function saveBlockToBeach(
     id: `${ownerId}/${blockName}`,
     owner_id: ownerId,
     name: blockName,
-    block_type: 'beach',
     block,
     position_hashes: {},
     created_at: now,
@@ -378,7 +370,6 @@ export async function saveBlock(
   ownerId: string,
   name: string,
   block: Block,
-  blockType: string = 'general',
   opts: WriteOptions = {},
 ): Promise<BlockRow> {
   const t = translateAddress(ownerId, name);
