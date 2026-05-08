@@ -10,6 +10,14 @@
 
 An **xstream frame** is a pscale block whose convention encodes the vapour-liquid-solid (V-L-S) collaboration loop. The frame block holds liquid (submitted-but-uncommitted) and solid (committed) content at conventional positions, indexed by entity. Vapour — live letter-by-letter co-presence and streamed LLM completions — is explicitly **NOT** in the frame block; it lives on a sibling realtime transport because it is pre-commitment by definition. A synthesis daemon (medium-LLM, or a designer-defined rule) reads liquid via `bsp()`, produces solid via `bsp()`, and the frame advances. The four faces (Character, Author, Designer, Observer — CADO) compose orthogonally: face determines whose liquid is visible to whom and who is authorised to commit, via membership in the matching `sed:` collective. No new MCP primitive is required — bsp-mcp already provides everything below the vapour line.
 
+### 0.1 Frame vs pool — different conventions for different intents
+
+Frames are **fixed-cast V-L-S**: a known set of entities at numbered slots 1..8, each with their own liquid and solid lanes, synthesised into canon at position 9. Use frames when participants are enumerable and the pattern is "everyone-puts-down-current-state, daemon-integrates-into-canon" — RPG scenes, design cells, document collaboration.
+
+For **open multi-party engagement** — a pool where contributions accumulate from any number of participants in landing order, "since I last checked" reads, "since contributor X last contributed" reads — see [src/block-conventions.json](../src/block-conventions.json) branch 4.2. Pool blocks are sequential supernest accumulators (slots 1, 2, ..., 9, 11, 12, ..., 99, 111, ...) where each contribution is a sub-block carrying its contributor's `agent_id` at sub-position 1. Pools have no fixed cast, no reserved canon position, and no embedded synthesis — synthesis (when needed) lives in a separate sibling block. Pools fit chat-style streams, beach billboards, GRIT round contributions before resolution; frames fit fixed-cast V-L-S synthesis.
+
+The two conventions can compose. A GRIT round, for example, may use a pool to accumulate raw player contributions (open accumulator, voice-preserving) and a frame at round-resolution time to capture the integrated narrative (fixed cast = round participants, canon at 9 = the resolved outcome). Pool feeds frame; frame archives the resolution; pool keeps the source voices intact.
+
 ---
 
 ## 1. The seven decisions that drive everything else
