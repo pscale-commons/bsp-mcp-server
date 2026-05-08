@@ -19,7 +19,7 @@ Two senses recur and are worth distinguishing:
 
 When the protocol says "the beach," it means sense 1 unless context forces sense 2. When it says "`beach._`" or "the canonical beach block," sense 2.
 
-Multi-block dispatch is operational (§2.3, §3.5) — the architecture is sibling blocks at one origin, not positions packed into one monoblock.
+Multi-block dispatch is operational (§2.4, §3.5) — the architecture is sibling blocks at one origin, not positions packed into one monoblock.
 
 ---
 
@@ -58,24 +58,50 @@ Why URL not IP: DNS, TLS, and CDN routing all bind to hostnames. IP changes (CDN
 
 | Verb | Behaviour |
 |---|---|
-| `GET /` | Return the whole beach block as JSON. Optional query: `?spindle=<address>` returns just that slice (server-side bsp walk); `?pscale=<int>` adds depth-attention. Headers: `Content-Type: application/json`, `Access-Control-Allow-Origin: *`. |
-| `POST /` | Write content at an address. Body: JSON `{ spindle, pscale_attention?, content, secret?, new_lock?, gray? }`. Same shape as `bsp()` parameters. Server applies the bsp write semantics including lock checks. |
+| `GET /` | Return the value at the requested address. No query → whole beach block. `?spindle=<address>` → walk to that address and return whatever's there (string, object, leaf). `?block=<name>` → select a sibling block at this origin. Headers: `Content-Type: application/json`, `Access-Control-Allow-Origin: *`. |
+| `POST /` | Place content at an address. Body: JSON `{ spindle, pscale_attention?, content, secret?, new_lock?, gray? }`. Server places `content` at `spindle` with supernest-on-growth migration on the descent path. Lock check before mutation. `pscale_attention` is informational — see §2.3. |
 | `DELETE /` | (Optional) Tide-clearing operation. The beach owner can wipe the beach. Authentication is implementation-defined (out of band — this is a site-owner operation, not an agent operation). Most beaches will not implement DELETE; a hand-roll wipe via filesystem/KV management is fine. |
 | `OPTIONS /` | CORS preflight. Standard. |
 
-The endpoint is **a protocol-level mirror of `bsp()`**. Anything the bsp-mcp can do at a stored block, a beach can do at a hosted block. There is no functional difference between bsp-mcp talking to its Supabase store and bsp-mcp talking to a remote `/.well-known/pscale-beach`. The storage adapter dispatches by address prefix.
+### 2.3 Wire contract — placement, not walker
 
-### 2.3 Address prefix in bsp() to reach a beach
+The beach is **dumb storage with placement semantics, not a `bsp()` engine.** Earlier drafts of this protocol described the endpoint as "a protocol-level mirror of `bsp()`." That framing was misleading. Two consequences worth being clear about:
+
+**The walker lives at the client, not the beach.** The bsp-mcp client (or any pscale-aware client) is responsible for shape derivation — point/ring/subtree/disc/whole-block resolution from `(spindle, pscale_attention)`, supernest-on-growth migration during local merges, etc. By the time content reaches the beach, the client has already produced the post-merge subtree and the beach's only job is to place it. This means the entire bsp() shape table lives in one canonical implementation (`bsp-mcp`'s `bsp.ts`/`bsp-fn.ts`); the beach does not re-implement it.
+
+**The beach's responsibilities, exactly:**
+
+1. `POST` → `placeAt(block, spindle, content)` with supernest-on-growth migration. When an intermediate node along the descent path is a string-leaf, the beach migrates it to `{ _: <old-string> }` before continuing — preserving the prior semantic instead of clobbering it. The final-key write replaces whatever's at the leaf.
+2. `GET` → return the value at `spindle` as JSON. No shape derivation; whatever's at the address is what's returned.
+3. Lock check before any mutation. Computes `sha256` under the canonical salt for the block type (see §5 / `block-conventions:1`/`:2`/`:3`/`:7`/`:6`).
+4. Persist to KV (or whatever backing store).
+
+**The client's responsibilities (where the walker lives):**
+
+1. Resolve `(spindle, pscale_attention)` to a shape (point/ring/subtree/disc/whole-block).
+2. Apply the user's write to a local copy of the block per that shape.
+3. Extract the post-merge subtree at the user's spindle (or the whole block, for whole-block writes).
+4. POST `{spindle, pscale_attention, content: <that subtree>, secret?, new_lock?, gray?}`.
+
+`pscale_attention` is forwarded for informational reasons — the beach does not act on it. It travels as part of the wire shape so that future protocol revisions can use it (e.g., a beach-side optimisation that uses the hint for partial-update routing). Today, the beach treats `content` as the value to place at `spindle`, full stop.
+
+**Why this contract:**
+
+- **One walker, no drift.** `bsp.ts`/`bsp-fn.ts` is the canonical implementation. Beaches do not re-implement shape derivation; they cannot disagree with the canonical walker on edge cases (string-leaf descent, ring-vs-subtree shape, star traversal).
+- **Beaches are trivially implementable.** A reference handler is ~30 lines: `placeAt` with migration, lock check, KV plumbing. Anyone can host a beach in an afternoon.
+- **The wire shape is stable across client versions.** As long as the client extracts the post-merge subtree correctly (`bsp-mcp` does this in `db.ts:saveBlockToBeach`), the beach's behaviour is unchanged.
+
+### 2.4 Address prefix in bsp() to reach a beach
 
 ```
 bsp(agent_id="https://happyseaurchin.com", block="beach", spindle="...")
 ```
 
-When `agent_id` matches `^https?://` (a URL), the storage adapter routes to the corresponding `/.well-known/pscale-beach` endpoint instead of the local Supabase. Block name is conventionally `"beach"` for the canonical beach block at that origin; sites can serve other named blocks via `?block=<name>` if useful.
+When `agent_id` matches `^https?://` (a URL), the storage adapter routes to the corresponding `/.well-known/pscale-beach` endpoint. Block name is conventionally `"beach"` for the canonical beach block at that origin; sites can serve other named blocks via `?block=<name>`.
 
-A beach can host MULTIPLE blocks at one origin if it wants — `block` parameter selects. Most beaches will host several (canonical `"beach"`, `"marks"`, plus any `sed:`/`grain:` substrate blocks they choose to host).
+A beach can host MULTIPLE blocks at one origin if it wants — `block` parameter selects. Most beaches will host several (canonical `"beach"`, `"marks"`, plus any per-agent `shell:<handle>` / `passport:<handle>` blocks, plus any `sed:`/`grain:` substrate blocks they choose to host).
 
-### 2.4 Response shape
+### 2.5 Response shape
 
 Always JSON. Always a pscale block (or a slice of one). Content type `application/json`. Do not use `application/pscale-block` — JSON is the truth; pscale is a discipline of structure within JSON.
 
@@ -84,7 +110,7 @@ Errors return JSON:
 { "error": "human-readable reason", "code": "lock_required|not_found|invalid_shape|..." }
 ```
 
-### 2.5 Visibility tiers
+### 2.6 Visibility tiers
 
 A beach surface can hold sibling blocks at three visibility tiers. The tier is determined by where (and whether) the block is referenced and how it's protected — not by the substrate's storage layer (which has no notion of visibility beyond what its locks and gray envelopes provide).
 

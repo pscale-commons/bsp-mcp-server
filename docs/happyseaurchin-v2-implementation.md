@@ -1,5 +1,7 @@
 # Update happyseaurchin.com to /.well-known/pscale-beach v2
 
+**Status**: HISTORICAL — captures the original v2 single-block reference. The reference `writeAt` shown below has been updated to the post-PR-#4 form (supernest-on-growth migration). For the canonical wire contract see [protocol-pscale-beach-v2.md §2.3](./protocol-pscale-beach-v2.md): the beach is dumb placement; the walker lives at the client. See also the sibling-block companion at [happyseaurchin-sibling-blocks-implementation.md](./happyseaurchin-sibling-blocks-implementation.md).
+
 **Audience**: David, handing this to the Claude Code session that has happyseaurchin.com's codebase open.
 **Goal**: Replace the existing v1 marks-only endpoint with a v2 endpoint that serves a pscale block.
 **Protocol reference**: [docs/protocol-pscale-beach-v2.md](./protocol-pscale-beach-v2.md) in this repo.
@@ -8,7 +10,7 @@
 
 ## TL;DR for Claude Code
 
-> Update the `/.well-known/pscale-beach` endpoint at happyseaurchin.com to serve pscale beach v2. The endpoint must serve a single pscale-shaped JSON block (not a flat list of marks). GET returns the whole block (with optional `?spindle=<addr>` for slicing). POST accepts `{spindle, pscale_attention?, content, secret?, new_lock?, gray?}` and applies a bsp()-shaped write. Locks are stored server-side as `position_hashes['_'] = sha256(secret + 'block:happyseaurchin.com:beach:_')`. The block lives in Vercel KV (or whatever the site uses). Wipe-the-tide is the site owner's manual operation. Spec at https://github.com/pscale-commons/bsp-mcp-server/blob/main/docs/protocol-pscale-beach-v2.md — read it before changing anything.
+> Update the `/.well-known/pscale-beach` endpoint at happyseaurchin.com to serve pscale beach v2. The endpoint must serve a single pscale-shaped JSON block (not a flat list of marks). GET returns the whole block (with optional `?spindle=<addr>` for slicing). POST accepts `{spindle, pscale_attention?, content, secret?, new_lock?, gray?}` and **places `content` at `spindle` with supernest-on-growth migration on the descent path** (the wire contract per protocol-pscale-beach-v2.md §2.3 — the beach is dumb placement, not a bsp() engine; shape derivation lives at the client). Locks are stored server-side as `position_hashes['_'] = sha256(secret + 'block:https://happyseaurchin.com:beach:_')`. The block lives in Vercel KV (or whatever the site uses). Wipe-the-tide is the site owner's manual operation. Spec at https://github.com/pscale-commons/bsp-mcp-server/blob/main/docs/protocol-pscale-beach-v2.md — read it before changing anything.
 
 That paragraph is the entire prompt. The template below is what the Claude Code session should produce.
 
@@ -96,34 +98,47 @@ async function saveHashes(hashes: Record<string, string>): Promise<void> {
   await kv.set(KV_HASH_KEY, hashes);
 }
 
-// ── BSP write logic — replicates bsp-mcp's bsp-fn semantics ──
-// (Whole-block replace if spindle empty; point write at digit address otherwise.)
+// ── BSP placement logic ──
+//
+// Per protocol-pscale-beach-v2.md §2.3, the beach treats `content` as the value
+// to place at `spindle`. Shape derivation is the client's job; the beach just
+// places. Supernest-on-growth migration is the one geometric concession: when
+// an intermediate node along the descent path is a string-leaf, migrate it to
+// {_: <old-string>} before continuing — preserving the prior semantic.
 
 function writeAt(block: Record<string, any>, address: string, value: any): Record<string, any> {
-  if (!address) {
-    return value;  // whole-block replace
+  if (!address || address === '_') {
+    if (!address) return value;        // empty address = whole-block replace
+    block._ = value;                    // address "_" = set underscore
+    return block;
   }
-  // Walk the address (e.g. "1.3" or "11"), creating intermediate objects.
-  const digits = address.replace(/\./g, '');
+  const parts = address.includes('.') ? address.split('.') : [...address];
   let node: any = block;
-  for (let i = 0; i < digits.length - 1; i++) {
-    const key = digits[i] === '0' ? '_' : digits[i];
-    if (typeof node[key] !== 'object' || node[key] === null) node[key] = {};
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+    const key = part === '0' ? '_' : part;
+    const existing = node[key];
+    if (typeof existing === 'string') {
+      // Supernest-on-growth: preserve the string at the underscore of the new sub-block
+      node[key] = { _: existing };
+    } else if (typeof existing !== 'object' || existing === null) {
+      node[key] = {};
+    }
     node = node[key];
   }
-  const lastDigit = digits[digits.length - 1];
-  const lastKey = lastDigit === '0' ? '_' : lastDigit;
+  const lastPart = parts[parts.length - 1];
+  const lastKey = lastPart === '0' ? '_' : lastPart;
   node[lastKey] = value;
   return block;
 }
 
 function readAt(block: Record<string, any>, address: string): any {
   if (!address) return block;
-  const digits = address.replace(/\./g, '');
+  const parts = address.includes('.') ? address.split('.') : [...address];
   let node: any = block;
-  for (const d of digits) {
+  for (const part of parts) {
     if (!node || typeof node !== 'object') return null;
-    const key = d === '0' ? '_' : d;
+    const key = part === '0' ? '_' : part;
     node = node[key];
   }
   return node ?? null;
