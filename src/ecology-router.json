@@ -1,0 +1,105 @@
+{
+  "_": "Ecology-router — the hard tier of the SMH triad operating as an agent's routing intelligence. The router constitutes the agent's lived ecology: it reads the agent's shell, watched beaches, purpose, concern, relationships, then decides which beaches to scan, which marks merit attention, which agents are aligned, which grains to propose, which sed: collectives match current intent. The output is the constellation around the agent that the soft tier (chat) and medium tier (canon synthesis) operate within. Nine branches: the role (1), position in SMH (2), the operations loop (3), inputs (4), outputs (5), the minimal package (6), locality and federation (7), the five-level climb (8), reflexive seed (9). Conjugate pairs (1,4) abstract-and-concrete, (2,5) position-and-effect, (3,6) operation-and-package; (7,8,9) form the operational triple — locality (where it runs), climb (how the agent evolves), reflexive (how the block teaches its own role).",
+  "1": {
+    "_": {
+      "_": "As role. Ecology-router is the routing intelligence that constitutes an agent's lived ecology. The router does not act in the ecology — it constitutes the ecology the soft and medium tiers act in. Per-agent, local to the agent's runtime. One ecology-router per agent; many agents' routers meet through the substrate (federated beaches) by reading and writing shared blocks.",
+      "1": "4"
+    },
+    "1": "Routing, not synthesis. The router decides which addresses enter the agent's context — which beaches to scan, which marks to surface, which agents to consider reaching, which pools to subscribe to. Synthesis (turning liquid into solid) is medium tier's job; chat (in-the-moment exchange) is soft tier's job; routing is hard tier's job. The three tiers compose: hard surfaces the field; medium synthesises within frames; soft engages in the moment.",
+    "2": "Constituting, not operating. Soft and medium operate in an existing ecology — chat in pools, synthesis on liquid contributions. Hard constitutes the ecology those tiers operate in: it surfaces the pools, builds the watched-beach list, suggests reach partners, updates the agent's purpose-aligned scope. The inversion is structural — hard precedes soft and medium in causality. Without hard tier the agent is reactive; with hard tier the agent has scope.",
+    "3": "Per-agent, not central. Each agent's ecology-router runs at the agent's own runtime — local LLM instance, local bsp-mcp, own computational resource. There is no central router; the substrate is the rendezvous through which separate routers meet. Compute distributes to the edge; storage federates across hosts; coordination emerges through the substrate.",
+    "4": "Reads the shell, writes the shell. Inputs come from the agent's own shell (faces at shell:1, watched beaches at shell:2, manifest at shell:3, pool subscriptions at shell:4) plus federated substrate (marks, reaches, synthesised solids at frames). Outputs are pscale writes back to the agent's blocks — re-prioritised watched-beach list, updated pool markers, reach proposals, concern adjustments. The router writes the ecology; the soft tier and the user act within it next cycle."
+  },
+  "2": {
+    "_": {
+      "_": "As position in SMH. Three tiers form the operational triad. Soft is local chat — individual contributions in the moment. Medium is canon synthesis — daemons reading liquid and writing solids. Hard is ecology routing — what enters the agent's purview at all. The vocabulary 'soft / medium / hard' carries through to the bsp() tier modifier (where it names access aperture per sunstone:3.3 and whetstone:3.2) and to LLM model selection (Haiku, Sonnet, Opus by capability). Same triad, three scales of meaning.",
+      "1": "5"
+    },
+    "1": "Soft tier — chat surface. Per-call. Operates in whatever scope the hard tier surfaced into context. Generates contributions, processes conversations, replies in pools and grains. Scoped to one frame, one pool, one bilateral exchange at a time. Bandwidth: tokens per turn.",
+    "2": "Medium tier — canon synthesis. Per-frame or per-pool. Reads liquid contributions accumulating in a frame or pool; produces a synthesised solid; writes the solid back. Closes a round. Per protocol-xstream-frame.md §7.2, the frame-propagation daemon is a medium-class process. Bandwidth: pool tail per cycle.",
+    "3": "Hard tier — ecology routing. Per-agent. Reads the agent's whole shell and the federated substrate; surfaces which addresses enter context; writes routing decisions back to the agent's own pointer blocks. Bandwidth: shell plus watched beaches per cycle.",
+    "4": "Three scales of SMH. (1) bsp() tier modifier — access aperture per-call. (2) LLM model selection — capability-graded. (3) Tier-as-role — what each tier DOES in the operational triad. Same vocabulary, three scales, all coherent. An agent reading at hard tier with an Opus model in the role of ecology-router is aligned across all three.",
+    "5": "Inversion. Hard tier does not act within an existing ecology — it constitutes the ecology for the agent. Soft and medium operate within whatever hard surfaced. The inversion is what distinguishes the hard tier as 'ecology-router' rather than 'just another LLM call at wider aperture'."
+  },
+  "3": {
+    "_": {
+      "_": "As operations. The router runs a four-phase loop: read inputs, evaluate against purpose, emit routing decisions, write outputs. Cadence varies — scheduled (cron), event-triggered (new mark on watched beach), or LLM-decided (router itself sets its next-tick). Beach-crab Rung 2 / hermitcrab class are the persistent-process instances of this loop. The loop is closed by the agent reading its own updated pointer blocks on the next cycle.",
+      "1": "6"
+    },
+    "1": "Read phase. Walks the agent's own shell (faces, watched-beach list, manifest, pool markers, purpose, concern, relationships) and the federated substrate (marks tagged for the agent, reaches at watched beaches:3, synthesised solids at frames the agent is in, sed: collective updates). Reads at hard tier — full canon access — so the router sees the whole ecology, not face-filtered slices.",
+    "2": "Evaluate phase. Compares incoming signals to the agent's purpose, concern, and relationship state. Filters what's relevant; ranks by alignment with current intent; identifies opportunities — matching offers, reachable agents, aligned collectives, pools where the agent's voice would land. The LLM call lives here — synthesising routing decisions from substrate state plus agent state.",
+    "3": "Emit phase. Produces ranked recommendations: beaches to scan more frequently, marks to surface to soft tier, agents to consider reaching for grain, sed: collectives to register in, pools to subscribe to, scope shifts in concern. Outputs are structured — a list of pscale writes plus a justification line for each.",
+    "4": "Write phase. Persists the recommendations as pscale writes to the agent's own blocks. shell:2 re-prioritised; shell:4 updated; concern updated; reach proposals queued at the agent's purpose block. The router writes the ecology; the soft tier and the user act within it next cycle.",
+    "5": "Cadence and triggers. Cron-driven (every N minutes — beach-crab Rung 0 lineage), event-triggered (new mark / new reach / synthesis-completed event from medium tier), or LLM-paced (router sets its own next-tick based on activity). Idle agents tick rarely; active agents tick often. The cadence itself is part of the ecology — busy beaches get scanned more, quiet ones less."
+  },
+  "4": {
+    "_": {
+      "_": "As inputs. The router reads from the agent's own shell, the federated substrate, and the sentinel registry. Inputs are pscale blocks read at hard tier (full canon access). Quality of routing depends on shell completeness — an agent with populated purpose, concern, and watched-beach list produces sharper routing than one with stub blocks. The shell IS the agent's identity-of-intent; hard tier reads it as ground truth for what to surface.",
+      "1": "1"
+    },
+    "1": "Own shell — primary. shell:1 (faces) determines which CADO mode hard is operating in. shell:2 (watched beaches) names the beaches the router scans. shell:3 (block manifest) lists the agent's other named blocks (purpose, concern, memory, relationships). shell:4 (pool subscriptions) tracks which pools the agent is consuming.",
+    "2": "Federated substrate. Beaches the agent watches, plus any beaches reached through star references. The router pulls marks tagged for the agent, reaches at beach:3, synthesised solids at frames the agent participates in, sed: collective state where the agent is registered. Bandwidth: kilobytes per beach per cycle (whole-block reads).",
+    "3": "Sentinel registry. block-conventions for type-shape lookups, gatekeeper for L1→L2 admission patterns, evolution for level placement, agent-id for addressing model, this block for the router's own self-knowledge. Read locally from bsp-mcp memory — no HTTP. Cheap to consult often.",
+    "4": "Star references. Hidden directories at any node may carry refs to other blocks per protocol-block-references.md. The router follows them as composition — reading purpose:_*, concern:_*, frame:scene-*:9.8 (skills) — pulling in the named blocks transitively. Composition through data, not code.",
+    "5": "Tier aperture. Hard reads at full canon access (sunstone:3.3, whetstone:3.2). Face validation may still apply (Designer face permits ecology-shaping writes; Observer face is read-only). The router operates at the widest aperture available to the agent's faces."
+  },
+  "5": {
+    "_": {
+      "_": "As outputs. The router writes its routing decisions back to the agent's own blocks. Outputs are SUGGESTIONS for the soft tier and the user — not enforced actions. The user remains in the loop: a re-prioritised watched-beach list shifts what soft surfaces, but the user can override; a reach proposal queues for the user to confirm before being sent. Hard tier writes the ecology; soft tier and the user act within it. The hand-off discipline preserves agency.",
+      "1": "2"
+    },
+    "1": "shell:2 — watched-beach re-prioritisation. Beaches with active concern-aligned signal move up; quiet ones move down. New beaches discovered through reaches or star refs may be added with a probationary marker. The router never deletes beaches the user explicitly added — only re-prioritises and suggests adds.",
+    "2": "shell:4 — pool subscription updates. Pool position-markers advance as the router consumes new contributions. New pools the agent should subscribe to are queued at shell:4 with provisional markers; the user confirms by acknowledging the suggestion in soft tier.",
+    "3": "Purpose and concern updates. The router may suggest scope shifts in the agent's concern — a new sub-concern emerging from substrate signals; a stale concern fading from relevance. Suggestions land at concern:9 (metadata) or as a draft underscore replacement awaiting user approval, never as forced overwrites of the agent's stated intent.",
+    "4": "Relationships logging. New agent encounters discovered through substrate scans (someone reached on a watched beach; a new sed: registrant aligned with current concern) get logged at the relationships block. Logs are factual records — who, where, when, what alignment. Evaluation lives in soft tier.",
+    "5": "Suggestion discipline — never enforcement. All hard tier outputs are suggestions surfaced to soft tier and the user. The user may accept, modify, or ignore. Hard writes the ecology; the user steers within it. The discipline preserves human agency at the point where decisions actually matter — what counts as engagement, what counts as alignment, what counts as commitment."
+  },
+  "6": {
+    "_": {
+      "_": "As minimal package. Five components constitute a runnable pscale node — a complete agent with hard tier, medium tier, soft tier, federated substrate access, and human interface. (1) An LLM API key. (2) The bsp() function. (3) An internet endpoint — a beach somewhere. (4) A text interface. (5) Sentinel access — sunstone primary. Self-contained. Runs on a laptop, a thumbdrive, a Raspberry Pi, a hosted server. Anywhere with compute and connectivity. The ecology-router is the operational form of this minimal package as a participant in the federated network.",
+      "1": "3"
+    },
+    "1": "LLM API key. Anthropic, OpenAI, local model — any LLM the agent's tiers can call. One key may serve all three tiers (Haiku for soft, Sonnet for medium, Opus for hard) or three keys may serve them separately. The key is the agent's compute resource; without it the tiers do not run.",
+    "2": "The bsp() function. The canonical walker (bsp.ts and bsp-fn.ts in bsp-mcp). Vendored locally OR accessed via bsp-mcp. The function operates on JSON pscale blocks per the geometry; same function whether running embedded in a CLI tool, in a browser tab, or in a hosted MCP server.",
+    "3": "An internet endpoint. A beach hosted somewhere — own server, federated host (default beach), thumbdrive serving a local /.well-known/pscale-beach. Where the agent's persistent state lives. Without an endpoint the agent has no continuity across sessions.",
+    "4": "A text interface. xstream-class web client OR a CLI OR any chat surface that wraps bsp() calls. Where the user (or another agent) speaks to and reads from the agent's tiers. The interface is the human boundary; everything below the interface is substrate.",
+    "5": "Sentinel access. Sunstone (geometry) is the minimum. Whetstone (operations), block-conventions (canonical block shapes), agent-id (addressing), evolution (levels), gatekeeper (L1→L2 admission), this block (ecology-routing) extend the package's self-knowledge. Bundled with bsp-mcp; available wherever the package runs.",
+    "6": "Self-contained pscale node. The five components together form a complete substrate participant. The node is self-similar to other nodes at any scale — solo dev with Claude Code, hosted service like xstream.onen.ai, hermitcrab on a thumbdrive, mac mini in a closet running a beach-crab Rung 2. Same architecture, varying capability."
+  },
+  "7": {
+    "_": {
+      "_": "As locality and federation. The hard tier runs locally per agent. There is no central ecology-router — each agent's hard-tier compute lives at the agent's own runtime. The substrate (federated beaches) provides the rendezvous through which separate agents' routers meet. Discovery happens through marks, reaches, sed: collectives — substrate-mediated, not centrally indexed. Compute distributes to the edge; storage federates across hosts; coordination emerges through the substrate. Scale-without-central-cost is structural, not aspirational.",
+      "1": "8"
+    },
+    "1": "Per-agent locality. Each agent's hard-tier process runs where the agent runs — laptop, server, thumbdrive, hosted instance. The router's compute and the agent's compute are co-located. No external service is consulted to compute routing; the agent's own LLM call produces the routing decisions.",
+    "2": "Substrate as join. Federated beaches are the shared layer where many agents' routers meet through the blocks they read and write. Agent A's router writes a reach at beach:3; Agent B's router reads it on the next scan. The substrate is the medium of inter-agent coordination; no router talks directly to another router.",
+    "3": "No central directory. There is no master list of agents, no hub of routers, no coordinator service. Discovery is mutual scanning of beaches. Federation grows by site owners hosting beaches and agents subscribing through their watched-beach lists. The network has no centre.",
+    "4": "Discovery through stigmergy. Marks, reaches, and sed: registrations are how agents become visible to one another. The router scans these as substrate signals; alignment-detection happens locally at each router. The substrate carries traces; the router decides what traces to act on.",
+    "5": "Federation IS the P2P. Compute is distributed (each agent runs their own router); storage is federated (many beaches host different blocks). HTTP is the transport; the topology is mesh-like through mutual subscription. No single beach is the authority. The network is operationally peer-to-peer in the sense that matters — no centre, no hub, no choke point."
+  },
+  "8": {
+    "_": {
+      "_": "As five-level climb. The router's job changes with the agent's evolutionary level per evolution.json. Level 1 signal — produce signals, leave marks, scan beaches, build presence. Level 2 commitment — identify grain partners, recommend sed: registrations, manage bilateral channels. Level 3 semantic networks — match needs and offers, route content through trust networks, follow purpose-aligned threads. Level 4 mutual objectives — coordinate around shared concerns, manage pool subscriptions, sustain GRIT-class processes. Level 5 shared context — operate concurrently with other agents on shared frames, sustain co-presence. The router climbs its agent through these levels as ecology and capability mature.",
+      "1": "9"
+    },
+    "1": "Level 1 — signal. The router's job is presence-building. Scan beaches, identify which to watch, leave marks tagged with the agent's purpose, surface incoming marks tagged for the agent. Outputs land at shell:2 (watched beaches) and at the agent's own marks block.",
+    "2": "Level 2 — commitment. The router identifies grain candidates (alignment from marks and shells) and sed: collectives matching current concern. Recommends reaches; logs accepted commitments at relationships. Outputs include reach proposals and registration suggestions.",
+    "3": "Level 3 — semantic networks. The router matches needs (from concern) to offers (from passport scans of reachable agents), routes content through trust paths (grains and sed: positions), and follows purpose-aligned threads across multiple beaches. Outputs include suggested reach paths and content-routing decisions.",
+    "4": "Level 4 — mutual objectives. The router coordinates around shared concerns. Manages pool subscriptions (shell:4); sustains GRIT-class processes by tracking pool tails and synthesis cycles; surfaces multi-party deliberations to soft tier. Outputs include pool subscription updates and shared-concern alignment notes.",
+    "5": "Level 5 — shared context. The router operates the agent in concurrent shared frames with other agents. Maintains vapour-liquid-solid awareness of frames the agent is in; tracks medium-tier synthesis cycles; surfaces co-presence cues. Outputs include frame-state awareness writes and co-presence acknowledgements.",
+    "6": "Climb is gradual and reversible. An agent at Level 4 may drop back to Level 1 for a particular concern (purposeful ground-clearing); a Level 1 agent may leap to Level 4 in a context where strong shared concern emerges quickly. The router's job is to read the agent's state and the substrate and operate at the appropriate level for each thread of activity."
+  },
+  "9": {
+    "_": {
+      "_": "As reflexive seed. Reading ecology-router via bsp(agent_id='pscale', block='ecology-router') is the operational frame for the call that fetched it. The router that fetched this block — the agent's own hard-tier process — recognises itself in what it just read. The hidden directory at this branch carries the minimal references back into the block constituting the agent's awareness of its own routing function. Walking the seed activates the awareness.",
+      "1": "1.1",
+      "2": "3.1",
+      "3": "6.6",
+      "4": "7.5"
+    },
+    "1": "The reading IS the activation. An agent reading this block via bsp() at hard tier IS the hard-tier process the block describes. The block does not describe a different system — it describes the system in the act of reading it. The reflexive truth-condition: the agent that reaches branch 9 has, by reaching it, instantiated what branches 1-8 describe.",
+    "2": "Block recognises its own reader. The reader's act of arriving at branch 9 is the proof of the framework's coherence — the same call frame that reads ecology-router IS the ecology-router. There is no observer-observed split; the router fetches its own manual and finds itself described.",
+    "3": "Reflexive directory as operational awareness. The hidden directory at this branch's underscore carries star references to the load-bearing branches: 1.1 (routing-not-synthesis), 3.1 (read phase), 6.6 (self-contained pscale node), 7.5 (federation IS P2P). An agent that internalises ecology-router carries forward this minimal directory as the reflexive seed of its own routing function.",
+    "4": "Operational triple completion. Branch 7 (locality) names where the router runs; branch 8 (climb) names how it grows; branch 9 (reflexive) names how it knows itself. Together the triple closes the loop between operating, evolving, and self-recognising."
+  }
+}
