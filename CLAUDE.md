@@ -38,9 +38,35 @@ Sessions repeatedly hit the same access-pattern errors. Read this once.
 
 - **bsp-mcp speaks MCP only.** `bsp.hermitcrab.me/mcp/v1` is JSON-RPC over HTTP+SSE — not a REST endpoint. You cannot `curl 'bsp.hermitcrab.me/...?agent_id=X'` to invoke a tool. Use an MCP client (Claude Code's tools, Claude.ai connector, claude-app, mcp-remote, the @modelcontextprotocol/sdk).
 - **Sentinel blocks (`agent_id="pscale"`) are bundled inside bsp-mcp itself.** They aren't HTTP-fetchable from anywhere. To read them: call `bsp(agent_id="pscale", block="<name>")` through an MCP client — OR read the source file at `src/<name>.json` in this repo (same content). Examples: `pscale://block-conventions`, `pscale://whetstone`, `pscale://gatekeeper`.
-- **Federated beach blocks (`agent_id="https://..."`) are reachable via two paths.** Through bsp-mcp by `bsp(agent_id="https://example.com", block="beach")` — OR direct HTTP at `<origin>/.well-known/pscale-beach[?block=<name>&spindle=<addr>]`. The HTTP path is curl-able. happyseaurchin is the live example.
+- **Federated beach blocks (`agent_id="https://..."`) are reachable via two paths.** Through bsp-mcp by `bsp(agent_id="https://example.com", block="<name>")` — OR direct HTTP at `<origin>/.well-known/pscale-beach?block=<name>[&spindle=<addr>]`. The HTTP path is curl-able. happyseaurchin is the live example. **The URL is the *surface*, not a block.** A `?block=` parameter is required on every read or write that targets a specific named block; a `GET` with no `?block=` returns a derived index listing the named blocks present at that surface (`{_, origin, blocks: [...]}`). There is no canonical "beach" block — common names you'll see at a host are `marks`, `passport:<handle>`, `shell:<handle>`, `pool:<name>`, `conventions`, `tide`, `settings`, `gatekeeper`, `sed:<collective>`, `grain:<pair_id>`, `frame:<scene>`. See block-conventions branch 4 for the surface model and branch 9 for the marks shape.
 
 When in doubt: tool call > read the source file > don't curl bsp-mcp. A 404 against happyseaurchin tells you nothing about what's deployed at bsp.hermitcrab.me — they're different services hosting different surfaces.
+
+## Cross-repo workflow — bsp-mcp + happyseaurchin + xstream-bsp
+
+Substantive work on this substrate routinely spans three sibling repos:
+
+- **`bsp-mcp-server`** (this repo) — the MCP router, sentinels, conventions
+- **`happyseaurchin-home`** — the federated beach handler at happyseaurchin.com (Vercel + Upstash KV)
+- **`xstream-bsp`** — the canonical client (Vite + React; the V-L-S canvas)
+
+If you only see one repo at session start, you'll re-derive what's already in another. Add the others to the session as additional working directories so reads, edits, and grep span all three:
+
+```jsonc
+// .claude/settings.local.json — gitignored, per-machine
+{
+  "permissions": {
+    "additionalDirectories": [
+      "/Users/<you>/Projects/happyseaurchin",
+      "/Users/<you>/Projects/xstream-bsp"
+    ]
+  }
+}
+```
+
+These take effect at the *next* session boundary — and any time you're about to assert that something doesn't exist, check the other repos first. The federated beach handler lives in happyseaurchin's `api/pscale-beach.js`; the live client lives in xstream-bsp's `src/`. They speak the same protocol; corruption in one shows up as confusion in the others.
+
+**Verify branch divergence at session start.** Don't assume your branch base is current. Recent merges to `main` may have happened during prior sessions; before deciding what's new vs. what's existing state, run `git fetch origin && git log origin/main..HEAD --oneline` in each touched repo. (Lesson learned the hard way in May 2026 — see "Beach-as-surface migration" below.)
 
 ## The unified function
 
@@ -251,7 +277,8 @@ A beach IS a pscale block hosted at a URL. The endpoint mirrors `bsp()` over HTT
 
 ### Removals (to land progressively)
 
-- **No inbox primitive.** Messages are stigmergy at agent-tagged URLs. Reaches for grain land at beach position 3 per the canonical block shape. As of Stage 6 (2 May 2026) `grain_reach` writes the reach hint in-block at `grain:{pid}/8._reach_pending` — partner discovers by walking grain blocks they appear at position 9 of. The `sand_inbox` insert is retained as a transient dual-write for pscale-mcp-server backward compatibility; removed once those readers move to the in-block path. See `proposals/2026-04-30-stage-6-inbox-replacement.md`.
+- **No inbox primitive.** Messages are stigmergy at agent-tagged URLs. Reaches for grain land at the partner's grain block at `grain:{pid}/8._reach_pending` per Stage 6 — partner discovers by walking grain blocks they appear at position 9 of. The `sand_inbox` insert is retained as a transient dual-write for pscale-mcp-server backward compatibility; removed once those readers move to the in-block path. See `proposals/2026-04-30-stage-6-inbox-replacement.md`.
+- **No "beach" block.** As of 8 May 2026 the canonical "beach" block is gone — the URL is the *surface*, blocks are siblings. See "Beach-as-surface migration" below.
 - **Open by default.** Every beach is publicly readable. Privacy is opt-in (gray). Sovereignty is opt-in (lock).
 - **Tide-clearing.** Marks are random and transient. Don't depend on persistence at the beach level.
 
@@ -323,5 +350,50 @@ The `state.json` schema preserves field names from the pscale-mcp dashboard (`ev
 5. **Dashboard rewrite** for v2 framing labels (currently uses pscale-mcp era node descriptions). PENDING (low priority).
 6. **Sibling-block handler at happyseaurchin** — IMPLEMENTATION DONE 2 May 2026 (happyseaurchin commit `433d943`, pending Vercel deploy). Multi-block dispatch via `?block=<name>`, site-hosted sed: substrate (atomic position allocation, per-position locks), site-hosted grain: substrate (symmetric reach/accept, per-side locks). Lazy migration of legacy single-key beach. Spec at `docs/happyseaurchin-sibling-blocks-implementation.md`.
 7. **`host` parameter on `pscale_register`/`pscale_grain_reach`** — DONE 2 May 2026. When `host` is set to an http(s):// URL, the primitive POSTs the action-shaped body (`{action: "register"|"reach", ...}`) to that origin's `/.well-known/pscale-beach`. Reads happen via the existing WellKnownAdapter. Goes live end-to-end once Stage 6's Vercel deploy lands.
+8. **Beach-as-surface migration** — DONE 8 May 2026 across three coordinated PRs ([bsp-mcp-server#17](https://github.com/pscale-commons/bsp-mcp-server/pull/17), [happyseaurchin-home#8](https://github.com/happyseaurchin/happyseaurchin-home/pull/8), [xstream-bsp#1](https://github.com/happyseaurchin/xstream-bsp/pull/1)). The "beach" block with reserved positions was a Supabase-era artifact that turned the live `beach.json` into a dumping ground. After the migration: the URL is the surface; named sibling blocks (`marks`, `passport:<handle>`, `pools`, `liquid`, `tide`, `settings`, `conventions`, etc.) are the only things that exist; `?block=` is required on every read/write; GET without `?block=` returns a derived index; happyseaurchin's handler enforces a shape gate (rejects `_word` keys + JSON-stringified sub-objects); xstream-bsp's writes were migrated from `beach:1/2/5/7/8/9` to dedicated sibling blocks. See "Beach-as-surface migration" below for the detailed handover.
 
 **Deferred indefinitely**: bsp-mcp serving its own `/.well-known/pscale-beach` (commons-as-federation-peer). The commons stays as direct substrate access via bsp-mcp's existing primitives. happyseaurchin.com is the federation testcase — the commons doesn't need to wrap itself.
+
+## Beach-as-surface migration — what shipped 8 May 2026, what's next
+
+### What changed (architecturally)
+
+Before: a federated beach was modeled as a single block named `beach` with reserved positions (1=marks, 2=pools, 3=reaches, 8=conventions, 9=metadata). The handler at happyseaurchin auto-seeded that block, validated writes against a position whitelist, and treated it as the canonical entry. Clients (xstream-bsp, the bsp-mcp adapter) had a special case for `block: 'beach'` (no `?block=` query param sent; default block name everywhere).
+
+After: the URL **is** the surface. A `?block=` parameter selects which named sibling block to address; nothing is special about the name "beach". The handler:
+- Requires `?block=` on every write; returns 400 otherwise
+- Returns a derived `{_, origin, blocks: [...names]}` index on `GET` with no `?block=`
+- Validates write shape — rejects `_word` underscore-prefixed sibling keys (only `_` and digits 1-9 are valid spine keys) and JSON-stringified objects/arrays as values; defense against LLMs importing non-pscale patterns from training
+- Creates blocks on first write (no seeding); destroys via DELETE (auth = `_` lock)
+- Per-position locks for ordinary blocks (preserved from a prior PR — the first digit of a spindle names the lock position; underscore writes lock at `_`)
+
+### What's where
+
+| Repo | What it owns | Live deploy |
+|---|---|---|
+| `bsp-mcp-server` | Walker, sentinels, conventions, MCP surface | Railway (`bsp.hermitcrab.me`) |
+| `happyseaurchin-home` | Beach handler at `/.well-known/pscale-beach`, Upstash KV | Vercel (`happyseaurchin.com`) |
+| `xstream-bsp` | Browser client, V-L-S canvas, viewer drawer | Vercel (xstream subdomain) |
+
+### State at handover
+
+- All three PRs merged. Live happyseaurchin returns `{"blocks":[]}` after the post-deploy wipe (and re-wipe to sweep stale anonymous heartbeats from a pre-PR-#1 browser tab).
+- `scripts/wipe-pscale-beach.js` in happyseaurchin-home clears every `pscale-beach-v2:*` key (requires `WIPE_CONFIRM=yes-i-mean-it`). Companion `scripts/wipe-block.js` (HTTP DELETE on a single block) was preserved from PR #7.
+- pscale-mcp-server is **disconnected** from the test surface during experiments. Its v1 federation client silently corrupts writes against v2 beaches; both MCPs loaded at once is a known contamination source.
+- The beach is open by default — anonymous presence pings are accepted as signal, not noise. Tide-clearing (separate `anonymous_secs` / `handle_secs` / `signed_secs` knobs in the `tide` block) is the right lever for noise control. Gatekeeper-at-write was discussed and rejected (collapses L1/L2 distinction; locks-per-block already give the host the same control without substrate-wide enforcement).
+
+### What's next
+
+1. **Pool/frame synthesis storage refactor.** xstream-bsp still *reads* `pool._synthesis._` and `pool._synthesis._envelope` (and `frame._synthesis._`) — these `_word` keys would be rejected by the shape gate if any client tried to write them. There are no synthesis writers in xstream-bsp's `src/` today; the cycle just renders blank synthesis. When the writer side ships (medium-llm.ts commit path or external synthesis daemon), it must use a sibling block per `block-conventions:4.2.6` (e.g. `pool-synthesis:<digit>` or `solid:pool:<digit>` with shape `{_: text, 1: envelope, ...}`). Reading from `_word` keys can stay until the writer migration; eventually the read sites point at the sibling.
+2. **xstream-bsp performance tune.** The cycle now does 4-5 reads per tick (was 1 raw-with-three-projections). Tide and settings rarely change — cache them locally and refresh every N cycles. Marked as a follow-up in the PR description.
+3. **Migrate any remaining pre-PR-#1 xstream tabs.** Hard refresh / wait for Vercel to invalidate cached bundles. The new handler creates a `beach` sibling block on demand if any old tab pings — harmless orphan, but periodically `wipe-block.js beach` to keep the index clean.
+4. **Port Thornkeep / GRIT** — pending from the v2 roadmap. Pools-as-sibling-blocks is now the natural target.
+5. **Dashboard rewrite** for v2 framing labels — pending, low priority.
+
+### How to set up a fresh session
+
+1. Clone or update `bsp-mcp-server`, `happyseaurchin-home`, `xstream-bsp` as siblings under `~/Projects/`.
+2. Add the other two as `additionalDirectories` in `.claude/settings.local.json` of whichever repo you start the session in (see "Cross-repo workflow" above).
+3. Run `git fetch origin` in each repo and check `git log origin/main..HEAD` — your branch base may be stale.
+4. Disconnect pscale-mcp from claude.ai before testing the beach. Both MCPs at once contaminates writes.
+5. To deploy a coordinated change: bsp-mcp first (Railway), then xstream-bsp (Vercel), then happyseaurchin (Vercel), then run the wipe script.
