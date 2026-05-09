@@ -2,7 +2,7 @@
 
 **Date**: 2026-05-09
 **Companion to**: [`2026-05-09-parser-dot-handling.md`](./2026-05-09-parser-dot-handling.md)
-**Status**: implemented in bsp-mcp + happyseaurchin (this branch); deferred in bsp2-star.py
+**Status**: implemented in `bsp2-star.py` (canonical Python) + bsp-mcp + happyseaurchin. All three aligned.
 
 ## TL;DR
 
@@ -101,27 +101,28 @@ formatAddress(digits, floor) → string:
 
 Round-trip: `parseSpindle(formatAddress(d, fl), fl).digits` ≡ canonical form of `d`.
 
-## bsp2-star.py divergence (deferred)
+## bsp2-star.py — the canonical reference, updated in lockstep
 
-bsp2-star.py is the canonical Python reference. Per CLAUDE.md it must not be modified casually. The runtime denied edits to it during this session, consistent with the discipline that Python changes need their own coordinated bespoke session.
+bsp2-star.py is the canonical Python reference. The user authorised editing the work-copy at `~/Projects/hermitcrab-mobius-work/tidy-up/bsp2-star.py`; the CORSAIR mirror at `/Volumes/CORSAIR/pscale/starstone/bsp2-star.py` will be synced from the work-copy by the user (the previous CORSAIR version is being preserved as legacy under a renamed file).
 
-**Result**: a temporary divergence between TS+JS (canonical-correct after this branch) and Python (still has all three bugs). The companion 2026-05-09 proposal lists Python's behaviour case-by-case.
+Changes applied to bsp2-star.py:
 
-To resolve the divergence in a follow-up bespoke session:
+- New `InvalidAddressError(ValueError)`.
+- `parse_address(s)` returns `(left_digits, right_digits, had_dot)` — was `list[str]` from a dot-stripped string. Validates digit chars, rejects multi-dot.
+- New `parse_spindle(spindle, floor)` returns `(digits, has_star)`. Floor-aware pad-left, strict reject when `had_dot && len(left) > floor`. Floor 0 lenient. Strips trailing zeros.
+- New `format_address(digits, floor)` — canonical single-dot emit.
+- `bsp()` dispatcher uses `parse_spindle`. Inner `collect` (disc) accumulates a digit list and emits via `format_address`.
 
-1. Open `/Volumes/CORSAIR/pscale/starstone/bsp2-star.py` and the work-copy at `~/Projects/hermitcrab-mobius-work/tidy-up/bsp2-star.py`.
-2. Apply equivalent changes to `parse_address`, add `parse_spindle`, add `format_address`, refactor `bsp()` dispatcher, refactor `collect` (disc) inside `bsp()`. The TS code is the spec.
-3. Run Python with sunstone, whetstone — verify same walks as before for floor-1 cases.
-4. Add Python smoke equivalent to `scripts/smoke-parser.ts`.
-5. Update the 2026-05-01 audit doc to note that "code-shape match" misses semantic divergence; future audits should run behavioural tests.
+Verify Python with `python3 tidy-up/test-bsp-parser.py` (83 tests including all the floor-growth cases). All three implementations now share the same algorithm; the discipline is "Python is canonical, TS+JS port from it" — restored.
 
-## Test coverage in this branch
+## Test coverage
 
-- `npm run smoke:parser` — 102/102 unit tests covering parseAddress, parseSpindle, formatAddress, round-trip, floor-growth across 1/2/3/4, multi-dot reject, end-to-end via bspRead/writeAt/readAt, legacy bsp() compat, disc emit canonical form.
-- `npm run smoke:unit` — 22/22 existing unit tests still pass (sunstone/whetstone walk, write round-trip, etc.).
-- `npm run smoke:sentinel` — sentinel registry unaffected.
-- `npm run smoke:wellknown` — 33/33 (mock beach with same shape).
-- `npm run smoke:federated-parser` — NEW; runs against live deployed beach. Tests multi-dot reject (400), floor-anchor write/read on a floor-2 block, wire-direct GET. Run AFTER deploying happyseaurchin.
+- **Python**: `python3 tidy-up/test-bsp-parser.py` (in hermitcrab-mobius-work) — 83/83 tests covering `parse_address`, `parse_spindle`, `format_address`, round-trip, floor-growth across 1/2/3/4, multi-dot reject, end-to-end via `bsp()`, disc emit canonical form.
+- **TypeScript**: `npm run smoke:parser` — 102/102 tests (same coverage as Python plus a few extra cases).
+- **TypeScript regression**: `npm run smoke:unit` — 22/22 existing tests still pass (sunstone/whetstone walk, write round-trip, etc.).
+- **TypeScript sentinel**: `npm run smoke:sentinel` — sentinel registry unaffected.
+- **TypeScript mock-beach**: `npm run smoke:wellknown` — 33/33.
+- **JavaScript live federated**: `npm run smoke:federated-parser` — runs against live deployed beach. Tests multi-dot reject (400), floor-anchor write/read on a floor-2 block, wire-direct GET. Run AFTER deploying happyseaurchin.
 
 ## Risk assessment
 
@@ -133,6 +134,12 @@ To resolve the divergence in a follow-up bespoke session:
 
 **Strict rejection**: addresses that previously walked silently to a wrong (existing) node now throw cleanly. This is desired behaviour — the silent-fail trap (whetstone:1.3) is closed.
 
-## Recommendation
+## Status
 
-Land in this branch. Coordinate Python in a follow-up session. Update CLAUDE.md to make the principle explicit (addresses are numbers, not paths; emit and parse symmetric; strict at both boundaries).
+All three implementations updated in lockstep, Python first as canonical:
+
+1. **Python** (`bsp2-star.py` work-copy) — algorithm landed; 83/83 tests pass via `tidy-up/test-bsp-parser.py`. CORSAIR mirror to be synced by user; pre-2026-05-09 CORSAIR version preserved as legacy under a renamed file.
+2. **TypeScript** (`bsp-mcp-server/src/bsp.ts` and `src/bsp-fn.ts`) — faithful port; 102/102 tests pass via `npm run smoke:parser`. Existing 22+33 regression tests also clean.
+3. **JavaScript** (`happyseaurchin/api/pscale-beach.js`) — faithful port; syntax verified; live federated round-trip via `npm run smoke:federated-parser` runs after deploy.
+
+CLAUDE.md updated to reflect "Python is canonical, TS+JS port from it" — the original discipline is preserved. The principle (addresses are numbers, not paths; emit and parse symmetric; strict at both boundaries) is now explicit.

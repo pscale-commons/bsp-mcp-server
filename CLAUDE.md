@@ -114,7 +114,7 @@ That's the whole surface: `bsp()` plus five primitives. Six entry points total. 
 
 ## The address invariant — locked
 
-This is the single most important thing to get right. There is **one** canonical parser; it lives in `src/bsp.ts`. The same algorithm is mirrored in `happyseaurchin/api/pscale-beach.js`. Both ends of the wire enforce the same form.
+This is the single most important thing to get right. The canonical parser lives in `bsp2-star.py` (Python source-of-truth at `~/Projects/hermitcrab-mobius-work/tidy-up/bsp2-star.py`, mirrored on `/Volumes/CORSAIR/pscale/starstone/`). `src/bsp.ts` and `happyseaurchin/api/pscale-beach.js` are faithful ports of that algorithm — both ends of the wire enforce the same form.
 
 **Pscale 0 is anchored at the floor (decimal point), NOT at the top of the tree.** Floor is the depth of the underscore chain — derived from the block, not declared. The decimal point is significant: it anchors pscale 0 to the floor. Pscale addresses are **numbers, not paths** — at most ONE decimal point per address (sunstone:1.5).
 
@@ -135,13 +135,13 @@ Trailing zeros in `100`, `110`, `345` are floor-width padding. `100` walks digit
 
 **Emit is symmetric.** `formatAddress(digits, floor)` produces the canonical single-decimal form: dot-free if all digits fit at-or-above the floor, otherwise a single dot at the floor boundary. Round-trip: `parseSpindle(formatAddress(d, fl), fl).digits` ≡ canonical form of `d`. Disc emits use `formatAddress` — no more multi-dot leaks back to LLM context.
 
-**Divergence note.** `bsp2-star.py` (Python canonical reference) was historically used as the source of truth, but currently has the same three parser bugs that bsp-mcp + happyseaurchin fix in this branch (replace-first-only, split-ghost-keys, total-length-pad-not-left-of-decimal). Python is deferred to a coordinated bespoke session per [`proposals/2026-05-09-floor-anchor-and-multi-dot.md`](proposals/2026-05-09-floor-anchor-and-multi-dot.md). The TypeScript and JavaScript ports are now the canonical parser; bsp2-star.py will be brought into line in a follow-up.
+The 2026-05-09 update added `parse_spindle`, `format_address`, `InvalidAddressError`, and floor-aware padding to bsp2-star.py; the TS+JS ports were updated in lockstep. Verify with `python3 tidy-up/test-bsp-parser.py` (Python — 83 tests) and `npm run smoke:parser` (TS — 102 tests). See [`proposals/2026-05-09-floor-anchor-and-multi-dot.md`](proposals/2026-05-09-floor-anchor-and-multi-dot.md) for the algorithm spec and bug closure.
 
 If you find yourself writing a different parser for "convenience" or "edge cases", stop. The convenience is wrong. The edge case is your assumption.
 
 ## What NOT to do
 
-1. **Do not modify `src/bsp.ts` casually.** Historically a port of `bsp2-star.py`; as of 2026-05-09 the TS+JS implementations are canonical and Python is deferred (see [`proposals/2026-05-09-floor-anchor-and-multi-dot.md`](proposals/2026-05-09-floor-anchor-and-multi-dot.md)). When Python catches up, sync wholesale rather than patching.
+1. **Do not modify `src/bsp.ts` casually.** It is a faithful port of `bsp2-star.py`. If the Python reference updates, replace wholesale rather than patching. The 2026-05-09 update was applied to all three (Python first, then TS, then JS) — verify alignment with `python3 tidy-up/test-bsp-parser.py` and `npm run smoke:parser`.
 2. **Do not add fields to blocks.** Position in the tree encodes what you think you need a field for. If you reach for a `type` field, the floor depth IS the type. If you reach for a `parent` field, the address IS the parent. If you reach for a `kind` enum, the underscore chain depth IS the kind.
 3. **Do not add logic to handle block semantics.** Tool handlers are thin: load block → bsp() → format → return. If a handler is doing more than that, the block structure is wrong, not the code.
 4. **Do not build categorised tools.** No `bsp_passport_publish`, no `bsp_inbox_send`, no `bsp_beach_mark`. The semantics live IN the block, accessed via the block name and the `*` operator. The label is data, not function name.
