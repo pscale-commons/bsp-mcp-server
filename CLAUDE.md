@@ -114,24 +114,34 @@ That's the whole surface: `bsp()` plus five primitives. Six entry points total. 
 
 ## The address invariant — locked
 
-This is the single most important thing to get right. It is encoded in `bsp2-star.py` and ported in `src/bsp.ts`. Do not deviate.
+This is the single most important thing to get right. There is **one** canonical parser; it lives in `src/bsp.ts`. The same algorithm is mirrored in `happyseaurchin/api/pscale-beach.js`. Both ends of the wire enforce the same form.
 
-**Pscale 0 is anchored at the floor (decimal point), NOT at the top of the tree.** Floor is the depth of the underscore chain — derived from the block, not declared. The walk algorithm is:
+**Pscale 0 is anchored at the floor (decimal point), NOT at the top of the tree.** Floor is the depth of the underscore chain — derived from the block, not declared. The decimal point is significant: it anchors pscale 0 to the floor. Pscale addresses are **numbers, not paths** — at most ONE decimal point per address (sunstone:1.5).
 
-1. Parse the address, stripping the decimal point (it's a readability marker).
-2. **Pad LEFT to floor width** with zeros (the human may have omitted underscore-chain steps).
-3. **Strip trailing zeros** (they are floor-width notation, not walk instructions).
-4. Walk: digit 0 → key `_`, digits 1-9 → respective keys.
+The walk algorithm is dot-aware:
 
-Whole-number digits to the left of the decimal walk the underscore-chain levels (positive pscale). Digits to the right walk into branches (negative pscale). The decimal in `123.45` marks the floor boundary — five steps total, decimal between the third and fourth.
+1. Split the address on the dot. **Multi-dot is rejected** at parse time.
+2. Validate every char ∈ [0-9].
+3. **Reject** if `hadDot && leftDigits.length > floor` (the dot would be above the floor).
+4. **Pad LEFT-OF-DECIMAL** to floor width with `'0'` (= `_`). This makes an address written at a smaller floor still locate the same semantic position after the block has grown an underscore layer above. `"34.5"` at floor 2 keeps walking to the leaf; at floor 3 it auto-pads to `"034.5"`; at floor 4 to `"0034.5"`.
+5. **Strip trailing zeros** (floor-width padding canonicalisation).
+6. Walk: digit 0 → key `_`, digits 1-9 → respective keys.
 
-Trailing zeros in `100`, `110`, `345` are floor-width padding. `100` walks digit `1` only. `110` walks digits `1` then `1`. Single algorithm, no exceptions, no alternatives anywhere in the codebase.
+Whole-number digits to the left of the decimal walk the underscore-chain levels (positive pscale). Digits to the right walk into branches (negative pscale). The decimal in `123.45` marks the floor boundary.
 
-If you find yourself writing a different parser for "convenience" or "edge cases", stop. The convenience is wrong. The edge case is your assumption. There is one parser. It lives in `src/bsp.ts`.
+Trailing zeros in `100`, `110`, `345` are floor-width padding. `100` walks digit `1` only. `110` walks digits `1` then `1`.
+
+**Strict at both boundaries.** Multi-dot addresses (`"1.2.3"`) and addresses with left-of-decimal exceeding floor throw `InvalidAddressError`. The MCP boundary catches and returns a clean user-facing error; the beach handler catches and returns HTTP 400 `invalid_address`. The substrate enforces its own contract — silent misroute (the whetstone:1.3 trap) is closed.
+
+**Emit is symmetric.** `formatAddress(digits, floor)` produces the canonical single-decimal form: dot-free if all digits fit at-or-above the floor, otherwise a single dot at the floor boundary. Round-trip: `parseSpindle(formatAddress(d, fl), fl).digits` ≡ canonical form of `d`. Disc emits use `formatAddress` — no more multi-dot leaks back to LLM context.
+
+**Divergence note.** `bsp2-star.py` (Python canonical reference) was historically used as the source of truth, but currently has the same three parser bugs that bsp-mcp + happyseaurchin fix in this branch (replace-first-only, split-ghost-keys, total-length-pad-not-left-of-decimal). Python is deferred to a coordinated bespoke session per [`proposals/2026-05-09-floor-anchor-and-multi-dot.md`](proposals/2026-05-09-floor-anchor-and-multi-dot.md). The TypeScript and JavaScript ports are now the canonical parser; bsp2-star.py will be brought into line in a follow-up.
+
+If you find yourself writing a different parser for "convenience" or "edge cases", stop. The convenience is wrong. The edge case is your assumption.
 
 ## What NOT to do
 
-1. **Do not modify `src/bsp.ts` casually.** It is a port of `bsp2-star.py`. If the Python reference updates, replace wholesale. Do not patch.
+1. **Do not modify `src/bsp.ts` casually.** Historically a port of `bsp2-star.py`; as of 2026-05-09 the TS+JS implementations are canonical and Python is deferred (see [`proposals/2026-05-09-floor-anchor-and-multi-dot.md`](proposals/2026-05-09-floor-anchor-and-multi-dot.md)). When Python catches up, sync wholesale rather than patching.
 2. **Do not add fields to blocks.** Position in the tree encodes what you think you need a field for. If you reach for a `type` field, the floor depth IS the type. If you reach for a `parent` field, the address IS the parent. If you reach for a `kind` enum, the underscore chain depth IS the kind.
 3. **Do not add logic to handle block semantics.** Tool handlers are thin: load block → bsp() → format → return. If a handler is doing more than that, the block structure is wrong, not the code.
 4. **Do not build categorised tools.** No `bsp_passport_publish`, no `bsp_inbox_send`, no `bsp_beach_mark`. The semantics live IN the block, accessed via the block name and the `*` operator. The label is data, not function name.

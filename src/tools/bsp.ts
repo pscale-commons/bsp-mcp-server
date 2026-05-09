@@ -22,7 +22,7 @@
  */
 
 import { z } from 'zod';
-import { Block, writeAt } from '../bsp.js';
+import { Block, writeAt, InvalidAddressError } from '../bsp.js';
 import {
   bspRead,
   bspWrite,
@@ -207,9 +207,16 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     const blockForRead = secret
       ? await decryptBlockNodes(row.block, secret, agent_id)
       : row.block;
-    const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
-    const lockLine = formatLockStateLine(row, spindle);
-    return { content: [{ type: 'text', text: formatRead(result) + lockLine }] };
+    try {
+      const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
+      const lockLine = formatLockStateLine(row, spindle);
+      return { content: [{ type: 'text', text: formatRead(result) + lockLine }] };
+    } catch (e: any) {
+      if (e instanceof InvalidAddressError) {
+        return { content: [{ type: 'text', text: `Read rejected: ${e.message}` }] };
+      }
+      throw e;
+    }
   }
 
   // ── WRITE and/or LOCK ──
@@ -246,6 +253,9 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
           pscale_attention: pscale_attention ?? null,
         };
       } catch (e: any) {
+        if (e instanceof InvalidAddressError) {
+          return { content: [{ type: 'text', text: `Write rejected: ${e.message}` }] };
+        }
         return { content: [{ type: 'text', text: `Write rejected: gray-encryption failed (${e?.message ?? String(e)})` }] };
       }
     } else {

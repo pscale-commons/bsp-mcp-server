@@ -99,22 +99,165 @@ export function floorDepth(block: Block): number {
 }
 
 // ── Address parsing ──
+//
+// Pscale addresses are NUMBERS, not paths. The decimal point anchors pscale 0
+// to the floor (sunstone:1.5). The substrate enforces this discipline at both
+// boundaries: parseSpindle rejects malformed input with a clear error, and
+// formatAddress emits the canonical single-dot form. Round-trip:
+//   parseSpindle(formatAddress(d, fl), fl) → d (after canonicalisation).
+
+/** Raised when a pscale address violates the canonical form. */
+export class InvalidAddressError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidAddressError';
+  }
+}
 
 /**
- * Parse a pscale number into a list of digit characters.
- * The decimal point is a readability marker for the floor boundary, not structural.
- * Strip it. Preserve digits — the caller handles floor padding and right-stripping.
+ * Split a pscale address into (leftDigits, rightDigits, hadDot).
+ *
+ * The decimal point is significant: it anchors pscale 0 to the floor. The
+ * caller (parseSpindle) uses (left, right) to apply floor-aware padding.
+ *
+ * Accepts string or number. Rejects multi-dot, non-digit characters.
  */
-export function parseAddress(number: number | string): string[] {
-  if (typeof number === 'number') {
-    const s = number.toFixed(10);
-    const parts = s.split('.');
-    const intPart = parts[0];
-    const fracPart = parts.length > 1 ? parts[1].replace(/0+$/, '') : '';
-    return [...(fracPart ? intPart + fracPart : intPart)];
+export function parseAddress(s: number | string): {
+  leftDigits: string[];
+  rightDigits: string[];
+  hadDot: boolean;
+} {
+  if (typeof s === 'number') {
+    if (Number.isInteger(s)) {
+      // Plain integer — no implicit decimal.
+      return { leftDigits: [...String(s)], rightDigits: [], hadDot: false };
+    }
+    // Float — always carries an implicit decimal; strict left-of-decimal
+    // check applies.
+    const formatted = s.toFixed(10);
+    const parts = formatted.split('.');
+    const left = parts[0];
+    const right = parts.length > 1 ? parts[1].replace(/0+$/, '') : '';
+    return { leftDigits: [...left], rightDigits: [...right], hadDot: true };
   }
-  const s = String(number).replace('.', '');
-  return [...s];
+
+  const text = String(s);
+  const dotCount = (text.match(/\./g) || []).length;
+  if (dotCount > 1) {
+    throw new InvalidAddressError(
+      `"${text}" has ${dotCount} decimal points; pscale addresses carry at most one (sunstone:1.5)`
+    );
+  }
+
+  let left: string;
+  let right: string;
+  if (dotCount === 1) {
+    [left, right] = text.split('.');
+  } else {
+    left = text;
+    right = '';
+  }
+
+  for (const ch of left + right) {
+    if (ch < '0' || ch > '9') {
+      throw new InvalidAddressError(
+        `"${text}" contains non-digit character "${ch}"`
+      );
+    }
+  }
+
+  return { leftDigits: [...left], rightDigits: [...right], hadDot: dotCount === 1 };
+}
+
+/**
+ * Parse a pscale spindle into walk digits with floor-aware padding.
+ *
+ * Returns { digits, hasStar }.
+ *
+ * The decimal point anchors pscale 0 to the floor (sunstone:1.5). When the
+ * address has fewer left-of-decimal digits than the floor, the left side is
+ * padded with '0' (= '_') so the same address keeps locating the same
+ * semantic position after the block has grown an underscore layer above.
+ *
+ * Trailing '*' is stripped — caller handles star semantics.
+ *
+ * Throws InvalidAddressError on multi-dot, non-digit chars, or addresses
+ * with left-of-decimal exceeding floor (the dot would be above the floor).
+ */
+export function parseSpindle(
+  spindle: string | number | null | undefined,
+  floor: number,
+): { digits: string[]; hasStar: boolean } {
+  if (spindle == null || spindle === '') {
+    return { digits: [], hasStar: false };
+  }
+
+  let s = String(spindle);
+  const hasStar = s.endsWith('*');
+  if (hasStar) s = s.slice(0, -1);
+  if (s === '') return { digits: [], hasStar };
+
+  const { leftDigits: leftRaw, rightDigits, hadDot } = parseAddress(s);
+  let leftDigits = leftRaw;
+
+  // Strict floor-anchor check only fires when floor is established (≥1).
+  // Floor 0 means the block has no underscore chain (e.g. a freshly created
+  // block with sub-position writes only) — no anchoring applies.
+  if (floor >= 1 && hadDot && leftDigits.length > floor) {
+    throw new InvalidAddressError(
+      `"${s}" has ${leftDigits.length} digits left of decimal but block ` +
+      `floor is ${floor}; the dot anchors pscale 0 at the floor, so ` +
+      `left-of-decimal digits cannot exceed floor depth`
+    );
+  }
+
+  if (floor > 1 && leftDigits.length < floor) {
+    leftDigits = Array(floor - leftDigits.length).fill('0').concat(leftDigits);
+  }
+
+  let digits = leftDigits.concat(rightDigits);
+
+  while (digits.length > 1 && digits[digits.length - 1] === '0') {
+    digits.pop();
+  }
+
+  return { digits, hasStar };
+}
+
+/**
+ * Format walk digits into a canonical pscale address string.
+ *
+ * Single-decimal form anchored at the floor when there are digits below the
+ * floor; dot-free otherwise. Strips trailing zeros (floor-width padding) and
+ * leading zeros from the left-of-decimal portion (parser re-pads from the
+ * floor).
+ *
+ * Round-trip: parseSpindle(formatAddress(d, fl), fl).digits is equivalent
+ * to d after canonicalisation, for any d that's reachable via a well-formed
+ * pscale address.
+ */
+export function formatAddress(digits: string[], floor: number): string {
+  let d = digits.slice();
+
+  while (d.length > 1 && d[d.length - 1] === '0') {
+    d.pop();
+  }
+
+  if (d.length === 0) return '';
+
+  if (d.length <= floor) {
+    while (d.length > 1 && d[0] === '0') {
+      d = d.slice(1);
+    }
+    return d.join('');
+  }
+
+  let left = d.slice(0, floor);
+  const right = d.slice(floor);
+  while (left.length > 1 && left[0] === '0') {
+    left = left.slice(1);
+  }
+  return left.join('') + '.' + right.join('');
 }
 
 // ── Walk ──
@@ -223,7 +366,7 @@ export function bsp(
   if (mode === 'disc' && point != null) {
     const target = typeof point === 'string' ? parseInt(point, 10) : point;
     const nodes: DiscNode[] = [];
-    function collectDisc(node: any, depth: number, path: string) {
+    function collectDisc(node: any, depth: number, walked: string[]) {
       if (depth === target) {
         let text: string | null = null;
         if (typeof node === 'string') {
@@ -235,34 +378,28 @@ export function bsp(
           }
           text = typeof inner === 'string' ? inner : null;
         }
+        // Emit the walked digit sequence as a canonical pscale address —
+        // single-decimal, floor-anchored, round-trippable through parseSpindle.
+        const path = walked.length > 0 ? formatAddress(walked, fl) : '';
         nodes.push({ path, text });
         return;
       }
       if (!node || typeof node !== 'object') return;
       if ('_' in node && typeof node._ === 'object') {
-        collectDisc(node._, depth + 1, path ? `${path}.0` : '0');
+        collectDisc(node._, depth + 1, walked.concat(['0']));
       }
       for (const d of '123456789') {
         if (d in node) {
-          collectDisc(node[d], depth + 1, path ? `${path}.${d}` : d);
+          collectDisc(node[d], depth + 1, walked.concat([d]));
         }
       }
     }
-    collectDisc(block, 0, '');
+    collectDisc(block, 0, []);
     return { mode: 'disc', depth: target, nodes };
   }
 
-  // Parse address, then: check floor → pad left → strip right → walk.
-  let digits = parseAddress(number!);
-  // 1. Pad left to floor width (add underscore-chain zeros the human omitted)
-  if (fl > 1 && digits.length < fl) {
-    digits = Array(fl - digits.length).fill('0').concat(digits);
-  }
-  // 2. Strip trailing zeros (human padding for floor-width notation)
-  while (digits.length > 1 && digits[digits.length - 1] === '0') {
-    digits.pop();
-  }
-  // 3. Walk
+  // Parse spindle: validates, applies floor-aware pad-left, strips trailing.
+  const { digits } = parseSpindle(number ?? null, fl);
   const { chain, terminal, parent, lastKey } = walk(block, digits);
 
   const pscaleAt = (depth: number) => (fl - 1) - depth;
@@ -410,24 +547,23 @@ export function fmtResult(result: BspResult): string {
 
 /** Read the raw value at an address — the symmetric counterpart to writeAt.
  *
- * Mirrors writeAt's digit-as-key semantics with NO floor-spine special case:
- * digit '0' maps to key '_'; the walker descends through the addressed
- * key regardless of whether the value is a string or object. Used for
- * surgical extraction during federated POST forwarding (where the receiver
- * applies the value at the user's spindle directly).
+ * Uses parseSpindle for floor-aware parsing, so an address written at a
+ * smaller floor still resolves correctly after the block has grown an
+ * underscore layer above.
  *
  * Returns undefined when the address doesn't resolve (any intermediate
- * non-object terminates the walk).
+ * non-object terminates the walk). Throws InvalidAddressError for
+ * malformed input (multi-dot, non-digit chars, left-of-decimal > floor).
  */
 export function readAt(block: Block, address: string | null | undefined): any {
   if (address == null || address === '' || address === '_') return block._;
-  const parts = String(address).includes('.')
-    ? String(address).split('.').filter(Boolean)
-    : [...String(address)];
+  const fl = floorDepth(block);
+  const { digits } = parseSpindle(address, fl);
+  if (digits.length === 0) return block._;
   let node: any = block;
-  for (const part of parts) {
+  for (const d of digits) {
     if (!node || typeof node !== 'object') return undefined;
-    const key = part === '0' ? '_' : part;
+    const key = d === '0' ? '_' : d;
     if (!(key in node)) return undefined;
     node = node[key];
   }
@@ -436,12 +572,16 @@ export function readAt(block: Block, address: string | null | undefined): any {
 
 /** Write value at address, creating intermediate nodes as needed.
  *
+ * Uses parseSpindle for floor-aware parsing.
+ *
  * Growth migration: when an intermediate node is a string, the string is
  * preserved as the underscore of the new sub-block before descending. This
  * implements the supernest-on-growth rule — a digit's existing semantic
  * migrates to its underscore the moment it gains children, instead of being
  * silently nuked. Final-key writes still replace whatever's at the leaf
  * (a write at "7" still replaces block[7]; only intermediate nodes migrate).
+ *
+ * Throws InvalidAddressError for malformed input.
  */
 export function writeAt(block: Block, address: string, value: any): Block {
   if (address === '_' || address === '' || address == null) {
@@ -449,13 +589,16 @@ export function writeAt(block: Block, address: string, value: any): Block {
     return block;
   }
 
-  const parts = String(address).includes('.')
-    ? String(address).split('.')
-    : [...String(address)];
+  const fl = floorDepth(block);
+  const { digits } = parseSpindle(address, fl);
+  if (digits.length === 0) {
+    block._ = value;
+    return block;
+  }
 
   let node: any = block;
-  for (const part of parts.slice(0, -1)) {
-    const key = part === '0' ? '_' : part;
+  for (let i = 0; i < digits.length - 1; i++) {
+    const key = digits[i] === '0' ? '_' : digits[i];
     const existing = node[key];
     if (typeof existing === 'string') {
       // Migration: preserve parent semantic at the underscore of the new sub-block
@@ -466,7 +609,8 @@ export function writeAt(block: Block, address: string, value: any): Block {
     node = node[key];
   }
 
-  const finalKey = parts[parts.length - 1] === '0' ? '_' : parts[parts.length - 1];
+  const finalDigit = digits[digits.length - 1];
+  const finalKey = finalDigit === '0' ? '_' : finalDigit;
   node[finalKey] = value;
   return block;
 }

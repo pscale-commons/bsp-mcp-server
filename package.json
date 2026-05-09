@@ -8,9 +8,11 @@
     "build": "tsc",
     "start": "tsx src/index.ts",
     "smoke:unit": "tsx scripts/smoke-bsp.ts",
+    "smoke:parser": "tsx scripts/smoke-parser.ts",
     "smoke:sentinel": "tsx scripts/smoke-sentinel.ts",
     "smoke:wellknown": "tsx scripts/smoke-wellknown.ts",
-    "smoke:federated": "tsx scripts/smoke-federated-live.ts"
+    "smoke:federated": "tsx scripts/smoke-federated-live.ts",
+    "smoke:federated-parser": "tsx scripts/smoke-federated-parser.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
