@@ -21,11 +21,16 @@ import {
   Block,
   collectUnderscore,
   floorDepth,
+  formatAddress,
   getHiddenDirectory,
-  parseAddress,
+  parseSpindle as parseSpindleCanonical,
   walk,
   writeAt,
+  InvalidAddressError,
 } from './bsp.js';
+
+// Re-export so existing tools/scripts that import from bsp-fn.ts keep working.
+export { InvalidAddressError } from './bsp.js';
 
 // ── Shape ──
 
@@ -67,34 +72,18 @@ export interface BspWriteResult {
 }
 
 // ── Spindle parsing ──
+//
+// The canonical parseSpindle lives in bsp.ts (it's the floor-aware parser
+// that anchors pscale 0 to the floor per sunstone:1.5). This module exposes
+// it under the same name for callers that import from bsp-fn.ts.
 
 interface ParsedSpindle {
   digits: string[];      // walk digits after floor-pad-left + trailing-zero-strip
   hasStar: boolean;      // true if spindle ends with '*'
-  rawDigits: string[];   // pre-padding digits (for diagnostics)
 }
 
 export function parseSpindle(spindle: string | null | undefined, floor: number): ParsedSpindle {
-  if (spindle == null || spindle === '') {
-    return { digits: [], hasStar: false, rawDigits: [] };
-  }
-  let s = String(spindle);
-  const hasStar = s.endsWith('*');
-  if (hasStar) s = s.slice(0, -1);
-  if (s === '') {
-    return { digits: [], hasStar, rawDigits: [] };
-  }
-  const rawDigits = parseAddress(s);
-  let digits = [...rawDigits];
-  // 1. Pad LEFT to floor width (the human may have omitted underscore-chain steps)
-  if (floor > 1 && digits.length < floor) {
-    digits = Array(floor - digits.length).fill('0').concat(digits);
-  }
-  // 2. Strip trailing zeros (floor-width notation, not walk instructions)
-  while (digits.length > 1 && digits[digits.length - 1] === '0') {
-    digits.pop();
-  }
-  return { digits, hasStar, rawDigits };
+  return parseSpindleCanonical(spindle, floor);
 }
 
 // ── Pscale ──
@@ -251,8 +240,9 @@ export function bspRead(
 // ── Disc collection ──
 
 function collectDisc(block: Block, targetDepth: number): Array<{ address: string; content: any }> {
+  const fl = floorDepth(block);
   const nodes: Array<{ address: string; content: any }> = [];
-  function recurse(node: any, depth: number, path: string) {
+  function recurse(node: any, depth: number, walked: string[]) {
     if (depth === targetDepth) {
       let content: any;
       if (typeof node === 'string') {
@@ -262,20 +252,23 @@ function collectDisc(block: Block, targetDepth: number): Array<{ address: string
       } else {
         content = null;
       }
-      nodes.push({ address: path || '_', content });
+      // Emit the walked digit sequence as a canonical pscale address —
+      // single-decimal, floor-anchored, round-trippable through parseSpindle.
+      const address = walked.length > 0 ? formatAddress(walked, fl) : '_';
+      nodes.push({ address, content });
       return;
     }
     if (!node || typeof node !== 'object') return;
     if ('_' in node && typeof node._ === 'object') {
-      recurse(node._, depth + 1, path ? `${path}.0` : '0');
+      recurse(node._, depth + 1, walked.concat(['0']));
     }
     for (const d of '123456789') {
       if (d in node) {
-        recurse(node[d], depth + 1, path ? `${path}.${d}` : d);
+        recurse(node[d], depth + 1, walked.concat([d]));
       }
     }
   }
-  recurse(block, 0, '');
+  recurse(block, 0, []);
   return nodes;
 }
 
