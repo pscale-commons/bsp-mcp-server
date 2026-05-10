@@ -3,7 +3,7 @@
 **Date**: 2026-05-09
 **Discovered by**: David (happyseaurchin) during idiothuman.com beach setup
 **Followup to**: [`2026-05-01-bsp-walker-audit.md`](./2026-05-01-bsp-walker-audit.md), which concluded "no functional walker divergence"
-**Status**: deferred to a bespoke session — bug confirmed, patch tested locally, NOT applied. CLAUDE.md guards `src/bsp.ts`; landing requires Python-source verification + careful test pass.
+**Status**: **RESOLVED 2026-05-09** in the bespoke session that produced [`proposals/2026-05-09-floor-anchor-and-multi-dot.md`](./2026-05-09-floor-anchor-and-multi-dot.md). The fix landed in commits `e707702` (floor-aware parser, strict reject on multi-dot) and `b411395` (`bsp2-star.py` updated in lockstep with the TS port). Multi-dot input now throws `InvalidAddressError` (HTTP 400 `invalid_address` from the wire) at both bsp-mcp's `parseSpindle` and the federated beach handler. No tolerant fallback. The 102-test parser smoke (`npm run smoke:parser`) covers parseAddress, parseSpindle, formatAddress, round-trip, floor-growth, multi-dot reject, and end-to-end via bspRead/writeAt/readAt. This doc retained as the diagnostic record from the discovery moment.
 
 ## TL;DR
 
