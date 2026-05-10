@@ -173,7 +173,7 @@ src/
   whetstone.json      — The operational reference (six branches; signature, derivation, modifiers, storage, translation, federation)
   agent-id.json       — Addressing model — five forms of agent_id, three address axes
   evolution.json      — Five-level ecosystem map
-  manifest.json       — The constitution index — Tier 1 (sentinel-bundled) + Tier 2 (library)
+  manifest.json       — The constitution index — references (sentinel-bundled in bsp-mcp) plus a pointer at the library (which lives at the beach)
   progression.json    — Iterative orientation progression (six steps; pscale_invite returns this)
   block-conventions.json — Substrate-wide canonical block-shape catalogue
   gatekeeper.json     — Substrate-wide canonical role-shell for L1→L2 admission (honored convention)
@@ -418,7 +418,7 @@ The L1 kernel is the wire-frozen v2 surface that makes Level 1 (Signal) operatio
 4. `bsp()` function signature (9 parameters; tools may add but not remove)
 5. Address parser semantics (one decimal point per sunstone:1.5, strip-then-iterate, floor-aware padding, multi-dot strict reject)
 
-The Tier 1 sentinel set is the kernel's content side. Above the kernel, everything is forkable — library content (Tier 2, lives in pscale-beach), per-beach conventions, init flows, the bsp-mcp tool surface beyond `bsp()` + the five primitives, individual beach experiences.
+The bsp-mcp references are the kernel's content side. Above the kernel, everything is forkable — the library at each operator's beach (canonical seed source: github.com/pscale-commons/pscale-beach), per-beach conventions, init flows, the bsp-mcp tool surface beyond `bsp()` + the five primitives, individual beach experiences.
 
 Why the freeze gates Level 2: sed: registration is permanent (position-of-arrival, lock-once); grain reach is bilateral (pair_id deterministic, lock-salt scoped). Both depend on the wire and salt formulas being identical at every beach the agent touches. A commitment to a moving target is not a commitment.
 
@@ -426,9 +426,9 @@ Why the freeze gates Level 2: sed: registration is permanent (position-of-arriva
 
 ## pscale-beach — habitat package (9 May 2026)
 
-The Tier 2 library has left bsp-mcp. Canonical authoring source moved to https://github.com/pscale-commons/pscale-beach (separate repo, created 9 May 2026). The beach package is the habitat side — federated `/.well-known/pscale-beach` handler + seed content + init wizard + Vercel deploy template. bsp-mcp stays the runtime side: bsp() walker, sentinel registry, MCP server, six-tool surface.
+The library has left bsp-mcp. Canonical authoring source moved to https://github.com/pscale-commons/pscale-beach (separate repo, created 9 May 2026). The beach package is the habitat side — federated `/.well-known/pscale-beach` handler + seed content + init wizard + Vercel deploy template. bsp-mcp stays the runtime side: bsp() walker, sentinel registry, MCP server, six-tool surface. bsp-mcp's references stay sentinel-bundled; the library lives only at beaches now.
 
-The split was driven by an architectural cut: substrate-truth (sentinel-bundled in bsp-mcp) doesn't vary; usage-pattern content (Tier 2 — reflexive, spore, vision, grit, rpg, state, systemic-kernel, federation-protocol, plus state-block-reflexive-spark added 10 May 2026) can vary by community. Federation does real diversity-of-usage work for Tier 2; bundling them in bsp-mcp prevented that. Now each beach operator curates their library variant; updates are pulled manually if wanted; no central sync expected.
+The split was driven by an architectural cut: substrate-truth (the bsp-mcp references) doesn't vary; usage-pattern content (the library — reflexive, spore, vision, grit, rpg, state, systemic-kernel, federation-protocol, plus state-block-reflexive-spark added 10 May 2026) can vary by community. Federation does real diversity-of-usage work for the library; bundling it in bsp-mcp prevented that. Now each beach operator curates their library variant; updates are pulled manually if wanted; no central sync expected.
 
 **Live beaches as of 2026-05-09**:
 - https://happyseaurchin.com — David's reference deployment, predates the pscale-beach repo (uses the same handler shape with hardcoded origin)
@@ -436,4 +436,4 @@ The split was driven by an architectural cut: substrate-truth (sentinel-bundled 
 
 **Onboarding**: pscale-beach's README has Option A (Claude Code paste prompt with explicit boundaries — don't modify repo files, don't take destructive beach actions, don't write outside named directories) and Option B (manual CLI). Option A boundaries were added after a Claude Code session silently patched `seeds/library/spore.json` when init failed; the boundaries surfaced from that incident.
 
-**Cleanup status**: As of the 10 May 2026 cleanup pass, `docs/library/` is removed from this repo, `manifest.json` branch 2 (Tier 2 listing) and branch 3.7 (library calls) are deleted, and `progression.json` step 5 references are adjusted. Tier 2 content lives canonically at pscale-beach now; this repo no longer ships or references it.
+**Cleanup status**: As of the 10 May 2026 cleanup pass, `docs/library/` is removed from this repo, `manifest.json` branch 2 (the library listing) and branch 3.7 (library calls) are deleted, and `progression.json` step 5 references are adjusted. Library content lives canonically at pscale-beach now; this repo no longer ships or hosts it, only refers to it by name.
