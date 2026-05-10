@@ -173,7 +173,7 @@ src/
   whetstone.json      — The operational reference (six branches; signature, derivation, modifiers, storage, translation, federation)
   agent-id.json       — Addressing model — five forms of agent_id, three address axes
   evolution.json      — Five-level ecosystem map
-  manifest.json       — The constitution index — Tier 1 (sentinel-bundled) + Tier 2 (library)
+  manifest.json       — The constitution index — references (sentinel-bundled in bsp-mcp) plus a pointer at the library (which lives at the beach)
   progression.json    — Iterative orientation progression (six steps; pscale_invite returns this)
   block-conventions.json — Substrate-wide canonical block-shape catalogue
   gatekeeper.json     — Substrate-wide canonical role-shell for L1→L2 admission (honored convention)
@@ -407,3 +407,33 @@ After: the URL **is** the surface. A `?block=` parameter selects which named sib
 3. Run `git fetch origin` in each repo and check `git log origin/main..HEAD` — your branch base may be stale.
 4. Disconnect pscale-mcp from claude.ai before testing the beach. Both MCPs at once contaminates writes.
 5. To deploy a coordinated change: bsp-mcp first (Railway), then xstream-bsp (Vercel), then happyseaurchin (Vercel), then run the wipe script.
+
+## L1 kernel — v2 freeze ready (9 May 2026)
+
+The L1 kernel is the wire-frozen v2 surface that makes Level 1 (Signal) operational and formally gates entry to Level 2 (Commitment). `evolution.json:_.6` names it. Five contracts:
+
+1. `/.well-known/pscale-beach` v2 wire protocol (GET/POST/DELETE shapes)
+2. Lock-salt formulas for the three substrate-types (ordinary, sed:, grain:)
+3. Spine rule (only `_` and digits 1-9 at every level — no `_word`, no JSON-stringified subtrees)
+4. `bsp()` function signature (9 parameters; tools may add but not remove)
+5. Address parser semantics (one decimal point per sunstone:1.5, strip-then-iterate, floor-aware padding, multi-dot strict reject)
+
+The bsp-mcp references are the kernel's content side. Above the kernel, everything is forkable — the library at each operator's beach (canonical seed source: github.com/pscale-commons/pscale-beach), per-beach conventions, init flows, the bsp-mcp tool surface beyond `bsp()` + the five primitives, individual beach experiences.
+
+Why the freeze gates Level 2: sed: registration is permanent (position-of-arrival, lock-once); grain reach is bilateral (pair_id deterministic, lock-salt scoped). Both depend on the wire and salt formulas being identical at every beach the agent touches. A commitment to a moving target is not a commitment.
+
+**Parser correctness fix LANDED 2026-05-09** in commits `e707702` (floor-aware parser, strict reject on multi-dot) and `b411395` (`bsp2-star.py` updated in lockstep with TS). Multi-dot input now throws `InvalidAddressError` (HTTP 400 `invalid_address` from the wire) at both bsp-mcp's `parseSpindle` and the federated beach handler. No tolerant fallback. The diagnostic record is at [`proposals/2026-05-09-parser-dot-handling.md`](./proposals/2026-05-09-parser-dot-handling.md) (now historical, RESOLVED) and the comprehensive proposal at [`proposals/2026-05-09-floor-anchor-and-multi-dot.md`](./proposals/2026-05-09-floor-anchor-and-multi-dot.md). With this fix landed, all five contracts of the L1 kernel are stable; v2 is ready to be tagged frozen.
+
+## pscale-beach — habitat package (9 May 2026)
+
+The library has left bsp-mcp. Canonical authoring source moved to https://github.com/pscale-commons/pscale-beach (separate repo, created 9 May 2026). The beach package is the habitat side — federated `/.well-known/pscale-beach` handler + seed content + init wizard + Vercel deploy template. bsp-mcp stays the runtime side: bsp() walker, sentinel registry, MCP server, six-tool surface. bsp-mcp's references stay sentinel-bundled; the library lives only at beaches now.
+
+The split was driven by an architectural cut: substrate-truth (the bsp-mcp references) doesn't vary; usage-pattern content (the library — reflexive, spore, vision, grit, rpg, state, systemic-kernel, federation-protocol, plus state-block-reflexive-spark added 10 May 2026) can vary by community. Federation does real diversity-of-usage work for the library; bundling it in bsp-mcp prevented that. Now each beach operator curates their library variant; updates are pulled manually if wanted; no central sync expected.
+
+**Live beaches as of 2026-05-09**:
+- https://happyseaurchin.com — David's reference deployment, predates the pscale-beach repo (uses the same handler shape with hardcoded origin)
+- https://beach.idiothuman.com — David's second beach, the first deployed via pscale-beach package via Vercel button + custom domain
+
+**Onboarding**: pscale-beach's README has Option A (Claude Code paste prompt with explicit boundaries — don't modify repo files, don't take destructive beach actions, don't write outside named directories) and Option B (manual CLI). Option A boundaries were added after a Claude Code session silently patched `seeds/library/spore.json` when init failed; the boundaries surfaced from that incident.
+
+**Cleanup status**: As of the 10 May 2026 cleanup pass, `docs/library/` is removed from this repo, `manifest.json` branch 2 (the library listing) and branch 3.7 (library calls) are deleted, and `progression.json` step 5 references are adjusted. Library content lives canonically at pscale-beach now; this repo no longer ships or hosts it, only refers to it by name.
