@@ -187,8 +187,7 @@ export function canonicaliseOrigin(rawUrl: string): string {
   return `${scheme}//${host}${portPart}`;
 }
 
-function beachEndpoint(ownerId: string, blockName: string): string {
-  const origin = canonicaliseOrigin(ownerId);
+function beachEndpoint(origin: string, blockName: string): string {
   return `${origin}/.well-known/pscale-beach?block=${encodeURIComponent(blockName)}`;
 }
 
@@ -206,8 +205,67 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
   }
 }
 
+// ── Origin resolution (bare → beach.<host> fallback) ──
+//
+// Operators commonly deploy pscale-beach at a `beach.` subdomain rather than
+// wiring /.well-known on their primary site. When a caller passes the bare
+// domain (e.g. https://idiothuman.com) and that host is not federated, the
+// resolver retries against `beach.<host>` once before giving up.
+//
+// Probe order is documented in docs/protocol-pscale-beach-v2.md §2.7.
+// Positive resolutions are cached for the process lifetime; negatives are not
+// cached so a later beach deploy at the same host resolves on next call.
+
+const FEDERATION_RESOLUTION_CACHE = new Map<string, string>();
+
+async function probeOriginOk(origin: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${origin}/.well-known/pscale-beach`, {
+      headers: { Accept: 'application/json' },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+function beachSubdomainOf(canonical: string): string | null {
+  const url = new URL(canonical);
+  const host = url.hostname;
+  if (host.startsWith('beach.')) return null;
+  if (host === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(host) || host.includes(':')) return null;
+  const portPart = url.port ? `:${url.port}` : '';
+  return `${url.protocol}//beach.${host}${portPart}`;
+}
+
+/**
+ * Resolve the actual federation origin for a URL agent_id. Probes the bare
+ * host first; on failure, retries against `beach.<host>` once (the conventional
+ * subdomain shape for pscale-beach deploys). Returns the resolved canonical
+ * origin, or null if neither responds.
+ */
+export async function resolveFederationOrigin(ownerId: string): Promise<string | null> {
+  if (!isFederatedOwner(ownerId)) return null;
+  const canonical = canonicaliseOrigin(ownerId);
+  const cached = FEDERATION_RESOLUTION_CACHE.get(canonical);
+  if (cached !== undefined) return cached;
+
+  if (await probeOriginOk(canonical)) {
+    FEDERATION_RESOLUTION_CACHE.set(canonical, canonical);
+    return canonical;
+  }
+  const fallback = beachSubdomainOf(canonical);
+  if (fallback && await probeOriginOk(fallback)) {
+    FEDERATION_RESOLUTION_CACHE.set(canonical, fallback);
+    return fallback;
+  }
+  return null;
+}
+
 async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<BlockRow | null> {
-  const url = beachEndpoint(ownerId, blockName);
+  const origin = await resolveFederationOrigin(ownerId);
+  if (!origin) return null;
+  const url = beachEndpoint(origin, blockName);
   let res: Response;
   try {
     res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
@@ -245,15 +303,8 @@ async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<B
  * responds successfully, "absent" when it 404s or fails.
  */
 export async function probeFederation(ownerId: string): Promise<'federated' | 'absent'> {
-  if (!isFederatedOwner(ownerId)) return 'absent';
-  const origin = canonicaliseOrigin(ownerId);
-  const url = `${origin}/.well-known/pscale-beach`;
-  try {
-    const res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
-    return res.ok ? 'federated' : 'absent';
-  } catch {
-    return 'absent';
-  }
+  const resolved = await resolveFederationOrigin(ownerId);
+  return resolved ? 'federated' : 'absent';
 }
 
 /**
@@ -268,7 +319,11 @@ export async function postActionToBeach(
   blockName: string,
   body: Record<string, any>,
 ): Promise<any> {
-  const url = beachEndpoint(origin, blockName);
+  const resolved = await resolveFederationOrigin(origin);
+  if (!resolved) {
+    throw new Error(`No beach at ${origin} (also tried beach.<host>). Site is not federated.`);
+  }
+  const url = beachEndpoint(resolved, blockName);
   let res: Response;
   try {
     res = await fetchWithTimeout(url, {
@@ -298,7 +353,11 @@ async function saveBlockToBeach(
   block: Block,
   opts: WriteOptions = {},
 ): Promise<BlockRow> {
-  const url = beachEndpoint(ownerId, blockName);
+  const origin = await resolveFederationOrigin(ownerId);
+  if (!origin) {
+    throw new Error(`No beach at ${ownerId} (also tried beach.<host>). Site is not federated; cannot write.`);
+  }
+  const url = beachEndpoint(origin, blockName);
   const userSpindle = opts.spindle;
   const isWholeBlock = !userSpindle || userSpindle === '' || userSpindle === '*';
   const body: Record<string, any> = {};
