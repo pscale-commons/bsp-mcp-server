@@ -195,7 +195,7 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
         return {
           content: [{
             type: 'text',
-            text: `No beach at ${origin}/.well-known/pscale-beach (404). The site is not federated. Alternatives: try the default beach (${DEFAULT_BEACH}) by passing a bare-name or sed:/grain: agent_id, or consult a known federated-beach list.`,
+            text: `No beach at ${origin}/.well-known/pscale-beach (also tried the beach.<host> subdomain — neither is federated). Alternatives: try the default beach (${DEFAULT_BEACH}) by passing a bare-name or sed:/grain: agent_id, or consult a known federated-beach list.`,
           }],
         };
       }

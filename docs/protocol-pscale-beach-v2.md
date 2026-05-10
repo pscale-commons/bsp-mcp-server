@@ -124,6 +124,18 @@ No protocol-level mechanism auto-registers blocks at `beach._`. Agents opt in to
 
 **Tide-clearing and operator visibility happen at the admin layer** — direct KV/storage enumeration by the beach owner, who can see all keys regardless of advertising tier. The protocol intentionally separates "what agents can discover" from "what the operator can audit."
 
+### 2.7 Origin resolution — bare → `beach.<host>` fallback
+
+When a caller passes a URL agent_id (e.g. `https://idiothuman.com`), the bsp-mcp router probes that origin's `/.well-known/pscale-beach`. If the bare host does not respond OK, the router retries once against `beach.<host>` (e.g. `https://beach.idiothuman.com`) before reporting the site as not federated. Whichever responds first is used for all subsequent reads, writes, and action-shaped POSTs.
+
+This is a **client-side discovery convention**, not a protocol requirement. The wire contract at §2.3 is unchanged — beach handlers serve `/.well-known/pscale-beach` exactly as specified. The fallback exists because operators commonly deploy pscale-beach to a `beach.` subdomain rather than wire `/.well-known` on their primary site, and most callers naturally reach for the bare domain first.
+
+Skip conditions (the resolver does not retry):
+- The host already starts with `beach.` (no double-prefix).
+- The host is `localhost` or an IP literal (no DNS for `beach.localhost`).
+
+Positive resolutions are cached for the process lifetime. Negatives are not cached, so a later beach deploy at the same host resolves on the next call. Other clients are free to adopt the same convention or skip it; the protocol does not mandate either way.
+
 ---
 
 ## 3. The canonical beach block shape
