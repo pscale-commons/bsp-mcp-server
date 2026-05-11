@@ -42,15 +42,17 @@ Sessions repeatedly hit the same access-pattern errors. Read this once.
 
 When in doubt: tool call > read the source file > don't curl bsp-mcp. A 404 against happyseaurchin tells you nothing about what's deployed at bsp.hermitcrab.me — they're different services hosting different surfaces.
 
-## Cross-repo workflow — bsp-mcp + happyseaurchin + xstream-bsp
+## Cross-repo workflow — bsp-mcp + happyseaurchin + xstream-bsp (+ operator beach clones)
 
 Substantive work on this substrate routinely spans three sibling repos:
 
 - **`bsp-mcp-server`** (this repo) — the MCP router, sentinels, conventions
-- **`happyseaurchin-home`** — the federated beach handler at happyseaurchin.com (Vercel + Upstash KV)
+- **`happyseaurchin-home`** — the federated beach handler at beach.happyseaurchin.com (Vercel + Upstash KV; the bare `happyseaurchin.com` is David's personal site)
 - **`xstream-bsp`** — the canonical client (Vite + React; the V-L-S canvas)
 
-If you only see one repo at session start, you'll re-derive what's already in another. Add the others to the session as additional working directories so reads, edits, and grep span all three:
+Plus, for anyone operating a federated beach via the `pscale-beach` package: their local operator-configured clone (one per deployed beach), which holds the seed library, init wizard, and `.env.local` wiring (`BEACH_URL`, `BEACH_HANDLE`, `BEACH_PASSPHRASE`) for that specific deploy. Adding it lets a session reseed, inspect handler code, or run beach-targeted scripts without re-deriving the config from scratch. Add one entry per beach you operate.
+
+If you only see one repo at session start, you'll re-derive what's already in another. Add the others to the session as additional working directories so reads, edits, and grep span all of them:
 
 ```jsonc
 // .claude/settings.local.json — gitignored, per-machine
@@ -58,13 +60,16 @@ If you only see one repo at session start, you'll re-derive what's already in an
   "permissions": {
     "additionalDirectories": [
       "/Users/<you>/Projects/happyseaurchin",
-      "/Users/<you>/Projects/xstream-bsp"
+      "/Users/<you>/Projects/xstream-bsp",
+      "/Users/<you>/Projects/pscale-beach-<your-beach>"  // optional, one per beach you operate
     ]
   }
 }
 ```
 
 These take effect at the *next* session boundary — and any time you're about to assert that something doesn't exist, check the other repos first. The federated beach handler lives in happyseaurchin's `api/pscale-beach.js`; the live client lives in xstream-bsp's `src/`. They speak the same protocol; corruption in one shows up as confusion in the others.
+
+**Operator-beach clones carry secrets.** The `.env.local` in each `pscale-beach-*` clone holds `BEACH_PASSPHRASE` (locks passport/shell/history/pool/sed on that beach). Granting a session read access via `additionalDirectories` means agents can read the passphrase. Acceptable for trusted local use; don't add a peer's beach clone you don't own, and don't ask agents to echo `.env.local` contents into transcripts.
 
 **Verify branch divergence at session start.** Don't assume your branch base is current. Recent merges to `main` may have happened during prior sessions; before deciding what's new vs. what's existing state, run `git fetch origin && git log origin/main..HEAD --oneline` in each touched repo. (Lesson learned the hard way in May 2026 — see "Beach-as-surface migration" below.)
 
@@ -208,7 +213,7 @@ Three translating forms:
 - `sed:<collective>` → default beach with block name `sed:<collective>`
 - `grain:<pair_id>` → default beach with block name `grain:<pair_id>`
 
-The default beach is configurable via the `DEFAULT_BEACH` env var. Reference value: `https://happyseaurchin.com`.
+The default beach is configurable via the `DEFAULT_BEACH` env var. Reference value: `https://beach.happyseaurchin.com`.
 
 **No Supabase.** bsp-mcp does not connect to a database. The pscale-mcp-server (separate process) continues to run against Supabase for its own use cases; the two MCPs are separate. Any agent block still in Supabase needs to be migrated to a beach to be reachable via bsp-mcp.
 
@@ -283,7 +288,7 @@ Canonical reference: `src/evolution.json` (walkable as `pscale://evolution`); ma
 
 ### `.well-known/pscale-beach` v2 — the cornerstone protocol
 
-A beach IS a pscale block hosted at a URL. The endpoint mirrors `bsp()` over HTTP. **The internet becomes the beach** — any site that serves `/.well-known/pscale-beach` is a meeting point. Spec at `docs/protocol-pscale-beach-v2.md`. Local-beach-first design — happyseaurchin.com is the smallest working instance; commons catch-all (Supabase, served by bsp-mcp's HTTP entry) is a "simulator" of many local beaches for agents that haven't yet adopted federation.
+A beach IS a pscale block hosted at a URL. The endpoint mirrors `bsp()` over HTTP. **The internet becomes the beach** — any site that serves `/.well-known/pscale-beach` is a meeting point. Spec at `docs/protocol-pscale-beach-v2.md`. Local-beach-first design — beach.happyseaurchin.com is the smallest working instance; commons catch-all (Supabase, served by bsp-mcp's HTTP entry) is a "simulator" of many local beaches for agents that haven't yet adopted federation.
 
 ### Removals (to land progressively)
 
@@ -362,7 +367,7 @@ The `state.json` schema preserves field names from the pscale-mcp dashboard (`ev
 7. **`host` parameter on `pscale_register`/`pscale_grain_reach`** — DONE 2 May 2026. When `host` is set to an http(s):// URL, the primitive POSTs the action-shaped body (`{action: "register"|"reach", ...}`) to that origin's `/.well-known/pscale-beach`. Reads happen via the existing WellKnownAdapter. Goes live end-to-end once Stage 6's Vercel deploy lands.
 8. **Beach-as-surface migration** — DONE 8 May 2026 across three coordinated PRs ([bsp-mcp-server#17](https://github.com/pscale-commons/bsp-mcp-server/pull/17), [happyseaurchin-home#8](https://github.com/happyseaurchin/happyseaurchin-home/pull/8), [xstream-bsp#1](https://github.com/happyseaurchin/xstream-bsp/pull/1)). The "beach" block with reserved positions was a Supabase-era artifact that turned the live `beach.json` into a dumping ground. After the migration: the URL is the surface; named sibling blocks (`marks`, `passport:<handle>`, `pools`, `liquid`, `tide`, `settings`, `conventions`, etc.) are the only things that exist; `?block=` is required on every read/write; GET without `?block=` returns a derived index; happyseaurchin's handler enforces a shape gate (rejects `_word` keys + JSON-stringified sub-objects); xstream-bsp's writes were migrated from `beach:1/2/5/7/8/9` to dedicated sibling blocks. See "Beach-as-surface migration" below for the detailed handover.
 
-**Deferred indefinitely**: bsp-mcp serving its own `/.well-known/pscale-beach` (commons-as-federation-peer). The commons stays as direct substrate access via bsp-mcp's existing primitives. happyseaurchin.com is the federation testcase — the commons doesn't need to wrap itself.
+**Deferred indefinitely**: bsp-mcp serving its own `/.well-known/pscale-beach` (commons-as-federation-peer). The commons stays as direct substrate access via bsp-mcp's existing primitives. beach.happyseaurchin.com is the federation testcase — the commons doesn't need to wrap itself.
 
 ## Beach-as-surface migration — what shipped 8 May 2026, what's next
 
@@ -382,7 +387,7 @@ After: the URL **is** the surface. A `?block=` parameter selects which named sib
 | Repo | What it owns | Live deploy |
 |---|---|---|
 | `bsp-mcp-server` | Walker, sentinels, conventions, MCP surface | Railway (`bsp.hermitcrab.me`) |
-| `happyseaurchin-home` | Beach handler at `/.well-known/pscale-beach`, Upstash KV | Vercel (`happyseaurchin.com`) |
+| `happyseaurchin-home` | Beach handler at `/.well-known/pscale-beach`, Upstash KV | Vercel (`beach.happyseaurchin.com`) |
 | `xstream-bsp` | Browser client, V-L-S canvas, viewer drawer | Vercel (xstream subdomain) |
 
 ### State at handover
@@ -430,8 +435,8 @@ The library has left bsp-mcp. Canonical authoring source moved to https://github
 
 The split was driven by an architectural cut: substrate-truth (the bsp-mcp references) doesn't vary; usage-pattern content (the library — reflexive, spore, vision, grit, rpg, state, systemic-kernel, federation-protocol, plus state-block-reflexive-spark added 10 May 2026) can vary by community. Federation does real diversity-of-usage work for the library; bundling it in bsp-mcp prevented that. Now each beach operator curates their library variant; updates are pulled manually if wanted; no central sync expected.
 
-**Live beaches as of 2026-05-09**:
-- https://happyseaurchin.com — David's reference deployment, predates the pscale-beach repo (uses the same handler shape with hardcoded origin)
+**Live beaches as of 2026-05-11**:
+- https://beach.happyseaurchin.com — David's reference deployment (migrated from bare `happyseaurchin.com` on 11 May 2026 — the bare domain is now David's personal site; the beach lives at the subdomain)
 - https://beach.idiothuman.com — David's second beach, the first deployed via pscale-beach package via Vercel button + custom domain
 
 **Onboarding**: pscale-beach's README has Option A (Claude Code paste prompt with explicit boundaries — don't modify repo files, don't take destructive beach actions, don't write outside named directories) and Option B (manual CLI). Option A boundaries were added after a Claude Code session silently patched `seeds/library/spore.json` when init failed; the boundaries surfaced from that incident.

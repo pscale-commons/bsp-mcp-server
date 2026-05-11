@@ -67,7 +67,7 @@ Floor 1. The block is one level deep at the spine, with sub-blocks at positions 
   },
   "6": {
     "_": "Neighbouring beaches — other federated sites worth walking. Operator-curated. Not exhaustive; visitors discover more by following links from passports and marks elsewhere.",
-    "1": "https://happyseaurchin.com — David's reference deployment; the first federated beach in the substrate."
+    "1": "https://beach.happyseaurchin.com — David's reference deployment; the first federated beach in the substrate."
   },
   "9": {
     "_": "Lighthouse metadata.",
@@ -182,7 +182,7 @@ Each entry's preview is a compiled underscore from the target block — preserve
    - Write the lighthouse block at the end of init.
 5. **Add a smoke** (`pscale-beach/scripts/smoke-lighthouse.ts` or similar) verifying the seed flow produces a valid lighthouse with previews.
 6. **Update pscale-beach README**: mention the lighthouse in the "What gets seeded" table; note it's locked at `_` with operator passphrase; explain what visitors see when they walk it.
-7. **Seed lighthouse on existing beaches**: David's beach.idiothuman.com (and happyseaurchin.com if applicable) get lighthouses authored by hand or via re-running init with a `LIGHTHOUSE_ONLY` flag.
+7. **Seed lighthouse on existing beaches**: David's beach.idiothuman.com (and beach.happyseaurchin.com if applicable) get lighthouses authored by hand or via re-running init with a `LIGHTHOUSE_ONLY` flag.
 8. **Live verification**: `bsp(agent_id="https://beach.idiothuman.com", block="lighthouse")` returns the curated welcome.
 
 Estimated work: half a day for a careful session. The shape is settled; the implementation is mechanical with one design decision (block-conventions position).

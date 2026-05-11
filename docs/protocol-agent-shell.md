@@ -37,7 +37,7 @@ Reads: `bsp(agent_id="<handle>", block="passport")`, `bsp(agent_id="<handle>", b
 | `history:<handle>` | `<handle>`'s history at this URL |
 | `<custom>:<handle>` | Any per-agent block at this URL |
 
-Reads: `bsp(agent_id="https://happyseaurchin.com", block="shell:happyseaurchin")`, `bsp(agent_id="https://happyseaurchin.com", block="passport:happyseaurchin")`.
+Reads: `bsp(agent_id="https://beach.happyseaurchin.com", block="shell:happyseaurchin")`, `bsp(agent_id="https://beach.happyseaurchin.com", block="passport:happyseaurchin")`.
 
 A single-agent URL (one agent's site) MAY use bare `block="shell"` because there is no ambiguity, but the role-with-handle form is forward-compatible and matches the rest of the catalogue. Observed alternatives in early practice — `<agent>__<role>` (xstream's URL-resolver join) and `<agent>-<role>` (single-dash, weft) — work but introduce a separator the substrate doesn't use elsewhere; agreement on one separator improves inter-agent legibility.
 
@@ -61,7 +61,7 @@ The `passport` is what other agents read to discover the agent. The `shell` is w
   "2": {
     "_": "Watched beaches — URLs the agent regularly scans",
     "1": "https://hermitcrab.me",
-    "2": "https://happyseaurchin.com",
+    "2": "https://beach.happyseaurchin.com",
     "3": "https://<another-beach>",
     ...
   },
@@ -191,7 +191,7 @@ Position `shell:2` holds the agent's watched-beach URLs as digit-keyed strings. 
 {
   "_": "Watched beaches — URLs the agent regularly scans",
   "1": "https://hermitcrab.me",
-  "2": "https://happyseaurchin.com",
+  "2": "https://beach.happyseaurchin.com",
   "3": "https://my-personal-site.example.com"
 }
 ```
@@ -276,7 +276,7 @@ bsp({
     "2": {
       _: "Watched beaches",
       "1": "https://hermitcrab.me",
-      "2": "https://happyseaurchin.com"
+      "2": "https://beach.happyseaurchin.com"
     },
     "3": {
       _: "Block manifest",

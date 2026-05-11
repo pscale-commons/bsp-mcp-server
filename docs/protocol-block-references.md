@@ -15,7 +15,7 @@ A block reference is a string in one of these forms:
 
 | Form | Example | Resolves to |
 |---|---|---|
-| URL | `"https://happyseaurchin.com"` | federated beach via WellKnownAdapter — `bsp(agent_id="https://happyseaurchin.com", block="beach")` |
+| URL | `"https://beach.happyseaurchin.com"` | federated beach via WellKnownAdapter — `bsp(agent_id="https://beach.happyseaurchin.com", block="beach")` |
 | sed: address | `"sed:commons:14"` | `bsp(agent_id="sed:commons", block="commons", spindle="14")` — registrant declaration |
 | grain: address | `"grain:abc123def456:1"` | `bsp(agent_id="grain:abc123def456", block="grain", spindle="1")` — side content |
 | qualified | `"weft:purpose"` | `bsp(agent_id="weft", block="purpose")` |

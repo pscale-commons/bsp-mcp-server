@@ -1,6 +1,6 @@
 /**
  * Stage 10 smoke — gray-encryption end-to-end against the federated beach
- * at https://happyseaurchin.com. Validates the encrypt-at-source pattern:
+ * at https://beach.happyseaurchin.com. Validates the encrypt-at-source pattern:
  * bsp-mcp encrypts in tools/bsp.ts before saveBlock dispatches, so the
  * envelope rides through saveBlockToBeach to the federated POST as part of
  * the block content. The receiving site stores it as-is (no server-side
@@ -12,7 +12,7 @@
  * weft/stash:1.
  *
  * Run: npx tsx scripts/smoke-gray.ts
- *      No Supabase env needed. Uses live federated beach at happyseaurchin.com.
+ *      No Supabase env needed. Uses live federated beach at beach.happyseaurchin.com.
  */
 
 import { handleBsp } from '../src/tools/bsp.js';
@@ -20,7 +20,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 
-const HOST = 'https://happyseaurchin.com';
+const HOST = 'https://beach.happyseaurchin.com';
 const TEST_BLOCK = `bsp-gray-smoke-${Date.now()}`;
 const SECRET = `gray-smoke-${Date.now()}`;
 const WRONG_SECRET = 'definitely-not-the-secret';
