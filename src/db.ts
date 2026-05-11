@@ -39,10 +39,10 @@ import ecologyRouter from './ecology-router.json' with { type: 'json' };
 // ── Default beach ──
 //
 // The federated host that bare-name, sed:, and grain: agent_ids translate to.
-// Override via DEFAULT_BEACH env var. https://happyseaurchin.com is the
+// Override via DEFAULT_BEACH env var. https://beach.happyseaurchin.com is the
 // reference federated host; any beach URL works as a default.
 
-export const DEFAULT_BEACH = process.env.DEFAULT_BEACH || 'https://happyseaurchin.com';
+export const DEFAULT_BEACH = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
 // ── Block row shape ──
 //

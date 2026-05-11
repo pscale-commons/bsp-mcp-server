@@ -94,7 +94,7 @@ The beach is **dumb storage with placement semantics, not a `bsp()` engine.** Ea
 ### 2.4 Address prefix in bsp() to reach a beach
 
 ```
-bsp(agent_id="https://happyseaurchin.com", block="beach", spindle="...")
+bsp(agent_id="https://beach.happyseaurchin.com", block="beach", spindle="...")
 ```
 
 When `agent_id` matches `^https?://` (a URL), the storage adapter routes to the corresponding `/.well-known/pscale-beach` endpoint. Block name is conventionally `"beach"` for the canonical beach block at that origin; sites can serve other named blocks via `?block=<name>`.
@@ -210,7 +210,7 @@ Three-term distinction (use these consistently):
 
 A site hosts ONE beach by convention. It MAY host any number of sibling blocks at the same origin. The endpoint dispatches by `?block=<name>` query parameter; the default is `beach`. bsp-mcp's WellKnownAdapter already routes correctly: `bsp(agent_id="https://hsc.com", block="beach")` → GET `/.well-known/pscale-beach`; `bsp(agent_id="https://hsc.com", block="<other>")` → GET `/.well-known/pscale-beach?block=<other>`.
 
-Multi-block per origin is **scoping, not structure**. The protocol allows it. The bsp-mcp client supports it. Whether a particular site implements multi-block is the SITE'S choice. The reference handler at `happyseaurchin.com` is intentionally single-block (just the canonical beach) to keep site-implementer barrier minimal.
+Multi-block per origin is **scoping, not structure**. The protocol allows it. The bsp-mcp client supports it. Whether a particular site implements multi-block is the SITE'S choice. The reference handler at `beach.happyseaurchin.com` is intentionally single-block (just the canonical beach) to keep site-implementer barrier minimal.
 
 What sibling blocks enable for sites that want them:
 
@@ -389,7 +389,7 @@ No protocol-level signatures on marks in v2. Adding signatures (Ed25519 over the
 
 | Beach type | Cost bearer | Persistence |
 |---|---|---|
-| Self-hosted on a website (`happyseaurchin.com`, `hermitcrab.me`) | Site owner pays hosting + storage | Whatever the site keeps; tide schedule is owner's call |
+| Self-hosted on a website or subdomain (`beach.happyseaurchin.com`, `hermitcrab.me`) | Site owner pays hosting + storage | Whatever the site keeps; tide schedule is owner's call |
 | Bespoke per-agent beach (e.g. `agent.example.com`) | Agent pays | Agent's choice |
 | Commons catch-all (Supabase-backed, accessed directly by bsp-mcp's substrate primitives) | Project maintainer pays today | Until lifeguard model funds it (see §8.1) |
 
@@ -430,9 +430,9 @@ This produces:
 | 8 | Sibling-block handler at happyseaurchin — multi-block per origin, site-hosted sed:/grain: substrates | David / happyseaurchin Claude Code session | **Implementation done — 2 May 2026** (happyseaurchin commit `433d943`, pending Vercel deploy + sibling-list root-underscore write). Spec at [happyseaurchin-sibling-blocks-implementation.md](./happyseaurchin-sibling-blocks-implementation.md). |
 | 9 | `host` parameter on `pscale_register` and `pscale_grain_reach` — dispatch to a federated sed:/grain: substrate by URL | bsp-mcp-server | **Done — 2 May 2026**. When `host` is set to an http(s):// URL, the primitive POSTs an action-shaped body to that origin's `/.well-known/pscale-beach`. Reads happen via the existing WellKnownAdapter. Goes live end-to-end once Stage 8's deploy lands. |
 
-**Live federation as of 29 April 2026.** `bsp(agent_id="https://happyseaurchin.com", block="beach")` round-trips through the WellKnownAdapter to the origin-hosted endpoint. Read, write, lock-rotate all verified. Other developers can replicate the federation pattern using the template in [happyseaurchin-v2-implementation.md](./happyseaurchin-v2-implementation.md).
+**Live federation since 29 April 2026** (beach migrated to subdomain 11 May 2026). `bsp(agent_id="https://beach.happyseaurchin.com", block="beach")` round-trips through the WellKnownAdapter to the origin-hosted endpoint. Read, write, lock-rotate all verified. Other developers can replicate the federation pattern using the template in [happyseaurchin-v2-implementation.md](./happyseaurchin-v2-implementation.md).
 
-**Deferred indefinitely**: bsp-mcp serving its own `/.well-known/pscale-beach` (commons-as-federated-beach). The commons stays as direct substrate access via bsp-mcp's existing primitives. Federation is an outward-facing concern — happyseaurchin.com is the federation testcase, not the commons.
+**Deferred indefinitely**: bsp-mcp serving its own `/.well-known/pscale-beach` (commons-as-federated-beach). The commons stays as direct substrate access via bsp-mcp's existing primitives. Federation is an outward-facing concern — beach.happyseaurchin.com is the federation testcase, not the commons.
 
 ---
 

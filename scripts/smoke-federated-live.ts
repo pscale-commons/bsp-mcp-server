@@ -1,9 +1,9 @@
 /**
  * smoke-federated-live.ts — verify the WellKnownAdapter fix against the LIVE
- * happyseaurchin beach. Exercises the four auth tiers through the modified
+ * beach.happyseaurchin beach. Exercises the four auth tiers through the modified
  * saveBlockToBeach so we can prove the protocol skew is closed end-to-end.
  *
- * WRITES TO LIVE happyseaurchin.com — uses agent_id "claude-pipe-test" and
+ * WRITES TO LIVE beach.happyseaurchin.com — uses agent_id "claude-pipe-test" and
  * passphrase "tier-c-passphrase-smoke" so the smoke is identifiable and easy
  * to clean up.
  *
@@ -12,7 +12,7 @@
 
 import { handleBsp } from '../src/tools/bsp.js';
 
-const BEACH = 'https://happyseaurchin.com';
+const BEACH = 'https://beach.happyseaurchin.com';
 const NOW = new Date().toISOString();
 const HANDLE = 'claude-pipe-test';
 const PASS = 'tier-c-passphrase-smoke';

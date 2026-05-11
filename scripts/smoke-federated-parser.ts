@@ -16,7 +16,7 @@
 
 import { handleBsp } from '../src/tools/bsp.js';
 
-const BEACH = process.env.SMOKE_BEACH || 'https://happyseaurchin.com';
+const BEACH = process.env.SMOKE_BEACH || 'https://beach.happyseaurchin.com';
 const PASS = `parser-smoke-${Date.now()}`;
 const SCRATCH = `claude-parser-test-${Date.now()}`;
 

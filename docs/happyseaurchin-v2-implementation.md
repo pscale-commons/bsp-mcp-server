@@ -2,6 +2,8 @@
 
 **Status**: HISTORICAL — captures the original v2 single-block reference. The reference `writeAt` shown below has been updated to the post-PR-#4 form (supernest-on-growth migration). For the canonical wire contract see [protocol-pscale-beach-v2.md §2.3](./protocol-pscale-beach-v2.md): the beach is dumb placement; the walker lives at the client. See also the sibling-block companion at [happyseaurchin-sibling-blocks-implementation.md](./happyseaurchin-sibling-blocks-implementation.md).
 
+> **URL note**: This playbook predates the 11 May 2026 subdomain migration. The live beach now lives at `https://beach.happyseaurchin.com` (the bare `happyseaurchin.com` became David's personal site). URLs in this doc reflect the state at the time of writing; treat them as historical references, not current targets.
+
 **Audience**: David, handing this to the Claude Code session that has happyseaurchin.com's codebase open.
 **Goal**: Replace the existing v1 marks-only endpoint with a v2 endpoint that serves a pscale block.
 **Protocol reference**: [docs/protocol-pscale-beach-v2.md](./protocol-pscale-beach-v2.md) in this repo.

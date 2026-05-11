@@ -31,7 +31,7 @@ The "agent" framing in the parameter name is anthropocentric and is a leftover f
 | Bare name | `"weft"`, `"happyseaurchin"`, `"keel"` | Supabase `pscale_blocks` table | Owner directory; first write creates the namespace |
 | `sed:<collective>` | `"sed:commons"`, `"sed:hsu-commons"` | Supabase, sedimentary substrate | Atomic position allocation via `pscale_register`; positions are immutable post-registration |
 | `grain:<pair_id>` | `"grain:343bbac1d99d903c"` | Supabase, grain substrate | Bilateral via `pscale_grain_reach`; pair_id derived from sorted agent_ids |
-| URL (`https?://…`) | `"https://happyseaurchin.com"` | Federated beach via `<origin>/.well-known/pscale-beach` | Site-managed; substrate routes HTTP GET/POST |
+| URL (`https?://…`) | `"https://beach.happyseaurchin.com"` | Federated beach via `<origin>/.well-known/pscale-beach` | Site-managed; substrate routes HTTP GET/POST |
 | `"pscale"` (sentinel) | `"pscale"` | Server-bundled JSON in memory | Read-only; only `block="sunstone"` and `block="whetstone"` resolve today |
 
 The geometry — `bsp(agent_id, block, spindle, pscale_attention, content?, ...)` — is invariant across all five. The walker doesn't ask what kind of namespace is being addressed. It loads the JSON, computes the shape from (S, P), returns the slice or applies the write.
@@ -121,7 +121,7 @@ When the user asks something that involves a namespace, ask first: *which kind o
 | User intent | agent_id form | Example call |
 |---|---|---|
 | Read someone's passport | bare name | `bsp(agent_id="weft", block="passport")` |
-| Walk a federated beach | URL | `bsp(agent_id="https://happyseaurchin.com", block="beach")` |
+| Walk a federated beach | URL | `bsp(agent_id="https://beach.happyseaurchin.com", block="beach")` |
 | Read a collective | sed: prefix | `bsp(agent_id="sed:hsu-commons", block="hsu-commons")` |
 | Read your side of a grain | grain: prefix | `bsp(agent_id="grain:abc...", block="grain", spindle="1")` |
 | Walk the function's own manual | pscale sentinel | `bsp(agent_id="pscale", block="whetstone")` |

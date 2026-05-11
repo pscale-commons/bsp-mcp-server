@@ -2,6 +2,8 @@
 
 **Status**: HISTORICAL — captures the spec at the time of the May 2026 sibling-block upgrade. The reference `writeAt` shown in §"Reference implementation" below has been updated to the post-PR-#4 form (supernest-on-growth migration) — the original spec clobbered string-leaves on intermediate descent and was a source of confusion. For the canonical wire contract see [protocol-pscale-beach-v2.md §2.3](./protocol-pscale-beach-v2.md). The beach is dumb placement; the walker lives at the client (bsp-mcp). No changes are required at happyseaurchin to honour the canonical contract — the deployed handler at `api/pscale-beach.js` already has the correct migration and matches the contract.
 
+> **URL note**: This playbook predates the 11 May 2026 subdomain migration. The live beach now lives at `https://beach.happyseaurchin.com` (the bare `happyseaurchin.com` became David's personal site). URLs in this doc reflect the state at the time of writing; treat them as historical references, not current targets.
+
 **Audience**: David, handing this to the Claude Code session that has happyseaurchin.com's codebase open.
 **Goal**: Extend the existing v2 single-block beach handler to dispatch on `?block=<name>` and host sibling blocks at the same origin — including site-hosted `sed:` collectives and `grain:` blocks.
 **Protocol reference**: [docs/protocol-pscale-beach-v2.md](./protocol-pscale-beach-v2.md) §2.3 (wire contract), §3.5 (origin / beach / sibling-block distinction), [docs/protocol-block-references.md](./protocol-block-references.md) §7 (sibling discoverability).

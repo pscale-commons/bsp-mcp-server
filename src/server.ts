@@ -53,7 +53,7 @@ function installErrorWrapper(server: McpServer): void {
   };
 }
 
-const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://happyseaurchin.com';
+const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
 const INSTRUCTIONS = `bsp-mcp-server — one function and five substrate primitives plus an orientation invite, operating on pscale JSON blocks served from federated beaches.
 
