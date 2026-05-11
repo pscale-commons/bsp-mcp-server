@@ -115,24 +115,39 @@ export type BspToolParams = {
 };
 
 /**
- * Determine which lock position a write would touch. Used only for the
- * fingerprint in formatLockState (informational, not for verification).
+ * Walk content and parse JSON-stringified objects/arrays back to native
+ * structures. LLMs occasionally serialise nested content as a string when
+ * the schema accepts `any`; the beach's shape gate then rejects the result.
+ * Normalising here lets bsp-mcp absorb the mistake — the beach stays strict
+ * as the safety net for direct HTTP clients. Strings that don't parse as a
+ * JSON object/array stay strings (legitimate text leaves are untouched).
  */
-function lockPositionForWrite(spindle: string | null | undefined): string {
-  if (!spindle || spindle === '') return '_';
-  return spindle.replace(/\*$/, '');
-}
-
-/**
- * For a federated read, surface a brief lock-line if the beach included a
- * fingerprint in its response. Today the beach doesn't expose position_hashes
- * in v2 GET responses, so this is a no-op placeholder for future protocol
- * extension. Reads that find a block return a clean line.
- */
-function formatLockStateLine(_row: BlockRow, _spindle: string | null | undefined): string {
-  // Federation v2 doesn't surface lock state on GET. If the beach starts
-  // returning a {block, locks} envelope we'd render here.
-  return '';
+function normaliseContent(value: any): any {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed !== null && typeof parsed === 'object') {
+          return normaliseContent(parsed);
+        }
+      } catch {
+        // Not valid JSON — keep as string.
+      }
+    }
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map(normaliseContent);
+  }
+  if (value !== null && typeof value === 'object') {
+    const result: Record<string, any> = {};
+    for (const [k, v] of Object.entries(value)) {
+      result[k] = normaliseContent(v);
+    }
+    return result;
+  }
+  return value;
 }
 
 // ── The handler ──
@@ -151,7 +166,12 @@ function formatLockStateLine(_row: BlockRow, _spindle: string | null | undefined
  * sentinel registry has no lock semantics (read-only).
  */
 export async function handleBsp(params: BspToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { agent_id, block: blockName, spindle, pscale_attention, content, secret, new_lock, face, tier } = params;
+  const { agent_id, block: blockName, spindle, pscale_attention, content: rawContent, secret, new_lock, face, tier } = params;
+
+  // Normalise stringified content before any walk — LLMs sometimes serialise
+  // nested structure as a JSON string by mistake; the beach's shape gate would
+  // then reject the write. bsp-mcp absorbs the mistake; beach stays strict.
+  const content = rawContent !== undefined ? normaliseContent(rawContent) : undefined;
 
   if (face || tier) {
     console.error(`[bsp] face=${face} tier=${tier} advisory (v0.1 — enforcement deferred)`);
@@ -209,8 +229,7 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       : row.block;
     try {
       const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
-      const lockLine = formatLockStateLine(row, spindle);
-      return { content: [{ type: 'text', text: formatRead(result) + lockLine }] };
+      return { content: [{ type: 'text', text: formatRead(result) }] };
     } catch (e: any) {
       if (e instanceof InvalidAddressError) {
         return { content: [{ type: 'text', text: `Read rejected: ${e.message}` }] };
@@ -300,6 +319,3 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   }
   return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${lockNote}` }] };
 }
-
-// Suppress unused-import warning when lockPositionForWrite isn't called above.
-void lockPositionForWrite;
