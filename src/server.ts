@@ -116,7 +116,7 @@ ARCHITECTURE: bsp-mcp is a router + sentinel server. The walker (bsp.ts/bsp-fn.t
 
 export function createServer(): McpServer {
   const server = new McpServer(
-    { name: 'bsp-mcp-server', version: '0.2.0' },
+    { name: 'bsp-mcp-server', version: '0.4.0' },
     { instructions: INSTRUCTIONS },
   );
 
