@@ -317,12 +317,32 @@ This propagates committed solids outward — to character sheets, world-canon bl
 
 Provided by the application. Specifies only:
 
-- Channel keyed by `frame:<scene-id>` and (for character face) `entity:<n>`.
+- Channel keyed by `frame:<scene-id>` (per-face) or `address:<spindle>` (free-roam, per-face).
 - Receives keystroke deltas and soft-LLM token streams.
 - Broadcasts to coordinate-proximate face-authorised subscribers.
 - No persistence requirement — vapour is allowed to drop.
 
-Reference implementation: xstream uses Supabase realtime presence + broadcast; xstream-play extends with per-character channels under the cast `sed:` collective.
+Reference implementation: xstream uses Supabase Realtime broadcast on the project commons (channel keyed by `vapour:<beach>:<face>:frame:<scene>` or `vapour:<beach>:<face>:addr:<address>`; see `xstream-bsp/src/lib/realtime.ts`). xstream-play extends with per-character channels under the cast `sed:` collective. The three federated alternatives below sit on the same channel namespace — any of them can host the same client without protocol changes.
+
+### 7.4 Transport spectrum — three federated alternatives
+
+The vapour wire is decoupled from the substrate, which means the project gets to choose its transport without touching `bsp()` semantics. Three options sit on a single spectrum, weighted differently against "who pays at scale" (CLAUDE.md design principle 4) and "vapour is allowed to drop" (§3.1):
+
+#### 7.4.1 Commons relay — Supabase Realtime broadcast (current default)
+
+Single shared transport on the project-maintainer's Supabase project. Channel namespacing as in §7.3. **Cost falls on the project maintainer** — fine for Level 0 / bootstrap, off-architecture as the network matures. Membership enforcement is client-side only (channel-name secrecy is not a security boundary on Supabase's broadcast tier); Observer leak is closed by the client refusing to subscribe but anyone with the anon key can join any channel. **Strengths**: zero operator effort, works today, drop-tolerant by default. **Weaknesses**: centralisation, no server-side authorisation, single point of failure.
+
+#### 7.4.2 Federated relay — per-beach WebSocket or SSE sidecar
+
+Each beach co-hosts `/.well-known/pscale-beach-vapour` alongside its `/.well-known/pscale-beach` handler. Same channel namespace. The beach knows its own `sed:<scope>-<face>` membership (it stores the locks already), so face authorisation becomes a server-side check at the WebSocket upgrade. **Cost falls on the beach operator** — matches the rest of the v2 federation story (per-beach storage, per-beach locks, per-beach vapour). Migration runs in three stages (dual-write → flip per-beach default → drop the commons). Full spec: [protocol-pscale-beach-vapour.md](protocol-pscale-beach-vapour.md). **Strengths**: server-side membership enforcement, per-beach sovereignty, federation-shape consistent. **Weaknesses**: operator engineering cost; SSE+POST fallback needed on hosts without WS support.
+
+#### 7.4.3 Mesh — WebRTC peer-to-peer with beach as signalling
+
+Keystrokes flow directly between peer browsers; the beach is only the signalling endpoint (offer/answer/ICE exchange). No relay storage of any kind — vapour bytes never sit on a server. This is the architectural purist's answer: vapour is pre-commitment thought, and pre-commitment thought should not pass through anyone's database, even ephemerally. **Drop-tolerance is intrinsic** (peer drops = peer gone; no buffering anywhere). Face authorisation happens at the signalling layer — the beach approves the offer/answer exchange the same way the WS endpoint approves an upgrade. **STUN/TURN** needed for NAT traversal; public STUN servers (Google, Cloudflare) work for most cases; TURN fallback for ~10% of network paths costs bandwidth and is a candidate for commons hosting at L0. **Cost** falls almost entirely on the peers themselves; the beach pays only for signalling, a negligible operation. **Strengths**: tightest possible privacy (no relay), no per-message infrastructure cost, intrinsically drop-tolerant. **Weaknesses**: highest engineering cost, NAT traversal failure rate, no spectator pattern (a third subscriber doesn't get a free join — they need a fresh peer connection to each broadcaster); mesh degree grows as the cast grows (n×(n−1)/2 connections per scene).
+
+#### 7.4.4 Sequencing
+
+The recommended path is not "pick one" but "stage them": commons today (§7.4.1) → federated relay as the network's primary transport (§7.4.2) → mesh as a Level-5 endgame for scenes where vapour privacy matters most (§7.4.3). The federated relay is the load-bearing step — it is what moves vapour off the project maintainer's bill and into the federation story proper. The mesh is the asymptote: the place vapour ends up when the network is dense enough that direct peer-to-peer is consistently feasible and the privacy property is worth its engineering cost. See `src/evolution.json:5.2` for where this sits on the relational-level map.
 
 ---
 
