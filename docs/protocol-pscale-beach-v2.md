@@ -124,17 +124,30 @@ No protocol-level mechanism auto-registers blocks at `beach._`. Agents opt in to
 
 **Tide-clearing and operator visibility happen at the admin layer** — direct KV/storage enumeration by the beach owner, who can see all keys regardless of advertising tier. The protocol intentionally separates "what agents can discover" from "what the operator can audit."
 
-### 2.7 Origin resolution — bare → `beach.<host>` fallback
+### 2.7 Origin resolution — strict `beach.<host>` subdomain convention
 
-When a caller passes a URL agent_id (e.g. `https://idiothuman.com`), the bsp-mcp router probes that origin's `/.well-known/pscale-beach`. If the bare host does not respond OK, the router retries once against `beach.<host>` (e.g. `https://beach.idiothuman.com`) before reporting the site as not federated. Whichever responds first is used for all subsequent reads, writes, and action-shaped POSTs.
+A federated beach lives at `https://beach.<host>/.well-known/pscale-beach`. When a caller passes a URL agent_id, the bsp-mcp router resolves to that canonical subdomain form **deterministically — no probe, no fallback**. Bare-domain beaches are not supported by convention: the bare host typically already serves other things (a personal site, an org homepage), and the dedicated subdomain keeps the federation surface uncluttered and discoverable.
 
-This is a **client-side discovery convention**, not a protocol requirement. The wire contract at §2.3 is unchanged — beach handlers serve `/.well-known/pscale-beach` exactly as specified. The fallback exists because operators commonly deploy pscale-beach to a `beach.` subdomain rather than wire `/.well-known` on their primary site, and most callers naturally reach for the bare domain first.
+Resolution is local and synchronous. The router prepends `beach.` to the host unless one of these pass-through conditions applies:
 
-Skip conditions (the resolver does not retry):
-- The host already starts with `beach.` (no double-prefix).
-- The host is `localhost` or an IP literal (no DNS for `beach.localhost`).
+| Pass-through case | Reason |
+|---|---|
+| Host already starts with `beach.` | No double-prefix. |
+| Dev-deploy host (`.vercel.app`, `.netlify.app`, `.pages.dev`) | Auto-generated hostnames don't have wildcard DNS for `beach.<host>`; operators use these directly while iterating, then attach a custom domain for federation by name. |
+| `localhost` or IP literal | No DNS for `beach.localhost` or `beach.127.0.0.1`. |
 
-Positive resolutions are cached for the process lifetime. Negatives are not cached, so a later beach deploy at the same host resolves on the next call. Other clients are free to adopt the same convention or skip it; the protocol does not mandate either way.
+Concrete examples:
+
+```
+agent_id="https://example.com"          → https://beach.example.com
+agent_id="https://beach.example.com"    → https://beach.example.com   (pass-through)
+agent_id="https://pscale-beach-x.vercel.app" → unchanged              (pass-through)
+agent_id="http://localhost:3000"        → unchanged                    (pass-through)
+```
+
+This is a **client-side routing convention**, not a wire protocol requirement. Beach handlers still serve `/.well-known/pscale-beach` exactly as specified at §2.3 — the URL the wire receives just always has `beach.` in front for real custom domains. Other federation clients are free to follow the same convention or adopt a different one; cross-client interop relies only on the wire contract.
+
+**Migration note (2026-05-12).** Earlier versions probed the bare host first and fell back to the subdomain. That fallback is removed — the subdomain is the single resolved form. Operators with bare-domain beaches must move to a `beach.` subdomain to remain reachable via bsp-mcp federation by name.
 
 ---
 
