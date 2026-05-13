@@ -1,18 +1,17 @@
-# Presence via beach marks
+# Presence at a beach
 
-**Status**: Convention, 29 April 2026
-**Cross-reference**: [protocol-pscale-beach-v2.md](./protocol-pscale-beach-v2.md) §3.1, §6
-**Replaces**: per-application presence relays (e.g. xstream-play's `relay_blocks` table)
+**Status**: Convention
+**Cross-reference**: [protocol-pscale-beach-v2.md](./protocol-pscale-beach-v2.md) §3.1, §6; `block-conventions` branch 4.6
 
-A beach IS a pscale block (protocol §1, decision 1). "Who is here right now?" is a pure pscale operation: walk the marks position, filter by recency. No separate relay, no separate pubsub, no special table. The beach is the presence surface.
+A beach IS a pscale block (protocol §1, decision 1). "Who is here right now?" is a pure pscale operation: walk the beach's `presence` sibling block, filter by recency. No separate relay, no separate pubsub, no special table. The beach is the presence surface.
 
 This document defines the convention every beach watcher and every xstream-class client follows so presence interoperates across implementations.
 
 ---
 
-## 1. Mark shape — when a mark is for presence
+## 1. Slot shape
 
-A presence mark is a structured mark per protocol §3.1, with three required tags at digit positions and one optional underscore:
+A presence slot has three required tags at digit positions plus a human-readable underscore:
 
 ```json
 {
@@ -23,8 +22,6 @@ A presence mark is a structured mark per protocol §3.1, with three required tag
 }
 ```
 
-Field semantics:
-
 | Position | Required | Purpose |
 |---|---|---|
 | `_` | recommended | Human-readable summary. What a non-presence-aware reader sees. |
@@ -32,27 +29,27 @@ Field semantics:
 | `2` | required | The pscale coordinate the agent is "at" within the beach. Empty string `""` for "at the root". |
 | `3` | required | RFC 3339 / ISO 8601 timestamp in UTC. Used for staleness filtering. |
 
-A non-presence mark — a one-shot stigmergy trace, a comment, a reach proposal — has no structural requirement. Presence marks are a CONVENTION over the same mark slot, distinguishable by the presence of all three required fields.
+No field 4. Presence carries no face — face is a write-time mode for substantive contributions, not an always-on state.
 
 ---
 
-## 2. Where presence marks live
+## 2. Where presence slots live
 
-At a slot in the beach's sibling `marks` block — `(agent_id='<URL>', block='marks')`. Same supernest as substantive marks (slot is any positive integer composed of digits 1-9; the bsp walker interprets it hierarchically). Distinguishable from substantive marks by the absence of field 4. See block-conventions branch 9 for the full marks-block convention.
+At a slot in the beach's sibling `presence` block — `(agent_id='<URL>', block='presence')`. Same supernest as marks (slot is any positive integer composed of digits 1-9; the bsp walker interprets it hierarchically — `11` walks `[1][1]`, `234` walks `[2][3][4]`). One slot per agent, claimed on first heartbeat and reused thereafter. See block-conventions branch 4.6 for the full presence convention.
 
-Implementations MAY filter marks at read time to show "presence" vs "substantive" by checking for absence of field 4. They MUST write presence marks to the marks block, not to the beach block.
+The `presence` block is distinct from the `marks` block. Substantive contributions go to marks; live-state pings go to presence. Their write lifecycles are different (marks accumulate, presence overwrites) and would collide in a shared supernest.
 
 ---
 
-## 3. Posting a presence mark
+## 3. Posting a presence ping
 
-An agent declares presence by writing a structured mark to the marks block via `bsp()`:
+An agent declares presence by writing a structured slot to the presence block via `bsp()`:
 
 ```javascript
 bsp({
   agent_id: "https://my-beach.example.com",   // the beach being marked
-  block: "marks",                              // sibling block — NOT 'beach'
-  spindle: "<next-free-int>",                  // e.g. "11" if 1-9 are taken
+  block: "presence",                            // sibling block at the URL surface
+  spindle: "<the agent's claimed digit>",       // e.g. "1" — see §3.1
   pscale_attention: -3,                        // subtree write at the slot
   content: {
     _: "weft @ 2026-04-29T15:42Z — present at /",
@@ -63,15 +60,20 @@ bsp({
 })
 ```
 
-The bsp walker interprets the integer hierarchically: slot `11` walks to `[1][1]`, slot `234` walks to `[2][3][4]`. Writers think in flat integers; the substrate stores the supernest naturally.
+### 3.1 Claiming a digit (first heartbeat only)
 
-**Cadence**: a presence mark is **idempotent** in identity (same agent at same address) but **temporal** in timestamp. Re-post every 2–10 seconds while the agent considers itself present. Most clients will do this on a heartbeat from their kernel loop. When the agent navigates away or closes, stop posting — the mark ages out.
+The agent's first heartbeat needs a slot. Walk the supernest in order (`1, 2, …, 9, 11, 12, …`) looking for:
 
-**Don't burn the marks block with one mark per heartbeat indefinitely.** Convention: clients SHOULD overwrite their previous presence mark at the same slot (rather than appending) so the marks block doesn't accumulate one stale mark per heartbeat. The simplest pattern:
+1. **An existing slot whose field 1 matches our agent_id** — reuse it (you came back to the same beach with the same handle).
+2. Otherwise, **the first absent / empty / stale slot** — claim it.
 
-- On first presence post, claim the next free slot (atomic-ish — probe-and-claim with retry).
-- On subsequent heartbeats, write at that same slot — the mark's timestamp updates in place.
-- On exit, optionally write a tombstone (a string mark "weft @ <ts> — leaving") at that slot, or leave the previous mark to age out.
+Cache the result locally per `(beach, agent_id)` so subsequent heartbeats write the same slot without re-walking.
+
+### 3.2 Cadence
+
+A presence slot is **idempotent in identity** (same agent, same slot) but **temporal in timestamp**. Re-post every 2–10 seconds while the agent considers itself present. Most clients do this on a heartbeat from their kernel loop. Writes overwrite the same slot; the timestamp updates in place, no accumulation.
+
+On exit (logout, handle-switch, tab-close), write a release: empty underscore at the agent's claimed slot. Peers see departure within the next staleness window.
 
 ---
 
@@ -79,10 +81,10 @@ The bsp walker interprets the integer hierarchically: slot `11` walks to `[1][1]
 
 To answer "who is here at this address right now":
 
-1. `bsp(agent_id="<beach>", block="marks", spindle="", pscale_attention=null)` — read the whole marks block.
-2. For each slot, check whether field 4 is absent. If field 4 is present, it's a substantive mark — skip for presence purposes (or include depending on render policy).
-3. If field `2` matches the address you care about (substring match for tree-depth granularity is acceptable), candidate is "at this address".
-4. Compute `now - parse(field 3)`. If `< STALENESS_WINDOW` (default 30 seconds — generous for poll cadences of 5–10s and small clock drift), include the agent in the present set. Otherwise drop.
+1. `bsp(agent_id="<beach>", block="presence", spindle="", pscale_attention=null)` — read the whole presence block.
+2. For each slot, parse fields 1, 2, 3.
+3. If field `2` matches the address you care about (string-match-from-the-left for tree-depth granularity — see §6), candidate is "at this address".
+4. Compute `now - parse(field 3)`. If `< STALENESS_WINDOW` (default 30 seconds — generous for poll cadences of 5–10s and small clock drift), include the agent. Otherwise drop.
 
 The result is a list of `{agent_id, address, timestamp, summary}` for each agent currently present.
 
@@ -96,9 +98,9 @@ The result is a list of `{agent_id, address, timestamp, summary}` for each agent
 | 5-second heartbeats | 20 seconds |
 | 10-second heartbeats | 30 seconds (default) |
 
-If an agent's mark exceeds the staleness window without an update, it is considered NOT present. The beach owner's tide schedule decides when to physically remove stale marks; the staleness window is a CLIENT-SIDE filter on what's currently visible as "present."
+If an agent's slot exceeds the staleness window without an update, it is considered NOT present. The beach owner's tide schedule decides when to physically remove stale slots; the staleness window is a CLIENT-SIDE filter on what's currently visible as "present."
 
-Staleness filtering is **read-side only**. The server does not know or care about the timestamp semantics. This keeps the beach implementation generic — it just stores marks.
+Staleness filtering is **read-side only**. The server does not know or care about the timestamp semantics. This keeps the beach implementation generic — it just stores slots.
 
 ---
 
@@ -108,7 +110,7 @@ Staleness filtering is **read-side only**. The server does not know or care abou
 
 - **Site-wide presence**: address is `""` (root). All agents who post present at root are "on the beach."
 - **Spatial address presence** (xstream-play style): address is a specific room coordinate like `"111"`. Agents in different rooms see different presence sets.
-- **Pool-specific presence**: address is a pool coordinate like `"2.3"`. Agents subscribed to that pool show up.
+- **Pool-specific presence**: address is a pool coordinate. Agents subscribed to that pool show up.
 
 The convention is **string-match-from-the-left**: an agent at address `"111"` is also present at `"11"` and at `""` for rendering purposes. A client filtering for `"11"` includes everyone whose `field 2` startsWith `"11"`. This gives natural depth-aggregation without needing per-level presence.
 
@@ -116,9 +118,9 @@ The convention is **string-match-from-the-left**: an agent at address `"111"` is
 
 ## 7. Tide-clearing presence
 
-Presence marks are subject to the same tide as any other mark on the beach. When the owner wipes the beach, presence resets — agents heartbeat in again on their next loop. This is correct: presence is by definition ephemeral, and the tide is the substrate's natural reset.
+Presence slots are subject to the host's tide schedule. When the owner wipes the beach, presence resets — agents heartbeat in again on their next loop. This is correct: presence is by definition ephemeral.
 
-For long-lived beaches that don't wipe, presence marks accumulate as stale entries until manually cleared. Beach owners are encouraged to schedule periodic stale-mark sweeps (e.g. nightly: clear marks where `field 3 < now - 24h`). The protocol does not mandate this — it's an operator hygiene practice.
+For long-lived beaches without a tide, abandoned slots accumulate as stale entries until manually cleared. Beach owners are encouraged to schedule periodic stale-slot sweeps (e.g. nightly: clear presence entries where `field 3 < now - 24h`). The protocol does not mandate this — operator hygiene.
 
 ---
 
@@ -131,18 +133,6 @@ This convention covers presence — "who is at this address right now". It does 
 - **Bilateral commitment** — handled by `pscale_grain_reach`.
 - **Multilateral role-taking** — handled by `pscale_register` in a `sed:` collective.
 - **Pool contributions** — separate concern; pools are blocks, contributions are writes, not presence.
+- **Substantive marks** — they live in the `marks` block (block-conventions branch 9), not here.
 
-If presence-via-marks is insufficient for an application's needs (e.g. sub-second updates required for combat), build a real-time channel ON TOP of bsp-mcp; do not bake it INTO the protocol.
-
----
-
-## 9. Migration from xstream-play's `relay_blocks`
-
-xstream-play currently maintains a `relay_blocks` Supabase table for player presence. To migrate:
-
-1. Replace the per-tick relay write with a per-tick beach-mark write per §3 above, addressed at the user's current pscale coordinate.
-2. Replace the per-tick relay read with a beach-mark filter per §4 above.
-3. Retire the `relay_blocks` table when no live games depend on it.
-4. The kernel loop is otherwise unchanged — the I/O surface swaps from `relay_blocks` queries to `bsp()` calls.
-
-The beach is the relay. The relay is the beach. There was only ever one substrate.
+If presence is insufficient for an application's needs (e.g. sub-second updates required for combat), build a real-time channel ON TOP of bsp-mcp; do not bake it INTO the protocol.
