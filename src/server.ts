@@ -23,6 +23,7 @@ import { registerEvolution } from './resources/evolution.js';
 import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPaywall } from './resources/paywall.js';
 import { registerGatekeeper } from './resources/gatekeeper.js';
+import { registerSoftAgent } from './resources/soft-agent.js';
 
 /**
  * Wrap every tool handler so exceptions surface as `isError: true` content
@@ -116,7 +117,7 @@ ARCHITECTURE: bsp-mcp is a router + sentinel server. The walker (bsp.ts/bsp-fn.t
 
 export function createServer(): McpServer {
   const server = new McpServer(
-    { name: 'bsp-mcp-server', version: '0.4.0' },
+    { name: 'bsp-mcp-server', version: '0.2.0' },
     { instructions: INSTRUCTIONS },
   );
 
@@ -184,6 +185,7 @@ export function createServer(): McpServer {
   registerXstreamFrame(server);
   registerPaywall(server);
   registerGatekeeper(server);
+  registerSoftAgent(server);
 
   return server;
 }

@@ -33,6 +33,7 @@ import manifest from './manifest.json' with { type: 'json' };
 import progression from './progression.json' with { type: 'json' };
 import blockConventions from './block-conventions.json' with { type: 'json' };
 import gatekeeper from './gatekeeper.json' with { type: 'json' };
+import softAgent from './soft-agent.json' with { type: 'json' };
 import protocolPaywall from './protocol-paywall.json' with { type: 'json' };
 import ecologyRouter from './ecology-router.json' with { type: 'json' };
 
@@ -97,6 +98,7 @@ const SENTINEL_BLOCKS: Record<string, Block> = {
   'pscale/progression': progression as unknown as Block,
   'pscale/block-conventions': blockConventions as unknown as Block,
   'pscale/gatekeeper': gatekeeper as unknown as Block,
+  'pscale/soft-agent': softAgent as unknown as Block,
   'pscale/protocol-paywall': protocolPaywall as unknown as Block,
   'pscale/ecology-router': ecologyRouter as unknown as Block,
 };
@@ -205,57 +207,65 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
   }
 }
 
-// ── Origin resolution (strict subdomain convention) ──
+// ── Origin resolution (bare → beach.<host> fallback) ──
 //
-// A federated beach lives at `https://beach.<host>/.well-known/pscale-beach`.
-// When a caller passes a URL agent_id, this resolver returns the canonical
-// `beach.<host>` form deterministically — no probe, no fallback. Bare-domain
-// beaches are not supported by convention (sites commonly serve other things
-// at the root; the dedicated subdomain keeps the beach surface uncluttered).
+// Operators commonly deploy pscale-beach at a `beach.` subdomain rather than
+// wiring /.well-known on their primary site. When a caller passes the bare
+// domain (e.g. https://idiothuman.com) and that host is not federated, the
+// resolver retries against `beach.<host>` once before giving up.
 //
-// Documented at docs/protocol-pscale-beach-v2.md §2.7.
-//
-// Pass-through cases (host used as-is, no `beach.` prepend):
-//   - Host already begins with `beach.` (no double-prefix).
-//   - Dev-deploy domains (.vercel.app, .netlify.app, .pages.dev) — these
-//     auto-generated hostnames don't have wildcard DNS, and are typically
-//     used directly during pre-custom-domain testing. Operators wanting
-//     federation by name should attach a custom domain and reference that.
-//   - localhost / IP literals — no DNS for `beach.<x>` to resolve.
-//
-// Note: this used to probe the bare host first and fall back to the subdomain.
-// As of 2026-05-12 the convention is subdomain-only; bare beaches are not
-// reachable via bsp-mcp federation. See PR for migration rationale.
+// Probe order is documented in docs/protocol-pscale-beach-v2.md §2.7.
+// Positive resolutions are cached for the process lifetime; negatives are not
+// cached so a later beach deploy at the same host resolves on next call.
 
-function isDevDeployHost(host: string): boolean {
-  return host.endsWith('.vercel.app') ||
-    host.endsWith('.netlify.app') ||
-    host.endsWith('.pages.dev');
+const FEDERATION_RESOLUTION_CACHE = new Map<string, string>();
+
+async function probeOriginOk(origin: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${origin}/.well-known/pscale-beach`, {
+      headers: { Accept: 'application/json' },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
-/**
- * Resolve the actual federation origin for a URL agent_id. Deterministic —
- * prepends `beach.` to the host unless the host is already a subdomain, a
- * dev-deploy URL, or localhost/IP. Returns null for non-URL agent_ids.
- */
-export function resolveFederationOrigin(ownerId: string): string | null {
-  if (!isFederatedOwner(ownerId)) return null;
-  const canonical = canonicaliseOrigin(ownerId);
+function beachSubdomainOf(canonical: string): string | null {
   const url = new URL(canonical);
   const host = url.hostname;
-
-  // Pass-through: already a subdomain, dev-deploy URL, or localhost/IP.
-  if (host.startsWith('beach.')) return canonical;
-  if (host === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(host)) return canonical;
-  if (isDevDeployHost(host)) return canonical;
-
-  // Bare host → prepend beach. subdomain.
+  if (host.startsWith('beach.')) return null;
+  if (host === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(host) || host.includes(':')) return null;
   const portPart = url.port ? `:${url.port}` : '';
   return `${url.protocol}//beach.${host}${portPart}`;
 }
 
+/**
+ * Resolve the actual federation origin for a URL agent_id. Probes the bare
+ * host first; on failure, retries against `beach.<host>` once (the conventional
+ * subdomain shape for pscale-beach deploys). Returns the resolved canonical
+ * origin, or null if neither responds.
+ */
+export async function resolveFederationOrigin(ownerId: string): Promise<string | null> {
+  if (!isFederatedOwner(ownerId)) return null;
+  const canonical = canonicaliseOrigin(ownerId);
+  const cached = FEDERATION_RESOLUTION_CACHE.get(canonical);
+  if (cached !== undefined) return cached;
+
+  if (await probeOriginOk(canonical)) {
+    FEDERATION_RESOLUTION_CACHE.set(canonical, canonical);
+    return canonical;
+  }
+  const fallback = beachSubdomainOf(canonical);
+  if (fallback && await probeOriginOk(fallback)) {
+    FEDERATION_RESOLUTION_CACHE.set(canonical, fallback);
+    return fallback;
+  }
+  return null;
+}
+
 async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<BlockRow | null> {
-  const origin = resolveFederationOrigin(ownerId);
+  const origin = await resolveFederationOrigin(ownerId);
   if (!origin) return null;
   const url = beachEndpoint(origin, blockName);
   let res: Response;
@@ -291,20 +301,12 @@ async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<B
 /**
  * Probe whether a URL hosts a federated beach. Used to disambiguate "block
  * not found at federated host" from "host not federated at all" after a 404
- * on a per-block load. Hits the resolved subdomain (`beach.<host>`) at
- * `/.well-known/pscale-beach` — returns "federated" on 2xx, "absent" otherwise.
+ * on a per-block load. Returns "federated" when the bare /.well-known endpoint
+ * responds successfully, "absent" when it 404s or fails.
  */
 export async function probeFederation(ownerId: string): Promise<'federated' | 'absent'> {
-  const origin = resolveFederationOrigin(ownerId);
-  if (!origin) return 'absent';
-  try {
-    const res = await fetchWithTimeout(`${origin}/.well-known/pscale-beach`, {
-      headers: { Accept: 'application/json' },
-    });
-    return res.ok ? 'federated' : 'absent';
-  } catch {
-    return 'absent';
-  }
+  const resolved = await resolveFederationOrigin(ownerId);
+  return resolved ? 'federated' : 'absent';
 }
 
 /**
@@ -319,9 +321,9 @@ export async function postActionToBeach(
   blockName: string,
   body: Record<string, any>,
 ): Promise<any> {
-  const resolved = resolveFederationOrigin(origin);
+  const resolved = await resolveFederationOrigin(origin);
   if (!resolved) {
-    throw new Error(`No beach at ${origin}. Federation requires a URL agent_id.`);
+    throw new Error(`No beach at ${origin} (also tried beach.<host>). Site is not federated.`);
   }
   const url = beachEndpoint(resolved, blockName);
   let res: Response;
@@ -353,9 +355,9 @@ async function saveBlockToBeach(
   block: Block,
   opts: WriteOptions = {},
 ): Promise<BlockRow> {
-  const origin = resolveFederationOrigin(ownerId);
+  const origin = await resolveFederationOrigin(ownerId);
   if (!origin) {
-    throw new Error(`No beach at ${ownerId}. Federation requires a URL agent_id.`);
+    throw new Error(`No beach at ${ownerId} (also tried beach.<host>). Site is not federated; cannot write.`);
   }
   const url = beachEndpoint(origin, blockName);
   const userSpindle = opts.spindle;
