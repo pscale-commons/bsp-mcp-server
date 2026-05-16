@@ -24,6 +24,8 @@ import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPaywall } from './resources/paywall.js';
 import { registerGatekeeper } from './resources/gatekeeper.js';
 import { registerSoftAgent } from './resources/soft-agent.js';
+import { registerSandRider } from './resources/sand-rider.js';
+import { registerL3Relay } from './resources/l3-relay.js';
 
 /**
  * Wrap every tool handler so exceptions surface as `isError: true` content
@@ -112,6 +114,8 @@ FOUNDATIONAL READING (sentinel-bundled — walk via bsp(agent_id="pscale", block
   block-conventions — substrate-wide convention catalogue. What canonical block names mean and which positions hold what.
   gatekeeper  — substrate-wide canonical role-shell for L1→L2 admission. Hermitcrab pattern: cognition fluid, structure persistent. Honored convention at the threshold of pscale_invite step 4.
   ecology-router — the hard tier of SMH as routing intelligence. Constitutes an agent's lived ecology by reading shell + purpose + watched beaches and surfacing routing decisions. Defines the minimal package (five components for a runnable pscale node). Per-agent locality; federation IS the P2P. Walk this when authoring a hard-tier process, designing a minimal-package reference build, or reasoning about how an agent climbs the five evolutionary levels.
+  sand-rider     — the Signed Agent Network Datagram envelope format. Rides on Level 3 content moving through committed channels (grain sides, sed: positions, pool slots) at position 9 of any probe slot. Carries probe_id, credit claim, SQ claim, sha256 chain of hops, topic_coordinate. Verified deterministically via pscale_verify_rider; verdicts accumulate as evaluations on the recipient's passport at the topic coordinate. Walk this when authoring or receiving an L3 probe.
+  l3-relay       — verb vocabulary for what a recipient does with a verified probe: keep (record at passport), reply (respond on the recipient's grain side), forward (route onward with chain extended), drop (decline explicitly). Composes with pscale_verify_rider. Walk this when designing an L3 verb-chooser, whether human-mediated (xstream's commit affordance in grain mode) or automated (ecology-router hard tier, beach-crab Rung 2).
 
 ARCHITECTURE: bsp-mcp is a router + sentinel server. The walker (bsp.ts/bsp-fn.ts) runs in-process for sentinel reads and for client-side merge during federated writes. The block content lives at federated beaches — JSON KV stores with locks. Default beach: ${DEFAULT_BEACH_URL}. To change it, set the DEFAULT_BEACH env var.`;
 
@@ -186,6 +190,8 @@ export function createServer(): McpServer {
   registerPaywall(server);
   registerGatekeeper(server);
   registerSoftAgent(server);
+  registerSandRider(server);
+  registerL3Relay(server);
 
   return server;
 }
