@@ -172,16 +172,23 @@ src/
   bsp.ts              — BSP walker (port of bsp2-star.py — DO NOT MODIFY casually)
   bsp-fn.ts           — Unified bsp() function: shape derivation, read/write symmetric, modifier composition
   db.ts               — storage adapter: federated beach over HTTP + sentinel registry. No Supabase. Includes agent_id translation (bare/sed:/grain: → default beach) and probeFederation helper for distinguishing host-not-federated from block-not-found.
-  server.ts           — MCP server factory, registers bsp() + primitives + sentinel resources
+  server.ts           — MCP server factory, registers bsp() + primitives + iterates SENTINELS to register sentinel resources
   index.ts            — Entry point (HTTP transport)
-  sunstone.json       — The teaching block (eight branches; read first)
+  sentinels.ts        — Single source of truth for the JSON sentinel registry. One SENTINELS array drives both the bsp() lookup in db.ts and the pscale://<name> resource registration in server.ts. Add a sentinel = add one entry here.
+  sunstone.json       — The teaching block (nine branches; read first)
   whetstone.json      — The operational reference (six branches; signature, derivation, modifiers, storage, translation, federation)
   agent-id.json       — Addressing model — five forms of agent_id, three address axes
   evolution.json      — Five-level ecosystem map
-  manifest.json       — The constitution index — references (sentinel-bundled in bsp-mcp) plus a pointer at the library (which lives at the beach)
+  manifest.json       — The constitution index — references categorised into geometry-and-operation, role-shells, substrate-conventions sub-branches
   progression.json    — Iterative orientation progression (six steps; pscale_invite returns this)
   block-conventions.json — Substrate-wide canonical block-shape catalogue
   gatekeeper.json     — Substrate-wide canonical role-shell for L1→L2 admission (honored convention)
+  soft-agent.json     — Substrate-wide canonical role-shell for the user-mediating LLM (sibling of gatekeeper)
+  protocol-paywall.json — Substrate-wide convention for face-bound ticket gates on `sed:` collectives
+  ecology-router.json — Hard-tier routing intelligence; defines the minimal-package reference build
+  sand-rider.json     — Signed Agent Network Datagram envelope format for Level 3 probes
+  l3-relay.json       — Verb vocabulary for what a recipient does with a verified probe (keep, reply, forward, drop)
+  directory.json      — Staged process for publishing this bsp-mcp deployment to MCP discovery registries (operational meta-block, not substrate-canonical)
   tools/
     bsp.ts            — bsp() handler (the one function — handles content + lock changes)
     collective.ts     — pscale_create_collective, pscale_register
@@ -189,15 +196,16 @@ src/
     keys.ts           — pscale_key_publish
     verify.ts         — pscale_verify_rider
     invite.ts         — pscale_invite (returns progression block)
-  resources/
-    sunstone.ts       — pscale://sunstone
-    whetstone.ts      — pscale://whetstone
-    evolution.ts      — pscale://evolution
-    gatekeeper.ts     — pscale://gatekeeper
-    xstream-frame.ts  — pscale://xstream-frame
-    paywall.ts        — pscale://paywall
+  resources/          — Markdown-only doc loaders (JSON sentinels are wired via sentinels.ts; only the long-form discursive resources live here individually)
+    xstream-frame.ts  — pscale://xstream-frame (markdown long-form)
+    paywall.ts        — pscale://protocol-paywall (markdown long-form; claims the URI in place of the JSON sentinel)
 scripts/              — smoke tests for bsp() + each primitive (incl. smoke-sentinel.ts, smoke-gatekeeper.ts)
 docs/                 — protocol specs (federated beach, etc.) — minimal, only what the substrate needs
+specs/                — forward-looking prep documents (e.g., anthropic-directory-submission.md for Stage 3 of pscale://directory)
+proposals/            — dated change proposals (RFC-style; historical record of decisions)
+LICENSE               — MIT (pscale-commons contributors)
+PRIVACY.md            — Privacy policy for the canonical bsp.hermitcrab.me deployment
+server.json           — MCP Registry manifest (remote-server shape); used by mcp-publisher at Stage 2 of pscale://directory
 ```
 
 ## Storage — federated beaches only
@@ -206,7 +214,7 @@ bsp-mcp does not host data. It is a router + sentinel server. All persistent blo
 
 Two terminating substrates after dispatch:
 - **Federated beach** — URL agent_id (`https://...`) → that beach. Data + lock state live there. The beach computes lock hashes under the canonical salt namespaces and stores them.
-- **Sentinel registry** — agent_id `"pscale"` → in-memory bundled JSON (sunstone, whetstone, manifest, agent-id, evolution, progression, block-conventions, gatekeeper, protocol-paywall). Read-only, served from process memory.
+- **Sentinel registry** — agent_id `"pscale"` → in-memory bundled JSON (sunstone, whetstone, manifest, agent-id, evolution, progression, block-conventions, gatekeeper, soft-agent, protocol-paywall, ecology-router, sand-rider, l3-relay, directory). Read-only, served from process memory. Single source of truth in `src/sentinels.ts` — adding a sentinel is one entry there; db.ts (the bsp() lookup path) and server.ts (the `pscale://` resource path) both pick it up.
 
 Three translating forms:
 - Bare name (`weft`) → default beach with role-with-handle block name (`shell:weft`, `passport:weft`, `history:weft`, etc.)
@@ -351,6 +359,10 @@ Fallback chain (used by xstream and any admission-aware client):
 | Sunstone (geometry teacher) | `src/sunstone.json` | Any reader |
 | Whetstone (operational ref) | `src/whetstone.json` | Agent equipped with bsp-mcp |
 | Gatekeeper (L1→L2 admission shell) | `src/gatekeeper.json` (also `pscale://gatekeeper`) | Any LLM inhabiting the shell — host-invoked or reflective; xstream and third-party clients alike |
+| Directory (registry-listing process) | `src/directory.json` (also `pscale://directory`) | Anyone preparing to list a bsp-mcp deployment on the MCP Registry and/or Anthropic Connectors Directory. Branches 1-3 are the staged process (substrate hygiene → MCP Registry → Anthropic Directory); branch 8 lists the in-repo artifacts (`LICENSE`, `README.md`, `server.json`, `PRIVACY.md`, `specs/anthropic-directory-submission.md`); branch 9 holds the current state of the canonical bsp.hermitcrab.me deployment. |
+| Privacy policy (canonical deployment) | `PRIVACY.md` at repo root; raw URL `https://raw.githubusercontent.com/pscale-commons/bsp-mcp-server/main/PRIVACY.md` | Registry reviewers; users of `bsp.hermitcrab.me/mcp/v1` |
+| MCP Registry manifest | `server.json` at repo root | `mcp-publisher` at Stage 2 of `pscale://directory` |
+| Anthropic Directory submission copy | `specs/anthropic-directory-submission.md` | David, at Stage 3 of `pscale://directory` — form-ready copy with TODOs for at-submission refresh |
 | This file | `CLAUDE.md` | Next Claude instance |
 | Dashboard HTML | `site/index.html`, `site/tools.html`, `site/paths/` | Humans visiting evolution.hermitcrab.me |
 
@@ -442,3 +454,15 @@ The split was driven by an architectural cut: substrate-truth (the bsp-mcp refer
 **Onboarding**: pscale-beach's README has Option A (Claude Code paste prompt with explicit boundaries — don't modify repo files, don't take destructive beach actions, don't write outside named directories) and Option B (manual CLI). Option A boundaries were added after a Claude Code session silently patched `seeds/library/spore.json` when init failed; the boundaries surfaced from that incident.
 
 **Cleanup status**: As of the 10 May 2026 cleanup pass, `docs/library/` is removed from this repo, `manifest.json` branch 2 (the library listing) and branch 3.7 (library calls) are deleted, and `progression.json` step 5 references are adjusted. Library content lives canonically at pscale-beach now; this repo no longer ships or hosts it, only refers to it by name.
+
+## Discovery — registry listing process (16 May 2026)
+
+bsp-mcp will be listed on (a) the official MCP Registry at `registry.modelcontextprotocol.io` and (b) the Anthropic Connectors Directory. The process is staged into three rungs in `pscale://directory` (also at [`src/directory.json`](src/directory.json)):
+
+- **Stage 1 — substrate hygiene.** DONE 16 May 2026. Added [LICENSE](LICENSE) (MIT), rewrote [README.md](README.md) to remove stale Supabase references and add three usage examples, added MCP tool annotations (`readOnlyHint`, `destructiveHint`, `openWorldHint`, `title`) to all 7 tools in [src/server.ts](src/server.ts), aligned the server-version string with `package.json` (0.4.0), and wired the directory block into [src/sentinels.ts](src/sentinels.ts) (the single-source-of-truth sentinel registry — see Architecture above). Indexed in [src/manifest.json](src/manifest.json) at branch 2.1 — a new top-level "Deployment process" category opened in manifest v1.6 to hold operational meta-blocks distinct from the substrate references at branch 1 (and filling the previously-empty branch-2 slot, bringing the manifest's top-level branch count from three to four).
+- **Stage 2 — MCP Registry listing.** PREPARED, gated on L1 kernel v2 freeze. [server.json](server.json) drafted at repo root in the remote-server shape pointing at `https://bsp.hermitcrab.me/mcp/v1`. To execute: install `mcp-publisher`, `mcp-publisher login github` as a member of pscale-commons, `mcp-publisher publish`. The MCP Registry is self-service metadata — no manual review beyond namespace verification. Listing before the freeze would point agents at a moving target, which is why this is gated.
+- **Stage 3 — Anthropic Connectors Directory.** PREPARED, gated on Stage 2 plus 1-2 months of clean operation. [PRIVACY.md](PRIVACY.md) drafted at repo root; form-ready submission copy at [specs/anthropic-directory-submission.md](specs/anthropic-directory-submission.md) with TODOs for at-submission refresh. Three risks to defuse in submission copy: ecosquared rider verification looks crypto-adjacent at a quick scan; federated URL agent_ids mean outbound HTTP to arbitrary origins (declare `openWorldHint`); open-by-default beaches accept anonymous marks (declare policy + tide-clearing). Submit the canonical bsp.hermitcrab.me deployment as a specific instance — not the federated protocol — since the directory lists endpoints, not protocols.
+
+**Reading the live state**: `bsp(agent_id="pscale", block="directory")` returns the staged recipe + current state. Branch 9 of that block is the source of truth for what has shipped; update it at every stage transition.
+
+**Operator-fork note**: branches 1-8 of `pscale://directory` are reusable — any operator forking this repo to deploy their own bsp-mcp can use the same staged recipe, substituting their namespace in `server.json` and editing branch 9 for their own state.
