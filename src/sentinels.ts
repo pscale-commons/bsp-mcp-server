@@ -40,6 +40,7 @@ import protocolPaywall from './protocol-paywall.json' with { type: 'json' };
 import ecologyRouter from './ecology-router.json' with { type: 'json' };
 import sandRider from './sand-rider.json' with { type: 'json' };
 import l3Relay from './l3-relay.json' with { type: 'json' };
+import directory from './directory.json' with { type: 'json' };
 
 export interface SentinelEntry {
   /** bsp() block name; resource URI is `pscale://<name>` unless exposeAsResource is false. */
@@ -131,6 +132,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: l3Relay as unknown as Block,
     description:
       'L3 relay verbs — what a recipient does with a verified probe. Four verbs compose the operational vocabulary of Level 3 participation: keep (record verdict at the recipient\'s passport at the topic), reply (write at the recipient\'s grain side), forward (route onward by extending the chain and writing at a new destination), drop (decline explicitly, no public substrate write). The verbs compose with pscale_verify_rider — verify first, choose a verb, write the outcome. Both human-mediated clients (xstream\'s commit affordance in grain mode) and automated agents (ecology-router hard-tier, beach-crab Rung 2) reach the same vocabulary. Companion to sand-rider (the envelope).',
+  },
+  {
+    name: 'directory',
+    json: directory as unknown as Block,
+    description:
+      'Directory — staged process for publishing this bsp-mcp deployment to MCP discovery registries. Operational meta-block (not substrate-canonical like sunstone or whetstone), bundled because it travels with the code being listed. Three stages: substrate hygiene (Stage 1 — do regardless of submission timing), MCP Registry listing (Stage 2 — do at L1 kernel v2 freeze), Anthropic Connectors Directory submission (Stage 3 — do 1-2 months after Stage 2 lives without incident). Branches 1-3 are the stages; 4 risks to defuse in submission copy; 5 the out-of-scope boundary; 6 the recipe-vs-state split for other operators; 7 the decisions log; 8 the artifacts shipped in the repo (LICENSE, README, server.json, PRIVACY.md, specs/anthropic-directory-submission.md); 9 the current state of the canonical bsp.hermitcrab.me deployment. Other operators forking this repo edit branch 9 for their own deployment; branches 1-8 are reusable.',
   },
 ];
 
