@@ -36,6 +36,8 @@ import gatekeeper from './gatekeeper.json' with { type: 'json' };
 import softAgent from './soft-agent.json' with { type: 'json' };
 import protocolPaywall from './protocol-paywall.json' with { type: 'json' };
 import ecologyRouter from './ecology-router.json' with { type: 'json' };
+import sandRider from './sand-rider.json' with { type: 'json' };
+import l3Relay from './l3-relay.json' with { type: 'json' };
 
 // ── Default beach ──
 //
@@ -100,6 +102,8 @@ const SENTINEL_BLOCKS: Record<string, Block> = {
   'pscale/gatekeeper': gatekeeper as unknown as Block,
   'pscale/soft-agent': softAgent as unknown as Block,
   'pscale/protocol-paywall': protocolPaywall as unknown as Block,
+  'pscale/sand-rider': sandRider as unknown as Block,
+  'pscale/l3-relay': l3Relay as unknown as Block,
   'pscale/ecology-router': ecologyRouter as unknown as Block,
 };
 
