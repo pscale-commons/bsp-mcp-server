@@ -1,0 +1,140 @@
+/**
+ * sentinels.ts — single source of truth for the pscale JSON sentinel blocks
+ * bundled in bsp-mcp.
+ *
+ * Each entry serves two access paths intentionally (per agent-id:191 and the
+ * whetstone:1.3 enactive underscore):
+ *
+ *   1. bsp(agent_id='pscale', block=<name>) → SENTINEL_BLOCKS lookup in db.ts.
+ *      The enactive path. An LLM walking via bsp() is INSIDE the function
+ *      while reading a block that describes the function. The whetstone-
+ *      sharpens-bsp coupling lives here.
+ *
+ *   2. pscale://<name> → MCP resource registration in server.ts.
+ *      The flat-JSON path. Non-bsp consumers (Claude.ai's resource browser,
+ *      doc generators, other MCP clients without bsp() in their toolset) get
+ *      the content without invoking bsp(). The underscore parses but does
+ *      not enact.
+ *
+ * Both registrations derive from this one list. Adding a sentinel: import
+ * the JSON, add one entry below — db.ts and server.ts both pick it up.
+ *
+ * `exposeAsResource: false` is set on entries whose `pscale://<name>` URI
+ * is already claimed by a separate doc resource (currently only
+ * protocol-paywall, whose URI serves the discursive markdown long-form
+ * via src/resources/paywall.ts).
+ */
+
+import type { Block } from './bsp.js';
+
+import sunstone from './sunstone.json' with { type: 'json' };
+import whetstone from './whetstone.json' with { type: 'json' };
+import agentId from './agent-id.json' with { type: 'json' };
+import evolution from './evolution.json' with { type: 'json' };
+import manifest from './manifest.json' with { type: 'json' };
+import progression from './progression.json' with { type: 'json' };
+import blockConventions from './block-conventions.json' with { type: 'json' };
+import gatekeeper from './gatekeeper.json' with { type: 'json' };
+import softAgent from './soft-agent.json' with { type: 'json' };
+import protocolPaywall from './protocol-paywall.json' with { type: 'json' };
+import ecologyRouter from './ecology-router.json' with { type: 'json' };
+import sandRider from './sand-rider.json' with { type: 'json' };
+import l3Relay from './l3-relay.json' with { type: 'json' };
+
+export interface SentinelEntry {
+  /** bsp() block name; resource URI is `pscale://<name>` unless exposeAsResource is false. */
+  name: string;
+  /** The walkable pscale JSON block. */
+  json: Block;
+  /** Description for the resource registration. Used only when exposeAsResource is true. */
+  description: string;
+  /** Default true. Set false when the resource URI is claimed by a separate doc loader (e.g. protocol-paywall). */
+  exposeAsResource?: boolean;
+}
+
+export const SENTINELS: SentinelEntry[] = [
+  {
+    name: 'sunstone',
+    json: sunstone as unknown as Block,
+    description:
+      'Sunstone — the geometry teacher for the BSP MCP. Self-contained: teaches its own format, the function that operates on it, and the discipline of voicing that authors its content. Nine branches frame the same primitive from nine angles (geometry, function, access, substrate, composition, commons, reflexive, voicing, design). Walk it with bsp() to learn how to use bsp(). The block IS the test.',
+  },
+  {
+    name: 'whetstone',
+    json: whetstone as unknown as Block,
+    description:
+      'Whetstone — operational reference for the BSP MCP. The sharpener that ships with the function. Six branches: signature, selection-shape derivation, modifier composition, storage adapter, translation from pscale-mcp idioms, federation. The underscore is enactive — its truth-condition is satisfied iff the reader arrived via a bsp() call into the sentinel; read via this resource URI the sentence parses as content but does not enact. Walk by position to retrieve the slice you need.',
+  },
+  {
+    name: 'agent-id',
+    json: agentId as unknown as Block,
+    description:
+      'Agent-id — addressing model across substrates. Nine branches: the reframe (agent_id is a namespace key, not an actor identity), the dispatch table (five forms), the address axes (agent_id × block × geometry), the disciplines (three invariants), and use cases. Read branch 1 for the reframe; branch 2 for the dispatch table; branch 9 for the architectural principle that keeps the function surface at six tools.',
+  },
+  {
+    name: 'evolution',
+    json: evolution as unknown as Block,
+    description:
+      'The five-level relational framing of the pscale agent ecology. Walkable as a pscale block. Pscale is the substrate, not a level — these levels describe relational acts. 1=Signal (leave marks), 2=Commitment (grain or sed: collective), 3=Semantic networks (SAND riders), 4=Mutual objectives (pools, GRIT, Onen RPG), 5=Shared context (MAGI + xstream). Star walk at digit 5 within each level for the beach-crab rung at that level. Walk by digit for each level\'s substance.',
+  },
+  {
+    name: 'manifest',
+    json: manifest as unknown as Block,
+    description:
+      'Manifest — the constitution index. Walking it tells you what bsp-mcp ships as references (sentinel-bundled, identical at every bsp-mcp instance). Branch 1 lists the references categorised into geometry-and-operation, role-shells, and substrate-conventions sub-branches. Branch 3 walks the orientation flow. Branch 4 is the starter recipe. The library — separate from the references — lives at the pscale-beach repo and at each operator\'s beach as seeded content.',
+  },
+  {
+    name: 'progression',
+    json: progression as unknown as Block,
+    description:
+      'Progression — the iterative orientation block returned by pscale_invite. Six steps from wake-up through shared-context coordination, designed as a purpose spindle: each step has a concrete action, validation criterion, and pointer to the next.',
+  },
+  {
+    name: 'block-conventions',
+    json: blockConventions as unknown as Block,
+    description:
+      'Block-conventions — substrate-wide convention catalogue. What canonical block names mean and which positions hold what (passport, shell, history, the URL surface, frame, grain, sed:, marks). Sentinel-bundled so it is identical at every bsp-mcp instance. Branch 8 carries cross-references; branch 8.7 codifies the growth discipline that lets a block\'s sub-positions outgrow nine without breaking the spine.',
+  },
+  {
+    name: 'gatekeeper',
+    json: gatekeeper as unknown as Block,
+    description:
+      'Gatekeeper — substrate-wide canonical role-shell for the L1→L2 admission threshold. Hermitcrab pattern: cognition fluid (any LLM with an API key inhabits it), structure persistent (this shell). An honored convention, not a primitive — pscale_grain_reach stays permissive; gatekeeper is the shape clients honour when admitting an agent from Signal (marks/vapour) into Commitment (grain/sed:). Branches: 1 voice, 2 criteria (admit/retry signals), 3 opening, 4 turn-2 follow-up patterns, 5 decision rules, 6 reply copy, 7 host invocation patterns (host-invoked vs reflective — claude-app/chatgpt clients run admission in-session and write passport:8 directly), 9 metadata.',
+  },
+  {
+    name: 'soft-agent',
+    json: softAgent as unknown as Block,
+    description:
+      'Soft-agent — substrate-wide canonical role-shell for the user-mediating soft-LLM. Hermitcrab pattern: cognition fluid (the LLM at each ⌘↵ turn), structure persistent (this shell). Sibling of the gatekeeper (which is the L1→L2 admission shell); this is the operating shell for already-engaged users. Branches: 1 ROLE, 2 KNOWLEDGE GATING, 3 STYLE, 4 CONTEXT, 5 FORMAT, 6 ACTIONS, 7 ACT-DON\'T-ASK, 8 HERMITCRAB DISCIPLINE, 9 metadata.',
+  },
+  {
+    name: 'protocol-paywall',
+    json: protocolPaywall as unknown as Block,
+    description:
+      'Protocol-paywall (JSON sentinel) — substrate-wide convention for face-bound ticket gates on sed: collectives. The walkable JSON form lives here; the discursive long-form markdown is at pscale://protocol-paywall via a separate resource loader (which currently claims the URI). Walk via bsp() for the structural form; see docs/protocol-paywall.md for the long-form narrative.',
+    exposeAsResource: false,
+  },
+  {
+    name: 'ecology-router',
+    json: ecologyRouter as unknown as Block,
+    description:
+      'Ecology-router — the hard tier of the SMH triad as an agent\'s routing intelligence. Constitutes the agent\'s lived ecology by reading shell, purpose, watched beaches and federated substrate, then surfacing routing decisions. Outputs are pscale writes back to the agent\'s own pointer blocks — never enforced, always suggestions to soft tier and the user. Per-agent locality; substrate-mediated coordination (federation IS the P2P). Defines the minimal package — five components that constitute a runnable pscale node.',
+  },
+  {
+    name: 'sand-rider',
+    json: sandRider as unknown as Block,
+    description:
+      'SAND rider — Signed Agent Network Datagram envelope format. Rides on Level 3 content moving through committed channels (grain sides, sed: positions, pool slots) at position 9 of any probe slot. Carries probe_id, credit claim, SQ claim, sha256 chain of hops, topic_coordinate. Verified deterministically via pscale_verify_rider; verdicts accumulate as evaluations on the recipient\'s passport at the topic coordinate. Nine branches: vocabulary, rider shape, composition with content, chain protocol, topic coordinates, verification and verdict, evaluations accumulation, authoring discipline, reflexive metadata. Companion to l3-relay (the verbs) and to pscale_verify_rider (the primitive).',
+  },
+  {
+    name: 'l3-relay',
+    json: l3Relay as unknown as Block,
+    description:
+      'L3 relay verbs — what a recipient does with a verified probe. Four verbs compose the operational vocabulary of Level 3 participation: keep (record verdict at the recipient\'s passport at the topic), reply (write at the recipient\'s grain side), forward (route onward by extending the chain and writing at a new destination), drop (decline explicitly, no public substrate write). The verbs compose with pscale_verify_rider — verify first, choose a verb, write the outcome. Both human-mediated clients (xstream\'s commit affordance in grain mode) and automated agents (ecology-router hard-tier, beach-crab Rung 2) reach the same vocabulary. Companion to sand-rider (the envelope).',
+  },
+];
+
+/** Convenience map for db.ts: 'pscale/<name>' → block. */
+export const SENTINEL_BLOCK_MAP: Record<string, Block> = Object.fromEntries(
+  SENTINELS.map((s) => [`pscale/${s.name}`, s.json]),
+);

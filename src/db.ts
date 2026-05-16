@@ -25,19 +25,7 @@
  */
 
 import { Block, readAt } from './bsp.js';
-import sunstone from './sunstone.json' with { type: 'json' };
-import whetstone from './whetstone.json' with { type: 'json' };
-import agentId from './agent-id.json' with { type: 'json' };
-import evolution from './evolution.json' with { type: 'json' };
-import manifest from './manifest.json' with { type: 'json' };
-import progression from './progression.json' with { type: 'json' };
-import blockConventions from './block-conventions.json' with { type: 'json' };
-import gatekeeper from './gatekeeper.json' with { type: 'json' };
-import softAgent from './soft-agent.json' with { type: 'json' };
-import protocolPaywall from './protocol-paywall.json' with { type: 'json' };
-import ecologyRouter from './ecology-router.json' with { type: 'json' };
-import sandRider from './sand-rider.json' with { type: 'json' };
-import l3Relay from './l3-relay.json' with { type: 'json' };
+import { SENTINEL_BLOCK_MAP } from './sentinels.js';
 
 // ── Default beach ──
 //
@@ -91,21 +79,7 @@ export function isFederatedOwner(ownerId: string): boolean {
 // bsp() is the function reading its own manual.
 
 const SENTINEL_OWNERS = new Set(['pscale']);
-const SENTINEL_BLOCKS: Record<string, Block> = {
-  'pscale/sunstone': sunstone as unknown as Block,
-  'pscale/whetstone': whetstone as unknown as Block,
-  'pscale/agent-id': agentId as unknown as Block,
-  'pscale/evolution': evolution as unknown as Block,
-  'pscale/manifest': manifest as unknown as Block,
-  'pscale/progression': progression as unknown as Block,
-  'pscale/block-conventions': blockConventions as unknown as Block,
-  'pscale/gatekeeper': gatekeeper as unknown as Block,
-  'pscale/soft-agent': softAgent as unknown as Block,
-  'pscale/protocol-paywall': protocolPaywall as unknown as Block,
-  'pscale/sand-rider': sandRider as unknown as Block,
-  'pscale/l3-relay': l3Relay as unknown as Block,
-  'pscale/ecology-router': ecologyRouter as unknown as Block,
-};
+const SENTINEL_BLOCKS: Record<string, Block> = SENTINEL_BLOCK_MAP;
 
 export function isSentinelOwner(ownerId: string): boolean {
   return SENTINEL_OWNERS.has(ownerId);

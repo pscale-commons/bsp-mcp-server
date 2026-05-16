@@ -17,15 +17,9 @@ import { handleKeyPublish, keyPublishParamsSchema } from './tools/keys.js';
 import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
 import { handleInvite, inviteParamsSchema } from './tools/invite.js';
 
-import { registerSunstone } from './resources/sunstone.js';
-import { registerWhetstone } from './resources/whetstone.js';
-import { registerEvolution } from './resources/evolution.js';
 import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPaywall } from './resources/paywall.js';
-import { registerGatekeeper } from './resources/gatekeeper.js';
-import { registerSoftAgent } from './resources/soft-agent.js';
-import { registerSandRider } from './resources/sand-rider.js';
-import { registerL3Relay } from './resources/l3-relay.js';
+import { SENTINELS } from './sentinels.js';
 
 /**
  * Wrap every tool handler so exceptions surface as `isError: true` content
@@ -183,15 +177,39 @@ export function createServer(): McpServer {
   );
 
   // ── Foundational resources ──
-  registerSunstone(server);
-  registerWhetstone(server);
-  registerEvolution(server);
+  // Pscale JSON sentinels: registered as MCP resources from the single
+  // source of truth in src/sentinels.ts. The same list drives SENTINEL_BLOCKS
+  // in db.ts (the bsp() lookup path). Adding a sentinel = one entry there;
+  // both access paths pick it up. Two consumers, one wiring:
+  //   bsp(agent_id='pscale', block=<name>) — enactive walk for LLMs
+  //   pscale://<name>                       — flat-JSON dump for non-bsp clients
+  // See agent-id:191 and whetstone:1.3 for why both paths exist.
+  for (const sentinel of SENTINELS) {
+    if (sentinel.exposeAsResource === false) continue;
+    const json = sentinel.json;
+    server.resource(
+      sentinel.name,
+      `pscale://${sentinel.name}`,
+      {
+        description: sentinel.description,
+        mimeType: 'application/json',
+      },
+      async (uri) => ({
+        contents: [
+          {
+            uri: uri.toString(),
+            text: JSON.stringify(json, null, 2),
+            mimeType: 'application/json',
+          },
+        ],
+      }),
+    );
+  }
+
+  // Markdown protocol-doc resources: kept as separate loaders since they
+  // serve the discursive long-form (markdown), not the walkable JSON.
   registerXstreamFrame(server);
   registerPaywall(server);
-  registerGatekeeper(server);
-  registerSoftAgent(server);
-  registerSandRider(server);
-  registerL3Relay(server);
 
   return server;
 }
