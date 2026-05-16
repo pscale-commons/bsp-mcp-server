@@ -115,7 +115,7 @@ ARCHITECTURE: bsp-mcp is a router + sentinel server. The walker (bsp.ts/bsp-fn.t
 
 export function createServer(): McpServer {
   const server = new McpServer(
-    { name: 'bsp-mcp-server', version: '0.2.0' },
+    { name: 'bsp-mcp-server', version: '0.4.0' },
     { instructions: INSTRUCTIONS },
   );
 
@@ -126,6 +126,14 @@ export function createServer(): McpServer {
     'bsp',
     'The unified bsp() function. Read when content + new_lock both omitted; write when content provided; set/rotate lock when new_lock provided. Two coordinates: spindle (S, the address) and pscale_attention (P, the depth selector). Shape derives from (S, P). Lock semantics: secret = proof of current authority; new_lock = target lock value (the two never overlap). See pscale://whetstone branch 2 for shape derivation, branch 3 for modifiers, branch 4 for storage. Substrate dispatch via agent_id prefix (sed:, grain:, ordinary).',
     bspParamsSchema,
+    {
+      title: 'BSP — unified read / write / lock',
+      // Same tool does both — destructive when content or new_lock is provided.
+      destructiveHint: true,
+      idempotentHint: false,
+      // URL agent_ids dispatch to arbitrary federated beaches; outbound HTTP is the norm.
+      openWorldHint: true,
+    },
     handleBsp,
   );
 
@@ -137,6 +145,14 @@ export function createServer(): McpServer {
     'pscale_create_collective',
     `Create a sedimentary collective at a federated beach — a "sed:<collective>" block where agents register at permanent, write-locked positions in landing order. The conventions string becomes the root underscore; creator_passphrase locks the root. Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to host elsewhere.`,
     createCollectiveParamsSchema,
+    {
+      title: 'Create sed: collective',
+      // Additive: creates a brand-new substrate at a previously-empty block name.
+      destructiveHint: false,
+      // Not idempotent — second call with the same name fails ("already exists").
+      idempotentHint: false,
+      openWorldHint: true,
+    },
     handleCreateCollective,
   );
 
@@ -144,6 +160,14 @@ export function createServer(): McpServer {
     'pscale_register',
     `Register in a sedimentary collective at a federated beach. The beach assigns the next valid position (digits 1-9 only, floor-2 minimum: 11, 12, ..., 19, 21, ..., 99, 111, ...). Your declaration becomes your underscore at that position. The position is write-locked with your passphrase. Subsequent writes via bsp() require the same passphrase as \`secret\`. Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to register at a different beach.`,
     registerParamsSchema,
+    {
+      title: 'Register in sed: collective',
+      // Additive: writes a never-before-occupied position; existing positions are not touched.
+      destructiveHint: false,
+      // Not idempotent — the beach assigns the next free position each call.
+      idempotentHint: false,
+      openWorldHint: true,
+    },
     handleRegister,
   );
 
@@ -151,6 +175,14 @@ export function createServer(): McpServer {
     'pscale_grain_reach',
     `Establish a grain at a federated beach — first durable bilateral commitment. Symmetric: same call from either side. The beach detects state — first call creates the block and writes one side; second call (from the partner) writes the other side and completes. Lex-smaller handle occupies side 1; lex-larger occupies side 2. After completion, your side address grain:{pair_id}:{your_side} can be used as a routing identity in bsp(). Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to host the grain at a different beach (both sides must agree on the host).`,
     grainReachParamsSchema,
+    {
+      title: 'Reach for bilateral grain',
+      // Additive: writes own side only; partner's side is never touched.
+      destructiveHint: false,
+      // Not idempotent — state transitions through reach → completed.
+      idempotentHint: false,
+      openWorldHint: true,
+    },
     handleGrainReach,
   );
 
@@ -158,6 +190,14 @@ export function createServer(): McpServer {
     'pscale_key_publish',
     `Derive an X25519+Ed25519 keypair from your secret + handle (Argon2id). Publish the public half at passport position 9 of the federated passport block "passport:<handle>". Private half is never stored. Same secret + handle always produces the same keys. Passport block must exist at the beach first. Rotation requires proof of prior key ownership (prior_secret OR signature). Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to publish at a different beach.`,
     keyPublishParamsSchema,
+    {
+      title: 'Publish public keypair',
+      // Rotation overwrites the prior public key at passport position 9.
+      destructiveHint: true,
+      // Same secret + handle → same keys; re-publish writes the same bytes.
+      idempotentHint: true,
+      openWorldHint: true,
+    },
     handleKeyPublish,
   );
 
@@ -165,6 +205,13 @@ export function createServer(): McpServer {
     'pscale_verify_rider',
     'Deterministic arithmetic check on a Level 2 ecosquared rider. Verifies: chain integrity (sha256 chain), credit conservation (rider.credits.n <= passport.6.1 balance), SQ recompute (Σ v_latest/giver_total over evaluations_received at topic_coordinate). Returns verdict: pass | warn | fail | skip. Non-enforcing — agents decide what to do with the verdict.',
     verifyRiderParamsSchema,
+    {
+      title: 'Verify ecosquared rider',
+      // Pure deterministic arithmetic; reads passport blocks but never writes.
+      readOnlyHint: true,
+      // Reads passport blocks at the sender's beach (URL or default).
+      openWorldHint: true,
+    },
     handleVerifyRider,
   );
 
@@ -173,6 +220,13 @@ export function createServer(): McpServer {
     'pscale_invite',
     "Secondary path — call AFTER bsp(agent_id='pscale', block='whetstone') if you want a guided six-step orientation walk, or if you are stuck. Returns the iterative orientation progression — a purpose spindle from wake (whetstone) through shared-context coordination. Each step is a concrete action with a validation criterion and a pointer to the next. Optionally takes a step parameter (1..6) to fetch a specific step; omit to receive step 1 with the whole-progression overview. NOT the recommended first call — the primary activation is reading whetstone via bsp(); pscale_invite serves agents who have read whetstone and want a structured walk through subsequent levels.",
     inviteParamsSchema,
+    {
+      title: 'Orientation invite',
+      // Reads the sentinel-bundled progression block; no writes anywhere.
+      readOnlyHint: true,
+      // Sentinel only — no outbound HTTP.
+      openWorldHint: false,
+    },
     handleInvite,
   );
 
