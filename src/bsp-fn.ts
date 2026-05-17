@@ -1,20 +1,36 @@
 /**
- * bsp-fn.ts — the unified bsp() function.
+ * bsp-fn.ts — the unified bsp() function (2026-05-17 canonical model).
  *
  * Two coordinates: spindle (S, the address) and pscale_attention (P).
- * Read when content omitted; write when content provided.
- * Selection shape derives from the relationship between S and P.
+ * Read when content omitted; write when content provided. Selection shape
+ * derives from the relationship between S and P.
  *
- * Shape derivation (from whetstone §2):
- *   P_att == P_end           → point   (string at terminus)
- *   P_att == P_end - 1       → ring    (children of terminus, digit-keyed)
- *   P_att < P_end - 1        → subtree (full subtree from terminus down to P_att)
- *   spindle empty + P set    → disc    (all nodes at depth corresponding to P_att)
- *   spindle empty + P null   → block   (whole tree)
- *   spindle ends '*'         → star    (enter hidden directory, recurse)
+ * Canonical shape vocabulary (six read shapes plus error):
+ *   block             — no S, no P: whole tree
+ *   path-walk         — S alone: semantic at each walked position
+ *   disc              — P alone: every position at depth (floor - P)
+ *   point             — S + P within or above S: single position at depth (floor - P)
+ *   path-walk+descent — S + P below the spindle terminus: walk + descent down
+ *                       to depth (floor - P), digit children only at each layer
+ *   star              — S ends with '*': enter hidden directory at terminus,
+ *                       recurse on post-* (S, P) inside as sub-block
  *
- * P_end = pscale at the terminus of the walked spindle.
- *       = (floor - 1) - (number of walked digits)  [matches bsp2-star.py]
+ * Pscale anchor (canonical 2026-05-17):
+ *   pscale = floor - depth   where depth 0 is root (off-pscale, structural).
+ *
+ * Disc emission rule:
+ *   Emit at target depth iff
+ *     (a) the walk's final step is digit 1-9, OR
+ *     (b) the entire walk is the root underscore chain AND it lands on a
+ *         string at target depth (the floor terminus).
+ *   Intermediate root-chain underscore-objects are not separate positions.
+ *   Hidden directories (off-chain underscore-objects) emit normally as
+ *   digit-walked positions when they sit at target depth.
+ *
+ * Descent rule:
+ *   Iterates digit children 1-9 only. The terminus's underscore-object
+ *   (hidden directory) is not in the descent — it is entered separately
+ *   via the star operator.
  */
 
 import {
@@ -22,245 +38,286 @@ import {
   collectUnderscore,
   floorDepth,
   formatAddress,
-  getHiddenDirectory,
   parseSpindle as parseSpindleCanonical,
-  walk,
+  walk as walkLegacy,
   writeAt,
   InvalidAddressError,
 } from './bsp.js';
 
-// Re-export so existing tools/scripts that import from bsp-fn.ts keep working.
 export { InvalidAddressError } from './bsp.js';
 
-// ── Shape ──
+// ── Shape vocabulary (canonical) ──
 
-export type Shape = 'point' | 'ring' | 'subtree' | 'disc' | 'block' | 'star';
+export type Shape =
+  | 'block'
+  | 'path-walk'
+  | 'disc'
+  | 'point'
+  | 'path-walk+descent'
+  | 'star'
+  | 'error';
+
+export interface PathWalkEntry {
+  address: string;
+  depth: number;
+  pscale: number | null;
+  content: string | null;
+}
+
+export interface DiscEntry {
+  address: string;
+  content: string | null;
+}
 
 export interface BspReadResult {
   shape: Shape;
-  // Each shape returns a different content payload:
-  point?: string | null;
-  ring?: Record<string, any>;
-  subtree?: any;
-  disc?: Array<{ address: string; content: any }>;
-  block?: Block;
-  star?: {
-    address: string;
-    semantic: string | null;
-    inner: BspReadResult | null;
-  };
-  // Useful diagnostics:
-  spindle?: string;
-  pscale_attention?: number | null;
-  p_end?: number;
   floor?: number;
+  // Per-shape payloads:
+  block?: Block;
+  entries?: PathWalkEntry[] | DiscEntry[];
+  path_walk?: PathWalkEntry[];
+  descent?: PathWalkEntry[];
+  // point shape:
+  spindle?: string | null;
+  pscale?: number | null;
+  depth?: number;
+  address?: string;
+  content?: string | null;
+  note?: string;
+  // disc shape:
+  target_depth?: number;
+  // star shape:
+  semantic?: string | null;
+  inner?: BspReadResult | null;
+  // error shape:
+  error_message?: string;
 }
 
 export interface BspWriteResult {
   shape: Shape;
   written: boolean;
-  // Updated block, ready for save
   block: Block;
-  // For diagnostics:
   spindle?: string;
   pscale_attention?: number | null;
-  // Soft advisory surfaced to the caller when the write succeeds but the input
-  // shape suggests a likely intent mismatch (e.g. a JSON-encoded string passed
-  // at point shape where a subtree was probably wanted). Non-fatal; the write
-  // is committed regardless.
   warning?: string;
 }
 
 // ── Spindle parsing ──
-//
-// The canonical parseSpindle lives in bsp.ts (it's the floor-aware parser
-// that anchors pscale 0 to the floor per sunstone:1.5). This module exposes
-// it under the same name for callers that import from bsp-fn.ts.
 
 interface ParsedSpindle {
-  digits: string[];      // walk digits after floor-pad-left + trailing-zero-strip
-  hasStar: boolean;      // true if spindle ends with '*'
+  digits: string[];
+  hasStar: boolean;
 }
 
 export function parseSpindle(spindle: string | null | undefined, floor: number): ParsedSpindle {
   return parseSpindleCanonical(spindle, floor);
 }
 
-// ── Pscale ──
-
 /**
- * pscale at a tree depth, given the floor.
- * Matches bsp2-star.py: pscale = (floor - 1) - depth.
- * For floor 1: depth 0 = pscale 0 (root), depth 1 = pscale -1.
+ * Split a spindle on '*' for star composition. Returns (pre, post, hasStar).
  */
-export function pscaleAt(depth: number, floor: number): number {
-  return (floor - 1) - depth;
+export function splitStar(
+  spindle: string | null | undefined,
+): { pre: string | null; post: string | null; hasStar: boolean } {
+  if (spindle == null) return { pre: null, post: null, hasStar: false };
+  const s = String(spindle);
+  if (!s.includes('*')) return { pre: s, post: null, hasStar: false };
+  const parts = s.split('*');
+  if (parts.length !== 2) {
+    throw new InvalidAddressError(`"${s}": star operator appears more than once`);
+  }
+  const [pre, post] = parts;
+  return {
+    pre: pre.length > 0 ? pre : null,
+    post: post.length > 0 ? post : null,
+    hasStar: true,
+  };
 }
 
-/** Inverse: depth at a given pscale, given the floor. */
+// ── Pscale arithmetic (canonical) ──
+
+/**
+ * Canonical formula: pscale = floor - depth.
+ * Depth 0 is root (structural wrapping, off-pscale) — returns null.
+ */
+export function pscaleAt(depth: number, floor: number): number | null {
+  if (depth === 0) return null;
+  return floor - depth;
+}
+
+/** Inverse: depth at a given pscale. */
 export function depthAt(pscale: number, floor: number): number {
-  return (floor - 1) - pscale;
+  return floor - pscale;
+}
+
+// ── Walking and semantics ──
+
+function walk(block: Block, digits: string[]): any {
+  let node: any = block;
+  for (const d of digits) {
+    const key = d === '0' ? '_' : d;
+    if (!node || typeof node !== 'object' || !(key in node)) return null;
+    node = node[key];
+  }
+  return node;
+}
+
+function semantic(node: any): string | null {
+  if (typeof node === 'string') return node;
+  if (node && typeof node === 'object') return collectUnderscore(node);
+  return null;
 }
 
 // ── Read ──
 
-/**
- * Read at (spindle, pscale_attention).
- * Shape derives from the relationship between P_end (terminus pscale) and P_att.
- */
 export function bspRead(
   block: Block,
   spindle: string | null | undefined,
   pscaleAttention: number | null | undefined,
 ): BspReadResult {
   const floor = floorDepth(block);
-  const { digits, hasStar } = parseSpindle(spindle, floor);
 
-  // Star: walk to terminus, enter hidden directory, recurse with remaining (S, P) inside.
+  // Star handling — walk pre-* to terminus, enter hidden directory at
+  // terminus._, recurse on (post-*, pscale) inside.
+  const { pre, post, hasStar } = splitStar(spindle);
   if (hasStar) {
-    const { terminal } = walk(block, digits);
-    const hidden = getHiddenDirectory(terminal);
-    const semantic = (terminal && typeof terminal === 'object')
-      ? collectUnderscore(terminal)
-      : null;
-    if (hidden === null) {
-      return {
-        shape: 'star',
-        star: { address: String(spindle), semantic, inner: null },
-        floor,
-      };
+    const preDigits = pre ? parseSpindleCanonical(pre, floor).digits : [];
+    const terminus = walk(block, preDigits);
+    let sem: string | null = null;
+    let inner: BspReadResult | null = null;
+    if (terminus && typeof terminus === 'object') {
+      sem = collectUnderscore(terminus);
+      const hidden = terminus._;
+      if (hidden && typeof hidden === 'object') {
+        inner = bspRead(hidden as Block, post, pscaleAttention ?? null);
+      }
+    } else if (typeof terminus === 'string') {
+      sem = terminus;
     }
-    // Treat the hidden directory as a block and recurse.
-    // For now, the inner spindle is empty (the star terminates the spindle).
-    // A future extension can split spindles on '*' to support "X*Y" composition.
-    const innerBlock: Block = { _: semantic ?? '', ...hidden };
-    const inner = bspRead(innerBlock, '', pscaleAttention);
     return {
       shape: 'star',
-      star: { address: String(spindle), semantic, inner },
       floor,
+      spindle: typeof spindle === 'string' ? spindle : null,
+      semantic: sem,
+      inner,
     };
   }
 
-  // Empty spindle: disc or whole-block.
+  const { digits } = parseSpindleCanonical(spindle ?? null, floor);
+
+  // Case 1: nothing → whole block.
+  if (digits.length === 0 && (pscaleAttention === null || pscaleAttention === undefined)) {
+    return { shape: 'block', floor, block };
+  }
+
+  // Case 2: pscale alone → disc at depth (floor - pscale).
   if (digits.length === 0) {
-    if (pscaleAttention == null) {
-      return { shape: 'block', block, floor };
-    }
-    // Disc: collect nodes at depth corresponding to pscale_attention.
-    const targetDepth = depthAt(pscaleAttention, floor);
-    const nodes = collectDisc(block, targetDepth);
+    const target = depthAt(pscaleAttention as number, floor);
     return {
       shape: 'disc',
-      disc: nodes,
-      pscale_attention: pscaleAttention,
       floor,
+      pscale: pscaleAttention as number,
+      target_depth: target,
+      entries: collectDisc(block, target, floor),
     };
   }
 
-  // Walk the spindle.
-  const { terminal } = walk(block, digits);
-  const pEnd = pscaleAt(digits.length, floor);
+  const pEnd = floor - digits.length; // pscale_at(len(digits), floor) — len>=1 so never root
 
-  // Default: P_att = P_end (point at terminus).
-  const pAtt = pscaleAttention ?? pEnd;
-
-  if (pAtt === pEnd) {
-    // Point: the underscore string at the terminus.
-    let text: string | null = null;
-    if (typeof terminal === 'string') {
-      text = terminal;
-    } else if (terminal && typeof terminal === 'object') {
-      text = collectUnderscore(terminal);
-    }
-    return { shape: 'point', point: text, spindle: String(spindle), pscale_attention: pAtt, p_end: pEnd, floor };
+  // Case 3: spindle alone → path-walk.
+  if (pscaleAttention === null || pscaleAttention === undefined) {
+    return {
+      shape: 'path-walk',
+      floor,
+      spindle: typeof spindle === 'string' ? spindle : null,
+      entries: buildPathWalk(block, digits, floor),
+    };
   }
 
-  if (pAtt === pEnd - 1) {
-    // Ring: children of terminus, digit-keyed.
-    const ring: Record<string, any> = {};
-    if (terminal && typeof terminal === 'object') {
-      for (const d of '123456789') {
-        if (d in terminal) {
-          const v = terminal[d];
-          if (typeof v === 'string') {
-            ring[d] = v;
-          } else if (v && typeof v === 'object') {
-            // Surface as a small node — underscore text plus digit children if present.
-            const underscore = collectUnderscore(v);
-            const node: Record<string, any> = {};
-            if (underscore !== null) node._ = underscore;
-            for (const dd of '123456789') {
-              if (dd in v) {
-                const vv = v[dd];
-                node[dd] = typeof vv === 'string' ? vv : (collectUnderscore(vv) ?? '(branch)');
-              }
-            }
-            ring[d] = Object.keys(node).length > 0 ? node : '(branch)';
-          }
-        }
-      }
-    }
-    return { shape: 'ring', ring, spindle: String(spindle), pscale_attention: pAtt, p_end: pEnd, floor };
-  }
-
-  if (pAtt < pEnd - 1) {
-    // Subtree: full subtree from terminus down to pscale_attention depth.
-    // The "down to P_att" cap is naturally enforced by the data — the floor IS the depth.
-    // We return the entire terminal node as a subtree.
-    return { shape: 'subtree', subtree: terminal, spindle: String(spindle), pscale_attention: pAtt, p_end: pEnd, floor };
-  }
-
-  // P_att > P_end: caller is asking for a level ABOVE the spindle's terminus.
-  // This is an upward query — return the spindle chain up to depth where pscale = pAtt.
-  // We resolve it by re-walking with a SHORTER spindle.
-  if (pAtt > pEnd) {
-    const targetDepth = depthAt(pAtt, floor);
-    if (targetDepth >= 0 && targetDepth < digits.length) {
-      const shortDigits = digits.slice(0, targetDepth);
-      const { terminal: shortTerminal } = walk(block, shortDigits);
-      const text = (typeof shortTerminal === 'string')
-        ? shortTerminal
-        : (shortTerminal && typeof shortTerminal === 'object' ? collectUnderscore(shortTerminal) : null);
+  // Case 4: spindle + pscale within or above spindle → point.
+  if ((pscaleAttention as number) >= pEnd) {
+    const target = depthAt(pscaleAttention as number, floor);
+    if (target < 1 || target > digits.length) {
       return {
         shape: 'point',
-        point: text,
-        spindle: String(spindle),
-        pscale_attention: pAtt,
-        p_end: pEnd,
         floor,
+        spindle: typeof spindle === 'string' ? spindle : null,
+        pscale: pscaleAttention as number,
+        content: null,
+        note: `pscale ${pscaleAttention} is off the spindle (depth ${target})`,
       };
     }
+    const prefix = digits.slice(0, target);
+    const node = walk(block, prefix);
+    return {
+      shape: 'point',
+      floor,
+      spindle: typeof spindle === 'string' ? spindle : null,
+      pscale: pscaleAttention as number,
+      depth: target,
+      address: formatAddress(prefix, floor),
+      content: semantic(node),
+    };
   }
 
-  // Fallback — shouldn't reach here in normal operation.
-  return { shape: 'point', point: null, spindle: String(spindle), pscale_attention: pAtt, p_end: pEnd, floor };
+  // Case 5: spindle + pscale below terminus → path-walk + descent.
+  const target = depthAt(pscaleAttention as number, floor);
+  const layers = target - digits.length;
+  const terminus = walk(block, digits);
+  return {
+    shape: 'path-walk+descent',
+    floor,
+    spindle: typeof spindle === 'string' ? spindle : null,
+    pscale: pscaleAttention as number,
+    path_walk: buildPathWalk(block, digits, floor),
+    descent: collectDescent(terminus, digits, floor, layers),
+  };
 }
 
-// ── Disc collection ──
+// ── Shape helpers ──
 
-function collectDisc(block: Block, targetDepth: number): Array<{ address: string; content: any }> {
-  const fl = floorDepth(block);
-  const nodes: Array<{ address: string; content: any }> = [];
+function buildPathWalk(block: Block, digits: string[], floor: number): PathWalkEntry[] {
+  const entries: PathWalkEntry[] = [];
+  for (let i = 1; i <= digits.length; i++) {
+    const prefix = digits.slice(0, i);
+    const node = walk(block, prefix);
+    entries.push({
+      address: formatAddress(prefix, floor),
+      depth: i,
+      pscale: pscaleAt(i, floor),
+      content: semantic(node),
+    });
+  }
+  return entries;
+}
+
+function collectDisc(block: Block, targetDepth: number, floor: number): DiscEntry[] {
+  if (targetDepth < 1) return [];
+  const results: DiscEntry[] = [];
+
   function recurse(node: any, depth: number, walked: string[]) {
     if (depth === targetDepth) {
-      let content: any;
-      if (typeof node === 'string') {
-        content = node;
-      } else if (node && typeof node === 'object') {
-        content = collectUnderscore(node) ?? '(branch)';
-      } else {
-        content = null;
+      const onChainIntermediate =
+        walked.length > 0 &&
+        walked.every((w) => w === '0') &&
+        node !== null &&
+        typeof node === 'object';
+      if (!onChainIntermediate) {
+        results.push({ address: formatAddress(walked, floor), content: semantic(node) });
       }
-      // Emit the walked digit sequence as a canonical pscale address —
-      // single-decimal, floor-anchored, round-trippable through parseSpindle.
-      const address = walked.length > 0 ? formatAddress(walked, fl) : '_';
-      nodes.push({ address, content });
       return;
     }
     if (!node || typeof node !== 'object') return;
-    if ('_' in node && typeof node._ === 'object') {
-      recurse(node._, depth + 1, walked.concat(['0']));
+    if ('_' in node) {
+      const u = node._;
+      if (u && typeof u === 'object') {
+        recurse(u, depth + 1, walked.concat(['0']));
+      } else if (typeof u === 'string') {
+        const onFloorChain = walked.every((w) => w === '0');
+        if (onFloorChain && depth + 1 === targetDepth) {
+          results.push({ address: formatAddress(walked.concat(['0']), floor), content: u });
+        }
+      }
     }
     for (const d of '123456789') {
       if (d in node) {
@@ -268,20 +325,57 @@ function collectDisc(block: Block, targetDepth: number): Array<{ address: string
       }
     }
   }
+
   recurse(block, 0, []);
-  return nodes;
+  return results;
+}
+
+function collectDescent(
+  terminus: any,
+  walked: string[],
+  floor: number,
+  layers: number,
+): PathWalkEntry[] {
+  const results: PathWalkEntry[] = [];
+  if (layers <= 0 || !terminus || typeof terminus !== 'object') return results;
+  let frontier: Array<[any, string[]]> = [[terminus, walked]];
+  for (let _layer = 1; _layer <= layers; _layer++) {
+    const nextFrontier: Array<[any, string[]]> = [];
+    for (const [node, walkedPath] of frontier) {
+      if (!node || typeof node !== 'object') continue;
+      for (const d of '123456789') {
+        if (d in node) {
+          const child = node[d];
+          const childDepth = walkedPath.length + 1;
+          results.push({
+            address: formatAddress(walkedPath.concat([d]), floor),
+            depth: childDepth,
+            pscale: pscaleAt(childDepth, floor),
+            content: semantic(child),
+          });
+          if (child && typeof child === 'object') {
+            nextFrontier.push([child, walkedPath.concat([d])]);
+          }
+        }
+      }
+    }
+    frontier = nextFrontier;
+  }
+  return results;
 }
 
 // ── Write ──
 
 /**
- * Write at (spindle, pscale_attention).
- * Content's shape MUST match the shape derived from (spindle, pscale_attention).
- * Replacement is precise to the shape: point replaces the underscore string,
- * ring replaces the digit children (keyed entries only), subtree replaces the
- * full subtree at terminus, disc replaces multiple positions, block replaces all.
- *
- * Returns the modified block ready for storage.save_block().
+ * Write at (spindle, pscale_attention). Content's shape MUST match the
+ * shape derived from (spindle, pscale_attention) per the canonical model:
+ *   - block (no S, no P): content is the full object to replace the tree
+ *   - path-walk (S alone): content is a string to write at the spindle terminus
+ *   - point (S + P at terminus): same as path-walk
+ *   - disc (P alone): content is array of {address, content}
+ *   - subtree-like (S + P below terminus): content is an object to splice
+ * The supernest-on-growth pattern is in walkOrCreate — a string node along
+ * the walk migrates to that node's underscore so digit children can attach.
  */
 export function bspWrite(
   block: Block,
@@ -290,35 +384,29 @@ export function bspWrite(
   content: any,
 ): BspWriteResult {
   const floor = floorDepth(block);
-  const { digits, hasStar } = parseSpindle(spindle, floor);
+  const { digits, hasStar } = parseSpindleCanonical(spindle, floor);
 
-  // Star write: walk to terminus, enter hidden directory, write inside.
   if (hasStar) {
-    const { terminal } = walk(block, digits);
+    // Star write: walk to terminus, enter hidden directory, write inside.
+    const { terminal } = walkLegacy(block, digits);
     if (!terminal || typeof terminal !== 'object') {
       throw new Error(`Star write: terminus at "${spindle}" is not an object`);
     }
-    // Find or create the hidden directory level.
-    // The hidden directory lives within the terminus's underscore chain at the
-    // deepest level that has digit children (or we create it).
     if (!('_' in terminal) || typeof terminal._ !== 'object') {
-      // Promote terminus._ from string to {_: string} so we can hang digits.
       const oldUnderscore = typeof terminal._ === 'string' ? terminal._ : '';
-      terminal._ = { _: oldUnderscore };
+      (terminal as any)._ = { _: oldUnderscore };
     }
-    // Apply inner write to the hidden directory.
-    const innerBlock: Block = terminal._;
+    const innerBlock: Block = (terminal as any)._;
     bspWriteInPlace(innerBlock, '', pscaleAttention, content);
     return {
       shape: 'star',
       written: true,
       block,
-      spindle: String(spindle),
-      pscale_attention: pscaleAttention,
+      spindle: typeof spindle === 'string' ? spindle : '',
+      pscale_attention: pscaleAttention ?? null,
     };
   }
 
-  // Direct write — no star.
   const shape = bspWriteInPlace(block, spindle ?? '', pscaleAttention, content);
   const result: BspWriteResult = {
     shape,
@@ -327,24 +415,24 @@ export function bspWrite(
     spindle: String(spindle ?? ''),
     pscale_attention: pscaleAttention,
   };
-  // Soft advisory: detect the most common shape-intent mismatch — a string at
-  // point shape that LOOKS like a serialized object/array. The write is
-  // committed (point writes accept strings); we just nudge the caller in case
-  // they meant to pass an object at subtree shape (pscale_attention <= P_end-2)
-  // or build the structure with deep spindle writes. Threshold is intentionally
-  // narrow: must be a string AND start with '{' or '[' AND parse as JSON.
-  if (shape === 'point' && typeof content === 'string' && /^\s*[{\[]/.test(content)) {
-    let looksLikeJson = false;
-    try { JSON.parse(content); looksLikeJson = true; } catch {}
-    if (looksLikeJson) {
+  // Soft advisory: a string that parses as JSON object/array at a single
+  // position is almost certainly an intent mismatch.
+  if (
+    shape === 'point' &&
+    typeof content === 'string' &&
+    /^\s*[\{\[]/.test(content)
+  ) {
+    try {
+      JSON.parse(content);
       result.warning =
-        `Stored as a string-leaf at "${spindle}". The content parses as JSON — if you meant to write a subtree, pass the OBJECT (not a JSON-encoded string) and set pscale_attention <= P_end - 2 for subtree shape, or use a whole-block write (empty spindle, pscale_attention=null). String-leaf writes succeed but cannot be walked deeper.`;
-    }
+        `Stored as a string-leaf at "${spindle}". The content parses as JSON — ` +
+        `if you meant a subtree, pass the OBJECT (not a JSON-encoded string).`;
+    } catch {}
   }
   return result;
 }
 
-/** Apply a write to a block in place; returns the determined shape. */
+/** Apply a write in place; returns the determined shape (canonical vocabulary). */
 function bspWriteInPlace(
   block: Block,
   spindle: string,
@@ -352,25 +440,23 @@ function bspWriteInPlace(
   content: any,
 ): Shape {
   const floor = floorDepth(block);
-  const { digits } = parseSpindle(spindle, floor);
+  const { digits } = parseSpindleCanonical(spindle, floor);
 
-  // Empty spindle.
   if (digits.length === 0) {
-    if (pscaleAttention == null) {
+    if (pscaleAttention === null || pscaleAttention === undefined) {
       // Whole-block write.
       if (!content || typeof content !== 'object') {
         throw new Error('Whole-block write requires an object payload');
       }
-      // Replace block contents in place: clear keys, copy from content.
-      for (const k of Object.keys(block)) delete block[k];
+      for (const k of Object.keys(block)) delete (block as any)[k];
       Object.assign(block, content);
       return 'block';
     }
-    // Disc write: content is array of {address, content} OR sparse object {address: content}.
+    // Disc write.
     if (Array.isArray(content)) {
       for (const entry of content) {
         if (entry && typeof entry === 'object' && 'address' in entry) {
-          writeAt(block, entry.address, entry.content);
+          writeAt(block, entry.address, (entry as any).content);
         }
       }
     } else if (content && typeof content === 'object') {
@@ -383,22 +469,21 @@ function bspWriteInPlace(
     return 'disc';
   }
 
-  // Walk to terminus parent for shape-aware writes.
-  const pEnd = pscaleAt(digits.length, floor);
+  const pEnd = floor - digits.length;
   const pAtt = pscaleAttention ?? pEnd;
 
-  if (pAtt === pEnd) {
-    // Point write: replace the underscore string at terminus.
+  if (pAtt >= pEnd) {
+    // Point write (spindle + pscale at or above terminus).
     if (typeof content !== 'string') {
       throw new Error(`Point write requires a string payload (got ${typeof content})`);
     }
-    // Walk to terminus parent and set the underscore-string at the final digit.
-    const finalDigit = digits[digits.length - 1];
-    const parentDigits = digits.slice(0, -1);
+    const target = depthAt(pAtt, floor);
+    const useDigits = target >= 1 && target <= digits.length ? digits.slice(0, target) : digits;
+    const finalDigit = useDigits[useDigits.length - 1];
+    const parentDigits = useDigits.slice(0, -1);
     const parent = walkOrCreate(block, parentDigits);
     const key = finalDigit === '0' ? '_' : finalDigit;
     if (key in parent && parent[key] !== null && typeof parent[key] === 'object') {
-      // Terminus has children — set its underscore (preserve children).
       parent[key]._ = content;
     } else {
       parent[key] = content;
@@ -406,45 +491,23 @@ function bspWriteInPlace(
     return 'point';
   }
 
-  if (pAtt === pEnd - 1) {
-    // Ring write: replace digit children of terminus per content keys.
-    if (!content || typeof content !== 'object' || Array.isArray(content)) {
-      throw new Error('Ring write requires an object payload {digit: string-or-obj}');
-    }
-    const terminus = walkOrCreate(block, digits);
-    for (const [k, v] of Object.entries(content)) {
-      if (!/^[1-9]$/.test(k)) {
-        throw new Error(`Ring write: key "${k}" is not a digit 1-9`);
-      }
-      terminus[k] = v;
-    }
-    return 'ring';
+  // path-walk+descent write (S + P below terminus) → replace subtree at terminus.
+  if (typeof content !== 'object' || content === null) {
+    throw new Error('Subtree (path-walk+descent) write requires an object payload');
   }
-
-  if (pAtt < pEnd - 1) {
-    // Subtree write: replace the entire terminus node with content.
-    if (typeof content !== 'object' || content === null) {
-      throw new Error('Subtree write requires an object payload');
-    }
-    const finalDigit = digits[digits.length - 1];
-    const parentDigits = digits.slice(0, -1);
-    const parent = walkOrCreate(block, parentDigits);
-    const key = finalDigit === '0' ? '_' : finalDigit;
-    parent[key] = content;
-    return 'subtree';
-  }
-
-  throw new Error(
-    `Write at (spindle="${spindle}", pscale_attention=${pAtt}) — unsupported shape (P_end=${pEnd})`,
-  );
+  const finalDigit = digits[digits.length - 1];
+  const parentDigits = digits.slice(0, -1);
+  const parent = walkOrCreate(block, parentDigits);
+  const key = finalDigit === '0' ? '_' : finalDigit;
+  parent[key] = content;
+  return 'path-walk+descent';
 }
 
-/** Walk to a node, creating intermediate objects as needed.
+/**
+ * Walk to a node, creating intermediate objects as needed.
  *
- * Growth migration: when a node along the walk is a string, the string is
- * preserved as the underscore of the new sub-block before descending. The
- * digit's existing semantic migrates to its underscore at the moment of
- * growth — supernest-on-growth — rather than being silently nuked.
+ * Sub-nest-on-growth: when a node along the walk is a string, the string
+ * migrates to the new sub-block's underscore before descending.
  */
 function walkOrCreate(block: Block, digits: string[]): Record<string, any> {
   let node: any = block;
@@ -452,7 +515,6 @@ function walkOrCreate(block: Block, digits: string[]): Record<string, any> {
     const key = d === '0' ? '_' : d;
     const existing = node[key];
     if (typeof existing === 'string') {
-      // Migration: preserve parent semantic at the underscore of the new sub-block
       node[key] = { _: existing };
     } else if (!(key in node) || typeof existing !== 'object' || existing === null) {
       node[key] = {};
@@ -462,7 +524,7 @@ function walkOrCreate(block: Block, digits: string[]): Record<string, any> {
   return node;
 }
 
-// ── The unified function ──
+// ── Unified entry point ──
 
 export interface BspParams {
   block: Block;
@@ -471,18 +533,6 @@ export interface BspParams {
   content?: any;
 }
 
-export interface BspReadOnly extends BspParams {
-  content?: undefined;
-}
-
-export interface BspWriteOnly extends BspParams {
-  content: NonNullable<any>;
-}
-
-/**
- * The unified bsp() function.
- * Read when content is undefined. Write when content is provided.
- */
 export function bspFn(params: BspParams): BspReadResult | BspWriteResult {
   const { block, spindle, pscale_attention, content } = params;
   if (content === undefined) {
@@ -499,44 +549,55 @@ function truncate(s: string, max: number): string {
 
 export function formatRead(r: BspReadResult): string {
   switch (r.shape) {
-    case 'point':
-      return `[point @ pscale ${r.pscale_attention}]\n  ${r.point ?? '(no text)'}`;
-    case 'ring': {
-      const lines = [`[ring @ pscale ${r.pscale_attention} of "${r.spindle}"]`];
-      for (const k of Object.keys(r.ring ?? {}).sort()) {
-        const v = r.ring![k];
-        if (typeof v === 'string') {
-          lines.push(`  ${k}: ${truncate(v, 150)}`);
-        } else if (v && typeof v === 'object') {
-          const u = v._ ?? '(branch)';
-          lines.push(`  ${k}: ${truncate(String(u), 150)}`);
-        }
-      }
-      return lines.join('\n');
-    }
-    case 'subtree':
-      return `[subtree @ "${r.spindle}"]\n${JSON.stringify(r.subtree, null, 2)}`;
-    case 'disc': {
-      const lines = [`[disc @ pscale ${r.pscale_attention}]`];
-      for (const n of r.disc ?? []) {
-        lines.push(`  [${n.address}] ${truncate(String(n.content ?? '(no text)'), 150)}`);
-      }
-      return lines.join('\n');
-    }
     case 'block':
       return `[whole block]\n${JSON.stringify(r.block, null, 2)}`;
+    case 'path-walk': {
+      const lines = [`[path-walk @ "${r.spindle}"]`];
+      for (const e of (r.entries as PathWalkEntry[]) ?? []) {
+        const content = e.content ?? '(no content)';
+        lines.push(`  d${e.depth} p${e.pscale} [${e.address}]: ${truncate(String(content), 150)}`);
+      }
+      return lines.join('\n');
+    }
+    case 'disc': {
+      const lines = [`[disc @ pscale ${r.pscale} (depth ${r.target_depth})]`];
+      for (const e of (r.entries as DiscEntry[]) ?? []) {
+        lines.push(`  [${e.address}]: ${truncate(String(e.content ?? '(no content)'), 150)}`);
+      }
+      return lines.join('\n');
+    }
+    case 'point':
+      if (r.note) return `[point @ pscale ${r.pscale}] ${r.note}`;
+      return `[point @ pscale ${r.pscale} depth ${r.depth} [${r.address}]]\n  ${r.content ?? '(no content)'}`;
+    case 'path-walk+descent': {
+      const lines = [`[path-walk+descent @ "${r.spindle}" pscale ${r.pscale}]`];
+      lines.push('  path-walk:');
+      for (const e of r.path_walk ?? []) {
+        const c = e.content ?? '(no content)';
+        lines.push(`    d${e.depth} p${e.pscale} [${e.address}]: ${truncate(String(c), 150)}`);
+      }
+      lines.push('  descent:');
+      for (const e of r.descent ?? []) {
+        lines.push(`    d${e.depth} p${e.pscale} [${e.address}]: ${truncate(String(e.content ?? ''), 150)}`);
+      }
+      return lines.join('\n');
+    }
     case 'star': {
-      const lines = [`[star @ "${r.star?.address}"]`];
-      if (r.star?.semantic) lines.push(`  semantic: ${truncate(r.star.semantic, 200)}`);
-      if (r.star?.inner) {
-        lines.push('  inner:');
-        const innerText = formatRead(r.star.inner);
+      const lines = [`[star @ "${r.spindle}"]`];
+      if (r.semantic) lines.push(`  semantic: ${truncate(r.semantic, 200)}`);
+      if (r.inner) {
+        lines.push(`  inner shape: ${r.inner.shape}`);
+        const innerText = formatRead(r.inner);
         for (const line of innerText.split('\n')) lines.push(`    ${line}`);
       } else {
         lines.push('  (no hidden directory)');
       }
       return lines.join('\n');
     }
+    case 'error':
+      return `[error] ${r.error_message ?? '(no message)'}`;
+    default:
+      return JSON.stringify(r, null, 2);
   }
 }
 

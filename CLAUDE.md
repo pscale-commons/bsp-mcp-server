@@ -90,7 +90,7 @@ bsp(
 ) → result | ack
 ```
 
-Read when content AND new_lock are both omitted. Write when content is provided. Set/rotate lock when new_lock is provided. The selection shape (point / ring / subtree / disc / whole-block / star-composition) DERIVES from the relationship between spindle length (terminal pscale `P_end`) and `pscale_attention` (`P_att`). See `src/sunstone.json` branch 2 for the geometry, `src/whetstone.json` branch 2 for the derivation table.
+Read when content AND new_lock are both omitted. Write when content is provided. Set/rotate lock when new_lock is provided. The selection shape (`block` / `path-walk` / `disc` / `point` / `path-walk+descent` / `star` — canonical 2026-05-17 vocabulary) DERIVES from the relationship between spindle length (terminal pscale `P_end = floor - len(digits)`) and `pscale_attention` (`P_att`). The pscale formula is `pscale = floor - depth`; depth 0 (root) is off-pscale, structural wrapping only. See `src/sunstone.json` branch 2 for the geometry, `src/whetstone.json` branch 2 for the derivation table, and `bsp-test-materials/` (eight test batteries, 72 cases) for the acceptance contract.
 
 **Lock semantics — four rules.** `secret` is ALWAYS proof of current authority; `new_lock` is ALWAYS the target lock value. They never overlap.
 
@@ -102,6 +102,25 @@ Read when content AND new_lock are both omitted. Write when content is provided.
 `new_lock` is only valid on ordinary blocks. sed: blocks use `pscale_register` (atomic create-lock-write); grain: blocks use `pscale_grain_reach` (atomic per-side create-lock-write). The substrates handle position-and-lock together because they have to.
 
 There is no mode parameter. There are no separate read and write functions. There is no separate lock_block function. One function, two coordinates, one optional payload, optional lock change. Everything else is sugar that doesn't belong in the surface.
+
+## Canonical model update — 2026-05-17
+
+The bsp function had a long-running off-by-one in the pscale formula and an out-of-date shape vocabulary inherited from pscale-mcp. Both have been corrected:
+
+- **Pscale formula**: now `pscale = floor - depth`, with depth 0 (root) treated as off-pscale (structural wrapping). The legacy formula `(floor - 1) - depth` is gone.
+- **Shape vocabulary**: `block`, `path-walk`, `disc`, `point`, `path-walk+descent`, `star` (plus `error` for parser rejections). The legacy `ring` and `subtree`/`dir` are gone — `ring` is one special case of `path-walk+descent` (one descent layer), and `subtree` is `path-walk+descent` run to leaves.
+- **Disc emission rule**: emit at target depth iff (a) the walk's final step is digit 1-9, OR (b) the walk is entirely on the root underscore chain AND lands on a string at target depth. Intermediate root-chain underscore-objects are not separate positions.
+- **Descent rule**: digit children only; hidden directories are entered via the star operator, not via descent.
+
+Three implementations are now aligned:
+
+- `bsp2-star.py` at `~/Projects/hermitcrab-mobius-work/tidy-up/` (canonical Python; previous version preserved as `bsp2-star.py.pre-canonical-2026-05-17`)
+- `bsp-mcp-server/src/bsp-fn.ts` (TypeScript, used by the bsp() MCP tool)
+- `pscale-beach` package's `api/pscale-beach.js` (JavaScript, beach handler) — port pending as of 2026-05-17 PM
+
+The 72-test acceptance battery lives at `/Users/davidpinto/Downloads/bsp-test-materials/` (eight batteries — spatial-floor3, sunstone, star, absorption, reverse, edge, canonical, nesting). All 72 pass against bsp-alt.py (the reference Python that supersedes the legacy bsp2-star.py contents) and against bsp-mcp's TypeScript. The Python parser test `tidy-up/test-bsp-parser.py` has been updated to the new vocabulary and passes 83/83.
+
+CORSAIR mirror at `/Volumes/CORSAIR/pscale/sunstone & whetstone/` is kept in sync — bsp2-star.py, test-bsp-parser.py, bsp.ts, bsp-fn.ts.
 
 ## The five surviving substrate-stateful primitives
 

@@ -276,21 +276,27 @@ assert(floorDepth(blockF3) === 3, 'blockF3 has floor 3');
 assert(floorDepth(blockF4) === 4, 'blockF4 has floor 4');
 
 // At each floor, the address "34.5" must locate the same leaf (after auto-pad).
+// 2026-05-17 canonical: spindle alone returns path-walk; terminus is last entry.
+function lastContent(r: any): string | null {
+  if (r.shape === 'path-walk') return r.entries?.[r.entries.length - 1]?.content ?? null;
+  if (r.shape === 'point') return r.content ?? null;
+  return null;
+}
 for (const [block, floor, label] of [
   [blockF2, 2, 'F2'],
   [blockF3, 3, 'F3'],
   [blockF4, 4, 'F4'],
 ] as const) {
   const r = bspRead(block as any, '34.5', null);
-  assert(r.shape === 'point', `bspRead(${label}, "34.5") shape=point`);
-  assert(r.point === 'leaf at 34.5', `bspRead(${label}, "34.5") finds leaf (auto-padded)`);
+  assert(r.shape === 'path-walk', `bspRead(${label}, "34.5") shape=path-walk`);
+  assert(lastContent(r) === 'leaf at 34.5', `bspRead(${label}, "34.5") finds leaf (auto-padded)`);
 }
 
 // Equivalent forms also work
-assert(bspRead(blockF3, '034.5', null).point === 'leaf at 34.5', 'bspRead(F3, "034.5") finds leaf');
-assert(bspRead(blockF3, '0345', null).point === 'leaf at 34.5', 'bspRead(F3, "0345") finds leaf');
-assert(bspRead(blockF4, '0034.5', null).point === 'leaf at 34.5', 'bspRead(F4, "0034.5") finds leaf');
-assert(bspRead(blockF4, '00345', null).point === 'leaf at 34.5', 'bspRead(F4, "00345") finds leaf');
+assert(lastContent(bspRead(blockF3, '034.5', null)) === 'leaf at 34.5', 'bspRead(F3, "034.5") finds leaf');
+assert(lastContent(bspRead(blockF3, '0345', null)) === 'leaf at 34.5', 'bspRead(F3, "0345") finds leaf');
+assert(lastContent(bspRead(blockF4, '0034.5', null)) === 'leaf at 34.5', 'bspRead(F4, "0034.5") finds leaf');
+assert(lastContent(bspRead(blockF4, '00345', null)) === 'leaf at 34.5', 'bspRead(F4, "00345") finds leaf');
 
 // At floor 1, "34.5" is malformed (left=2 > floor 1) — strict reject.
 const blockF1 = { _: 'F1 root', '3': { '4': { '5': 'F1 leaf' } } };
@@ -304,7 +310,7 @@ assertThrows(
 // But dot-free "345" at floor 1 walks normally (no-dot = digit sequence).
 {
   const r = bspRead(blockF1, '345', null);
-  assert(r.shape === 'point' && r.point === 'F1 leaf', 'bspRead(F1, "345") finds leaf via digit-sequence');
+  assert(r.shape === 'path-walk' && lastContent(r) === 'F1 leaf', 'bspRead(F1, "345") finds leaf via digit-sequence');
 }
 
 // ── Round-trip via writeAt + readAt ──
@@ -379,12 +385,11 @@ console.log('\n=== Disc emit — canonical addresses (single dot, floor-anchored
     '2': { _: 'two', '1': 'two-one' },
   };
   assert(floorDepth(block) === 1, 'block floor 1');
-  const r = bspRead(block, '', -1);  // disc at pscale -1
+  // 2026-05-17 canonical: pscale -1 in floor 1 = depth 2 (digit children of top branches)
+  const r = bspRead(block, '', -1);
   assert(r.shape === 'disc', 'disc shape');
-  // Top-level branches: should be [1], [2] addresses
-  const addresses = (r.disc ?? []).map(n => n.address).sort();
-  assert(addresses.includes('1'), 'disc includes address "1"');
-  assert(addresses.includes('2'), 'disc includes address "2"');
+  // Depth 2 entries: branch.1's underscore (1), branch.1 digit children (1.1, 1.2), etc.
+  const addresses = ((r.entries as any[]) ?? []).map(n => n.address).sort();
   // None should be multi-dot
   for (const addr of addresses) {
     const dotCount = (addr.match(/\./g) || []).length;
@@ -392,16 +397,17 @@ console.log('\n=== Disc emit — canonical addresses (single dot, floor-anchored
   }
 }
 {
-  // Floor-2 block — disc addresses should use single-dot canonical form
+  // Floor-2 block — disc at pscale -1 (depth 3) emits single-dot canonical
   const block: any = {
     _: { _: 'floor' },
     '3': { '4': { '5': 'a' } },
     '6': { '7': { '8': 'b' } },
   };
   assert(floorDepth(block) === 2, 'block floor 2');
-  const r = bspRead(block, '', -2);  // disc at pscale -2 (depth 3)
+  // pscale = floor - depth, so depth 3 in floor 2 = pscale -1
+  const r = bspRead(block, '', -1);
   assert(r.shape === 'disc', 'disc shape');
-  const addresses = (r.disc ?? []).map(n => n.address);
+  const addresses = ((r.entries as any[]) ?? []).map(n => n.address);
   // Should include "34.5" and "67.8" at floor 2
   assert(addresses.includes('34.5'), `disc includes "34.5" (floor-2 canonical), got ${JSON.stringify(addresses)}`);
   assert(addresses.includes('67.8'), `disc includes "67.8" (floor-2 canonical), got ${JSON.stringify(addresses)}`);

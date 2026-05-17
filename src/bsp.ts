@@ -145,7 +145,7 @@ export function parseAddress(s: number | string): {
   const dotCount = (text.match(/\./g) || []).length;
   if (dotCount > 1) {
     throw new InvalidAddressError(
-      `"${text}" has ${dotCount} decimal points; pscale addresses carry at most one (sunstone:1.5)`
+      `"${text}" has multiple decimal points (${dotCount}); pscale addresses carry at most one (sunstone:1.5)`
     );
   }
 
@@ -205,9 +205,9 @@ export function parseSpindle(
   // block with sub-position writes only) — no anchoring applies.
   if (floor >= 1 && hadDot && leftDigits.length > floor) {
     throw new InvalidAddressError(
-      `"${s}" has ${leftDigits.length} digits left of decimal but block ` +
-      `floor is ${floor}; the dot anchors pscale 0 at the floor, so ` +
-      `left-of-decimal digits cannot exceed floor depth`
+      `"${s}" has ${leftDigits.length} digits left of decimal; exceeds floor ` +
+      `${floor} (the dot anchors pscale 0 at the floor, so left-of-decimal ` +
+      `digits cannot exceed floor depth)`
     );
   }
 
