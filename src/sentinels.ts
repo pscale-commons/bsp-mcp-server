@@ -41,6 +41,7 @@ import ecologyRouter from './ecology-router.json' with { type: 'json' };
 import sandRider from './sand-rider.json' with { type: 'json' };
 import l3Relay from './l3-relay.json' with { type: 'json' };
 import directory from './directory.json' with { type: 'json' };
+import bspTest from './bsp-test.json' with { type: 'json' };
 
 export interface SentinelEntry {
   /** bsp() block name; resource URI is `pscale://<name>` unless exposeAsResource is false. */
@@ -138,6 +139,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: directory as unknown as Block,
     description:
       'Directory — staged process for publishing this bsp-mcp deployment to MCP discovery registries. Operational meta-block (not substrate-canonical like sunstone or whetstone), bundled because it travels with the code being listed. Three stages: substrate hygiene (Stage 1 — do regardless of submission timing), MCP Registry listing (Stage 2 — do at L1 kernel v2 freeze), Anthropic Connectors Directory submission (Stage 3 — do 1-2 months after Stage 2 lives without incident). Branches 1-3 are the stages; 4 risks to defuse in submission copy; 5 the out-of-scope boundary; 6 the recipe-vs-state split for other operators; 7 the decisions log; 8 the artifacts shipped in the repo (LICENSE, README, server.json, PRIVACY.md, specs/anthropic-directory-submission.md); 9 the current state of the canonical bsp.hermitcrab.me deployment. Other operators forking this repo edit branch 9 for their own deployment; branches 1-8 are reusable.',
+  },
+  {
+    name: 'bsp-test',
+    json: bspTest as unknown as Block,
+    description:
+      'BSP-TEST suite — eight test batteries (72 tests total) for verifying any bsp() implementation against the canonical 2026-05-17 specification. Each battery sits at digits 1-8 as a floor-1 sub-block with 9 numbered tests. Branches: 1 spatial floor-3 fixture (block, path-walk, disc, point, path-walk+descent across pscale 2 down to pscale -3); 2 sunstone (floor 1, hidden directories, underscore-as-object); 3 star operator (X* enters terminus._, recursive (S, P)); 4 absorption across floors (canonical address survives floor changes via left-of-decimal zero-padding); 5 reverse direction (given content, find the call); 6 edge cases (off-spindle pscale, multi-dot reject, invalid chars, empty block, over-long walks); 7 canonical form (multi-dot reject, left-pad to floor, strip trailing zeros); 8 subnesting and supernesting (block-growth operations). Three workflows: verify an existing bsp, author a new bsp from sunstone, or compare two implementations for contract-equivalence. Reference Python bsp-alt.py and bsp-mcp\'s TypeScript both pass 72/72. Fixtures live alongside the test source folder (~/Downloads/bsp-test-materials/); sunstone is also at pscale://sunstone.',
   },
 ];
 
