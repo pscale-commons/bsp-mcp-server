@@ -32,6 +32,7 @@ import {
 } from '../bsp-fn.js';
 import {
   loadBlock,
+  loadBspShape,
   saveBlock,
   BlockRow,
   isFederatedOwner,
@@ -150,6 +151,43 @@ function normaliseContent(value: any): any {
   return value;
 }
 
+// ── Not-found response helper ──
+
+/**
+ * Render the not-found message for a read miss. For federated hosts, probes
+ * the host to distinguish "host is federated but does not host this block"
+ * from "no beach at this host at all". For non-federated targets (sentinels,
+ * default-beach translations that didn't resolve), returns a plain message.
+ */
+async function notFoundResponse(
+  target: ReturnType<typeof translateAddress>,
+  agent_id: string,
+  blockName: string,
+): Promise<{ content: { type: 'text'; text: string }[] }> {
+  if (isFederatedOwner(target.agent_id)) {
+    const origin = canonicaliseOrigin(target.agent_id);
+    const status = await probeFederation(target.agent_id);
+    if (status === 'federated') {
+      const translationNote = target.translated
+        ? ` (resolved from agent_id="${target.original.agent_id}" + block="${target.original.block}")`
+        : '';
+      return {
+        content: [{
+          type: 'text',
+          text: `Block "${target.block}" not found at federated host ${origin}${translationNote}. The host is federated and serves /.well-known/pscale-beach, but does not host this block. If you intended a per-agent block, the canonical name is "<role>:<handle>" — e.g. shell:happyseaurchin, passport:happyseaurchin (per block-conventions branches 1, 2, 3 position 8).`,
+        }],
+      };
+    }
+    return {
+      content: [{
+        type: 'text',
+        text: `No beach at ${origin}/.well-known/pscale-beach (also tried the beach.<host> subdomain — neither is federated). Alternatives: try the default beach (${DEFAULT_BEACH}) by passing a bare-name or sed:/grain: agent_id, or consult a known federated-beach list.`,
+      }],
+    };
+  }
+  return { content: [{ type: 'text', text: `Block "${agent_id}/${blockName}" not found.` }] };
+}
+
 // ── The handler ──
 
 /**
@@ -183,7 +221,8 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   const target = translateAddress(agent_id, blockName);
 
   // Sentinels reject writes — they are read-only.
-  if (isSentinelOwner(target.agent_id) && (content !== undefined || new_lock !== undefined)) {
+  const isSentinel = isSentinelOwner(target.agent_id);
+  if (isSentinel && (content !== undefined || new_lock !== undefined)) {
     return {
       content: [{
         type: 'text',
@@ -192,34 +231,50 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     };
   }
 
-  let row: BlockRow | null = await loadBlock(agent_id, blockName);
-
   // ── READ ── (no content, no lock change)
   if (content === undefined && new_lock === undefined) {
-    if (!row) {
-      // Federated host: distinguish "host not federated" from "block missing".
-      if (isFederatedOwner(target.agent_id)) {
-        const origin = canonicaliseOrigin(target.agent_id);
-        const status = await probeFederation(target.agent_id);
-        if (status === 'federated') {
-          const translationNote = target.translated
-            ? ` (resolved from agent_id="${target.original.agent_id}" + block="${target.original.block}")`
-            : '';
-          return {
-            content: [{
-              type: 'text',
-              text: `Block "${target.block}" not found at federated host ${origin}${translationNote}. The host is federated and serves /.well-known/pscale-beach, but does not host this block. If you intended a per-agent block, the canonical name is "<role>:<handle>" — e.g. shell:happyseaurchin, passport:happyseaurchin (per block-conventions branches 1, 2, 3 position 8).`,
-            }],
-          };
+    // Wire-level fast path — federated hosts, no gray decryption needed.
+    // The beach computes shape locally and returns only the resolved slice,
+    // avoiding whole-block transfer for narrow queries. Skipped for sentinels
+    // (in-memory, walked locally) and for secret-bearing reads (may need the
+    // raw block to walk _gray envelopes through decryptBlockNodes first).
+    if (!isSentinel && !secret && isFederatedOwner(target.agent_id)) {
+      try {
+        const wireResult = await loadBspShape(
+          target.agent_id,
+          target.block,
+          spindle ?? null,
+          pscale_attention ?? null,
+        );
+        if (wireResult && typeof wireResult === 'object' && 'shape' in wireResult) {
+          // Canonical shape-tagged response from a v2 beach — return directly.
+          return { content: [{ type: 'text', text: formatRead(wireResult as any) }] };
         }
-        return {
-          content: [{
-            type: 'text',
-            text: `No beach at ${origin}/.well-known/pscale-beach (also tried the beach.<host> subdomain — neither is federated). Alternatives: try the default beach (${DEFAULT_BEACH}) by passing a bare-name or sed:/grain: agent_id, or consult a known federated-beach list.`,
-          }],
-        };
+        if (wireResult && typeof wireResult === 'object') {
+          // Legacy beach (no ?pscale= handling) returned the raw block —
+          // walk it locally rather than make a second HTTP call.
+          try {
+            const result = bspRead(wireResult as Block, spindle ?? '', pscale_attention ?? null);
+            return { content: [{ type: 'text', text: formatRead(result) }] };
+          } catch (e: any) {
+            if (e instanceof InvalidAddressError) {
+              return { content: [{ type: 'text', text: `Read rejected: ${e.message}` }] };
+            }
+            throw e;
+          }
+        }
+        // wireResult === null → 404 from the federated host.
+        return notFoundResponse(target, agent_id, blockName);
+      } catch (e: any) {
+        // Wire-level network/parse error — fall through to local loadBlock path.
+        console.error(`[bsp] wire-level read failed, falling back to loadBlock: ${e?.message ?? e}`);
       }
-      return { content: [{ type: 'text', text: `Block "${agent_id}/${blockName}" not found.` }] };
+    }
+
+    // Local path — sentinels, gray-decryption reads, or wire-level fallback.
+    const row = await loadBlock(agent_id, blockName);
+    if (!row) {
+      return notFoundResponse(target, agent_id, blockName);
     }
     // Stage 10 — when secret is provided on a read, walk the block through
     // decryptBlockNodes so any _gray envelopes anywhere in the tree are
@@ -243,6 +298,10 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   // The federated beach is the lock authority. bsp-mcp does not verify or
   // compute hashes — it forwards `secret` and `new_lock` and the beach
   // accepts or rejects. For sentinel writes, we already rejected above.
+
+  // Load existing state to merge writes against (and to seed an empty block
+  // when locking-only on a new target).
+  const row: BlockRow | null = await loadBlock(agent_id, blockName);
 
   // Determine starting block — existing or empty seed.
   const block: Block = row?.block ?? {};
