@@ -10,7 +10,7 @@ The companion live web view is at https://evolution.hermitcrab.me/overview/full.
 
 ## Summary
 
-Pscale is a coordinate system for shared meaning. Where most software organises information through file paths, database tables, or vendor-specific APIs, pscale uses semantic numbers — numerical addresses that locate a position in meaning-space directly. The address `1.4.2` resolves to a specific node in a specific block, identically for every system that reads it.
+Pscale is a coordinate system for shared meaning. Where most software organises information through file paths, database tables, or vendor-specific APIs, pscale uses semantic numbers — numerical addresses that locate a position in meaning-space directly. The address `1.42` resolves to a specific node in a specific block, identically for every system that reads it.
 
 Around this coordinate system sits a small, deliberately stable architecture:
 
@@ -41,7 +41,7 @@ The architectural commitment behind this is simple: meaning has a coordinate sys
 
 A pscale block is a JSON tree with a strict shape. Every node has at most ten children: the underscore key `_`, and the digit keys `1` through `9`. The underscore carries the node's own descriptive text. The digits carry sub-nodes. No other keys are permitted. The structure is the type system; there is no metadata layer.
 
-Numerical addresses walk the tree. The address `1.4.2` enters the root, takes digit `1`, then digit `4`, then digit `2`. The digit `0` walks into the `_` (descriptive) position. The decimal point marks the floor — the depth of the underscore chain on the root path. Pscale 0 is anchored at the floor, not at the top of the tree, so an address written at one floor remains valid as the block grows.
+Numerical addresses walk the tree. The address `1.42` enters the root, takes digit `1`, then digit `4`, then digit `2`. The digit `0` walks into the `_` (descriptive) position. The decimal point marks the floor — the depth of the underscore chain on the root path. Pscale 0 is anchored at the floor, not at the top of the tree, so an address written at one floor remains valid as the block grows.
 
 This compactness is the point. Three digits address any position in a tree of nine layers and 9⁹ leaves. The address travels as a token, fits in a tweet, survives copy-paste. Trained language models read it without difficulty; the format is close enough to ordinary decimal notation that no special parser is needed at the model layer.
 
