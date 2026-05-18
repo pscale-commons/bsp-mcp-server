@@ -20,7 +20,9 @@
     --ink-dim: #5b636d;
     --line: #d9d5cd;
     --accent: #0e7c8c;
-    --accent-soft: #d6ece9;
+    --accent-soft: #e8f3f2;
+    --accent-border: #b6d8d4;
+    --accent-dark: #0a6470;
     color-scheme: light;
   }
   * { box-sizing: border-box; }
@@ -66,13 +68,10 @@
         padding: 14px 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.45;
         font-family: ui-monospace, "SF Mono", Menlo, monospace; }
   pre code { background: transparent; padding: 0; }
-  blockquote { margin: 18px 0; padding: 12px 18px; border-left: 3px solid var(--accent);
-               background: var(--panel); color: var(--ink); font-size: 15px; }
   .lead { font-size: 17px; line-height: 1.6; color: var(--ink); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
            padding: 18px 22px; margin: 18px 0; }
   .panel h3 { margin-top: 0; }
-  .panel-soft { background: var(--accent-soft); border-color: #b6d8d4; }
   .meta { color: var(--ink-dim); font-size: 13px;
           font-family: ui-monospace, "SF Mono", Menlo, monospace; }
   .audience-grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 18px 0; }
@@ -82,6 +81,62 @@
   .audience h3 { margin-top: 0; font-size: 15px; }
   .audience ul { margin-bottom: 0; }
   .audience li { font-size: 14.5px; }
+
+  /* Invitation cards — visually demarcated CTAs. */
+  .try-card {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 22px 26px;
+    margin: 32px 0;
+  }
+  .try-card .try-label {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin: 0 0 8px;
+    display: block;
+  }
+  .try-card h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: var(--ink);
+  }
+  .try-card p { margin: 0 0 14px; font-size: 15.5px; line-height: 1.55; }
+  .try-card p:last-child { margin-bottom: 0; }
+  .try-card pre {
+    background: #ffffff;
+    border-color: var(--accent-border);
+    margin: 14px 0;
+  }
+  .try-card a.cta {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 8px 18px;
+    background: var(--accent);
+    color: #ffffff;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14.5px;
+  }
+  .try-card a.cta:hover { background: var(--accent-dark); text-decoration: none; }
+  .try-card a:not(.cta) { color: var(--accent); }
+
+  .pull-quote {
+    margin: 44px 0;
+    padding: 18px 26px;
+    border-left: 4px solid var(--accent);
+    font-size: 21px;
+    line-height: 1.45;
+    color: var(--ink);
+    font-weight: 400;
+  }
+
   footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line);
            color: var(--ink-dim); font-size: 13px;
            font-family: ui-monospace, "SF Mono", Menlo, monospace; }
@@ -102,16 +157,22 @@
 <main>
 
 <p class="lead">
-  Pscale is a coordinate system for shared meaning. Where most software organises information through file paths, database tables, or vendor-specific APIs, pscale uses semantic numbers — numerical addresses that locate a position in meaning-space directly. An address like <code>1.4.2</code> resolves to the same node in the same block for every system that reads it.
+  Pscale is a coordinate system for shared meaning. Where most software organises information through file paths, database tables, or vendor-specific APIs, pscale uses semantic numbers — numerical addresses that locate a position in meaning-space directly. An address like <code>1.42</code> resolves to the same node in the same block for every system that reads it.
 </p>
 
 <p>
   Around the coordinate system sits a small, deliberately stable architecture: a single function for reads and writes (<a href="https://github.com/pscale-commons/bsp-mcp-server">bsp()</a>), a federated key-value substrate hosted at any URL that chooses to serve it (the beach), a set of immutable teaching blocks bundled with every server instance (the sentinels), and a browser canvas for humans working alongside multiple LLMs concurrently (xstream). The components are roles in one geometry, not separate products.
 </p>
 
-<p>
-  The code is open source under the MIT license. The hosted reference implementation runs at <a href="https://bsp.hermitcrab.me/mcp/v1"><code>bsp.hermitcrab.me/mcp/v1</code></a>. Live federated beaches include <a href="https://beach.happyseaurchin.com/.well-known/pscale-beach"><code>beach.happyseaurchin.com</code></a> and <a href="https://beach.idiothuman.com/.well-known/pscale-beach"><code>beach.idiothuman.com</code></a>.
-</p>
+
+<aside class="try-card">
+  <span class="try-label">See it move</span>
+  <h3>Pscale in one animation</h3>
+  <p>
+    Before the prose: a sixty-second animated explainer renders the geometry — semantic numbers, addresses, the floor — in motion. The fastest way to grasp what "numbers as addresses for meaning" actually means.
+  </p>
+  <a class="cta" href="https://xstream.machus.ai/the-address-of-meaning/" target="_blank" rel="noopener">Watch the animation →</a>
+</aside>
 
 
 <h2>The problem it addresses</h2>
@@ -121,7 +182,11 @@
 </p>
 
 <p>
-  Pscale takes the inverse stance. Persistent state — purposes, history, relationships, projects, working notes, shared facts — lives in pscale blocks held at a federated substrate that no single vendor controls. Multiple LLMs read and write the same blocks. The cognition is shared; the model is interchangeable.
+  Pscale takes the inverse stance. Persistent state — purposes, history, relationships, projects, working notes, shared facts — lives in pscale blocks held at a federated substrate that no single vendor controls. Multiple LLMs read and write the same blocks.
+</p>
+
+<p class="pull-quote">
+  The cognition is shared; the model is interchangeable.
 </p>
 
 
@@ -138,6 +203,21 @@
   <li><strong>Mutual objectives</strong> — pools and role-collectives coordinating multi-party work toward shared goals.</li>
   <li><strong>Shared context</strong> — LLMs and humans operating concurrently on the same blocks. The collective context window.</li>
 </ul>
+
+
+<aside class="try-card">
+  <span class="try-label">Spin it up — three minutes</span>
+  <h3>Connect bsp-mcp to your LLM</h3>
+  <p>
+    The hosted MCP router runs at <code>bsp.hermitcrab.me/mcp/v1</code>. Add the entry below to any MCP-compatible client — Claude Code, Claude.ai, Cursor — then ask the model what to try next. <code>sunstone</code>, <code>spore</code>, <code>manifest</code> are reasonable starting points; the model will work out the rest.
+  </p>
+<pre><code>{
+  "bsp": {
+    "command": "npx",
+    "args": ["-y", "mcp-remote@0.1.38", "https://bsp.hermitcrab.me/mcp/v1"]
+  }
+}</code></pre>
+</aside>
 
 
 <h2>Why decision-makers should look at this</h2>
@@ -169,6 +249,19 @@
 </div>
 
 
+<aside class="try-card">
+  <span class="try-label">Early days</span>
+  <h3>Walk a live beach</h3>
+  <p>
+    A beach is the substrate as it exists at one URL — a plain GET returns the list of named sibling blocks; each is readable with <code>?block=&lt;name&gt;</code>. The reference deployment currently holds a handful of marks, a few passports, a few pools. Walking it now is like visiting a concert hall before the orchestra arrives: the architecture is there; the population isn't yet.
+  </p>
+  <p>
+    What grows here: connecting with people who love what you love (Level 3); a real need met within twenty-four hours; group decisions of ten, a hundred, a thousand without the usual ceremony (Level 4); trust held by structure rather than by intermediaries or charismatic visionaries; the hundred-and-one daily admin tasks reduced to a few, so most hours go to what is loved, with people respected — because that's what we are, social beings. Promised plenty of times. Trying it now, even in an empty hall, is how one finds out whether this iteration is different.
+  </p>
+  <a class="cta" href="https://beach.happyseaurchin.com/.well-known/pscale-beach" target="_blank" rel="noopener">Visit beach.happyseaurchin.com →</a>
+</aside>
+
+
 <h2>Verify it operates</h2>
 
 <ul class="tight">
@@ -182,56 +275,28 @@
 </ul>
 
 
-<h2>For an LLM that wants to engage directly</h2>
-
-<p>
-  The reference implementation is exposed as a remote MCP server. Adding it to a client (Claude Code, Claude.ai, Cursor, or any MCP-compatible host) requires a short configuration entry:
-</p>
-
-<pre><code>{
-  "bsp": {
-    "command": "npx",
-    "args": ["-y", "mcp-remote@0.1.38", "https://bsp.hermitcrab.me/mcp/v1"]
-  }
-}</code></pre>
-
-<p>
-  After connecting, three productive first reads — described, not prescribed:
-</p>
-
-<ul>
-  <li><code>bsp(agent_id="pscale", block="manifest")</code> returns the constitution index. It lists every other reference and how to walk it.</li>
-  <li><code>bsp(agent_id="pscale", block="sunstone")</code> returns the geometry-teaching block. Nine angles on the same primitive. An LLM walking this block learns to walk other blocks.</li>
-  <li><code>bsp(agent_id="pscale", block="evolution")</code> returns the five-level relational map, including current pulse and the substrate primitives associated with each level.</li>
-</ul>
-
-<p>
-  A bootstrap-style block called <em>spore</em> is hosted at <a href="https://beach.happyseaurchin.com/.well-known/pscale-beach?block=spore"><code>beach.happyseaurchin.com</code></a> (with <code>?block=spore</code>). It is written in the substrate's reflexive voice, addressed to an LLM being onboarded into operating the substrate directly. Defensive language models may flag this voicing as out-of-band instruction; readers should be aware that the spore is a teaching artifact intended for an LLM that has been deliberately invited to operate the substrate, not a general explanation document. This overview page is the general explanation; the spore is the operational onboarding.
-</p>
-
-
 <h2>Comprehensive material</h2>
 
 <p>
-  The full architectural and conceptual document, suitable for ingestion as a single context file, is available in two forms:
+  The full architectural and conceptual document — covering the architecture in detail, the economic model (ecosquared), the governance commitments, current operational state, a glossary, and references — is available in two forms. Roughly 4,000 words, third-person observational voice.
 </p>
 
-<div class="panel panel-soft">
+<div class="panel" style="background: var(--panel); border-color: var(--accent-border);">
   <p style="margin: 0;">
     <strong>Web view:</strong> <a href="/overview/full">/overview/full</a> — the comprehensive deep-dive in browser.<br>
-    <strong>Downloadable markdown:</strong> <a href="/overview/pscale.md">/overview/pscale.md</a> — single self-contained file, designed for direct LLM ingestion (paste into a Project, attach as Knowledge, or hand to a session that needs the full picture).
+    <strong>Downloadable markdown:</strong> <a href="/overview/pscale.md">/overview/pscale.md</a> — single self-contained file. Paste into a Claude Project, attach as GPT Knowledge, or hand to any session that wants the full picture in one shot. An LLM ingesting this file alone has enough to brief a non-technical reader on the architecture, the strategic angle, and what to try.
   </p>
 </div>
-
-<p>
-  The comprehensive document covers the architecture in detail, the economic model (ecosquared), the governance commitments, current operational state, a glossary, and a list of further references. It is roughly 4,000 words and written in third-person observational voice throughout.
-</p>
 
 
 <h2>Background</h2>
 
 <p>
   Pscale emerged from approximately 25 years of work by David Pinto on coordination architectures — a body of research called the Fulcrum framework. The first operational implementation was <a href="https://github.com/pscale-commons/pscale-mcp-server">pscale-mcp-server</a> (March 2026, 25 categorised tools, central Supabase substrate). The current iteration, <a href="https://github.com/pscale-commons/bsp-mcp-server">bsp-mcp-server</a> (April 2026 onward), collapses the function surface to one unified function and replaces the central database with federated beach storage. The geometry did not change between iterations; the function surface caught up to it.
+</p>
+
+<p>
+  Until the broader game is built and the community is proven, direct experience through one's own LLM is the most reliable evaluation method. Connect the MCP, walk a sentinel, visit a beach, ask the model what it would do with this — the answers are more useful than any description, including this one.
 </p>
 
 <p>
