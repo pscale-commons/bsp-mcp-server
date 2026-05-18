@@ -208,7 +208,7 @@ For a non-technical decision-maker, the most useful first move is to ask a langu
 
 ## Lineage and people
 
-The architecture is the work of David Pinto, building on a body of research called the Fulcrum framework that he has been developing since approximately 2001. The first operational implementation was pscale-mcp-server (March 2026, 25 categorised tools, a central database substrate). The current iteration, bsp-mcp-server (April 2026 onward), collapses the function surface to a single unified function and replaces the central database with federated beach storage.
+The architecture is the work of David Pinto, an anthropologist and mathematician working on *social* coordination architectures — a body of research called the Fulcrum framework that he has been developing since approximately 2001. The first coding fundamental was pscale itself in February 2026. The first operational MCP wrapper was pscale-mcp-server (March 2026 onward, 25 categorised tools, a central database substrate). The current iteration, bsp-mcp-server (April 2026 onward), collapses the function surface to a single unified function and replaces the central database with federated beach storage.
 
 The geometry did not change between the two iterations. The function surface caught up to it.
 
