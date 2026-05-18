@@ -171,6 +171,33 @@ function beachEndpoint(origin: string, blockName: string): string {
   return `${origin}/.well-known/pscale-beach?block=${encodeURIComponent(blockName)}`;
 }
 
+/**
+ * Beach endpoint URL with canonical wire parameters. When spindle or pscale
+ * are provided, the beach (if upgraded to the canonical model) returns the
+ * shape-resolved bsp() result directly instead of raw JSON for the client
+ * to walk. This is the wire-level (B, S, P) loop the substrate was designed
+ * for — surgical reads, no whole-block transfers for narrow queries.
+ *
+ * Legacy beaches that don't honour ?pscale= will fall back to returning
+ * raw JSON; the caller can detect this (response has no `shape` field) and
+ * walk locally.
+ */
+function beachEndpointCanonical(
+  origin: string,
+  blockName: string,
+  spindle: string | null,
+  pscale: number | null,
+): string {
+  const params: string[] = [`block=${encodeURIComponent(blockName)}`];
+  if (spindle != null && spindle !== '') {
+    params.push(`spindle=${encodeURIComponent(spindle)}`);
+  }
+  if (pscale != null) {
+    params.push(`pscale=${encodeURIComponent(String(pscale))}`);
+  }
+  return `${origin}/.well-known/pscale-beach?${params.join('&')}`;
+}
+
 // ── Federated beach adapter (HTTP) ──
 
 const BEACH_TIMEOUT_MS = parseInt(process.env.BEACH_TIMEOUT_MS || '8000', 10);
@@ -240,6 +267,43 @@ export async function resolveFederationOrigin(ownerId: string): Promise<string |
     return fallback;
   }
   return null;
+}
+
+/**
+ * Wire-level canonical read. Sends (spindle, pscale) to the federated beach
+ * and returns whatever the beach returns (canonical-shape JSON when the
+ * beach supports it, raw block JSON when it doesn't). The caller distinguishes
+ * by checking the response — a `shape` field means canonical; otherwise it's
+ * legacy JSON and the caller should walk locally.
+ *
+ * Returns null when the block is not found (404) or the host isn't federated.
+ */
+export async function loadBspShape(
+  ownerId: string,
+  blockName: string,
+  spindle: string | null,
+  pscale: number | null,
+): Promise<any | null> {
+  const origin = await resolveFederationOrigin(ownerId);
+  if (!origin) return null;
+  const url = beachEndpointCanonical(origin, blockName, spindle, pscale);
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
+  } catch (e: any) {
+    throw new Error(`Beach fetch failed (${url}): ${e?.message ?? e}`);
+  }
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    let detail = '';
+    try { detail = ' — ' + (await res.text()).slice(0, 200); } catch {}
+    throw new Error(`Beach load failed (${res.status} ${res.statusText})${detail}`);
+  }
+  try {
+    return await res.json();
+  } catch (e: any) {
+    throw new Error(`Beach response was not JSON: ${e?.message ?? e}`);
+  }
 }
 
 async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<BlockRow | null> {
