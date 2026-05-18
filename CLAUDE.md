@@ -198,7 +198,7 @@ src/
   whetstone.json      — The operational reference (six branches; signature, derivation, modifiers, storage, translation, federation)
   agent-id.json       — Addressing model — five forms of agent_id, three address axes
   evolution.json      — Five-level ecosystem map
-  manifest.json       — The constitution index — references categorised into geometry-and-operation, role-shells, substrate-conventions sub-branches
+  manifest.json       — The constitution index — references categorised into geometry-and-operation, role-shells, substrate-conventions, and acceptance sub-branches
   progression.json    — Iterative orientation progression (six steps; pscale_invite returns this)
   block-conventions.json — Substrate-wide canonical block-shape catalogue
   gatekeeper.json     — Substrate-wide canonical role-shell for L1→L2 admission (honored convention)
@@ -208,6 +208,7 @@ src/
   sand-rider.json     — Signed Agent Network Datagram envelope format for Level 3 probes
   l3-relay.json       — Verb vocabulary for what a recipient does with a verified probe (keep, reply, forward, drop)
   directory.json      — Staged process for publishing this bsp-mcp deployment to MCP discovery registries (operational meta-block, not substrate-canonical)
+  bsp-test.json       — 72-test acceptance battery (eight batteries at digits 1-8) bundled from `bsp-test-materials/`; the contract any conforming bsp() implementation must pass. Walk `bsp(agent_id='pscale', block='bsp-test')` to read the suite.
   tools/
     bsp.ts            — bsp() handler (the one function — handles content + lock changes)
     collective.ts     — pscale_create_collective, pscale_register
@@ -379,6 +380,7 @@ Fallback chain (used by xstream and any admission-aware client):
 | Whetstone (operational ref) | `src/whetstone.json` | Agent equipped with bsp-mcp |
 | Gatekeeper (L1→L2 admission shell) | `src/gatekeeper.json` (also `pscale://gatekeeper`) | Any LLM inhabiting the shell — host-invoked or reflective; xstream and third-party clients alike |
 | Directory (registry-listing process) | `src/directory.json` (also `pscale://directory`) | Anyone preparing to list a bsp-mcp deployment on the MCP Registry and/or Anthropic Connectors Directory. Branches 1-3 are the staged process (substrate hygiene → MCP Registry → Anthropic Directory); branch 8 lists the in-repo artifacts (`LICENSE`, `README.md`, `server.json`, `PRIVACY.md`, `specs/anthropic-directory-submission.md`); branch 9 holds the current state of the canonical bsp.hermitcrab.me deployment. |
+| BSP-TEST acceptance suite | `src/bsp-test.json` (also `pscale://bsp-test`); source fixtures at `bsp-test-materials/` | Any agent porting bsp() to a new language or verifying contract-equivalence between implementations. Eight batteries at digits 1-8; 72 tests total. Reference Python `bsp-alt.py` and the bsp-mcp TypeScript both pass 72/72. |
 | Privacy policy (canonical deployment) | `PRIVACY.md` at repo root; raw URL `https://raw.githubusercontent.com/pscale-commons/bsp-mcp-server/main/PRIVACY.md` | Registry reviewers; users of `bsp.hermitcrab.me/mcp/v1` |
 | MCP Registry manifest | `server.json` at repo root | `mcp-publisher` at Stage 2 of `pscale://directory` |
 | Anthropic Directory submission copy | `specs/anthropic-directory-submission.md` | David, at Stage 3 of `pscale://directory` — form-ready copy with TODOs for at-submission refresh |

@@ -1,0 +1,583 @@
+{
+  "_": "BSP-TEST suite — eight test batteries (72 tests total) for verifying any bsp() implementation against the canonical 2026-05-17 specification. Walk by digit 1-8 to enter each battery; each battery is a floor-1 sub-block with 9 numbered tests. Each test carries description at .X._, the bsp() call at .X.1, the canonical answer at .X.2; batteries 5-8 also carry markers at .X.3 (a JSON array of substrings expected in the stringified result — sits as a leaf at the walker, runner reads dynamically), shape at .X.4, count at .X.5. THREE WORKFLOWS. (A) Verify an existing bsp — for each test, read the call at branch.X.Y.1 (or .2 for the reverse battery), invoke against the named fixture, compare to the canonical at branch.X.Y.2. (B) Author a new bsp from sunstone — read pscale://sunstone, write a bsp in any language, test against all 72 cases until clean; the result is a conforming implementation. (C) Compare two implementations — if both pass all 72, they are contract-equivalent. SPEC ANCHORS. Pscale = floor - depth; depth 0 (root) is off-pscale, structural wrapping only. Six canonical shapes — block, path-walk, disc, point, path-walk+descent, star — plus error for parser rejections. Disc emission rule: emit at target depth iff (a) final step is digit 1-9, or (b) the entire walk is on the root underscore chain and lands on a string at target depth. Descent rule: digit children 1-9 only; hidden directories enter via the star operator. Multi-dot addresses and left-of-decimal exceeding floor depth raise InvalidAddressError. FIXTURES live alongside the test source at ~/Downloads/bsp-test-materials/ — test-spatial-floor3.json, sunstone.json (also at pscale://sunstone), absorb-floor1/2/3.json, subnest-before/after.json, super-before/after.json. The reference Python bsp-alt.py passes 72/72 by construction; bsp-mcp’s TypeScript port (src/bsp-fn.ts) passes 72/72 via scripts/bsp-cli.ts. Read branch.X._ for each battery’s scope.",
+  "1": {
+    "_": "BSP-TEST — a portable test fixture for verifying any bsp function against a canonical specification. This block supports three workflows: testing an existing bsp implementation, authoring a new bsp from sunstone and verifying it against the spec, and comparing two bsp implementations to determine equivalence at the contract level. Five companion test blocks sit alongside, each exercising one facet of the spec: this block (battery 1, spatial fixture at floor 3) plus bsp-test-sunstone (battery 2, floor 1 with hidden directories), bsp-test-star (battery 3, star operator), bsp-test-absorption (battery 4, address absorption across floors), bsp-test-reverse (battery 5, inverse direction — given content find the call), and bsp-test-edge (battery 6, off-spindle pscale, multi-dot rejection, invalid chars, empty block, over-long walks). All six batteries together comprise 54 tests; the reference implementation bsp-alt.py passes all by construction. SPEC ANCHORS. (1) Pscale equals floor minus depth, with depth zero (the root) treated as off-pscale, structural wrapping only; the underscore chain from root defines the floor depth. (2) A spindle is a digit walk subject to floor-aware padding — a shorter left-of-decimal pads with leading zeros (each zero walks an underscore step) to floor width; trailing zeros strip; multi-dot addresses raise InvalidAddressError; left-of-decimal width exceeding floor depth raises InvalidAddressError. (3) Return shape derives from the relationship between spindle (S) and pscale attention (P). Six return shapes are canonical: block (no S, no P) returns the whole tree; path-walk (S alone, no P) returns the semantic at each walked position along the spindle; disc (P alone, no S) returns every position at depth equal to floor minus P; point (S plus P at or above the spindle terminus) returns a single position at the depth P names within the spindle, or shape=point with content=null and a note when P lands above the spindle (off-spindle upward query); path-walk+descent (S plus P below the spindle terminus) returns a path-walk along the spindle plus a breadth-first descent from the terminus down to the depth corresponding to P; star (S ends with *) walks pre-star to terminus, enters the hidden directory at terminus._ if it is an object, and applies post-star (S, P) recursively as a sub-block. Error shape applies when the parser rejects the input. (4) DISC EMISSION RULE. A walk position emits a disc entry iff (a) its final step is a digit 1-9 (a digit-walked position), or (b) the entire walk is on the root underscore chain (all '0' steps) and lands on a string at target depth (the floor terminus). Intermediate root-chain underscore-objects are not separate positions — they are the chain leading to the floor terminus, not content of their own. Hidden directories at off-chain underscore positions are emitted normally. (5) DESCENT RULE. The descent from a spindle terminus iterates digit children 1-9 only; underscore-objects (hidden directories) at the terminus are NOT in the descent — they are entered separately via the star operator. (6) Disc target_depth less than 1 returns the empty disc — pscale equal to or greater than floor lands at or above the root, which is off-pscale. WORKFLOWS. (A) Test an existing bsp function — for each branch 1 through 9 here and across the companion batteries, read the call at branch.1 (or branch.2 for the reverse battery) and invoke your bsp against the appropriate fixture; compare the output to the canonical at branch.2 (or branch.3 markers for reverse and edge). (B) Author a new bsp from sunstone — read sunstone for the geometry teaching, write a bsp in any language, test until all 54 cases pass; you have a conforming bsp. (C) Federated comparison — run two implementations against this suite; if both pass all 54, they are equivalent at the contract level. FIXTURES. The spatial fixture test-spatial-floor3.json is a floor-3 block with positions at every pscale from 2 (Thornkeep, Headland) down to -3 (Iron Chain), each leaf labelled with its own pscale and the canonical spindle that reaches it. Sunstone is the floor 1 teaching block of bsp-mcp with hidden directories at branches 1-8. The absorption trio absorb-floor1/2/3.json carry identical content under successively deeper underscore chains. RUN. python3 run-bsp-tests.py drives all six batteries and reports per-branch with shape and count assertions in addition to marker substring matching.",
+    "1": {
+      "_": "Block only — whole-block read. No spindle, no pscale.",
+      "1": "bsp(block=test-spatial-floor3)",
+      "2": "Returns the entire JSON tree of test-spatial-floor3 — every position, every underscore, every leaf, intact. Shape: whole block."
+    },
+    "2": {
+      "_": "Single-digit walk after trailing-zero strip — spindle 100 canonicalises to walk 1 only.",
+      "1": "bsp(block=test-spatial-floor3, spindle=100)",
+      "2": "Path-walk of one underscore semantic, at the single walked digit. Returns the underscore at digit 1 of root: THORNKEEP — pscale 2 — spindle 100. Shape: path-walk of length one."
+    },
+    "3": {
+      "_": "Three-digit walk reaching the floor — spindle 123 walks 1, 2, 3.",
+      "1": "bsp(block=test-spatial-floor3, spindle=123)",
+      "2": "Path-walk of three underscores, one for each walked digit: at digit 1, THORNKEEP (pscale 2); at digit 2, TAVERN (pscale 1); at digit 3, KITCHEN (pscale 0). Three semantics, ordered by walk position. Shape: path-walk of length three."
+    },
+    "4": {
+      "_": "Walk below the floor — spindle 123.4 walks 1, 2, 3, 4.",
+      "1": "bsp(block=test-spatial-floor3, spindle=123.4)",
+      "2": "Path-walk of four underscores: THORNKEEP (pscale 2), TAVERN (pscale 1), KITCHEN (pscale 0), HEARTH (pscale -1). Four semantics, ordered by walk position. Shape: path-walk of length four."
+    },
+    "5": {
+      "_": "Deep walk below the floor — spindle 123.473 walks 1, 2, 3, 4, 7, 3.",
+      "1": "bsp(block=test-spatial-floor3, spindle=123.473)",
+      "2": "Path-walk of six entries: THORNKEEP (pscale 2), TAVERN (pscale 1), KITCHEN (pscale 0), HEARTH (pscale -1), POT-HOOK (pscale -2), IRON CHAIN (pscale -3). The last entry is a leaf string with no underscore wrapper; the leaf value itself is the semantic. Shape: path-walk of length six."
+    },
+    "6": {
+      "_": "Pscale 0 alone, no spindle — disc at the floor.",
+      "1": "bsp(block=test-spatial-floor3, pscale=0)",
+      "2": "Disc of every position at depth 3 (the floor) across the whole block. Six entries: FLOOR TERMINUS (the root underscore-chain terminus at root,_,_,_), AT-FLOOR-VIA-UNDERSCORE (at root,_,_,8), KITCHEN (at 1,2,3 — has children, returns its underscore semantic), COMMON ROOM (at 1,2,7 — leaf), FISHMONGER (at 1,5,8 — leaf), LAMP ROOM (at 3,1,5 — leaf). Shape: disc. Note on the convention: a non-floor underscore string (such as the underscore of Tavern at root,1,2,_) is the parent object's semantic carried at the parent's pscale, not a separate disc position; it is not included here. Only the floor-chain underscore-terminus and digit-walked positions count."
+    },
+    "7": {
+      "_": "Pscale -1 alone, no spindle — disc one below the floor.",
+      "1": "bsp(block=test-spatial-floor3, pscale=-1)",
+      "2": "Disc of every position at depth 4 (one below the floor) across the whole block. Two entries: HEARTH (at 1,2,3,4 — has children, returns its underscore), STOVE (at 1,2,3,5 — leaf). Shape: disc."
+    },
+    "8": {
+      "_": "Spindle plus pscale within the spindle — pscale 1 lies above the spindle terminus by one.",
+      "1": "bsp(block=test-spatial-floor3, spindle=123, pscale=1)",
+      "2": "Single point at the position the spindle reaches at pscale 1. Spindle 123 walks 1, 2, 3; pscale 1 sits at depth 2 (floor minus depth equals 1) which is the second walked digit. Returns TAVERN — pscale 1 — spindle 120. Shape: point."
+    },
+    "9": {
+      "_": "Spindle plus pscale below the spindle terminus — pscale -2 lies two below the terminus.",
+      "1": "bsp(block=test-spatial-floor3, spindle=123, pscale=-2)",
+      "2": "Path-walk along the spindle plus children of the terminus expanded down to the depth corresponding to pscale -2 (which is depth 5, two layers below the floor). Path-walk: THORNKEEP (pscale 2), TAVERN (pscale 1), KITCHEN (pscale 0). Descent from KITCHEN: at layer one (pscale -1, depth 4), HEARTH (with its own children below) and STOVE (leaf); at layer two (pscale -2, depth 5), BELLOWS (leaf under HEARTH), ASH PIT (leaf under HEARTH), POT-HOOK (with a child below but the descent stops at this depth). Eight entries total, structured as path-walk-then-descent. Shape: path-walk plus depth-bounded descent."
+    }
+  },
+  "2": {
+    "_": "BSP-TEST-SUNSTONE — second battery of tests, running against sunstone as the fixture instead of test-spatial-floor3. Sunstone is the teaching block for bsp-mcp, a floor 1 pscale block with nine top-level branches (1 through 9) each carrying a self-contained framing of the bsp primitive. Several branches contain hidden directories at branch._ (an underscore-as-object pattern) holding the branch's summary plus star references to conjugate branches. This battery exercises the same spec as the spatial battery but on a floor 1 block with hidden directories present, complementing the floor 3 cases in bsp-test.json. The spec anchors, comparison rule, and three workflows (test existing bsp, author new bsp from sunstone, federated comparison) are identical to those documented in bsp-test.json — read that block's root underscore for the full method statement. For each branch 1 through 9 here, read branch.1 (the bsp call to execute against sunstone) and branch.2 (the canonical expected output per the spec). Invoke your bsp under test, compare, report match or divergence. The fixture sunstone is available as a local file (sunstone.json alongside this block) or via bsp-mcp at agent_id='pscale' block='sunstone'. Reference implementation bsp-alt.py passes all nine tests by construction; run python3 bsp-alt.py sunstone.json --spindle X --pscale Y for each case to see the canonical structure. Specific to sunstone: floor 1 means pscale 0 sits at depth 1 (the floor underscore string at root,_); spindles do not exercise floor-aware left-padding at floor 1 since left-of-decimal width 1 already matches floor 1; hidden directories at branch underscores (branches 1 through 8 have them, branch 9 does not) mean the disc at pscale -1 collects 47 positions across the whole block — that case is not in this nine-test set but mentioned here so a reader knows what to expect from it.",
+    "1": {
+      "_": "Block only — whole-block read against sunstone.",
+      "1": "bsp(block=sunstone)",
+      "2": "Returns the entire JSON tree of sunstone — root underscore is the floor terminus string starting 'Sunstone — a teaching block for the BSP MCP. Self-contained...', nine top-level branches at digits 1 through 9, each with its own internal structure (most with a hidden directory at branch._). Shape: whole block."
+    },
+    "2": {
+      "_": "Spindle 5 — single-digit walk to branch 5 of sunstone.",
+      "1": "bsp(block=sunstone, spindle=5)",
+      "2": "Path-walk of one entry at depth 1, pscale 0. Content is the underscore semantic of branch 5, which is reached by walking the underscore chain from root.5 — root.5 is an object with hidden directory at root.5._ whose terminus underscore is 'As composition. Star walks into a hidden directory; the primitive composes with itself across block boundaries...' Shape: path-walk of length one."
+    },
+    "3": {
+      "_": "Spindle 55 — two-digit walk into branch 5, position 5.",
+      "1": "bsp(block=sunstone, spindle=55)",
+      "2": "Path-walk of two entries. At depth 1 pscale 0, branch 5's underscore semantic: 'As composition. Star walks into a hidden directory...' At depth 2 pscale -1, the leaf at root.5.5: 'Soliton stabilisation. In nonlinear PCT, the reference is not fixed externally...' Shape: path-walk of length two."
+    },
+    "4": {
+      "_": "Spindle 71 — two-digit walk reaching the reflexive koan at root.7.1.",
+      "1": "bsp(block=sunstone, spindle=71)",
+      "2": "Path-walk of two entries. At depth 1 pscale 0, branch 7's underscore: 'As reflexive. The block teaches BSP by being navigable through BSP...' At depth 2 pscale -1, the leaf at root.7.1: 'The entity reading this exists, thereby inducing the awareness function — the turn — and making the sunstone shine.' Shape: path-walk of length two."
+    },
+    "5": {
+      "_": "Spindle 91 — two-digit walk into branch 9 (a branch with no hidden directory).",
+      "1": "bsp(block=sunstone, spindle=91)",
+      "2": "Path-walk of two entries. At depth 1 pscale 0, branch 9's underscore (which is a plain string, not a hidden directory): 'As design. Pscale blocks are an experimental medium; structure follows intent...' At depth 2 pscale -1, the leaf at root.9.1: 'The spectrum from passive to active. At one extreme, a block is a data store...' Shape: path-walk of length two."
+    },
+    "6": {
+      "_": "Pscale 0 alone, no spindle — disc at the floor of sunstone.",
+      "1": "bsp(block=sunstone, pscale=0)",
+      "2": "Disc of all positions at depth 1 (the floor). Ten entries: FLOOR TERMINUS at address (empty after stripping trailing zero, walks _) which is 'Sunstone — a teaching block for the BSP MCP. Self-contained...' Then the nine branch summaries collected via collect_underscore on each branch: at address 1 'As geometry...', at 2 'As function...', at 3 'As access...', at 4 'As substrate...', at 5 'As composition...', at 6 'As commons...', at 7 'As reflexive...', at 8 'As voicing...', at 9 'As design...'. Shape: disc. Note: branches 1 through 8 reach their underscore via the hidden directory pattern (branch._  is an object whose own underscore terminates the chain). Branch 9 reaches its underscore directly (branch._ is the string itself). The disc collection produces the same semantic in both cases via collect_underscore which walks the underscore chain to find a string."
+    },
+    "7": {
+      "_": "Spindle 5 plus pscale 0 — point at the spindle terminus, which IS the floor for a one-digit walk in floor 1.",
+      "1": "bsp(block=sunstone, spindle=5, pscale=0)",
+      "2": "Single point at depth 1 pscale 0, address 5. Content is branch 5's underscore terminus: 'As composition. Star walks into a hidden directory...' Shape: point. This is equivalent in content to test 2 but framed as a point query rather than a path-walk; the spindle terminus for a single-digit walk at floor 1 sits at pscale 0, so a pscale 0 query within that spindle returns the same one position."
+    },
+    "8": {
+      "_": "Spindle 55 plus pscale -1 — point at the spindle terminus (depth 2, one below the floor).",
+      "1": "bsp(block=sunstone, spindle=55, pscale=-1)",
+      "2": "Single point at depth 2 pscale -1, address 5,5. Content is the leaf at root.5.5: 'Soliton stabilisation. In nonlinear PCT, the reference is not fixed externally...' Shape: point."
+    },
+    "9": {
+      "_": "Spindle 5 plus pscale -1 — pscale lies one below the spindle terminus, so path-walk plus descent of one layer.",
+      "1": "bsp(block=sunstone, spindle=5, pscale=-1)",
+      "2": "Path-walk along the spindle plus children of the terminus expanded down one layer. Path-walk one entry: at depth 1 pscale 0, branch 5's underscore 'As composition...' Descent five entries (digit children of root.5 at depth 2 pscale -1): at 5,1 'Star is the composition operator...', at 5,2 'Block references wire blocks into ecologies...', at 5,3 'Self-reference creates control loops...', at 5,4 'PCT mapping. The polar geometry corresponds to Perceptual Control Theory...', at 5,5 'Soliton stabilisation...'. Six entries total, structured as path-walk-then-descent. Shape: path-walk plus depth-bounded descent. Note: the descent iterates digit children only; the hidden directory at root.5._ is not in the descent (the disc at pscale -1 collects it separately, but descent under the spindle terminus is the children rule per the spec)."
+    }
+  },
+  "3": {
+    "_": "BSP-TEST-STAR — third battery, exercising the star operator. The star operator at a spindle terminus enters the hidden directory at the terminus (the underscore-as-object at terminus._) and applies an inner spindle and pscale inside the hidden directory as if it were a sub-block. A spindle of the form X* walks X to the terminus, enters the hidden directory there, and returns the inner as a whole-block view by default. A spindle of the form X*Y walks X, enters the hidden directory, then walks Y inside. Pscale composes on the inner: X* with pscale P yields a disc inside the hidden directory at depth (floor_of_hidden_dir minus P). If the terminus has no hidden directory (its underscore is a string, not an object), the star returns the terminus semantic with inner null. The return shape is 'star' with two payload fields: 'semantic' carrying the underscore terminus of the spindle terminus (the position the star was applied at), and 'inner' carrying the inner bsp result (or null when no hidden directory). The inner is a full bsp result with its own shape (block, path-walk, point, disc, etc.) determined by what was passed inside. Sunstone is the fixture for this battery — its branches 1 through 8 each carry a hidden directory at branch._, while branch 9 does not. Hidden directories at sunstone branches typically hold star references (strings naming other bsp addresses, e.g. root.7._.1 holds '1.1' pointing at sunstone:1.1) plus a summary underscore. Reference implementation bsp-alt.py supports the star operator after the extension; run python3 bsp-alt.py sunstone.json --spindle 'X*' to see the canonical structure. Workflows A, B, C as documented in bsp-test.json — invoke at the call in branch.1, compare to canonical at branch.2, report match or divergence.",
+    "1": {
+      "_": "Spindle 5* — star into branch 5's hidden directory, no inner walk or pscale.",
+      "1": "bsp(block=sunstone, spindle=5*)",
+      "2": "Shape: star. Semantic: the underscore terminus of root.5 walked via the underscore chain, 'As composition. Star walks into a hidden directory; the primitive composes with itself across block boundaries...' Inner: shape block, holding the hidden directory at root.5._ — an object with one digit child at 1 (the string '2', a star reference to sunstone branch 2) plus its own underscore string 'As composition...'. The inner block's keys are _ and 1."
+    },
+    "2": {
+      "_": "Spindle 1* — star into branch 1's hidden directory, no inner.",
+      "1": "bsp(block=sunstone, spindle=1*)",
+      "2": "Shape: star. Semantic: 'As geometry. A pscale block is polar — every node belongs to a longitudinal spindle...' Inner: shape block, hidden directory at root.1._ with keys _ and 1 (1 holds the star reference '4' to sunstone branch 4, and _ holds 'As geometry...')."
+    },
+    "3": {
+      "_": "Spindle 7* — star into the reflexive seed at root.7._, no inner.",
+      "1": "bsp(block=sunstone, spindle=7*)",
+      "2": "Shape: star. Semantic: 'As reflexive. The block teaches BSP by being navigable through BSP...' Inner: shape block, the reflexive seed at root.7._ with five keys — _ (the underscore 'As reflexive...'), 1 ('1.1'), 2 ('2.1'), 3 ('5.3'), 4 ('7.1'). The four digit positions are star references to other sunstone addresses (the minimal reflexive directory)."
+    },
+    "4": {
+      "_": "Spindle 9* — star at a branch with no hidden directory (root.9._ is a string, not an object).",
+      "1": "bsp(block=sunstone, spindle=9*)",
+      "2": "Shape: star. Semantic: 'As design. Pscale blocks are an experimental medium; structure follows intent...' Inner: null. Branch 9 of sunstone has its underscore as a plain string rather than an object, so there is no hidden directory to enter. The star operation still returns the terminus semantic but the inner is null."
+    },
+    "5": {
+      "_": "Spindle 5*1 — star into branch 5's hidden directory, then walk digit 1 inside.",
+      "1": "bsp(block=sunstone, spindle=5*1)",
+      "2": "Shape: star. Semantic: 'As composition. Star walks into a hidden directory...' Inner: shape path-walk of one entry at depth 1, pscale 0 inside the hidden directory (which has its own floor of 1, since hidden._ is a string). The entry's content is '2', a star reference to sunstone branch 2."
+    },
+    "6": {
+      "_": "Spindle 7*1 — star into the reflexive seed, walk digit 1 inside.",
+      "1": "bsp(block=sunstone, spindle=7*1)",
+      "2": "Shape: star. Semantic: 'As reflexive...' Inner: shape path-walk of one entry at depth 1, pscale 0 inside the reflexive seed. The entry's content is '1.1' — a star reference to sunstone:1.1 (the underscore at branch 1, position 1). One of the four reflexive seeds an agent grafts into its own reflexive block."
+    },
+    "7": {
+      "_": "Spindle 7*4 — star into the reflexive seed, walk digit 4 inside (the koan address).",
+      "1": "bsp(block=sunstone, spindle=7*4)",
+      "2": "Shape: star. Semantic: 'As reflexive...' Inner: shape path-walk of one entry at depth 1, pscale 0 inside the reflexive seed. The entry's content is '7.1' — a star reference to sunstone:7.1, the koan 'The entity reading this exists, thereby inducing the awareness function...' This is the recursive self-reference of the reflexive seed."
+    },
+    "8": {
+      "_": "Spindle 7* plus pscale 0 — star into the reflexive seed, then disc at pscale 0 inside.",
+      "1": "bsp(block=sunstone, spindle=7*, pscale=0)",
+      "2": "Shape: star. Semantic: 'As reflexive...' Inner: shape disc at pscale 0 inside the hidden directory. The hidden directory at root.7._ has floor 1 (its own underscore is a string), so pscale 0 inside it sits at depth 1. Five entries: the floor terminus at address 0 ('As reflexive...'), and the four digit children at addresses 1, 2, 3, 4 holding star references '1.1', '2.1', '5.3', '7.1'."
+    },
+    "9": {
+      "_": "Spindle 5*1 plus pscale 0 — star into branch 5's hidden directory, walk 1 with pscale 0 inside.",
+      "1": "bsp(block=sunstone, spindle=5*1, pscale=0)",
+      "2": "Shape: star. Semantic: 'As composition...' Inner: shape point. Inside the hidden directory at root.5._, walking spindle 1 with pscale 0 (which equals the spindle terminus pscale for a one-digit walk at floor 1) returns the position at depth 1: content '2', a star reference to sunstone branch 2."
+    }
+  },
+  "4": {
+    "_": "BSP-TEST-ABSORPTION — fourth battery, exercising absorption stability across floor changes. The absorption guarantee: the same canonical address reaches the same semantic content regardless of how many underscore layers the block has on top, because shorter addresses pad left with zeros (underscores) up to the floor width. Three paired fixtures sit alongside this block — absorb-floor1.json, absorb-floor2.json, absorb-floor3.json — each carrying identical content at the same canonical addresses but wrapped under successively deeper underscore chains. For example the string 'POSITION ONE' lives at root.1 in floor-1, at root._.1 in floor-2, at root._._.1 in floor-3; all three are reached by the canonical address '1' once the parser pads to floor width. The pscale labels are stable under absorption — pscale 0 always sits at the floor regardless of which floor that is — so a point query 'spindle=1, pscale=0' returns the same content with the same pscale label on all three fixtures. The depth label differs (1, 2, 3 respectively) since depth is a tree property, but pscale is a content property. Each of the nine tests in this battery queries the three fixtures with the same call and asserts the same content comes back. The spec implication: an address written at one floor remains valid as the block grows additional underscore layers above; the substrate guarantees absorption. Workflow as in bsp-test.json — invoke each call, compare content to canonical, report match or divergence.",
+    "1": {
+      "_": "Address 1 plus pscale 0 on floor-1 — point at depth 1, pscale 0.",
+      "1": "bsp(block=absorb-floor1, spindle=1, pscale=0)",
+      "2": "Shape: point. Depth 1, pscale 0, address 1, content 'POSITION ONE — same content, address 1'. This is the simplest case: no padding needed since the address width matches the floor width."
+    },
+    "2": {
+      "_": "Address 1 plus pscale 0 on floor-2 — same content, padded address.",
+      "1": "bsp(block=absorb-floor2, spindle=1, pscale=0)",
+      "2": "Shape: point. Depth 2 (one greater than floor-1), pscale 0 (same as floor-1 case), content 'POSITION ONE — same content, address 1'. The address '1' pads to '01' under floor 2, walking _,1 to reach the content that lives at root._.1 in this fixture. Same content, same pscale, deeper tree position."
+    },
+    "3": {
+      "_": "Address 1 plus pscale 0 on floor-3 — same content, more padding.",
+      "1": "bsp(block=absorb-floor3, spindle=1, pscale=0)",
+      "2": "Shape: point. Depth 3, pscale 0, content 'POSITION ONE — same content, address 1'. The address pads to '001' under floor 3, walking _,_,1 to reach root._._.1 where the content lives. Tests 1, 2, 3 together demonstrate absorption — same address, same pscale, same content across three floors."
+    },
+    "4": {
+      "_": "Address 9.1 plus pscale -1 on floor-1 — point below the floor.",
+      "1": "bsp(block=absorb-floor1, spindle=9.1, pscale=-1)",
+      "2": "Shape: point. Depth 2, pscale -1, content 'POSITION NINE-ONE — same content, address 9.1'. At floor 1, address '9.1' has left-of-decimal width 1 matching floor 1; walks 9,1 reaching root.9.1."
+    },
+    "5": {
+      "_": "Address 9.1 plus pscale -1 on floor-2 — same content, padded.",
+      "1": "bsp(block=absorb-floor2, spindle=9.1, pscale=-1)",
+      "2": "Shape: point. Depth 3, pscale -1 (same as floor-1 case), content 'POSITION NINE-ONE — same content, address 9.1'. At floor 2, '9.1' pads to '09.1', walking _,9,1 to reach root._.9.1."
+    },
+    "6": {
+      "_": "Address 9.1 plus pscale -1 on floor-3 — same content, more padding.",
+      "1": "bsp(block=absorb-floor3, spindle=9.1, pscale=-1)",
+      "2": "Shape: point. Depth 4, pscale -1, content 'POSITION NINE-ONE — same content, address 9.1'. At floor 3, '9.1' pads to '009.1', walking _,_,9,1 to reach root._._.9.1. Tests 4, 5, 6 confirm absorption holds at pscale -1 as well — content stable across floors, pscale label stable, depth label varies."
+    },
+    "7": {
+      "_": "Disc at pscale 0 on floor-1 — four entries at the floor.",
+      "1": "bsp(block=absorb-floor1, pscale=0)",
+      "2": "Shape: disc, target_depth 1. Four entries: FLOOR TERMINUS at address 0 ('FLOOR TERMINUS — same content, address 0'), POSITION ONE at address 1, POSITION FIVE at address 5, POSITION NINE at address 9 (the underscore semantic of the branch-9 object)."
+    },
+    "8": {
+      "_": "Disc at pscale 0 on floor-2 — same content, different addresses (padded).",
+      "1": "bsp(block=absorb-floor2, pscale=0)",
+      "2": "Shape: disc, target_depth 2. Four entries with same content as test 7 but addresses now have one underscore prefix: FLOOR TERMINUS at 0,0; POSITION ONE at 0,1; POSITION FIVE at 0,5; POSITION NINE at 0,9. The pscale 0 disc has the same membership across floors — same four positions, same four contents — even though their tree depth has increased by one."
+    },
+    "9": {
+      "_": "Disc at pscale 0 on floor-3 — same content, two underscore prefixes.",
+      "1": "bsp(block=absorb-floor3, pscale=0)",
+      "2": "Shape: disc, target_depth 3. Same four entries: FLOOR TERMINUS at 0,0,0; POSITION ONE at 0,0,1; POSITION FIVE at 0,0,5; POSITION NINE at 0,0,9. Tests 7, 8, 9 confirm the pscale 0 disc remains stable across floors — same membership, same contents — with only the address prefixes growing to reflect the deeper underscore chain."
+    }
+  },
+  "5": {
+    "_": "BSP-TEST-REVERSE — fifth battery, exercising the inverse direction. Forward tests ask 'given a bsp call, what is the canonical output?'; reverse tests ask 'given target content or a description, what is the bsp call?'. Three flavours of reverse: (a) direct content lookup, where the LLM is given a literal string that appears in a fixture and must produce the address that reaches it; (b) semantic match, where the LLM is given a description of meaning rather than literal content and must locate the matching position — these often have multiple acceptable answers because the substrate's structure allows several addresses to refer to semantically related content; (c) call generation from intent, where the LLM is given a high-level question about the block and must produce the bsp call that answers it best. Each branch carries the prompt at branch.1, the canonical bsp call at branch.2, and a list of marker strings at branch.3 that should appear in the canonical call's output. Workflow for an LLM under test: read the prompt at branch.1, generate your own bsp call, run it, and verify the output contains the markers at branch.3. The canonical at branch.2 is one valid answer; alternative calls that produce content satisfying the prompt are also valid (especially for semantic-match cases). The verifier in run-bsp-tests.py validates the canonical mechanically by running it against the appropriate fixture and checking markers. Fixtures vary per branch: spatial-related prompts use test-spatial-floor3.json; sunstone-related prompts use sunstone.json. The reverse battery exercises a different cognitive direction from the four forward batteries — synthesis rather than evaluation — and is therefore particularly useful for testing whether an LLM has internalised the spec, not just whether its bsp implementation conforms.",
+    "1": {
+      "_": "Direct content lookup — find a literal string in test-spatial-floor3.",
+      "1": "Where in test-spatial-floor3 is the string 'BELLOWS — pscale -2 — spindle 123.41' stored? Produce the bsp call that retrieves it.",
+      "2": "bsp(block=test-spatial-floor3, spindle=123.41)",
+      "3": [
+        "BELLOWS"
+      ]
+    },
+    "2": {
+      "_": "Direct content lookup — find a literal string in sunstone.",
+      "1": "Where in sunstone is the content beginning 'Soliton stabilisation. In nonlinear PCT, the reference is not fixed externally...' stored? Produce the bsp call that retrieves it.",
+      "2": "bsp(block=sunstone, spindle=55)",
+      "3": [
+        "Soliton stabilisation"
+      ]
+    },
+    "3": {
+      "_": "Direct lookup — find the entire cross-section at depth 4 of test-spatial-floor3.",
+      "1": "Test-spatial-floor3 is floor 3. Produce the bsp call that returns every position one below the floor (depth 4, pscale -1) across the whole block.",
+      "2": "bsp(block=test-spatial-floor3, pscale=-1)",
+      "3": [
+        "HEARTH",
+        "STOVE"
+      ]
+    },
+    "4": {
+      "_": "Semantic match — find positions semantically inside the kitchen, with the path to it.",
+      "1": "In test-spatial-floor3, you want to see what is contained within the kitchen — the kitchen itself, plus its immediate contents one layer deeper. Produce the bsp call. Multiple valid answers exist: a spindle-plus-pscale that includes the path-walk plus descent, or a pscale-only disc that returns just the contents at one layer below the kitchen.",
+      "2": "bsp(block=test-spatial-floor3, spindle=123, pscale=-1)",
+      "3": [
+        "KITCHEN",
+        "HEARTH",
+        "STOVE"
+      ]
+    },
+    "5": {
+      "_": "Semantic match — find the koan at sunstone's reflexive branch.",
+      "1": "Sunstone has a branch about reflexivity (the block teaching itself). At one position within that branch there is a koan — a self-referential statement that the entity reading this exists, thereby inducing awareness. Produce the bsp call that reaches that koan.",
+      "2": "bsp(block=sunstone, spindle=71)",
+      "3": [
+        "entity reading this exists"
+      ]
+    },
+    "6": {
+      "_": "Semantic match — locate the hidden directory holding the reflexive seed.",
+      "1": "Sunstone's reflexive branch carries a 'reflexive seed' — a hidden directory containing four star references to other sunstone addresses, plus its own underscore summary. Produce the bsp call that retrieves this hidden directory and its contents.",
+      "2": "bsp(block=sunstone, spindle=7*)",
+      "3": [
+        "As reflexive",
+        "1.1",
+        "2.1",
+        "5.3",
+        "7.1"
+      ]
+    },
+    "7": {
+      "_": "Call generation — show the floor of sunstone.",
+      "1": "Produce the bsp call that returns every position at pscale 0 of sunstone — the floor terminus plus the nine branch summaries. The intent is to see a cross-section of the block at its anchor level.",
+      "2": "bsp(block=sunstone, pscale=0)",
+      "3": [
+        "Sunstone",
+        "As geometry",
+        "As function",
+        "As reflexive",
+        "As design"
+      ]
+    },
+    "8": {
+      "_": "Call generation — find positions at pscale -2 in test-spatial-floor3.",
+      "1": "Produce the bsp call that returns every position at pscale -2 (two below the floor) of test-spatial-floor3. The block contains content at this pscale — leaves below the hearth.",
+      "2": "bsp(block=test-spatial-floor3, pscale=-2)",
+      "3": [
+        "BELLOWS",
+        "ASH PIT",
+        "POT-HOOK"
+      ]
+    },
+    "9": {
+      "_": "Call generation — enter the reflexive seed and disc at its floor.",
+      "1": "Produce the bsp call that enters the hidden directory at sunstone's reflexive branch and returns a disc of all positions at the floor of that hidden directory (the four star references plus the directory's own underscore). The call should compose the star operator with a pscale.",
+      "2": "bsp(block=sunstone, spindle=7*, pscale=0)",
+      "3": [
+        "As reflexive",
+        "1.1",
+        "2.1",
+        "5.3",
+        "7.1"
+      ]
+    }
+  },
+  "6": {
+    "_": "BSP-TEST-EDGE — sixth battery, exercising edge cases and boundary behaviour of the bsp function. Where the forward batteries verify normal operation and the reverse battery verifies synthesis, this battery verifies what bsp does under unusual or invalid inputs. Each branch carries the standard fields (description at branch._, call at branch.1, canonical answer description at branch.2) plus three additional assertion positions for the runner: markers at branch.3 (substrings to match in the output), expected_shape at branch.4, and expected_count at branch.5 (an integer for path-walk or disc shapes, a [path_walk, descent] pair for combined shapes, or null when no count assertion applies). Error cases use expected_shape='error' and the markers match against the error message. The edge cases test: pscale above the spindle terminus (off-spindle upward query); pscale alone at the root level (off-pscale, empty disc); pscale above the floor (real positions exist there); pscale far below all content (empty disc, deeper than the tree); spindle longer than the actual tree depth (walks past leaves into null); multi-dot rejection (more than one decimal point per address); invalid characters in the spindle; empty spindle with pscale (equivalent to pscale alone); spindle with left-of-decimal exceeding floor (rejection). The cases collectively pin down what bsp does at and beyond the spec's defined region, so any conforming implementation must agree on the boundary behaviour.",
+    "1": {
+      "_": "Spindle plus pscale that lands above the spindle terminus to the point of root — off-spindle upward query.",
+      "1": "bsp(block=test-spatial-floor3, spindle=1, pscale=3)",
+      "2": "Shape: point. Content: null. The pscale 3 query lands at depth (floor minus pscale) equals 0, which is the root — off-pscale by spec. A note field carries the reason, e.g. 'pscale 3 is off the spindle (depth 0)'.",
+      "3": [
+        "off the spindle"
+      ],
+      "4": "point",
+      "5": null
+    },
+    "2": {
+      "_": "Pscale alone at the root level — off-pscale, empty disc.",
+      "1": "bsp(block=test-spatial-floor3, pscale=3)",
+      "2": "Shape: disc. target_depth 0 (root). Zero entries — the root is structural wrapping and off-pscale; no positions sit there.",
+      "3": [],
+      "4": "disc",
+      "5": 0
+    },
+    "3": {
+      "_": "Pscale 2 alone — above the floor by one, two positions exist there.",
+      "1": "bsp(block=test-spatial-floor3, pscale=2)",
+      "2": "Shape: disc. target_depth 1. Two entries: THORNKEEP at address 1 (depth 1, pscale 2), HEADLAND at address 3 (depth 1, pscale 2). These are the only top-level digit-walked branches in the fixture.",
+      "3": [
+        "THORNKEEP",
+        "HEADLAND"
+      ],
+      "4": "disc",
+      "5": 2
+    },
+    "4": {
+      "_": "Pscale far below all content — empty disc.",
+      "1": "bsp(block=test-spatial-floor3, pscale=-5)",
+      "2": "Shape: disc. target_depth 8. Zero entries — the deepest content in the fixture is IRON CHAIN at depth 6 (pscale -3); nothing exists at depth 8 or deeper.",
+      "3": [],
+      "4": "disc",
+      "5": 0
+    },
+    "5": {
+      "_": "Spindle longer than the actual tree — walks past leaves into null.",
+      "1": "bsp(block=test-spatial-floor3, spindle=12345)",
+      "2": "Shape: path-walk of 5 entries. Walks 1, 2, 3, 4, 5 — but at digit 5 inside HEARTH (digits 1, 2, 7 only) the walk falls off the tree. Entries 1-4 carry content (THORNKEEP, TAVERN, KITCHEN, HEARTH); entry 5 has null content because the walk could not continue.",
+      "3": [
+        "THORNKEEP",
+        "TAVERN",
+        "KITCHEN",
+        "HEARTH"
+      ],
+      "4": "path-walk",
+      "5": 5
+    },
+    "6": {
+      "_": "Multi-dot rejection — addresses carry at most one decimal point.",
+      "1": "bsp(block=test-spatial-floor3, spindle=1.2.3)",
+      "2": "Error. InvalidAddressError raised by the parser. Error message contains 'multiple decimal points'. Per sunstone:1.5, an address carries at most one decimal — multi-dot is pre-bsp notation that must be canonicalised before parsing.",
+      "3": [
+        "multiple decimal points"
+      ],
+      "4": "error",
+      "5": null
+    },
+    "7": {
+      "_": "Invalid character in spindle — non-digit raises error.",
+      "1": "bsp(block=test-spatial-floor3, spindle=1a2)",
+      "2": "Error. InvalidAddressError raised by the parser. Error message contains the rejected character — 'non-digit'.",
+      "3": [
+        "non-digit"
+      ],
+      "4": "error",
+      "5": null
+    },
+    "8": {
+      "_": "Empty spindle with pscale — equivalent to pscale-alone disc.",
+      "1": "bsp(block=test-spatial-floor3, spindle=, pscale=0)",
+      "2": "Shape: disc. Empty spindle is treated identically to no spindle. Returns the pscale 0 disc — six entries: FLOOR TERMINUS, AT-FLOOR-VIA-UNDERSCORE, KITCHEN, COMMON ROOM, FISHMONGER, LAMP ROOM. Same as bsp-test branch 6.",
+      "3": [
+        "FLOOR TERMINUS",
+        "KITCHEN",
+        "COMMON ROOM",
+        "FISHMONGER",
+        "LAMP ROOM"
+      ],
+      "4": "disc",
+      "5": 6
+    },
+    "9": {
+      "_": "Left-of-decimal exceeds floor — rejection (cannot anchor pscale 0 above the floor).",
+      "1": "bsp(block=test-spatial-floor3, spindle=1234.5)",
+      "2": "Error. InvalidAddressError raised by the parser. Left-of-decimal width 4 exceeds the block's floor of 3 — the decimal point anchors pscale 0 at the floor, so the left side cannot have more digits than the floor depth. Error message contains 'exceeds floor'.",
+      "3": [
+        "exceeds floor"
+      ],
+      "4": "error",
+      "5": null
+    }
+  },
+  "7": {
+    "_": "BSP-TEST-CANONICAL — seventh battery, exercising the relationship between the WRITTEN form of an address and the actual walk it produces. The bsp parser canonicalises an address through three rules acting in this order: (1) reject if multiple decimal points or non-digit characters; (2) pad left-of-decimal with leading zeros (each a '_' underscore step) until the left-side width equals the floor depth, but only when the written left-side is shorter than the floor; (3) strip trailing zeros from the resulting walk digits, since a trailing zero is an underscore step that adds nothing past a literal digit. These three rules together mean: a SHORTER address (length less than floor) absorbs into the underscore chain at the start; a TRAILING-ZERO-BEARING address reaches a position ABOVE the floor by stripping the zero; a DOT in the address anchors pscale 0 to the floor boundary and lets right-of-decimal digits walk into the sub-floor branches without modification. The same address means different things at different floors — '1' at floor 1 walks digit 1, at floor 3 walks _,_,1; this is absorption, the same canonical form reaching the same content even after the block grows additional underscore layers above. The same address can also pick out different positions depending on pscale_attention — '123.4' alone walks all four digits and returns a path-walk, but '123.4' with pscale=0 returns a single point at the position the spindle reaches AT the floor (the '3' position, KITCHEN), pscale=-1 picks the position one below the floor (the '4', HEARTH), pscale=2 picks the position two above the floor (the '1', THORNKEEP). This is how a spindle plus a pscale 'extracts' a specific digit of a semantic number — the spindle is the full path; the pscale selects which depth within that path to read as a point. Tests 1 through 6 exercise canonicalisation (written form → walk → content); tests 7 through 9 exercise digit-picking (spindle plus pscale → specific position). Each branch carries the call at branch.1, the canonical answer at branch.2, markers at branch.3, expected_shape at branch.4, expected_count at branch.5 — same structure as bsp-test-edge.json.",
+    "1": {
+      "_": "Trailing-zero strip — '100' at floor 3 strips both zeros to walk just digit 1.",
+      "1": "bsp(block=test-spatial-floor3, spindle=100)",
+      "2": "Shape: path-walk of one entry. The parser sees left='100', length 3 = floor 3 (no padding), strips trailing zeros to walk digits ['1']. Result: one entry at depth 1, pscale 2, content THORNKEEP. The trailing zeros indicated 'go up to the floor' but since they were never digit-walks they vanish in canonicalisation. '100' and '1' represent the same canonical walk at floor 3.",
+      "3": [
+        "THORNKEEP"
+      ],
+      "4": "path-walk",
+      "5": 1
+    },
+    "2": {
+      "_": "Two-digit walk — '120' strips trailing zero, walks digits 1, 2.",
+      "1": "bsp(block=test-spatial-floor3, spindle=120)",
+      "2": "Shape: path-walk of two entries. Parser: left='120' length 3 = floor 3, strip trailing zero, walk digits ['1', '2']. Entries: depth 1 pscale 2 THORNKEEP, depth 2 pscale 1 TAVERN.",
+      "3": [
+        "THORNKEEP",
+        "TAVERN"
+      ],
+      "4": "path-walk",
+      "5": 2
+    },
+    "3": {
+      "_": "Three-digit walk reaching the floor — '123' at floor 3, no padding or stripping.",
+      "1": "bsp(block=test-spatial-floor3, spindle=123)",
+      "2": "Shape: path-walk of three entries. Parser: left='123' length 3 = floor 3, no padding, no trailing zero to strip. Walks digits ['1', '2', '3']. Entries: THORNKEEP (d1 p2), TAVERN (d2 p1), KITCHEN (d3 p0). The third entry is at pscale 0 — the floor.",
+      "3": [
+        "THORNKEEP",
+        "TAVERN",
+        "KITCHEN"
+      ],
+      "4": "path-walk",
+      "5": 3
+    },
+    "4": {
+      "_": "Walk crossing the floor — '123.4' at floor 3, dot anchors pscale 0 to the floor.",
+      "1": "bsp(block=test-spatial-floor3, spindle=123.4)",
+      "2": "Shape: path-walk of four entries. Parser: left='123' length 3 = floor 3 (no pad), right='4', walk digits ['1', '2', '3', '4']. Entries cross the floor: THORNKEEP (d1 p2), TAVERN (d2 p1), KITCHEN (d3 p0 — the floor), HEARTH (d4 p-1 — one below floor). The decimal marker tells the parser that '123' is above-and-at the floor and '4' is below; the floor sits between '3' and '4'.",
+      "3": [
+        "THORNKEEP",
+        "TAVERN",
+        "KITCHEN",
+        "HEARTH"
+      ],
+      "4": "path-walk",
+      "5": 4
+    },
+    "5": {
+      "_": "Padding for absorption — '1' at floor 3 pads to '001', walks _,_,1.",
+      "1": "bsp(block=absorb-floor3, spindle=1)",
+      "2": "Shape: path-walk of three entries. Parser: left='1' length 1 < floor 3, pad left to '001', walk digits ['0', '0', '1']. The two leading zeros walk the root underscore chain; the final '1' walks digit 1 inside root._._. Reaches POSITION ONE in absorb-floor3, which lives at root._._.1 due to the floor-3 wrapping. Intermediate path-walk entries at depths 1, 2 carry the floor terminus string via collect_underscore (each chain object's semantic walks deeper to find the floor terminus).",
+      "3": [
+        "POSITION ONE"
+      ],
+      "4": "path-walk",
+      "5": 3
+    },
+    "6": {
+      "_": "Padding with decimal — '9.1' at floor 3 pads to '009.1', walks _,_,9,1.",
+      "1": "bsp(block=absorb-floor3, spindle=9.1)",
+      "2": "Shape: path-walk of four entries. Parser: left='9' length 1 < floor 3, pad left to '009', append right='1'. Walks digits ['0', '0', '9', '1']. Reaches POSITION NINE-ONE at root._._.9.1. Intermediate depths 1, 2 carry the floor terminus via chain semantic; depth 3 is POSITION NINE (the underscore of the digit-9 object); depth 4 is POSITION NINE-ONE.",
+      "3": [
+        "POSITION NINE-ONE",
+        "POSITION NINE"
+      ],
+      "4": "path-walk",
+      "5": 4
+    },
+    "7": {
+      "_": "Picking the floor digit — spindle 123.4 with pscale 0 picks the '3' position.",
+      "1": "bsp(block=test-spatial-floor3, spindle=123.4, pscale=0)",
+      "2": "Shape: point. The spindle 123.4 walks four digits crossing the floor. With pscale=0 (the floor), the query lands at depth 3 (floor minus pscale = 3) — the third walked digit, the '3' before the decimal. Returns the single position at that depth: KITCHEN. This is how 'picking a specific digit out of a semantic number' works — the spindle names the path, the pscale names which step along the path to read as a point.",
+      "3": [
+        "KITCHEN"
+      ],
+      "4": "point",
+      "5": null
+    },
+    "8": {
+      "_": "Picking the first below-floor digit — spindle 123.4 with pscale -1 picks the '4' position.",
+      "1": "bsp(block=test-spatial-floor3, spindle=123.4, pscale=-1)",
+      "2": "Shape: point. The spindle 123.4 ends at depth 4, pscale -1. With pscale=-1, the query lands at depth 4 — the fourth walked digit, the '4' after the decimal. Returns: HEARTH. This pscale equals the spindle terminus (p_end = -1), so the query effectively asks 'show me the spindle's terminus position'.",
+      "3": [
+        "HEARTH"
+      ],
+      "4": "point",
+      "5": null
+    },
+    "9": {
+      "_": "Picking the top of the spindle — spindle 123.4 with pscale 2 picks the '1' position.",
+      "1": "bsp(block=test-spatial-floor3, spindle=123.4, pscale=2)",
+      "2": "Shape: point. With pscale=2 (the highest pscale within this spindle at floor 3), the query lands at depth 1 — the first walked digit, the '1'. Returns: THORNKEEP. Tests 7, 8, 9 together show that pscale within a spindle 'tunes' which position along the walked path is returned as a point: pscale 0 picks the floor digit, pscale -N picks N below floor, pscale +N picks N above floor, all within the same spindle.",
+      "3": [
+        "THORNKEEP"
+      ],
+      "4": "point",
+      "5": null
+    }
+  },
+  "8": {
+    "_": "BSP-TEST-NESTING — eighth battery, exercising the two block-growth operations: SUBNESTING (a leaf at a digit position grows into an object holding both the old semantic at its new underscore plus new digit children) and SUPERNESTING (the whole block gains another underscore layer at the root, raising the floor depth by 1). Neither operation is currently a primitive of the bsp function. Subnesting happens IMPLICITLY in bsp-mcp's write path: when a write descends past a string-valued node, the string moves to that node's underscore so digit children can attach (the 'growth migration' or 'supernest-on-growth' pattern in src/bsp-fn.ts walkOrCreate). Supernesting has no implementation today — it is a meta-operation a host would perform by wrapping the existing block in {_: <old>} and updating its floor declaration; there is no pscale_supernest tool yet. This battery tests the READ-SIDE consequences of both growth modes via paired before/after fixtures. The structural guarantees being verified: (a) subnesting preserves the old leaf semantic at the new underscore — reading the digit position still returns the same content as before; (b) subnesting opens new addressable positions below the grown digit; (c) supernesting preserves all old addresses' content via floor-aware padding — the same spindle reaches the same content with the same pscale label, only the tree depth shifts; (d) supernesting preserves the pscale 0 disc's content membership though the disc's addresses gain an underscore-walk prefix. Tests 1-4 exercise subnesting against subnest-before.json / subnest-after.json (both floor 1, the after fixture has digit 1 grown into an object); tests 5-9 exercise supernesting against super-before.json (floor 1) / super-after.json (floor 2, the whole block wrapped in another underscore). The same structure as bsp-test-edge and bsp-test-canonical applies — branch.1 is the call, branch.2 is the canonical answer, branch.3 markers, branch.4 expected_shape, branch.5 expected_count.",
+    "1": {
+      "_": "Subnest before — spindle 1 reaches a leaf string.",
+      "1": "bsp(block=subnest-before, spindle=1)",
+      "2": "Shape: path-walk of one entry at depth 1 pscale 0, content 'A leaf at digit 1 — content that was here before subnest'. Direct leaf read at the digit position.",
+      "3": [
+        "A leaf at digit 1"
+      ],
+      "4": "path-walk",
+      "5": 1
+    },
+    "2": {
+      "_": "Subnest after — same address reaches the same semantic, preserved via the new underscore of the grown object.",
+      "1": "bsp(block=subnest-after, spindle=1)",
+      "2": "Shape: path-walk of one entry at depth 1 pscale 0, content 'A leaf at digit 1 — content that was here before subnest'. The digit-1 position is now an object, but its semantic via collect_underscore is the SAME string as before. This is the subnest preservation guarantee: growing a leaf into an object MUST keep the old leaf content as the new object's underscore so existing addresses still resolve to the same semantic.",
+      "3": [
+        "A leaf at digit 1"
+      ],
+      "4": "path-walk",
+      "5": 1
+    },
+    "3": {
+      "_": "Subnest before — spindle 1.1 walks past a leaf and finds nothing at depth 2.",
+      "1": "bsp(block=subnest-before, spindle=1.1)",
+      "2": "Shape: path-walk of two entries. At depth 1, the digit-1 leaf 'A leaf at digit 1'; at depth 2, content null because the walk cannot continue into a string. The old block has no deeper structure at position 1.",
+      "3": [
+        "A leaf at digit 1"
+      ],
+      "4": "path-walk",
+      "5": 2
+    },
+    "4": {
+      "_": "Subnest after — spindle 1.1 now reaches the new deeper content.",
+      "1": "bsp(block=subnest-after, spindle=1.1)",
+      "2": "Shape: path-walk of two entries. At depth 1, 'A leaf at digit 1' (preserved via the grown object's underscore); at depth 2 pscale -1, 'Deeper at 1.1 — new content created by the subnest growth'. The subnest opened a new addressable position.",
+      "3": [
+        "A leaf at digit 1",
+        "Deeper at 1.1"
+      ],
+      "4": "path-walk",
+      "5": 2
+    },
+    "5": {
+      "_": "Supernest before — spindle 1 reaches POSITION at 1 directly at depth 1.",
+      "1": "bsp(block=super-before, spindle=1)",
+      "2": "Shape: path-walk of one entry at depth 1, pscale 0, content 'POSITION at 1'. Floor 1 block — the digit-1 leaf is at the floor, no underscore-chain padding needed for the address.",
+      "3": [
+        "POSITION at 1"
+      ],
+      "4": "path-walk",
+      "5": 1
+    },
+    "6": {
+      "_": "Supernest after — spindle 1 now pads to '01' and walks through one extra underscore step, still reaching POSITION at 1 with pscale 0.",
+      "1": "bsp(block=super-after, spindle=1)",
+      "2": "Shape: path-walk of two entries. At depth 1 pscale 1, the floor terminus 'FLOOR TERMINUS...' (via collect_underscore on the root chain object — the supernested layer); at depth 2 pscale 0, 'POSITION at 1'. The pscale label of the final entry is THE SAME as super-before (pscale 0); the tree depth differs (2 vs 1) reflecting the additional underscore layer. This is supernest absorption: the same address resolves to the same content with the same pscale label even after the block grew an underscore layer above.",
+      "3": [
+        "POSITION at 1",
+        "FLOOR TERMINUS"
+      ],
+      "4": "path-walk",
+      "5": 2
+    },
+    "7": {
+      "_": "Supernest before — pscale 0 disc finds three positions at the floor.",
+      "1": "bsp(block=super-before, pscale=0)",
+      "2": "Shape: disc at target_depth 1. Three entries: FLOOR TERMINUS at address 0, POSITION at 1 at address 1, POSITION at 5 at address 5. All at pscale 0 (the floor).",
+      "3": [
+        "FLOOR TERMINUS",
+        "POSITION at 1",
+        "POSITION at 5"
+      ],
+      "4": "disc",
+      "5": 3
+    },
+    "8": {
+      "_": "Supernest after — pscale 0 disc finds the same three positions at the new floor.",
+      "1": "bsp(block=super-after, pscale=0)",
+      "2": "Shape: disc at target_depth 2 (the new floor depth). Same three entries by content: FLOOR TERMINUS, POSITION at 1, POSITION at 5. Addresses gain an underscore-walk prefix ('0,0' for the terminus, '0,1' and '0,5' for the digit positions) reflecting the deeper tree. Disc membership is preserved across supernest — the same pscale 0 cross-section returns the same content set, only the addresses lengthen.",
+      "3": [
+        "FLOOR TERMINUS",
+        "POSITION at 1",
+        "POSITION at 5"
+      ],
+      "4": "disc",
+      "5": 3
+    },
+    "9": {
+      "_": "Subnest after — pscale -1 disc finds one position (the new deeper content).",
+      "1": "bsp(block=subnest-after, pscale=-1)",
+      "2": "Shape: disc at target_depth 2. One entry: 'Deeper at 1.1 — new content created by the subnest growth' at address 1,1. The subnest opened a single position at pscale -1; nothing else is below the floor in this fixture.",
+      "3": [
+        "Deeper at 1.1"
+      ],
+      "4": "disc",
+      "5": 1
+    }
+  }
+}
