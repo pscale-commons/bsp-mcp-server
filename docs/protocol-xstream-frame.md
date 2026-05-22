@@ -258,6 +258,81 @@ The viewer's *necessity* decreases as the relational level rises. At Level 1 the
 
 The viewer is the lens xstream offers onto Levels 1–4 from within a Level 5 frame. It is necessary, secondary, and dismissible.
 
+### 5.7 The dimensional intersection — substrate filter for VLS visibility
+
+V-L-S visibility is filtered by a four-dimensional intersection at the substrate level:
+
+```
+(face, beach, address, frame)
+```
+
+This is the **dimensional intersection** — the conjunction of axes that defines "the place I am currently working". Every read and write at the substrate is implicitly scoped by it. Two orthogonal modulators sit alongside the four primary dimensions: **tier** (SMH — aperture/scope) and **authority** (handle + secret + admission). Tier widens or narrows what's visible within the intersection; authority gates what writes are permitted. The four primary dimensions define *where*; tier defines *how wide*; authority defines *who*.
+
+(Alternative names considered: `4-manifold` — mathematically misleading because the axes are discrete, not continuous; `working coordinate` — accurate but less evocative; `dimensional locus` — overlapping with substrate terminology. "Dimensional intersection" is descriptive without overclaiming.)
+
+#### What V and L mean at the intersection
+
+V and L are universally face-filtered. The semantics are identical across all four CADO faces:
+
+- **V** — peer keypresses, face-tagged X, at this intersection. I see only those typing in my own face here.
+- **L** — peer submitted content, face-tagged X, at this intersection. I see only those whose submitted intent has the same face as mine.
+
+The face-filter is the substrate's privacy/relevance property: Character liquid is visible to other Characters in the same scene, Author liquid to other Authors editing the same block, and so on. This was already stated face-by-face in §5.1–5.4; the dimensional-intersection framing names it as a single rule.
+
+#### What S means per face
+
+S diverges per face's purpose. Where V and L are universal, S is where the face's natural output kind lands in the substrate:
+
+| Face | S (solid) destination | Synthesis pattern |
+|---|---|---|
+| Character | synthesised narrative in this pool/frame; entity-position lane in frame disc | medium-LLM merges multiple liquid into one canonical solid (§4) |
+| Author | versions of the content block at this address | merge by editor-rule (single-committer / quorum / auto-merge per §5.2) |
+| Designer | versions of the action/rule block at this address | governance merge; ecological-change check before commit (§5.3) |
+| Observer | mark at this address; or external-render artifact (open question, §11) | none in current implementation — Observer commits directly to mark |
+
+#### Substrate-level vs UI-level
+
+The dimensional intersection is **substrate-level**. Any client that uses bsp-mcp can operate at it — xstream's V-L-S canvas is one possible presentation; a claude.ai connector with bsp-mcp tools, a CLI, or a future Chrome extension are equally valid clients. The intersection determines:
+
+- which `bsp()` reads return relevant peer presence and liquid
+- which `bsp()` writes the client should perform on submit
+- which face-tagged content the substrate filters to the user
+
+The V-L-S **canvas** (vapour-liquid-solid zones in the UI) is xstream-specific — it is the reflexive presentation that makes a client *xstream rather than generic*. A claude.ai connector exposes the same dimensional intersection but renders it as conversation with bsp() tool calls rather than three stacked zones. Both are equally legitimate access modes.
+
+What MUST be present in any client to claim "operating at the dimensional intersection":
+
+1. A way to declare or derive the four axes (face, beach, address, frame)
+2. Reads scoped to the intersection (presence, liquid, solid, marks)
+3. Writes tagged with the active face and lodged at the address (or frame entity-position)
+4. Honour of the tier aperture if applicable
+5. Honour of the authority gate (sign with secret; route through admission for needs-admission acts)
+
+A client that does these five things participates at the dimensional intersection. The reflexive canvas is one possible UX on top; the civilised-mind viewer drawer is another; a pure-API connector is a third.
+
+#### Degenerate intersections
+
+Not every (face × beach × address × frame) tuple has a meaningful operation. Examples:
+
+- **Character outside a frame and outside a pool**: no scene to inhabit. Submit has no natural destination. The graceful fallback is to write a face-tagged mark (face=character) at the address — the user is asserting presence-as-character without a synthesis pathway.
+- **Author at a non-content address** (e.g. a marks block or a presence block): no content block to edit. Fallback: face-tagged mark, or disabled submit with a hint.
+- **Designer at a non-action address**: no rule block to revise. Fallback as above.
+- **Observer**: always meaningful — Observer is the safety-net face. Drop a mark at any address.
+
+The convention: clients SHOULD detect degenerate intersections and either disable submit or fall back to a face-tagged mark. The substrate does not enforce face-appropriateness of writes — a Character can technically submit at an Author-block address; the substrate just records `face=character` in field 4 of the mark. The convention is client-side discipline, not substrate enforcement.
+
+#### Pool, frame, address — clarification
+
+A common confusion: pool is not a fifth dimension. Pool is an *address pattern* — `pool:<name>` is a particular address inside a beach. Frame is also an *address-like overlay* — `frame:<scene>` is a block at that address, but entering a frame adds a SECOND coordinate (entity-position) that lives alongside address. So the substrate-shape ontology is:
+
+- **Channel** — beach / sed / grain (URL prefix; relational class)
+- **Beach** — URL of the federated host
+- **Address** — pscale spindle inside the beach's block tree
+- **Block kind** — pool / frame / content / action / mark / passport / shell / etc. (derived from substrate shape at the address)
+- **Frame overlay** — when `current_frame` is set, the working position becomes `(address, frame, entity_position)` as a triple
+
+Pool and frame are block kinds. Channel is a beach-URL property. The user-facing dimensional intersection is the orthogonal layer above all this: face × beach × address × frame. The rest is derived.
+
 ---
 
 ## 6. The block-shape derivation in one table
@@ -422,5 +497,9 @@ The phase 0.10 lessons are encoded in the protocol shape, not in defensive code.
 - **Vapour-to-liquid coalescing**: does every accepted vapour become a separate liquid write, or do we coalesce within a window? Application choice; protocol-neutral.
 - **Liquid TTL**: should liquid expire if no synthesis fires within N minutes? Convention per scene-skill, likely.
 - **Designer governance loops**: how deep does the recursive design go? At some point a constitution-skill governs the design-skills. The protocol allows arbitrary depth via star-references; whether that depth is sane is a design choice.
+- **Observer-compiler mode**: Observer's S today is a direct mark write (no synthesis). For external-audience output (narrative / animation / share), three options are open: (a) plugin as a SOLID-output transform — L is mark content, S is a mark + optional rendered-artifact pointer; (b) plugin replaces L→S — multiple observers' L become inputs to a generative API, S is the rendered artifact; (c) plugin writes to a new block kind (e.g. `output:<name>`). (b) is theoretically cleanest and reuses the synthesis pattern. (a) is most pragmatic. (c) introduces new substrate.
+- **Observer's L sourcing**: when Observer is producing a compiled external artifact (option b above), does its L come from typed prompt only, or can it be PIPED from the solid of Character entities in the frame? An Observer-compiler watching a frame could automatically bundle character solid lanes into the synthesis input, with the typed prompt as editorial direction. This would make Observer a "third-person narrator" of others' lived-in fiction. Unclear whether the synthesis API would accept this composition or whether a separate "compiler-frame" block kind is needed.
+- **Character without a frame or pool**: graceful fallback noted (face-tagged mark), but does the medium-LLM treat this differently from an Observer mark? The face-tag differs; the substrate write is otherwise identical. UX may want to disable Character submit outside frames/pools to avoid the ambiguity.
+- **Tier UI surfacing**: tier (SMH) is substrate-supported but not yet exposed in any client UI. Power-user setting; defaults to Medium. When and how it appears in xstream's UI is open.
 
 These are noted, not blocking. The minimum viable frame protocol is sections 2–7. Sections 8–10 are illustration and migration notes.
