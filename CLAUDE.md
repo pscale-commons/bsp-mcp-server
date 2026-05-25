@@ -12,6 +12,15 @@ This is not a normal MCP server. Most MCP servers expose categorised tools (pass
 
 This iteration takes that lesson all the way. The function surface IS bsp(). Names like "passport", "inbox", "history" are conventions encoded in block names and walked via the `*` operator. The mobius twist: the digit is mapped to a semantic, which itself has an address made of digits. That's why the surface is so small. There's nothing to add — there's only blocks to walk.
 
+## Authoring rule — semantic addresses carry ONE decimal point
+
+Pscale addresses are numbers, not paths (sunstone:1.5). They carry **at most one decimal point** — the decimal anchors pscale 0 at the block's floor; left-of-decimal pads to floor width. Two forms are valid; pick whichever is clearer for the reader:
+
+- **Canonical address form** (single decimal). `block-conventions:4.26` walks branch 4, then 2, then 6. Block-conventions floor is 1, so one digit sits left of the decimal. A four-deep walk into a floor-2 block writes as `34.56`, never `3.4.5.6`.
+- **Tree-walk notation** (commas, no decimal). When emphasising the path of digits actually walked, use commas: `block-conventions:4,2,6` is the same address rendered as an explicit walk. The commas eliminate any question about where the floor sits, at the cost of not being a canonical address.
+
+**Forbidden in code, prose, commits, and block content**: multi-dot strings like `4.2.6` or `3.4.5.6`. The walker strict-rejects them at parse (`InvalidAddressError`, fix landed 2026-05-09); your authoring must match. Common slips: writing `block-conventions:4.2.6` instead of `4.26` or `4,2,6`; writing `whetstone:1.3.2` instead of `1.32` or `1,3,2`. If you catch yourself reaching for a second dot, switch to commas.
+
 ## What this is
 
 A new MCP server that operationalises pscale JSON blocks through a single unified function — `bsp(B, S, P, content?, ...)`. Block-Spindle-Pscale where spindle is the semantic-number address (extending into JSON nesting depth) and pscale is the transversal attention coordinate. These are polar coordinates, not cartesian: radial depth × transversal breadth.
