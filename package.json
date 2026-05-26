@@ -22,7 +22,8 @@
     "smoke:wellknown": "tsx scripts/smoke-wellknown.ts",
     "smoke:federated": "tsx scripts/smoke-federated-live.ts",
     "smoke:federated-parser": "tsx scripts/smoke-federated-parser.ts",
-    "smoke:wire-bsp": "tsx scripts/smoke-wire-bsp.ts"
+    "smoke:wire-bsp": "tsx scripts/smoke-wire-bsp.ts",
+    "smoke:pool-engage": "tsx scripts/smoke-pool-engage.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
