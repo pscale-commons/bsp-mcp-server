@@ -10,21 +10,23 @@
 
 **Isn't:** the convention spec itself. Isn't the NOMAD game-system spec. Isn't world content. Each of those is a separate downstream artefact, scoped here but authored elsewhere.
 
-## The three-layer separation (recap)
+## The four pscale sublayers (recap)
+
+All four sit INSIDE Layer 2 (semantic — pscale block content operating with an LLM) in your existing 0-3 layer framework. Layer 0 (infrastructure) and Layer 1 (code: the bsp.ts walker, the bsp-mcp router) sit below; Layer 3 (awareness/imagination — the inchoate field where the game actually plays) sits above.
 
 ```
-Layer 3 — World content        e.g. Thornkeep, Middle-Earth, real-world meetup
-                                ↓ authored as blocks at a beach
-Layer 2 — Game system          e.g. NOMAD, D&D, FATE, or NONE (real-world mode)
-                                ↓ lives in a separate repo (e.g. nomad-bsp)
-Layer 1 — Substrate convention this document's scope — bsp-mcp + federated beach
-                                ↓ bsp() + 5 primitives + block conventions
-Layer 0 — Substrate primitives the bsp-mcp surface (already stable)
+Pscale sublayer 3 — World content     e.g. Thornkeep places, characters, lore at a beach
+                                       ↓ authored as blocks (possibly seeded from a repo)
+Pscale sublayer 2 — Game system       e.g. NOMAD blocks: soft/medium/hard agents, dice, evaluator
+                                       ↓ lives in a separate repo, seeded onto a beach
+Pscale sublayer 1 — Substrate conv.   passport, shell, pool, frame, spatial coord block, etc.
+                                       ↓ block-conventions sentinel-bundled + per-beach overrides
+Pscale sublayer 0 — Pscale format     block + spindle + pscale + supernest + hidden directories
 ```
 
-The substrate enables engagement. Real-world engagement uses it directly — users ARE characters, interactions ARE outcomes, no arbitration needed. Fantasy RPG adds a game-system layer (NOMAD) on top for perception framing, outcome arbitration, consistency tracking — what reality normally provides for free.
+The substrate enables engagement. Real-world engagement uses it directly — users ARE characters, interactions ARE outcomes, no arbitration needed. Fantasy RPG adds a game-system sublayer (NOMAD) on top for perception framing, outcome arbitration, consistency tracking — what reality normally provides for free.
 
-**Layer 1 is the only layer this document scopes.**
+**Pscale sublayer 1 is the only sublayer this document scopes.** Sublayer 2 (NOMAD) ships in its own repo; sublayer 3 (Thornkeep world content) is authored at a beach.
 
 ## What the substrate already enables (no additions)
 
@@ -149,6 +151,59 @@ Each tier is itself a pscale block (`soft-agent.json`, `medium-agent.json`, `har
 **None of this requires xstream.** The RPG is playable through any MCP client (Claude.app, claude-app, mcp-remote, custom SDK) that speaks `bsp()`.
 
 xstream provides reflexive presentation when ready: live vapour streaming, face-aware V-L-S surfaces, presence visualisation, the dimensional intersection rendered as a canvas rather than a sequence of tool calls. Optional quality layer; not infrastructure.
+
+## Seeding pattern — game system as repo, content as blocks at a beach
+
+The NOMAD game system lives in a separate repo, **but the artefacts it publishes are pscale blocks** seeded onto a beach. Same shape as `pscale-beach` today, where the library and seed blocks live in a repo and an operator's init script seeds them into the beach's KV store.
+
+For `nomad-bsp`:
+- Repo holds source-of-truth JSON blocks: `soft-agent`, `medium-agent`, `hard-agent`, character templates, dice config, NOMAD-specific rules
+- An init script seeds them onto a target beach under canonical names (e.g. at `beach.happyseaurchin.com`)
+- Once seeded, the blocks live at the beach — locked under the operator's passphrase, readable by all, writable only by the operator (or by daemons holding the operator's derived key)
+- Players using bsp-mcp + the beach walk those blocks; they're indistinguishable from any other substrate content
+- Updates flow: repo change → init script re-run → beach blocks refreshed
+
+**This makes the game system itself a federated artefact.** Each beach operator can:
+
+- Use the published seeds as-is (run the canonical NOMAD)
+- Modify the seeds locally — their beach runs a variant
+- Fork the repo and publish their own variant
+- Pull selective updates from upstream
+
+Players choose a beach to play at; that beach's seeded NOMAD blocks define the game system in effect there. Two beaches running different NOMAD variants are two different game tables — same lineage, different houses.
+
+**World content (sublayer 3) follows the same pattern, one sublayer up.** A world bundle could be published as a repo (e.g. `thornkeep-world`) with an init script seeding the spatial coordinate block, character blocks, rules block onto a beach. Or world content can be authored directly at the beach without a publishing repo. Both are valid; the choice is operator preference.
+
+Once all three sublayers (1: substrate convention, 2: game system, 3: world content) are present at a beach, that beach is a complete game venue. Players connect via bsp-mcp, walk the blocks, play.
+
+## Deferred — XYZ state management
+
+A real concern, named here, **not solved here.** Different modes of play imply different state-management needs:
+
+| Mode | What state means |
+|---|---|
+| **Resettable scenario** | one-shot session; state resets between runs; no persistent history |
+| **Long-term campaign** | persistent shared history; events accumulate; reverting requires deliberate rewind |
+| **Open world** | many concurrent players; state isolated per-party or shared globally; persistence indefinite |
+| **Shared now-moment** | a single canonical "now" everyone sees; updates synchronous |
+| **Block-universe** | events have positional/temporal coordinates; players walking through experience them at their own pace; multiple "nows" can coexist |
+| **Parallel timelines / forks** | the GM (or substrate) supports branching state from a save point |
+
+The substrate convention (spatial coordinate block + events-ref + rules-ref) is **mode-agnostic in principle** — the same block shapes can carry any of these modes. The mode is determined by:
+
+- Daemon behaviour (does the events block accumulate forever, snapshot periodically, or reset on session end?)
+- Block-bundle isolation (one events block for the world, or one per campaign?)
+- Convention discipline (do we allow rewinding by writing earlier-position events, or strict append-only?)
+
+For the first NOMAD-on-bsp deployment, a **provisional shape** that doesn't pre-commit:
+
+- Per-campaign block bundle: each campaign gets its own events block, rules block, possibly its own spatial block (or shares the world spatial with per-campaign event overlays)
+- Append-only events: no rewind; if the GM needs to retcon, they author a new event that supersedes
+- No fork support: one canonical timeline per campaign
+
+These are game-system choices, not substrate constraints. Proper scoping of state-management modes happens after the first NOMAD-on-bsp deployment surfaces concrete patterns.
+
+**For now**: scope the substrate convention without committing to a state-management model. The convention works for all of them; mode-choice is downstream.
 
 ## Validation paths
 
