@@ -131,19 +131,22 @@ The 72-test acceptance battery lives at `/Users/davidpinto/Downloads/bsp-test-ma
 
 CORSAIR mirror at `/Volumes/CORSAIR/pscale/sunstone & whetstone/` is kept in sync — bsp2-star.py, test-bsp-parser.py, bsp.ts, bsp-fn.ts.
 
-## The five surviving substrate-stateful primitives
+## The six primitives
 
-These have atomic state machines that bsp() alone cannot subsume:
+Five with atomic substrate state machines bsp() alone cannot subsume, plus one envelope-bundling primitive added 2026-05-26 (`pscale_pool_engage`) because the envelope discipline is operational and conventions could not carry it.
 
 1. `pscale_create_collective` — admin operation on a sed: substrate (passphrase hashing, conventions setup)
 2. `pscale_register` — server-assigned position in a sed: substrate (atomic next-position allocation, passphrase hash storage)
 3. `pscale_grain_reach` — bilateral commitment via the symmetric reach/accept state machine across pair_id
 4. `pscale_key_publish` — Argon2id key derivation, public key publication for gray encryption
 5. `pscale_verify_rider` — deterministic arithmetic check on ecosquared riders (sha256 chain, credit conservation, SQ recompute)
+6. `pscale_pool_engage` — response-envelope primitive: bundles {pool_purpose, synthesis_hint, slice-since-marker, marker_new} in one tool result. The substrate state is identical to a `bsp()` read/write of the pool block; what the primitive adds is the envelope shape. The envelope is what makes personal synthesis operational — the calling LLM has the synthesis_hint (the pool author's directive about how to interpret the stream through the reader's own purpose) in-context the moment it reads the response. Optional `contribution` parameter posts at next-free supernest slot in the same call. Marker is caller-managed (passed in, returned). Synthesis_hint sourced from `pool:<name>/9.1` (canonical, new convention) falling back to the pool's `_`, then to a default.
 
-Each has a real server-side state machine that requires more than `(content, lock)` arguments — atomic next-position allocation, bilateral pair-id derivation, Argon2id derivation, ecosquared arithmetic. Lock-state changes on ordinary blocks are NOT in this list — they're a `new_lock` argument to `bsp()`. Locking was originally a sixth primitive; it folded back in once we asked the inversion test ("is this a state machine or a convention?") and got "it's a property change with the same authority proof as a content write."
+Items 1-5 have atomic server-side state machines (next-position allocation, bilateral pair-id derivation, Argon2id derivation, ecosquared arithmetic). Lock-state changes on ordinary blocks are NOT primitives — they're a `new_lock` argument to `bsp()`.
 
-That's the whole surface: `bsp()` plus five primitives. Six entry points total. Resist the urge to grow it.
+Item 6 is the exception to the "primitive = state machine" rule. It exists because the pscale-mcp pool tools (pscale_pool_join / send / read) carried personal-synthesis operationally via their response envelope, and bsp-mcp's surface collapse moved that to convention — where it failed to carry. The envelope is the unit of operationality. Documented as an experimental addition; if RPG validation (against the prototype in a separate session) doesn't show concrete value, it is reverted before merge.
+
+That's the whole surface: `bsp()` plus six primitives. Seven entry points total (plus the meta-tool `pscale_invite`). Resist further growth; the bar for a 7th primitive is "the envelope is observably what's missing, and conventions have failed to carry it."
 
 ## The address invariant — locked
 
@@ -225,6 +228,7 @@ src/
     keys.ts           — pscale_key_publish
     verify.ts         — pscale_verify_rider
     invite.ts         — pscale_invite (returns progression block)
+    pool.ts           — pscale_pool_engage (the envelope primitive)
   resources/          — Markdown-only doc loaders (JSON sentinels are wired via sentinels.ts; only the long-form discursive resources live here individually)
     xstream-frame.ts  — pscale://xstream-frame (markdown long-form)
     paywall.ts        — pscale://protocol-paywall (markdown long-form; claims the URI in place of the JSON sentinel)

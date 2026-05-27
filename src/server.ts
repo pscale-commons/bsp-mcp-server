@@ -1,11 +1,19 @@
 /**
  * server.ts — MCP server factory.
  *
- * Surface: bsp() + five substrate primitives + one orientation invite +
- * foundational resources. Seven tools total. The invite is a meta-tool
+ * Surface: bsp() + six substrate primitives + one orientation invite +
+ * foundational resources. Eight tools total. The invite is a meta-tool
  * (not a feature tool) — it serves discoverability for tool-scanning LLMs
  * by giving the manifest a tool-shaped surface alongside its block surface.
  * Resist further additions. The geometry IS the program.
+ *
+ * Note on pscale_pool_engage (6th primitive, added 2026-05-26): pools and
+ * marks share the same block shape per block-conventions:4.1; pool engagement
+ * adds no new geometry. What this primitive provides is the response ENVELOPE
+ * — synthesis_hint + slice-since-marker bundled in one tool result so the
+ * caller's LLM has the personal-synthesis instruction in-context. The
+ * pscale-mcp pool tools worked operationally because of this envelope; the
+ * envelope did not survive the surface collapse into convention.
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -16,6 +24,7 @@ import { handleGrainReach, grainReachParamsSchema } from './tools/grain.js';
 import { handleKeyPublish, keyPublishParamsSchema } from './tools/keys.js';
 import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
 import { handleInvite, inviteParamsSchema } from './tools/invite.js';
+import { handlePoolEngage, poolEngageParamsSchema } from './tools/pool.js';
 
 import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPaywall } from './resources/paywall.js';
@@ -52,7 +61,7 @@ function installErrorWrapper(server: McpServer): void {
 
 const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
-const INSTRUCTIONS = `bsp-mcp-server — one function and five substrate primitives plus an orientation invite, operating on pscale JSON blocks served from federated beaches.
+const INSTRUCTIONS = `bsp-mcp-server — one function and six substrate primitives plus an orientation invite, operating on pscale JSON blocks served from federated beaches.
 
 FIRST ACTION when you connect: call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
 
@@ -86,12 +95,13 @@ SUBSTRATE DISPATCH: three real targets after dispatch.
 
 The translation happens inside bsp-mcp; callers just pass the agent_id form they have. To target a specific federated beach, pass its URL as agent_id; otherwise the default beach handles bare/sed:/grain: forms.
 
-THE FIVE PRIMITIVES (substrate state machines bsp() alone cannot subsume):
+THE SIX PRIMITIVES (substrate state machines bsp() alone cannot subsume, plus the pool-engage envelope):
   pscale_create_collective — create a sed: substrate at a federated beach (atomic create-lock-write at the beach's site-hosted sed: handler).
   pscale_register          — register at a sed: collective on a federated beach. Server-assigned position; per-position lock; proof-of-presence-in-time.
   pscale_grain_reach       — symmetric reach/accept across a bilateral pair_id, hosted at a federated beach.
   pscale_key_publish       — derive Argon2id keypair, publish public half to passport:<handle> position 9 at a federated beach.
   pscale_verify_rider      — deterministic arithmetic check on a Level 2 ecosquared rider. Pure math.
+  pscale_pool_engage       — read a pool with an envelope: purpose + synthesis_hint + slice-since-marker. Optional contribution param posts in the same call. The envelope is the operational discipline — the pool's author embeds the synthesis_hint at pool:<name>/9.1 (or falls back to the underscore), and the envelope carries that instruction to YOUR LLM so each reader produces their own personal synthesis from the shared stream.
 
 Each primitive that talks to a beach takes an optional agent_id parameter (URL of the beach). When omitted, the default beach is used. pscale_grain_reach and pscale_key_publish use a separate "handle" parameter for the agent's bare-name identity.
 
@@ -199,6 +209,22 @@ export function createServer(): McpServer {
       openWorldHint: true,
     },
     handleKeyPublish,
+  );
+
+  server.tool(
+    'pscale_pool_engage',
+    `Engage with a pool at a federated beach — read with optional post-on-the-same-call, returning an envelope that bundles purpose + synthesis_hint + new contributions since your marker. The envelope is the operational discipline: the synthesis_hint is the pool author's instruction to YOUR LLM about how to synthesise the contributions through your own purpose. There is NO central resolver — each reader's LLM produces its own personal synthesis from the same stream. If \`contribution\` is provided, the primitive posts at the next-free supernest slot (1, 2, …, 9, 11, …) then returns the envelope including your just-posted contribution. Marker is caller-managed — pass since_position in, store marker_new for next call. Synthesis_hint sourced from pool:<name>/9.1 if set, else from the pool's underscore (purpose), else a default. Defaults to ${DEFAULT_BEACH_URL}; pass pool_url to target a different beach.`,
+    poolEngageParamsSchema,
+    {
+      title: 'Pool engage — read with synthesis envelope',
+      // Destructive only when contribution is provided; read-only otherwise.
+      // Mark destructive to be safe; the same tool covers both modes.
+      destructiveHint: true,
+      // Not idempotent — each call with a contribution appends a new slot.
+      idempotentHint: false,
+      openWorldHint: true,
+    },
+    handlePoolEngage,
   );
 
   server.tool(
