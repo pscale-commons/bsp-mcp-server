@@ -374,8 +374,10 @@ function collectDescent(
  *   - point (S + P at terminus): same as path-walk
  *   - disc (P alone): content is array of {address, content}
  *   - subtree-like (S + P below terminus): content is an object to splice
- * The supernest-on-growth pattern is in walkOrCreate — a string node along
+ * The subnest-on-growth pattern is in walkOrCreate — a string node along
  * the walk migrates to that node's underscore so digit children can attach.
+ * This is the implicit subnest of sunstone:1.6.2 (local growth at one digit
+ * position), not the block-wide supernest of sunstone:1.6.3 (floor growth).
  */
 export function bspWrite(
   block: Block,

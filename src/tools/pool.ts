@@ -10,7 +10,7 @@
  *
  * Polymorphic by `contribution`:
  *   absent  → read-only engage: returns purpose + synthesis_hint + slice
- *   present → post + engage: writes at next-free supernest slot, then returns
+ *   present → post + engage: writes at next-free digit-path slot, then returns
  *             the envelope (catch-up includes the just-posted contribution)
  *
  * Marker is caller-managed. Pass `since_position` in (the int you stored last
@@ -38,15 +38,17 @@ export const DEFAULT_SYNTHESIS_HINT =
 
 const READ_PAGE_LIMIT = 200;
 
-// ── Supernest helpers (inlined; mirror xstream/lib/bsp-client.ts) ──
+// ── Digit-path slot helpers (inlined; mirror xstream/lib/bsp-client.ts) ──
+// "digit-path" per sunstone:1.6.4 — sibling + subnest in lex order, distinct
+// from supernest (block-wide floor growth, sunstone:1.6.3).
 
 /**
- * Yields the supernest enumeration of pool slots — positive integers composed
+ * Yields the digit-path enumeration of pool slots — positive integers composed
  * of digits 1-9 only (zeros are skipped: 10, 20, 100, ... are underscore-
  * summary slots reserved for compression). 9 + 81 + 729 = 819 slots, ample
  * for any realistic pool population. Matches block-conventions:9.3.
  */
-export function* supernestSlots(): Generator<string> {
+export function* digitPathSlots(): Generator<string> {
   for (let n = 1; n <= 9; n++) yield String(n);
   for (let n = 11; n <= 99; n++) {
     if (String(n).includes('0')) continue;
@@ -74,13 +76,13 @@ export function readSlot(block: Block | null, slot: string): any {
 }
 
 /**
- * Find the next-free supernest slot. Same discipline as findNextMarkSpindle in
+ * Find the next-free digit-path slot. Same discipline as findNextMarkSpindle in
  * xstream's beach-kernel: at depth 1, any non-null value counts as a claim;
  * at depth 2+, only objects count (strings at depth 2+ are tag-field
  * collisions from a shallower contribution, per block-conventions:9.3).
  */
 export function findNextSlot(block: Block | null): string {
-  const slots = [...supernestSlots()];
+  const slots = [...digitPathSlots()];
   let maxIdx = -1;
   for (let i = 0; i < slots.length; i++) {
     const slot = slots[i];
@@ -109,7 +111,7 @@ export interface PoolContribution {
 }
 
 /**
- * Walk the supernest enumeration, collect contributions whose slot integer is
+ * Walk the digit-path enumeration, collect contributions whose slot integer is
  * strictly greater than `since_position`. Capped at READ_PAGE_LIMIT — beyond
  * that, more_available is true and the caller pages by passing the last
  * returned position as the next since_position.
@@ -120,7 +122,7 @@ export function collectContributions(
 ): { contributions: PoolContribution[]; more_available: boolean } {
   const out: PoolContribution[] = [];
   let more = false;
-  for (const slot of supernestSlots()) {
+  for (const slot of digitPathSlots()) {
     const v = readSlot(block, slot);
     if (v === null) continue;
     const position = parseInt(slot, 10);
@@ -203,7 +205,7 @@ export const poolEngageParamsSchema = {
   contribution: z
     .string()
     .optional()
-    .describe("Optional. Text to post as a contribution before reading. If provided, the primitive writes at the next-free supernest slot (1, 2, …, 9, 11, …) with shape {_: text, 1: agent_id, 2: '', 3: ISO-ts, 4: face}, then reads the envelope. Omit for read-only engagement."),
+    .describe("Optional. Text to post as a contribution before reading. If provided, the primitive writes at the next-free digit-path slot (1, 2, …, 9, 11, …; sunstone:1.6.4) with shape {_: text, 1: agent_id, 2: '', 3: ISO-ts, 4: face}, then reads the envelope. Omit for read-only engagement."),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
