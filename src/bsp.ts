@@ -576,10 +576,13 @@ export function readAt(block: Block, address: string | null | undefined): any {
  *
  * Growth migration: when an intermediate node is a string, the string is
  * preserved as the underscore of the new sub-block before descending. This
- * implements the supernest-on-growth rule — a digit's existing semantic
- * migrates to its underscore the moment it gains children, instead of being
- * silently nuked. Final-key writes still replace whatever's at the leaf
- * (a write at "7" still replaces block[7]; only intermediate nodes migrate).
+ * implements the subnest-on-growth rule (the implicit subnest of
+ * sunstone:1.6.2 — local growth at one digit position, distinct from the
+ * block-wide supernest at 1.6.3 which grows the floor) — a digit's existing
+ * semantic migrates to its underscore the moment it gains children, instead
+ * of being silently nuked. Final-key writes still replace whatever's at the
+ * leaf (a write at "7" still replaces block[7]; only intermediate nodes
+ * migrate).
  *
  * Throws InvalidAddressError for malformed input.
  */

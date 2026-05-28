@@ -28,7 +28,7 @@ function getText(r: any): string {
 
 console.log(`Smoke against ${BEACH}\n  handle=${HANDLE}  ts=${NOW}\n`);
 
-// Each smoke run writes marks at unique slots (timestamp suffix folded into supernest)
+// Each smoke run writes marks at unique slots (timestamp suffix folded into digit-path)
 // to avoid collision across runs. Marks live at the 'marks' sibling block per
 // block-conventions branch 9 — the URL surface has no "beach" block.
 const SLOT_PRESENCE = String(7000 + (Date.now() % 1000));   // e.g. 7321 → walks 7,3,2,1

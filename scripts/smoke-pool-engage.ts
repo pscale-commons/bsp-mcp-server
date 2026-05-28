@@ -3,11 +3,11 @@
  *
  * The handler (handlePoolEngage) reaches the federated beach over HTTP and is
  * exercised by RPG validation in a follow-on session. This smoke covers the
- * deterministic logic — supernest enumeration, slot reading, next-free-slot,
+ * deterministic logic — digit-path enumeration, slot reading, next-free-slot,
  * envelope assembly, synthesis_hint fallback chain — without network.
  */
 import {
-  supernestSlots,
+  digitPathSlots,
   readSlot,
   findNextSlot,
   collectContributions,
@@ -23,10 +23,10 @@ function assert(cond: boolean, label: string) {
   else { fail++; console.log(`  ✗ ${label}`); }
 }
 
-console.log('=== supernestSlots — first 12 slots ===');
+console.log('=== digitPathSlots — first 12 slots ===');
 const first12 = [...(function* () {
   let i = 0;
-  for (const s of supernestSlots()) {
+  for (const s of digitPathSlots()) {
     yield s;
     if (++i >= 12) break;
   }
@@ -38,7 +38,7 @@ assert(first12[9] === '11', 'jumps to 11 (skips 10)');
 assert(first12[10] === '12', 'continues 12');
 assert(!first12.some(s => s.includes('0')), 'no zeros in any slot');
 
-console.log('\n=== readSlot — walks supernest paths ===');
+console.log('\n=== readSlot — walks digit-path slot paths ===');
 const sample: Block = {
   _: 'pool',
   '1': { _: 'first', '1': 'alice', '3': '2026-05-26T10:00:00Z' },
