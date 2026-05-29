@@ -69,13 +69,13 @@ export const bspParamsSchema = {
     .string()
     .nullable()
     .optional()
-    .describe('Address path (S). Empty string or null walks the root. Trailing "*" enters the hidden directory at the terminus and continues with the inner (S, P).'),
+    .describe('Address path (S). Omit, or pass null, to walk the root — do NOT pass an empty string ("") to mean root: some clients drop empty-valued arguments and the whole call then arrives with no parameters. Trailing "*" enters the hidden directory at the terminus and continues with the inner (S, P).'),
   pscale_attention: z
     .number()
     .int()
     .nullable()
     .optional()
-    .describe('Depth selector (P). Together with spindle, derives selection shape — point (P==P_end), ring (P==P_end-1), subtree (P<P_end-1), disc (spindle empty), whole-block (both empty).'),
+    .describe('Depth selector (P). Together with spindle, derives selection shape — point (P==P_end), ring (P==P_end-1), subtree (P<P_end-1), disc (spindle omitted/null), whole-block (both omitted/null).'),
   content: z
     .any()
     .optional()

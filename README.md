@@ -24,8 +24,8 @@ Selection shape derives from the relationship between spindle length (`P_end`) a
 | `P_att == P_end` | point | string at terminus | string |
 | `P_att == P_end - 1` | ring | digit children of terminus | `{1: ..., 2: ...}` |
 | `P_att <  P_end - 1` | subtree | full subtree | nested object |
-| spindle empty + P set | disc | all nodes at depth | sparse map |
-| spindle empty + P null | block | whole tree | whole-block JSON |
+| no spindle + P set | disc | all nodes at depth | sparse map |
+| no spindle + P null | block | whole tree | whole-block JSON |
 | spindle ends `*` | star | hidden directory composition | inner shape |
 
 Substrate dispatch is implicit in the `agent_id` prefix:

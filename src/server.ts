@@ -71,8 +71,8 @@ Selection shape derives from (spindle length P_end, pscale_attention P_att):
   P_att == P_end       → point   (string at terminus)
   P_att == P_end - 1   → ring    (digit children of terminus, {1: ..., 2: ...})
   P_att <  P_end - 1   → subtree (full subtree from terminus down)
-  spindle empty + P    → disc    (all nodes at depth corresponding to P_att)
-  spindle empty + null → block   (whole tree)
+  no spindle + P       → disc    (all nodes at depth corresponding to P_att)
+  no spindle, no P     → block   (whole tree)
   spindle ends '*'     → star    (enter hidden directory, recurse)
 
 LOCK SEMANTICS (four rules — enforced at the federated beach):
