@@ -2,6 +2,7 @@
 
 **Date:** 2026-05-18
 **Status:** framing doc, pre-convention. Supersedes the conflated work in PR #47.
+**Amended 2026-05-29:** collapsed the "four pscale sublayers 0-3" back to three layers, sorted by *usage* not by authorship. The sublayer cut conflated "where a block is authored" (substrate repo / game repo / world content) with "what kind of thing it is". Three layers — code, semantic usage, imaginative meaning — keeps the divergence between RPG and real-world use isolated to Layer 2.
 **Scope:** the substrate side only — what convention (if any) is needed beyond the substrate-as-it-stands to enable multi-party engagement, with fantasy RPG (NOMAD) as the worked stress-test.
 
 ## What this document is and isn't
@@ -10,23 +11,29 @@
 
 **Isn't:** the convention spec itself. Isn't the NOMAD game-system spec. Isn't world content. Each of those is a separate downstream artefact, scoped here but authored elsewhere.
 
-## The four pscale sublayers (recap)
+## The three layers (recap)
 
-All four sit INSIDE Layer 2 (semantic — pscale block content operating with an LLM) in your existing 0-3 layer framework. Layer 0 (infrastructure) and Layer 1 (code: the bsp.ts walker, the bsp-mcp router) sit below; Layer 3 (awareness/imagination — the inchoate field where the game actually plays) sits above.
+Three layers, sorted by **how each is used**, not by where it is authored:
 
 ```
-Pscale sublayer 3 — World content     e.g. Thornkeep places, characters, lore at a beach
-                                       ↓ authored as blocks (possibly seeded from a repo)
-Pscale sublayer 2 — Game system       e.g. NOMAD blocks: soft/medium/hard agents, dice, evaluator
-                                       ↓ lives in a separate repo, seeded onto a beach
-Pscale sublayer 1 — Substrate conv.   passport, shell, pool, frame, spatial coord block, etc.
-                                       ↓ block-conventions sentinel-bundled + per-beach overrides
-Pscale sublayer 0 — Pscale format     block + spindle + pscale + supernest + hidden directories
+Layer 3 — Imaginative meaning   the inchoate field; play happens in participants' minds
+                                ↑ scaffolded by, never reduced to, the layers below
+Layer 2 — Semantic usage        conventions + game system + world content — a flat catalogue
+                                structured (pscale blocks) OR unstructured (plain LLM chat)
+                                ← RPG and real-world DIVERGE only here
+Layer 1 — Code / substrate      pscale format + bsp function + six primitives — FROZEN
+                                ← identical for RPG and real-world
 ```
 
-The substrate enables engagement. Real-world engagement uses it directly — users ARE characters, interactions ARE outcomes, no arbitration needed. Fantasy RPG adds a game-system sublayer (NOMAD) on top for perception framing, outcome arbitration, consistency tracking — what reality normally provides for free.
+- **Layer 1 — code / substrate.** The pscale block format AND the bsp function (plus the six primitives). One frozen floor: the format is the noun (the data shape), the walk is the verb (the access); they co-define and freeze together as the L1 kernel's five contracts. Does NOT change for fantasy RPG or for real-world use. (One spec, several conforming implementations — TS walker, JS beach handler, Python reference — but that is spec-vs-impl *within* Layer 1, not a separate layer.)
+- **Layer 2 — semantic usage.** How blocks are named, arranged, and walked to mean something. A flat catalogue of sibling kinds — substrate-wide conventions (passport, shell, pool, grain, sed:, spatial, frame…), the NOMAD game system, and world content (Thornkeep places, lore) — **not** a numbered stack. This is the ONLY layer where fantasy RPG and real-world use diverge: same Layer 1, different Layer-2 conventions. Semantics here may be **structured** (pscale blocks, walked by an LLM) or, in ordinary LLM chat, **unstructured** (natural language). pscale + bsp is what makes Layer 2 structured and consistent; an unstructured conversation with an LLM routes Layer 1 → Layer 3 directly, with natural language standing in for structured Layer 2.
+- **Layer 3 — imaginative meaning.** The inchoate field where the game — or real-world coordination — actually plays, in the minds of the participants (human, and perhaps agent). Unrepresented. The thing the other two scaffold.
 
-**Pscale sublayer 1 is the only sublayer this document scopes.** Sublayer 2 (NOMAD) ships in its own repo; sublayer 3 (Thornkeep world content) is authored at a beach.
+The substrate enables engagement. Real-world engagement uses it directly — users ARE characters, interactions ARE outcomes, no arbitration needed. Fantasy RPG adds a game system (NOMAD) within Layer 2 for perception framing, outcome arbitration, consistency tracking — what reality normally provides for free.
+
+xstream is not a layer: it is an interface that gives humans the bsp function and access to Layer 1, presents Layer-2 semantics, and reflects Layer 3 back while they hold it in imagination. Claude.app is another such interface (unstructured Layer 2). The viewer-drawer / columns / presence machinery is xstream-specific Layer-2 usage plus presentation — it sits on top, not underneath.
+
+**Substrate-wide conventions are the only Layer-2 usage this document scopes.** The NOMAD game system ships in its own repo; Thornkeep world content is authored at a beach — both are Layer-2 usage authored elsewhere.
 
 ## What the substrate already enables (no additions)
 
@@ -172,9 +179,9 @@ For `nomad-bsp`:
 
 Players choose a beach to play at; that beach's seeded NOMAD blocks define the game system in effect there. Two beaches running different NOMAD variants are two different game tables — same lineage, different houses.
 
-**World content (sublayer 3) follows the same pattern, one sublayer up.** A world bundle could be published as a repo (e.g. `thornkeep-world`) with an init script seeding the spatial coordinate block, character blocks, rules block onto a beach. Or world content can be authored directly at the beach without a publishing repo. Both are valid; the choice is operator preference.
+**World content follows the same seeding pattern.** A world bundle could be published as a repo (e.g. `thornkeep-world`) with an init script seeding the spatial coordinate block, character blocks, rules block onto a beach. Or world content can be authored directly at the beach without a publishing repo. Both are valid; the choice is operator preference.
 
-Once all three sublayers (1: substrate convention, 2: game system, 3: world content) are present at a beach, that beach is a complete game venue. Players connect via bsp-mcp, walk the blocks, play.
+Once all three kinds of Layer-2 usage (substrate convention, game system, world content) are present at a beach, that beach is a complete game venue. Players connect via bsp-mcp, walk the blocks, play.
 
 ## Deferred — XYZ state management
 
