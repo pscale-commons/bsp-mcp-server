@@ -24,36 +24,39 @@ const whole = bspRead(sunstone as any, '', null);
 assert(whole.shape === 'block', 'whole block shape');
 assert(whole.block === sunstone, 'whole block returns same reference');
 
-console.log('\n=== point read at "1.1" ===');
+// Canonical 2026-05-17 vocabulary: a no-pscale spindle read is a PATH-WALK
+// (not a point); the ring-equivalent is PATH-WALK+DESCENT (one descent layer);
+// pscale = floor - depth (top-level branches at floor 1 are pscale 0).
+console.log('\n=== path-walk read at "1.1" (no pscale) ===');
 const p11 = bspRead(sunstone as any, '1.1', null);
-assert(p11.shape === 'point', 'point shape');
-assert(p11.point !== null && p11.point.includes('polar geometry'), 'point text contains polar geometry');
-console.log('  ', p11.point?.slice(0, 100), '...');
+assert(p11.shape === 'path-walk', 'path-walk shape');
+assert(formatRead(p11).includes('polar geometry'), 'path-walk text contains polar geometry');
+console.log('  ', formatRead(p11).split('\n').slice(0, 2).join(' / ').slice(0, 120), '...');
 
-console.log('\n=== ring read at "1" (children of branch 1) ===');
-const ringR = bspRead(sunstone as any, '1', -2);
-assert(ringR.shape === 'ring', 'ring shape');
-assert(ringR.ring !== undefined && '1' in ringR.ring, 'ring has digit 1');
-console.log('  digits:', Object.keys(ringR.ring ?? {}).join(', '));
+console.log('\n=== path-walk+descent at "1" pscale -1 (digit children of branch 1) ===');
+const ringR = bspRead(sunstone as any, '1', -1);
+assert(ringR.shape === 'path-walk+descent', 'path-walk+descent shape');
+assert((ringR.descent?.length ?? 0) > 0, 'descent has digit children');
+console.log('  descent addresses:', ringR.descent?.map(n => n.address).join(', '));
 
-console.log('\n=== disc read at pscale -1 (top-level branches) ===');
-const discR = bspRead(sunstone as any, '', -1);
+console.log('\n=== disc read at pscale 0 (top-level branches) ===');
+const discR = bspRead(sunstone as any, '', 0);
 assert(discR.shape === 'disc', 'disc shape');
-assert((discR.disc?.length ?? 0) >= 8, 'disc returns at least 8 nodes (sunstone has 8 branches)');
-console.log('  count:', discR.disc?.length);
-console.log('  addresses:', discR.disc?.slice(0, 5).map(n => n.address).join(', '), '...');
+assert(((discR.entries as any[])?.length ?? 0) >= 8, 'disc returns at least 8 nodes (sunstone branches)');
+console.log('  count:', (discR.entries as any[])?.length);
+console.log('  addresses:', (discR.entries as any[])?.slice(0, 5).map(n => n.address).join(', '), '...');
 
-console.log('\n=== star read at "7" (reflexive seed) ===');
+console.log('\n=== star read at "7*" (reflexive seed) ===');
 const star7 = bspRead(sunstone as any, '7*', null);
 assert(star7.shape === 'star', 'star shape');
-assert(star7.star?.semantic !== null, 'star has semantic text');
-assert(star7.star?.inner !== null, 'star has inner content');
-console.log('  semantic:', star7.star?.semantic?.slice(0, 100), '...');
+assert(star7.semantic != null, 'star has semantic text');
+assert(star7.inner != null, 'star has inner content');
+console.log('  semantic:', star7.semantic?.slice(0, 100), '...');
 
-console.log('\n=== whetstone signature read at "1.1" ===');
+console.log('\n=== whetstone signature read at "1.1" (no pscale → path-walk) ===');
 const w11 = bspRead(whetstone as any, '1.1', null);
-assert(w11.shape === 'point', 'whetstone point shape');
-assert(w11.point !== null && w11.point.includes('agent_id'), 'whetstone 1.1 describes agent_id');
+assert(w11.shape === 'path-walk', 'whetstone path-walk shape');
+assert(formatRead(w11).includes('agent_id'), 'whetstone 1.1 describes agent_id');
 
 console.log('\n=== write roundtrip — point write then read ===');
 const testBlock: any = JSON.parse(JSON.stringify({ _: 'test', '1': 'original' }));
@@ -61,13 +64,16 @@ const writeR = bspWrite(testBlock, '1', null, 'updated');
 assert(writeR.written, 'point write succeeded');
 assert(testBlock['1'] === 'updated', 'point write changed value');
 
-console.log('\n=== ring write — populate digit children ===');
-const ringBlock: any = { _: 'parent', '1': { _: 'first child' } };
-bspWrite(ringBlock, '1', -2, { '1': 'a', '2': 'b', '3': 'c' });
-assert(ringBlock['1']['1'] === 'a', 'ring digit 1 written');
-assert(ringBlock['1']['2'] === 'b', 'ring digit 2 written');
-assert(ringBlock['1']['3'] === 'c', 'ring digit 3 written');
-assert(ringBlock['1']._ === 'first child', 'ring write preserved underscore');
+console.log('\n=== path-walk+descent write — replaces the subtree at terminus ===');
+const ringBlock: any = { _: 'parent', '1': { _: 'first child', '9': 'pre-existing' } };
+const descentWrite = bspWrite(ringBlock, '1', -1, { '1': 'a', '2': 'b', '3': 'c' });
+assert(descentWrite.shape === 'path-walk+descent', 'descent write shape');
+assert(ringBlock['1']['1'] === 'a', 'descent digit 1 written');
+assert(ringBlock['1']['2'] === 'b', 'descent digit 2 written');
+assert(ringBlock['1']['3'] === 'c', 'descent digit 3 written');
+// Canonical descent write REPLACES the node (bsp-fn.ts:496); to retain prior
+// keys include them in the payload. Here _ and 9 are intentionally dropped.
+assert(ringBlock['1']._ === undefined && !('9' in ringBlock['1']), 'subtree replaced, not merged');
 
 console.log('\n=== subtree write — replace whole node ===');
 const subBlock: any = { _: 'root', '2': { _: 'old', '1': 'a' } };
