@@ -238,7 +238,20 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     // avoiding whole-block transfer for narrow queries. Skipped for sentinels
     // (in-memory, walked locally) and for secret-bearing reads (may need the
     // raw block to walk _gray envelopes through decryptBlockNodes first).
-    if (!isSentinel && !secret && isFederatedOwner(target.agent_id)) {
+    //
+    // GATED to pscale-bearing, non-star reads. The beach returns a canonical
+    // {shape} object ONLY when ?pscale= is present; for a no-pscale GET it
+    // returns the RAW NODE at the spindle (readAt) — which also STRIPS a
+    // trailing '*'. The wire branch below cannot reconstruct path-walk or star
+    // semantics from a bare node: a string node reads as not-found, an object
+    // node gets double-walked, and a stripped star loses the hidden directory.
+    // So path-walk reads (spindle, no pscale) and star reads route to the local
+    // whole-block path, where bspRead walks them with the canonical walker.
+    // Point / disc / descent (pscale present) keep the wire optimisation.
+    // Contract-drift fix 2026-05-30 — see proposals/2026-05-30-wire-read-gate.md.
+    const hasStar = typeof spindle === 'string' && spindle.includes('*');
+    const wireEligible = pscale_attention != null && !hasStar;
+    if (wireEligible && !isSentinel && !secret && isFederatedOwner(target.agent_id)) {
       try {
         const wireResult = await loadBspShape(
           target.agent_id,

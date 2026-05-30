@@ -23,6 +23,7 @@
     "smoke:federated": "tsx scripts/smoke-federated-live.ts",
     "smoke:federated-parser": "tsx scripts/smoke-federated-parser.ts",
     "smoke:wire-bsp": "tsx scripts/smoke-wire-bsp.ts",
+    "smoke:read-gate": "tsx scripts/smoke-read-gate.ts",
     "smoke:pool-engage": "tsx scripts/smoke-pool-engage.ts"
   },
   "dependencies": {
