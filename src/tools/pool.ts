@@ -219,6 +219,14 @@ export const poolEngageParamsSchema = {
     .string()
     .optional()
     .describe('Lock proof. Required if the pool block is locked (and you are writing) OR if the pool author has gated contribution writes. Forwarded to the beach which verifies. Sensitive — never repeat in conversation.'),
+  purpose: z
+    .string()
+    .optional()
+    .describe("Optional, CREATION-only. If the pool does NOT yet exist at this beach, providing `purpose` creates it with the right object shape: {_: '<purpose>'}. The tool constructs the shape internally — caller cannot get it wrong (no way to accidentally author a bare-string pool block). Ignored when the pool already exists (existing purpose is not overwritten). This is the canonical bsp-mcp path to create a pool; do NOT use raw bsp() with content='<purpose>' which produces a malformed string-root block."),
+  synthesis_hint: z
+    .string()
+    .optional()
+    .describe("Optional, CREATION-only. Synthesis directive to set at pool:<name>/9.1 in the same call — carried in the engagement envelope to readers' LLMs so they synthesise through the pool author's purpose rather than a generic default. Ignored when the pool already exists; to update an existing pool's synthesis_hint, write 9.1 directly via bsp()."),
 };
 
 export type PoolEngageParams = {
@@ -229,6 +237,8 @@ export type PoolEngageParams = {
   face?: 'character' | 'author' | 'designer' | 'observer';
   since_position?: number;
   secret?: string;
+  purpose?: string;
+  synthesis_hint?: string;
 };
 
 // ── Handler ──
@@ -252,11 +262,57 @@ export async function handlePoolEngage(
 
   // ── Load pool ──
   let row = await loadBlock(pool_url, blockName);
+  let created = false;
   if (!row) {
+    // Pool absent — create it if purpose was provided, otherwise surface the
+    // gap so the caller can decide. Creation goes through this primitive
+    // (NOT raw bsp() with stringy content) so the right object shape is
+    // guaranteed at the tool layer — the caller passes `purpose` as a string
+    // and the tool constructs {_: purpose} internally. No way to get the
+    // malformed bare-string pool that this primitive originally diagnosed.
+    if (params.purpose) {
+      const newBlock: Record<string, any> = { _: params.purpose };
+      if (params.synthesis_hint) {
+        newBlock['9'] = { _: 'pool metadata', '1': params.synthesis_hint };
+      }
+      try {
+        await saveBlock(pool_url, blockName, newBlock, {
+          spindle: '',
+          pscale_attention: null,
+          secret,
+        });
+      } catch (e: any) {
+        return {
+          content: [{ type: 'text', text: `Pool create failed at ${pool_url}:${blockName}: ${e?.message ?? String(e)}` }],
+        };
+      }
+      row = await loadBlock(pool_url, blockName);
+      if (!row) {
+        return {
+          content: [{ type: 'text', text: `Created pool but reload failed at ${pool_url}:${blockName}.` }],
+        };
+      }
+      created = true;
+    } else {
+      return {
+        content: [{
+          type: 'text',
+          text: `No pool at (agent_id="${pool_url}", block="${blockName}"). Pass purpose= to create one — pscale_pool_engage will author the right shape internally.`,
+        }],
+      };
+    }
+  }
+
+  // Defensive: if the existing pool block is a non-object (legacy malformed
+  // bare-string from a prior buggy authoring path), surface that diagnostic
+  // explicitly with a recovery hint rather than crashing downstream on the
+  // typeof assumptions. The bsp-mcp writeAt fix means future creations via
+  // this primitive won't produce this shape; legacy blocks need a DELETE.
+  if (typeof row.block !== 'object' || row.block === null) {
     return {
       content: [{
         type: 'text',
-        text: `No pool at (agent_id="${pool_url}", block="${blockName}"). Create one first via bsp() — write the pool's underscore (purpose) and optionally pool:${pool_name}/9.1 (synthesis_hint).`,
+        text: `Pool at ${pool_url}:${blockName} is malformed (root is ${row.block === null ? 'null' : typeof row.block}, not an object). Recovery: DELETE the block at the beach, then call pscale_pool_engage again with purpose= to recreate cleanly. Direct delete: curl -X DELETE -H 'Content-Type: application/json' -d '{"confirm":true}' "${pool_url}/.well-known/pscale-beach?block=${blockName}"`,
       }],
     };
   }
@@ -320,6 +376,10 @@ export async function handlePoolEngage(
   const lines: string[] = [];
   lines.push(`pool:${pool_name} @ ${pool_url}`);
   lines.push('');
+  if (created) {
+    lines.push(`created: pool authored with purpose at _${params.synthesis_hint ? ' and synthesis_hint at 9.1' : ''}`);
+    lines.push('');
+  }
   if (postedPosition !== null) {
     lines.push(`posted: slot ${postedPosition} (your contribution is included below)`);
     lines.push('');
