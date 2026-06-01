@@ -450,6 +450,24 @@ function bspWriteInPlace(
       if (!content || typeof content !== 'object') {
         throw new Error('Whole-block write requires an object payload');
       }
+      // Existing block may be a non-object (string from a malformed prior
+      // write, e.g. a pool block authored with content='<purpose>' instead of
+      // content={_: '<purpose>'}). Object.keys(str) returns char indices, and
+      // delete str[0] throws in strict mode — surfaced as "Cannot delete
+      // property '0' of [object String]" for callers trying to heal in place.
+      // The whole-block path is replace semantics anyway, so the mutation
+      // strategy must adapt to the existing block's actual shape rather than
+      // assuming object input. When the existing block is non-object, the
+      // caller's reference cannot be mutated to become an object (primitives
+      // aren't transformable). Throw a clean error directing callers to load
+      // a fresh empty block instead — the same operation succeeds when the
+      // initial block reference is {} rather than the corrupt prior value.
+      if (typeof block !== 'object' || block === null) {
+        throw new Error(
+          `Whole-block write requires an object root; existing block is ${typeof block === 'object' ? 'null' : typeof block}. ` +
+            `If healing a malformed block, DELETE first then write fresh.`,
+        );
+      }
       for (const k of Object.keys(block)) delete (block as any)[k];
       Object.assign(block, content);
       return 'block';
