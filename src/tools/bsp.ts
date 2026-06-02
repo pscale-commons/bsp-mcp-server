@@ -51,6 +51,12 @@ import {
   decryptGrayNodes,
   grayMode,
   GrayEnvelope,
+  newGroupKey,
+  wrapGroupKey,
+  unwrapGroupKeyFromKeyring,
+  groupEncryptContent,
+  groupDecryptContent,
+  GROUP_KEYRING_MARKER,
 } from '../keys.js';
 
 // ── Gray-encryption helpers ──
@@ -73,6 +79,65 @@ function leadingSideDigit(spindle: string): string | null {
     break;
   }
   return null;
+}
+
+/**
+ * Group create / invite / content write. Mutates `block` in place.
+ *   - obtains the group key K (unwrap from an existing keyring, or generate one)
+ *   - if `members` given, wraps K to any not-yet-keyed handle (create/invite),
+ *     writing the keyring at position 9
+ *   - if `content` given, encrypts it under K at the leaf `spindle` (1-8)
+ * Throws a user-facing Error on any precondition failure.
+ */
+async function applyGroupWrite(
+  block: any,
+  members: string[] | undefined,
+  content: any,
+  spindle: string | null | undefined,
+  encSecret: string | undefined,
+  hasKeyring: boolean,
+): Promise<void> {
+  if (!encSecret) {
+    throw new Error('group operations need enc_secret (the key that unwraps the shared group key).');
+  }
+  let groupKey: Uint8Array;
+  if (hasKeyring) {
+    const got = await unwrapGroupKeyFromKeyring(block['9'], encSecret);
+    if (!got) throw new Error('cannot unwrap the group key — you are not a member, or the enc_secret is wrong.');
+    groupKey = got;
+  } else {
+    if (!members || members.length === 0) {
+      throw new Error('creating a private group needs members:[...] — the handles allowed to read (include yourself).');
+    }
+    groupKey = newGroupKey();
+  }
+  // Invite: wrap K to any member not already in the keyring.
+  if (members && members.length) {
+    const keyring: any = hasKeyring ? { ...block['9'] } : { _: GROUP_KEYRING_MARKER };
+    const slots = Object.keys(keyring).filter((k) => /^[1-9]$/.test(k));
+    const present = new Set(slots.map((k) => keyring[k]?._));
+    let n = slots.length;
+    for (const handle of members) {
+      if (present.has(handle)) continue;
+      const mk = await getPublicKeys(handle);
+      if (!mk) throw new Error(`member "${handle}" has not published keys — they run pscale_key_publish first.`);
+      n += 1;
+      if (n > 9) throw new Error('this version supports up to 9 members (flat keyring); larger groups are a follow-up.');
+      keyring[String(n)] = wrapGroupKey(groupKey, handle, mk.x25519);
+      present.add(handle);
+    }
+    writeAt(block, '9', keyring);
+  }
+  // Content (optional): encrypt under K at a 1-8 leaf.
+  if (content !== undefined) {
+    if (!spindle || spindle === '') {
+      throw new Error('group content write needs a leaf spindle (1-8).');
+    }
+    if (leadingSideDigit(String(spindle)) === '9') {
+      throw new Error('position 9 is the keyring — write group content at positions 1-8.');
+    }
+    writeAt(block, spindle, groupEncryptContent(stringifyForGray(content), groupKey));
+  }
 }
 
 /**
@@ -131,6 +196,12 @@ async function buildGrayDecryptor(
     k1 = p1?.x25519 ?? null;
     k2 = p2?.x25519 ?? null;
   }
+  // Group: unwrap the shared key once from the keyring at position 9 (null if
+  // the reader is not a member, so group leaves render as opaque).
+  let groupKey: Uint8Array | null = null;
+  if (block?.['9']?._ === GROUP_KEYRING_MARKER) {
+    groupKey = await unwrapGroupKeyFromKeyring(block['9'], secret);
+  }
   return async (env: GrayEnvelope): Promise<string | null> => {
     const mode = grayMode(env);
     if (mode === 'self') return selfDecrypt(env, secret, agentId);
@@ -141,6 +212,7 @@ async function buildGrayDecryptor(
       if (h2 && k1) { const pt = await grainDecrypt(env, secret, h2, k1); if (pt !== null) return pt; }
       return null;
     }
+    if (mode === 'group') return groupKey ? groupDecryptContent(env, groupKey) : null;
     return null;
   };
 }
@@ -185,6 +257,10 @@ export const bspParamsSchema = {
     .string()
     .optional()
     .describe('Encryption key — your privacy identity, SEPARATE from `secret` (write-authority). Derives your keypair and encrypts/decrypts gray content (self + grain). NEVER sent to the beach. Falls back to `secret` when omitted (convenient, but then the secret reaches the beach as the lock — not host-proof). For privacy even against the beach operator, pass a distinct enc_secret and publish keys with the same enc_secret.'),
+  members: z
+    .array(z.string())
+    .optional()
+    .describe('Group encryption: the handles allowed to READ this block (include yourself). On the first write it creates a shared group key wrapped to each member (a keyring at position 9); on a later write it invites any new handles. Content written to a group block is private by default (encrypted to the group key); members read with their enc_secret. Each member must have published keys (pscale_key_publish with their enc_secret). Up to 9 members in this version.'),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
@@ -205,6 +281,7 @@ export type BspToolParams = {
   new_lock?: string;
   gray?: boolean;
   enc_secret?: string;
+  members?: string[];
   face?: 'character' | 'author' | 'designer' | 'observer';
   tier?: 'soft' | 'medium' | 'hard';
 };
@@ -331,8 +408,8 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     };
   }
 
-  // ── READ ── (no content, no lock change)
-  if (content === undefined && new_lock === undefined) {
+  // ── READ ── (no content, no lock change, no membership change)
+  if (content === undefined && new_lock === undefined && params.members === undefined) {
     // Wire-level fast path — federated hosts, no gray decryption needed.
     // The beach computes shape locally and returns only the resolved slice,
     // avoiding whole-block transfer for narrow queries. Skipped for sentinels
@@ -425,11 +502,30 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   // Grain blocks curate privately by default; ordinary blocks are public unless
   // gray:true is passed. gray:false forces a public write either way.
   const isGrain = target.block.startsWith('grain:');
+  const hasKeyring = (block as any)?.['9']?._ === GROUP_KEYRING_MARKER;
+  const isGroupOp = params.members !== undefined || hasKeyring;
   const wantGray = isGrain ? params.gray !== false : params.gray === true;
 
   // Apply content write if provided.
   let writeResult: BspWriteResult | null = null;
-  if (content !== undefined) {
+  if (isGroupOp && params.gray !== false && (content !== undefined || params.members !== undefined)) {
+    // ── Group: create / invite / private content ──
+    try {
+      await applyGroupWrite(block, params.members, content, spindle, encSecret, hasKeyring);
+      writeResult = {
+        shape: 'point',
+        written: true,
+        block,
+        spindle: String(spindle ?? '9'),
+        pscale_attention: pscale_attention ?? null,
+      };
+    } catch (e: any) {
+      if (e instanceof InvalidAddressError) {
+        return { content: [{ type: 'text', text: `Write rejected: ${e.message}` }] };
+      }
+      return { content: [{ type: 'text', text: `Write rejected: ${e?.message ?? String(e)}` }] };
+    }
+  } else if (content !== undefined) {
     if (wantGray) {
       if (!encSecret) {
         return {
@@ -483,12 +579,14 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       blockName,
       blockToSave,
       {
-        spindle: spindle ?? '',
-        pscale_attention: pscale_attention ?? null,
+        // A group write touches two positions (keyring at 9 + content leaf), so
+        // it must persist as a whole-block write; ordinary/grain/self stay surgical.
+        spindle: isGroupOp ? '' : (spindle ?? ''),
+        pscale_attention: isGroupOp ? null : (pscale_attention ?? null),
         // Leak fix: a self-gray write to an ordinary block uses `secret` ONLY
         // as the encryption key — it must not reach the beach. Grain writes
         // still forward it (it locks the side); lock changes still forward it.
-        secret: wantGray && !isGrain && new_lock === undefined ? undefined : secret,
+        secret: wantGray && !isGrain && !isGroupOp && new_lock === undefined ? undefined : secret,
         new_lock: params.new_lock,
         gray: params.gray,
       },

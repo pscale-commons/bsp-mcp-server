@@ -42,7 +42,7 @@ export interface PublicKeyPair {
  */
 export interface GrayMeta {
   _: 'gray';
-  '1': 'self' | 'grain';
+  '1': 'self' | 'grain' | 'group';
   '2'?: string;
 }
 export interface GrayEnvelope {
@@ -50,6 +50,18 @@ export interface GrayEnvelope {
   '1': string;
   '2': string;
   '9': GrayMeta;
+}
+
+/**
+ * A keyring entry — the group key K sealed to one member's published x25519
+ * via an ephemeral box. Spine-legal.
+ *   { _: member_handle, 1: ciphertext, 2: nonce, 3: ephemeral_pub }
+ */
+export interface GroupKeyEntry {
+  _: string;
+  '1': string;
+  '2': string;
+  '3': string;
 }
 
 // ── Encoding helpers ──
@@ -185,6 +197,10 @@ export function verifyKeyRotation(
 const GRAY_MARKER = 'gray' as const;
 const NOTE_SELF = 'Encrypted (gray); readable only with the author secret.';
 const NOTE_GRAIN = 'Encrypted (gray); readable by the two grain parties.';
+const NOTE_GROUP = 'Encrypted (gray); readable by the group (key wrapped per member in the keyring at 9).';
+
+/** Block is group-encrypted ⇔ block[9]._ === this marker. */
+export const GROUP_KEYRING_MARKER = 'group-keyring';
 
 /** True when a node is a gray envelope (marker at 9._ === "gray"). */
 export function isGrayEnvelope(node: any): node is GrayEnvelope {
@@ -200,10 +216,10 @@ export function isGrayEnvelope(node: any): node is GrayEnvelope {
 }
 
 /** The envelope's encryption mode, or null if not a gray envelope. */
-export function grayMode(node: any): 'self' | 'grain' | null {
+export function grayMode(node: any): 'self' | 'grain' | 'group' | null {
   if (!isGrayEnvelope(node)) return null;
   const m = (node['9'] as GrayMeta)['1'];
-  return m === 'self' || m === 'grain' ? m : null;
+  return m === 'self' || m === 'grain' || m === 'group' ? m : null;
 }
 
 // ── Self-encryption (private to the author) ──
@@ -272,6 +288,63 @@ export async function grainDecrypt(
 ): Promise<string | null> {
   const shared = await grainSharedKey(secret, myHandle, counterpartyX25519PubB64);
   const pt = nacl.box.open.after(fromBase64(env['1']), fromBase64(env['2']), shared);
+  return pt ? decoder.decode(pt) : null;
+}
+
+// ── Group encryption (N members; shared key wrapped per member) ──
+//
+// A group block carries a keyring at position 9:
+//   { _: "group-keyring", 1: entry, 2: entry, ... }
+// Each entry seals the 32-byte group key K to one member's published x25519 via
+// an ephemeral box (anonymous sender). Content leaves are gray envelopes
+// (mode "group") encrypted with K (secretbox). A reader trial-unwraps each
+// entry with deriveKeypair(enc_secret, entry._) — only their own entry opens.
+
+/** Fresh random group key (secretbox key). */
+export function newGroupKey(): Uint8Array {
+  return nacl.randomBytes(nacl.secretbox.keyLength);
+}
+
+/** Seal the group key to a member's published x25519 (ephemeral sender). */
+export function wrapGroupKey(groupKey: Uint8Array, memberHandle: string, memberX25519PubB64: string): GroupKeyEntry {
+  const eph = nacl.box.keyPair();
+  const nonce = nacl.randomBytes(nacl.box.nonceLength);
+  const ct = nacl.box(groupKey, nonce, fromBase64(memberX25519PubB64), eph.secretKey);
+  if (!ct) throw new Error('group key wrap failed');
+  return { _: memberHandle, '1': toBase64(ct), '2': toBase64(nonce), '3': toBase64(eph.publicKey) };
+}
+
+/** Open one keyring entry with the reader's derived secret key. */
+export async function unwrapGroupKey(entry: GroupKeyEntry, encSecret: string, handle: string): Promise<Uint8Array | null> {
+  const keys = await deriveKeypair(encSecret, handle);
+  return nacl.box.open(fromBase64(entry['1']), fromBase64(entry['2']), fromBase64(entry['3']), keys.x25519.secretKey);
+}
+
+/** Trial-unwrap the group key from a keyring using only the reader's enc_secret. */
+export async function unwrapGroupKeyFromKeyring(keyring: any, encSecret: string): Promise<Uint8Array | null> {
+  if (!keyring || typeof keyring !== 'object') return null;
+  for (const k of Object.keys(keyring)) {
+    if (k === '_') continue;
+    const entry = keyring[k];
+    if (!entry || typeof entry !== 'object' || typeof entry['_'] !== 'string') continue;
+    if (typeof entry['1'] !== 'string' || typeof entry['2'] !== 'string' || typeof entry['3'] !== 'string') continue;
+    const K = await unwrapGroupKey(entry as GroupKeyEntry, encSecret, entry['_']);
+    if (K) return K;
+  }
+  return null;
+}
+
+/** Encrypt a content leaf with the group key (mode "group"). */
+export function groupEncryptContent(plaintext: string, groupKey: Uint8Array): GrayEnvelope {
+  const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+  const ct = nacl.secretbox(encoder.encode(plaintext), nonce, groupKey);
+  if (!ct) throw new Error('group content encryption failed');
+  return { _: NOTE_GROUP, '1': toBase64(ct), '2': toBase64(nonce), '9': { _: GRAY_MARKER, '1': 'group' } };
+}
+
+/** Decrypt a group content leaf with the group key. */
+export function groupDecryptContent(env: GrayEnvelope, groupKey: Uint8Array): string | null {
+  const pt = nacl.secretbox.open(fromBase64(env['1']), fromBase64(env['2']), groupKey);
   return pt ? decoder.decode(pt) : null;
 }
 
