@@ -1,7 +1,7 @@
 # Secret-model decouple — encryption key vs lock key
 
 **Date**: 2026-06-02
-**Status**: Implementing.
+**Status**: IMPLEMENTED + DEPLOYED 2026-06-02 (live on bsp.hermitcrab.me). Deterministic `smoke:gray` 25/25; live `smoke:grain-live` 16/16 (two-party private grain end-to-end).
 **Locus**: **bsp-mcp only.** No beach change, no migration.
 
 ## Problem
