@@ -82,6 +82,24 @@ async function main(): Promise<void> {
   // Right party, wrong counterparty key → null (auth fails).
   ok('bob with eve-key (wrong counterparty) → null', (await grainDecrypt(genv, 'bob-secret', 'bob', eveKeys.x25519)) === null);
 
+  console.log('— secret-model decouple (lock key ≠ encryption key) —');
+  // Each party has TWO secrets: a lock passphrase (goes to the beach to lock
+  // their side) and an encryption secret (never leaves the client). Keys are
+  // published from the ENC secret; grain content is encrypted with it.
+  const LOCK_A = 'alice-lock-passphrase';
+  const ENC_A = 'alice-encryption-secret';
+  const LOCK_B = 'bob-lock-passphrase';
+  const ENC_B = 'bob-encryption-secret';
+  const aPub = formatPublicKeys(await deriveKeypair(ENC_A, 'alice'));
+  const bPub = formatPublicKeys(await deriveKeypair(ENC_B, 'bob'));
+  const note = 'decoupled secret note';
+  const denv = await grainEncrypt(note, ENC_A, 'alice', 'bob', bPub.x25519);
+  ok('partner decrypts with their ENC secret', (await grainDecrypt(denv, ENC_B, 'bob', aPub.x25519)) === note);
+  ok('author re-reads with their ENC secret', (await grainDecrypt(denv, ENC_A, 'alice', bPub.x25519)) === note);
+  ok('the LOCK secret the beach sees CANNOT decrypt (partner side)', (await grainDecrypt(denv, LOCK_B, 'bob', aPub.x25519)) === null);
+  ok('the LOCK secret the beach sees CANNOT decrypt (author side)', (await grainDecrypt(denv, LOCK_A, 'alice', bPub.x25519)) === null);
+  ok('lock secret and enc secret derive different keys', formatPublicKeys(await deriveKeypair(LOCK_A, 'alice')).x25519 !== aPub.x25519);
+
   console.log('— published keys (passport position 9) —');
   const pub = formatPublicKeys(await deriveKeypair('kp-secret', 'handle-1234'));
   const spine = publicKeysToSpine(pub);

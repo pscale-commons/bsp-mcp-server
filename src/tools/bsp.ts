@@ -181,6 +181,10 @@ export const bspParamsSchema = {
     .boolean()
     .optional()
     .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle (encrypt at a leaf). Degray = read with secret, then write the plaintext back with gray:false. Grain mode needs both parties to have run pscale_key_publish."),
+  enc_secret: z
+    .string()
+    .optional()
+    .describe('Encryption key — your privacy identity, SEPARATE from `secret` (write-authority). Derives your keypair and encrypts/decrypts gray content (self + grain). NEVER sent to the beach. Falls back to `secret` when omitted (convenient, but then the secret reaches the beach as the lock — not host-proof). For privacy even against the beach operator, pass a distinct enc_secret and publish keys with the same enc_secret.'),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
@@ -200,6 +204,7 @@ export type BspToolParams = {
   secret?: string;
   new_lock?: string;
   gray?: boolean;
+  enc_secret?: string;
   face?: 'character' | 'author' | 'designer' | 'observer';
   tier?: 'soft' | 'medium' | 'hard';
 };
@@ -293,7 +298,13 @@ async function notFoundResponse(
  * sentinel registry has no lock semantics (read-only).
  */
 export async function handleBsp(params: BspToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { agent_id, block: blockName, spindle, pscale_attention, content: rawContent, secret, new_lock, face, tier } = params;
+  const { agent_id, block: blockName, spindle, pscale_attention, content: rawContent, secret, new_lock, enc_secret, face, tier } = params;
+
+  // Encryption identity — separate from the lock `secret`. Derives the keypair
+  // and encrypts/decrypts; NEVER forwarded to the beach. Falls back to `secret`
+  // so single-secret callers keep working (but are not host-proof — the secret
+  // then reaches the beach as the lock).
+  const encSecret = enc_secret ?? secret;
 
   // Normalise stringified content before any walk — LLMs sometimes serialise
   // nested structure as a JSON string by mistake; the beach's shape gate would
@@ -325,8 +336,8 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     // Wire-level fast path — federated hosts, no gray decryption needed.
     // The beach computes shape locally and returns only the resolved slice,
     // avoiding whole-block transfer for narrow queries. Skipped for sentinels
-    // (in-memory, walked locally) and for secret-bearing reads (may need the
-    // raw block to walk gray envelopes through decryptGrayNodes first).
+    // (in-memory, walked locally) and for key-bearing reads (secret or
+    // enc_secret may need the raw block to decrypt gray envelopes first).
     //
     // GATED to pscale-bearing, non-star reads. The beach returns a canonical
     // {shape} object ONLY when ?pscale= is present; for a no-pscale GET it
@@ -340,7 +351,7 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     // Contract-drift fix 2026-05-30 — see proposals/2026-05-30-wire-read-gate.md.
     const hasStar = typeof spindle === 'string' && spindle.includes('*');
     const wireEligible = pscale_attention != null && !hasStar;
-    if (wireEligible && !isSentinel && !secret && isFederatedOwner(target.agent_id)) {
+    if (wireEligible && !isSentinel && !encSecret && isFederatedOwner(target.agent_id)) {
       try {
         const wireResult = await loadBspShape(
           target.agent_id,
@@ -378,12 +389,13 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     if (!row) {
       return notFoundResponse(target, agent_id, blockName);
     }
-    // When secret is provided on a read, walk the block and rehydrate any gray
-    // envelopes (self or grain) to plaintext before bspRead computes the shape.
-    const blockForRead = secret
+    // When an encryption key is provided on a read, walk the block and rehydrate
+    // any gray envelopes (self or grain) to plaintext before bspRead computes
+    // the shape. The decrypt key is enc_secret (falling back to secret).
+    const blockForRead = encSecret
       ? await decryptGrayNodes(
           row.block,
-          await buildGrayDecryptor(row.block, target.block.startsWith('grain:'), agent_id, secret),
+          await buildGrayDecryptor(row.block, target.block.startsWith('grain:'), agent_id, encSecret),
         )
       : row.block;
     try {
@@ -419,9 +431,14 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   let writeResult: BspWriteResult | null = null;
   if (content !== undefined) {
     if (wantGray) {
-      if (!secret) {
+      if (!encSecret) {
         return {
-          content: [{ type: 'text', text: 'Write rejected: gray encryption requires secret (the key). Pass gray:false to write public.' }],
+          content: [{ type: 'text', text: 'Write rejected: gray encryption requires an encryption key (enc_secret, or secret as fallback). Pass gray:false to write public.' }],
+        };
+      }
+      if (isGrain && !secret) {
+        return {
+          content: [{ type: 'text', text: 'Write rejected: a grain write needs `secret` to prove your side lock (plus enc_secret for privacy).' }],
         };
       }
       if (!spindle || spindle === '') {
@@ -431,8 +448,8 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       }
       try {
         const envelope = isGrain
-          ? await encryptGrainLeaf(block, spindle, stringifyForGray(content), secret)
-          : await selfEncrypt(stringifyForGray(content), secret, agent_id);
+          ? await encryptGrainLeaf(block, spindle, stringifyForGray(content), encSecret)
+          : await selfEncrypt(stringifyForGray(content), encSecret, agent_id);
         writeAt(block, spindle, envelope);
         writeResult = {
           shape: 'point',
