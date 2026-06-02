@@ -24,7 +24,9 @@
     "smoke:federated-parser": "tsx scripts/smoke-federated-parser.ts",
     "smoke:wire-bsp": "tsx scripts/smoke-wire-bsp.ts",
     "smoke:read-gate": "tsx scripts/smoke-read-gate.ts",
-    "smoke:pool-engage": "tsx scripts/smoke-pool-engage.ts"
+    "smoke:pool-engage": "tsx scripts/smoke-pool-engage.ts",
+    "smoke:gray": "tsx scripts/smoke-gray.ts",
+    "smoke:gray-live": "tsx scripts/smoke-gray-live.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",

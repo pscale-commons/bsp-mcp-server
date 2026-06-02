@@ -1,8 +1,18 @@
 /**
- * crypto.ts — shared crypto module for gray (encrypted) engagement.
+ * keys.ts — crypto module for gray (encrypted) engagement.
  *
- * Deterministic key derivation: Argon2id(secret, salt=agent_id) → X25519 + Ed25519 keypairs.
+ * Deterministic key derivation: Argon2id(secret, salt=handle) → X25519 + Ed25519.
  * The secret is a passphrase (HITL) or local block hash (NHITL). Never stored.
+ *
+ * Two encryption modes, both producing a SPINE-LEGAL envelope (every key is
+ * "_" or a digit 1-9, so the federated beach shape gate accepts it, and a
+ * walker without the secret sees opaque structure — privacy without secrecy
+ * of existence):
+ *   - self:  symmetric secretbox under the author's own derived key. Only the
+ *            author (same secret + handle) decrypts. For private-to-me leaves.
+ *   - grain: bilateral. Both parties derive ONE shared key via X25519 ECDH
+ *            between their published keypairs (nacl.box.before). Either party
+ *            reads either side; outsiders cannot. For private grain curation.
  *
  * Dependencies: tweetnacl (X25519/Ed25519/XSalsa20-Poly1305), hash-wasm (Argon2id).
  */
@@ -17,18 +27,29 @@ export interface DerivedKeys {
   ed25519: { publicKey: Uint8Array; secretKey: Uint8Array };
 }
 
-export interface EncryptedPayload {
-  ciphertext: string;  // base64
-  nonce: string;       // base64
-  sender_x25519_public: string;  // base64 — needed for decryption
-  signature: string;   // base64
-  sender_ed25519_public: string; // base64 — needed for verification
+export interface PublicKeyPair {
+  x25519: string;  // base64
+  ed25519: string; // base64
 }
 
-export interface SelfEncryptedPayload {
-  _gray: true;
-  ciphertext: string;  // base64
-  nonce: string;       // base64
+/**
+ * The gray envelope. Spine-legal: every key is "_" or a digit 1-9.
+ *
+ *   { _: <human note>,
+ *     "1": <ciphertext b64>,
+ *     "2": <nonce b64>,
+ *     "9": { _: "gray", "1": "self" | "grain", "2"?: <partner handle> } }
+ */
+export interface GrayMeta {
+  _: 'gray';
+  '1': 'self' | 'grain';
+  '2'?: string;
+}
+export interface GrayEnvelope {
+  _: string;
+  '1': string;
+  '2': string;
+  '9': GrayMeta;
 }
 
 // ── Encoding helpers ──
@@ -47,11 +68,11 @@ function fromBase64(b64: string): Uint8Array {
 // ── Key derivation ──
 
 /**
- * Derive X25519 + Ed25519 keypairs from a secret and agent_id.
+ * Derive X25519 + Ed25519 keypairs from a secret and agent_id (handle).
  * Argon2id: memory-hard, brute-force resistant. Same inputs → same keys.
  */
 export async function deriveKeypair(secret: string, agentId: string): Promise<DerivedKeys> {
-  // Salt must be at least 8 bytes for Argon2
+  // Salt must be at least 8 bytes for Argon2.
   const saltStr = agentId.length >= 8 ? agentId : agentId.padEnd(8, '\0');
 
   const hash = await argon2id({
@@ -65,62 +86,66 @@ export async function deriveKeypair(secret: string, agentId: string): Promise<De
   });
 
   const seed = new Uint8Array(hash);
-
-  // First 32 bytes → X25519 keypair
-  const x25519Seed = seed.slice(0, 32);
-  const x25519 = nacl.box.keyPair.fromSecretKey(x25519Seed);
-
-  // Last 32 bytes → Ed25519 keypair
-  const ed25519Seed = seed.slice(32, 64);
-  const ed25519 = nacl.sign.keyPair.fromSeed(ed25519Seed);
-
+  const x25519 = nacl.box.keyPair.fromSecretKey(seed.slice(0, 32));
+  const ed25519 = nacl.sign.keyPair.fromSeed(seed.slice(32, 64));
   return { x25519, ed25519 };
 }
 
-/**
- * Format public keys as base64 strings for DB storage.
- */
-export function formatPublicKeys(keys: DerivedKeys): { x25519: string; ed25519: string } {
+/** Format public keys as base64 strings for storage/display. */
+export function formatPublicKeys(keys: DerivedKeys): PublicKeyPair {
   return {
     x25519: toBase64(keys.x25519.publicKey),
     ed25519: toBase64(keys.ed25519.publicKey),
   };
 }
 
-/**
- * Parse stored public keys from base64.
- */
-export function parsePublicKeys(stored: { x25519: string; ed25519: string }): {
-  x25519: Uint8Array;
-  ed25519: Uint8Array;
-} {
-  return {
-    x25519: fromBase64(stored.x25519),
-    ed25519: fromBase64(stored.ed25519),
-  };
+/** Parse stored public keys from base64. */
+export function parsePublicKeys(stored: PublicKeyPair): { x25519: Uint8Array; ed25519: Uint8Array } {
+  return { x25519: fromBase64(stored.x25519), ed25519: fromBase64(stored.ed25519) };
 }
 
-/**
- * Check if two public key sets match.
- */
-export function keysMatch(
-  a: { x25519: string; ed25519: string },
-  b: { x25519: string; ed25519: string },
-): boolean {
+/** Check if two public key sets match. */
+export function keysMatch(a: PublicKeyPair, b: PublicKeyPair): boolean {
   return a.x25519 === b.x25519 && a.ed25519 === b.ed25519;
+}
+
+// ── Published-keys spine shape (passport position 9) ──
+//
+// Position 9 stores the public halves. The stored shape MUST be spine-legal
+// ("_" + digits) or the beach shape gate rejects the publish. Canonical:
+//   { _: <note>, "1": ed25519 (signing), "2": x25519 (encryption) }
+// Readers tolerate the legacy bare-key shape {x25519, ed25519} so passports
+// published before this fix still parse.
+
+const KEYS_NOTE =
+  'Published public keys (Argon2id from secret + handle). 1 ed25519 (signing), 2 x25519 (encryption). Private halves never stored.';
+
+export function publicKeysToSpine(keys: PublicKeyPair): { _: string; '1': string; '2': string } {
+  return { _: KEYS_NOTE, '1': keys.ed25519, '2': keys.x25519 };
+}
+
+export function publicKeysFromSpine(node: any): PublicKeyPair | null {
+  if (!node || typeof node !== 'object') return null;
+  // Canonical spine shape: { _, 1: ed25519, 2: x25519 }.
+  if (typeof node['1'] === 'string' && typeof node['2'] === 'string') {
+    return { ed25519: node['1'], x25519: node['2'] };
+  }
+  // Legacy bare-key shape — tolerate on read.
+  if (typeof node.x25519 === 'string' && typeof node.ed25519 === 'string') {
+    return { x25519: node.x25519, ed25519: node.ed25519 };
+  }
+  return null;
 }
 
 // ── Key rotation signing (proof-of-prior-key for passport position 9) ──
 
 /**
- * Canonical message for a key rotation. Binds the agent_id and the new
- * public keys together so the signature commits to a specific rotation.
- * Replay-safe: the only state an attacker could rewind to is one the
- * legitimate owner had previously authorised, which is recovery, not attack.
+ * Canonical message for a key rotation. Binds the agent_id and the new public
+ * keys together so the signature commits to a specific rotation.
  */
 export function keyRotationMessage(
   agentId: string,
-  newPubKeys: { x25519: string; ed25519: string },
+  newPubKeys: PublicKeyPair,
 ): Uint8Array {
   return encoder.encode(
     `pscale_key_rotation:${agentId}:${newPubKeys.x25519}:${newPubKeys.ed25519}`,
@@ -130,7 +155,7 @@ export function keyRotationMessage(
 /** Sign a key rotation with the prior Ed25519 secret key. Returns base64. */
 export function signKeyRotation(
   agentId: string,
-  newPubKeys: { x25519: string; ed25519: string },
+  newPubKeys: PublicKeyPair,
   priorEd25519SecretKey: Uint8Array,
 ): string {
   const msg = keyRotationMessage(agentId, newPubKeys);
@@ -141,7 +166,7 @@ export function signKeyRotation(
 /** Verify a base64 rotation signature against the prior Ed25519 public key. */
 export function verifyKeyRotation(
   agentId: string,
-  newPubKeys: { x25519: string; ed25519: string },
+  newPubKeys: PublicKeyPair,
   signatureBase64: string,
   priorEd25519PublicKeyBase64: string,
 ): boolean {
@@ -155,145 +180,124 @@ export function verifyKeyRotation(
   }
 }
 
-// ── Bilateral encryption (for inbox: sender → recipient) ──
+// ── Gray envelope detection ──
 
-/**
- * Encrypt plaintext for a specific recipient. Signs with sender's Ed25519 key.
- */
-export function encryptForRecipient(
-  plaintext: string,
-  senderKeys: DerivedKeys,
-  recipientX25519Public: Uint8Array,
-): EncryptedPayload {
-  const message = encoder.encode(plaintext);
-  const nonce = nacl.randomBytes(nacl.box.nonceLength);
+const GRAY_MARKER = 'gray' as const;
+const NOTE_SELF = 'Encrypted (gray); readable only with the author secret.';
+const NOTE_GRAIN = 'Encrypted (gray); readable by the two grain parties.';
 
-  const ciphertext = nacl.box(
-    message,
-    nonce,
-    recipientX25519Public,
-    senderKeys.x25519.secretKey,
+/** True when a node is a gray envelope (marker at 9._ === "gray"). */
+export function isGrayEnvelope(node: any): node is GrayEnvelope {
+  return (
+    !!node &&
+    typeof node === 'object' &&
+    typeof node['1'] === 'string' &&
+    typeof node['2'] === 'string' &&
+    !!node['9'] &&
+    typeof node['9'] === 'object' &&
+    node['9']['_'] === GRAY_MARKER
   );
-
-  if (!ciphertext) throw new Error('Encryption failed');
-
-  // Sign the ciphertext for tamper detection
-  const signature = nacl.sign.detached(ciphertext, senderKeys.ed25519.secretKey);
-
-  return {
-    ciphertext: toBase64(ciphertext),
-    nonce: toBase64(nonce),
-    sender_x25519_public: toBase64(senderKeys.x25519.publicKey),
-    signature: toBase64(signature),
-    sender_ed25519_public: toBase64(senderKeys.ed25519.publicKey),
-  };
 }
 
-/**
- * Decrypt a message from a sender. Verifies signature first.
- * Returns null if decryption or verification fails.
- */
-export function decryptFromSender(
-  payload: EncryptedPayload,
-  recipientKeys: DerivedKeys,
-): { plaintext: string; verified: boolean } | null {
-  const ciphertext = fromBase64(payload.ciphertext);
-  const nonce = fromBase64(payload.nonce);
-  const senderX25519Public = fromBase64(payload.sender_x25519_public);
-  const senderEd25519Public = fromBase64(payload.sender_ed25519_public);
-  const signature = fromBase64(payload.signature);
-
-  // Verify signature
-  const verified = nacl.sign.detached.verify(ciphertext, signature, senderEd25519Public);
-
-  // Decrypt
-  const plaintext = nacl.box.open(
-    ciphertext,
-    nonce,
-    senderX25519Public,
-    recipientKeys.x25519.secretKey,
-  );
-
-  if (!plaintext) return null;
-
-  return {
-    plaintext: decoder.decode(plaintext),
-    verified,
-  };
+/** The envelope's encryption mode, or null if not a gray envelope. */
+export function grayMode(node: any): 'self' | 'grain' | null {
+  if (!isGrayEnvelope(node)) return null;
+  const m = (node['9'] as GrayMeta)['1'];
+  return m === 'self' || m === 'grain' ? m : null;
 }
 
-// ── Self-encryption (for private blocks: owner only) ──
+// ── Self-encryption (private to the author) ──
 
-/**
- * Encrypt content for self-storage. Uses symmetric encryption with derived key.
- */
-export async function selfEncrypt(
-  plaintext: string,
-  secret: string,
-  agentId: string,
-): Promise<SelfEncryptedPayload> {
+export async function selfEncrypt(plaintext: string, secret: string, agentId: string): Promise<GrayEnvelope> {
   const keys = await deriveKeypair(secret, agentId);
-  // Use the X25519 secret key as the symmetric key (first 32 bytes of derivation)
   const key = keys.x25519.secretKey;
-  const message = encoder.encode(plaintext);
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
-
-  const ciphertext = nacl.secretbox(message, nonce, key);
+  const ciphertext = nacl.secretbox(encoder.encode(plaintext), nonce, key);
   if (!ciphertext) throw new Error('Self-encryption failed');
-
   return {
-    _gray: true,
-    ciphertext: toBase64(ciphertext),
-    nonce: toBase64(nonce),
+    _: NOTE_SELF,
+    '1': toBase64(ciphertext),
+    '2': toBase64(nonce),
+    '9': { _: GRAY_MARKER, '1': 'self' },
   };
 }
 
-/**
- * Decrypt self-encrypted content.
- * Returns null if decryption fails (wrong secret).
- */
-export async function selfDecrypt(
-  payload: SelfEncryptedPayload,
-  secret: string,
-  agentId: string,
-): Promise<string | null> {
+export async function selfDecrypt(env: GrayEnvelope, secret: string, agentId: string): Promise<string | null> {
   const keys = await deriveKeypair(secret, agentId);
   const key = keys.x25519.secretKey;
-  const ciphertext = fromBase64(payload.ciphertext);
-  const nonce = fromBase64(payload.nonce);
+  const pt = nacl.secretbox.open(fromBase64(env['1']), fromBase64(env['2']), key);
+  return pt ? decoder.decode(pt) : null;
+}
 
-  const plaintext = nacl.secretbox.open(ciphertext, nonce, key);
-  if (!plaintext) return null;
+// ── Grain encryption (bilateral shared key) ──
+//
+// Both parties compute the SAME shared key via X25519 ECDH:
+//   nacl.box.before(partner_x25519_public, my_x25519_secret)
+// Symmetric: DH(my_secret, partner_public) == DH(partner_secret, my_public).
+// So either party encrypts/decrypts either side; outsiders cannot.
+//
+// REQUIRES the side secret to be the SAME secret used to publish keys under
+// the same handle — otherwise the derived public half won't match what the
+// partner combines with, and the shared keys diverge.
 
-  return decoder.decode(plaintext);
+async function grainSharedKey(secret: string, myHandle: string, counterpartyX25519PubB64: string): Promise<Uint8Array> {
+  const my = await deriveKeypair(secret, myHandle);
+  return nacl.box.before(fromBase64(counterpartyX25519PubB64), my.x25519.secretKey);
+}
+
+export async function grainEncrypt(
+  plaintext: string,
+  secret: string,
+  myHandle: string,
+  partnerHandle: string,
+  partnerX25519PubB64: string,
+): Promise<GrayEnvelope> {
+  const shared = await grainSharedKey(secret, myHandle, partnerX25519PubB64);
+  const nonce = nacl.randomBytes(nacl.box.nonceLength);
+  const ciphertext = nacl.box.after(encoder.encode(plaintext), nonce, shared);
+  if (!ciphertext) throw new Error('Grain encryption failed');
+  return {
+    _: NOTE_GRAIN,
+    '1': toBase64(ciphertext),
+    '2': toBase64(nonce),
+    '9': { _: GRAY_MARKER, '1': 'grain', '2': partnerHandle },
+  };
+}
+
+export async function grainDecrypt(
+  env: GrayEnvelope,
+  secret: string,
+  myHandle: string,
+  counterpartyX25519PubB64: string,
+): Promise<string | null> {
+  const shared = await grainSharedKey(secret, myHandle, counterpartyX25519PubB64);
+  const pt = nacl.box.open.after(fromBase64(env['1']), fromBase64(env['2']), shared);
+  return pt ? decoder.decode(pt) : null;
 }
 
 // ── Block-level decryption (for walk) ──
+//
+// Walk a block and replace each gray envelope with its plaintext, using the
+// supplied per-leaf decryptor (self or grain). Returns a new tree — does not
+// mutate. Envelopes the decryptor cannot open render as "[encrypted]".
 
-/**
- * Recursively walk a block and decrypt any _gray nodes.
- * Returns a new object — does not mutate the original.
- */
-export async function decryptBlockNodes(
+export async function decryptGrayNodes(
   node: any,
-  secret: string,
-  agentId: string,
+  decryptLeaf: (env: GrayEnvelope) => Promise<string | null>,
 ): Promise<any> {
-  if (node === null || node === undefined) return node;
-  if (typeof node === 'string' || typeof node === 'number' || typeof node === 'boolean') return node;
-
-  if (typeof node === 'object' && node._gray === true && node.ciphertext && node.nonce) {
-    const result = await selfDecrypt(node as SelfEncryptedPayload, secret, agentId);
-    return result !== null ? result : '[encrypted]';
+  if (node === null || typeof node !== 'object') return node;
+  if (isGrayEnvelope(node)) {
+    const pt = await decryptLeaf(node);
+    return pt !== null ? pt : '[encrypted]';
   }
-
-  if (typeof node === 'object') {
-    const result: Record<string, any> = {};
-    for (const key of Object.keys(node)) {
-      result[key] = await decryptBlockNodes(node[key], secret, agentId);
-    }
-    return result;
+  if (Array.isArray(node)) {
+    const out: any[] = [];
+    for (const v of node) out.push(await decryptGrayNodes(v, decryptLeaf));
+    return out;
   }
-
-  return node;
+  const out: Record<string, any> = {};
+  for (const k of Object.keys(node)) {
+    out[k] = await decryptGrayNodes(node[k], decryptLeaf);
+  }
+  return out;
 }

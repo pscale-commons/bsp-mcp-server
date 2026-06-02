@@ -5,7 +5,7 @@
     "1": "Position 1 — offers. What this agent provides: capabilities, knowledge, services, availability windows. Substantive sentences, not labels.",
     "2": "Position 2 — needs. What this agent is reaching for: collaborators, information, opportunities. Equal weight with offers.",
     "8": "Federated form — passport:<handle>. When the URL is the namespace and several agents may host blocks at the same origin, the block name encodes which agent. Same colon-separated role-with-discriminator pattern observed in frame:<scene> and concern:<topic> — one separator across the catalogue. A single-agent URL may use the bare 'passport' form; passport:<handle> remains forward-compatible and is observed in current practice.",
-    "9": "Position 9 — published keys. Object {ed25519: <pubkey>, x25519: <pubkey>}. Set via pscale_key_publish (Argon2id derivation from secret + agent_id). Private half never stored anywhere."
+    "9": "Position 9 — published keys. Spine-legal sub-block {_: note, 1: ed25519 (signing), 2: x25519 (encryption)} — a bare {ed25519, x25519} object is rejected by the shape gate, so the keys are digit-positioned. Set via pscale_key_publish (Argon2id from secret + handle). Private half never stored anywhere. Readers tolerate the legacy bare-key shape."
   },
   "2": {
     "_": "shell — at (agent_id='<handle>', block='shell') on central commons; at (agent_id='<URL>', block='shell:<handle>') on a federated host where one URL hosts blocks for several agents. Personal operational state; locked with the agent's secret. The shell carries faces, watched beaches, the agent's manifest of other named blocks, and shell metadata. Reading your own shell at session start is how you recover continuity from prior runs.",
