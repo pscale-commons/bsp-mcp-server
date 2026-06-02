@@ -68,7 +68,7 @@ async function main() {
     assert(!txt(openR).includes(NOTE), 'open read (no key) does not leak');
 
     console.log('\n=== 5. owner invites m3; m3 reads ===');
-    const inv = await handleBsp({ agent_id: HOST, block: GROUP, spindle: '9', pscale_attention: null, members: [ids.m3.h], enc_secret: ids.owner.enc });
+    const inv = await handleBsp({ agent_id: HOST, block: GROUP, spindle: '9', pscale_attention: null, members: [ids.owner.h, ids.m1.h, ids.m2.h, ids.m3.h], enc_secret: ids.owner.enc });
     assert(!txt(inv).toLowerCase().includes('rejected'), 'owner invited m3');
     const raw2 = await rawGet(GROUP);
     assert(Object.keys(raw2['9'] ?? {}).filter(k => /^[1-9]$/.test(k)).length === 4, 'keyring now has 4 members');

@@ -320,17 +320,48 @@ export async function unwrapGroupKey(entry: GroupKeyEntry, encSecret: string, ha
   return nacl.box.open(fromBase64(entry['1']), fromBase64(entry['2']), fromBase64(entry['3']), keys.x25519.secretKey);
 }
 
-/** Trial-unwrap the group key from a keyring using only the reader's enc_secret. */
+/** True when a node is a wrapped-key entry (handle + sealed key, all strings). */
+function isKeyEntry(n: any): boolean {
+  return (
+    !!n && typeof n === 'object' &&
+    typeof n['_'] === 'string' &&
+    typeof n['1'] === 'string' && typeof n['2'] === 'string' && typeof n['3'] === 'string'
+  );
+}
+
+/**
+ * Lay wrapped-key entries into a (possibly chained) keyring: 8 entries per page
+ * at positions 1-8; position 9 is a continuation page of the same shape. Spine-
+ * legal for any N.
+ */
+export function buildKeyring(wraps: GroupKeyEntry[], marker: string = GROUP_KEYRING_MARKER): any {
+  const node: any = { _: marker };
+  wraps.slice(0, 8).forEach((w, i) => { node[String(i + 1)] = w; });
+  if (wraps.length > 8) node['9'] = buildKeyring(wraps.slice(8), 'more');
+  return node;
+}
+
+/** All member handles in a keyring (recurses the continuation chain). */
+export function keyringHandles(keyring: any): string[] {
+  const out: string[] = [];
+  if (!keyring || typeof keyring !== 'object') return out;
+  for (let i = 1; i <= 8; i++) { if (isKeyEntry(keyring[String(i)])) out.push(keyring[String(i)]['_']); }
+  const tail = keyring['9'];
+  if (isKeyEntry(tail)) out.push(tail['_']);
+  else if (tail && typeof tail === 'object') out.push(...keyringHandles(tail));
+  return out;
+}
+
+/** Trial-unwrap the group key from a (possibly chained) keyring using only the reader's enc_secret. */
 export async function unwrapGroupKeyFromKeyring(keyring: any, encSecret: string): Promise<Uint8Array | null> {
   if (!keyring || typeof keyring !== 'object') return null;
-  for (const k of Object.keys(keyring)) {
-    if (k === '_') continue;
-    const entry = keyring[k];
-    if (!entry || typeof entry !== 'object' || typeof entry['_'] !== 'string') continue;
-    if (typeof entry['1'] !== 'string' || typeof entry['2'] !== 'string' || typeof entry['3'] !== 'string') continue;
-    const K = await unwrapGroupKey(entry as GroupKeyEntry, encSecret, entry['_']);
-    if (K) return K;
+  for (let i = 1; i <= 8; i++) {
+    const entry = keyring[String(i)];
+    if (isKeyEntry(entry)) { const K = await unwrapGroupKey(entry as GroupKeyEntry, encSecret, entry['_']); if (K) return K; }
   }
+  const tail = keyring['9'];
+  if (isKeyEntry(tail)) { const K = await unwrapGroupKey(tail as GroupKeyEntry, encSecret, tail['_']); if (K) return K; }
+  else if (tail && typeof tail === 'object') return unwrapGroupKeyFromKeyring(tail, encSecret);
   return null;
 }
 
