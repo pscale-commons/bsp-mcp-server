@@ -33,8 +33,9 @@ import {
 
 export const keyPublishParamsSchema = {
   handle: z.string().describe('Your bare-name handle. Used as the Argon2id derivation salt AND as the discriminator in the passport block name ("passport:<handle>") at the beach. Must match an existing passport block.'),
-  secret: z.string().describe('Passphrase. Combined with handle to derive the keypair. Never stored.'),
-  prior_secret: z.string().optional().describe('Rotation only: previous passphrase. Server derives prior keypair and signs the rotation message internally.'),
+  secret: z.string().describe('Write-authority for the passport block (proves you may write position 9). Also the fallback keypair seed when enc_secret is omitted. Never stored.'),
+  enc_secret: z.string().optional().describe('Keypair seed (Argon2id with handle) — the published PUBLIC half derives from this; the private half is never stored, and enc_secret itself is never sent to the beach. Falls back to secret. Use the SAME enc_secret you use for grain/self encryption, or your published key will not match your ciphertext.'),
+  prior_secret: z.string().optional().describe('Rotation only: the PRIOR encryption secret (it derived the currently-published keypair). Server derives the prior keypair and signs the rotation message internally.'),
   signature: z.string().optional().describe('Rotation only: precomputed base64 Ed25519 sig over "pscale_key_rotation:{handle}:{new_x25519_b64}:{new_ed25519_b64}", made with the prior secret key.'),
   agent_id: z.string().optional().describe(`URL of the beach hosting the passport. Defaults to ${DEFAULT_BEACH}. The passport block name is "passport:<handle>" per the role-with-handle convention.`),
 };
@@ -53,11 +54,14 @@ async function getPublicKeysFromBeach(beach: string, handle: string): Promise<{ 
 export async function handleKeyPublish(params: {
   handle: string;
   secret: string;
+  enc_secret?: string;
   prior_secret?: string;
   signature?: string;
   agent_id?: string;
 }): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { handle, secret, prior_secret, signature } = params;
+  // Keypair seed is enc_secret (never forwarded); secret stays write-authority.
+  const encSecret = params.enc_secret ?? secret;
   const beach = params.agent_id ?? DEFAULT_BEACH;
 
   if (!isFederatedOwner(beach)) {
@@ -67,7 +71,7 @@ export async function handleKeyPublish(params: {
   }
 
   const blockName = `passport:${handle}`;
-  const newKeys = await deriveKeypair(secret, handle);
+  const newKeys = await deriveKeypair(encSecret, handle);
   const newPubKeys = formatPublicKeys(newKeys);
 
   const row = await loadBlock(beach, blockName);
