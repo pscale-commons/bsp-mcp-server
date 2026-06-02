@@ -40,9 +40,18 @@ import {
   canonicaliseOrigin,
   probeFederation,
   translateAddress,
+  getPublicKeys,
   DEFAULT_BEACH,
 } from '../db.js';
-import { selfEncrypt, decryptBlockNodes } from '../keys.js';
+import {
+  selfEncrypt,
+  selfDecrypt,
+  grainEncrypt,
+  grainDecrypt,
+  decryptGrayNodes,
+  grayMode,
+  GrayEnvelope,
+} from '../keys.js';
 
 // ── Gray-encryption helpers ──
 
@@ -54,6 +63,86 @@ import { selfEncrypt, decryptBlockNodes } from '../keys.js';
 function stringifyForGray(content: any): string {
   if (typeof content === 'string') return content;
   return JSON.stringify(content);
+}
+
+/** First significant side digit (1-9) of a spindle; null if none. */
+function leadingSideDigit(spindle: string): string | null {
+  for (const ch of spindle) {
+    if (ch >= '1' && ch <= '9') return ch;
+    if (ch === '0' || ch === '.') continue;
+    break;
+  }
+  return null;
+}
+
+/**
+ * Encrypt a leaf for a grain side using the bilateral shared key. Resolves the
+ * caller's and partner's handles from the grain block's position 9 + the side
+ * digit of the spindle, fetches the partner's published x25519, and encrypts.
+ * Throws a user-facing message on any precondition failure.
+ */
+async function encryptGrainLeaf(
+  grainBlock: any,
+  spindle: string,
+  plaintext: string,
+  secret: string,
+): Promise<GrayEnvelope> {
+  const side = leadingSideDigit(spindle);
+  if (side !== '1' && side !== '2') {
+    throw new Error('grain gray write must address your side (spindle starting with 1 or 2).');
+  }
+  const partnerSide = side === '1' ? '2' : '1';
+  const sideMap = grainBlock?.['9'];
+  const myHandle = sideMap?.[side];
+  const partnerHandle = sideMap?.[partnerSide];
+  if (!myHandle || !partnerHandle) {
+    throw new Error('grain not established (no parties at position 9). Reach first via pscale_grain_reach, then curate with bsp().');
+  }
+  const partnerKeys = await getPublicKeys(partnerHandle);
+  if (!partnerKeys) {
+    throw new Error(`partner "${partnerHandle}" has not published keys — cannot curate privately. They run pscale_key_publish, or write with gray:false. (Your side secret must be the same secret you published keys with.)`);
+  }
+  return grainEncrypt(plaintext, secret, myHandle, partnerHandle, partnerKeys.x25519);
+}
+
+/**
+ * Build a per-leaf decryptor for a secret-bearing read. Self envelopes decrypt
+ * with the reader's own derived key. Grain envelopes trial-decrypt from both
+ * party perspectives — the reader's secret opens exactly one — using each
+ * party's published x25519 fetched from their passport.
+ */
+async function buildGrayDecryptor(
+  block: any,
+  isGrain: boolean,
+  agentId: string,
+  secret: string,
+): Promise<(env: GrayEnvelope) => Promise<string | null>> {
+  let h1: string | undefined;
+  let h2: string | undefined;
+  let k1: string | null = null;
+  let k2: string | null = null;
+  if (isGrain && block?.['9'] && typeof block['9'] === 'object') {
+    h1 = block['9']['1'];
+    h2 = block['9']['2'];
+    const [p1, p2] = await Promise.all([
+      h1 ? getPublicKeys(h1) : Promise.resolve(null),
+      h2 ? getPublicKeys(h2) : Promise.resolve(null),
+    ]);
+    k1 = p1?.x25519 ?? null;
+    k2 = p2?.x25519 ?? null;
+  }
+  return async (env: GrayEnvelope): Promise<string | null> => {
+    const mode = grayMode(env);
+    if (mode === 'self') return selfDecrypt(env, secret, agentId);
+    if (mode === 'grain') {
+      // Reader is whichever party their secret belongs to; try both. My handle
+      // pairs with the OTHER party's published key.
+      if (h1 && k2) { const pt = await grainDecrypt(env, secret, h1, k2); if (pt !== null) return pt; }
+      if (h2 && k1) { const pt = await grainDecrypt(env, secret, h2, k1); if (pt !== null) return pt; }
+      return null;
+    }
+    return null;
+  };
 }
 
 // ── Schemas ──
@@ -91,7 +180,7 @@ export const bspParamsSchema = {
   gray: z
     .boolean()
     .optional()
-    .describe('Explicit opt-in for self-encryption on unlocked ordinary blocks. Default false. Encryption happens client-side at bsp-mcp; the encrypted envelope is what lands at the beach.'),
+    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle (encrypt at a leaf). Degray = read with secret, then write the plaintext back with gray:false. Grain mode needs both parties to have run pscale_key_publish."),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
@@ -237,7 +326,7 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     // The beach computes shape locally and returns only the resolved slice,
     // avoiding whole-block transfer for narrow queries. Skipped for sentinels
     // (in-memory, walked locally) and for secret-bearing reads (may need the
-    // raw block to walk _gray envelopes through decryptBlockNodes first).
+    // raw block to walk gray envelopes through decryptGrayNodes first).
     //
     // GATED to pscale-bearing, non-star reads. The beach returns a canonical
     // {shape} object ONLY when ?pscale= is present; for a no-pscale GET it
@@ -289,11 +378,13 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     if (!row) {
       return notFoundResponse(target, agent_id, blockName);
     }
-    // Stage 10 — when secret is provided on a read, walk the block through
-    // decryptBlockNodes so any _gray envelopes anywhere in the tree are
-    // rehydrated to plaintext before bspRead computes the requested shape.
+    // When secret is provided on a read, walk the block and rehydrate any gray
+    // envelopes (self or grain) to plaintext before bspRead computes the shape.
     const blockForRead = secret
-      ? await decryptBlockNodes(row.block, secret, agent_id)
+      ? await decryptGrayNodes(
+          row.block,
+          await buildGrayDecryptor(row.block, target.block.startsWith('grain:'), agent_id, secret),
+        )
       : row.block;
     try {
       const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
@@ -319,22 +410,29 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   // Determine starting block — existing or empty seed.
   const block: Block = row?.block ?? {};
 
+  // Grain blocks curate privately by default; ordinary blocks are public unless
+  // gray:true is passed. gray:false forces a public write either way.
+  const isGrain = target.block.startsWith('grain:');
+  const wantGray = isGrain ? params.gray !== false : params.gray === true;
+
   // Apply content write if provided.
   let writeResult: BspWriteResult | null = null;
   if (content !== undefined) {
-    if (params.gray === true) {
+    if (wantGray) {
       if (!secret) {
         return {
-          content: [{ type: 'text', text: 'Write rejected: gray=true requires secret (used as encryption key).' }],
+          content: [{ type: 'text', text: 'Write rejected: gray encryption requires secret (the key). Pass gray:false to write public.' }],
         };
       }
       if (!spindle || spindle === '') {
         return {
-          content: [{ type: 'text', text: 'Write rejected: gray=true requires a non-empty spindle (gray-encrypt at a leaf, not the whole block).' }],
+          content: [{ type: 'text', text: 'Write rejected: gray encryption requires a non-empty spindle (encrypt at a leaf, not the whole block).' }],
         };
       }
       try {
-        const envelope = await selfEncrypt(stringifyForGray(content), secret, agent_id);
+        const envelope = isGrain
+          ? await encryptGrainLeaf(block, spindle, stringifyForGray(content), secret)
+          : await selfEncrypt(stringifyForGray(content), secret, agent_id);
         writeAt(block, spindle, envelope);
         writeResult = {
           shape: 'point',
@@ -347,7 +445,7 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
         if (e instanceof InvalidAddressError) {
           return { content: [{ type: 'text', text: `Write rejected: ${e.message}` }] };
         }
-        return { content: [{ type: 'text', text: `Write rejected: gray-encryption failed (${e?.message ?? String(e)})` }] };
+        return { content: [{ type: 'text', text: `Write rejected: ${e?.message ?? String(e)}` }] };
       }
     } else {
       try {
@@ -370,7 +468,10 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       {
         spindle: spindle ?? '',
         pscale_attention: pscale_attention ?? null,
-        secret,
+        // Leak fix: a self-gray write to an ordinary block uses `secret` ONLY
+        // as the encryption key — it must not reach the beach. Grain writes
+        // still forward it (it locks the side); lock changes still forward it.
+        secret: wantGray && !isGrain && new_lock === undefined ? undefined : secret,
         new_lock: params.new_lock,
         gray: params.gray,
       },

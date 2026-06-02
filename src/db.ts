@@ -26,6 +26,7 @@
 
 import { Block, readAt } from './bsp.js';
 import { SENTINEL_BLOCK_MAP } from './sentinels.js';
+import { publicKeysFromSpine } from './keys.js';
 
 // ── Default beach ──
 //
@@ -557,7 +558,5 @@ export async function getPassportFromAddress(addr: string): Promise<Block | null
 export async function getPublicKeys(agentHandle: string): Promise<{ x25519: string; ed25519: string } | null> {
   const block = await getPassportBlock(agentHandle);
   if (!block) return null;
-  const keys = block['9'];
-  if (!keys || typeof keys !== 'object' || !keys.x25519 || !keys.ed25519) return null;
-  return { x25519: keys.x25519, ed25519: keys.ed25519 };
+  return publicKeysFromSpine(block['9']);
 }

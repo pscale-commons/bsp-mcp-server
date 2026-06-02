@@ -27,6 +27,8 @@ import {
   keysMatch,
   signKeyRotation,
   verifyKeyRotation,
+  publicKeysToSpine,
+  publicKeysFromSpine,
 } from '../keys.js';
 
 export const keyPublishParamsSchema = {
@@ -45,9 +47,7 @@ async function getPublicKeysFromBeach(beach: string, handle: string): Promise<{ 
   const blockName = `passport:${handle}`;
   const row = await loadBlock(beach, blockName);
   if (!row) return null;
-  const keys = row.block?.['9'];
-  if (!keys || typeof keys !== 'object' || !keys.x25519 || !keys.ed25519) return null;
-  return { x25519: keys.x25519, ed25519: keys.ed25519 };
+  return publicKeysFromSpine(row.block?.['9']);
 }
 
 export async function handleKeyPublish(params: {
@@ -118,7 +118,9 @@ export async function handleKeyPublish(params: {
   }
 
   const block = row.block as Block;
-  writeAt(block, '9', newPubKeys as any);
+  // Spine-legal published-keys shape ({_, 1: ed25519, 2: x25519}) so the beach
+  // shape gate accepts the write — a bare {x25519, ed25519} object is rejected.
+  writeAt(block, '9', publicKeysToSpine(newPubKeys) as any);
   // Surgical write at spindle "9" with the new key object.
   await saveBlock(beach, blockName, block, {
     spindle: '9',
