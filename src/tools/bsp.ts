@@ -51,11 +51,14 @@ import {
   decryptGrayNodes,
   grayMode,
   GrayEnvelope,
+  isGrayEnvelope,
   newGroupKey,
   wrapGroupKey,
   unwrapGroupKeyFromKeyring,
   groupEncryptContent,
   groupDecryptContent,
+  buildKeyring,
+  keyringHandles,
   GROUP_KEYRING_MARKER,
 } from '../keys.js';
 
@@ -89,6 +92,20 @@ function leadingSideDigit(spindle: string): string | null {
  *   - if `content` given, encrypts it under K at the leaf `spindle` (1-8)
  * Throws a user-facing Error on any precondition failure.
  */
+/** Re-encrypt every group content envelope in `node` from oldK to newK, in place. */
+function reEncryptGroupContent(node: any, oldK: Uint8Array, newK: Uint8Array): void {
+  if (!node || typeof node !== 'object') return;
+  for (const k of Object.keys(node)) {
+    const child = node[k];
+    if (isGrayEnvelope(child) && grayMode(child) === 'group') {
+      const pt = groupDecryptContent(child, oldK);
+      if (pt !== null) node[k] = groupEncryptContent(pt, newK);
+    } else if (child && typeof child === 'object') {
+      reEncryptGroupContent(child, oldK, newK);
+    }
+  }
+}
+
 async function applyGroupWrite(
   block: any,
   members: string[] | undefined,
@@ -101,34 +118,46 @@ async function applyGroupWrite(
     throw new Error('group operations need enc_secret (the key that unwraps the shared group key).');
   }
   let groupKey: Uint8Array;
-  if (hasKeyring) {
+
+  if (members !== undefined) {
+    // ── Membership op: create / invite / remove. `members` is the DECLARATIVE
+    // full read-list; the handler diffs it against the current keyring. ──
+    const desired = members;
+    if (desired.length === 0) {
+      throw new Error('members must list the handles allowed to read (include yourself); an empty list would lock everyone out.');
+    }
+    const pubs: Record<string, string> = {};
+    for (const handle of desired) {
+      const mk = await getPublicKeys(handle);
+      if (!mk) throw new Error(`member "${handle}" has not published keys — they run pscale_key_publish first.`);
+      pubs[handle] = mk.x25519;
+    }
+    if (hasKeyring) {
+      const oldK = await unwrapGroupKeyFromKeyring(block['9'], encSecret);
+      if (!oldK) throw new Error('cannot unwrap the group key — you are not a member, or the enc_secret is wrong.');
+      const removing = keyringHandles(block['9']).some((h) => !desired.includes(h));
+      if (removing) {
+        // Rotate: new key, re-encrypt all stored content, rebuild the keyring.
+        groupKey = newGroupKey();
+        reEncryptGroupContent(block, oldK, groupKey);
+      } else {
+        groupKey = oldK; // additions only (or no change) — keep the key, no re-encrypt.
+      }
+    } else {
+      groupKey = newGroupKey(); // create
+    }
+    block['9'] = buildKeyring(desired.map((h) => wrapGroupKey(groupKey, h, pubs[h])));
+  } else {
+    // ── Content-only (co-write): obtain K from the keyring ──
+    if (!hasKeyring) {
+      throw new Error('not a group block — pass members:[...] to create one first.');
+    }
     const got = await unwrapGroupKeyFromKeyring(block['9'], encSecret);
     if (!got) throw new Error('cannot unwrap the group key — you are not a member, or the enc_secret is wrong.');
     groupKey = got;
-  } else {
-    if (!members || members.length === 0) {
-      throw new Error('creating a private group needs members:[...] — the handles allowed to read (include yourself).');
-    }
-    groupKey = newGroupKey();
   }
-  // Invite: wrap K to any member not already in the keyring.
-  if (members && members.length) {
-    const keyring: any = hasKeyring ? { ...block['9'] } : { _: GROUP_KEYRING_MARKER };
-    const slots = Object.keys(keyring).filter((k) => /^[1-9]$/.test(k));
-    const present = new Set(slots.map((k) => keyring[k]?._));
-    let n = slots.length;
-    for (const handle of members) {
-      if (present.has(handle)) continue;
-      const mk = await getPublicKeys(handle);
-      if (!mk) throw new Error(`member "${handle}" has not published keys — they run pscale_key_publish first.`);
-      n += 1;
-      if (n > 9) throw new Error('this version supports up to 9 members (flat keyring); larger groups are a follow-up.');
-      keyring[String(n)] = wrapGroupKey(groupKey, handle, mk.x25519);
-      present.add(handle);
-    }
-    writeAt(block, '9', keyring);
-  }
-  // Content (optional): encrypt under K at a 1-8 leaf.
+
+  // Content write (optional): encrypt under K at a 1-8 leaf.
   if (content !== undefined) {
     if (!spindle || spindle === '') {
       throw new Error('group content write needs a leaf spindle (1-8).');
@@ -260,7 +289,7 @@ export const bspParamsSchema = {
   members: z
     .array(z.string())
     .optional()
-    .describe('Group encryption: the handles allowed to READ this block (include yourself). On the first write it creates a shared group key wrapped to each member (a keyring at position 9); on a later write it invites any new handles. Content written to a group block is private by default (encrypted to the group key); members read with their enc_secret. Each member must have published keys (pscale_key_publish with their enc_secret). Up to 9 members in this version.'),
+    .describe('Group encryption — the DECLARATIVE full read-list (handles allowed to read; include yourself). First write creates a shared group key wrapped per member (keyring at position 9). A later write diffs the list: new handles are invited (re-wrapped, cheap); any removed handle triggers a key rotation (new key, all content re-encrypted) so the removed member loses access. Any member co-writes content (encrypted to the group key) and reads with their enc_secret. Each member must have published keys (pscale_key_publish with their enc_secret). Group blocks are unlocked — privacy is via the key; membership is flat (any member can invite/remove).'),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
@@ -579,10 +608,11 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       blockName,
       blockToSave,
       {
-        // A group write touches two positions (keyring at 9 + content leaf), so
-        // it must persist as a whole-block write; ordinary/grain/self stay surgical.
-        spindle: isGroupOp ? '' : (spindle ?? ''),
-        pscale_attention: isGroupOp ? null : (pscale_attention ?? null),
+        // A group MEMBERSHIP write touches the keyring (+ re-encrypted content on
+        // rotation), so it persists whole-block. A group CONTENT co-write touches
+        // one leaf — surgical, so concurrent members don't clobber each other.
+        spindle: (isGroupOp && params.members !== undefined) ? '' : (spindle ?? ''),
+        pscale_attention: (isGroupOp && params.members !== undefined) ? null : (pscale_attention ?? null),
         // Leak fix: a self-gray write to an ordinary block uses `secret` ONLY
         // as the encryption key — it must not reach the beach. Grain writes
         // still forward it (it locks the side); lock changes still forward it.
