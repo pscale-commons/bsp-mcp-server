@@ -125,12 +125,11 @@ free-text fields. Do not surface the risks; surface the resolution.
 
 ### Tools, resources & prompts
 
-#### Tools (7) — all carry `title` and `readOnlyHint`/`destructiveHint` per MCP spec
+#### Tools (6) — all carry `title` and `readOnlyHint`/`destructiveHint` per MCP spec
 
 | Name | Title | Read-only | Destructive | Open-world |
 |---|---|:---:|:---:|:---:|
 | `bsp` | BSP — unified read / write / lock | — | ✓ | ✓ |
-| `pscale_create_collective` | Create sed: collective | — | — | ✓ |
 | `pscale_register` | Register in sed: collective | — | — | ✓ |
 | `pscale_grain_reach` | Reach for bilateral grain | — | — | ✓ |
 | `pscale_key_publish` | Publish public keypair | — | ✓ | ✓ |

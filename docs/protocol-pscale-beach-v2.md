@@ -343,13 +343,13 @@ There is no tool. There is no SQL inbox table. There is the beach.
 
 ### 6.5 sed: collectives — already correct
 
-`pscale_create_collective` and `pscale_register` are existing substrate primitives. They produce blocks at `(agent_id="sed:{collective}", block="{collective}")` with `position_hashes` per registrant. Walked via `bsp()` like any other block.
+`pscale_register` is an existing substrate primitive; founding a collective is a plain `bsp()` write to the sed: root (not a primitive). Both produce blocks at `(agent_id="sed:{collective}", block="{collective}")` with `position_hashes` per registrant. Walked via `bsp()` like any other block.
 
 The sed:conventions block at `agent_id="sed:conventions"` holds universal guidance. Position 9 in the conventions block is reserved for beach-protocol conventions per v2 (URL canonicalisation, tide semantics, no-inbox replacement patterns).
 
 ### 6.6 Why none of these need new primitives
 
-The substrate primitives (`bsp`, `pscale_create_collective`, `pscale_register`, `pscale_grain_reach`, `pscale_key_publish`, `pscale_verify_rider`) are SUFFICIENT because every supporting concept is "a particular shape of pscale block + a particular write/read pattern." The block IS the data structure; `bsp()` IS the access function; the convention IS what shape to expect at what address.
+The substrate primitives (`bsp`, `pscale_register`, `pscale_grain_reach`, `pscale_key_publish`, `pscale_verify_rider`) are SUFFICIENT because every supporting concept is "a particular shape of pscale block + a particular write/read pattern." The block IS the data structure; `bsp()` IS the access function; the convention IS what shape to expect at what address.
 
 The pscale-mcp era shipped convenience tools for each convention. bsp-mcp ships none of those — agents using the protocol read the conventions (§6.1–6.5 here, and `sed:conventions` on the substrate) and call `bsp()` accordingly.
 

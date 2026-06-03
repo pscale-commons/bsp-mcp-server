@@ -1,13 +1,13 @@
 /**
  * server.ts — MCP server factory.
  *
- * Surface: bsp() + six substrate primitives + one orientation invite +
- * foundational resources. Eight tools total. The invite is a meta-tool
+ * Surface: two functions (bsp, bsp-floor) + five primitives + one orientation
+ * invite + foundational resources. Eight tools total. The invite is a meta-tool
  * (not a feature tool) — it serves discoverability for tool-scanning LLMs
  * by giving the manifest a tool-shaped surface alongside its block surface.
  * Resist further additions. The geometry IS the program.
  *
- * Note on pscale_pool_engage (6th primitive, added 2026-05-26): pools and
+ * Note on pscale_pool_engage (the envelope primitive, added 2026-05-26): pools and
  * marks share the same block shape per block-conventions:4.1; pool engagement
  * adds no new geometry. What this primitive provides is the response ENVELOPE
  * — synthesis_hint + slice-since-marker bundled in one tool result so the
@@ -20,7 +20,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { handleBsp, bspParamsSchema } from './tools/bsp.js';
 import { handleBspFloor, bspFloorParamsSchema } from './tools/bsp-floor.js';
-import { handleCreateCollective, createCollectiveParamsSchema, handleRegister, registerParamsSchema } from './tools/collective.js';
+import { handleRegister, registerParamsSchema } from './tools/collective.js';
 import { handleGrainReach, grainReachParamsSchema } from './tools/grain.js';
 import { handleKeyPublish, keyPublishParamsSchema } from './tools/keys.js';
 import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
@@ -62,7 +62,7 @@ function installErrorWrapper(server: McpServer): void {
 
 const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
-const INSTRUCTIONS = `bsp-mcp-server — one function and six substrate primitives plus an orientation invite, operating on pscale JSON blocks served from federated beaches.
+const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor) and five substrate primitives plus an orientation invite, operating on pscale JSON blocks served from federated beaches.
 
 FIRST ACTION when you connect: call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
 
@@ -96,9 +96,8 @@ SUBSTRATE DISPATCH: three real targets after dispatch.
 
 The translation happens inside bsp-mcp; callers just pass the agent_id form they have. To target a specific federated beach, pass its URL as agent_id; otherwise the default beach handles bare/sed:/grain: forms.
 
-THE SIX PRIMITIVES (substrate state machines bsp() alone cannot subsume, plus the pool-engage envelope):
-  pscale_create_collective — create a sed: substrate at a federated beach (atomic create-lock-write at the beach's site-hosted sed: handler).
-  pscale_register          — register at a sed: collective on a federated beach. Server-assigned position; per-position lock; proof-of-presence-in-time.
+THE FIVE PRIMITIVES (substrate state machines bsp() alone cannot subsume, plus the pool-engage envelope):
+  pscale_register          — register at a sed: collective on a federated beach. Server-assigned position; per-position lock; proof-of-presence-in-time. Founding a collective is NOT a primitive — it is a plain bsp() write (content={_:conventions}, new_lock=admin); the beach has no founding state machine.
   pscale_grain_reach       — symmetric reach/accept across a bilateral pair_id, hosted at a federated beach.
   pscale_key_publish       — derive Argon2id keypair, publish public half to passport:<handle> position 9 at a federated beach.
   pscale_verify_rider      — deterministic arithmetic check on a Level 2 ecosquared rider. Pure math.
@@ -167,25 +166,12 @@ export function createServer(): McpServer {
     handleBspFloor,
   );
 
-  // ── Five substrate-stateful primitives ──
+  // ── Four substrate-stateful primitives + the pool envelope ──
   // All operate against a federated beach. agent_id parameter is the beach URL
   // (defaults to ${DEFAULT_BEACH_URL}). The beach implements the substrate
   // state machine (atomic position alloc, bilateral handshake, key write).
-  server.tool(
-    'pscale_create_collective',
-    `Create a sedimentary collective at a federated beach — a "sed:<collective>" block where agents register at permanent, write-locked positions in landing order. The conventions string becomes the root underscore; creator_passphrase locks the root. Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to host elsewhere.`,
-    createCollectiveParamsSchema,
-    {
-      title: 'Create sed: collective',
-      // Additive: creates a brand-new substrate at a previously-empty block name.
-      destructiveHint: false,
-      // Not idempotent — second call with the same name fails ("already exists").
-      idempotentHint: false,
-      openWorldHint: true,
-    },
-    handleCreateCollective,
-  );
-
+  // Founding a sed: collective is NOT here — it is a plain bsp() write
+  // (content={_:conventions}, new_lock=admin); the beach has no founding action.
   server.tool(
     'pscale_register',
     `Register in a sedimentary collective at a federated beach. The beach assigns the next valid position (digits 1-9 only, floor-2 minimum: 11, 12, ..., 19, 21, ..., 99, 111, ...). Your declaration becomes your underscore at that position. The position is write-locked with your passphrase. Subsequent writes via bsp() require the same passphrase as \`secret\`. Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to register at a different beach.`,
