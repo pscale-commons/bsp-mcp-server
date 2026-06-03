@@ -19,6 +19,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { handleBsp, bspParamsSchema } from './tools/bsp.js';
+import { handleBspFloor, bspFloorParamsSchema } from './tools/bsp-floor.js';
 import { handleCreateCollective, createCollectiveParamsSchema, handleRegister, registerParamsSchema } from './tools/collective.js';
 import { handleGrainReach, grainReachParamsSchema } from './tools/grain.js';
 import { handleKeyPublish, keyPublishParamsSchema } from './tools/keys.js';
@@ -145,6 +146,25 @@ export function createServer(): McpServer {
       openWorldHint: true,
     },
     handleBsp,
+  );
+
+  // ── The n-ary companion ──
+  // bsp() indexes WITHIN one block (walk depth is meaningful there); bsp-floor()
+  // relates two or more blocks by their shared floor plane. Walk depth is
+  // block-local; pscale (floor - depth) is the one coordinate every block
+  // shares, because the floor is invariant under supernest. Reads only.
+  server.tool(
+    'bsp-floor',
+    'The n-ary companion to bsp(). Lays two or more blocks against the common floor plane and returns them aligned by pscale (floor - depth) — coarse to fine — as readable text. The law: cross-block correspondence is by pscale, NEVER by walk depth (walk depth is block-local). Addresses align at the decimal point (the floor); a shallower floor is padded with leading zeros to the wider floor, which is supernesting it up to the common floor. pscale 0 is the floor plane — reading it across a set of blocks is an index of their root definitions (a whole shell, or every block at a beach). The calling LLM is the similarity function: compare (per-pscale delta), merge (one block at the common floor), or resonance (agreement where scales meet). See pscale://sunstone 5.6 for the geometry, pscale://whetstone branch 7 for the surface.',
+    bspFloorParamsSchema,
+    {
+      title: 'bsp-floor — cross-block floor alignment',
+      // Reads each target block and computes the alignment; never writes.
+      readOnlyHint: true,
+      // Targets may be URL beaches; outbound HTTP is the norm.
+      openWorldHint: true,
+    },
+    handleBspFloor,
   );
 
   // ── Five substrate-stateful primitives ──
