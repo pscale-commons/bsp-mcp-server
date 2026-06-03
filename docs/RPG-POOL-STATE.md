@@ -79,6 +79,7 @@ does). So: "build path 3, with `commit` = A."
   pool's underscore points at it via a `*ref` the envelope follows — pure-liquid and
   supernest-safe (a digit position can't hold a hint; slot 9 is an entry).
 - Then `block-conventions:4.2` doc, then the xstream pool flow.
+- **xstream amendment when this lands:** the existing [xstream-bsp#70](https://github.com/happyseaurchin/xstream-bsp/pull/70) (merged 2026-06-02) currently shapes pool commits as "personal solid display only, no substrate write" — an interim that was correct for the pre-Path-3 model but doesn't carry the submit/commit split. The amendment: pool submit → `pool_engage(submit=...)` writing `liquid:pool:<name>` (no synthesis returned); pool commit → `pool_engage(commit=...)` writing the chronicle slot (general pools) or character spine (RPG redirect, Joint A) and rendering the returned synthesis envelope in the solid zone. The "no substrate write" needs to become "write a destination determined by the engagement kind". `beach-kernel.ts:readPool` stays scrubbed of legacy `_synthesis`; the personal solid state remains a Column-level concept (commit-time-only, not auto-rerun). Source map for the amendment: `src/components/Column.tsx` commit handler (the pool branch added by #70) + the soft-LLM tool descriptions in `src/kernel/claude-tools.ts` (so the LLM reaches for `submit=` vs `commit=` correctly).
 - **This is a fresh-session build.** Do not start it at a filling context window.
 
 ## 5. Ownership (David assigns; the work is spec'd so it transfers cleanly)
