@@ -1,7 +1,8 @@
 # Marks (and pool) shape — hidden-directory tag fields per sunstone:1.4.1
 
 **Date**: 2026-05-17
-**Status**: proposal, not implemented. Discussed during xstream marks-supernest fix; surfaces the underlying substrate-design question that the convention update in block-conventions:9 acknowledges but doesn't close.
+**Status**: SUPERSEDED 2026-06-03 by [`proposals/2026-06-03-supernest-floor-growth-and-positional-ladder.md`](2026-06-03-supernest-floor-growth-and-positional-ladder.md). The hidden-directory mark shape worked around a metadata collision that exists **only** under fixed-floor digit-path growth (entries drift below the floor, so the decimal can't reach them and metadata is forced onto digit positions). The floor-growth supernest method keeps every entry at pscale 0, which makes the decimal usable for metadata and removes the collision's cause — so this shape change is no longer needed. Retained as historical record.
+**Originally**: proposal, not implemented. Discussed during xstream marks-supernest fix; surfaces the underlying substrate-design question that the convention update in block-conventions:9 acknowledges but doesn't close.
 **Companion to**: bsp-mcp-server PR #36 (block-conventions:9 append-only writes, key-deletion wipes), xstream-bsp PR #34 (findNextMarkSpindle change), sunstone:1.4.1 (PR #39 — hidden directories at digit positions only).
 
 ## TL;DR
