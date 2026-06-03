@@ -106,35 +106,29 @@ const noTomb = collectContributions(withTombstone, 0);
 assert(noTomb.contributions.length === 1, 'tombstone at slot 1 skipped');
 assert(noTomb.contributions[0].position === 2, 'only real contribution at slot 2 returned');
 
-console.log('\n=== extractSynthesisHint — three-step fallback chain ===');
-// 1. 9.1 present (authored)
-const authored: Block = { _: 'purpose', '9': { '1': 'synthesise as a wandering sage' } };
-const a = extractSynthesisHint(authored);
-assert(a.source === 'authored', 'source = authored when 9.1 set');
-assert(a.hint === 'synthesise as a wandering sage', 'hint = 9.1 string');
+console.log('\n=== extractSynthesisHint — underscore source (9.1 retired: it is an entry slot) ===');
+// The hint is the pool's underscore — never a digit position. 9.1 would be claimed
+// and overwritten by the ninth contribution once the pool supernests.
+const purposed: Block = { _: 'A pool for visitors to introduce themselves.' };
+const p = extractSynthesisHint(purposed);
+assert(p.source === 'purpose', 'underscore present → source = purpose');
+assert(p.hint === 'A pool for visitors to introduce themselves.', 'hint = the underscore');
 
-// 1b. 9.1 as a sub-object with _ — also authored
-const authoredObj: Block = { _: 'purpose', '9': { '1': { _: 'synthesise via the sage' } } };
-const ao = extractSynthesisHint(authoredObj);
-assert(ao.source === 'authored', '9.1 as object — source still authored');
-assert(ao.hint === 'synthesise via the sage', '9.1 object underscore = hint');
+// A 9.1 is now IGNORED — it is a contribution slot, not metadata.
+const with91: Block = { _: 'the purpose', '9': { '1': 'this used to be the hint' } };
+const w = extractSynthesisHint(with91);
+assert(w.source === 'purpose' && w.hint === 'the purpose', '9.1 ignored; underscore wins');
 
-// 2. 9.1 absent, _ present (purpose fallback)
-const purposeOnly: Block = { _: 'A pool for visitors to introduce themselves.' };
-const p = extractSynthesisHint(purposeOnly);
-assert(p.source === 'purpose', 'falls back to purpose when 9.1 absent');
-assert(p.hint === 'A pool for visitors to introduce themselves.', 'purpose used as hint');
-
-// 3. Both absent → default
+// No underscore → the crafted default.
 const empty: Block = {};
 const d = extractSynthesisHint(empty);
-assert(d.source === 'default', 'default when both absent');
+assert(d.source === 'default', 'no underscore → default');
 assert(d.hint === DEFAULT_SYNTHESIS_HINT, 'hint = default constant');
 
-// 4. 9.1 empty string — skip, fall to purpose
-const empty91: Block = { _: 'purpose', '9': { '1': '' } };
-const e91 = extractSynthesisHint(empty91);
-assert(e91.source === 'purpose', 'empty 9.1 falls through to purpose');
+// Blank underscore → default.
+const emptyU: Block = { _: '   ' };
+const eu = extractSynthesisHint(emptyU);
+assert(eu.source === 'default', 'blank underscore → default');
 
 console.log('\n=== summary ===');
 console.log(`  pass: ${pass}`);
