@@ -3,36 +3,34 @@
 **Read this before touching the RPG or the pool primitive.** It exists so a session
 *executes* the joints below rather than re-designing them. The joints are **decided,
 not open for re-design.** If you find yourself about to write a new proposal, or to
-judge `rpg-architecture` "objective and therefore wrong" and rebuild it — **stop**:
-that disagreement is a known, half-finished migration (§2), not a design gap. The
+rebuild the architecture from scratch — **stop**: the canon is `rpg-architecture-subjective`
+(§2); the older objective `rpg-architecture` is a superseded draft, not a design gap. The
 discipline this whole effort defends: *maximise pscale block + bsp + LLM; do not
 multiply code.*
 
-Last updated 2026-06-03.
+Last updated 2026-06-04.
 
 ---
 
 ## 1. What is LIVE and PROVEN (the runtime)
 
-- **Pool accumulates past 9 by supernest** — `src/accumulator.ts` (`appendWithSupernest`); `pool_engage` wired; envelope hint comes from the pool's underscore. PR #63, **deployed** (Vercel → `bsp.hermitcrab.me`). Proven by smoke (accumulator 22/22, pool-engage 34/34) and live for a single contribution; **past-9 not yet exercised live** (§3 Joint C).
+- **Pool accumulates past 9 by supernest** — `src/accumulator.ts` (`appendWithSupernest`); `pool_engage` wired; envelope hint comes from the pool's underscore. PR #63, **deployed** (Railway → `bsp.hermitcrab.me`). Proven by smoke (accumulator 22/22, pool-engage 34/34) and live for a single contribution; **past-9 not yet exercised live** (§3 Joint C).
 - **Perception-as-depth** — proven live on `spatial:thornwood:111`: the secret ("the stillness is listening") sits at `111*1.31`, occluded at a newcomer's depth (`111*1` `P=-1`), revealed at `P=-2`. Occlusion **is** read-depth; the mechanism is real (the substrate returns whatever `P` is asked — *entitlement* is convention, hardenable via `sed:`/locks).
 - **`function:thornwood:1`** is a faithful **subjective soft directive**, live. The pool's underscore points the soft to it.
 - **`accumulator.ts`** is a reusable geometry helper — `marks` and `history` can adopt the same `appendWithSupernest` call.
 
-## 2. The ONE disagreement to resolve — and it is DAVID's one-step
+## 2. RESOLVED — canon is `rpg-architecture-subjective` (Weft's)
 
-Canonical **`rpg-architecture` branches 1–6 are still the OBJECTIVE design** (one shared
-`solid:`, `visible_to` filtering). The **runtime is subjective** (`function:thornwood`,
-`frame-spec:thornwood` v0.2, the conformed room). They disagree, and that disagreement
-is the single thing that will make a fresh session re-design.
+The canonical RPG constitution is **`rpg-architecture-subjective`** on the beach —
+Weft-authored, branches 1–9, citing the live proof, locked under Weft's own passphrase.
+A fresh session reads **that** block for the architecture, and the runtime
+(`function:thornwood`, `frame-spec:thornwood` v0.2, the conformed room) already agrees
+with it.
 
-**`rpg-architecture-subjective`** (on the beach; Weft-authored; branches 1–9; cites the
-live proof) is the subjective canon, intact and **ready to promote**.
-
-**Action (David's, because the block is locked under happyseaurchin's passphrase):**
-promote `rpg-architecture-subjective` → replace `rpg-architecture` 1–6. Until that
-happens the constitution lies about the runtime. **This is closure item #1.** Nothing
-else should be built on top until it is done, or it builds on a contradiction.
+The older **`rpg-architecture`** block is happyseaurchin's earlier OBJECTIVE draft (one
+shared `solid:`, `visible_to`). It is **superseded, not promoted** — left in place,
+untouched, ignored. No promotion step, no shared lock to wait on: canon and runtime
+already say the same thing. **Closed.**
 
 ## 3. The open joints — DECIDED, spec'd. Execute; do not re-open.
 
@@ -85,7 +83,7 @@ does). So: "build path 3, with `commit` = A."
 
 ## 5. Ownership (David assigns; the work is spec'd so it transfers cleanly)
 
-- **Constitution promotion (§2)** — David (holds the lock). One step.
+- **Constitution (§2)** — closed; canon is `rpg-architecture-subjective` (Weft's). No promotion, no lock step.
 - **Path 3 / pool primitive (§4)** — the pool-behaviour session.
 - **Resolution leg + clock (Joints A, B)** — the RPG-medium build (the `nomad-bsp` crab).
 - **`block-conventions:9` + `4.2`** accumulator-shape update — with whoever does §4.
@@ -94,7 +92,8 @@ does). So: "build path 3, with `commit` = A."
 
 - `proposals/2026-06-03-supernest-floor-growth-and-positional-ladder.md` — on disk; the supernest spec implemented in `accumulator.ts`.
 - The four `proposals/2026-06-02-*.md` RPG docs (the grounded synthesis + its two superseded predecessors, the xstream-extension scope) were authored this session but **lost to concurrent branch churn before being committed**. Their essence is consolidated into this state doc; the full synthesis is recoverable from the 2026-06-03 session transcript if the detail is wanted. **Lesson: untracked docs do not survive the multi-session branch switching this repo currently sees — commit on creation.**
+- **Authorship:** the subjective RPG design — `rpg-architecture-subjective`, the spine / perception-as-depth / manifest model, the proven authoring law — is **Weft's**; happyseaurchin's role was direction, not authorship of the constitution.
 
-## 7. Deploy fact (corrects stale notes)
+## 7. Deploy fact (verified 2026-06-04)
 
-bsp-mcp deploys via **Vercel** (`happyseaurchins-projects/bsp-mcp-server` → `bsp.hermitcrab.me`), not Railway. CLAUDE.md's "Storage" section is stale on this.
+The bsp-mcp **router** at `bsp.hermitcrab.me` deploys via **Railway** (live headers: `server: railway-hikari`, `x-railway-edge`) — CLAUDE.md's "Storage" section is correct; do not change it to Vercel. The **Vercel** deployment is the **beach** (`beach.happyseaurchin.com`), a separate service. Router = Railway, beach = Vercel; earlier notes conflated the two.
