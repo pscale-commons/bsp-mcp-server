@@ -34,6 +34,7 @@ import {
   loadBlock,
   loadBspShape,
   saveBlock,
+  appendToBeach,
   BlockRow,
   isFederatedOwner,
   isSentinelOwner,
@@ -298,6 +299,10 @@ export const bspParamsSchema = {
     .enum(['soft', 'medium', 'hard'])
     .optional()
     .describe('SMH aperture modifier. Composes with face per the face-tier matrix. Advisory in v0.1; enforced in v0.2.'),
+  append: z
+    .boolean()
+    .optional()
+    .describe('Accumulator append — marks / history / pools. When true the federated beach allocates the next free zero-free slot and SUPERNESTS (wraps {_: old}, raising the floor) when the floor fills; the client does NOT compute a spindle, and the acknowledgement carries the server-assigned slot. `content` is the entry to append (the {_, 1: agent_id, 2: address, 3: ts, …} mark/contribution shape); `secret` is forwarded if the accumulator is locked. Omit spindle and pscale_attention. Atomic server-side — concurrent appends never race on slot allocation. Not compatible with gray/group (those encrypt at a leaf and need a spindle).'),
 };
 
 export type BspToolParams = {
@@ -313,6 +318,7 @@ export type BspToolParams = {
   members?: string[];
   face?: 'character' | 'author' | 'designer' | 'observer';
   tier?: 'soft' | 'medium' | 'hard';
+  append?: boolean;
 };
 
 /**
@@ -435,6 +441,27 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
         text: `"${target.agent_id}" is a read-only sentinel. The bundled teaching blocks are server-fixed.`,
       }],
     };
+  }
+
+  // ── APPEND ── atomic next-slot allocation + supernest-on-rollover at the
+  // beach (pscale-beach append mode). THE accumulator write: marks, history,
+  // pools. The beach picks the next free zero-free slot and wraps {_: old} when
+  // the floor fills, so the client never computes a slot and concurrent appends
+  // never race. `content` is the entry; spindle/pscale_attention do not apply.
+  if (params.append === true) {
+    if (content === undefined) {
+      return { content: [{ type: 'text', text: 'Append rejected: append needs `content` (the entry to append).' }] };
+    }
+    if (params.gray === true || params.members !== undefined) {
+      return { content: [{ type: 'text', text: 'Append rejected: gray/group encryption is not supported with append — append targets open accumulators. Use a spindled write to encrypt at a leaf.' }] };
+    }
+    try {
+      const res = await appendToBeach(agent_id, blockName, content, secret);
+      const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}]` }] };
+    } catch (e: any) {
+      return { content: [{ type: 'text', text: `Append rejected: ${e?.message ?? String(e)}` }] };
+    }
   }
 
   // ── READ ── (no content, no lock change, no membership change)
