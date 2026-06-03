@@ -207,7 +207,7 @@
   },
   "tools": {
     "count": 6,
-    "list": ["bsp", "pscale_create_collective", "pscale_register", "pscale_grain_reach", "pscale_key_publish", "pscale_verify_rider"]
+    "list": ["bsp", "pscale_register", "pscale_grain_reach", "pscale_key_publish", "pscale_verify_rider"]
   },
   "removals": {
     "no_inbox": {

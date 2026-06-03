@@ -50,12 +50,11 @@ Substrate dispatch is implicit in the `agent_id` prefix:
 
 ## The substrate primitives
 
-These have atomic state machines `bsp()` alone cannot subsume — five federated state-machine primitives plus one orientation invite:
+These have atomic state machines `bsp()` alone cannot subsume — four federated state-machine primitives plus one orientation invite:
 
 | Tool | Purpose |
 |---|---|
-| `pscale_create_collective` | Create a sed: substrate with conventions in the root underscore |
-| `pscale_register` | Server-assigned position in a sed: collective (proof-of-presence-in-time) |
+| `pscale_register` | Server-assigned position in a sed: collective (proof-of-presence-in-time). Found a collective by writing its root with `bsp()` — `content={_:conventions}, new_lock=admin` — not a separate tool |
 | `pscale_grain_reach` | Symmetric reach/accept across a bilateral pair |
 | `pscale_key_publish` | Argon2id keypair derivation; public half lands at passport position 9 |
 | `pscale_verify_rider` | Deterministic arithmetic check on a Level 2 ecosquared rider |
@@ -226,7 +225,7 @@ src/
   directory.json           publishing process for this server
   tools/
     bsp.ts                 handler for bsp()
-    collective.ts          pscale_create_collective, pscale_register
+    collective.ts          pscale_register (founding is a bsp() write, not a tool)
     grain.ts               pscale_grain_reach
     keys.ts                pscale_key_publish
     verify.ts              pscale_verify_rider

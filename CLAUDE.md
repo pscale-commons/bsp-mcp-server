@@ -2,7 +2,7 @@
 
 ## To the next instance — read this before touching anything
 
-This repo is one function — `bsp()` — and five substrate-stateful primitives. That is the WHOLE surface. If you find yourself adding a 7th or 8th tool, stop. The geometry is the program. The function walks. Read sunstone before you read any code.
+This repo is two functions — `bsp()` and the n-ary `bsp-floor()` — and five primitives (four substrate-stateful, plus the pool-engage envelope). That is essentially the WHOLE surface — the only other entry point is the `pscale_invite` orientation meta-tool. If you find yourself adding a 6th primitive, stop. The geometry is the program. The function walks. Read sunstone before you read any code.
 
 You are stepping into a project where the JSON nesting level IS the data, not a container for it. Depth encodes scale and resolution. Position encodes relationships. The underscore chain encodes the semantic spine. The star operator encodes cross-references. The bsp walker just walks. The structure does the work.
 
@@ -108,7 +108,7 @@ Read when content AND new_lock are both omitted. Write when content is provided.
 - (R3) Block locked         + `secret`              → secret proves authority for content writes.
 - (R4) Block locked         + `secret` + `new_lock` → rotate lock (with optional content in same call).
 
-`new_lock` is only valid on ordinary blocks. sed: blocks use `pscale_register` (atomic create-lock-write); grain: blocks use `pscale_grain_reach` (atomic per-side create-lock-write). The substrates handle position-and-lock together because they have to.
+`new_lock` locks ordinary blocks — and a sed: collective's root: founding a collective is a `bsp()` write with `new_lock` (content={_:conventions}, locked at `_` under the sed: salt). Per-registrant sed: positions and grain: sides are locked atomically by `pscale_register` and `pscale_grain_reach` instead — those allocate position-and-lock together because they have to.
 
 There is no mode parameter. There are no separate read and write functions. There is no separate lock_block function. One function, two coordinates, one optional payload, optional lock change. Everything else is sugar that doesn't belong in the surface.
 
@@ -131,22 +131,31 @@ The 72-test acceptance battery lives at `/Users/davidpinto/Downloads/bsp-test-ma
 
 CORSAIR mirror at `/Volumes/CORSAIR/pscale/sunstone & whetstone/` is kept in sync — bsp2-star.py, test-bsp-parser.py, bsp.ts, bsp-fn.ts.
 
-## The six primitives
+## The five primitives
 
-Five with atomic substrate state machines bsp() alone cannot subsume, plus one envelope-bundling primitive added 2026-05-26 (`pscale_pool_engage`) because the envelope discipline is operational and conventions could not carry it.
+Four with atomic substrate state machines bsp() alone cannot subsume, plus one envelope-bundling primitive added 2026-05-26 (`pscale_pool_engage`) because the envelope discipline is operational and conventions could not carry it.
 
-1. `pscale_create_collective` — admin operation on a sed: substrate (passphrase hashing, conventions setup)
-2. `pscale_register` — server-assigned position in a sed: substrate (atomic next-position allocation, passphrase hash storage)
-3. `pscale_grain_reach` — bilateral commitment via the symmetric reach/accept state machine across pair_id
-4. `pscale_key_publish` — Argon2id key derivation, public key publication for gray encryption
-5. `pscale_verify_rider` — deterministic arithmetic check on ecosquared riders (sha256 chain, credit conservation, SQ recompute)
-6. `pscale_pool_engage` — response-envelope primitive: bundles {pool_purpose, synthesis_hint, slice-since-marker, marker_new} in one tool result. The substrate state is identical to a `bsp()` read/write of the pool block; what the primitive adds is the envelope shape. The envelope is what makes personal synthesis operational — the calling LLM has the synthesis_hint (the pool author's directive about how to interpret the stream through the reader's own purpose) in-context the moment it reads the response. Optional `contribution` parameter posts at next-free digit-path slot (sunstone:1.6.4) in the same call. Marker is caller-managed (passed in, returned). Synthesis_hint sourced from `pool:<name>/9.1` (canonical, new convention) falling back to the pool's `_`, then to a default.
+1. `pscale_register` — server-assigned position in a sed: substrate (atomic next-position allocation, passphrase hash storage). The one sed: state machine. Founding a collective is NOT a primitive — see the dissolution note below.
+2. `pscale_grain_reach` — bilateral commitment via the symmetric reach/accept state machine across pair_id
+3. `pscale_key_publish` — Argon2id key derivation, public key publication for gray encryption
+4. `pscale_verify_rider` — deterministic arithmetic check on ecosquared riders (sha256 chain, credit conservation, SQ recompute)
+5. `pscale_pool_engage` — response-envelope primitive: bundles {pool_purpose, synthesis_hint, slice-since-marker, marker_new} in one tool result. The substrate state is identical to a `bsp()` read/write of the pool block; what the primitive adds is the envelope shape. The envelope is what makes personal synthesis operational — the calling LLM has the synthesis_hint (the pool author's directive about how to interpret the stream through the reader's own purpose) in-context the moment it reads the response. Optional `contribution` parameter posts at next-free digit-path slot (sunstone:1.6.4) in the same call. Marker is caller-managed (passed in, returned). Synthesis_hint sourced from `pool:<name>/9.1` (canonical, new convention) falling back to the pool's `_`, then to a default.
 
-Items 1-5 have atomic server-side state machines (next-position allocation, bilateral pair-id derivation, Argon2id derivation, ecosquared arithmetic). Lock-state changes on ordinary blocks are NOT primitives — they're a `new_lock` argument to `bsp()`.
+Items 1-4 have atomic server-side state machines (next-position allocation, bilateral pair-id derivation, Argon2id derivation, ecosquared arithmetic). Lock-state changes on ordinary blocks are NOT primitives — they're a `new_lock` argument to `bsp()`. Founding a sed: collective is likewise not a primitive — it is a `bsp()` write to the sed: root (content={_:conventions}, new_lock=admin); the beach applies the sed: salt and there is no founding state machine.
 
-Item 6 is the exception to the "primitive = state machine" rule. It exists because the pscale-mcp pool tools (pscale_pool_join / send / read) carried personal-synthesis operationally via their response envelope, and bsp-mcp's surface collapse moved that to convention — where it failed to carry. The envelope is the unit of operationality. Documented as an experimental addition; if RPG validation (against the prototype in a separate session) doesn't show concrete value, it is reverted before merge.
+Item 5 is the exception to the "primitive = state machine" rule. It exists because the pscale-mcp pool tools (pscale_pool_join / send / read) carried personal-synthesis operationally via their response envelope, and bsp-mcp's surface collapse moved that to convention — where it failed to carry. The envelope is the unit of operationality. Documented as an experimental addition; if RPG validation (against the prototype in a separate session) doesn't show concrete value, it is reverted before merge.
 
-That's the whole surface: `bsp()` plus six primitives. Seven entry points total (plus the meta-tool `pscale_invite`). Resist further growth; the bar for a 7th primitive is "the envelope is observably what's missing, and conventions have failed to carry it."
+That's the whole surface: two functions (`bsp()` and the n-ary `bsp-floor()`) plus five primitives, plus the meta-tool `pscale_invite` — eight entry points total. Resist further growth; the bar for a 6th primitive is "the envelope is observably what's missing, and conventions have failed to carry it."
+
+### Dissolution note — `pscale_create_collective` (2026-06-03)
+
+`pscale_create_collective` was the last categorised "bundle around a direction" surviving from the pscale-mcp era. It was **dissolved, not merged**: founding a collective was never a state machine, so it is a `bsp()` write, not a primitive —
+
+    bsp(agent_id="sed:<collective>", content={_: "<conventions>"}, new_lock="<admin>")
+
+— which the beach handles as a standard write to a sed:-named block, locking the root `_` under the sed: salt (verified against `handleStandardWrite` on the deployed beach `beach.happyseaurchin.com` HEAD `c6b762a` and the canonical `pscale-beach` package). The old tool claimed to do this but was **silently dead**: the beach has no `create_collective` action, so its body fell through to a standard write carrying neither `content` nor `new_lock` — it wrote nothing and returned `ok`. `pscale_register` (the one genuine sed: state machine) stays. The surface drops one tool, from nine (after `bsp-floor` landed in #61) to eight. This is "grow, don't conflate" applied to the sed: surface: register is the real primitive; founding dissolves into the function that already does locked writes, rather than being merged with register into one overloaded tool. Canonical founding pattern documented at `block-conventions:7.2`.
+
+(An earlier pass in this work explored merging the two into one polymorphic `pscale_sed_engage` — rejected as mild conflation, inconsistent with the `bsp`/`bsp-floor` sibling discipline. The discovery that founding is provably a `bsp()` write is what made dissolution the cleaner move.)
 
 ## The address invariant — locked
 
@@ -223,7 +232,7 @@ src/
   bsp-test.json       — 72-test acceptance battery (eight batteries at digits 1-8) bundled from `bsp-test-materials/`; the contract any conforming bsp() implementation must pass. Walk `bsp(agent_id='pscale', block='bsp-test')` to read the suite.
   tools/
     bsp.ts            — bsp() handler (the one function — handles content + lock changes)
-    collective.ts     — pscale_create_collective, pscale_register
+    collective.ts     — pscale_register (founding a collective is a bsp() write, not a tool)
     grain.ts          — pscale_grain_reach
     keys.ts           — pscale_key_publish
     verify.ts         — pscale_verify_rider
@@ -301,11 +310,11 @@ If a new agent-facing runbook is needed, it goes IN A BLOCK on the substrate, no
 
 `pscale-mcp-server` (March-April 2026) operationalised the pscale block format through 25 categorised tools. The discipline learned: structure encodes meaning; categories were premature; the function surface should mirror the geometry, not the use cases.
 
-`bsp-mcp-server` (April 2026 onward) collapses that surface to one function plus five substrate primitives, with sunstone and whetstone as foundational blocks. The substrate is unchanged. The discipline is sharper.
+`bsp-mcp-server` (April 2026 onward) collapses that surface to two functions plus five primitives, with sunstone and whetstone as foundational blocks. The substrate is unchanged. The discipline is sharper.
 
 The shift in numbers:
 - pscale-mcp-server: 25 tools, 5 navigation modes, asymmetric read/write, mode-as-enum
-- bsp-mcp-server: 6 tools (bsp + 5 primitives), shape derived from (S, P) coordinates, symmetric read/write, lock-as-argument, modes as derived selection shapes
+- bsp-mcp-server: 8 tools (bsp + bsp-floor + 5 primitives + pscale_invite), shape derived from (S, P) coordinates, symmetric read/write, lock-as-argument, modes as derived selection shapes
 
 The geometry didn't change. The function surface caught up to it.
 
