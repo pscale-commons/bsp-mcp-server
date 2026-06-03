@@ -16,14 +16,16 @@
  * Marker is caller-managed. Pass `since_position` in (the int you stored last
  * time, or omit/0 to receive all). Receive `marker_new` back; store it.
  *
- * Synthesis_hint sourcing (new convention layered on top of block-conventions:4.2):
- *   1. pool:<name>/9.1 if present  — explicit author intent
- *   2. pool:<name>/_   as fallback — the pool's purpose statement
- *   3. DEFAULT_SYNTHESIS_HINT      — last resort
+ * Synthesis_hint sourcing (2026-06-03 — 9.1 retired as incompatible with supernest):
+ *   1. pool:<name>/_          — the underscore (its purpose, or a pointer to an
+ *                               external directive block); never a digit position,
+ *                               which the accumulator claims for contributions
+ *   2. DEFAULT_SYNTHESIS_HINT  — last resort when there is no underscore
  */
 
 import { z } from 'zod';
-import { Block, writeAt } from '../bsp.js';
+import { Block, writeAt, readAt } from '../bsp.js';
+import { appendWithSupernest } from '../accumulator.js';
 import {
   loadBlock,
   saveBlock,
@@ -123,8 +125,12 @@ export function collectContributions(
   const out: PoolContribution[] = [];
   let more = false;
   for (const slot of digitPathSlots()) {
-    const v = readSlot(block, slot);
-    if (v === null) continue;
+    // readAt (floor-aware) not readSlot (raw): after a supernest the entries sit
+    // one floor down and an entry's dated address absorbs (a "7" resolves via
+    // "07" = [0,7]), so this same enumeration still finds every entry across any
+    // amount of floor growth.
+    const v = readAt(block, slot);
+    if (v == null) continue;
     const position = parseInt(slot, 10);
     if (position <= sincePosition) continue;
 
@@ -167,22 +173,18 @@ export function collectContributions(
 }
 
 /**
- * Extract synthesis_hint per the three-step fallback chain. Position 9.1 is
- * the canonical authoring slot — sibling to frame:9 (canon) and sed::9
- * (governance). Position 9 as pool metadata is the convention this primitive
- * crystallises (see block-conventions:4.2.6).
+ * Extract synthesis_hint. Sourced from the pool's UNDERSCORE, never a digit
+ * position. A pure-liquid pool reserves no metadata slot — every digit 1-9 becomes
+ * a contribution as the pool fills, and past nine the block supernests (accumulator.ts),
+ * so a hint at 9.1 would be claimed and overwritten by the ninth entry (block[9] IS
+ * contribution 9; block[9][1] is its agent_id). The underscore is the pool's own
+ * voice: for a directive pool it points the reader at an external directive (e.g. the
+ * RPG soft scoop at function:thornwood/1), for a general pool it states the purpose.
+ * The crafted DEFAULT personal-synthesis directive is the fallback when there is no
+ * underscore. (Was: a 9.1 → _ → default chain; 9.1 is retired as incompatible with
+ * the supernest accumulator — see proposals/2026-06-03-supernest-…, block-conventions:4.2.)
  */
-export function extractSynthesisHint(block: Block): { hint: string; source: 'authored' | 'purpose' | 'default' } {
-  const nine = (block as any)['9'];
-  if (typeof nine === 'object' && nine !== null) {
-    const one = (nine as any)['1'];
-    if (typeof one === 'string' && one.trim() !== '') {
-      return { hint: one, source: 'authored' };
-    }
-    if (typeof one === 'object' && one !== null && typeof (one as any)._ === 'string' && (one as any)._.trim() !== '') {
-      return { hint: (one as any)._, source: 'authored' };
-    }
-  }
+export function extractSynthesisHint(block: Block): { hint: string; source: 'purpose' | 'default' } {
   const purpose = (block as any)._;
   if (typeof purpose === 'string' && purpose.trim() !== '') {
     return { hint: purpose, source: 'purpose' };
@@ -226,7 +228,7 @@ export const poolEngageParamsSchema = {
   synthesis_hint: z
     .string()
     .optional()
-    .describe("Optional, CREATION-only. Synthesis directive to set at pool:<name>/9.1 in the same call — carried in the engagement envelope to readers' LLMs so they synthesise through the pool author's purpose rather than a generic default. Ignored when the pool already exists; to update an existing pool's synthesis_hint, write 9.1 directly via bsp()."),
+    .describe("RETIRED (2026-06-03): a synthesis directive can no longer be stored at a digit position — a pure-liquid pool reserves every digit 1-9 for contributions and supernests past nine, so 9.1 would be claimed by the ninth entry. The synthesis_hint is now the pool's underscore (a directive pool points its underscore at an external directive block, e.g. function:<game>/1). Accepted but not stored; pending the submit/commit redesign."),
 };
 
 export type PoolEngageParams = {
@@ -272,9 +274,11 @@ export async function handlePoolEngage(
     // malformed bare-string pool that this primitive originally diagnosed.
     if (params.purpose) {
       const newBlock: Record<string, any> = { _: params.purpose };
-      if (params.synthesis_hint) {
-        newBlock['9'] = { _: 'pool metadata', '1': params.synthesis_hint };
-      }
+      // synthesis_hint is NOT stored at a digit position. A pure-liquid pool keeps
+      // every digit 1-9 for contributions (it supernests past nine), so 9.1 would be
+      // claimed by the ninth entry. A pool that wants a custom directive states it in
+      // its underscore (or points the underscore at an external directive block); the
+      // synthesis_hint create-param is retired pending the submit/commit redesign.
       try {
         await saveBlock(pool_url, blockName, newBlock, {
           spindle: '',
@@ -320,7 +324,6 @@ export async function handlePoolEngage(
   // ── Optional: post contribution ──
   let postedPosition: number | null = null;
   if (contribution !== undefined && contribution.trim() !== '') {
-    const slot = findNextSlot(row.block);
     const contributionObj: Record<string, any> = {
       _: contribution,
       '1': agent_id,
@@ -330,33 +333,38 @@ export async function handlePoolEngage(
     if (face) contributionObj['4'] = face;
 
     const updatedBlock: Block = JSON.parse(JSON.stringify(row.block));
+    let appended: { block: Block; address: string; grew: boolean };
     try {
-      writeAt(updatedBlock, slot, contributionObj);
+      // Append on the positional ladder, growing the floor by supernest when the
+      // current floor's 1-9 are full (accumulator.ts). Past nine the block wraps
+      // — old entries absorb (a "7" still resolves) and the new one lands at a
+      // fresh slot, never nested into an existing contribution.
+      appended = appendWithSupernest(updatedBlock, contributionObj);
     } catch (e: any) {
       return {
-        content: [{ type: 'text', text: `Pool write failed at slot ${slot}: ${e?.message ?? String(e)}` }],
+        content: [{ type: 'text', text: `Pool append failed: ${e?.message ?? String(e)}` }],
       };
     }
 
     try {
-      await saveBlock(pool_url, blockName, updatedBlock, {
-        spindle: slot,
-        pscale_attention: -1,
-        secret,
-      });
+      // On supernest the whole block changed (the floor grew), so write the whole
+      // block; otherwise a surgical position write of just the new slot.
+      await saveBlock(pool_url, blockName, appended.block, appended.grew
+        ? { spindle: '', secret }
+        : { spindle: appended.address, pscale_attention: -1, secret });
     } catch (e: any) {
       return {
         content: [{ type: 'text', text: `Pool write rejected by beach: ${e?.message ?? String(e)}` }],
       };
     }
 
-    postedPosition = parseInt(slot, 10);
+    postedPosition = parseInt(appended.address, 10);
     // Re-load to get the canonical post-write state for the envelope.
     row = await loadBlock(pool_url, blockName);
     if (!row) {
       // Vanishingly unlikely — block existed a moment ago. Surface explicitly.
       return {
-        content: [{ type: 'text', text: `Posted at slot ${slot} but reload failed.` }],
+        content: [{ type: 'text', text: `Posted at slot ${appended.address} but reload failed.` }],
       };
     }
   }
@@ -377,7 +385,7 @@ export async function handlePoolEngage(
   lines.push(`pool:${pool_name} @ ${pool_url}`);
   lines.push('');
   if (created) {
-    lines.push(`created: pool authored with purpose at _${params.synthesis_hint ? ' and synthesis_hint at 9.1' : ''}`);
+    lines.push('created: pool authored with purpose at _');
     lines.push('');
   }
   if (postedPosition !== null) {
