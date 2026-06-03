@@ -484,6 +484,61 @@ export async function saveBlock(
 }
 
 /**
+ * Append-with-supernest: hand `entry` to the federated beach's append mode. The
+ * beach allocates the next free zero-free slot and supernests (wraps {_: old},
+ * raising the floor by 1) when the floor fills — atomic, so concurrent appends
+ * never race on allocation. THE accumulator write for marks / history / pools.
+ * Returns the server-assigned slot. Mirrors saveBlock's translate-then-dispatch.
+ */
+export async function appendToBeach(
+  ownerId: string,
+  name: string,
+  entry: Block,
+  secret?: string,
+): Promise<{ slot?: string; supernested?: boolean; floor?: number }> {
+  const t = translateAddress(ownerId, name);
+  if (isSentinelOwner(t.agent_id)) {
+    throw new Error(`"${t.agent_id}" is a read-only sentinel; cannot append.`);
+  }
+  const origin = await resolveFederationOrigin(t.agent_id);
+  if (!origin) {
+    throw new Error(`No beach at ${ownerId} (also tried beach.<host>). Site is not federated; cannot append.`);
+  }
+  const url = beachEndpoint(origin, t.block);
+  const body: Record<string, any> = { append: true, content: entry };
+  if (secret !== undefined) body.secret = secret;
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (e: any) {
+    throw new Error(`Beach append failed (${url}): ${e?.message ?? e}`);
+  }
+  if (!res.ok) {
+    let errMsg = `Beach append rejected (${res.status} ${res.statusText})`;
+    try {
+      const txt = await res.text();
+      try {
+        const parsed = JSON.parse(txt);
+        if (parsed?.error) errMsg = `Beach append rejected: ${parsed.error}`;
+      } catch {
+        if (txt) errMsg += ` — ${txt.slice(0, 200)}`;
+      }
+    } catch { /* ignore body-read error */ }
+    throw new Error(errMsg);
+  }
+  try {
+    const j = JSON.parse(await res.text()) as { slot?: string; supernested?: boolean; floor?: number };
+    return { slot: j.slot, supernested: j.supernested, floor: j.floor };
+  } catch {
+    return {};
+  }
+}
+
+/**
  * No-op for federated beaches. The lock change rides inside the saveBlock
  * POST body as new_lock + secret; the beach computes and stores the hash.
  * Kept as a function for callsite compatibility — bsp-mcp itself never
