@@ -1,5 +1,5 @@
 /**
- * smoke-bspx.ts — floor-alignment module + bspx tool acceptance.
+ * smoke-floor-align.ts — floor-alignment module + bsp-floor tool acceptance.
  *
  * Verifies the law: cross-block correspondence is by PSCALE (floor-anchored),
  * not walk depth. A floor-1 block and a floor-2 block must meet at the floor
@@ -82,5 +82,5 @@ const selfProduct = floorProduct(A, A, lexicalSim);
 const crossProduct = floorProduct(A, B, lexicalSim);
 ok(selfProduct > crossProduct, `A resonates with itself more than with B (self=${selfProduct} > cross=${crossProduct})`);
 
-console.log(`\nsmoke-bspx: ${pass} passed, ${fail} failed`);
+console.log(`\nsmoke-floor-align: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

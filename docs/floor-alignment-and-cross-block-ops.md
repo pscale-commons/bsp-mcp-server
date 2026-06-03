@@ -1,4 +1,4 @@
-# Floor alignment — the cross-block operation (`bspx`)
+# Floor alignment — the cross-block operation (`bsp-floor`)
 
 **Status: landed in bsp-mcp (2026-06-03).** The canonical home for this law is
 this repo — sunstone/whetstone are sentinel-bundled here, and the live
@@ -79,8 +79,12 @@ Because pscale is invariant under supernest, you never actually transform the
 block — indexing both by pscale *is* the alignment. The leading zeros are just
 how it renders at a fixed floor width. **Supernest is the unary change-of-basis
 on the pscale axis; floor-alignment is the n-ary operation in that shared basis.**
-(The supernest *operation* — atomic append-with-floor-growth — is the natural
-sibling on this same surface; PR #60 deferred its placement here. See below.)
+(The supernest *operation* — atomic append-with-floor-growth — is in the same
+floor-fundamental **family**, but is **not** the same signature: `bsp-floor` is
+read-only n-ary computation, while append-with-supernest *mutates* — it grows a
+block's floor on overflow. It belongs in `bsp()`'s write path or as its own
+write op, not folded into this read-only function. PR #60 deferred its
+placement; see below.)
 
 ### The dot-product shape
 
@@ -111,24 +115,24 @@ mapping is what makes it sufficient.**
 
 ---
 
-## The BSP surface — `bspx`, a second function (not a sixth primitive)
+## The BSP surface — `bsp-floor`, a second function (not a sixth primitive)
 
 The five substrate primitives are all atomic state machines (position
 allocation, bilateral derivation, Argon2id, rider arithmetic) plus the pool
-envelope. `bspx` is **none of those** — it is pure computation over two or more
+envelope. `bsp-floor` is **none of those** — it is pure computation over two or more
 already-loaded blocks. So it is not a "sixth primitive" in the CLAUDE.md sense;
 it is a **second geometric function**: `bsp` is the unary index (walk depth
-within one block), `bspx` is the n-ary contract (pscale across blocks). The
+within one block), `bsp-floor` is the n-ary contract (pscale across blocks). The
 unary/binary split mirrors index-vs-contract in linear algebra and keeps each
 signature honest. Star already occupies "compose by reference" inside `bsp()`;
 "compose by floor" is a different arity and gets its own surface.
 
-`bspx` is **n-ary, not merely binary**: the floor plane is shared by *all*
+`bsp-floor` is **n-ary, not merely binary**: the floor plane is shared by *all*
 blocks. Pass a whole shell of blocks, or every block at a beach, and read
 pscale 0 across them for an **index of their root definitions**. Binary
 comparison is the two-block case.
 
-**Signature.** `bspx(targets, pscale_attention?)` where `targets` is a list of
+**Signature.** `bsp-floor(targets, pscale_attention?)` where `targets` is a list of
 two or more `{agent_id, block}` pairs (same dispatch as `bsp()`), and
 `pscale_attention` optionally restricts the result to one pscale level. It
 **reads only**. It returns the aligned frame as readable text; **the calling LLM
@@ -141,8 +145,8 @@ programmatic scorer.
 `src/floor-align.ts` — `indexByPscale`, `floorAlign(...blocks)`,
 `floorPlane(blocks, pscale)`, `floorProduct(A, B, sim)`. Reuses the canonical
 `collectUnderscore` / `floorDepth` / `formatAddress` from `bsp.ts` (no second
-parser/formatter). `src/tools/bspx.ts` is the MCP tool; registered in
-`server.ts` as a sibling of `bsp`. `scripts/smoke-bspx.ts` is the acceptance
+parser/formatter). `src/tools/bsp-floor.ts` is the MCP tool; registered in
+`server.ts` as a sibling of `bsp`. `scripts/smoke-floor-align.ts` is the acceptance
 test (the floor-1 ↔ floor-2 meeting-at-the-floor case + the n-ary
 root-definition index + the resonance scalar).
 
@@ -175,7 +179,7 @@ session." Clean seam:
 ## Propagation checklist
 
 - [x] `bsp-mcp-server` — sunstone `1.56`, `5.6`, branch-5 underscore; whetstone
-      branch 7; `src/floor-align.ts`; `bspx` tool + registration; this doc.
+      branch 7; `src/floor-align.ts`; `bsp-floor` tool + registration; this doc.
       Redeploy (Railway) carries it into the live `pscale` sentinel.
 - [ ] `pscale-commons/dev-tools` — the filmstrip viewer already implements the
       law; add a comment/reference pointing at canonical sunstone `5.6` /
@@ -187,8 +191,9 @@ session." Clean seam:
       location: bsp-mcp (this repo), federated beaches (happyseaurchin,
       idiothuman, the `pscale-beach` package seed), and xstream-play.
 - [ ] CLAUDE.md framing: "one function `bsp()` + five primitives" → "two
-      functions (`bsp` unary, `bspx` n-ary) + five primitives." Deferred to
+      functions (`bsp` unary, `bsp-floor` n-ary) + five primitives." Deferred to
       David (CLAUDE.md is his defining doc; wording proposed in the PR body).
-- [ ] Deferred sibling: the atomic **append-with-supernest** operation (#60's
-      deferred tool) belongs on this same geometry surface — a focused
-      follow-up, not built here.
+- [ ] Deferred: the atomic **append-with-supernest** operation (#60's deferred
+      tool) is the *write* half of the floor-fundamental family — it grows a
+      block's floor on overflow, so it belongs in `bsp()`'s write path or stands
+      alone, **not** folded into read-only `bsp-floor`. A focused follow-up.

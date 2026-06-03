@@ -1,13 +1,17 @@
 /**
- * tools/bspx.ts — bspx() MCP tool: the n-ary companion to bsp().
+ * tools/bsp-floor.ts — bsp-floor() MCP tool: the n-ary companion to bsp().
  *
  * bsp() is unary — it indexes WITHIN one block, where walk depth is meaningful.
- * bspx() is n-ary — it relates two or more blocks by their shared floor plane.
- * Walk depth is block-local and never crosses a boundary; pscale (floor minus
- * depth) is the one coordinate every block shares, because the floor is
- * invariant under supernest. bspx loads each target, lays them against the
+ * bsp-floor() is n-ary — it relates two or more blocks by their shared floor
+ * plane. Walk depth is block-local and never crosses a boundary; pscale (floor
+ * minus depth) is the one coordinate every block shares, because the floor is
+ * invariant under supernest. bsp-floor loads each target, lays them against the
  * floor, and returns the aligned frame — coarse (high pscale) to fine — as
  * readable text. It READS only.
+ *
+ * The name centralises the floor and the decimal point: alignment at the floor
+ * (the decimal) is the whole operation, and the floor is the one coordinate
+ * shared across every block in the system.
  *
  * The calling LLM is the similarity function: handed the aligned text, it reads
  * the per-pscale delta (compare), composes one block at the common floor
@@ -24,7 +28,7 @@ import { loadBlock, translateAddress } from '../db.js';
 
 // ── Schema ──
 
-export const bspxParamsSchema = {
+export const bspFloorParamsSchema = {
   targets: z
     .array(
       z.object({
@@ -44,7 +48,7 @@ export const bspxParamsSchema = {
     .describe('Optional — restrict the result to ONE pscale level (e.g. 0 for the floor plane / root-definition index). Omit for the full coarse-to-fine alignment across every level.'),
 };
 
-export type BspxToolParams = {
+export type BspFloorToolParams = {
   targets: { agent_id: string; block: string }[];
   pscale_attention?: number | null;
 };
@@ -92,7 +96,7 @@ function formatFloorAlign(
 
 // ── Handler ──
 
-export async function handleBspx(params: BspxToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
+export async function handleBspFloor(params: BspFloorToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { targets, pscale_attention } = params;
 
   // Load each target through the same dispatch as bsp().
@@ -118,7 +122,7 @@ export async function handleBspx(params: BspxToolParams): Promise<{ content: { t
     return {
       content: [{
         type: 'text',
-        text: `bspx needs at least two loadable blocks to lay against the floor; ${present.length} loaded. Not found:\n${miss}`,
+        text: `bsp-floor needs at least two loadable blocks to lay against the floor; ${present.length} loaded. Not found:\n${miss}`,
       }],
     };
   }
