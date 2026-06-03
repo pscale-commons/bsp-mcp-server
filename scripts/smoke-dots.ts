@@ -7,13 +7,11 @@
  * them earlier. This guard ratchets against that — it fails if any bundled block
  * carries a multi-dot pscale ref (digit.digit.digit) outside a small allow-list.
  *
- * SCOPE (deliberate): guards the stable, committed sentinels — the teaching and
- * reference blocks, including sunstone/whetstone (the historical regression site).
- * Three blocks are TEMPORARILY excluded because, as of 2026-06-03, they are
- * uncommitted-modified in the working tree (a large in-flight WIP) AND carry 22
- * legacy multi-dot refs that cannot be scrubbed without conflicting with that WIP.
- * When the WIP lands: scrub those refs to single-dot canonical and remove them
- * from EXCLUDE so the guard covers them too. See PR / the floor-alignment session.
+ * SCOPE: guards every bundled sentinel block. Only bsp-test.json is excluded —
+ * it is a test battery that legitimately carries malformed multi-dot inputs. The
+ * 22 legacy multi-dot refs that once sat in block-conventions / manifest /
+ * protocol-paywall were scrubbed to single-dot canonical (2026-06-04), so those
+ * blocks are now guarded along with the rest.
  *
  * Run: npm run smoke:dots
  */
@@ -34,13 +32,10 @@ const ALLOW = new Set<string>([
   '0.4.0', // server semver (directory.json)
 ]);
 
-// Files excluded from the scan, with the reason. Test fixtures legitimately
-// carry malformed inputs; the three sentinels below are pending-scrub.
+// Files excluded from the scan. bsp-test.json is a test battery that
+// legitimately carries malformed multi-dot inputs; everything else is guarded.
 const EXCLUDE: Record<string, string> = {
   'bsp-test.json': 'test battery — legitimately contains malformed multi-dot inputs',
-  'block-conventions.json': 'PENDING SCRUB (14 refs) — uncommitted-modified 2026-06-03; scrub when the in-flight sentinel WIP lands',
-  'manifest.json': 'PENDING SCRUB (7 refs) — uncommitted-modified 2026-06-03; scrub when the WIP lands',
-  'protocol-paywall.json': 'PENDING SCRUB (1 ref) — uncommitted-modified 2026-06-03; scrub when the WIP lands',
 };
 
 const files = readdirSync(SRC).filter((f) => f.endsWith('.json'));
@@ -58,7 +53,7 @@ for (const f of files) {
 }
 
 console.log(`smoke-dots: scanned ${scanned.length} bundled blocks; allow-list {${[...ALLOW].join(', ')}}`);
-console.log(`  deferred (pending scrub, blocked by in-flight WIP): ${Object.keys(EXCLUDE).filter((f) => f !== 'bsp-test.json').join(', ')}`);
+console.log(`  excluded (test fixtures): ${Object.keys(EXCLUDE).join(', ')}`);
 
 if (violations.length) {
   console.error(`\n✗ ${violations.length} multi-dot pscale ref(s) — use single-dot canonical (sunstone:1.5):`);
