@@ -10,6 +10,7 @@ import {
   digitPathSlots,
   readSlot,
   findNextSlot,
+  findAuthorSlot,
   collectContributions,
   extractSynthesisHint,
   DEFAULT_SYNTHESIS_HINT,
@@ -73,6 +74,29 @@ const collisionCase: Block = {
   '1': { _: 'a', '1': 'alice', '3': '2026-05-26T10:00:00Z' },
 };
 assert(findNextSlot(collisionCase) === '2', 'depth-2 strings ignored — next after slot 1 is slot 2, not 12');
+
+console.log('\n=== findAuthorSlot — liquid overwrite-my-slot semantics ===');
+// Liquid is one slot per author: an author reuses their own slot (overwrite),
+// a new author allocates the next free one. findAuthorSlot resolves the former.
+const liquidBuf: Block = {
+  _: 'liquid pre-commit buffer',
+  '1': { _: 'alice pending', '1': 'alice', '3': '2026-06-04T09:00:00Z' },
+  '2': { _: 'bob pending', '1': 'bob', '3': '2026-06-04T09:01:00Z' },
+};
+assert(findAuthorSlot(liquidBuf, 'alice') === '1', 'alice owns slot 1 (overwrite target)');
+assert(findAuthorSlot(liquidBuf, 'bob') === '2', 'bob owns slot 2');
+assert(findAuthorSlot(liquidBuf, 'carol') === null, 'carol has no slot → null (allocate next-free)');
+assert(findAuthorSlot(null, 'alice') === null, 'null block → null');
+assert(findAuthorSlot({} as Block, 'alice') === null, 'empty block → null');
+// Compose: a returning author overwrites; a fresh author appends.
+assert(
+  (findAuthorSlot(liquidBuf, 'alice') ?? findNextSlot(liquidBuf)) === '1',
+  'returning author (alice) resolves to her existing slot 1',
+);
+assert(
+  (findAuthorSlot(liquidBuf, 'carol') ?? findNextSlot(liquidBuf)) === '3',
+  'fresh author (carol) resolves to next-free slot 3',
+);
 
 console.log('\n=== collectContributions — slice + shape ===');
 const pool: Block = {
