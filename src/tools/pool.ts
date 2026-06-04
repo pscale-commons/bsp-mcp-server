@@ -8,10 +8,20 @@
  * the moment it reads the response. The substrate stays passive; the envelope
  * is what carries the personal-synthesis discipline.
  *
- * Polymorphic by `contribution`:
- *   absent  → read-only engage: returns purpose + synthesis_hint + slice
- *   present → post + engage: writes at next-free digit-path slot, then returns
- *             the envelope (catch-up includes the just-posted contribution)
+ * Polymorphic by the optional verbs (the spool / frame / destination split —
+ * see docs/RPG-POOL-STATE.md §4). The primitive owns transport only; it never
+ * synthesises:
+ *   (read)        no submit, no contribution → purpose + synthesis_hint + slice
+ *   submit=<text> → STAGE to the liquid buffer (liquid:pool:<name>): one slot per
+ *                   author, OVERWRITING; returns the social mirror of co-present
+ *                   pending intentions. No pool append, no synthesis. Empty =
+ *                   withdraw. This is the pending-mirror affordance for bsp-mcp.
+ *   contribution= → COMMIT: atomic append of the text (raw OR an LLM-produced
+ *                   synthesis; agnostic) to `destination` — 'pool' (default, the
+ *                   shared spool) or a block name like 'solid:<name>'. The
+ *                   destination is the objective dial. RPG's subjective case
+ *                   (write per-subject spines) is the resolver's bsp() job.
+ * submit and contribution may combine (stage then commit in one call).
  *
  * Marker is caller-managed. Pass `since_position` in (the int you stored last
  * time, or omit/0 to receive all). Receive `marker_new` back; store it.
@@ -25,10 +35,10 @@
 
 import { z } from 'zod';
 import { Block, writeAt, readAt } from '../bsp.js';
-import { appendWithSupernest } from '../accumulator.js';
 import {
   loadBlock,
   saveBlock,
+  appendToBeach,
   isFederatedOwner,
   DEFAULT_BEACH,
 } from '../db.js';
@@ -41,8 +51,8 @@ export const DEFAULT_SYNTHESIS_HINT =
 const READ_PAGE_LIMIT = 200;
 
 // ── Digit-path slot helpers (inlined; mirror xstream/lib/bsp-client.ts) ──
-// "digit-path" per sunstone:1.6.4 — sibling + subnest in lex order, distinct
-// from supernest (block-wide floor growth, sunstone:1.6.3).
+// "digit-path" per sunstone:1.64 — sibling + subnest in lex order, distinct
+// from supernest (block-wide floor growth, sunstone:1.63).
 
 /**
  * Yields the digit-path enumeration of pool slots — positive integers composed
@@ -99,6 +109,24 @@ export function findNextSlot(block: Block | null): string {
   if (maxIdx === -1) return slots[0];
   if (maxIdx + 1 < slots.length) return slots[maxIdx + 1];
   return slots[slots.length - 1];
+}
+
+/**
+ * Find the digit-path slot whose entry was authored by `agentId` (its field 1).
+ * Liquid (block-conventions:4.5) is one slot per author, OVERWRITING — an author
+ * reuses their existing slot if present, else allocates the next free one. Floor-
+ * aware (readAt) so it still finds the slot after the buffer has supernested.
+ */
+export function findAuthorSlot(block: Block | null, agentId: string): string | null {
+  if (typeof block !== 'object' || block === null) return null;
+  for (const slot of digitPathSlots()) {
+    const v = readAt(block, slot);
+    if (v == null) continue;
+    if (typeof v === 'object' && !Array.isArray(v) && (v as Record<string, any>)['1'] === agentId) {
+      return slot;
+    }
+  }
+  return null;
 }
 
 // ── Envelope assembly ──
@@ -192,6 +220,48 @@ export function extractSynthesisHint(block: Block): { hint: string; source: 'pur
   return { hint: DEFAULT_SYNTHESIS_HINT, source: 'default' };
 }
 
+// ── Liquid staging (submit) ──
+
+/**
+ * Stage `text` to the author's slot in the pre-commit liquid buffer
+ * (liquid:pool:<name>, block-conventions:4.5). One slot per author, OVERWRITING:
+ * reuse the author's existing slot if present, else allocate the next free one,
+ * and write only that slot surgically so co-present peers' pending slots stay
+ * intact. Returns the slot written. Empty `text` writes an empty underscore —
+ * the withdraw/clear convention. This is the pending-mirror affordance: liquid
+ * lives on the beach, so submit makes "see what others intend before committing"
+ * a substrate capability, not an xstream-only one.
+ */
+async function stageLiquid(
+  url: string,
+  liquidName: string,
+  agentId: string,
+  text: string,
+  face: string | undefined,
+  secret: string | undefined,
+): Promise<string> {
+  const lrow = await loadBlock(url, liquidName);
+  const exists = !!lrow && typeof lrow.block === 'object' && lrow.block !== null;
+  const lblock: Block = exists
+    ? JSON.parse(JSON.stringify(lrow!.block))
+    : ({ _: `Liquid pre-commit buffer for ${liquidName} (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit.` } as Block);
+
+  const slotObj: Record<string, any> = { _: text, '1': agentId, '2': '', '3': new Date().toISOString() };
+  if (face) slotObj['4'] = face;
+
+  const mySlot = findAuthorSlot(lblock, agentId) ?? findNextSlot(lblock);
+  writeAt(lblock, mySlot, slotObj);
+
+  if (exists) {
+    // Surgical: write only this author's slot, leaving peers' slots intact.
+    await saveBlock(url, liquidName, lblock, { spindle: mySlot, pscale_attention: -1, secret });
+  } else {
+    // First write creates the buffer (whole-block, seeds the floor underscore).
+    await saveBlock(url, liquidName, lblock, { spindle: '', secret });
+  }
+  return mySlot;
+}
+
 // ── Schema ──
 
 export const poolEngageParamsSchema = {
@@ -207,7 +277,19 @@ export const poolEngageParamsSchema = {
   contribution: z
     .string()
     .optional()
-    .describe("Optional. Text to post as a contribution before reading. If provided, the primitive writes at the next-free digit-path slot (1, 2, …, 9, 11, …; sunstone:1.6.4) with shape {_: text, 1: agent_id, 2: '', 3: ISO-ts, 4: face}, then reads the envelope. Omit for read-only engagement."),
+    .describe("Optional. COMMIT text — deposit a contribution (raw OR an LLM-produced synthesis; the primitive is agnostic) at the next-free digit-path slot of the destination (1, 2, …, 9, 11, …; sunstone:1.64) with shape {_: text, 1: agent_id, 2: '', 3: ISO-ts, 4: face}, then read the envelope. Atomic append (beach-side). Omit for read-only engagement, or use `submit` to stage to liquid without committing."),
+  submit: z
+    .string()
+    .optional()
+    .describe("Optional. STAGE text to the pre-commit liquid buffer (liquid:pool:<name>, block-conventions:4.5) instead of committing. One slot per author, OVERWRITING — writes/overwrites YOUR slot and returns the social mirror of all co-present pending intentions; it does NOT append to the pool and does NOT synthesise. Empty string withdraws (clears your slot). Lets others see what you intend before you commit. May be combined with `contribution` (stage then commit in one call)."),
+  destination: z
+    .string()
+    .optional()
+    .describe("Optional, applies to `contribution`. Where the commit lands: 'pool' (default — the shared spool everyone pulls) or a block name such as 'solid:<name>' for a shared committed artifact. The deposit is a dumb atomic append; the primitive never synthesises. This is the objective dial. Structured per-subject spine writes (the RPG subjective case) are the resolver's bsp() job, NOT this param — point destination only at accumulator-shaped blocks."),
+  with_liquid: z
+    .boolean()
+    .optional()
+    .describe("Optional. Include the liquid mirror (all co-present pending intentions from liquid:pool:<name>) in the envelope. Implied true when `submit` is provided; default false otherwise to skip the extra fetch."),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
@@ -236,6 +318,9 @@ export type PoolEngageParams = {
   pool_url: string;
   pool_name: string;
   contribution?: string;
+  submit?: string;
+  destination?: string;
+  with_liquid?: boolean;
   face?: 'character' | 'author' | 'designer' | 'observer';
   since_position?: number;
   secret?: string;
@@ -248,8 +333,9 @@ export type PoolEngageParams = {
 export async function handlePoolEngage(
   params: PoolEngageParams,
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { agent_id, pool_url, pool_name, contribution, face, secret } = params;
+  const { agent_id, pool_url, pool_name, contribution, submit, destination, face, secret } = params;
   const sincePosition = params.since_position ?? 0;
+  const withLiquid = params.with_liquid === true || submit !== undefined;
 
   if (!isFederatedOwner(pool_url)) {
     return {
@@ -261,6 +347,7 @@ export async function handlePoolEngage(
   }
 
   const blockName = `pool:${pool_name}`;
+  const liquidName = `liquid:pool:${pool_name}`;
 
   // ── Load pool ──
   let row = await loadBlock(pool_url, blockName);
@@ -321,51 +408,76 @@ export async function handlePoolEngage(
     };
   }
 
-  // ── Optional: post contribution ──
+  // ── Optional: SUBMIT — stage to the pre-commit liquid buffer ──
+  // Liquid (block-conventions:4.5) is one slot per author, OVERWRITING: your
+  // current pending intention, visible to co-present peers as the social mirror
+  // before anyone commits. submit overwrites YOUR slot and (via withLiquid) the
+  // envelope returns the mirror; it never appends to the pool and never
+  // synthesises. Empty text withdraws. This brings xstream's pending-mirror
+  // reflexivity to a bare bsp-mcp caller, because liquid lives on the beach.
+  let submittedSlot: string | null = null;
+  if (submit !== undefined) {
+    try {
+      submittedSlot = await stageLiquid(pool_url, liquidName, agent_id, submit, face, secret);
+    } catch (e: any) {
+      return { content: [{ type: 'text', text: `Liquid submit rejected by beach: ${e?.message ?? String(e)}` }] };
+    }
+  }
+
+  // ── Optional: COMMIT — deposit a contribution to a destination ──
+  // The dumb deposit: append `contribution` (raw text OR an LLM-produced
+  // synthesis — agnostic) to the destination accumulator. `destination` is the
+  // objective dial: 'pool' (default — the shared spool everyone pulls) or any
+  // block name (e.g. 'solid:<name>' for a shared artifact). The append is atomic
+  // beach-side (appendToBeach): the beach allocates the slot and supernests when
+  // the floor fills, so concurrent commits never race. Structured per-subject
+  // spine writes (RPG) are the resolver's bsp() job, NOT this primitive.
   let postedPosition: number | null = null;
+  let postedTo: string | null = null;
+  let postedSupernested = false;
   if (contribution !== undefined && contribution.trim() !== '') {
-    const contributionObj: Record<string, any> = {
+    const entry: Record<string, any> = {
       _: contribution,
       '1': agent_id,
       '2': '',
       '3': new Date().toISOString(),
     };
-    if (face) contributionObj['4'] = face;
+    if (face) entry['4'] = face;
 
-    const updatedBlock: Block = JSON.parse(JSON.stringify(row.block));
-    let appended: { block: Block; address: string; grew: boolean };
-    try {
-      // Append on the positional ladder, growing the floor by supernest when the
-      // current floor's 1-9 are full (accumulator.ts). Past nine the block wraps
-      // — old entries absorb (a "7" still resolves) and the new one lands at a
-      // fresh slot, never nested into an existing contribution.
-      appended = appendWithSupernest(updatedBlock, contributionObj);
-    } catch (e: any) {
-      return {
-        content: [{ type: 'text', text: `Pool append failed: ${e?.message ?? String(e)}` }],
-      };
+    const destBlock = destination && destination !== 'pool' ? destination : blockName;
+
+    // A non-pool destination may not exist yet — seed it with a floor (a root
+    // underscore) so the append lands on a well-formed block. The pool itself
+    // already exists by here (loaded or created above).
+    if (destBlock !== blockName) {
+      const drow = await loadBlock(pool_url, destBlock);
+      if (!drow || typeof drow.block !== 'object' || drow.block === null) {
+        try {
+          await saveBlock(pool_url, destBlock, { _: `Committed entries from pool:${pool_name} (block-conventions:4.2).` } as Block, { spindle: '', secret });
+        } catch (e: any) {
+          return { content: [{ type: 'text', text: `Could not create destination ${destBlock}: ${e?.message ?? String(e)}` }] };
+        }
+      }
     }
 
+    let ack: { slot?: string; supernested?: boolean; floor?: number };
     try {
-      // On supernest the whole block changed (the floor grew), so write the whole
-      // block; otherwise a surgical position write of just the new slot.
-      await saveBlock(pool_url, blockName, appended.block, appended.grew
-        ? { spindle: '', secret }
-        : { spindle: appended.address, pscale_attention: -1, secret });
+      ack = await appendToBeach(pool_url, destBlock, entry as Block, secret);
     } catch (e: any) {
-      return {
-        content: [{ type: 'text', text: `Pool write rejected by beach: ${e?.message ?? String(e)}` }],
-      };
+      return { content: [{ type: 'text', text: `Pool commit rejected by beach: ${e?.message ?? String(e)}` }] };
     }
+    postedPosition = ack.slot ? parseInt(ack.slot, 10) : null;
+    postedTo = destBlock;
+    postedSupernested = ack.supernested === true;
 
-    postedPosition = parseInt(appended.address, 10);
-    // Re-load to get the canonical post-write state for the envelope.
-    row = await loadBlock(pool_url, blockName);
-    if (!row) {
-      // Vanishingly unlikely — block existed a moment ago. Surface explicitly.
-      return {
-        content: [{ type: 'text', text: `Posted at slot ${appended.address} but reload failed.` }],
-      };
+    // Reload the pool only when the commit landed in it (so the envelope's slice
+    // includes the just-posted). A commit elsewhere leaves the pool unchanged.
+    if (destBlock === blockName) {
+      const reloaded = await loadBlock(pool_url, blockName);
+      if (!reloaded) {
+        return { content: [{ type: 'text', text: `Committed at slot ${ack.slot ?? '?'} but pool reload failed.` }] };
+      }
+      row = reloaded;
     }
   }
 
@@ -378,6 +490,16 @@ export async function handlePoolEngage(
     ? contributions[contributions.length - 1].position
     : sincePosition;
 
+  // Liquid mirror — co-present pending intentions, not yet committed. Fetched
+  // when you submitted (you want to see the room) or when with_liquid is set.
+  let liquidSlots: PoolContribution[] = [];
+  if (withLiquid) {
+    const lrow = await loadBlock(pool_url, liquidName);
+    if (lrow && typeof lrow.block === 'object' && lrow.block !== null) {
+      liquidSlots = collectContributions(lrow.block, 0).contributions;
+    }
+  }
+
   // ── Render as human-readable text (consistent with bsp() handler style) ──
   // The envelope shape is what matters; this rendering presents it for an LLM
   // to consume in tool-result form.
@@ -388,8 +510,15 @@ export async function handlePoolEngage(
     lines.push('created: pool authored with purpose at _');
     lines.push('');
   }
+  if (submittedSlot !== null) {
+    lines.push(submit && submit.trim() !== ''
+      ? `submitted: liquid slot ${submittedSlot} (your pending intention — staged, not yet committed)`
+      : `withdrawn: liquid slot ${submittedSlot} cleared`);
+    lines.push('');
+  }
   if (postedPosition !== null) {
-    lines.push(`posted: slot ${postedPosition} (your contribution is included below)`);
+    const where = postedTo === blockName ? 'the pool' : postedTo;
+    lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}`);
     lines.push('');
   }
   lines.push('# Purpose');
@@ -398,6 +527,20 @@ export async function handlePoolEngage(
   lines.push(`# Synthesis hint (source: ${hintSource})`);
   lines.push(synthesisHint);
   lines.push('');
+  if (withLiquid) {
+    lines.push(`# Liquid — pending, not yet committed (${liquidSlots.length} ${liquidSlots.length === 1 ? 'author' : 'authors'})`);
+    if (liquidSlots.length === 0) {
+      lines.push('(no pending intentions)');
+    } else {
+      for (const s of liquidSlots) {
+        const who = s.agent_id ?? '(anon)';
+        const mine = s.agent_id === agent_id ? ' (you)' : '';
+        const when = s.ts ?? '';
+        lines.push(`- ${who}${mine} ${when}: ${s.text || '(empty)'}`);
+      }
+    }
+    lines.push('');
+  }
   lines.push(`# Contributions since position ${sincePosition} (count: ${contributions.length}${more_available ? ', more available' : ''})`);
   if (contributions.length === 0) {
     lines.push('(nothing new)');

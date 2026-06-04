@@ -32,7 +32,8 @@
     "smoke:gray-live": "tsx scripts/smoke-gray-live.ts",
     "smoke:grain-live": "tsx scripts/smoke-grain-live.ts",
     "smoke:group-live": "tsx scripts/smoke-group-live.ts",
-    "smoke:group2b-live": "tsx scripts/smoke-group2b-live.ts"
+    "smoke:group2b-live": "tsx scripts/smoke-group2b-live.ts",
+    "smoke:spool-live": "tsx scripts/smoke-spool-live.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",

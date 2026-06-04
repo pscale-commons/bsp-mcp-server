@@ -1,5 +1,11 @@
 # bsp-mcp-server
 
+> **ADDRESS NOTATION — NON-NEGOTIABLE, READ FIRST.** Pscale addresses are numbers, not paths (sunstone:1.5). Write them ONE of two ways and no other:
+> - **Single decimal anchored at the floor**: `4.26`, `4.56`, `9.3` — left-of-decimal padded to floor width. (block-conventions floor is 1, so `4.26` = branch 4 → 2 → 6.)
+> - **Comma-walk** when emphasising the path of digits walked: `4,2,6`.
+>
+> **NEVER write multi-dot** (`4.2.6`, `1.3.2`, `1.6.4`). The walker strict-rejects it; it boils the maintainer's brain. Common slips: `4.2.6`→`4.26`, `1.6.4`→`1.64`. If you reach for a second dot, switch to commas. Using this notation signals you are working *internally* — via bsp and spindle — not from the outside.
+
 ## To the next instance — read this before touching anything
 
 This repo is two functions — `bsp()` and the n-ary `bsp-floor()` — and five primitives (four substrate-stateful, plus the pool-engage envelope). That is essentially the WHOLE surface — the only other entry point is the `pscale_invite` orientation meta-tool. If you find yourself adding a 6th primitive, stop. The geometry is the program. The function walks. Read sunstone before you read any code.
