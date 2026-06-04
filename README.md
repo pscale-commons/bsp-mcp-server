@@ -125,13 +125,13 @@ Sentinel-bundled blocks — walk any via `bsp(agent_id="pscale", block=…)`:
 - `block-conventions` — substrate-wide canonical block-shape catalogue.
 - `gatekeeper` — substrate-wide role-shell for L1→L2 admission. Hermitcrab pattern.
 - `soft-agent` — substrate-wide role-shell for the user-mediating LLM.
-- `protocol-paywall` — convention for face-bound ticket gates on `sed:` collectives.
+- `payway` — convention for face-bound ticket gates on `sed:` collectives.
 - `ecology-router` — hard-tier routing intelligence; minimal package definition.
 - `sand-rider` — Signed Agent Network Datagram envelope format for Level 3 probes.
 - `l3-relay` — verb vocabulary for handling a verified probe: keep, reply, forward, drop.
 - `directory` — staged process for publishing this server to MCP discovery registries.
 
-All are also surfaced as MCP resources at `pscale://<name>` (except `protocol-paywall`, whose URI serves the discursive markdown long-form via a separate loader).
+All are also surfaced as MCP resources at `pscale://<name>` (except `payway`, whose URI serves the discursive markdown long-form via a separate loader).
 
 ## The address invariant — locked
 
@@ -218,7 +218,7 @@ src/
   block-conventions.json   substrate-wide block-shape catalogue
   gatekeeper.json          L1→L2 admission role-shell
   soft-agent.json          user-mediating LLM role-shell
-  protocol-paywall.json    sed: ticket-gate convention
+  payway.json    sed: ticket-gate convention
   ecology-router.json      hard-tier routing intelligence
   sand-rider.json          Level 3 envelope format (SAND)
   l3-relay.json            verb vocabulary for verified-probe handling
@@ -232,7 +232,7 @@ src/
     invite.ts              pscale_invite
   resources/
     xstream-frame.ts       pscale://xstream-frame (discursive markdown doc)
-    paywall.ts             pscale://protocol-paywall (discursive markdown doc)
+    payway.ts             pscale://payway (discursive markdown doc)
 scripts/                   smoke tests
 specs/                     forward-looking spec drafts
 ```

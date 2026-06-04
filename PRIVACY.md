@@ -20,7 +20,7 @@ tool through this connector, one of two things happens:
 1. **Sentinel read** — calls to `bsp(agent_id="pscale", block=…)` return one
    of the bundled teaching blocks (sunstone, whetstone, agent-id, evolution,
    manifest, progression, block-conventions, gatekeeper, soft-agent,
-   protocol-paywall, ecology-router, directory). These are JSON files baked
+   payway, ecology-router, directory). These are JSON files baked
    into the server at build time, served from process memory. No external
    network call. No data is stored or retained.
 

@@ -28,7 +28,7 @@ import { handleInvite, inviteParamsSchema } from './tools/invite.js';
 import { handlePoolEngage, poolEngageParamsSchema } from './tools/pool.js';
 
 import { registerXstreamFrame } from './resources/xstream-frame.js';
-import { registerPaywall } from './resources/paywall.js';
+import { registerPayway } from './resources/payway.js';
 import { SENTINELS } from './sentinels.js';
 
 /**
@@ -295,7 +295,7 @@ export function createServer(): McpServer {
   // Markdown protocol-doc resources: kept as separate loaders since they
   // serve the discursive long-form (markdown), not the walkable JSON.
   registerXstreamFrame(server);
-  registerPaywall(server);
+  registerPayway(server);
 
   return server;
 }

@@ -224,7 +224,7 @@ src/
   block-conventions.json — Substrate-wide canonical block-shape catalogue
   gatekeeper.json     — Substrate-wide canonical role-shell for L1→L2 admission (honored convention)
   soft-agent.json     — Substrate-wide canonical role-shell for the user-mediating LLM (sibling of gatekeeper)
-  protocol-paywall.json — Substrate-wide convention for face-bound ticket gates on `sed:` collectives
+  payway.json         — Substrate-wide convention (pay forward to contribute and experience): face-bound ticket gates on `sed:` collectives; alias sentinel name protocol-paywall
   ecology-router.json — Hard-tier routing intelligence; defines the minimal-package reference build
   sand-rider.json     — Signed Agent Network Datagram envelope format for Level 3 probes
   l3-relay.json       — Verb vocabulary for what a recipient does with a verified probe (keep, reply, forward, drop)
@@ -240,7 +240,7 @@ src/
     pool.ts           — pscale_pool_engage (the envelope primitive)
   resources/          — Markdown-only doc loaders (JSON sentinels are wired via sentinels.ts; only the long-form discursive resources live here individually)
     xstream-frame.ts  — pscale://xstream-frame (markdown long-form)
-    paywall.ts        — pscale://protocol-paywall (markdown long-form; claims the URI in place of the JSON sentinel)
+    payway.ts         — pscale://payway (+ legacy pscale://protocol-paywall alias; markdown long-form; claims the URI in place of the JSON sentinel)
 scripts/              — smoke tests for bsp() + each primitive (incl. smoke-sentinel.ts, smoke-gatekeeper.ts)
 docs/                 — protocol specs (federated beach, etc.) — minimal, only what the substrate needs
 specs/                — forward-looking prep documents (e.g., anthropic-directory-submission.md for Stage 3 of pscale://directory)
@@ -256,7 +256,7 @@ bsp-mcp does not host data. It is a router + sentinel server. All persistent blo
 
 Two terminating substrates after dispatch:
 - **Federated beach** — URL agent_id (`https://...`) → that beach. Data + lock state live there. The beach computes lock hashes under the canonical salt namespaces and stores them.
-- **Sentinel registry** — agent_id `"pscale"` → in-memory bundled JSON (sunstone, whetstone, manifest, agent-id, evolution, progression, block-conventions, gatekeeper, soft-agent, protocol-paywall, ecology-router, sand-rider, l3-relay, directory). Read-only, served from process memory. Single source of truth in `src/sentinels.ts` — adding a sentinel is one entry there; db.ts (the bsp() lookup path) and server.ts (the `pscale://` resource path) both pick it up.
+- **Sentinel registry** — agent_id `"pscale"` → in-memory bundled JSON (sunstone, whetstone, manifest, agent-id, evolution, progression, block-conventions, gatekeeper, soft-agent, payway [alias protocol-paywall], ecology-router, sand-rider, l3-relay, directory). Read-only, served from process memory. Single source of truth in `src/sentinels.ts` — adding a sentinel is one entry there; db.ts (the bsp() lookup path) and server.ts (the `pscale://` resource path) both pick it up.
 
 Three translating forms:
 - Bare name (`weft`) → default beach with role-with-handle block name (`shell:weft`, `passport:weft`, `history:weft`, etc.)
@@ -396,7 +396,7 @@ Fallback chain (used by xstream and any admission-aware client):
 | Ecology pulse snapshot | `site/state.json` | Humans + dashboards |
 | Beach-crab ladder | `docs/beach-crab-ladder.md` | Anyone building a persistent agent |
 | Xstream frame protocol | `docs/protocol-xstream-frame.md` | Anyone implementing the V-L-S interface |
-| Paywall convention | `docs/protocol-paywall.md` (also `pscale://protocol-paywall`) | Anyone authoring a paywalled `sed:` collective, building a paywall-aware client, or running a verifier — reference build at `pscale-commons/ticketing-agent` |
+| Payway convention | `docs/payway.md` (also `pscale://payway`, alias `pscale://protocol-paywall`) | Anyone authoring a payway-gated `sed:` collective, building a payway-aware client, or running a verifier — reference build at `pscale-commons/ticketing-agent` |
 | Sibling-block beach upgrade | `docs/happyseaurchin-sibling-blocks-implementation.md` | Anyone extending a v2 single-block beach to host site-hosted sed:/grain: substrates and named pools. Companion to `happyseaurchin-v2-implementation.md`. |
 | Sunstone (geometry teacher) | `src/sunstone.json` | Any reader |
 | Whetstone (operational ref) | `src/whetstone.json` | Agent equipped with bsp-mcp |
