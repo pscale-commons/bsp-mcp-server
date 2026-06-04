@@ -108,14 +108,16 @@ Realised as two MCP calls:
 
 ```
 pscale_register(collective="<collective>", declaration="<self-description>", passphrase="<p>")
-  → server allocates <position>, writes the underscore, locks the position.
+  → server allocates <position> (floor-2+, e.g. 11), writes the underscore, locks the position.
 
 bsp(agent_id="sed:<collective>", block="<collective>",
-    spindle="<position>.1", pscale_attention=-2,
-    content="grain:<pair_id>:<issuer-side>",
+    spindle="<position>", pscale_attention=-len(<position>),   # e.g. "11" → -2
+    content={ "_": "<self-description>", "1": "grain:<pair_id>:<issuer-side>" },
     secret="<p>")
-  → writes the ticket_grain reference at digit 1.
+  → overwrites the position with the {_, 1} object, attaching the ticket_grain ref at digit 1.
 ```
+
+**Addressing note.** The second write targets the *whole position* (`spindle="<position>"`), not a child path `"<position>.1"`. On a federated beach a `sed:` position is a multi-digit address that descends to the floor (a whole-block read nests position `11` as the trie path `1→1`), so a child like `"11.1"` exceeds the floor and is rejected. The registrant instead re-writes its own position as the `{_, 1}` object — it holds that position's lock, so the overwrite is authorised, and the self-description is preserved at `_`. (Grain-side revocations differ — see §2.2: a grain's *sides* sit AT the floor, so `"<issuer-side>.1"` is a valid child path there, written public via `gray:false` at `pscale_attention = -1`.)
 
 The `<issuer-side>` value is whichever of side 1 or 2 the issuer occupies in the lex-ordered pair — the buyer learns it from the `grain_address_mine` field that `pscale_grain_reach` returns to the issuer, communicated back to the buyer in the issuer's purchase confirmation. The reference itself is per [`protocol-block-references.md`](./protocol-block-references.md) §1 grain form (three colon-separated parts, no leading star).
 
@@ -161,7 +163,7 @@ Failure of any rule produces a `[ticket-rejected]` envelope with a short reason 
 
 ### 2.5 Implementation note — pscale_attention is negative-floor
 
-The `bsp()` primitive anchors `pscale = 0` at the floor (depth of the underscore chain) and walks deeper as **negative** values. A spindle of length `N` has `P_end = -N`; reading at the terminus uses `pscale_attention = P_end`, reading the disc just above uses `pscale_attention = P_end + 1` (a ring), and so on. Implementations that pass positive values to `bsp()` for spindles like `<position>.1` will receive `unsupported shape (P_end=-2)` errors from the live substrate. See `pscale://whetstone` branch 2 for the full selection-shape derivation. The pseudocode in §2.3–§2.4 uses the abstract verbs "walk" and "read"; concrete `pscale_attention` values are negative.
+The `bsp()` primitive anchors `pscale = 0` at the floor (depth of the underscore chain) and walks deeper as **negative** values. A spindle of length `N` has `P_end = -N`; reading at the terminus uses `pscale_attention = P_end`, reading the disc just above uses `pscale_attention = P_end + 1` (a ring), and so on. Implementations that pass positive values to `bsp()` will receive `unsupported shape` errors from the live substrate. Because pscale is floor-anchored, child addressing is **depth-sensitive**: a `sed:` registrant position already descends to the floor, so its ticket-grain reference is attached by overwriting the *whole position* with a `{_, 1}` object (§2.3), whereas a grain *side* sits at the floor, so a revocation is a child write at `<issuer-side>.1`, `pscale_attention = -1` (§2.2). See `pscale://whetstone` branch 2 for the full selection-shape derivation. The pseudocode in §2.3–§2.4 uses the abstract verbs "walk" and "read"; concrete `pscale_attention` values are negative.
 
 ---
 
