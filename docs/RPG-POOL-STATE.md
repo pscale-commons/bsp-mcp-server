@@ -8,9 +8,9 @@ rebuild the architecture from scratch — **stop**: the canon is `rpg-architectu
 discipline this whole effort defends: *maximise pscale block + bsp + LLM; do not
 multiply code.*
 
-Last updated 2026-06-04 (spool/frame/destination decomposition added; Phase 0
-submit/commit/destination landed on branch `claude/pool-spool-submit-commit-2026-06-04`,
-smoke-proven, **not yet deployed to Railway**).
+Last updated 2026-06-04 (Phases 0, 1, 3 landed. Phase 0 submit/commit/destination
+**deployed** via #71; Phase 1 subjective `function:thornwood` live; Phase 3 resolver crab
+(`nomad-bsp` v0.2, PR #1) verified live + cron added. The spool/frame/destination model is §4.).
 
 ---
 
@@ -20,6 +20,8 @@ smoke-proven, **not yet deployed to Railway**).
 - **Perception-as-depth** — proven live on `spatial:thornwood:111`: the secret ("the stillness is listening") sits at `111*1.31`, occluded at a newcomer's depth (`111*1` `P=-1`), revealed at `P=-2`. Occlusion **is** read-depth; the mechanism is real (the substrate returns whatever `P` is asked — *entitlement* is convention, hardenable via `sed:`/locks).
 - **`function:thornwood:1`** is a faithful **subjective soft directive**, live. The pool's underscore points the soft to it.
 - **`accumulator.ts`** is a reusable geometry helper — `marks` and `history` can adopt the same `appendWithSupernest` call.
+- **`pool_engage` submit / commit / destination** — the spool/frame/destination split (§4). **Deployed** via #71 (Railway). Proven 41/41 unit + 22/22 live (submit→liquid mirror, commit→pool/`solid:` with routing isolation, marker, withdraw).
+- **The subjective resolution loop runs autonomously** — the `nomad-bsp` crab (v0.2, PR #1) read Cyrus's pending intention, resolved it via `function:thornwood:2` with deterministic sha256 dice, wrote his outcome to `witnessed:cyrus` (tick-stamped; fog of war intact — the woman accepts him but he still cannot name her), posted the pool resolution marker, and a re-run no-ops (the cursor closes the window). Proven live on `beach.happyseaurchin.com`, 2026-06-04. NOT yet exercised with multiple co-present actors (the next test), nor running on the cron yet (PR #1 adds it; repo secrets pending).
 
 ## 2. RESOLVED — canon is `rpg-architecture-subjective` (Weft's)
 
@@ -35,6 +37,8 @@ untouched, ignored. No promotion step, no shared lock to wait on: canon and runt
 already say the same thing. **Closed.**
 
 ## 3. The open joints — DECIDED, spec'd. Execute; do not re-open.
+
+**STATUS 2026-06-04:** Joints A + B **landed** — the subjective directive (Phase 1) and the resolver crab (Phase 3, `nomad-bsp` PR #1) are live and verified (see §4). Joint C (past-9 supernest, live) still pending.
 
 ### Joint A — the resolution leg (the loop's last joint)
 *Symptom (parallel test):* a committed intention has no path back to a spine — turn 2
@@ -140,7 +144,14 @@ hardenable later via lock/face.
 - **xstream amendment when this lands:** the existing [xstream-bsp#70](https://github.com/happyseaurchin/xstream-bsp/pull/70) (merged 2026-06-02) currently shapes pool commits as "personal solid display only, no substrate write" — an interim that was correct for the pre-Path-3 model but doesn't carry the submit/commit split. The amendment: pool submit → `pool_engage(submit=...)` writing `liquid:pool:<name>` (no synthesis returned); pool commit → `pool_engage(commit=...)` writing the chronicle slot (general pools) or character spine (RPG redirect, Joint A) and rendering the returned synthesis envelope in the solid zone. The "no substrate write" needs to become "write a destination determined by the engagement kind". `beach-kernel.ts:readPool` stays scrubbed of legacy `_synthesis`; the personal solid state remains a Column-level concept (commit-time-only, not auto-rerun). Source map for the amendment: `src/components/Column.tsx` commit handler (the pool branch added by #70) + the soft-LLM tool descriptions in `src/kernel/claude-tools.ts` (so the LLM reaches for `submit=` vs `commit=` correctly).
 - **Refinement (Phase 0/1):** the line above says "pool commit → character spine (RPG redirect)". Sharpened: a *player's* commit always lands in the **pool** (their intention, `destination=pool`); the **spine** write is the *resolver's* job (Phase 1, via bsp()), never `pool_engage(commit)`. So xstream's RPG commit targets `destination=pool`; the medium/crab fans to spines separately. The objective/subjective split is who-writes-where, not a pool_engage destination.
 
-### Phase 3 — the resolver runner: **crab cron first** (David carries the cost), distributed later
+### Phase 3 — the resolver runner: **crab cron first** (David carries the cost), distributed later — LANDED 2026-06-04
+
+**Done:** `nomad-bsp` daemon v0.2 (PR #1) aligned to subjective — window via the pool's
+`face=resolution` cursor, outcomes → `witnessed:<handle>` spines (tick-stamped), pool
+resolution marker, deterministic sha256 dice fed to the LLM, `DRY_RUN` safety; cron workflow
+added. Verified live (resolved Cyrus; cursor closes the window; no duplicate). PENDING: set
+the repo secrets so the cron runs; the multi-actor concurrency test; `consolidate()` (the
+consensus / observer digest) is stubbed — the next build, and the seed of the Observer/output face.
 
 Resolution = any LLM reading a directive block + writing the outcome to a destination. Two
 runners, same path; **build the crab first** (David's call, 2026-06-04 — he carries the
