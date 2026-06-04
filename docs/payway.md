@@ -1,4 +1,4 @@
-# Paywall Convention
+# Payway Convention
 
 **Status**: Draft, 1 May 2026
 **Companion to**: [`protocol-xstream-frame.md`](./protocol-xstream-frame.md), [`protocol-pscale-beach-v2.md`](./protocol-pscale-beach-v2.md), [`protocol-block-references.md`](./protocol-block-references.md)
@@ -8,16 +8,16 @@
 
 ## 0. Reframe in one paragraph
 
-The paywall gates participation, not display. A `sed:` collective is face-bound (xstream-frame §5); registration in it grants face authority over the V-L-S loop — Character writes liquid into a frame, Author commits content, Designer revises rules. The Observer face requires no membership and reads solid only. So paywalling a `sed:` collective gates *creative participation* (~90% of xstream's purpose; the imaginative-mind canvas) and leaves consumption (~10%; the civilised-mind drawer) open by default. The convention: any `sed:` collective MAY declare a paywall config sub-block at position 9 (sed::9) carrying issuer, purchase URL, face, and scope. A *ticket* is an ordinary grain whose envelope text marks it as such. Registration in a paywalled collective references that grain; a verifier daemon walks the grain and writes a confirmation envelope onto the registration. The whole convention lives in `bsp()` writes — no new MCP primitive, no central toll-booth, no protocol-level fees.
+The payway is **pay forward** — you don't pay for access, you pay to contribute and experience. Concretely: it gates participation, not display. A `sed:` collective is face-bound (xstream-frame §5); registration in it grants face authority over the V-L-S loop — Character writes liquid into a frame, Author commits content, Designer revises rules. The Observer face requires no membership and reads solid only. So putting a payway on a `sed:` collective gates *creative participation* (~90% of xstream's purpose; the imaginative-mind canvas) and leaves consumption (~10%; the civilised-mind drawer) open by default. The convention: any `sed:` collective MAY declare a payway config sub-block at position 9 (sed::9) carrying issuer, purchase URL, face, and scope. A *ticket* is an ordinary grain whose envelope text marks it as such. Registration in a payway-gated collective references that grain; a verifier daemon walks the grain and writes a confirmation envelope onto the registration. The whole convention lives in `bsp()` writes — no new MCP primitive, no central toll-booth, no protocol-level fees.
 
 ---
 
 ## 1. Design constraints (non-negotiable)
 
-These five distinguish a paywall *primitive* from a paywall *platform*. A change that violates any of them does not ship.
+These five distinguish a payway *primitive* from a payway *platform*. A change that violates any of them does not ship.
 
 1. **No central issuer.** Every frame-owner picks their own ticketing agent. A reference implementation is one option among many.
-2. **No central client.** A client (xstream-play or any other) reads the paywall config sub-block at sed::9 per collective and routes to whatever issuer that collective specifies. It does not prefer, rank, badge, or default any issuer.
+2. **No central client.** A client (xstream-play or any other) reads the payway config sub-block at sed::9 per collective and routes to whatever issuer that collective specifies. It does not prefer, rank, badge, or default any issuer.
 3. **No protocol-level fees.** The substrate enforces sed: membership and grain validity; it charges nothing. Fees, if any, are between the frame-owner and their payment processor.
 4. **No special-cased issuers in bsp-mcp.** A grain from `agent:any-tickets` is structurally identical to any other grain. The substrate cannot tell tickets from non-tickets and must not try.
 5. **Forkable in an afternoon.** The reference ticketing agent stays small enough that anyone with a Stripe account and a small VPS can stand up their own.
@@ -26,15 +26,15 @@ These five distinguish a paywall *primitive* from a paywall *platform*. A change
 
 ## 2. Protocol additions
 
-### 2.1 The paywall config sub-block at sed::9
+### 2.1 The payway config sub-block at sed::9
 
-A paywalled `sed:` collective declares this as a sub-block at position 9 (the canonical metadata slot per `pscale://block-conventions` branch 7.3). Position 9 of a `sed:` collective is reserved for protocol-level metadata — registrants land at floor-2 supernest positions 11..99, 111..999. The sub-block is metadata; it does not change how `bsp()` reads or writes the collective. Sibling keys like `_tickets` would be invisible to bsp() because the walker only handles `_` and digits 1-9 (sunstone branch 1.1).
+A payway-gated `sed:` collective declares this as a sub-block at position 9 (the canonical metadata slot per `pscale://block-conventions` branch 7.3). Position 9 of a `sed:` collective is reserved for protocol-level metadata — registrants land at floor-2 supernest positions 11..99, 111..999. The sub-block is metadata; it does not change how `bsp()` reads or writes the collective. Sibling keys like `_tickets` would be invisible to bsp() because the walker only handles `_` and digits 1-9 (sunstone branch 1.1).
 
 ```json
 {
   "_": "sed: cast for <scene-id>",
   "9": {
-    "_": "Paywall config — when present, registration in this collective requires a verified ticket-grain from the named issuer.",
+    "_": "Payway config — when present, registration in this collective requires a verified ticket-grain from the named issuer.",
     "1": "agent:<issuer-id>",
     "2": "https://<issuer-domain>/buy/<product-id>",
     "3": "character",
@@ -54,7 +54,7 @@ A paywalled `sed:` collective declares this as a sub-block at position 9 (the ca
 | 9.4 | scope | What the ticket authorises — a single frame, a frame pattern (`frame:thornkeep-*`), or a beach (`beach:<host>`) | yes |
 | 9.5 | verifier | Agent that confirms registrations after grain check; defaults to 9.1 (issuer) if omitted | no |
 
-A collective with an empty or absent position 9 is open — anyone may register. This is the existing default and stays unchanged. To paywall later, write the sub-block via a single `bsp()` call to `spindle="9", pscale_attention=-1, content={_: "...", 1: "...", 2: "...", 3: "...", 4: "...", 5: "..."}` with the collective creator's secret. Individual fields can be updated later with point writes (`spindle="92"` to update purchase_url, etc.).
+A collective with an empty or absent position 9 is open — anyone may register. This is the existing default and stays unchanged. To payway later, write the sub-block via a single `bsp()` call to `spindle="9", pscale_attention=-1, content={_: "...", 1: "...", 2: "...", 3: "...", 4: "...", 5: "..."}` with the collective creator's secret. Individual fields can be updated later with point writes (`spindle="92"` to update purchase_url, etc.).
 
 ### 2.2 The ticket grain envelope
 
@@ -92,7 +92,7 @@ The verifier walks the issuer's side children (`bsp(agent_id="grain:<pair_id>", 
 
 ### 2.3 The registration ritual extension
 
-Today, registration in a `sed:` collective is a write to the next available position in the collective block, performed by the registering agent via `pscale_register`. This stays unchanged for open collectives. For paywalled collectives the ritual gains two steps.
+Today, registration in a `sed:` collective is a write to the next available position in the collective block, performed by the registering agent via `pscale_register`. This stays unchanged for open collectives. For payway-gated collectives the ritual gains two steps.
 
 **Step A (registrant):** the registering agent performs registration as a two-write sequence — first `pscale_register` with a self-description as the `declaration` string, then a follow-up `bsp()` write that places the `ticket_grain` reference at digit 1 of the position. Two writes because `pscale_register.declaration` accepts a string only; the structured `ticket_grain` reference belongs as a sub-fact at the position's digit 1, subordinate to the self-describing underscore. This matches the same sunstone branch 1 pattern used for revocations on the grain side: meaning at underscore, sub-structure at digits.
 
@@ -177,7 +177,7 @@ The build covers idempotency on webhooks, per-product rate limits on grain issua
 
 ## 4. xstream-play affordance — interface contract
 
-Any client that wants to support the paywall pattern (xstream-play is the reference) implements this contract. The contract specifies *what* the client must do; *how* is the client's call.
+Any client that wants to support the payway pattern (xstream-play is the reference) implements this contract. The contract specifies *what* the client must do; *how* is the client's call.
 
 ### 4.1 What the client must do
 
@@ -197,24 +197,24 @@ For each `sed:` collective the user is interacting with:
 1. **MUST NOT prefer any issuer over another.** Issuers are visually and behaviourally identical to the client.
 2. **MUST NOT cache or hardcode any issuer.** Every collective is read fresh.
 3. **MUST NOT introduce a "verified" badge tied to an allowlist of issuers.** No allowlists.
-4. **MUST NOT take a fee, route the purchase through a paywall server, or interpose itself between the buyer and the issuer's `purchase_url`.** The user goes directly to the issuer.
+4. **MUST NOT take a fee, route the purchase through a payway server, or interpose itself between the buyer and the issuer's `purchase_url`.** The user goes directly to the issuer.
 5. **MUST NOT obscure or misrepresent the issuer.** The buy affordance MUST identify the issuer by `agent_id`.
 
 These prohibitions are what keep the system federated. They are easy to violate without realising.
 
 ### 4.3 Observer face is unchanged
 
-The Observer face requires no `sed:` membership and reads solid only. Most frames make Observer free. A frame-owner *may* paywall the Observer face by gating the frame's solid blocks behind a `sed:observers` collective with its own paywall config sub-block at sed::9, but this is unusual and discouraged in defaults. The observer-as-creator case (rendering output videos, summaries, derivative work) is a v2 convention extension — see §6.
+The Observer face requires no `sed:` membership and reads solid only. Most frames make Observer free. A frame-owner *may* payway the Observer face by gating the frame's solid blocks behind a `sed:observers` collective with its own payway config sub-block at sed::9, but this is unusual and discouraged in defaults. The observer-as-creator case (rendering output videos, summaries, derivative work) is a v2 convention extension — see §6.
 
 ---
 
 ## 5. Frame-owner onboarding
 
-Five steps to add a paywall to a collective:
+Five steps to add a payway to a collective:
 
 1. **Pick or deploy a ticketing agent** — fork `pscale-commons/ticketing-agent`, configure with your products, point your domain at it, set up Stripe (or another driver). Or use someone else's deployment.
 2. **Configure the product** in the agent's YAML — `sed:` block, face, scope, duration, price, description.
-3. **Write the paywall config sub-block at sed::9** of your `sed:` collective via a one-time `bsp()` write — issuer (9.1), purchase_url (9.2), face (9.3), scope (9.4), and optionally verifier (9.5).
+3. **Write the payway config sub-block at sed::9** of your `sed:` collective via a one-time `bsp()` write — issuer (9.1), purchase_url (9.2), face (9.3), scope (9.4), and optionally verifier (9.5).
 4. **Run the verifier** — bundled with the ticketing agent, or run separately if using a third-party issuer (the reference impl ships a verifier-only mode).
 5. **Test and announce** — buy a ticket from your own agent (Stripe test card), confirm the grain lands, registration verifies, and your client unlocks write affordances.
 
@@ -224,15 +224,15 @@ No platform onboarding. No contract signing. No fees other than what your paymen
 
 ## 6. Federation guarantees
 
-These five are the protocol's social contract. Anyone reviewing changes to bsp-mcp, a paywall-aware client, or the reference ticketing agent reads these first.
+These five are the protocol's social contract. Anyone reviewing changes to bsp-mcp, a payway-aware client, or the reference ticketing agent reads these first.
 
 ### 6.1 The substrate stays neutral
 
-bsp-mcp does not know what a ticket is. From its perspective, a ticket grain is a grain like any other; the position-9 paywall config sub-block is metadata it does not interpret; verifier daemons are application code it does not run. **No PR to bsp-mcp adds the words "ticket" or "payment" to its primitives.**
+bsp-mcp does not know what a ticket is. From its perspective, a ticket grain is a grain like any other; the position-9 payway config sub-block is metadata it does not interpret; verifier daemons are application code it does not run. **No PR to bsp-mcp adds the words "ticket" or "payment" to its primitives.**
 
 ### 6.2 The client stays neutral
 
-A paywall-aware client implements §4.1 generically and never references specific issuers in code. **No PR to a client adds an issuer allowlist, ranking, badge, or other special-casing.** A bug here would centralise the system more than any single hosted service.
+A payway-aware client implements §4.1 generically and never references specific issuers in code. **No PR to a client adds an issuer allowlist, ranking, badge, or other special-casing.** A bug here would centralise the system more than any single hosted service.
 
 ### 6.3 The reference implementation stays small
 
@@ -250,8 +250,8 @@ A frame-owner who buys grains from one issuer must be able to migrate to a diffe
 
 ## 7. Reserved and deferred
 
-- **Observer-with-output as a paid role (v2).** A creative-Observer face that renders derivative output (streams, summaries, videos) is structurally a separate `sed:observers-derivative` collective with its own paywall config sub-block at sed::9. The protocol allows this today via §2.1; v1 reference build does not lit it up explicitly. v2 convention pass clarifies the face semantics — whether the canonical CADO `observer` is split, or a fifth role-name is reserved.
-- **Credit-bearing tickets (v2 via SAND).** v1 reserves `credits=N` envelope grammar (§2.2) and v1 verifiers reject grains carrying it (§2.4 rule 8). v2 couples credits to V-L-S participation faces (Character/Author/Designer ~90% creative); Observer stays time-bounded or free (~10% drawer). Frame-owners may run mixed offerings with each paywall config block specifying its model.
+- **Observer-with-output as a paid role (v2).** A creative-Observer face that renders derivative output (streams, summaries, videos) is structurally a separate `sed:observers-derivative` collective with its own payway config sub-block at sed::9. The protocol allows this today via §2.1; v1 reference build does not lit it up explicitly. v2 convention pass clarifies the face semantics — whether the canonical CADO `observer` is split, or a fifth role-name is reserved.
+- **Credit-bearing tickets (v2 via SAND).** v1 reserves `credits=N` envelope grammar (§2.2) and v1 verifiers reject grains carrying it (§2.4 rule 8). v2 couples credits to V-L-S participation faces (Character/Author/Designer ~90% creative); Observer stays time-bounded or free (~10% drawer). Frame-owners may run mixed offerings with each payway config block specifying its model.
 - **Cross-beach scope (`scope=beach:X`) (v2).** v1 verifiers reject ticket envelopes carrying `scope=beach:X` with reason `beach-scope-not-supported-yet` (§2.4 rule 4). The clean v2 resolution adds a 9.6 beach field declared by the frame-owner, against which `beach:X` tickets can be matched without a substrate-level frame-host lookup primitive. Multi-frame season passes via `frame:<prefix>-*` patterns continue to work in v1.
 - **Compromise-resistant verification.** Synthesis daemon performs an independent grain check before honouring liquid — defends against verifier compromise at O(N) per-tick cost. Specified in the `ticketing-agent` repo as Addendum A; not v1.
 - **Subscription billing.** Modellable as auto-renewing time passes; v2.

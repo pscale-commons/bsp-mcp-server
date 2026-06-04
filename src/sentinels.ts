@@ -20,9 +20,9 @@
  * the JSON, add one entry below — db.ts and server.ts both pick it up.
  *
  * `exposeAsResource: false` is set on entries whose `pscale://<name>` URI
- * is already claimed by a separate doc resource (currently only
- * protocol-paywall, whose URI serves the discursive markdown long-form
- * via src/resources/paywall.ts).
+ * is already claimed by a separate doc resource (currently payway and its
+ * legacy protocol-paywall alias, whose URIs serve the discursive markdown
+ * long-form via src/resources/payway.ts).
  */
 
 import type { Block } from './bsp.js';
@@ -36,7 +36,7 @@ import progression from './progression.json' with { type: 'json' };
 import blockConventions from './block-conventions.json' with { type: 'json' };
 import gatekeeper from './gatekeeper.json' with { type: 'json' };
 import softAgent from './soft-agent.json' with { type: 'json' };
-import protocolPaywall from './protocol-paywall.json' with { type: 'json' };
+import payway from './payway.json' with { type: 'json' };
 import ecologyRouter from './ecology-router.json' with { type: 'json' };
 import sandRider from './sand-rider.json' with { type: 'json' };
 import l3Relay from './l3-relay.json' with { type: 'json' };
@@ -110,10 +110,17 @@ export const SENTINELS: SentinelEntry[] = [
       'Soft-agent — substrate-wide canonical role-shell for the user-mediating soft-LLM. Hermitcrab pattern: cognition fluid (the LLM at each ⌘↵ turn), structure persistent (this shell). Sibling of the gatekeeper (which is the L1→L2 admission shell); this is the operating shell for already-engaged users. Branches: 1 ROLE, 2 KNOWLEDGE GATING, 3 STYLE, 4 CONTEXT, 5 FORMAT, 6 ACTIONS, 7 ACT-DON\'T-ASK, 8 HERMITCRAB DISCIPLINE, 9 metadata.',
   },
   {
-    name: 'protocol-paywall',
-    json: protocolPaywall as unknown as Block,
+    name: 'payway',
+    json: payway as unknown as Block,
     description:
-      'Protocol-paywall (JSON sentinel) — substrate-wide convention for face-bound ticket gates on sed: collectives. The walkable JSON form lives here; the discursive long-form markdown is at pscale://protocol-paywall via a separate resource loader (which currently claims the URI). Walk via bsp() for the structural form; see docs/protocol-paywall.md for the long-form narrative.',
+      'Payway (JSON sentinel) — substrate-wide convention for paying forward to contribute and experience: face-bound ticket gates on sed: collectives that open creative PARTICIPATION while leaving reading open. The walkable JSON form lives here; the long-form markdown is at pscale://payway (alias pscale://protocol-paywall) via a separate resource loader. Walk via bsp() for the structural form; see docs/payway.md for the narrative.',
+    exposeAsResource: false,
+  },
+  {
+    name: 'protocol-paywall',
+    json: payway as unknown as Block,
+    description:
+      'Alias of payway (legacy name) — kept so existing references via bsp(agent_id="pscale", block="protocol-paywall") and pscale://protocol-paywall keep resolving. Same content as payway.',
     exposeAsResource: false,
   },
   {
