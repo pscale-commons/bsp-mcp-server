@@ -107,13 +107,33 @@ the synthesis_hint is never a digit position (supernest would claim it). Deferre
 liquid locking (open-by-default; harden via lock/face later). Spine writes are NOT a
 destination here — they are the resolver's bsp() job (Phase 1).
 
-### Phase 1 — the RPG leg (Joints A + B)
+### Phase 1 — the RPG leg (Joints A + B) — DIRECTIVE LANDED 2026-06-04
 
-The medium reads the window, frames, writes each character's outcome to their OWN spine
-`witnessed:<handle>` via **bsp()** (not `pool_engage` — spines are structured, not append-
-logs). Retire `solid:beaten-drum-main` + `visible_to`; align `function:thornwood` positions
-2 and 3 to subjective. Add the **tick** (Joint B) to each beat so co-present spines
-interleave. Spine write-authority is permissive-by-convention (the room's medium writes),
+`function:thornwood` is now subjective on the live beach (verified read-back):
+- **`:1`** (soft) — unchanged; already subjective.
+- **`:2`** (medium) — rewritten: writes each subject's outcome to their OWN `witnessed:<handle>`
+  spine at earned depth (not a shared solid); no `visible_to` (per-spine scoping replaces it).
+- **`:3`** (hard) — rewritten: consolidation is the **derived/observer digest** — fold only
+  what co-present spines *agree* on into `spatial:thornwood:111` + `history:beaten-drum-main`;
+  contested perceptions stay distributed; trim spines + pool.
+- **`solid:beaten-drum-main`** — underscore marked DEPRECATED; its three beats + marker
+  preserved (surgical `_`-only write). The medium no longer writes there; the crab/hard tier
+  folds the remnants into spatial + history, then it is removed.
+
+**Two design decisions made here (react before the crab builds on them):**
+1. **Window detection = a resolution marker IN the pool** (`field 4 = 'resolution'`), not a
+   re-read of `solid:`. After resolving, the medium appends one neutral breadcrumb entry to
+   `pool:beaten-drum-main` with `field 5 = 'resolved-through:<slot>;tick:<n>'`. This IS the
+   spool-with-resolutions: a puller sees, in their since-marker slice, both unresolved
+   intentions AND resolution breadcrumbs. The breadcrumb is a coordination cursor, not canon;
+   authoritative perception lives in the spines.
+2. **Tick = a room round counter** read from the last resolution marker (`tick:n`, start 1),
+   incremented per window, stamped on every spine write of that window — the cross-spine clock
+   (Joint B) that lets co-present spines interleave.
+
+NOT yet done: the loop has not *run* under the new directive (that is the crab, Phase 3 — its
+first resolution is the end-to-end test) and the three frozen `solid:` beats are not yet
+migrated. Spine write-authority is permissive-by-convention (the room's medium writes),
 hardenable later via lock/face.
 
 ### Phase 2 — the reflexive surface (xstream)
