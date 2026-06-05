@@ -1,5 +1,15 @@
 # Subjective RPG + pool — system state and open joints
 
+> **SUPERSEDED 2026-06-05 — read [`proposals/2026-06-05-in-loop-resolution.md`](../proposals/2026-06-05-in-loop-resolution.md) first.**
+> The model below (liquid-window + crab-cron resolver + per-subject spines + tick/breadcrumb) was diagnosed as the thing that "didn't work through bsp-mcp" and was rebuilt this session into the **room-pool model**, now live:
+> - **Resolution is in-loop** — the first contributor to touch a room after a window closes resolves it; **no crab in the loop** (cron disabled; the crab survives only as an optional dispassionate resolver for empty rooms).
+> - **`pool:<room>` is OPEN** and holds **public, identifier-only event-skeletons** (the shared room reality); each **character renders their own private narrative** from a skeleton into their own history, applying only the names they know (perception-brightness, not fog-as-filter).
+> - **No tick, no breadcrumb** — timestamps order; an empty liquid slot means resolved.
+> - **Characters are shells** (history = the per-character narrative); RPG is semantics on standard blocks, not new block types.
+> - `function:thornwood` rewritten live to this; `pool:beaten-drum-main` opened. The general pool mechanism (chat / Quaker / RPG) is one stigmergic machine differing only by parameters in `function`/`frame`.
+>
+> The text below is retained as the historical record of the superseded model.
+
 **Read this before touching the RPG or the pool primitive.** It exists so a session
 *executes* the joints below rather than re-designing them. The joints are **decided,
 not open for re-design.** If you find yourself about to write a new proposal, or to
