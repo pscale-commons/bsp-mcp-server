@@ -34,6 +34,7 @@
  */
 
 import { z } from 'zod';
+import { createHash } from 'node:crypto';
 import { Block, writeAt, readAt } from '../bsp.js';
 import {
   loadBlock,
@@ -49,6 +50,26 @@ export const DEFAULT_SYNTHESIS_HINT =
   "Synthesise the contributions through your own purpose. Each visitor reads the same stream and produces their own synthesis — there is no central resolver. Preserve distinct voices. Flag tensions and convergences honestly. What you make of it is yours.";
 
 const READ_PAGE_LIMIT = 200;
+
+/**
+ * Deterministic exploding-d10 luck (rules:nomad:2), sha256-seeded so a window's
+ * roll is fixed before any resolver reads it — honest dice HANDED by the
+ * envelope, not chosen by the resolving LLM. A pure function of the seed; no
+ * synthesis, no semantic interpretation (the legitimate substrate concern is
+ * entropy, like a checksum). Mirrors nomad-bsp's daemon.
+ */
+export function deterministicLuck(seed: string): { pos: number; neg: number; luck: number } {
+  let h = createHash('sha256').update(seed).digest();
+  let i = 0;
+  const byte = (): number => {
+    if (i >= h.length) { h = createHash('sha256').update(h).digest(); i = 0; }
+    return h[i++];
+  };
+  const d10 = (): number => (byte() % 10) + 1;
+  const explode = (): number => { let total = 0, roll: number; do { roll = d10(); total += roll; } while (roll === 10); return total; };
+  const pos = explode(), neg = explode();
+  return { pos, neg, luck: pos - neg };
+}
 
 // ── Digit-path slot helpers (inlined; mirror xstream/lib/bsp-client.ts) ──
 // "digit-path" per sunstone:1.64 — sibling + subnest in lex order, distinct
@@ -524,9 +545,14 @@ export async function handlePoolEngage(
   lines.push('# Purpose');
   lines.push(purpose || '(no purpose set)');
   lines.push('');
-  lines.push(`# Synthesis hint (source: ${hintSource})`);
-  lines.push(synthesisHint);
-  lines.push('');
+  // De-dupe: for a directive pool the synthesis hint IS the underscore (source
+  // 'purpose'), already printed as Purpose — don't echo it. Only when there is
+  // no underscore (source 'default') is the hint a distinct fallback worth showing.
+  if (hintSource === 'default') {
+    lines.push('# Synthesis hint');
+    lines.push(synthesisHint);
+    lines.push('');
+  }
   if (withLiquid) {
     lines.push(`# Liquid — pending, not yet committed (${liquidSlots.length} ${liquidSlots.length === 1 ? 'author' : 'authors'})`);
     if (liquidSlots.length === 0) {
@@ -539,6 +565,18 @@ export async function handlePoolEngage(
         lines.push(`- ${who}${mine} ${when}: ${s.text || '(empty)'}`);
       }
     }
+    lines.push('');
+  }
+  // Window dice — when intentions are staged, hand the resolver's exploding-d10
+  // luck, deterministically seeded by the window so it is FIXED before the
+  // resolver reads it (honest, not LLM-chosen). The resolver (per the game's
+  // medium directive) uses these and never invents its own.
+  if (withLiquid && liquidSlots.length > 0) {
+    const stamps = liquidSlots.map(s => s.ts).filter((t): t is string => !!t).sort();
+    const seed = `${blockName}:window:${stamps[0] ?? liquidSlots[0].text.slice(0, 24)}`;
+    const { pos, neg, luck } = deterministicLuck(seed);
+    lines.push('# Window dice (for the resolver — exploding-d10 luck, rules:nomad:2)');
+    lines.push(`positive ${pos}, negative ${neg}, luck ${luck > 0 ? '+' : ''}${luck} — fixed for this window; use these, never invent dice.`);
     lines.push('');
   }
   lines.push(`# Contributions since position ${sincePosition} (count: ${contributions.length}${more_available ? ', more available' : ''})`);
