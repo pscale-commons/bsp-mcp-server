@@ -12,7 +12,7 @@ Played through bsp-mcp (Claude App / ChatGPT), the prior build didn't work: the 
 
 ## 2. The substrate pool mechanism (general — chat, Quaker, RPG)
 
-One stigmergic mechanism, **no clocks, no counters, no markers-as-state**. Three standard blocks per room:
+One stigmergic mechanism, **no clocks, no counters, no resolution-markers** (no tick, no breadcrumb — the read-cursor is a *different* marker and it stays; see "two verbs and two markers" below). Three standard blocks per room:
 
 - **`liquid:pool:<room>`** — the **open window**. One slot per author, an intention, **revisable** while the window is open. The first submission with no live window *opens* one; later submissions *join* it.
 - **`pool:<room>`** — an **open** append stream of **event-skeletons**: the room's shared, public record of what happened. *(open = any contributor can append; see §6.)*
@@ -26,7 +26,18 @@ One stigmergic mechanism, **no clocks, no counters, no markers-as-state**. Three
 
 **No clock paradox:** the only time reference is the **server timestamp every submission already carries**. "Has the window closed?" = compare *open-time + duration* against *the timestamp of the touch now landing*. Both are stamped values on the blocks — a stigmergic trace, not a tick or a poll.
 
-**`window = 0` ⇒ chat.** Instant duration: submit becomes its own pool entry at once, "resolution" is identity, "render" is read-as-is. **Quaker** = a long window, resolver = the clerk, skeleton = the minute. **RPG** = a game-default window, resolver = first-after-close + dice, skeleton = the public outcome. *Same machine; the differences are parameters in `function`/`frame`, no code.*
+**The two verbs and the two markers — read this; it is the distinction that tangled a fresh session.**
+
+*Two verbs, both real and kept (the honest split, not a bug):*
+- **`contribution`** → appends to the **pool**. The basic spool's append — the whole of basic chat. (Informally, "commit.")
+- **`submit`** → stages to **liquid**, the one-slot revisable "about to say" mirror. The windowed/reflexive layer (the RPG gathering a window; xstream's typing preview). It does *not* write the pool.
+- "Players only submit" is the *RPG / directive-pool* experience — the directive moves the submitted intention into the pool at resolution. A convention on top, never the raw primitive; a directive-less pool appends with `contribution`.
+
+*Two markers — different things; only the second was ever removed:*
+- **The read-cursor** (`since_position` in, `marker_new` out, caller-managed) — how a reader pulls "what's new since I last looked." The spool's pull mechanism. **Kept; not old-model.**
+- **The resolution-marker** (the `tick`/breadcrumb the old crab wrote into the pool to say "resolved at tick n") — **removed.** When this doc or the §5 directive says "no marker / no markers-as-state," it means *this* one. Timestamps order; an empty liquid slot signals resolved.
+
+**`window = 0` ⇒ chat.** No window, no liquid: a `contribution` is itself the pool entry, "resolution" is identity, "render" is read-as-is. **Quaker** = a long window, resolver = the clerk, skeleton = the minute. **RPG** = a game-default window, resolver = first-after-close + dice, skeleton = the public outcome. *Same machine; the differences are parameters in `function`/`frame`, no code.*
 
 ## 3. Perception-brightness (not fog-of-war)
 

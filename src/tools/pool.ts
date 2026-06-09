@@ -233,8 +233,23 @@ export function collectContributions(
  * underscore. (Was: a 9.1 → _ → default chain; 9.1 is retired as incompatible with
  * the supernest accumulator — see proposals/2026-06-03-supernest-…, block-conventions:4.2.)
  */
+/**
+ * Floor-aware read of a block's underscore: walk the root underscore chain down
+ * to its terminal string. After a supernest (sunstone:1.63) the block's top `_`
+ * is the wrapped old block (an object), and the real floor value — the purpose /
+ * directive — sits one level deeper per supernest. A naive `block._` read misses
+ * it (the bug where the directive "vanishes" once a pool passes nine); this walks
+ * to the floor, mirroring collectContributions' floor-awareness so the purpose
+ * survives any amount of floor growth.
+ */
+export function floorUnderscore(block: Block): string {
+  let u: any = (block as any)?._;
+  while (u && typeof u === 'object' && !Array.isArray(u)) u = u._;
+  return typeof u === 'string' ? u : '';
+}
+
 export function extractSynthesisHint(block: Block): { hint: string; source: 'purpose' | 'default' } {
-  const purpose = (block as any)._;
+  const purpose = floorUnderscore(block);
   if (typeof purpose === 'string' && purpose.trim() !== '') {
     return { hint: purpose, source: 'purpose' };
   }
@@ -503,7 +518,7 @@ export async function handlePoolEngage(
   }
 
   // ── Build envelope ──
-  const purpose = typeof (row.block as any)._ === 'string' ? (row.block as any)._ : '';
+  const purpose = floorUnderscore(row.block);
   const { hint: synthesisHint, source: hintSource } = extractSynthesisHint(row.block);
   const { contributions, more_available } = collectContributions(row.block, sincePosition);
 

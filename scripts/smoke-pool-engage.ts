@@ -13,6 +13,7 @@ import {
   findAuthorSlot,
   collectContributions,
   extractSynthesisHint,
+  floorUnderscore,
   DEFAULT_SYNTHESIS_HINT,
 } from '../src/tools/pool.js';
 import type { Block } from '../src/bsp.js';
@@ -153,6 +154,18 @@ assert(d.hint === DEFAULT_SYNTHESIS_HINT, 'hint = default constant');
 const emptyU: Block = { _: '   ' };
 const eu = extractSynthesisHint(emptyU);
 assert(eu.source === 'default', 'blank underscore → default');
+
+console.log('\n=== floorUnderscore — purpose survives supernest (the "directive vanishes past nine" bug) ===');
+// After a supernest the top `_` is the WRAPPED old block; the purpose descends to
+// the floor (_._, then _._._...). A floor-aware read must still find it.
+assert(floorUnderscore({ _: 'flat' }) === 'flat', 'no supernest → top underscore string');
+const once: Block = { _: { _: 'the purpose', '1': 'c1', '9': 'c9' }, '1': 'c10' };
+assert(floorUnderscore(once) === 'the purpose', 'supernest x1 → walks to floor string');
+const o = extractSynthesisHint(once);
+assert(o.source === 'purpose' && o.hint === 'the purpose', 'supernest x1 → hint still sourced from purpose');
+const twice: Block = { _: { _: { _: 'the purpose' } } };
+assert(floorUnderscore(twice) === 'the purpose', 'supernest x2 → walks all the way to the floor');
+assert(floorUnderscore({}) === '', 'no underscore → empty string (falls to default)');
 
 console.log('\n=== summary ===');
 console.log(`  pass: ${pass}`);
