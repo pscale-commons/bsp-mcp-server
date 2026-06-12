@@ -87,13 +87,14 @@ Nothing here is in progress. Each is a single decision that, once taken, becomes
 
 | Item | State |
 |---|---|
-| Gate 1 — window-open trace | **built**: PR #80 (smoke 56/56, tsc clean); merge → Railway auto-deploy |
-| Gate 2 — duration home | **done on rig** (frame-spec 9.2, 90s); reaches table with migration |
-| Gate 3 — directive nits | **staged** in migration (both surfaces) |
-| Gate 4 — uniform shells | **proven on rig**; table port **staged, archive-first**, awaiting David's explicit go (it overwrites live-play blocks — permission-gated) |
-| Gate 5 — frame-spec | **staged**: rig v0.2 ports to table in the same migration |
-| Migration script | `/tmp/migrate-apex-thornwood.mjs` — archives every overwritten original to `archive:*` first; holds the GM secret, never commit to any repo |
-| nomad-bsp PR #3 (cron disable + solid drop) | **merged** (David, 2026-06-10) |
-| Beach test-debris sweep | **done** 2026-06-10 — 14 blocks force-wiped (12 timestamped sed: artifacts, grain:aaaa…, liquid:1); `test-spatial-floor3` kept (bsp-test fixture); `probe-open`, `beach-log:waer` kept pending classification |
-| happyseaurchin-home | tidy commit made locally (CLAUDE.md corrections; the three doc deletions landed as-is; worktrees gitignored); push permission-gated — David: `git -C ~/Projects/happyseaurchin push origin main` |
-| fable-5 working set | PR #79; this update rides it |
+| Gate 1 — window-open trace | **DEPLOYED** — PR #80 merged; verified live on the router 2026-06-12 (revise held dice at −6, stamp unmoved; withdraw + resubmit opened a new window, new stamp, new dice) |
+| Gate 2 — duration home | **DONE on the table** — frame-spec 9.2 (90s, the Designer's dial); `function:thornwood:2` cites it |
+| Gate 3 — directive nits | **DONE** — both surfaces carry identical nit-edited directives |
+| Gate 4 — uniform shells | **DONE on the table** — knows:cyrus/anya/fenn live; witnessed: spines floor-1 (cyrus 6 beats, anya 4, fenn 2); name-asymmetry preserved; originals archived at `archive:witnessed:*:2026-06-10` |
+| Gate 5 — frame-spec | **DONE** — rig v0.2-subjective live on the table; stale original at `archive:frame-spec:thornwood:2026-06-10` |
+| Table/rig pointer | lighthouse 5.43 records it on-substrate |
+| **Phase I remaining** | **the exit test only** — David plays: multi-actor beat + the four-face pass + the xstream glance |
+| nomad-bsp PR #3 (cron disable + solid drop) | merged (David, 2026-06-10) |
+| Beach test-debris sweep | done — 14 blocks force-wiped; `test-spatial-floor3` kept (bsp-test fixture); `probe-open`, `beach-log:waer` kept pending classification |
+| happyseaurchin-home | tidy commit pushed to main (2026-06-12) |
+| fable-5 working set | merged (#79); gate code merged (#80) |
