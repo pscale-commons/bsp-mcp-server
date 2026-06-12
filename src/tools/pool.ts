@@ -256,6 +256,40 @@ export function extractSynthesisHint(block: Block): { hint: string; source: 'pur
   return { hint: DEFAULT_SYNTHESIS_HINT, source: 'default' };
 }
 
+// ── Window-open trace (honest dice + honest clock) ──
+
+const WINDOW_STAMP_RE = /\bWindow opened (\S+?)\.?\s*$/;
+
+/**
+ * Read the window's open moment from the liquid buffer's underscore (floor-aware,
+ * so the stamp survives a supernest). The stamp is written ONCE, when the first
+ * non-empty intention lands on an empty buffer — the window's stigmergic trace.
+ * Returns null on legacy buffers that predate the stamp.
+ */
+export function windowOpenTs(liquidBlock: Block | null): string | null {
+  if (!liquidBlock || typeof liquidBlock !== 'object') return null;
+  const m = floorUnderscore(liquidBlock).match(WINDOW_STAMP_RE);
+  return m ? m[1] : null;
+}
+
+/**
+ * The window's dice seed. Stamped buffers seed from the recorded open moment —
+ * immutable for the window's whole life, so a withdraw or revise of the earliest
+ * slot can neither reroll the dice nor move the clock. Legacy buffers (no stamp)
+ * fall back to the earliest live timestamp — the mutable inference this trace
+ * supersedes; they heal on their next window, which gets stamped at opening.
+ */
+export function windowSeed(
+  blockName: string,
+  liquidBlock: Block | null,
+  liveSlots: PoolContribution[],
+): { seed: string; openTs: string | null } {
+  const openTs = windowOpenTs(liquidBlock);
+  if (openTs) return { seed: `${blockName}:window:${openTs}`, openTs };
+  const stamps = liveSlots.map(s => s.ts).filter((t): t is string => !!t).sort();
+  return { seed: `${blockName}:window:${stamps[0] ?? liveSlots[0]?.text.slice(0, 24) ?? 'empty'}`, openTs: null };
+}
+
 // ── Liquid staging (submit) ──
 
 /**
@@ -278,23 +312,37 @@ async function stageLiquid(
 ): Promise<string> {
   const lrow = await loadBlock(url, liquidName);
   const exists = !!lrow && typeof lrow.block === 'object' && lrow.block !== null;
-  const lblock: Block = exists
-    ? JSON.parse(JSON.stringify(lrow!.block))
-    : ({ _: `Liquid pre-commit buffer for ${liquidName} (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit.` } as Block);
+  const baseDesc = `Liquid pre-commit buffer for ${liquidName} (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit.`;
 
   const slotObj: Record<string, any> = { _: text, '1': agentId, '2': '', '3': new Date().toISOString() };
   if (face) slotObj['4'] = face;
 
+  const liveCount = exists
+    ? collectContributions(lrow!.block, 0).contributions.filter(c => c.text !== '').length
+    : 0;
+  const opening = text.trim() !== '' && liveCount === 0;
+
+  if (!exists || opening) {
+    // The window OPENS (or the buffer is born): rebuild fresh — prior tombstones
+    // swept, the open moment stamped at the underscore as the window's stigmergic
+    // trace. The dice seed and the closed-check both read this stamp; a withdraw
+    // or revise cannot move it. (Two simultaneous openers can race this whole-block
+    // write — last wins, the loser re-stages on their next submit; cooperative-play
+    // acceptable, revisit if observed.)
+    const stamp = text.trim() !== '' ? ` Window opened ${slotObj['3']}.` : '';
+    const fresh: Block = { _: `${baseDesc}${stamp}` } as Block;
+    (fresh as Record<string, any>)['1'] = slotObj;
+    await saveBlock(url, liquidName, fresh, { spindle: '', secret });
+    return '1';
+  }
+
+  // Window already live (or a withdraw): surgical — only this author's slot
+  // changes; peers' slots and the stamp at the underscore stay fixed for the
+  // window's whole life.
+  const lblock: Block = JSON.parse(JSON.stringify(lrow!.block));
   const mySlot = findAuthorSlot(lblock, agentId) ?? findNextSlot(lblock);
   writeAt(lblock, mySlot, slotObj);
-
-  if (exists) {
-    // Surgical: write only this author's slot, leaving peers' slots intact.
-    await saveBlock(url, liquidName, lblock, { spindle: mySlot, pscale_attention: -1, secret });
-  } else {
-    // First write creates the buffer (whole-block, seeds the floor underscore).
-    await saveBlock(url, liquidName, lblock, { spindle: '', secret });
-  }
+  await saveBlock(url, liquidName, lblock, { spindle: mySlot, pscale_attention: -1, secret });
   return mySlot;
 }
 
@@ -529,9 +577,11 @@ export async function handlePoolEngage(
   // Liquid mirror — co-present pending intentions, not yet committed. Fetched
   // when you submitted (you want to see the room) or when with_liquid is set.
   let liquidSlots: PoolContribution[] = [];
+  let liquidBlock: Block | null = null;
   if (withLiquid) {
     const lrow = await loadBlock(pool_url, liquidName);
     if (lrow && typeof lrow.block === 'object' && lrow.block !== null) {
+      liquidBlock = lrow.block;
       liquidSlots = collectContributions(lrow.block, 0).contributions;
     }
   }
@@ -587,11 +637,13 @@ export async function handlePoolEngage(
   // resolver reads it (honest, not LLM-chosen). The resolver (per the game's
   // medium directive) uses these and never invents its own.
   if (withLiquid && liquidSlots.length > 0) {
-    const stamps = liquidSlots.map(s => s.ts).filter((t): t is string => !!t).sort();
-    const seed = `${blockName}:window:${stamps[0] ?? liquidSlots[0].text.slice(0, 24)}`;
+    const { seed, openTs } = windowSeed(blockName, liquidBlock, liquidSlots);
     const { pos, neg, luck } = deterministicLuck(seed);
     lines.push('# Window dice (for the resolver — exploding-d10 luck, rules:nomad:2)');
     lines.push(`positive ${pos}, negative ${neg}, luck ${luck > 0 ? '+' : ''}${luck} — fixed for this window; use these, never invent dice.`);
+    if (openTs) {
+      lines.push(`window opened ${openTs} — the stamp does not move; closed once the room's duration has passed.`);
+    }
     lines.push('');
   }
   lines.push(`# Contributions since position ${sincePosition} (count: ${contributions.length}${more_available ? ', more available' : ''})`);
