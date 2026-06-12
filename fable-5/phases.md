@@ -12,13 +12,15 @@ The anti-fiddle rule during a phase test: observations made mid-play go to the s
 
 **The system:** the room-pool RPG played end-to-end through ordinary LLM apps — multi-actor, in-loop resolution, no mid-play edits to anything.
 
+**Where (decision 2026-06-10):** the apex — `beach.happyseaurchin.com` — is the **TABLE**: the default pool_url, where the friends' story lives. The sub-beach — `thornwood.beach.happyseaurchin.com` — is the **RIG**: shapes are proven there, then graduate to the table. The June 5–6 story stays on the table; the rig's proven architecture (knows: facets, floor-1 spines, frame-spec v0.2) ports onto it. Reversible by pointing the same migration the other way.
+
 **Gate** (each item is crossed by the play loop itself):
 
-1. **Window-open trace + honest dice** (server — `src/tools/pool.ts` + smoke cases). The window's open moment becomes a *recorded trace* (stamped at the liquid buffer's underscore when a window opens) instead of an *inference from mutable slots*. Both the dice seed and the window-closed check read it. One mechanism closes two holes: dice-shopping by withdraw/revise (observed live 2026-06-06: +1 → −1 → −4) and clock-shift by the same move. The fix is more stigmergy, not more machinery. Deploys itself on merge.
-2. **Window-duration home** — `function:thornwood` gains digit 4: the room's default window duration. The resolver aperture (`:2`) reads it instead of improvising.
-3. **Directive nits** (same GM edit session as 2): the resolver clears others' slots with an empty *string*, not `{_:''}`; the soft appends a newly-learned name to the character's knowledge index the moment it is earned.
-4. **Uniform character shells**: `witnessed:<handle>` becomes a pure floor-1 beat spine; the knowledge index moves to a `knows:<handle>` facet ({1: people, 2: places}); migrate all live characters to the one shape; one-line edit to `function:thornwood:1` to read names from the facet. (This is what makes write-my-history work identically for every character, every turn.)
-5. **`frame-spec:thornwood` defused** — a one-write banner marking it superseded by `function:thornwood` + the in-loop model, so no future session rebuilds the wrong model from it. The full rewrite belongs to Phase II, where its real consumer arrives.
+1. **Window-open trace + honest dice** (server — `src/tools/pool.ts` + smoke cases). The window's open moment becomes a *recorded trace* (stamped at the liquid buffer's underscore when a window opens) instead of an *inference from mutable slots*. Both the dice seed and the window-closed check read it. One mechanism closes two holes: dice-shopping by withdraw/revise (observed live 2026-06-06: +1 → −1 → −4) and clock-shift by the same move. The fix is more stigmergy, not more machinery. **BUILT — PR #80** (smoke 46 → 56, tsc clean); Railway deploys on merge.
+2. **Window-duration home** — **DONE on the rig**: `frame-spec:thornwood` 9.2 (90 seconds; the Designer's dial). The nit-edited `function:thornwood:2` names it as the duration's source. Reaches the table with the migration.
+3. **Directive nits** — the resolver clears slots with an empty *string* (never an `{_:''}` object); the soft appends a newly-learned name to `knows:<you>` the moment it is earned. **STAGED** in the migration (both surfaces, identical directives).
+4. **Uniform character shells**: `witnessed:<handle>` = pure floor-1 beat spine; knowledge index at the `knows:<handle>` facet ({1: people, 2: places}). **PROVEN on the rig** by the parallel session; the migration ports it to the table with the apex story's knowledge folded in (cyrus can name Anya and Maren; anya still cannot name cyrus — the asymmetry preserved exactly).
+5. **`frame-spec:thornwood` upgraded** — the rig already carries the v0.2-subjective rewrite (CADO×SMH read-map; duration at 9.2); the migration ports it to the table whole, superseding the two-models-stale apex block. (Outdid the planned banner.)
 
 **Exit test — the multi-actor beat.** Two characters co-present, one window, one skeleton, two divergent renders. Pass criteria, all of them, in one live session through ordinary LLM apps:
 - dice unchanged under a withdraw and a revise of the earliest intention;
@@ -26,6 +28,14 @@ The anti-fiddle rule during a phase test: observations made mid-play go to the s
 - perception-brightness holds — neither render contains a name that character has not earned;
 - each character's beat appends cleanly to their floor-1 spine;
 - no block, directive, or code is edited between the first submit and the second render.
+
+**And the four-face pass** (David wearing each CADO face, same or adjacent sessions — this is what "complete in a systemic sense" means here):
+- **Character** — play a beat: the multi-actor test above is this face's proof.
+- **Author** — extend the stage: add a fixture or place detail to `spatial:thornwood`, and see it rendered at earned depth on a later perceive.
+- **Designer** — change a rule: tune the window duration at `frame-spec:thornwood` 9.2, and see the next window honour the new value.
+- **Observer** — produce output: read two `witnessed:` spines and append a correlation narrative (overlap and divergence, never a master truth) to the beach — `history:beaten-drum-main`.
+
+**Closing observation** (the Phase II bridge, zero work): open xstream against the table and note which of the four faces' traces are visible there.
 
 **On exit:** record the result at the beach (a history entry on the room), then open Phase II.
 
@@ -67,8 +77,9 @@ Nothing here is in progress. Each is a single decision that, once taken, becomes
 - v2 freeze tag + directory Stage 2: recommended trigger — after Phase I exit proves the wire under real multi-actor play. The fetch-bridge raised the stakes: arbitrary clients bind to the wire, so the tag is the compatibility promise.
 - Sentinel mirroring to a beach (orientation without bsp-mcp): decide only when a real client needs it.
 - Docs-to-substrate migration: this directory retires file-by-file into blocks once Phase I/II settle the conventions being documented.
-- happyseaurchin-home local uncommitted changes (modified CLAUDE.md, deleted hyperbolic-trilogy docs 57/66/67): David restores or commits — not an agent call.
 - In-browser crypto parity (Argon2id in WASM) for MCP-less agents wanting keys/gray: needed only when such an agent exists.
+- Atomic window-open: two simultaneous openers race the fresh-buffer rebuild (last wins; the loser re-stages on their next submit, visibly absent from the mirror). Cooperative-play acceptable; revisit only if observed at the table.
+- Rig reseed cadence: when/how the sub-beach resets from `packs/thornwood` after table graduations — operator's call; cartridge harness already proven.
 
 ---
 
@@ -76,8 +87,13 @@ Nothing here is in progress. Each is a single decision that, once taken, becomes
 
 | Item | State |
 |---|---|
-| Phase I gate 1-5 | not started (held while David's parallel RPG session finishes; B-items touch the same live blocks) |
+| Gate 1 — window-open trace | **built**: PR #80 (smoke 56/56, tsc clean); merge → Railway auto-deploy |
+| Gate 2 — duration home | **done on rig** (frame-spec 9.2, 90s); reaches table with migration |
+| Gate 3 — directive nits | **staged** in migration (both surfaces) |
+| Gate 4 — uniform shells | **proven on rig**; table port **staged, archive-first**, awaiting David's explicit go (it overwrites live-play blocks — permission-gated) |
+| Gate 5 — frame-spec | **staged**: rig v0.2 ports to table in the same migration |
+| Migration script | `/tmp/migrate-apex-thornwood.mjs` — archives every overwritten original to `archive:*` first; holds the GM secret, never commit to any repo |
 | nomad-bsp PR #3 (cron disable + solid drop) | **merged** (David, 2026-06-10) |
 | Beach test-debris sweep | **done** 2026-06-10 — 14 blocks force-wiped (12 timestamped sed: artifacts, grain:aaaa…, liquid:1); `test-spatial-floor3` kept (bsp-test fixture); `probe-open`, `beach-log:waer` kept pending classification |
-| happyseaurchin-home sync | up to date; local uncommitted changes surfaced to David |
-| fable-5 working set | committed this branch |
+| happyseaurchin-home | tidy commit made locally (CLAUDE.md corrections; the three doc deletions landed as-is; worktrees gitignored); push permission-gated — David: `git -C ~/Projects/happyseaurchin push origin main` |
+| fable-5 working set | PR #79; this update rides it |
