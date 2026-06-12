@@ -80,6 +80,8 @@ Nothing here is in progress. Each is a single decision that, once taken, becomes
 - In-browser crypto parity (Argon2id in WASM) for MCP-less agents wanting keys/gray: needed only when such an agent exists.
 - Atomic window-open: two simultaneous openers race the fresh-buffer rebuild (last wins; the loser re-stages on their next submit, visibly absent from the mirror). Cooperative-play acceptable; revisit only if observed at the table.
 - Rig reseed cadence: when/how the sub-beach resets from `packs/thornwood` after table graduations — operator's call; cartridge harness already proven.
+- Payway activation — the campaign world (see the apex `worlds` block) is the first real run: found the cast collective with ticket config at its position 9, issue via `ticketing-agent`, verify. Reference build e2e-tested 2026-06-04; never yet operator-run.
+- Worlds minting — daily-demo (cron reset), campaign (payway), puzzler-1, personal sandpits: each is one Vercel domain-add + pack-seed once its design is settled. Plan lives at the apex `worlds` block; pattern at block-conventions 4.8.
 
 ---
 
