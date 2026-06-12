@@ -14,6 +14,8 @@ import {
   collectContributions,
   extractSynthesisHint,
   floorUnderscore,
+  windowOpenTs,
+  windowSeed,
   DEFAULT_SYNTHESIS_HINT,
 } from '../src/tools/pool.js';
 import type { Block } from '../src/bsp.js';
@@ -166,6 +168,55 @@ assert(o.source === 'purpose' && o.hint === 'the purpose', 'supernest x1 → hin
 const twice: Block = { _: { _: { _: 'the purpose' } } };
 assert(floorUnderscore(twice) === 'the purpose', 'supernest x2 → walks all the way to the floor');
 assert(floorUnderscore({}) === '', 'no underscore → empty string (falls to default)');
+
+console.log('\n=== window-open trace — honest dice + honest clock (the stamp does not move) ===');
+const stamped: Block = {
+  _: 'Liquid pre-commit buffer for liquid:pool:room (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit. Window opened 2026-06-10T12:00:00.000Z.',
+  '1': { _: 'first intention', '1': 'alice', '3': '2026-06-10T12:00:00.000Z' },
+  '2': { _: 'second intention', '1': 'bob', '3': '2026-06-10T12:00:30.000Z' },
+};
+assert(windowOpenTs(stamped) === '2026-06-10T12:00:00.000Z', 'stamp parsed from the underscore');
+const liveStamped = collectContributions(stamped, 0).contributions;
+const s1 = windowSeed('pool:room', stamped, liveStamped);
+assert(s1.seed === 'pool:room:window:2026-06-10T12:00:00.000Z', 'seed derives from the stamp');
+assert(s1.openTs === '2026-06-10T12:00:00.000Z', 'openTs handed to the envelope');
+
+// Withdraw the earliest: alice's slot becomes a tombstone with a NEW timestamp;
+// the stamp — and therefore the seed — does not move. Dice cannot be shopped.
+const afterWithdraw: Block = JSON.parse(JSON.stringify(stamped));
+(afterWithdraw as Record<string, any>)['1'] = { _: '', '1': 'alice', '3': '2026-06-10T12:05:00.000Z' };
+const liveWithdrawn = collectContributions(afterWithdraw, 0).contributions;
+assert(liveWithdrawn.length === 1, 'withdrawn slot drops from the live set');
+assert(windowSeed('pool:room', afterWithdraw, liveWithdrawn).seed === s1.seed, 'withdraw-earliest: seed unchanged');
+
+// Revise the earliest: fresh timestamp on the slot; stamped seed still unchanged.
+const afterRevise: Block = JSON.parse(JSON.stringify(stamped));
+(afterRevise as Record<string, any>)['1'] = { _: 'first intention, sharpened', '1': 'alice', '3': '2026-06-10T12:06:00.000Z' };
+assert(
+  windowSeed('pool:room', afterRevise, collectContributions(afterRevise, 0).contributions).seed === s1.seed,
+  'revise-earliest: seed unchanged',
+);
+
+// Legacy buffer (no stamp): falls back to the earliest live timestamp — which IS
+// movable. This is the hole the stamp closes; legacy windows heal at next opening.
+const legacy: Block = {
+  _: 'Liquid pre-commit buffer (block-conventions:4.5).',
+  '1': { _: 'a', '1': 'alice', '3': '2026-06-10T12:00:00.000Z' },
+  '2': { _: 'b', '1': 'bob', '3': '2026-06-10T12:00:30.000Z' },
+};
+assert(windowOpenTs(legacy) === null, 'no stamp on a legacy buffer');
+const l1 = windowSeed('pool:room', legacy, collectContributions(legacy, 0).contributions);
+assert(l1.seed === 'pool:room:window:2026-06-10T12:00:00.000Z' && l1.openTs === null, 'legacy fallback: earliest live ts, no openTs');
+const legacyWithdrawn: Block = JSON.parse(JSON.stringify(legacy));
+(legacyWithdrawn as Record<string, any>)['1'] = { _: '', '1': 'alice', '3': '2026-06-10T12:05:00.000Z' };
+assert(
+  windowSeed('pool:room', legacyWithdrawn, collectContributions(legacyWithdrawn, 0).contributions).seed !== l1.seed,
+  'legacy fallback moves on withdraw — the hole the stamp closes',
+);
+
+// A supernested liquid still yields its stamp (floor-aware read).
+const superedLiquid: Block = { _: { _: 'Buffer. Window opened 2026-06-10T12:00:00.000Z.', '1': 'old entry' } } as unknown as Block;
+assert(windowOpenTs(superedLiquid) === '2026-06-10T12:00:00.000Z', 'stamp read survives supernest');
 
 console.log('\n=== summary ===');
 console.log(`  pass: ${pass}`);
