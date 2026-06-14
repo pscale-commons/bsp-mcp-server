@@ -256,6 +256,58 @@ export function extractSynthesisHint(block: Block): { hint: string; source: 'pur
   return { hint: DEFAULT_SYNTHESIS_HINT, source: 'default' };
 }
 
+// ── Directive delivery — the envelope carries the Designer's rules ──
+// A directive pool points its underscore at an external directive block (this
+// file's header; docs/protocol-block-references.md §5-6 — "wiring lives in DATA
+// editable via bsp, not code"). The Designer (CADO) authors the directive block
+// (e.g. function:thornwood) via bsp(); the envelope DELIVERS it inline so the
+// soft/character LLM has the rules in-context every turn — instead of a pointer
+// it skips. The resolving read is the beach's, INSIDE the existing pool_engage
+// response: no extra tool call for the calling LLM. An ordinary prose underscore
+// (chat / Quaker pools) is not a reference and falls through unchanged.
+
+/** True when the pool's floor-underscore is a block reference (single token, no
+ *  whitespace, qualified with ':') naming the room's operating directive —
+ *  "function:thornwood", or "function:thornwood/1" for one aperture. */
+export function isDirectiveRef(underscore: string): boolean {
+  const s = underscore.trim();
+  return s.length > 0 && !/\s/.test(s) && s.includes(':');
+}
+
+/** Render a directive block (or one aperture node) as readable text. */
+export function renderDirective(node: any): string {
+  if (typeof node === 'string') return node;
+  if (typeof node !== 'object' || node === null) return '';
+  const parts: string[] = [];
+  const head = floorUnderscore(node as Block);
+  if (head) parts.push(head);
+  for (let d = 1; d <= 9; d++) {
+    const v = node[String(d)];
+    if (typeof v === 'string') parts.push(`(${d}) ${v}`);
+    else if (v && typeof v === 'object') {
+      const s = floorUnderscore(v as Block);
+      if (s) parts.push(`(${d}) ${s}`);
+    }
+  }
+  return parts.join('\n\n');
+}
+
+/** Resolve a directive reference against the SAME beach and render it. The '/'
+ *  form selects one aperture (function:thornwood/1); without it the whole block
+ *  is delivered. Returns null on any failure so a missing directive falls back
+ *  to the plain purpose and never breaks a read. */
+export async function resolveDirective(poolUrl: string, ref: string): Promise<string | null> {
+  try {
+    const [blk, sp] = ref.trim().split('/', 2);
+    const drow = await loadBlock(poolUrl, blk);
+    if (!drow || typeof drow.block !== 'object' || drow.block === null) return null;
+    const node = sp ? readAt(drow.block as Block, sp) : drow.block;
+    return renderDirective(node) || null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Window-open trace (honest dice + honest clock) ──
 
 const WINDOW_STAMP_RE = /\bWindow opened (\S+?)\.?\s*$/;
@@ -582,6 +634,9 @@ export async function handlePoolEngage(
 
   // ── Build envelope ──
   const purpose = floorUnderscore(row.block);
+  // If the pool points its underscore at a directive block, deliver that block
+  // inline (the read is the beach's — no extra tool call for the caller).
+  const directiveText = isDirectiveRef(purpose) ? await resolveDirective(pool_url, purpose) : null;
   const { hint: synthesisHint, source: hintSource } = extractSynthesisHint(row.block);
   const { contributions, more_available } = collectContributions(row.block, sincePosition);
 
@@ -622,9 +677,15 @@ export async function handlePoolEngage(
     lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}`);
     lines.push('');
   }
-  lines.push('# Purpose');
-  lines.push(purpose || '(no purpose set)');
-  lines.push('');
+  if (directiveText) {
+    lines.push("# Operating directive — the room's rules, authored by the designer; READ AND FOLLOW THIS EVERY TURN, do not merely acknowledge it");
+    lines.push(directiveText);
+    lines.push('');
+  } else {
+    lines.push('# Purpose');
+    lines.push(purpose || '(no purpose set)');
+    lines.push('');
+  }
   // De-dupe: for a directive pool the synthesis hint IS the underscore (source
   // 'purpose'), already printed as Purpose — don't echo it. Only when there is
   // no underscore (source 'default') is the hint a distinct fallback worth showing.
