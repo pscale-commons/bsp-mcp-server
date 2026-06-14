@@ -495,7 +495,8 @@ export async function appendToBeach(
   name: string,
   entry: Block,
   secret?: string,
-): Promise<{ slot?: string; supernested?: boolean; floor?: number }> {
+  resolveWindow?: string,
+): Promise<{ slot?: string; supernested?: boolean; floor?: number; alreadyResolved?: boolean; resolvedBy?: string | null; window?: string }> {
   const t = translateAddress(ownerId, name);
   if (isSentinelOwner(t.agent_id)) {
     throw new Error(`"${t.agent_id}" is a read-only sentinel; cannot append.`);
@@ -507,6 +508,10 @@ export async function appendToBeach(
   const url = beachEndpoint(origin, t.block);
   const body: Record<string, any> = { append: true, content: entry };
   if (secret !== undefined) body.secret = secret;
+  // RESOLVER-ONLY: tag this append as a window's resolution so the beach enforces
+  // single-resolution (atomic SET-NX). A 409 window_already_resolved comes back as
+  // a discriminated result below — another resolver claimed the window first.
+  if (resolveWindow !== undefined) body.resolve_window = resolveWindow;
   let res: Response;
   try {
     res = await fetchWithTimeout(url, {
@@ -518,16 +523,18 @@ export async function appendToBeach(
     throw new Error(`Beach append failed (${url}): ${e?.message ?? e}`);
   }
   if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    let parsed: any = null;
+    try { parsed = JSON.parse(txt); } catch { /* not JSON */ }
+    // 409 window_already_resolved is NOT an error — it's the single-resolution
+    // claim doing its job (another resolver got this window first). Surface it as
+    // a discriminated result so the caller stands the resolver down, not throws.
+    if (res.status === 409 && parsed?.code === 'window_already_resolved') {
+      return { alreadyResolved: true, resolvedBy: parsed.resolved_by ?? null, window: parsed.window };
+    }
     let errMsg = `Beach append rejected (${res.status} ${res.statusText})`;
-    try {
-      const txt = await res.text();
-      try {
-        const parsed = JSON.parse(txt);
-        if (parsed?.error) errMsg = `Beach append rejected: ${parsed.error}`;
-      } catch {
-        if (txt) errMsg += ` — ${txt.slice(0, 200)}`;
-      }
-    } catch { /* ignore body-read error */ }
+    if (parsed?.error) errMsg = `Beach append rejected: ${parsed.error}`;
+    else if (txt) errMsg += ` — ${txt.slice(0, 200)}`;
     throw new Error(errMsg);
   }
   try {

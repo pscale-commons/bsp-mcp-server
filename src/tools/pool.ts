@@ -370,6 +370,10 @@ export const poolEngageParamsSchema = {
     .string()
     .optional()
     .describe("Optional, applies to `contribution`. Where the commit lands: 'pool' (default — the shared spool everyone pulls) or a block name such as 'solid:<name>' for a shared committed artifact. The deposit is a dumb atomic append; the primitive never synthesises. This is the objective dial. Structured per-subject spine writes (the RPG subjective case) are the resolver's bsp() job, NOT this param — point destination only at accumulator-shaped blocks."),
+  resolves_window: z
+    .string()
+    .optional()
+    .describe("RESOLVER-ONLY (function:thornwood:2). When committing a window's resolution event-skeleton, pass the window's open-stamp — the 'window opened <ts>' value handed back in this envelope. The beach admits the FIRST resolver of that window and rejects every other with a stand-down (single-resolution enforced atomically at the store, not by convention — two LLMs can both judge a window closed and both try to resolve). Omit for ordinary contributions / chat."),
   with_liquid: z
     .boolean()
     .optional()
@@ -410,6 +414,7 @@ export type PoolEngageParams = {
   secret?: string;
   purpose?: string;
   synthesis_hint?: string;
+  resolves_window?: string;
 };
 
 // ── Handler ──
@@ -544,11 +549,21 @@ export async function handlePoolEngage(
       }
     }
 
-    let ack: { slot?: string; supernested?: boolean; floor?: number };
+    let ack: { slot?: string; supernested?: boolean; floor?: number; alreadyResolved?: boolean; resolvedBy?: string | null };
     try {
-      ack = await appendToBeach(pool_url, destBlock, entry as Block, secret);
+      ack = await appendToBeach(pool_url, destBlock, entry as Block, secret, params.resolves_window);
     } catch (e: any) {
       return { content: [{ type: 'text', text: `Pool commit rejected by beach: ${e?.message ?? String(e)}` }] };
+    }
+    if (ack.alreadyResolved) {
+      // The single-resolution claim refused this write — another resolver got the
+      // window first. Not an error: stand down, do not write a second outcome.
+      return {
+        content: [{
+          type: 'text',
+          text: `window already resolved by ${ack.resolvedBy ?? 'another player'} — stand down: do NOT write a second outcome. Re-read the pool since your marker and perceive the resolution that now exists.`,
+        }],
+      };
     }
     postedPosition = ack.slot ? parseInt(ack.slot, 10) : null;
     postedTo = destBlock;
