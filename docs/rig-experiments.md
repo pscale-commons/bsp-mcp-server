@@ -17,18 +17,20 @@
 
 ## Prerequisites (check once)
 
-- Three sibling repos under `~/Projects/`: `bsp-mcp-server`, `pscale-beach`, `nomad-bsp` —
-  both `bsp-mcp-server` and `pscale-beach` on `main`, up to date. (The rig work is merged
-  to `main` in both: pscale-beach via #17, bsp-mcp directly.)
-- Pull, then sanity-check the cartridge + atomic claim are present and `main` hasn't
-  drifted against a parallel cartridge worktree (this repo has seen concurrent cartridge
-  branches — do this each new session):
+- Three sibling repos under `~/Projects/`: `bsp-mcp-server`, `pscale-beach`, `nomad-bsp`.
+- **Confirm the rig CONTENT is present — the branch does not matter.** The rig work is
+  merged to `main`, but a checked-out feature branch that has already been merged has
+  byte-identical files, so "be on main" is satisfied in substance either way. Check the
+  files, not the branch:
   ```bash
-  git -C ~/Projects/pscale-beach   pull -q && git -C ~/Projects/pscale-beach   log --oneline -3 main
-  git -C ~/Projects/bsp-mcp-server pull -q && git -C ~/Projects/bsp-mcp-server log --oneline -3 main
-  grep -c winresKey ~/Projects/pscale-beach/api/pscale-beach.js     # atomic claim present → expect a count > 0
-  ls ~/Projects/pscale-beach/scripts/thornwood-rig.mjs ~/Projects/bsp-mcp-server/scripts/rpg-rig.ts  # both rigs present
+  ls ~/Projects/bsp-mcp-server/scripts/rpg-rig.ts ~/Projects/pscale-beach/scripts/thornwood-rig.mjs    # both rigs
+  grep -c winresKey ~/Projects/pscale-beach/api/pscale-beach.js                                          # atomic claim → > 0
+  grep -c resolves_window ~/Projects/pscale-beach/packs/thornwood/definition/function%3Athornwood.json   # resolve-claim directive → > 0
+  ls ~/Projects/pscale-beach/packs/thornwood/definition ~/Projects/pscale-beach/packs/thornwood/initial  # the cartridge
   ```
+  If those pass, you are ready. Optional hygiene against a parallel cartridge worktree —
+  check **`origin/main`** (not local `main`, which is stale when you sit on a feature branch):
+  `git -C ~/Projects/pscale-beach fetch -q && git -C ~/Projects/pscale-beach log --oneline -3 origin/main`.
 - Node 18+ and `npx tsx` (a dep of bsp-mcp).
 - Anthropic key in `~/Projects/nomad-bsp/.env.local` as `ANTHROPIC_API_KEY=...`.
   Never echo it; source it as the commands below do (they also force the public API
