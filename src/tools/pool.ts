@@ -342,6 +342,30 @@ export function windowSeed(
   return { seed: `${blockName}:window:${stamps[0] ?? liveSlots[0]?.text.slice(0, 24) ?? 'empty'}`, openTs: null };
 }
 
+/**
+ * Per-actor exploding-d10 luck for a window. Each live intention gets its OWN
+ * luck, seeded from the immutable window-open stamp (windowSeed) PLUS the
+ * author's identity — so an actor's luck is fixed the instant the window opens,
+ * is independent of co-present actors, and cannot be shopped by revise/withdraw
+ * (the seed never references the actor's own mutable slot). This is what lets
+ * distinct intentions resolve to DIVERGENT outcomes for the one synthesis to
+ * weave: rules:nomad's CF and difficulty are already per-actor — the dice now
+ * match. The d10 SHAPE is RPG (rules:nomad); the substrate's honest concern is
+ * the per-actor seed, like a checksum. Returns one entry per live slot, in order.
+ */
+export function windowDicePerAuthor(
+  blockName: string,
+  liquidBlock: Block | null,
+  liveSlots: PoolContribution[],
+): Array<{ agent_id: string | null; pos: number; neg: number; luck: number }> {
+  const { seed } = windowSeed(blockName, liquidBlock, liveSlots);
+  return liveSlots.map((s) => {
+    const who = s.agent_id ?? `slot${s.position}`;
+    const { pos, neg, luck } = deterministicLuck(`${seed}:${who}`);
+    return { agent_id: s.agent_id, pos, neg, luck };
+  });
+}
+
 // ── Liquid staging (submit) ──
 
 /**
@@ -708,15 +732,20 @@ export async function handlePoolEngage(
     }
     lines.push('');
   }
-  // Window dice — when intentions are staged, hand the resolver's exploding-d10
-  // luck, deterministically seeded by the window so it is FIXED before the
-  // resolver reads it (honest, not LLM-chosen). The resolver (per the game's
-  // medium directive) uses these and never invents its own.
-  if (withLiquid && liquidSlots.length > 0) {
-    const { seed, openTs } = windowSeed(blockName, liquidBlock, liquidSlots);
-    const { pos, neg, luck } = deterministicLuck(seed);
-    lines.push('# Window dice (for the resolver — exploding-d10 luck, rules:nomad:2)');
-    lines.push(`positive ${pos}, negative ${neg}, luck ${luck > 0 ? '+' : ''}${luck} — fixed for this window; use these, never invent dice.`);
+  // Window dice — when intentions are staged, hand the resolver an exploding-d10
+  // luck PER ACTOR, deterministically seeded by the window + the actor's identity
+  // so each is FIXED before the resolver reads it (honest, not LLM-chosen) and
+  // independent between actors. The resolver (per the game's medium directive)
+  // resolves each actor's own band from their own luck and never invents dice.
+  const liveForDice = liquidSlots.filter((s) => s.text !== '' && s.agent_id);
+  if (withLiquid && liveForDice.length > 0) {
+    const perActor = windowDicePerAuthor(blockName, liquidBlock, liveForDice);
+    const { openTs } = windowSeed(blockName, liquidBlock, liveForDice);
+    lines.push('# Window dice (for the resolver — exploding-d10 luck PER ACTOR, rules:nomad:2)');
+    for (const d of perActor) {
+      lines.push(`- ${d.agent_id}: positive ${d.pos}, negative ${d.neg}, luck ${d.luck > 0 ? '+' : ''}${d.luck}`);
+    }
+    lines.push("Each actor's luck is fixed for this window — use these, never invent dice. Resolve each actor's own band (CF + SF + their luck − difficulty), then weave ONE event-skeleton from the separate outcomes.");
     if (openTs) {
       lines.push(`window opened ${openTs} — the stamp does not move; closed once the room's duration has passed.`);
     }
