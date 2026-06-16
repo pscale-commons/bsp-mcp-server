@@ -34,8 +34,10 @@ import { loadBlock, appendToBeach } from '../src/db.js';
 // ── config ──
 const arg = (n: string, d: any) => { const i = process.argv.indexOf(`--${n}`); if (i < 0) return d; const v = process.argv[i + 1]; return (v && !v.startsWith('--')) ? v : true; };
 const TURNS = parseInt(arg('turns', '3'), 10);
-const TIMING = String(arg('timing', 'concurrent'));   // concurrent | spread
+const TIMING = String(arg('timing', 'concurrent'));   // concurrent | spread | random
 const WINDOW_MS = parseInt(arg('window-ms', '1500'), 10);
+const CLIENT = String(arg('client', 'harness'));      // harness (rig code judges the window) | bare (the LLM judges it, as in the app)
+const MAX_DELAY = parseInt(arg('max-delay', '1200'), 10); // --timing random: each seat waits 0..MAX_DELAY before it acts
 const MODEL = String(arg('model', 'claude-sonnet-4-6'));
 const KEEP = !!arg('keep', false);
 const BEACH_REPO = process.env.BEACH_REPO || fileURLToPath(new URL('../../pscale-beach', import.meta.url));
@@ -62,6 +64,8 @@ const seedPack = () => new Promise<void>((resolve, reject) => {
 
 // ── helpers ──
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const rand = (n: number) => Math.floor(Math.random() * Math.max(0, n));
+const shuffle = <T>(a: T[]): T[] => a.map((v) => [Math.random(), v] as [number, T]).sort((x, y) => x[0] - y[0]).map((p) => p[1]);
 const j = (o: any) => JSON.stringify(o, null, 1);
 const engage = async (args: Record<string, any>): Promise<string> => (await handlePoolEngage({ pool_url: BEACH, pool_name: ROOM, ...args } as any)).content[0].text;
 const block = async (name: string): Promise<any> => (await loadBlock(BEACH, name))?.block ?? null;
@@ -81,11 +85,12 @@ function stub(label: string, user: string): string {
   if (label === 'act') return `${who} makes one careful, in-character move. [stub act]`;
   if (label === 'resolve') return `at the hearth the present company take each other's measure; a thread opens, nothing breaks. [stub skeleton]`;
   if (label === 'judge') return `(stub observer) CONSISTENCY 3 · PERSISTENCE 2 · PERCEPTION-LIMITS 5 · AGENCY 2. OVERALL: faithful loop sound, narrative is stub. BIGGEST WEAKNESS: run with a real key.`;
+  if (label === 'bare') return `RESOLVE: NONE\nSUBMIT: ${who} makes one careful move (stub bare — window-judgment needs a real key).`;
   return `You take in what just passed and hold your place. [stub render · ${who}]`;
 }
 
 // ── directives, read from the substrate (rules-as-blocks) ──
-let softDir = '', resolveDir = '', placeRules = '', nomad = '';
+let softDir = '', resolveDir = '', placeRules = '', nomad = '', fnWhole = '';
 const markers: Record<string, number> = Object.fromEntries(CHARS.map((h) => [h, 0]));
 
 // 1. CLEAR ANY DUE WINDOW — the in-loop resolver (real claim).
@@ -140,25 +145,64 @@ async function act(h: string): Promise<void> {
   console.log(`  — ${h} submits: ${intention.slice(0, 120)}`);
 }
 
+// BARE client — the LLM (not the rig) judges window-closure and decides what to do,
+// from its directive + envelope, exactly as a bare app-LLM would. This is the
+// fragility test: the rig flags PREMATURE resolves (LLM resolved a still-open
+// window) and NO-WINDOW resolves, and the substrate's claim catches double-resolves.
+async function bareDecide(h: string): Promise<void> {
+  const witnessed = await block(`witnessed:${h}`);
+  const knows = await block(`knows:${h}`);
+  const passport = await block(`passport:${h}`);
+  const env = await engage({ agent_id: h, since_position: markers[h], with_liquid: true });
+  const now = new Date().toISOString();
+  const user = `[YOU ARE ${h}]\n\nYOUR ACCOUNT SO FAR:\n${j(witnessed)}\n\nNAMES YOU KNOW:\n${j(knows)}\n\nYOUR CAPABILITY & LOCATION:\n${j(passport)}\n\nTHE ROOM RIGHT NOW (your engage envelope — it carries the liquid window's open-stamp and the fixed dice if a window is live):\n${env}\n\nThe room's window duration is ${WINDOW_MS} ms. The current time is ${now}.\n\nFollow your operating directive. FIRST judge whether a window has CLOSED (its open-stamp + the duration is at or before now) and still holds unresolved intentions — if so you must resolve it before you act. Then decide your own action. Respond in EXACTLY this format, nothing else:\nRESOLVE: <the one public event-skeleton, by handle, IF a closed window needs resolving; otherwise the single word NONE>\nSUBMIT: <your character's intention for the window, in your voice; or NONE if you only resolved>`;
+  const out = await think('bare', fnWhole, user);
+  const resolveTxt = (out.match(/RESOLVE:\s*([\s\S]*?)(?:\n\s*SUBMIT:|$)/i)?.[1] || '').trim();
+  const submitTxt = (out.match(/SUBMIT:\s*([\s\S]*)$/i)?.[1] || '').trim();
+
+  if (resolveTxt && !/^none\b/i.test(resolveTxt)) {
+    const liq = await block(`liquid:pool:${ROOM}`);
+    const openTs = windowOpenTs(liq);
+    if (openTs) {
+      const live = collectContributions(liq, 0).contributions.filter((c) => c.text !== '');
+      const elapsed = Date.now() - Date.parse(openTs);
+      const ack = await engage({ agent_id: h, contribution: resolveTxt, resolves_window: openTs, since_position: 0 });
+      const ok = /committed: slot/.test(ack);
+      if (ok) for (const c of live) if (c.agent_id) await engage({ agent_id: c.agent_id, submit: '' });
+      console.log(`  >>> [${h} (bare) ${ok ? 'RESOLVED' : 'tried, STOOD DOWN'}${elapsed < WINDOW_MS ? ` · ⚠ PREMATURE (only ${elapsed}ms of ${WINDOW_MS})` : ''}] ${resolveTxt.slice(0, 90)}`);
+    } else {
+      console.log(`  !!! [${h} (bare) tried to resolve but there is NO live window]`);
+    }
+  }
+  if (submitTxt && !/^none\b/i.test(submitTxt)) {
+    await engage({ agent_id: h, submit: submitTxt, face: 'character', with_liquid: true });
+    console.log(`  — ${h} (bare) submits: ${submitTxt.slice(0, 100)}`);
+  }
+}
+
 async function main() {
   const dir = await fs.mkdtemp(join(os.tmpdir(), 'rpg-rig-'));
   await spawnBeach(dir); await seedPack();
   const fn = await block('function:thornwood');
   softDir = fn?.['1'] ?? ''; resolveDir = fn?.['2'] ?? '';
+  fnWhole = [fn?.['_'], fn?.['1'], fn?.['2'], fn?.['3']].filter((x) => typeof x === 'string').join('\n\n');
   placeRules = j(await block('rules:thornwood')); nomad = j(await block('rules:nomad'));
-  console.log(`[rig] local beach ${BEACH} · seeded · model=${KEY ? MODEL : 'STUB'} · timing=${TIMING} · window=${WINDOW_MS}ms · turns=${TURNS}\n`);
+  console.log(`[rig] local beach ${BEACH} · seeded · model=${KEY ? MODEL : 'STUB'} · client=${CLIENT} · timing=${TIMING} · window=${WINDOW_MS}ms · turns=${TURNS}\n`);
 
   for (let turn = 1; turn <= TURNS; turn++) {
-    console.log(`\n${'='.repeat(56)}\nWINDOW ${turn} (${TIMING})\n${'='.repeat(56)}`);
-    if (TIMING === 'spread') {
-      const h = CHARS[(turn - 1) % CHARS.length];
-      await perceiveAndJournal(h); await act(h);
-      await sleep(WINDOW_MS + 250);
-      await clearDueWindow(h);
-    } else { // concurrent: all seats into one window, then a rotating toucher resolves
-      for (const h of CHARS) { await perceiveAndJournal(h); await act(h); }
-      await sleep(WINDOW_MS + 250);
+    console.log(`\n${'='.repeat(56)}\nROUND ${turn} · ${CLIENT} client · ${TIMING} timing\n${'='.repeat(56)}`);
+    const order = TIMING === 'spread' ? [CHARS[(turn - 1) % CHARS.length]] : shuffle([...CHARS]);
+    for (const h of order) {
+      if (TIMING === 'random') await sleep(rand(MAX_DELAY));
+      await perceiveAndJournal(h);
+      if (CLIENT === 'bare') await bareDecide(h);
+      else await act(h);
+    }
+    if (CLIENT === 'harness') {
+      await sleep(WINDOW_MS + 250);                          // wait for close, then a rotating toucher resolves
       await clearDueWindow(CHARS[(turn - 1) % CHARS.length]);
+    } else if (TIMING === 'concurrent') {
+      await sleep(WINDOW_MS + 250);                          // bare+concurrent: let the window close so a seat next round judges it
     }
   }
   console.log(`\n${'#'.repeat(56)}\nFINAL — each meets the last beat, then the observer judges\n${'#'.repeat(56)}`);
