@@ -17,11 +17,18 @@
 
 ## Prerequisites (check once)
 
-- Three sibling repos under `~/Projects/`: `bsp-mcp-server`, `pscale-beach`, `nomad-bsp`.
-- **`pscale-beach` on branch `claude/sub-beaches-cartridge-2026-06-10`** (or merged to main):
-  that branch carries the current cartridge — the atomic-claim resolve directive, the
-  directive-pool wiring, and the orchestrator rig. Verify:
-  `git -C ~/Projects/pscale-beach branch --show-current`.
+- Three sibling repos under `~/Projects/`: `bsp-mcp-server`, `pscale-beach`, `nomad-bsp` —
+  both `bsp-mcp-server` and `pscale-beach` on `main`, up to date. (The rig work is merged
+  to `main` in both: pscale-beach via #17, bsp-mcp directly.)
+- Pull, then sanity-check the cartridge + atomic claim are present and `main` hasn't
+  drifted against a parallel cartridge worktree (this repo has seen concurrent cartridge
+  branches — do this each new session):
+  ```bash
+  git -C ~/Projects/pscale-beach   pull -q && git -C ~/Projects/pscale-beach   log --oneline -3 main
+  git -C ~/Projects/bsp-mcp-server pull -q && git -C ~/Projects/bsp-mcp-server log --oneline -3 main
+  grep -c winresKey ~/Projects/pscale-beach/api/pscale-beach.js     # atomic claim present → expect a count > 0
+  ls ~/Projects/pscale-beach/scripts/thornwood-rig.mjs ~/Projects/bsp-mcp-server/scripts/rpg-rig.ts  # both rigs present
+  ```
 - Node 18+ and `npx tsx` (a dep of bsp-mcp).
 - Anthropic key in `~/Projects/nomad-bsp/.env.local` as `ANTHROPIC_API_KEY=...`.
   Never echo it; source it as the commands below do (they also force the public API
