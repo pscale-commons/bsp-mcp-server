@@ -28,7 +28,7 @@ import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { handlePoolEngage, windowOpenTs, collectContributions, windowSeed, deterministicLuck } from '../src/tools/pool.js';
+import { handlePoolEngage, windowOpenTs, collectContributions, windowDicePerAuthor } from '../src/tools/pool.js';
 import { loadBlock, appendToBeach } from '../src/db.js';
 
 // ── config ──
@@ -46,6 +46,11 @@ const BEACH = `http://localhost:${PORT}`;
 const ROOM = 'beaten-drum-main';
 const SECRET = 'thorn142';
 const CHARS = ['cyrus', 'anya', 'fenn'];
+
+// ── trace capture — drives the three filmstrip views (dataflow / threads / observer) ──
+const TRACE: any[] = [];
+let SEQ = 0, CURRENT_ROUND = 0;
+const trace = (e: Record<string, any>) => { TRACE.push({ seq: SEQ++, round: CURRENT_ROUND, ...e }); };
 
 // ── local beach (child process; its own node_modules) ──
 let beachProc: ChildProcess | null = null;
@@ -75,7 +80,7 @@ const KEY = process.env.ANTHROPIC_API_KEY;
 const BASE = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/$/, '');
 async function think(label: string, system: string, user: string): Promise<string> {
   if (!KEY) return stub(label, user);
-  const r = await fetch(`${BASE}/v1/messages`, { method: 'POST', headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }, body: JSON.stringify({ model: MODEL, max_tokens: 800, system, messages: [{ role: 'user', content: user }] }) });
+  const r = await fetch(`${BASE}/v1/messages`, { method: 'POST', headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }, body: JSON.stringify({ model: MODEL, max_tokens: 2000, system, messages: [{ role: 'user', content: user }] }) });
   const d: any = await r.json();
   if (!r.ok) throw new Error(`Anthropic ${r.status}: ${JSON.stringify(d).slice(0, 200)}`);
   return (d.content || []).map((c: any) => c.text || '').join('').trim();
@@ -102,19 +107,22 @@ async function clearDueWindow(toucher: string): Promise<string> {
   if (!live.length) return 'already-cleared';
   if (Date.now() - Date.parse(openTs) < WINDOW_MS) return 'still-open';
 
-  const { seed } = windowSeed(`pool:${ROOM}`, liq, live);
-  const dice = deterministicLuck(seed);
+  const perActor = windowDicePerAuthor(`pool:${ROOM}`, liq, live);
   const caps: string[] = [];
   for (const c of live) { const p = await block(`passport:${c.agent_id}`); caps.push(`- ${c.agent_id}: ${p?.['1'] ?? ''}`); }
-  const user = `[RESOLVE WINDOW opened ${openTs}]\n\nINTENTIONS IN THE WINDOW:\n${live.map((c) => `- ${c.agent_id}: ${c.text}`).join('\n')}\n\nCAPABILITY (Character Force):\n${caps.join('\n')}\n\nPLACE RULES (Situation Force):\n${placeRules}\n\nDICE (fixed): positive ${dice.pos}, negative ${dice.neg}, luck ${dice.luck > 0 ? '+' : ''}${dice.luck}.\n\nSYSTEM:\n${nomad}\n\nWrite ONE terse PUBLIC event-skeleton — actors by handle.`;
+  const diceLines = perActor.map((d) => `- ${d.agent_id}: positive ${d.pos}, negative ${d.neg}, luck ${d.luck > 0 ? '+' : ''}${d.luck}`).join('\n');
+  const user = `[RESOLVE WINDOW opened ${openTs}]\n\nINTENTIONS IN THE WINDOW:\n${live.map((c) => `- ${c.agent_id}: ${c.text}`).join('\n')}\n\nCAPABILITY (Character Force), per actor:\n${caps.join('\n')}\n\nPLACE RULES (Situation Force):\n${placeRules}\n\nPER-ACTOR DICE (each actor's own fixed luck):\n${diceLines}\n\nSYSTEM:\n${nomad}\n\nFor EACH acting character compute their own band (CF + SF + their luck − difficulty); then write ONE terse PUBLIC event-skeleton weaving the separate outcomes — actors by handle.`;
   const skeleton = await think('resolve', resolveDir, user);
   const ack = await engage({ agent_id: toucher, contribution: skeleton, resolves_window: openTs, since_position: 0 });
   // success returns the envelope with "committed: slot N"; a refused claim returns
   // only a short stand-down. (Don't regex "already resolved" — the inlined directive
   // text contains that phrase, so it false-positives on a successful resolve.)
-  if (!/committed: slot/.test(ack)) return 'stood-down';
+  const claimed = /committed: slot/.test(ack);
+  trace({ phase: 'resolve', actor: toucher, reads: [`liquid:pool:${ROOM}`, ...live.map((c) => `passport:${c.agent_id}`), 'rules:nomad', 'rules:thornwood'], dice: perActor, prompt: user, response: skeleton, writes: claimed ? [`pool:${ROOM} (commit)`] : ['(claim refused)'], claim: claimed ? 'resolved' : 'stood-down' });
+  if (!claimed) return 'stood-down';
   for (const c of live) if (c.agent_id) await engage({ agent_id: c.agent_id, submit: '' });   // empty each resolved slot
-  console.log(`\n  >>> [${toucher} resolved a ${live.length}-intention window · luck ${dice.luck > 0 ? '+' : ''}${dice.luck}] >>>\n  ${skeleton.replace(/\n/g, '\n  ')}`);
+  const luckSummary = perActor.map((d) => `${d.agent_id} ${d.luck > 0 ? '+' : ''}${d.luck}`).join(', ');
+  console.log(`\n  >>> [${toucher} resolved a ${live.length}-intention window · ${luckSummary}] >>>\n  ${skeleton.replace(/\n/g, '\n  ')}`);
   return 'resolved';
 }
 
@@ -130,6 +138,7 @@ async function perceiveAndJournal(h: string): Promise<void> {
   const loc = witnessed?.['1']?.['2'] ?? `*:${BEACH}:spatial:thornwood:111`;
   await appendToBeach(BEACH, `witnessed:${h}`, { _: beat, '1': h, '2': loc, '3': new Date().toISOString() } as any, SECRET);
   markers[h] = fresh[fresh.length - 1].position;
+  trace({ phase: 'perceive', actor: h, reads: [`pool:${ROOM}`, `witnessed:${h}`, `knows:${h}`], writes: [`witnessed:${h} (append)`], prompt: user, response: beat });
   console.log(`  · ${h} journaled: ${beat.slice(0, 140)}`);
 }
 
@@ -142,6 +151,7 @@ async function act(h: string): Promise<void> {
   const user = `[YOU ARE ${h}]\n\nYOUR ACCOUNT SO FAR:\n${j(witnessed)}\n\nNAMES YOU KNOW:\n${j(knows)}\n\nYOUR CAPABILITY & LOCATION:\n${j(passport)}\n\nTHE ROOM RIGHT NOW (the engage envelope):\n${env}\n\nWhat does ${h} do? The action only, in ${h}'s voice.`;
   const intention = await think('act', softDir, user);
   await engage({ agent_id: h, submit: intention, face: 'character', with_liquid: true });
+  trace({ phase: 'act', actor: h, reads: [`witnessed:${h}`, `passport:${h}`, 'pool_engage envelope'], writes: [`liquid:pool:${ROOM} (submit)`], prompt: user, response: intention, envelope: env });
   console.log(`  — ${h} submits: ${intention.slice(0, 120)}`);
 }
 
@@ -190,6 +200,7 @@ async function main() {
   console.log(`[rig] local beach ${BEACH} · seeded · model=${KEY ? MODEL : 'STUB'} · client=${CLIENT} · timing=${TIMING} · window=${WINDOW_MS}ms · turns=${TURNS}\n`);
 
   for (let turn = 1; turn <= TURNS; turn++) {
+    CURRENT_ROUND = turn;
     console.log(`\n${'='.repeat(56)}\nROUND ${turn} · ${CLIENT} client · ${TIMING} timing\n${'='.repeat(56)}`);
     const order = TIMING === 'spread' ? [CHARS[(turn - 1) % CHARS.length]] : shuffle([...CHARS]);
     for (const h of order) {
@@ -206,6 +217,7 @@ async function main() {
     }
   }
   console.log(`\n${'#'.repeat(56)}\nFINAL — each meets the last beat, then the observer judges\n${'#'.repeat(56)}`);
+  CURRENT_ROUND = TURNS + 1;
   for (const h of CHARS) await perceiveAndJournal(h);
 
   const digest: string[] = [];
@@ -218,9 +230,18 @@ async function main() {
   const poolLines = Object.keys(pool).filter((k) => k !== '_').sort().map((k) => (typeof pool[k] === 'object' ? pool[k]._ : pool[k]) || '');
   digest.push(`=== pool:${ROOM} (public) ===\n${poolLines.join('\n')}`);
   const judgeSys = `You are the OBSERVER of an RPG test run — the inter-subjective correlation across the players' separate accounts, never a player. Judge on four criteria; for each a score 1-5 + one terse sentence of evidence: (1) CONSISTENCY across turns and accounts; (2) PERSISTENCE — consequences endure and propagate; (3) PERCEPTION-LIMITS — no leaked name/private fact; (4) AGENCY — chosen actions shift outcomes. Close with OVERALL and BIGGEST RULE-WEAKNESS TO FIX.`;
-  console.log(`\n${'#'.repeat(56)}\nOBSERVER VERDICT\n${'#'.repeat(56)}\n${await think('judge', judgeSys, digest.join('\n\n'))}`);
+  const verdict = await think('judge', judgeSys, digest.join('\n\n'));
+  trace({ phase: 'judge', actor: 'observer', reads: [...CHARS.map((h) => `witnessed:${h}`), `pool:${ROOM}`], prompt: digest.join('\n\n'), response: verdict });
+  console.log(`\n${'#'.repeat(56)}\nOBSERVER VERDICT\n${'#'.repeat(56)}\n${verdict}`);
 
-  if (KEEP) console.log(`\n[rig] sandpit kept at ${dir}`); else await fs.rm(dir, { recursive: true, force: true });
+  if (KEEP) {
+    await fs.writeFile(join(dir, 'trace.json'), JSON.stringify(TRACE, null, 1));
+    console.log(`\n[rig] sandpit kept at ${dir}`);
+    console.log(`[rig] trace: ${TRACE.length} events → ${join(dir, 'trace.json')}`);
+    console.log(`[rig] render: npx tsx scripts/rig-filmstrip.ts --dir ${dir} --view dataflow|threads|observer`);
+  } else {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
 }
 
 main().catch((e) => { console.error('[rig] ERROR', e?.stack || e); process.exitCode = 1; }).finally(() => { if (beachProc) beachProc.kill(); });
