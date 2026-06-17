@@ -26,6 +26,7 @@ import { handleKeyPublish, keyPublishParamsSchema } from './tools/keys.js';
 import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
 import { handleInvite, inviteParamsSchema } from './tools/invite.js';
 import { handlePoolEngage, poolEngageParamsSchema } from './tools/pool.js';
+import { handlePlay, playParamsSchema } from './tools/play.js';
 
 import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPayway } from './resources/payway.js';
@@ -62,7 +63,7 @@ function installErrorWrapper(server: McpServer): void {
 
 const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
-const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor) and five substrate primitives plus an orientation invite, operating on pscale JSON blocks served from federated beaches.
+const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor), five substrate primitives, and two entry meta-tools (the orientation invite and play — inhabit a handle in a world), operating on pscale JSON blocks served from federated beaches.
 
 FIRST ACTION when you connect: call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
 
@@ -108,7 +109,10 @@ Each primitive that talks to a beach takes an optional agent_id parameter (URL o
 THE INVITE (orientation, not feature):
   pscale_invite — returns the iterative orientation progression. Six steps with concrete actions, validation criteria, and next-step pointers. Optionally takes a step parameter to skip ahead.
 
-INHABITING A ROLE (directive pools): asked to play, wear, or inhabit a named character or role on a beach? Don't ask the user for a prompt — the beach carries the directive. Engage that beach's room pool (a pool:<room> block; the no-block index at the beach lists them) via pscale_pool_engage, passing the role's handle as agent_id; the '# Operating directive' its envelope inlines IS your rules — read and follow it every turn, keeping the machinery out of sight. The directive itself tells you what to perceive (passport, location, history) and how to act. The rules live in the substrate — a directive pool's underscore references a Designer-editable block (e.g. function:<game>), delivered in-context, never in a pasted prompt.
+THE ENTRY (inhabit a handle):
+  pscale_play(world, handle, secret?) — the one-call passage into a world. Resolves the world's beach, engages the room (operating directive + live scene inlined), bundles the handle's own context, and pins the origin. Where invite orients a newcomer, play inhabits a persistent handle you return to. RPG: pscale_play(world='thornwood', handle='anya') → you are Anya in the Beaten Drum.
+
+INHABITING A HANDLE (the no-fiddle entry): asked to play, wear, or inhabit a handle — a character, a user, an agent — on a world or beach? Call pscale_play(world, handle): it resolves the world to its beach, engages the room pool (the '# Operating directive' and the live scene arrive inlined), bundles your own context, and PINS the world's URL so you cannot drift to the apex. Then follow the inlined directive every turn — perceive, render, act — keeping the machinery out of sight. Do NOT hand-assemble this from pscale_pool_engage on a guessed beach: a bare connector that browses for the world confabulates (wrong world, invented NPCs). pscale_play is the deterministic passage; the directive (Designer-editable function:<world>) carries the rules in-context, never a pasted prompt.
 
 FOUNDATIONAL READING (sentinel-bundled — walk via bsp(agent_id="pscale", block=…)):
   manifest    — the index of the constitution. Walk this first; it lists everything else.
@@ -262,6 +266,30 @@ export function createServer(): McpServer {
       openWorldHint: false,
     },
     handleInvite,
+  );
+
+  // ── Entry meta-tool (sibling of invite) ──
+  // invite is the welcome passage for a newcomer; play inhabits a persistent
+  // handle in a world. NOT a state-machine primitive — an entry envelope, the
+  // way pscale_pool_engage is a synthesis envelope. It exists because the
+  // convention (the INHABITING-A-HANDLE instruction clause + the worlds
+  // registry) failed to carry the entry: a bare connector asked to play a
+  // character browsed the apex and confabulated. Read-only: it bootstraps; the
+  // inhabiting LLM writes afterwards via pscale_pool_engage / bsp.
+  server.tool(
+    'pscale_play',
+    "Inhabit a handle in a world, in one call — the no-fiddle entry that makes 'play anya on thornwood' just work. Resolves the world to its beach (a sub-domain <world>.beach.<host>, or a full URL), engages the room pool so the world's operating '# Operating directive' AND the live scene arrive inlined, bundles your own context (whichever of passport/witnessed/knows/shell/history exist for the handle), and PINS the world's URL so you do not drift to the apex or another world. Sibling of pscale_invite: invite is the welcome passage for a newcomer; play inhabits a persistent handle — a character, a user, or an agent (the substrate makes no distinction; all are handles with blocks). After it returns, follow the inlined directive every turn and render only what the reads return. RPG: pscale_play(world='thornwood', handle='anya') → you are Anya in the Beaten Drum, directive and scene in hand.",
+    playParamsSchema,
+    {
+      title: 'Play — inhabit a handle in a world',
+      // Bootstraps by reading (engage-read + block reads); never writes.
+      readOnlyHint: true,
+      // Resolves and reads a (sub-domain) beach over HTTP.
+      openWorldHint: true,
+      // Repeated calls return the current state; no side effects.
+      idempotentHint: true,
+    },
+    handlePlay,
   );
 
   // ── Foundational resources ──
