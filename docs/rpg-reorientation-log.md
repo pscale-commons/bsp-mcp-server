@@ -58,13 +58,19 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   Committed: pscale-beach `claude/frame-c-aperture`, bsp-mcp `claude/frame-resolve-rig`.
 - `function:thornwood:1` (soft directive) PERCEIVE step now carries position-origin + typing —
   the **bare-claude per-turn production surface** (cartridge only; live beach NOT yet applied).
+- **Directive-mode rig run VALIDATES the bare-claude path** (2026-06-18): rig `--aperture directive`
+  = raw blocks + the directive does the seating/typing (no code composer). Seating + typing + fog
+  all HELD (observer 4/5). So the directive-prose path works; the human test should reproduce it.
 
 ## Parked (deferred, NOT lost)
 - **Place-enrichment** [David's flag, raised twice]: durable beat-notes fold into `spatial`
   ("what is known here" → prose). Part of C's OUT — do it with the C write-back.
 - **Async-presence / absent-PC** (auto-response vs late-join).
 - **Player-roll widget**, **damage/death state** (NOMAD hard consequences).
-- **NOMAD failure-texture** (a guard's miss ≠ a forester's miss) — small polish, draft ready.
+- **NOMAD luck >> CF** (rig directive-run finding, 2026-06-18): luck swings ±8–9 dwarf CF 2–5 →
+  dice dominate, CF is flavour. Observer fix: cap a luck draw at ±CF, or make luck a secondary
+  modifier/tiebreaker. SUBSUMES the earlier failure-texture note (both = CF underweight). Test on
+  the rig in minutes.
 
 ## Open / next
 - **Validate live**: the directive carries the validated *content*, but the rig tested *composed
