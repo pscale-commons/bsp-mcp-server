@@ -61,16 +61,30 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
 - **Directive-mode rig run VALIDATES the bare-claude path** (2026-06-18): rig `--aperture directive`
   = raw blocks + the directive does the seating/typing (no code composer). Seating + typing + fog
   all HELD (observer 4/5). So the directive-prose path works; the human test should reproduce it.
+- [David, 2026-06-18] **Cartridge versioning = git.** A new VERSION of a world = a commit/PR to
+  `packs/<world>/` — the commit IS the experiment record; rollback via git or `pack-reset` from a
+  commit; fork via `git branch`. A NEW cartridge FOLDER = a divergent world OR running two versions
+  live at once (A/B). The live beach is a fresh INSTANCE of a seeded cartridge version; pack-reset
+  from a chosen commit = rollback. (Canonical home: each `packs/<world>/MANIFEST.md`.)
 
 ## Parked (deferred, NOT lost)
 - **Place-enrichment** [David's flag, raised twice]: durable beat-notes fold into `spatial`
   ("what is known here" → prose). Part of C's OUT — do it with the C write-back.
 - **Async-presence / absent-PC** (auto-response vs late-join).
 - **Player-roll widget**, **damage/death state** (NOMAD hard consequences).
-- **NOMAD luck >> CF** (rig directive-run finding, 2026-06-18): luck swings ±8–9 dwarf CF 2–5 →
-  dice dominate, CF is flavour. Observer fix: cap a luck draw at ±CF, or make luck a secondary
-  modifier/tiebreaker. SUBSUMES the earlier failure-texture note (both = CF underweight). Test on
-  the rig in minutes.
+- **NOMAD luck-vs-CF — FIXED 2026-06-18** [David's spec]: CF now scored 1-20 (10 talent + 10 skill;
+  8 = competent), block-only edit to `rules:nomad` position 1. Rig directive-run confirmed: CF reads
+  7–14 (was 2–5), luck no longer dominates, observer dropped the finding. NOMAD is now the working
+  "basic hook-up" David asked for.
+- **NOMAD sub-success friction** (new rig finding, 2026-06-18): stalemate / minor-failure bands
+  render as success-adjacent (no felt cost). Fix candidate: a sub-success band must encode one
+  concrete durable complication (a closed door, an NPC reaction needing repair). Echoes the older
+  "failures = consequences" thread. Parked — David postponing NOMAD.
+- **NOMAD real design = "action" pscale block** [David, 2026-06-18]: make the if/then logic
+  (CF>SF, CF+SF>LUCK, …) a WALKABLE PATH the LLM traverses (table-as-geometry), not flat prose.
+  Today `rules:nomad` is a block the medium READS + applies; the ONLY frozen code is the dice
+  (honest entropy, `pool.ts deterministicLuck`). No crappy code/categories to unwind. The
+  action-block is the bigger redesign — postponed.
 
 ## Open / next
 - **Validate live**: the directive carries the validated *content*, but the rig tested *composed
