@@ -39,6 +39,7 @@ const WINDOW_MS = parseInt(arg('window-ms', '1500'), 10);
 const CLIENT = String(arg('client', 'harness'));      // harness (rig code judges the window) | bare (the LLM judges it, as in the app)
 const MAX_DELAY = parseInt(arg('max-delay', '1200'), 10); // --timing random: each seat waits 0..MAX_DELAY before it acts
 const MODEL = String(arg('model', 'claude-sonnet-4-6'));
+const APERTURE = String(arg('aperture', 'composed')); // composed (rig builds the C aperture in code) | directive (raw blocks; the DIRECTIVE does the seating/typing — the bare-claude path)
 const KEEP = !!arg('keep', false);
 const BEACH_REPO = process.env.BEACH_REPO || fileURLToPath(new URL('../../pscale-beach', import.meta.url));
 const PORT = parseInt(process.env.RIG_PORT || '8799', 10);
@@ -75,6 +76,57 @@ const j = (o: any) => JSON.stringify(o, null, 1);
 const engage = async (args: Record<string, any>): Promise<string> => (await handlePoolEngage({ pool_url: BEACH, pool_name: ROOM, ...args } as any)).content[0].text;
 const block = async (name: string): Promise<any> => (await loadBlock(BEACH, name))?.block ?? null;
 
+// ── resolve the Character soft aperture (frame-spec:thornwood 1.1) for handle h ──
+// Seats the character at passport:3, gives the place at that location (with its
+// authored standing figures), the character's own witnessed/knows, the place
+// rules, and the live co-present cast TYPED apart from the authored figures. The
+// seat (1,1,1) and typing (1,1,3) prose are pulled from the substrate frame, so
+// editing frame-spec changes what the soft LLM is handed — the frame is resolved,
+// not hardcoded.
+const locOf = (passport: any): string => (String(passport?.['3'] ?? '').match(/spatial:thornwood:(\d+)/) || [])[1] || '111';
+function walkSpatial(node: any, addr: string): any { let n = node; for (const d of String(addr).split('')) { if (n && typeof n === 'object') n = n[d]; else return null; } return n ?? null; }
+async function cAperture(h: string): Promise<{ text: string; reads: string[] }> {
+  const passport = await block(`passport:${h}`);
+  const locAddr = locOf(passport);
+  const place = walkSpatial(await block('spatial:thornwood'), locAddr);
+  const witnessed = await block(`witnessed:${h}`);
+  const knows = await block(`knows:${h}`);
+  let others = 0;
+  for (const o of CHARS) { if (o === h) continue; if (locOf(await block(`passport:${o}`)) === locAddr) others++; }
+  const text = [
+    `POSITION (your seat) — ${frameC?.['1'] ?? 'you perceive from passport:3.'}`,
+    `WHERE YOU ARE — spatial:thornwood:${locAddr}, the place and the standing figures authored into it:\n${j(place)}`,
+    `YOUR CAPABILITY — passport:${h}:\n${j(passport)}`,
+    `YOUR ACCOUNT SO FAR — witnessed:${h}:\n${j(witnessed)}`,
+    `NAMES YOU KNOW — knows:${h}:\n${j(knows)}`,
+    `PERCEPTION PHYSICS — rules:thornwood:\n${placeRules}`,
+    `LIVE CHARACTERS CO-PRESENT — ${others} other player-character(s) share your position; each is a separate live agency, perceived by appearance until you earn a name, and NEVER one of the authored standing figures above.`,
+    `HOLD THE KINDS APART — ${frameC?.['3'] ?? 'you, the authored standing figures, and the live co-present characters are three different things.'}`,
+  ].join('\n\n');
+  return { text, reads: [`passport:${h}`, `spatial:thornwood:${locAddr}`, `witnessed:${h}`, `knows:${h}`, 'rules:thornwood', 'frame-spec:thornwood'] };
+}
+
+// ── raw blocks (the bare-claude condition): the blocks the directive tells the soft to read,
+// with NO seat/typing pre-framing and NO pre-derived co-present list. The directive (system
+// prompt = function:thornwood:1, now carrying position-origin + typing) must do that work
+// itself — exactly as a bare claude.ai client does. Tests the DIRECTIVE, not the composer. ──
+async function rawBlocks(h: string): Promise<{ text: string; reads: string[] }> {
+  const passport = await block(`passport:${h}`);
+  const locAddr = locOf(passport);
+  const place = walkSpatial(await block('spatial:thornwood'), locAddr);
+  const witnessed = await block(`witnessed:${h}`);
+  const knows = await block(`knows:${h}`);
+  const text = [
+    `passport:${h} (capability + location):\n${j(passport)}`,
+    `spatial:thornwood:${locAddr} (the place at your location):\n${j(place)}`,
+    `rules:thornwood (perception physics):\n${placeRules}`,
+    `witnessed:${h} (your account so far):\n${j(witnessed)}`,
+    `knows:${h} (names you can recognise):\n${j(knows)}`,
+  ].join('\n\n');
+  return { text, reads: [`passport:${h}`, `spatial:thornwood:${locAddr}`, 'rules:thornwood', `witnessed:${h}`, `knows:${h}`] };
+}
+const aperture = (h: string) => (APERTURE === 'directive' ? rawBlocks(h) : cAperture(h));
+
 // ── the LLM seat: real Claude if keyed, else deterministic stub ──
 const KEY = process.env.ANTHROPIC_API_KEY;
 const BASE = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/$/, '');
@@ -96,6 +148,7 @@ function stub(label: string, user: string): string {
 
 // ── directives, read from the substrate (rules-as-blocks) ──
 let softDir = '', resolveDir = '', placeRules = '', nomad = '', fnWhole = '';
+let frameC: any = null; // frame-spec:thornwood C soft aperture (1.1) — seat + typing prose, pulled from the substrate
 const markers: Record<string, number> = Object.fromEntries(CHARS.map((h) => [h, 0]));
 
 // 1. CLEAR ANY DUE WINDOW — the in-loop resolver (real claim).
@@ -131,27 +184,25 @@ async function perceiveAndJournal(h: string): Promise<void> {
   const pool = await block(`pool:${ROOM}`);
   const fresh = collectContributions(pool, markers[h]).contributions;
   if (!fresh.length) return;
+  const ap = await aperture(h);
   const witnessed = await block(`witnessed:${h}`);
-  const knows = await block(`knows:${h}`);
-  const user = `[YOU ARE ${h}]\n\nYOUR ACCOUNT SO FAR:\n${j(witnessed)}\n\nNAMES YOU KNOW:\n${j(knows)}\n\nNEW PUBLIC EVENTS (by handle):\n${fresh.map((c) => `- ${c.text}`).join('\n')}\n\nRender these as ${h}'s OWN private account — second person, names only as ${h} knows them, otherwise by appearance. One short paragraph.`;
+  const user = `[YOU ARE ${h}]\n\n${ap.text}\n\nNEW PUBLIC EVENTS since you last looked (handle-tagged — translate each to a name you have earned, otherwise appearance):\n${fresh.map((c) => `- ${c.text}`).join('\n')}\n\nRender these as ${h}'s OWN private account — second person, present tense, perceived FROM your position; names only as ${h} has earned them. One short paragraph.`;
   const beat = await think('render', softDir, user);
   const loc = witnessed?.['1']?.['2'] ?? `*:${BEACH}:spatial:thornwood:111`;
   await appendToBeach(BEACH, `witnessed:${h}`, { _: beat, '1': h, '2': loc, '3': new Date().toISOString() } as any, SECRET);
   markers[h] = fresh[fresh.length - 1].position;
-  trace({ phase: 'perceive', actor: h, reads: [`pool:${ROOM}`, `witnessed:${h}`, `knows:${h}`], writes: [`witnessed:${h} (append)`], prompt: user, response: beat });
+  trace({ phase: 'perceive', actor: h, reads: ap.reads.concat([`pool:${ROOM}`]), writes: [`witnessed:${h} (append)`], prompt: user, response: beat });
   console.log(`  · ${h} journaled: ${beat.slice(0, 140)}`);
 }
 
 // 4. ACT — read the real envelope (directive + window), produce + SUBMIT an intention.
 async function act(h: string): Promise<void> {
-  const witnessed = await block(`witnessed:${h}`);
-  const knows = await block(`knows:${h}`);
-  const passport = await block(`passport:${h}`);
+  const ap = await aperture(h);
   const env = await engage({ agent_id: h, since_position: markers[h], with_liquid: true });
-  const user = `[YOU ARE ${h}]\n\nYOUR ACCOUNT SO FAR:\n${j(witnessed)}\n\nNAMES YOU KNOW:\n${j(knows)}\n\nYOUR CAPABILITY & LOCATION:\n${j(passport)}\n\nTHE ROOM RIGHT NOW (the engage envelope):\n${env}\n\nWhat does ${h} do? The action only, in ${h}'s voice.`;
+  const user = `[YOU ARE ${h}]\n\n${ap.text}\n\nTHE ROOM RIGHT NOW (the live window + operating directive):\n${env}\n\nWhat does ${h} do, perceiving from your position? The action only, in ${h}'s voice.`;
   const intention = await think('act', softDir, user);
   await engage({ agent_id: h, submit: intention, face: 'character', with_liquid: true });
-  trace({ phase: 'act', actor: h, reads: [`witnessed:${h}`, `passport:${h}`, 'pool_engage envelope'], writes: [`liquid:pool:${ROOM} (submit)`], prompt: user, response: intention, envelope: env });
+  trace({ phase: 'act', actor: h, reads: ap.reads.concat(['pool_engage envelope']), writes: [`liquid:pool:${ROOM} (submit)`], prompt: user, response: intention, envelope: env });
   console.log(`  — ${h} submits: ${intention.slice(0, 120)}`);
 }
 
@@ -197,7 +248,8 @@ async function main() {
   softDir = fn?.['1'] ?? ''; resolveDir = fn?.['2'] ?? '';
   fnWhole = [fn?.['_'], fn?.['1'], fn?.['2'], fn?.['3']].filter((x) => typeof x === 'string').join('\n\n');
   placeRules = j(await block('rules:thornwood')); nomad = j(await block('rules:nomad'));
-  console.log(`[rig] local beach ${BEACH} · seeded · model=${KEY ? MODEL : 'STUB'} · client=${CLIENT} · timing=${TIMING} · window=${WINDOW_MS}ms · turns=${TURNS}\n`);
+  frameC = (await block('frame-spec:thornwood'))?.['1']?.['1'] ?? null;   // resolve the C soft aperture from the substrate
+  console.log(`[rig] local beach ${BEACH} · seeded · model=${KEY ? MODEL : 'STUB'} · client=${CLIENT} · timing=${TIMING} · aperture=${APERTURE} · window=${WINDOW_MS}ms · turns=${TURNS}\n`);
 
   for (let turn = 1; turn <= TURNS; turn++) {
     CURRENT_ROUND = turn;
