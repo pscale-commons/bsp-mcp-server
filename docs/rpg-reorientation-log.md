@@ -66,6 +66,18 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   commit; fork via `git branch`. A NEW cartridge FOLDER = a divergent world OR running two versions
   live at once (A/B). The live beach is a fresh INSTANCE of a seeded cartridge version; pack-reset
   from a chosen commit = rollback. (Canonical home: each `packs/<world>/MANIFEST.md`.)
+- **"Engagement is an act" build — DONE 2026-06-19** (the human test-run's core bug fix). Test bug:
+  a character who *perceived but never submitted* wasn't in the liquid, so an actor read "only me,"
+  solo-resolved, and the resolver invented the absent character's response ("she took the drink").
+  Systemic fix, NO targeting rule: (a) `function:thornwood:1` step 4 — **every turn is an act**
+  (looking/waiting/watching included), so the submission IS presence and the liquid is reliable
+  co-presence → no false-solo; (b) `:2` **agency clause** — the resolver weaves ONLY what each
+  character submitted, never authors a response they didn't act; (c) reframed underscore (liquid =
+  reliable presence; solo only when truly alone); (d) `pool.ts` **embodiment gate** — A/D/O engage
+  leaves no liquid trace on an RPG pool (only characters are embodied/present). Rig no-regression
+  PASSED (passive "watching" now resolves with a perception calc; seating/CF/fog hold, observer 4/5).
+  The watcher→false-solo→agency-steal bug can't reproduce in the rig (it forces every seat to act
+  each round) → validated by David's next human test.
 
 ## Parked (deferred, NOT lost)
 - **Place-enrichment** [David's flag, raised twice]: durable beat-notes fold into `spatial`

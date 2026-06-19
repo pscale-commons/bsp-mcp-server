@@ -580,8 +580,16 @@ export async function handlePoolEngage(
   // envelope returns the mirror; it never appends to the pool and never
   // synthesises. Empty text withdraws. This brings xstream's pending-mirror
   // reflexivity to a bare bsp-mcp caller, because liquid lives on the beach.
+  // Embodiment gate. On an RPG/directive pool, only an EMBODIED character leaves a
+  // trace in the liquid — a character is in the spatial block, visible, so engaging
+  // the room is an act others can see, and the liquid IS the room's live presence.
+  // Author / Designer / Observer are not embodied: they read the room from outside
+  // the fiction, leave no presence, and are invisible to characters — so their
+  // submit is dropped read-only. (Character or no face = embodied, writes as before.)
+  const isRpgPool = isDirectiveRef(floorUnderscore(row.block));
+  const embodied = !face || face === 'character';
   let submittedSlot: string | null = null;
-  if (submit !== undefined) {
+  if (submit !== undefined && !(isRpgPool && !embodied)) {
     try {
       submittedSlot = await stageLiquid(pool_url, liquidName, agent_id, submit, face, secret);
     } catch (e: any) {
