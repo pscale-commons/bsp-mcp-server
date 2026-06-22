@@ -113,6 +113,32 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   ADHERENCE only (does a bare LLM follow the prose): the rig's `--client bare` was updated off the old
   pure-dwell rule to defer to the directive (co-presence-close); a keyed run (ANTHROPIC_API_KEY) or
   the live two-machine test is what settles it. The substrate gives the LLM everything the fix needs.
+- **Character-shell convention — designed + BUILT + validated 2026-06-22.** [David] design-first, off an
+  agreed spec ([proposals/2026-06-22-character-shell-convention.md](../proposals/2026-06-22-character-shell-convention.md)).
+  KEY INSIGHT [David]: a character shell IS the hermitcrab shell already in use, at three densities —
+  **happyseaurchin** (thin / human-driven) → **weft** (dense / LLM-app harness) → **mobius** (full /
+  API-key + heartbeat, autonomous). PC vs active-NPC = where on that spectrum the shell sits, NOT a
+  type. Decisions: specialise `shell:<handle>` (not a new name); inhabitation = density (not a field);
+  private (locked `_`, drive gray-able). Persona/voice/stance → the Character face (`shell` 1.1, like
+  weft's); **drive → `purpose:<handle>`** (the agency lever); autonomy → `wake:<handle>`+heartbeat. The
+  manifest also gathers the RPG-mechanical blocks — `stats:<handle>` (NOMAD CF now, condition/HP later)
+  + rule refs — so the shell is the **complete context-assembly hub**. Whole-system framing [David]: RPG
+  is the maximal-stress test of the entire stack (pscale → bsp+beach → pool/grain/sed → RPG context
+  delivery); a real-world user IS a thin character shell in the commons-world, so "works for RPG → works
+  for real users" is an identity, not an analogy.
+  BUILT: 6 cartridge blocks (`shell:`/`purpose:` for cyrus/anya/fenn, locked per-character); rig reads
+  shell-persona (→ system) + purpose-drive (→ user) in perceive/act/bareDecide.
+  VALIDATED (keyed autonomous rig, bare/concurrent/directive, 3 turns, no human): **the hedging is GONE**
+  — the three pursued DIVERGENT drives and converged on the shared mystery through action (Cyrus voices
+  the missing-caravan question; Anya names the bone-charms; Fenn reveals he cut & burned charms). Fog
+  5/5, consistency/persistence 4/5. **Agency still 3/5 — but the CAUSE MOVED**: no longer "nobody acts"
+  (drive fixed that) but "partials don't RAMIFY" — a partial yields atmosphere (Bram notices) with no
+  downstream teeth (no NPC reaction, no door closing, no state change). That is the PARKED NOMAD problem
+  (sub-success friction / failures=consequences / damage-death state / the "action" block), which the
+  shell manifest already names as `stats:<handle>`. So the next systemic lever is NOMAD consequences:
+  an outcome must close an option, open a threat, or change state. The shell build also PROVED the
+  HITL-reducing loop — iterate a systemic element (shells) → re-run autonomous → read the observer →
+  name the next lever — with no human in the chair.
 
 ## Parked (deferred, NOT lost)
 - **Place-enrichment** [David's flag, raised twice]: durable beat-notes fold into `spatial`

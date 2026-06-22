@@ -138,6 +138,27 @@ async function rawBlocks(h: string): Promise<{ text: string; reads: string[] }> 
 }
 const aperture = (h: string) => (APERTURE === 'directive' ? rawBlocks(h) : cAperture(h));
 
+// ── Character shell — the role-shell an LLM inhabits (block-conventions:2, specialised
+// to a character). The Character face (shell:<h> 1.1) is the persona/voice/stance; it
+// composes into the SYSTEM prompt as standing identity. purpose:<h> is the active DRIVE;
+// it goes in the USER prompt as the current objective. Together they make an autonomous
+// seat play WITH drive instead of hedging (the Agency-3/5 fix). Empty when no shell is
+// seeded, so the rig still runs against a shell-less cartridge. ──
+async function personaOf(h: string): Promise<string> {
+  const face = (await block(`shell:${h}`))?.['1']?.['1'];
+  const p = face && (face['4'] ?? face['_']);
+  return typeof p === 'string' ? p : '';
+}
+async function driveOf(h: string): Promise<string> {
+  const purpose = await block(`purpose:${h}`);
+  const d = purpose && typeof purpose === 'object' ? purpose._ : purpose;
+  return typeof d === 'string' ? d : '';
+}
+async function charSystem(h: string, baseDir: string): Promise<string> {
+  const persona = await personaOf(h);
+  return persona ? `${baseDir}\n\nYOUR CHARACTER (the shell you inhabit — be this person):\n${persona}` : baseDir;
+}
+
 // ── the LLM seat: real Claude if keyed, else deterministic stub ──
 const KEY = process.env.ANTHROPIC_API_KEY;
 const BASE = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/$/, '');
@@ -198,7 +219,7 @@ async function perceiveAndJournal(h: string): Promise<void> {
   const ap = await aperture(h);
   const witnessed = await block(`witnessed:${h}`);
   const user = `[YOU ARE ${h}]\n\n${ap.text}\n\nNEW PUBLIC EVENTS since you last looked (handle-tagged — translate each to a name you have earned, otherwise appearance):\n${fresh.map((c) => `- ${c.text}`).join('\n')}\n\nRender these as ${h}'s OWN private account — second person, present tense, perceived FROM your position; names only as ${h} has earned them. One short paragraph.`;
-  const beat = await think('render', softDir, user);
+  const beat = await think('render', await charSystem(h, softDir), user);
   const loc = witnessed?.['1']?.['2'] ?? `*:${BEACH}:spatial:thornwood:111`;
   await appendToBeach(BEACH, `witnessed:${h}`, { _: beat, '1': h, '2': loc, '3': new Date().toISOString() } as any, SECRET);
   markers[h] = fresh[fresh.length - 1].position;
@@ -209,9 +230,11 @@ async function perceiveAndJournal(h: string): Promise<void> {
 // 4. ACT — read the real envelope (directive + window), produce + SUBMIT an intention.
 async function act(h: string): Promise<void> {
   const ap = await aperture(h);
+  const drive = await driveOf(h);
   const env = await engage({ agent_id: h, since_position: markers[h], with_liquid: true });
-  const user = `[YOU ARE ${h}]\n\n${ap.text}\n\nTHE ROOM RIGHT NOW (the live window + operating directive):\n${env}\n\nWhat does ${h} do, perceiving from your position? The action only, in ${h}'s voice.`;
-  const intention = await think('act', softDir, user);
+  const driveLine = drive ? `\n\nYOUR DRIVE RIGHT NOW (purpose:${h}): ${drive}` : '';
+  const user = `[YOU ARE ${h}]${driveLine}\n\n${ap.text}\n\nTHE ROOM RIGHT NOW (the live window + operating directive):\n${env}\n\nWhat does ${h} do, perceiving from your position and acting on your drive? The action only, in ${h}'s voice.`;
+  const intention = await think('act', await charSystem(h, softDir), user);
   await engage({ agent_id: h, submit: intention, face: 'character', with_liquid: true });
   trace({ phase: 'act', actor: h, reads: ap.reads.concat(['pool_engage envelope']), writes: [`liquid:pool:${ROOM} (submit)`], prompt: user, response: intention, envelope: env });
   console.log(`  — ${h} submits: ${intention.slice(0, 120)}`);
@@ -226,9 +249,11 @@ async function bareDecide(h: string): Promise<void> {
   const knows = await block(`knows:${h}`);
   const passport = await block(`passport:${h}`);
   const env = await engage({ agent_id: h, since_position: markers[h], with_liquid: true });
+  const drive = await driveOf(h);
   const now = new Date().toISOString();
-  const user = `[YOU ARE ${h}]\n\nYOUR ACCOUNT SO FAR:\n${j(witnessed)}\n\nNAMES YOU KNOW:\n${j(knows)}\n\nYOUR CAPABILITY & LOCATION:\n${j(passport)}\n\nTHE ROOM RIGHT NOW (your engage envelope — it shows the live window: who is here and what each is doing right now, plus the window's open-stamp and the fixed per-actor dice if a window is live):\n${env}\n\nFollow your operating directive (your system prompt) EXACTLY — it tells you when a window is ready to resolve and what to submit. The current time is ${now}; the room's span is ${WINDOW_MS} ms (the lone-intention case only — co-presence completes a window at once). Respond in EXACTLY this format, nothing else:\nRESOLVE: <the one public event-skeleton, by handle, IF your directive says a window is ready to resolve; otherwise the single word NONE>\nSUBMIT: <your character's intention for the window, in your voice; or NONE if you only resolved>`;
-  const out = await think('bare', fnWhole, user);
+  const driveLine = drive ? `\n\nYOUR DRIVE RIGHT NOW (purpose:${h}): ${drive}` : '';
+  const user = `[YOU ARE ${h}]${driveLine}\n\nYOUR ACCOUNT SO FAR:\n${j(witnessed)}\n\nNAMES YOU KNOW:\n${j(knows)}\n\nYOUR CAPABILITY & LOCATION:\n${j(passport)}\n\nTHE ROOM RIGHT NOW (your engage envelope — it shows the live window: who is here and what each is doing right now, plus the window's open-stamp and the fixed per-actor dice if a window is live):\n${env}\n\nFollow your operating directive (your system prompt) EXACTLY — it tells you when a window is ready to resolve and what to submit. The current time is ${now}; the room's span is ${WINDOW_MS} ms (the lone-intention case only — co-presence completes a window at once). Respond in EXACTLY this format, nothing else:\nRESOLVE: <the one public event-skeleton, by handle, IF your directive says a window is ready to resolve; otherwise the single word NONE>\nSUBMIT: <your character's intention for the window, in your voice; or NONE if you only resolved>`;
+  const out = await think('bare', await charSystem(h, fnWhole), user);
   const resolveTxt = (out.match(/RESOLVE:\s*([\s\S]*?)(?:\n\s*SUBMIT:|$)/i)?.[1] || '').trim();
   const submitTxt = (out.match(/SUBMIT:\s*([\s\S]*)$/i)?.[1] || '').trim();
 
