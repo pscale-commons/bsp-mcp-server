@@ -116,10 +116,37 @@ export async function handlePlay(
   //    is "the content relevant to them" in one call; the kind is inferred, not
   //    declared (character if it has witnessed/passport; user/agent if a shell).
   const own: { name: string; json: string }[] = [];
+  const seen = new Set<string>();
+  let shellBlock: any = null;
   for (const b of ['passport', 'witnessed', 'knows', 'shell', 'history']) {
-    const row = await loadBlock(resolved, `${b}:${handle}`);
+    const name = `${b}:${handle}`;
+    const row = await loadBlock(resolved, name);
     if (row && row.block && typeof row.block === 'object') {
-      own.push({ name: `${b}:${handle}`, json: JSON.stringify(row.block, null, 1) });
+      own.push({ name, json: JSON.stringify(row.block, null, 1) });
+      seen.add(name);
+      if (b === 'shell') shellBlock = row.block;
+    }
+  }
+  // Shell-as-context-compiler: the shell's manifest (position 3) is a bundle of
+  // bsp-addresses that scoop the handle's full context. Beyond the default set
+  // above, scoop whatever extra named blocks the manifest references (e.g.
+  // purpose:<h> the drive, stats:<h> the rule sheet, relationships:<h>) — so a
+  // character inhabits the way a hermitcrab does (mobius loads all its blocks),
+  // not from a hardcoded list. Default set + manifest extras (the lean): a thin
+  // or shell-less handle still works; a rich shell pulls its whole context.
+  const manifest = shellBlock && shellBlock['3'];
+  if (manifest && typeof manifest === 'object') {
+    for (const k of Object.keys(manifest)) {
+      if (k === '_') continue;
+      const v = manifest[k];
+      const ref = typeof v === 'string' ? v : (v && typeof v === 'object' ? v._ : null);
+      if (typeof ref === 'string' && ref.includes(':') && !/\s/.test(ref) && !seen.has(ref)) {
+        seen.add(ref);
+        const row = await loadBlock(resolved, ref);
+        if (row && row.block && typeof row.block === 'object') {
+          own.push({ name: ref, json: JSON.stringify(row.block, null, 1) });
+        }
+      }
     }
   }
   const has = (p: string) => own.some((o) => o.name.startsWith(p));
