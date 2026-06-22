@@ -163,6 +163,25 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   see him. Partly a turns=1 artifact (fenn acted last, no follow-up join); partly a real design Q [David's
   call]: is ENTERING / being-present a public act (pool updates on arrival), or liquid-only until a beat
   resolves? Connects to async-presence / absent-PC.
+- **Window dead-lock CAUGHT + FIXED 2026-06-22 — the faithful rig's first real catch.** A longer agent run
+  (turns=4) revealed: after round 1's first co-presence resolution, NO further window resolved all run —
+  ONE frozen window-open stamp, ONE pool skeleton, every later resolution rejected "already resolved". The
+  play LOOKED fine (observer 4.5/5) because perception reads the LIVE WINDOW (liquid): the characters saw
+  each other + built rich PRIVATE narratives, masking the frozen PUBLIC pool + dead NOMAD mechanics beneath.
+  ROOT CAUSE: the window-open stamp resets only when the liquid EMPTIES; the resolver can clear only its OWN
+  slot (`submit=''` is caller-scoped — no tool to clear co-present slots); actors OVERWRITE their slots with
+  new intentions instead of clearing → liquid never empties → stamp frozen → single-resolution (keyed on the
+  stamp) permanently rejects. The SCRIPTED rig HID it (it force-cleared all slots — a deviation real LLMs
+  cannot do); the high-fidelity agent rig EXPOSED it. Exactly the dataflow bug David predicted would only
+  surface in live play — caught first on the rig, no human. FIX (clear-on-resolve): `pool.ts` wipes the whole
+  liquid buffer when a `resolves_window` claim is accepted → the next submission opens a fresh window;
+  `function:thornwood:2` drops the manual per-actor clear (now automatic). VALIDATED (re-run turns=4): **5
+  distinct window stamps (cycles), 5 pool skeletons (one per window), 5 resolutions / 0 stand-downs, 0 tool
+  errors, resolver rotates (cyrus→anya)**; observer Consistency 5/5, Persistence 5/5, Agency 5/5 — the TEETH
+  now fire EVERY round (observer praised "consequence-layering": Bram silence → public refusal → involuntary
+  stop), not just round 1. RESIDUAL (observer, perception 4/5): name-knowledge attribution — anya used
+  "cyrus" without a logged public name-transmission; fix = log name-learning in the pool at the moment it
+  occurs (the `knows:<h>` earned-names boundary). [David's call.]
 
 ## Parked (deferred, NOT lost)
 - **Place-enrichment** [David's flag, raised twice]: durable beat-notes fold into `spatial`

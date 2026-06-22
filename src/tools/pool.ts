@@ -653,6 +653,21 @@ export async function handlePoolEngage(
     postedTo = destBlock;
     postedSupernested = ack.supernested === true;
 
+    // Window resolved → CLEAR the room's liquid so the next intention opens a FRESH
+    // window. A resolver can only clear its OWN slot (submit='' is caller-scoped);
+    // co-present slots would otherwise persist, the window-open stamp would never
+    // reset, and single-resolution (keyed on that stamp) would dead-lock every future
+    // resolution — the room freezes into one perpetual already-resolved window. Caught
+    // by the high-fidelity agent rig 2026-06-22 (a scripted rig force-cleared all slots
+    // and so hid it). Clearing the whole buffer on a successful resolve is the fix; the
+    // resolver no longer clears by hand (function:thornwood:2 updated to match).
+    if (params.resolves_window) {
+      try {
+        const ldesc = `Liquid pre-commit buffer for ${liquidName} (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit. Empty means no live window.`;
+        await saveBlock(pool_url, liquidName, { _: ldesc } as Block, { spindle: '', secret });
+      } catch { /* best-effort: a stale slot at worst, never a hard failure */ }
+    }
+
     // Reload the pool only when the commit landed in it (so the envelope's slice
     // includes the just-posted). A commit elsewhere leaves the pool unchanged.
     if (destBlock === blockName) {
