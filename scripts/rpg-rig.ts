@@ -24,12 +24,23 @@
  * else a deterministic stub so the whole loop verifies with no key.
  */
 import { spawn, type ChildProcess } from 'node:child_process';
-import { promises as fs } from 'node:fs';
+import { promises as fs, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { handlePoolEngage, windowOpenTs, collectContributions, windowDicePerAuthor } from '../src/tools/pool.js';
 import { loadBlock, appendToBeach } from '../src/db.js';
+
+// Load .env.rig (gitignored — NEVER committed) so a stored ANTHROPIC_API_KEY is
+// reused across runs/sessions without re-exporting it each time. Existing env
+// wins, so an explicit export still overrides the file.
+try {
+  const ef = fileURLToPath(new URL('../.env.rig', import.meta.url));
+  if (existsSync(ef)) for (const line of readFileSync(ef, 'utf8').split('\n')) {
+    const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+  }
+} catch { /* no .env.rig — falls back to the stub, fine */ }
 
 // ── config ──
 const arg = (n: string, d: any) => { const i = process.argv.indexOf(`--${n}`); if (i < 0) return d; const v = process.argv[i + 1]; return (v && !v.startsWith('--')) ? v : true; };
@@ -216,11 +227,19 @@ async function bareDecide(h: string): Promise<void> {
   const passport = await block(`passport:${h}`);
   const env = await engage({ agent_id: h, since_position: markers[h], with_liquid: true });
   const now = new Date().toISOString();
-  const user = `[YOU ARE ${h}]\n\nYOUR ACCOUNT SO FAR:\n${j(witnessed)}\n\nNAMES YOU KNOW:\n${j(knows)}\n\nYOUR CAPABILITY & LOCATION:\n${j(passport)}\n\nTHE ROOM RIGHT NOW (your engage envelope — it carries the liquid window's open-stamp and the fixed dice if a window is live):\n${env}\n\nThe room's window duration is ${WINDOW_MS} ms. The current time is ${now}.\n\nFollow your operating directive. FIRST judge whether a window has CLOSED (its open-stamp + the duration is at or before now) and still holds unresolved intentions — if so you must resolve it before you act. Then decide your own action. Respond in EXACTLY this format, nothing else:\nRESOLVE: <the one public event-skeleton, by handle, IF a closed window needs resolving; otherwise the single word NONE>\nSUBMIT: <your character's intention for the window, in your voice; or NONE if you only resolved>`;
+  const user = `[YOU ARE ${h}]\n\nYOUR ACCOUNT SO FAR:\n${j(witnessed)}\n\nNAMES YOU KNOW:\n${j(knows)}\n\nYOUR CAPABILITY & LOCATION:\n${j(passport)}\n\nTHE ROOM RIGHT NOW (your engage envelope — it shows the live window: who is here and what each is doing right now, plus the window's open-stamp and the fixed per-actor dice if a window is live):\n${env}\n\nFollow your operating directive (your system prompt) EXACTLY — it tells you when a window is ready to resolve and what to submit. The current time is ${now}; the room's span is ${WINDOW_MS} ms (the lone-intention case only — co-presence completes a window at once). Respond in EXACTLY this format, nothing else:\nRESOLVE: <the one public event-skeleton, by handle, IF your directive says a window is ready to resolve; otherwise the single word NONE>\nSUBMIT: <your character's intention for the window, in your voice; or NONE if you only resolved>`;
   const out = await think('bare', fnWhole, user);
   const resolveTxt = (out.match(/RESOLVE:\s*([\s\S]*?)(?:\n\s*SUBMIT:|$)/i)?.[1] || '').trim();
   const submitTxt = (out.match(/SUBMIT:\s*([\s\S]*)$/i)?.[1] || '').trim();
 
+  // ACT then RESOLVE — the directive order (step 4: submit, THEN resolve the now-
+  // complete window). Apply the submission FIRST so the actor's own intention is in
+  // the window before co-presence-close is judged; applying resolve first would let a
+  // close fire on a window that does not yet hold the resolver's own act.
+  if (submitTxt && !/^none\b/i.test(submitTxt)) {
+    await engage({ agent_id: h, submit: submitTxt, face: 'character', with_liquid: true });
+    console.log(`  — ${h} (bare) submits: ${submitTxt.slice(0, 100)}`);
+  }
   if (resolveTxt && !/^none\b/i.test(resolveTxt)) {
     const liq = await block(`liquid:pool:${ROOM}`);
     const openTs = windowOpenTs(liq);
@@ -230,14 +249,13 @@ async function bareDecide(h: string): Promise<void> {
       const ack = await engage({ agent_id: h, contribution: resolveTxt, resolves_window: openTs, since_position: 0 });
       const ok = /committed: slot/.test(ack);
       if (ok) for (const c of live) if (c.agent_id) await engage({ agent_id: c.agent_id, submit: '' });
-      console.log(`  >>> [${h} (bare) ${ok ? 'RESOLVED' : 'tried, STOOD DOWN'}${elapsed < WINDOW_MS ? ` · ⚠ PREMATURE (only ${elapsed}ms of ${WINDOW_MS})` : ''}] ${resolveTxt.slice(0, 90)}`);
+      // Co-presence-close: a ≥2-intention resolve is CORRECT however little time has
+      // passed; only a LONE-intention resolve before the span is the premature-solo bug.
+      const prematureSolo = live.length < 2 && elapsed < WINDOW_MS;
+      console.log(`  >>> [${h} (bare) ${ok ? 'RESOLVED' : 'tried, STOOD DOWN'}${ok ? ` · ${live.length}-intention` : ''}${prematureSolo ? ` · ⚠ PREMATURE SOLO (1 intention, only ${elapsed}ms of ${WINDOW_MS})` : ''}] ${resolveTxt.slice(0, 90)}`);
     } else {
       console.log(`  !!! [${h} (bare) tried to resolve but there is NO live window]`);
     }
-  }
-  if (submitTxt && !/^none\b/i.test(submitTxt)) {
-    await engage({ agent_id: h, submit: submitTxt, face: 'character', with_liquid: true });
-    console.log(`  — ${h} (bare) submits: ${submitTxt.slice(0, 100)}`);
   }
 }
 
