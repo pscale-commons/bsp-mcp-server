@@ -78,6 +78,41 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   PASSED (passive "watching" now resolves with a perception calc; seating/CF/fog hold, observer 4/5).
   The watcher→false-solo→agency-steal bug can't reproduce in the rig (it forces every seat to act
   each round) → validated by David's next human test.
+- **FAILED IN REAL PLAY 2026-06-22 — ZERO correspondence (next session's bug).** Live thornwood data:
+  routing FINE (both on thornwood), propagation FINE (anya's committed beat saw cyrus by appearance,
+  fog held), frame FINE. The ONE bug is **INSTANT-SOLO**: each player resolves their window instantly,
+  so windows never stay open to gather — cyrus resolved 3 solo beats (10:47–10:49) before anya ever
+  acted; they NEVER shared a window = no interaction. "Engagement is an act" fixed PRESENCE, not
+  TIMING. ROOT CAUSE: the window DURATION is not ENFORCED — the directive's "resolve only a closed
+  window" is convention; the LLM instant-resolves and the beach's atomic claim checks single-resolution
+  NOT duration, so it accepts the early resolve. FIX (invariant-as-code, like single-resolution): the
+  beach REJECTS `resolves_window` when `now < openTs + duration` → forces the window to stay open its
+  full duration so the second player can join. Cost: latency (act → wait the duration → resolve) = the
+  inherent async constraint (no realtime). Duration source = frame-spec:thornwood:9 (90s).
+- **SHIPPED 2026-06-22 — "co-presence-close" (refines the pure-dwell proposal above).** Re-test forensics
+  added a THIRD face to the same fault: perceive reads ONLY the resolved pool, never the LIVE WINDOW —
+  so Anya's question to Cyrus (which even reached pool slot 4) was invisible to him while pending, and
+  one-sided once frozen (solo-resolved, no gather to pull Cyrus in). **[David] rejected pure-dwell+re-touch
+  as tedious** ("players have to keep checking"; a submission mid-window getting no resolution "tests the
+  patience of any player") and chose: **a window resolves the moment a SECOND character joins it**
+  (co-presence completes the gather, the completing submission INCLUDED); a lone intention resolves after
+  the span; a submission with no open window starts a NEW one (not in the closed one). KEY INSIGHT: counting
+  present intentions is convention-ROBUST where the prior time-arithmetic + solo-instant escape hatch was
+  not — so this ships **block-only, no deploy**: `function:thornwood` (dropped solo-instant; perceive now
+  reads the live window + renders co-present live actors; act applies ≥2-closes), `frame-spec:9.2` (span
+  90→30s, reframed as solo-patience-ONLY). Reseed `packs/thornwood` to apply. **Hardening-if-shaky** (the
+  prior entry's invariant-as-code, re-shaped to this rule): envelope (`pool.ts`) STATES the verdict
+  ("another character is here NOW — the window is complete, resolve") so the SURFACE owns it, not
+  convention — needs a Railway deploy; deferred until the block-only re-test shows whether the directive holds.
+  Parked: 3rd-player shut-out (a settle-grace before ≥2 closes) — irrelevant at two players.
+  **Mechanics validated 8/8, no LLM, no live secrets** (`scripts/check-co-presence-close.ts` — drives
+  the real `pscale_pool_engage` against a freshly-seeded LOCAL beach): perceive surfaces the live
+  window (the exact "Anya asked, Cyrus saw nothing" fix), a 2nd submission makes a 2-intention window
+  with per-actor dice for both, resolving it commits ONE shared skeleton, single-resolution stands a
+  second resolver down, and the other character then perceives the shared beat. RESIDUAL = directive
+  ADHERENCE only (does a bare LLM follow the prose): the rig's `--client bare` was updated off the old
+  pure-dwell rule to defer to the directive (co-presence-close); a keyed run (ANTHROPIC_API_KEY) or
+  the live two-machine test is what settles it. The substrate gives the LLM everything the fix needs.
 
 ## Parked (deferred, NOT lost)
 - **Place-enrichment** [David's flag, raised twice]: durable beat-notes fold into `spatial`
@@ -99,10 +134,12 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   action-block is the bigger redesign — postponed.
 
 ## Open / next
-- **Validate live**: the directive carries the validated *content*, but the rig tested *composed
-  context*, not *directive prose* — so directive-vs-composed is the variable the next bare-claude
-  two-machine test checks. Needs the directive applied to the LIVE beach (`thorn142`, David's ok),
-  then "play X on thornwood" on two machines.
+- **RE-TEST co-presence-close (2026-06-22, IN PROGRESS)**: reseed `packs/thornwood` to the live beach,
+  restart play on both machines, and check the one thing that's failed twice — do two characters
+  actually MEET (a question asked → resolved as ONE shared beat, not two solo skeletons)? Success =
+  the second submission closes the gather and the exchange lands in the pool with both in it. If the
+  directive holds, the meeting works with no code; if the LLM is still flaky about reading the live
+  window or counting present intentions, ship the envelope-verdict hardening (Decisions, last entry).
 - **Reliability upgrade** (only if directive-adherence proves weak live): a per-turn perceive that
   COMPOSES the C aperture (a shared resolver used by `pscale_play` + a perceive path), matching the
   rig — the reorientation's "delivered envelope" move. Don't build pre-emptively.
