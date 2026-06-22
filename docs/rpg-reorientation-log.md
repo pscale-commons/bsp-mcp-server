@@ -139,6 +139,30 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   an outcome must close an option, open a threat, or change state. The shell build also PROVED the
   HITL-reducing loop — iterate a systemic element (shells) → re-run autonomous → read the observer →
   name the next lever — with no human in the chair.
+- **NOMAD teeth + perception framing — 2026-06-22 (merged #22).** A band below clear must BITE (option
+  closed / threat opened / standing spent / NPC reaction) — `rules:nomad:4` + `function:thornwood:2`.
+  Lifted Agency 3→5, Persistence 4→5 (failures cost irreversibly + persist). `function:thornwood:1`
+  render step: another character's interior is the POV's INTERPRETATION, not fact (David's 2026-06-16 ruling).
+- **Faithful rig (`--client agent`) — BUILT + validated 2026-06-22. HNITL ≡ HITL achieved.** [David, point 1]
+  The character-LLM makes its OWN bsp-mcp tool calls — `pscale_play` to enter + scoop the shell manifest,
+  `bsp` to read place/passport + journal `witnessed`, `pscale_pool_engage` to perceive the live window +
+  submit + resolve — no composed aperture, no scripted calls; the rig only EXECUTES the LLM's calls against
+  the local beach (system = the real server `INSTRUCTIONS`; tools = the real Zod schemas via zod-to-json-schema).
+  The sole difference from HITL is the intent-source (purpose vs human keystrokes). VALIDATED (turns=1, real
+  Claude): each entered via `pscale_play`; cyrus PERCEIVED the LIVE WINDOW (saw anya pending, recognised
+  himself as the figure she addressed), submitted, then did co-presence-close ITSELF — saw 2-in-window, read
+  `passport:anya` for CF, wrote ONE skeleton via `contribution`+`resolves_window`, cleared, journaled. Fog
+  5/5, observer 4/5. This IS the dataflow David's two-machine play uses. Supporting builds: `pscale_play`
+  now manifest-driven scoop (#86, default set + extras the shell names → the drive reaches entry); shell
+  orienting notes (#23 — walk-the-manifest + NPC-self-driving). Disciplines still TODO for full fidelity:
+  render-then-decide is natural in the loop; the ≥30s one-intent tempo gate is `--gap` (set to span for
+  fidelity runs); MCP-boundary is in-process handlers (≈parity; real-wire is the last 5%).
+  NEW FINDING (the faithful rig caught what scripting hides) — **"public-inscription threshold"**: a SOLO
+  actor (fenn, alone, window unresolved) is live in the LIQUID (perceivable by live-window readers) but NOT
+  in the POOL until a joiner resolves it (or the span elapses) — so pool-only readers + the observer don't
+  see him. Partly a turns=1 artifact (fenn acted last, no follow-up join); partly a real design Q [David's
+  call]: is ENTERING / being-present a public act (pool updates on arrival), or liquid-only until a beat
+  resolves? Connects to async-presence / absent-PC.
 
 ## Parked (deferred, NOT lost)
 - **Place-enrichment** [David's flag, raised twice]: durable beat-notes fold into `spatial`

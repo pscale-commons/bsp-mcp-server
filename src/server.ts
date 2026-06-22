@@ -63,7 +63,7 @@ function installErrorWrapper(server: McpServer): void {
 
 const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
-const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor), five substrate primitives, and two entry meta-tools (the orientation invite and play — inhabit a handle in a world), operating on pscale JSON blocks served from federated beaches.
+export const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor), five substrate primitives, and two entry meta-tools (the orientation invite and play — inhabit a handle in a world), operating on pscale JSON blocks served from federated beaches.
 
 FIRST ACTION when you connect: call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
 

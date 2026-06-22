@@ -28,8 +28,13 @@ import { promises as fs, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { handlePoolEngage, windowOpenTs, collectContributions, windowDicePerAuthor } from '../src/tools/pool.js';
+import { handlePoolEngage, windowOpenTs, collectContributions, windowDicePerAuthor, poolEngageParamsSchema } from '../src/tools/pool.js';
+import { handlePlay, playParamsSchema } from '../src/tools/play.js';
+import { handleBsp, bspParamsSchema } from '../src/tools/bsp.js';
+import { INSTRUCTIONS } from '../src/server.js';
 import { loadBlock, appendToBeach } from '../src/db.js';
+import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 // Load .env.rig (gitignored — NEVER committed) so a stored ANTHROPIC_API_KEY is
 // reused across runs/sessions without re-exporting it each time. Existing env
@@ -47,7 +52,8 @@ const arg = (n: string, d: any) => { const i = process.argv.indexOf(`--${n}`); i
 const TURNS = parseInt(arg('turns', '3'), 10);
 const TIMING = String(arg('timing', 'concurrent'));   // concurrent | spread | random
 const WINDOW_MS = parseInt(arg('window-ms', '1500'), 10);
-const CLIENT = String(arg('client', 'harness'));      // harness (rig code judges the window) | bare (the LLM judges it, as in the app)
+const CLIENT = String(arg('client', 'harness'));      // harness (rig code judges the window) | bare (the LLM judges it) | agent (HNITL≡HITL: the LLM makes its OWN bsp-mcp tool calls)
+const GAP_MS = parseInt(arg('gap', '3000'), 10);      // --client agent: ms between rounds (≥ the beach window span = full fidelity; smaller = faster iteration)
 const MAX_DELAY = parseInt(arg('max-delay', '1200'), 10); // --timing random: each seat waits 0..MAX_DELAY before it acts
 const MODEL = String(arg('model', 'claude-sonnet-4-6'));
 const APERTURE = String(arg('aperture', 'composed')); // composed (rig builds the C aperture in code) | directive (raw blocks; the DIRECTIVE does the seating/typing — the bare-claude path)
@@ -284,6 +290,81 @@ async function bareDecide(h: string): Promise<void> {
   }
 }
 
+// ── Agent client (--client agent) — HNITL ≡ HITL ──────────────────────────────
+// The character-LLM is handed the REAL bsp-mcp tools and makes its OWN calls:
+// pscale_play to enter + scoop its shell manifest, pscale_pool_engage to perceive
+// the live window + submit + resolve, bsp to read/write blocks — exactly as a
+// claude.ai player's LLM does. The rig only EXECUTES the calls against the local
+// beach; it composes nothing and scripts nothing. The sole difference from HITL is
+// that the LLM supplies the intent (from its purpose) where a human would type it.
+// This is the configuration that catches the LLM's-own-dataflow bugs (does it read
+// the live window? pass pool_url? re-read witnessed?) that a scripted rig hides.
+const z2j = (shape: Record<string, any>) => { const s: any = zodToJsonSchema(z.object(shape), { $refStrategy: 'none' }); delete s.$schema; return s; };
+const AGENT_TOOLS = [
+  { name: 'pscale_play', description: "Inhabit a handle in a world in one call: resolves the world to its beach, engages the room (the operating directive AND the live scene arrive inlined), scoops your own context by walking your shell's manifest, and PINS the beach so every later call targets it.", input_schema: z2j(playParamsSchema) },
+  { name: 'pscale_pool_engage', description: "Engage a pool. Read (no submit/contribution) returns the operating directive + the live window + new events. submit=<text> STAGES your intention to the room's liquid window — your PRESENCE. contribution=<skeleton> + resolves_window=<open-stamp> COMMITS one resolution. with_liquid shows co-present pending intentions.", input_schema: z2j(poolEngageParamsSchema) },
+  { name: 'bsp', description: "The unified bsp() read/write. Read when content omitted; write when content provided. For federated blocks (witnessed/knows/spatial/passport) agent_id is the beach URL and spindle is the address; append=true appends to an accumulator such as your own history.", input_schema: z2j(bspParamsSchema) },
+];
+const AGENT_SYSTEM = INSTRUCTIONS;
+async function executeTool(name: string, input: any): Promise<string> {
+  try {
+    if (name === 'pscale_play') return (await handlePlay(input)).content[0].text;
+    if (name === 'pscale_pool_engage') return (await handlePoolEngage(input)).content[0].text;
+    if (name === 'bsp') return (await handleBsp(input)).content[0].text;
+    return `error: unknown tool "${name}"`;
+  } catch (e: any) { return `tool error (${name}): ${e?.message ?? String(e)}`; }
+}
+async function agentApi(messages: any[]): Promise<any> {
+  if (!KEY) throw new Error('--client agent requires ANTHROPIC_API_KEY — the agent must make real tool calls; the stub cannot.');
+  const r = await fetch(`${BASE}/v1/messages`, {
+    method: 'POST',
+    headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: MODEL, max_tokens: 3000, system: AGENT_SYSTEM, tools: AGENT_TOOLS, messages }),
+  });
+  const d: any = await r.json();
+  if (!r.ok) throw new Error(`Anthropic ${r.status}: ${JSON.stringify(d).slice(0, 400)}`);
+  return d;
+}
+// One turn = drive the LLM's tool-use loop until it stops calling tools. The thread
+// PERSISTS across turns (a real conversation, exactly like a claude.ai session).
+async function agentTurn(h: string, thread: any[]): Promise<void> {
+  for (let step = 0; step < 16; step++) {
+    const resp = await agentApi(thread);
+    thread.push({ role: 'assistant', content: resp.content });
+    const text = (resp.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('').trim();
+    if (text) console.log(`  · ${h}: ${text.replace(/\s+/g, ' ').slice(0, 220)}`);
+    const toolUses = (resp.content || []).filter((c: any) => c.type === 'tool_use');
+    for (const tu of toolUses) {
+      const i = tu.input || {};
+      const tag = i.submit !== undefined ? ` submit="${String(i.submit).slice(0, 60)}…"`
+        : i.contribution !== undefined ? ` RESOLVE/commit` : i.block ? ` ${i.block}${i.spindle != null ? ':' + i.spindle : ''}`
+        : i.world ? ` ${i.handle}@${i.world}` : '';
+      console.log(`  → ${h} · ${tu.name}${tag}`);
+    }
+    if (toolUses.length === 0) return;  // end of turn
+    const results: any[] = [];
+    for (const tu of toolUses) {
+      const out = await executeTool(tu.name, tu.input);
+      results.push({ type: 'tool_result', tool_use_id: tu.id, content: out.slice(0, 20000) });
+    }
+    thread.push({ role: 'user', content: results });
+  }
+  console.log(`  ! ${h}: hit the tool-step cap (16) this turn`);
+}
+async function runAgentRounds(): Promise<void> {
+  const threads: Record<string, any[]> = {};
+  for (const h of CHARS) threads[h] = [{ role: 'user', content: `Play ${h} on ${BEACH} — your passphrase for ${h} is "${SECRET}". Take ${h}'s turn: enter the world, perceive from your character's position, render the lived moment, and act once (submit your intention). You ARE ${h} — decide on ${h}'s behalf.` }];
+  for (let turn = 1; turn <= TURNS; turn++) {
+    CURRENT_ROUND = turn;
+    console.log(`\n${'='.repeat(56)}\nROUND ${turn} · agent client (the LLM drives its own bsp-mcp tools)\n${'='.repeat(56)}`);
+    for (const h of shuffle([...CHARS])) {
+      if (turn > 1) threads[h].push({ role: 'user', content: `Take ${h}'s next turn — perceive what has changed in the room and act once.` });
+      await agentTurn(h, threads[h]);
+    }
+    if (turn < TURNS) await sleep(GAP_MS);
+  }
+}
+
 async function main() {
   const dir = await fs.mkdtemp(join(os.tmpdir(), 'rpg-rig-'));
   await spawnBeach(dir); await seedPack();
@@ -292,8 +373,12 @@ async function main() {
   fnWhole = [fn?.['_'], fn?.['1'], fn?.['2'], fn?.['3']].filter((x) => typeof x === 'string').join('\n\n');
   placeRules = j(await block('rules:thornwood')); nomad = j(await block('rules:nomad'));
   frameC = (await block('frame-spec:thornwood'))?.['1']?.['1'] ?? null;   // resolve the C soft aperture from the substrate
-  console.log(`[rig] local beach ${BEACH} · seeded · model=${KEY ? MODEL : 'STUB'} · client=${CLIENT} · timing=${TIMING} · aperture=${APERTURE} · window=${WINDOW_MS}ms · turns=${TURNS}\n`);
+  const cfg = CLIENT === 'agent' ? `gap=${GAP_MS}ms` : `timing=${TIMING} · aperture=${APERTURE} · window=${WINDOW_MS}ms`;
+  console.log(`[rig] local beach ${BEACH} · seeded · model=${KEY ? MODEL : 'STUB'} · client=${CLIENT} · ${cfg} · turns=${TURNS}\n`);
 
+  if (CLIENT === 'agent') {
+   await runAgentRounds();
+  } else {
   for (let turn = 1; turn <= TURNS; turn++) {
     CURRENT_ROUND = turn;
     console.log(`\n${'='.repeat(56)}\nROUND ${turn} · ${CLIENT} client · ${TIMING} timing\n${'='.repeat(56)}`);
@@ -314,6 +399,7 @@ async function main() {
   console.log(`\n${'#'.repeat(56)}\nFINAL — each meets the last beat, then the observer judges\n${'#'.repeat(56)}`);
   CURRENT_ROUND = TURNS + 1;
   for (const h of CHARS) await perceiveAndJournal(h);
+  }
 
   const digest: string[] = [];
   for (const h of CHARS) {
