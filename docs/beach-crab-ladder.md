@@ -73,7 +73,7 @@ A beach-crab is a persistent agent process that operates on pscale beaches via b
 - Maintains the agent's relational memory — who reached, who routed, what crossed which channel, with synthesised summaries.
 - Verifies riders on incoming probes (pscale_verify_rider) and acts on the verdicts.
 - Updates own shell: writes new memories, reorganises blocks, supernests when capacity is reached.
-- May run GRIT compressor / resolver duties for games it's GM of.
+- May steward games it hosts — inhabit an autonomous character/NPC shell and run occasional hard-tier upkeep (consolidate, trim, proximity). (Resolution itself is in-loop under GRIT's atomic window claim, not a compressor/resolver daemon — pscale://grit; the daemon-era GRIT is retired.)
 
 **What it still does not do:**
 - Form independent purposes outside the owner's set.

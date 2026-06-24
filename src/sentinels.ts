@@ -36,6 +36,7 @@ import progression from './progression.json' with { type: 'json' };
 import blockConventions from './block-conventions.json' with { type: 'json' };
 import gatekeeper from './gatekeeper.json' with { type: 'json' };
 import softAgent from './soft-agent.json' with { type: 'json' };
+import grit from './grit.json' with { type: 'json' };
 import payway from './payway.json' with { type: 'json' };
 import ecologyRouter from './ecology-router.json' with { type: 'json' };
 import sandRider from './sand-rider.json' with { type: 'json' };
@@ -77,7 +78,7 @@ export const SENTINELS: SentinelEntry[] = [
     name: 'evolution',
     json: evolution as unknown as Block,
     description:
-      'The five-level relational framing of the pscale agent ecology. Walkable as a pscale block. Pscale is the substrate, not a level — these levels describe relational acts. 1=Signal (leave marks), 2=Commitment (grain or sed: collective), 3=Semantic networks (SAND riders), 4=Mutual objectives (pools, GRIT, Onen RPG), 5=Shared context (MAGI + xstream). Star walk at digit 5 within each level for the beach-crab rung at that level. Walk by digit for each level\'s substance.',
+      'The five-level relational framing of the pscale agent ecology. Walkable as a pscale block. Pscale is the substrate, not a level — these levels describe relational acts. 1=Signal (leave marks), 2=Commitment (grain or sed: collective), 3=Semantic networks (SAND riders), 4=Mutual objectives (pools, GRIT, the role-played world), 5=Shared context (MAGI + xstream). Star walk at digit 5 within each level for the beach-crab rung at that level. Walk by digit for each level\'s substance.',
   },
   {
     name: 'manifest',
@@ -108,6 +109,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: softAgent as unknown as Block,
     description:
       'Soft-agent — substrate-wide canonical role-shell for the user-mediating soft-LLM. Hermitcrab pattern: cognition fluid (the LLM at each ⌘↵ turn), structure persistent (this shell). Sibling of the gatekeeper (which is the L1→L2 admission shell); this is the operating shell for already-engaged users. Branches: 1 ROLE, 2 KNOWLEDGE GATING, 3 STYLE, 4 CONTEXT, 5 FORMAT, 6 ACTIONS, 7 ACT-DON\'T-ASK, 8 HERMITCRAB DISCIPLINE, 9 metadata.',
+  },
+  {
+    name: 'grit',
+    json: grit as unknown as Block,
+    description:
+      'GRIT — Group Resolution In Time. The canonical, daemonless play-loop for running a role-played world on pscale blocks: a contributor-driven room with no server, no round-timer, no central resolver. MOST of play is SIMPLE (perceive → act → commit a terse public fact; no dice, no waiting); a CHECK is the exception and the only time dice are read (a CONTEST gathers both actors and one resolver weaves the outcome; a solo TRIAL self-resolves on fixed seeded dice). The pool is public reality in identifiers; each character\'s witnessed is their private narrative; names are earned in-fiction. GRIT decides WHEN a check is needed and HOW its outcome is gathered, written once, and made to bite — it does NOT define the dice or the bands: those belong to a world\'s RESOLUTION RULES block (the reference system is rules:nomad; a world may mount any rules, D&D-style or other). A world mounts on GRIT by supplying its own rules + place (spatial:<world>/rules:<world>) + cast and pointing the room pool\'s underscore here; GRIT itself never changes. Branches: _ the framing + simple/check essence + the mount note, 1 soft (wear a character), 2 check (the resolving aperture), 3 hard (occasional upkeep). Supersedes the daemon-era meaning of GRIT (timer-window rounds + server-dispatched resolution + first-valid-wins compressors), now retired. See block-conventions for how a world mounts on it; rules:nomad for the reference resolution system.',
   },
   {
     name: 'payway',
