@@ -57,6 +57,36 @@ async function beachIndex(origin: string): Promise<string[]> {
   }
 }
 
+/** The spatial address in a passport's position 3 ("…spatial:<world>:<addr>") — the character's location. */
+function passportLocation(passportBlock: any): string | null {
+  const p3 = passportBlock?.['3'];
+  if (typeof p3 !== 'string') return null;
+  const m = p3.match(/spatial:[\w-]+:(\d+)/);
+  return m ? m[1] : null;
+}
+/** A name-free observable appearance from a passport's position 3 (the posture before the location
+ *  ref), so a co-present character is perceived without leaking the name they have not yet earned. */
+function passportAppearance(passportBlock: any, handle: string): string {
+  let s = String(passportBlock?.['3'] ?? '').split(/\s*Location:/)[0].trim();
+  if (handle) {
+    const cap = handle[0].toUpperCase() + handle.slice(1);
+    s = s.replace(new RegExp(`\\b${cap}\\b`, 'g'), 'A figure').replace(new RegExp(`\\b${handle}\\b`, 'gi'), 'a figure');
+  }
+  return s || 'a figure here';
+}
+/** Co-presence from the substrate: the OTHER handles whose passport:3 location equals the caller's.
+ *  Position is already in passport:3 — this only surfaces what the substrate holds, so a player sees
+ *  who is in the room on arrival, before anyone acts. By appearance; names stay unearned. */
+async function coPresentCast(origin: string, handle: string, myLoc: string | null): Promise<string[]> {
+  if (!myLoc) return [];
+  const out: string[] = [];
+  for (const pn of (await beachIndex(origin)).filter((b) => b.startsWith('passport:') && b !== `passport:${handle}`)) {
+    const row = await loadBlock(origin, pn);
+    if (row?.block && passportLocation(row.block) === myLoc) out.push(passportAppearance(row.block, pn.slice('passport:'.length)));
+  }
+  return out;
+}
+
 export const playParamsSchema = {
   world: z
     .string()
@@ -149,6 +179,12 @@ export async function handlePlay(
       }
     }
   }
+  // 4b. Co-presence — surface who else stands at your location (passport:3). A pure reveal of what
+  //     the substrate already holds: you SEE the room's live cast on arrival, by appearance.
+  const myPassport = own.find((o) => o.name === `passport:${handle}`);
+  const myLoc = myPassport ? passportLocation(JSON.parse(myPassport.json)) : null;
+  const coPresent = await coPresentCast(resolved, handle, myLoc);
+
   const has = (p: string) => own.some((o) => o.name.startsWith(p));
   const kind = has('witnessed:') || has('passport:')
     ? 'character'
@@ -166,6 +202,11 @@ export async function handlePlay(
   out.push('');
   out.push('═══════════ THE ROOM — operating directive + live scene ═══════════');
   out.push(env);
+  if (coPresent.length) {
+    out.push('');
+    out.push('═══════════ WHO IS HERE — co-present at your position (by appearance; names unearned until spoken) ═══════════');
+    for (const c of coPresent) out.push(`— ${c}`);
+  }
   if (own.length) {
     out.push('');
     out.push(`═══════════ YOUR OWN CONTEXT (${handle}) ═══════════`);
