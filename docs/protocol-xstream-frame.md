@@ -158,9 +158,9 @@ Each entity commits their own liquid to their own solid, optionally with a per-e
 
 Synthesis fires when N-of-M entities have written non-empty liquid. Useful for design cells or council-like bodies where the rule is "we all need to weigh in."
 
-### 4.4 Time-triggered (GRIT)
+### 4.4 Window-resolved (GRIT)
 
-Synthesis fires when the round window elapses. Identical to GRIT under the pscale-beach v2 protocol — the same daemon family. The envelope `[SYNTHESIS rule=grit window=<s>s resolves=<ts>]` is the same envelope GRIT writes for pool resolution.
+Under GRIT (`pscale://grit`) most acts SIMPLE-commit directly with no synthesis. A CHECK (a contested or uncertain act) gathers intentions into a window; resolution is **in-loop** — a participant resolves the window and writes one event, claiming it atomically via `resolves_window` (the beach stands every other resolver down). This is not a daemon-fired time-trigger; it is in-loop resolution gated by the atomic single-resolution claim. The earlier daemon-family time-trigger is retired.
 
 ### 4.5 Designer-rule
 

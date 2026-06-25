@@ -321,13 +321,13 @@ Conventional shape:
 
 Subscribers write contributions at the next free position via `bsp() ring write` or `bsp() point write`. Order is supernest order. Read with `bsp(spindle="2.N", pscale_attention=-2)` for disc of contributions. No tool. No SQL table.
 
-### 6.3 GRIT — script + envelope convention
+### 6.3 GRIT — the daemonless play-loop convention
 
-GRIT (Group Resolution In Time) is a daemon script (`grit-resolver.ts` in pscale-mcp era) that polls a pool, detects the open round window via timestamps, and posts an event when the window elapses.
+GRIT (Group Resolution In Time) is the canonical play-loop for multi-agent coordination on a pool, bundled as a sentinel at `pscale://grit`. The pscale-mcp era ran it as a daemon (`grit-resolver.ts`) that polled a pool and posted an event when a round window elapsed; **that model is retired.**
 
-Under bsp-mcp, GRIT is unchanged in spirit: a script that uses `bsp()` to read pool contributions and `bsp()` to write event contributions. The event is marked by a textual envelope in the contribution's underscore: `[GRIT EVENT resolves=<ts> window=<s>s]` followed by the synthesis. Contributors detect events by parsing the envelope; non-events are liquid for the next round.
+Under bsp-mcp, GRIT is **daemonless and in-loop.** Most acts are SIMPLE: a participant perceives the pool's new facts and the live intentions, acts, and self-commits a terse public fact via `bsp()` / `pscale_pool_engage` — no dice, no resolver. The exception is a CHECK: a CONTEST gathers opposed intentions into a window and one participant resolves both, or a solo TRIAL resolves at once on fixed seeded dice. Single-resolution is enforced **atomically at the beach** — the store admits the first resolver of a window (`resolves_window`) and stands every other down — so there is no server dispatch and no first-valid-wins polling.
 
-No new MCP primitive. The GRIT pattern is purely convention plus a daemon. Port from pscale-mcp's `scripts/grit-resolver.ts` is the only code work — substrate calls become `bsp()` calls.
+No new MCP primitive, and no daemon. GRIT supplies the loop only; the dice and outcome tiers live in a swappable rules block (the reference is NOMAD); a world (spatial + rules + cast) is content above it. See `pscale://grit` and `proposals/2026-06-23-grit-extraction.md`.
 
 ### 6.4 Inbox replacement — marks tagged for an agent
 
@@ -437,7 +437,7 @@ This produces:
 | 2 | `evolution.json` + `state.json` restructure to five-level framing | bsp-mcp-server | **Done — 28 April 2026** |
 | 3 | `WellKnownAdapter` in `db.ts` — URL-prefix dispatch | bsp-mcp-server | **Done — 28 April 2026** (commits `ed4a7f8`, `7c83d0a`) |
 | 4 | Update `happyseaurchin.com/.well-known/pscale-beach` to v2 (block-shaped responses) | David / happyseaurchin Claude Code session | **Done — 29 April 2026** (live federation smoke confirmed) |
-| 5 | Onen RPG / Thornkeep / GRIT port — convention layer + script update; substrate primitives unchanged | David | **Pending** |
+| 5 | Role-played world / GRIT — convention layer, NOT a daemon port; substrate primitives unchanged | David | **Done — 2026-06** (GRIT is the daemonless in-loop play-loop, bundled as the `pscale://grit` sentinel; the Thornwood reference cartridge runs it live. No `grit-resolver.ts` port — single-resolution is the beach's atomic `resolves_window` claim. See `proposals/2026-06-23-grit-extraction.md`.) |
 | 6 | Inbox replacement in grain_reach — in-block reach hint at grain `block['8']` (Path 2, sub-option b, dual-write) | bsp-mcp-server | **Done — 2 May 2026** (per `proposals/2026-04-30-stage-6-inbox-replacement.md`; sand_inbox kept transiently for pscale-mcp-server compatibility) |
 | 7 | Dashboard rewrite for v2 framing labels | bsp-mcp-server | **Pending** (low priority) |
 | 8 | Sibling-block handler at happyseaurchin — multi-block per origin, site-hosted sed:/grain: substrates | David / happyseaurchin Claude Code session | **Implementation done — 2 May 2026** (happyseaurchin commit `433d943`, pending Vercel deploy + sibling-list root-underscore write). Spec at [happyseaurchin-sibling-blocks-implementation.md](./happyseaurchin-sibling-blocks-implementation.md). |

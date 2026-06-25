@@ -182,6 +182,102 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   stop), not just round 1. RESIDUAL (observer, perception 4/5): name-knowledge attribution — anya used
   "cyrus" without a logged public name-transmission; fix = log name-learning in the pool at the moment it
   occurs (the `knows:<h>` earned-names boundary). [David's call.]
+- **First two-machine HITL run + sequencing redesign — 2026-06-23.** Cyrus + Anya on two claude.ai
+  connectors (live thornwood, thorn142), David driving both. **Co-presence-close PASSED** — 4/4 windows
+  gathered, the characters genuinely met and held dialogue; name-transmission logged correctly in the
+  PUBLIC record (beat 5: "gives her name — Anya"); NOMAD teeth fired with per-actor divergence ("Anya's
+  cast found the room's attention; Cyrus's declaration found its silence"); one narrow authored-figure
+  scar (a background "broad man" promoted into beat 2 then dropped — self-limiting, not self-amplifying).
+  But real play (human tempo — what the rig CANNOT simulate) exposed FOUR faults: (1) **over-rolling** —
+  dice every window incl. basic dialogue, because the envelope hands dice unconditionally so rules:nomad's
+  SIMPLE=no-dice never bites; (2) **cross-authoring** — one player's machine resolves BOTH characters
+  (deterministic dice stop roll-fudging, not NARRATIVE fudging); (3) **async tedium** [David — the big one]
+  — no push → submit-then-nudge-"what happened?"; out-of-sync windows; the player never knows whose turn it
+  is; (4) **name-boundary break** — Anya's narration used "Cyrus" though he never gave his name; knows:<h>
+  goes stale one beat after a name is given. UNIFYING PATTERN: public writes (the explicit act) happen;
+  private bookkeeping (witnessed journaling, knows-append) is LLM-discretion and DOESN'T — witnessed:anya
+  was never written all run. REDESIGN [David requested write-up] at
+  [proposals/2026-06-23-resolution-sequencing-redesign.md](../proposals/2026-06-23-resolution-sequencing-redesign.md):
+  two reframes — (a) separate EXCHANGE (talk/look/move → post DIRECTLY via `contribution=`, immediate, no
+  dice) from RESOLUTION (contested acts only → gather+roll+teeth); (b) fold PERCEIVE into ACT + report
+  turn-state (every engage returns what-changed-since-you-acted + waiting-on-X). Recommended: Model A
+  (transcript-first) default, B's gather for opening/contested; output stays shared-skeleton (reject
+  primary+echo); dice only on contested; name only-what-earned, derived from narrative (drop knows as a
+  maintained ledger). KEY: maps entirely onto EXISTING tool paths (`contribution=` direct append;
+  `submit=`+`resolves_window=` gather) → **CORE IS BLOCK-ONLY, no deploy**; rollback = `pack-reset` from
+  the current cartridge commit. Two optional code hardenings (soften envelope dice framing; explicit
+  turn-state line) only if the directive can't carry it. Forks pending David's confirm (proposal end).
+- **Fluid async sequence — SHIPPED + VALIDATED + LIVE 2026-06-23.** The redesign above converged into
+  [proposals/2026-06-23-fluid-async-sequence.md](../proposals/2026-06-23-fluid-async-sequence.md) (refines +
+  SUPERSEDES the resolution-sequencing-redesign draft — same four faults, sharper frame: rolling-as-exception,
+  gathering-as-exception, terse name-free record, steer-at-scale). David's forks ANSWERED by it: self-commit yes
+  (a simple act commits its own terse PUBLIC fact, auto-success); dice-as-exception (only a CHECK rolls);
+  exchange/resolution split = **SIMPLE** (perceive→render→commit direct, NO window, NO dice) vs **CHECK** (the
+  rare uncertain-with-cost act — CONTEST against another = gather both + one resolver; TRIAL vs the world = solo,
+  self-resolved on fixed seeded dice); name earned-only, entering the public record only when spoken in-fiction.
+  BUILT block-only on the cartridge: `function:thornwood` rewritten (1 soft = the 5-step play loop with
+  CONTEST/TRIAL as the exception; 2 = the resolving aperture worn ONLY for a check; 3 = hard upkeep) +
+  `frame-spec:thornwood:9` → v0.4-simple-check-split (span 30s = solo-patience ONLY). DEPLOYED live thornwood
+  (pack-reset; verified this session by reading `function:thornwood` straight off the beach). VALIDATED: the
+  faithful rig (`--client agent`, 12 shared beats, no dice in talk, fog held, observer ~4/5) **+ David's
+  two-machine HITL run ("works quite well")**. Character-shell port LIVE in the cartridge (`shell:`/`purpose:`
+  for cyrus/anya/fenn, scooped on entry by `pscale_play`). **CF→≈8** anchored prose-native in the three passports
+  (competent-not-master; reaches live on the next pack-reset). **CONVERGENCE:** fluid-async-sequence IS the merge
+  of the two overlapping 2026-06-23 specs — the paused `claude/rpg-sequencing-v2` session's
+  resolution-sequencing-redesign forks are answered HERE; do NOT run a parallel A/B (one live beach).
+- **GRIT extraction — name + lift the RPG engine out of Thornwood. ARCHITECTURE CONFIRMED 2026-06-23 +
+  BUILT 2026-06-24.** [David] design-first call after the D&D test: **two-tier (GRIT + NOMAD), with
+  GRIT as a bsp-mcp SENTINEL** (not a library seed), and **recycle "GRIT" (Group Resolution In Time),
+  fully replacing its dead daemon meaning.** Three reusable things above the engine, not two: **GRIT**
+  = the daemonless play-loop (perceive/act/commit, simple-vs-check, contest-gather / solo-trial,
+  pool-public / witnessed-private, fog-by-earned-names, the resolving aperture, hard upkeep) —
+  world-AND-rules agnostic, canonical; **NOMAD** = the resolution rules (capability + situation + dice
+  − difficulty → bands) — the swappable slot (D&D = `rules:dnd`); **World** = `spatial:<world>` +
+  `rules:<world>` + cast. The D&D test SETTLED it: a D&D group keeps GRIT, swaps NOMAD→rules:dnd,
+  authors their world — the play-loop is the most reused/most invariant thing, so it is a genuine
+  reusable layer, not world content. The lone seam (D&D initiative vs co-presence) still splits: the
+  gather→resolve→one-skeleton→clear machinery is GRIT; the ordering/scoring within a contest is the
+  rules block. SHIPPED (reversible, no deploy): `src/grit.json` (faithful genericization of the
+  *validated* `function:thornwood` — night-wood→wild places; CF/SF/bands/d10 → "the world's resolution
+  rules, ref system rules:nomad"; spine-clean _,1,2,3; window/gather/resolves machinery kept) + wired
+  into `src/sentinels.ts` (typecheck clean; walks as `pscale://grit`). SPEC: `proposals/2026-06-23-grit-extraction.md`.
+  **BUILT 2026-06-24 [David: "go for it"]:** wiring **B** (architect's call) — `resolveDirective` gains a
+  `pscale:`-prefix SENTINEL-FALLBACK so a room pool whose underscore is `pscale:grit` runs the canonical
+  loop with NO per-world copy (`function:thornwood` KEPT as rollback target / override example; gatekeeper
+  pattern — beach override first, sentinel canonical second). Cartridge `pool:beaten-drum-main` underscore →
+  `pscale:grit`. Docs-rewrite DONE: evolution:4 (daemon→in-loop + pscale://grit), manifest (1.34 grit index +
+  v2.0), block-conventions (2.5 mount-note + Designer-face line; 4.2.6 + 4.5.5 daemon-GRIT corrected),
+  beach-crab-ladder:76, protocol-pscale-beach-v2 §6.3 + roadmap, protocol-xstream-frame §4.4, pscale-beach
+  library grit.json + rpg.json rewritten thin. **nomad-bsp DEPRECATED** (README + CLAUDE.md banners; salvage
+  `character-template`→char-creation; GitHub archive-flag offered, not set). VALIDATED: no-LLM end-to-end
+  `scripts/check-grit-wiring.ts` 6/6 PASS (inlined directive IS the GRIT sentinel, world content bundled,
+  rules referenced as swappable) + agent-rig confirmation on the wiring. **SAFE-EXEC:** all reversible repo
+  edits — NO live writes, NO deploy. CORSAIR snapshot `/Volumes/CORSAIR/pscale/thornwood-snapshots/
+  2026-06-24-pre-grit-extraction/` (22 blocks incl. beats; pinned pscale-beach f78a5c8 / bsp-mcp 3695e3c).
+  ONLY remaining live step (GATED on David's go): Railway deploy (resolver) → verify play → flip live
+  `pool:beaten-drum-main` underscore to `pscale:grit` → verify; rollback = flip back to `function:thornwood`
+  (still present), one write. **DO NOT `pack-reset` live until bsp-mcp is deployed** — the cartridge now
+  expects the resolver fallback. DIRECTION [David 2026-06-24]: transition upgrades toward the CADO **Designer
+  face** via bsp-mcp — quality through players, not the substrate architect.
+  **POST-ASSESSMENT + RE-GENERICIZED 2026-06-24** (David flagged concurrent other-session RPG changes,
+  concluded, in the GRIT/NOMAD area; he playtested on the **thousand-valleys** live world). Assessed: (1)
+  `function:thornwood` gained the **"three reveals"** (commit `9f97e85`, on main #27) — co-present cast handed
+  at PERCEIVE (you see who's here before they act), directed-act = HALF-COMMIT (commit your half, their
+  response is theirs; directed-at-you is yours to answer), DERIVED MEMORY (pool = the shared record you read
+  your own past from; `witnessed` = a private overlay of reads, NOT a transcript; names come from the public
+  record not a maintained list; NPC audible words are public). All world-agnostic loop mechanics → **grit.json
+  RE-GENERICIZED from 9f97e85** (branch 1 verbatim-from-source via /tmp rebuild + night-wood→wild places;
+  reveals folded into `_`; branches 2/3 unchanged, already genericized). (2) `rules:nomad` mechanics
+  UNCHANGED — the live thousand-valleys divergence is ONLY the world-seeder's `rules:thornwood`→
+  `rules:thousand-valleys` substitution (not a NOMAD change). (3) thousand-valleys is a SEPARATE live world
+  whose `function:thousand-valleys` branches 1/2/3 are identical (world-normalized) to thornwood@9f97e85 —
+  confirms 9f97e85 IS the concluded loop. bsp-mcp: no content divergence (origin/main = merges of my own
+  branch). **nomad-bsp GitHub-archived** (isArchived:true). Wiring re-validated `scripts/check-grit-wiring.ts`
+  6/6 + agent-rig re-confirmation on the three-reveals loop (observer **4.5/5 — UP from the pre-reveals 4/5**;
+  perception-limits + persistence both 5/5 — the reveals visibly working; lone note = passive NPC Bram, a
+  content/NPC-richness item already on the roadmap, not a regression). High-level GRIT docs (evolution/manifest/
+  block-conventions/library) sit at an altitude the reveals don't change → stand. Net: only grit.json needed
+  the refresh; cutover plan unchanged.
 
 ## Parked (deferred, NOT lost)
 - **Place-enrichment** [David's flag, raised twice]: durable beat-notes fold into `spatial`
@@ -203,15 +299,65 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   action-block is the bigger redesign — postponed.
 
 ## Open / next
-- **RE-TEST co-presence-close (2026-06-22, IN PROGRESS)**: reseed `packs/thornwood` to the live beach,
-  restart play on both machines, and check the one thing that's failed twice — do two characters
-  actually MEET (a question asked → resolved as ONE shared beat, not two solo skeletons)? Success =
-  the second submission closes the gather and the exchange lands in the pool with both in it. If the
-  directive holds, the meeting works with no code; if the LLM is still flaky about reading the live
-  window or counting present intentions, ship the envelope-verdict hardening (Decisions, last entry).
+- **RE-TEST co-presence-close — DONE 2026-06-23 (PASSED).** First two-machine HITL run: 4/4 windows
+  gathered, the characters met and held dialogue. Co-presence-close confirmed under real play. The run
+  surfaced the NEXT work (see the sequencing-redesign Decisions entry + proposal).
+- **Resolution sequencing — RESOLVED + SHIPPED 2026-06-23** (see Decisions: "Fluid async sequence"). The
+  redesign's four forks were answered by the fluid-async-sequence spec, built block-only, deployed live, and
+  validated on the rig + David's two-machine run. The `resolution-sequencing-redesign.md` draft is SUPERSEDED.
+- **CADO corrected + backcast roadmap [David, 2026-06-23 — ACTIVE].** CADO is **advisory framing**, already
+  operational — it is all just create/edit blocks, scoped per face so people + agents self-organise around what
+  they build; rights-enforcement is the deferred **v0.2** (`docs/protocol-agent-shell.md` §3.3–3.4). NOT directives
+  to build. [David corrected an over-scoped review — `cado-complete-product-minimum.md`, now SUPERSEDED; its one
+  surviving idea is the four-stances completeness: define / build / inhabit / export exhaust the relations to a
+  world, no fifth face.] Operative plan = **backcast from the three objectives** (bsp-mcp human play / llm-play /
+  xstream) at
+  [proposals/2026-06-23-roadmap-backcast-three-objectives.md](../proposals/2026-06-23-roadmap-backcast-three-objectives.md).
+  CONVERGENCE (the present edge): all three backcasts bottom out on **world-generation** (author-LLM) + **NOMAD
+  damage/death + character-creation** — block-only, no L1. v0.2 rights + multi-world/gazetteer are PROTOTYPED in
+  **pscale-biome** (the identity membrane / biome-DNS gazetteer / `located` multi-world, where `urb` is a named
+  placeholder), so the adoption/scale rungs are de-risked. NEXT: world-gen — hands-on (David + claude.ai → A)
+  ∥ probe (me, autonomous author-LLM → B).
+- **World-gen probe — VIABLE 2026-06-23 (rung 0 proven, no human).** `scripts/probe-author-world.ts`
+  (emit-spec → batch-load — the fast pattern from `scripts/probe-write-speed.ts`): an author-LLM generated a
+  coherent, shape-valid, populated, playable town (rivermeet — 7 places / 23 positions, 5 NPC passports, all
+  spine-legal, floors present) in ONE generation + a 21ms batch-load; the traveller-perceive read coherent;
+  coherence judge 5/5/5/4 ("nearly production-ready"). SPEED: bsp-mcp's handler adds ~0ms; the real cost is
+  remote RTT (242ms) × sequential — so author-as-DATA-SPEC + batch-load (~0.4s) beats N sequential bsp() tool
+  calls (~7.3s network + 1-3s LLM thinking each). TWO FINDINGS: (a) the author got pscale addressing RIGHT
+  (`21`/`31` = walk 2,1 / 3,1 → the stall, the inn common room — generalised from one `:2` example); (b) the
+  generic coherence judge LACKED pscale-awareness and FALSE-FLAGGED those correct addresses as errors → the
+  Observer + Designer LLMs (rung 1) MUST be substrate-grounded (handed whetstone), or a self-correcting
+  designer-LLM would "fix" correct work. Probe scripts uncommitted (harness, not substrate).
+- **PLAYABLE end-to-end — CONFIRMED 2026-06-23.** `scripts/probe-playable-world.ts`: a fresh author-generated
+  town swapped onto the thornwood engine; 3 real character-LLMs ENTERED via `pscale_play` and co-present acted
+  on one shared beat (the Greymarch caravan question) — judge GROUNDED 3 / COHERENT 4, "reads as a playable
+  world". FINDING ("the Bram leak"): reusing thornwood's CHARACTERS in a new town bled their OLD memory in (they
+  named Bram, absent from the new town) — a character is world-BOUND via witnessed/knows/shell, so world-gen MUST
+  include fresh character-creation; transplanting contaminates. This PROMOTES character-creation from "nice" to a
+  hard rung-0 requirement. (Also seen: a non-fatal wire-read fallback on `bsp pool:...` — the known no-pscale
+  read gate; LLM recovered.) BEACH FACTS for going live: apex `beach.happyseaurchin.com` accepts content writes
+  NOW (verified write→read→delete); a fresh `<world>.beach.happyseaurchin.com` resolves by DNS but has NO TLS
+  cert (SSL_ERROR_SYSCALL) → a one-time Vercel domain-add per world, or a wildcard `*.beach...` to future-proof
+  all worlds (not doable via the available Vercel MCP tools — a dashboard step).
+- **Beach provisioning + engine-on-GitHub — verified 2026-06-23 (context for the 28.20 GRIT session).**
+  PROVISIONING (sharpens the entry above): NOT a wildcard cert — thornwood / idiothuman / apex each carry a
+  SPECIFIC cert (`CN=thornwood.beach…`); a fresh `<world>.beach.happyseaurchin.com` DNS-resolves + the handler
+  Host-routes + the cartridge can SEED it via `pack-seed --via <apex>` (apex cert + Host header), but CLIENTS
+  (claude.ai / bsp-mcp / browsers) can't HTTPS-connect until that subdomain has its OWN cert. The `vercel` CLI
+  IS authed as happyseaurchin on project happyseaurchin-home (`prj_IAQn…` / `team_iTER…`) → one subdomain is a
+  single `vercel domains add` (auto-cert, reversible); a TRUE wildcard `*.beach…` needs a DNS-01 TXT at DreamHost
+  (David's DNS access). ENGINE ON GITHUB (David's ask): YES, three forms — (1) **nomad-bsp**
+  (github.com/happyseaurchin/nomad-bsp) = the PRIOR engine extraction: NOMAD as seedable blocks (nomad-rules +
+  soft/medium/hard-agent + character-template + dice-config) + a synthesis DAEMON (`daemon/synthesis-daemon.js`
+  + launchd plist; the `grit-resolver-crab` branch IS GRIT); (2) pscale-beach `packs/thornwood` (origin/main) =
+  the CURRENT cartridge (fluid directive); (3) bsp-mcp `src/tools/pool.ts` + `bsp.ts` (origin/main) = the CURRENT
+  in-loop resolution. CRITICAL for 28.20: nomad-bsp is a ~June-5 snapshot built around a CENTRAL synthesis
+  daemon; the engine has since moved to IN-LOOP resolution (each player's LLM + the atomic single-resolution
+  claim, NO central daemon) — so GRIT-as-daemon (nomad-bsp) ≠ the live engine shape; reconcile, don't assume
+  nomad-bsp is current. CF work committed on `origin/claude/thornwood-passport-cf` (branch, pending merge);
+  this session's probe scripts + proposals are uncommitted local (harness/docs, not the engine).
 - **Reliability upgrade** (only if directive-adherence proves weak live): a per-turn perceive that
   COMPOSES the C aperture (a shared resolver used by `pscale_play` + a perceive path), matching the
   rig — the reorientation's "delivered envelope" move. Don't build pre-emptively.
-- **Round out A/D/O** as bsp-mcp frame-resolutions (text apertures), NOT an xstream viewer.
-  A also CREATES handles (NPCs + PCs) initially.
 - **Place-enrichment** + **NOMAD failure-texture** + **shell-phasing** — see Parked / Decisions.

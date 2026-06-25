@@ -292,14 +292,23 @@ export function renderDirective(node: any): string {
   return parts.join('\n\n');
 }
 
-/** Resolve a directive reference against the SAME beach and render it. The '/'
- *  form selects one aperture (function:thornwood/1); without it the whole block
- *  is delivered. Returns null on any failure so a missing directive falls back
- *  to the plain purpose and never breaks a read. */
+/** Resolve a directive reference and render it. Normally reads the SAME beach
+ *  (function:thornwood); a "pscale:<name>" ref reads the SENTINEL registry
+ *  instead (pscale:grit — the canonical, always-available play-loop), so a world
+ *  runs the canonical loop with no per-world copy. The '/' form selects one
+ *  aperture (function:thornwood/1, pscale:grit/1); without it the whole block is
+ *  delivered. Returns null on any failure so a missing directive falls back to
+ *  the plain purpose and never breaks a read. */
 export async function resolveDirective(poolUrl: string, ref: string): Promise<string | null> {
   try {
     const [blk, sp] = ref.trim().split('/', 2);
-    const drow = await loadBlock(poolUrl, blk);
+    // Sentinel fallback (gatekeeper pattern): a beach-hosted directive
+    // (function:<world>) is the per-world override; "pscale:<name>" is the
+    // substrate-wide canonical, read from the bundled sentinel registry.
+    const sentinel = blk.startsWith('pscale:') ? blk.slice('pscale:'.length) : null;
+    const drow = sentinel
+      ? await loadBlock('pscale', sentinel)
+      : await loadBlock(poolUrl, blk);
     if (!drow || typeof drow.block !== 'object' || drow.block === null) return null;
     const node = sp ? readAt(drow.block as Block, sp) : drow.block;
     return renderDirective(node) || null;
