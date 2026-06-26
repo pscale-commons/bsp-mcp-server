@@ -56,6 +56,7 @@ const CLIENT = String(arg('client', 'harness'));      // harness (rig code judge
 const GAP_MS = parseInt(arg('gap', '3000'), 10);      // --client agent: ms between rounds (≥ the beach window span = full fidelity; smaller = faster iteration)
 const MAX_DELAY = parseInt(arg('max-delay', '1200'), 10); // --timing random: each seat waits 0..MAX_DELAY before it acts
 const MODEL = String(arg('model', 'claude-sonnet-4-6'));
+const JUDGE_MODEL = String(arg('judge-model', 'claude-sonnet-4-6')); // observer held constant so a model-vs-model play comparison is fair
 const APERTURE = String(arg('aperture', 'composed')); // composed (rig builds the C aperture in code) | directive (raw blocks; the DIRECTIVE does the seating/typing — the bare-claude path)
 const KEEP = !!arg('keep', false);
 const BEACH_REPO = process.env.BEACH_REPO || fileURLToPath(new URL('../../pscale-beach', import.meta.url));
@@ -63,7 +64,7 @@ const PORT = parseInt(process.env.RIG_PORT || '8799', 10);
 const BEACH = `http://localhost:${PORT}`;
 const ROOM = 'beaten-drum-main';
 const SECRET = 'thorn142';
-const CHARS = ['cyrus', 'anya', 'fenn'];
+const CHARS = String(arg('chars', 'cyrus,anya,fenn')).split(',').map((s) => s.trim()).filter(Boolean);
 
 // ── trace capture — drives the three filmstrip views (dataflow / threads / observer) ──
 const TRACE: any[] = [];
@@ -170,7 +171,7 @@ const KEY = process.env.ANTHROPIC_API_KEY;
 const BASE = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/$/, '');
 async function think(label: string, system: string, user: string): Promise<string> {
   if (!KEY) return stub(label, user);
-  const r = await fetch(`${BASE}/v1/messages`, { method: 'POST', headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }, body: JSON.stringify({ model: MODEL, max_tokens: 2000, system, messages: [{ role: 'user', content: user }] }) });
+  const r = await fetch(`${BASE}/v1/messages`, { method: 'POST', headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }, body: JSON.stringify({ model: label === 'judge' ? JUDGE_MODEL : MODEL, max_tokens: 2000, system, messages: [{ role: 'user', content: user }] }) });
   const d: any = await r.json();
   if (!r.ok) throw new Error(`Anthropic ${r.status}: ${JSON.stringify(d).slice(0, 200)}`);
   return (d.content || []).map((c: any) => c.text || '').join('').trim();
