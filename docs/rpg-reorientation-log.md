@@ -299,6 +299,28 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   action-block is the bigger redesign — postponed.
 
 ## Open / next
+- **Three reveals — VALIDATED + SHIPPED + LIVE 2026-06-24; validation cycle NEXT.** The completion side of the
+  GRIT-session POST-ASSESSMENT entry above. The three reveals from the first thousand-valleys two-machine play
+  (Orvel + Tessavar, 9 beats) — co-presence / directed-act half-commit / derived memory, + NPC-public stopgap +
+  interiority one-liner — designed
+  ([proposals/2026-06-24-three-reveals-copresence-target-derived-memory.md](../proposals/2026-06-24-three-reveals-copresence-target-derived-memory.md)),
+  validated NHITL (haiku **4.5/5** — the robustness floor — then sonnet "disciplined, high-quality"; the GRIT
+  session's own rig run agreed, 4.5/5 up from 4/5), SHIPPED. **Reveal 1 (co-presence) is CODE, not directive** —
+  `play.ts` surfaces the co-present cast (handles whose passport:3 = your location) in the pscale_play envelope;
+  bsp-mcp **PR #90 → Railway-DEPLOYED → verified live** ("WHO IS HERE" present in the deployed envelope, via a
+  fresh raw-MCP call — the harness session goes stale through the instance swap and self-reconnects). Reveals 2-4
+  are directive (pscale-beach #27 `function:thornwood`; the GRIT session re-genericized `grit.json` from that
+  commit, so `pscale:grit` carries them too). LIVE: thousand-valleys directive updated (2-4) + co-presence
+  deployed; verified. INTEGRATED STATE: bsp-mcp main = co-presence (`play.ts` #90) + GRIT's `resolveDirective`
+  `pscale:`-fallback (`pool.ts` #91), both deployed → the deployed server supports co-presence AND
+  pool→pscale:grit. Reveals live on BOTH paths (cartridge pool→pscale:grit; live thousand-valleys
+  pool→function:thousand-valleys — both carry the reveals, play identically). RESIDUAL: motive-attribution in
+  private journals (the one-liner addresses it; observer-flagged on sonnet). **NEXT [handover written for a fresh
+  session]: the VALIDATION CYCLE — (1) RIG NHITL online (haiku then sonnet, `--client agent`); (2) two-machine
+  USER play-test on thousand-valleys (handles orvel/tessavar/sable, unlocked, co-located at the Drover's Common)
+  — confirm infra solid + RPG playable. OPEN: align thousand-valleys + live thornwood to `pscale:grit` (the GRIT
+  cutover; its Railway-deploy gate is now satisfied) — only after confirming `pscale:grit` pulls the world's
+  rules. Live locks: thousand-valleys=`valleys142`, thornwood=`thorn142`.**
 - **RE-TEST co-presence-close — DONE 2026-06-23 (PASSED).** First two-machine HITL run: 4/4 windows
   gathered, the characters met and held dialogue. Co-presence-close confirmed under real play. The run
   surfaced the NEXT work (see the sequencing-redesign Decisions entry + proposal).
