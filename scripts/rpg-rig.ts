@@ -62,8 +62,12 @@ const KEEP = !!arg('keep', false);
 const BEACH_REPO = process.env.BEACH_REPO || fileURLToPath(new URL('../../pscale-beach', import.meta.url));
 const PORT = parseInt(process.env.RIG_PORT || '8799', 10);
 const BEACH = `http://localhost:${PORT}`;
-const ROOM = 'beaten-drum-main';
-const SECRET = 'thorn142';
+const ROOM = String(arg('room', 'beaten-drum-main'));
+const SECRET = String(arg('secret', 'thorn142'));
+// --pack <name|path>: which cartridge to seed (a bare name resolves under <beach-repo>/packs/).
+// Default thornwood; pass --pack thousand-valleys --room thousand-valleys-commons --secret valleys142
+// --chars orvel,tessavar,sable to rig a different world.
+const PACK = (() => { const p = String(arg('pack', 'thornwood')); return p.includes('/') ? p : join(BEACH_REPO, 'packs', p); })();
 const CHARS = String(arg('chars', 'cyrus,anya,fenn')).split(',').map((s) => s.trim()).filter(Boolean);
 
 // ── trace capture — drives the three filmstrip views (dataflow / threads / observer) ──
@@ -82,7 +86,7 @@ async function spawnBeach(dir: string): Promise<void> {
   throw new Error('local beach did not come up');
 }
 const seedPack = () => new Promise<void>((resolve, reject) => {
-  const p = spawn('node', [join(BEACH_REPO, 'scripts/pack-seed.mjs'), '--beach', BEACH, '--pack', join(BEACH_REPO, 'packs/thornwood')], { stdio: ['ignore', 'ignore', 'ignore'], env: { ...process.env, THORN_GM: SECRET, THORN_CYRUS: SECRET, THORN_ANYA: SECRET, THORN_FENN: SECRET } });
+  const p = spawn('node', [join(BEACH_REPO, 'scripts/pack-seed.mjs'), '--beach', BEACH, '--pack', PACK], { stdio: ['ignore', 'ignore', 'ignore'], env: { ...process.env, THORN_GM: SECRET, THORN_CYRUS: SECRET, THORN_ANYA: SECRET, THORN_FENN: SECRET, VALLEYS_GM: SECRET } });
   p.on('exit', (c) => (c === 0 ? resolve() : reject(new Error(`pack-seed exit ${c}`))));
 });
 
