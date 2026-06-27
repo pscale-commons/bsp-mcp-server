@@ -278,6 +278,69 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   content/NPC-richness item already on the roadmap, not a regression). High-level GRIT docs (evolution/manifest/
   block-conventions/library) sit at an altitude the reveals don't change → stand. Net: only grit.json needed
   the refresh; cutover plan unchanged.
+- **Validation cycle — STAGE 1 (RIG) PASSED 2026-06-26; STAGE 2 (USERS) infra-confirmed, David's to drive.** The
+  handover's two-stage validation of the three reveals as resolved via GRIT. STAGE 1 — faithful agent-rig
+  (`--client agent`, local beach seeded `packs/thornwood`, pool→`pscale:grit`), NHITL, both models cheapest-first:
+  **haiku 3.5/5**, **sonnet 4.5/5** ("an unusually tight multi-account run" — PERSISTENCE 5, AGENCY 5). FORENSIC on
+  the kept sandpits (read the SUBSTRATE not just the console — the window-deadlock lesson): 9 clean beats each,
+  underscore=`pscale:grit` confirmed live, correct handle attribution, no tool errors, no apex drift. **All three
+  reveals resolve correctly via the GRIT path** — co-presence on entry (beats 1-3 by appearance), directed-act
+  half-commit (asker commits half, target answers on its own turn, ZERO cross-authoring), derived-memory (knows
+  stays seed-only, no maintained ledger). GRIT wiring re-confirmed deterministically (`check-grit-wiring.ts` 6/6,
+  incl. "references the rules block SWAPPABLY, not hardcoded"). The haiku 3.5 vs the prior 4.5 is ENTIRELY the
+  parked-NOMAD axes (PERSISTENCE/AGENCY) in a pure no-check cooperative scene — no contest/trial fired so NOMAD
+  teeth stayed dormant; reveal-domain axes held (CONSISTENCY/PERCEPTION-LIMITS 4/4). CAVEAT: both runs were
+  SIMPLE-path only — the CHECK path (dice + world-rules pull) did NOT execute under the agent rig; validated
+  by-equivalence (grit:2 = genericized function:thornwood:2) + the wiring check, not by-execution this cycle.
+  TWO RESIDUALS reproduced on BOTH models, BOTH pre-existing/parked, NEITHER a GRIT regression: (a) handle-as-name
+  — the autonomous LLM weaves the handle-tag into public prose as a spoken name without an in-fiction introduction
+  (beats 2/7/8/9); (b) zero `witnessed` appends — neither model journals privately (seed-only). KEY CONTRAST [the
+  cycle's most useful finding]: reading the LIVE thousand-valleys (the actual first two-machine play — orvel/tessavar,
+  9 beats) shows BOTH residuals SELF-CORRECT in human play — orvel + tessavar introduced themselves in-fiction
+  (slots 4/5) so names were earned, and `witnessed:orvel` was journaled richly (6 private overlays). The residuals
+  are AUTONOMOUS-RIG ARTIFACTS (the unsupervised LLM skips the social-introduction ritual + the discretionary
+  journal step); the ship target is human play on bare claude.ai, which handles both. STAGE 2 — live infra
+  confirmed READY (David drives the two-machine test): deployed `bsp.hermitcrab.me` up, `thousand-valleys.beach`
+  reachable + TLS, co-presence envelope LIVE ("WHO IS HERE" via play.ts #90), orvel co-located at the Drover's
+  Common, directive=`function:thousand-valleys` carries reveals 2-4, both rules blocks present
+  (`rules:nomad` + `rules:thousand-valleys`). WORLD-CONTENT FINDING (NOT substrate): `rules:thousand-valleys` is a
+  HALF-LOCALIZED thornwood seed — still names "the Beaten Drum / Bram / the loft stair" while the world's tavern is
+  the Drover's Common with keeper Maret Coll; harmless in simple play (place-rules read only on a CHECK, which
+  never fired), would inject incoherence the moment a check resolves. Echoes the 2026-06-23 "transplanting
+  contaminates" finding — the seeder renamed the block but did not localize its content. The live thousand-valleys
+  pool currently holds 9 beats mid-scene (tessavar leading orvel to the gather-stone); a fresh two-machine test
+  continues from there unless reseeded (`seed-world.ts --world thousand-valleys`, lock `valleys142`). GRIT-ALIGNMENT
+  DECISION (the open item): the gate ("`pscale:grit` pulls the world's rules") is MET — wiring confirms swappable
+  rules-ref + thousand-valleys has both rules blocks → re-pointing `pool:thousand-valleys-commons._` → `"pscale:grit"`
+  is a clean one-write. RECOMMENDATION: LEAVE IT for now — `function:thousand-valleys` works and carries the reveals;
+  the alignment is a consistency-nicety not a functional need, and it is a live write best done when the world is
+  QUIET, not right before the two-machine test. Post-test cleanup on David's go.
+  **APPLIED 2026-06-26 [David: "do 2 and 3"]** — overrides the LEAVE-IT recommendation above. (Truth =
+  the beach + the code, NOT this log [David]; every change below was verified by reading it back off
+  thousand-valleys.beach, not asserted from here.) LIVE thousand-valleys: (#2) `rules:thousand-valleys`
+  hand-localized to the Drover's Common / Maret Coll / the alpine high country (was a string-swapped
+  thornwood seed still naming the Beaten Drum / Bram / deer-paths). (#3) `pool:thousand-valleys-commons._`
+  → `pscale:grit` + scene WIPED [David chose "fresh room"] + liquid reset; `orvel` reset to arrival seed
+  (witnessed→{_,1}, knows−Tessavar; tessavar/sable were already seed; passport/shell/purpose/stats intact).
+  `pscale_play(orvel)` confirms: GRIT directive inlined, empty pool, co-presence (tessavar/sable by
+  appearance), orvel at arrival. ROOT CAUSE of the bleed: `seed-world.ts` `generaliseEngine()` string-swapped
+  `rules:thornwood` (only "thornwood"→world; "Beaten Drum"/"Bram"/"deer-path"/"night-wood" survived).
+  SEEDER FIXED (uncommitted): generic town-agnostic `rules:<world>` (venue/figure/biome named NOWHERE,
+  deferred to the authored `spatial:<world>`); DROP the bled+redundant `function:<world>` (a GRIT world runs
+  on the `pscale:grit` sentinel, not a per-world directive copy); `pool→pscale:grit`; static leak-guard added.
+  Validated on local beaches ashford + millbrook: rules/spatial clean, no function bleed, PLAYABLE+CLEAN.
+  RESIDUALS (non-blocking): (a) live thousand-valleys still has vestigial UNUSED `function:thousand-valleys`
+  (bled) + `frame-spec` (clean) — deletable for full tidiness; (b) seeder `DEFAULT_SCENARIO` is HARDCODED to
+  the thousand-valleys premise (upland / drove-roads / missing-stock / ridge-lights) → every seeded world is a
+  thematic clone (millbrook reused "Maret Coll") — parked world-gen-diversity item; the scenario needs to be a param.
+  **CLEANUP a+b+c DONE 2026-06-26 [David: "ok to a+b+c"]:** (a) seeder fix committed — bsp-mcp branch
+  `claude/seeder-generic-rules-grit` (21ae7ab); (b) `function:thousand-valleys` DELETED off the live beach
+  (HTTP 200, gone from the index); (c) thousand-valleys clean-reset CARTRIDGE created, verified (pack-seed →
+  local beach: 24 blocks, engine locks 403, pool._=pscale:grit, rules=Drover's Common), and committed —
+  pscale-beach branch `claude/thousand-valleys-cartridge` (85ac911, GRIT-native = no function:<world>; reset
+  via `VALLEYS_GM=valleys142 pack-reset --pack packs/thousand-valleys`). BOTH BRANCHES AWAIT MERGE → once
+  merged, the next session inherits the fixed seeder (no future bleed) + a resettable thousand-valleys (no
+  manual surgery). Still parked: DEFAULT_SCENARIO→param; a player-facing world-gen flow (the Author-face).
 
 ## Parked (deferred, NOT lost)
 - **Place-enrichment** [David's flag, raised twice]: durable beat-notes fold into `spatial`
@@ -299,7 +362,7 @@ minimal code so the right context reaches each LLM (soft / medium / hard) throug
   action-block is the bigger redesign — postponed.
 
 ## Open / next
-- **Three reveals — VALIDATED + SHIPPED + LIVE 2026-06-24; validation cycle NEXT.** The completion side of the
+- **Three reveals — VALIDATED + SHIPPED + LIVE 2026-06-24; validation cycle STAGE 1 PASSED 2026-06-26 (see Decisions; Stage 2 USERS = David's two-machine test, infra ready).** The completion side of the
   GRIT-session POST-ASSESSMENT entry above. The three reveals from the first thousand-valleys two-machine play
   (Orvel + Tessavar, 9 beats) — co-presence / directed-act half-commit / derived memory, + NPC-public stopgap +
   interiority one-liner — designed
