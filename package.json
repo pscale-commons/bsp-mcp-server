@@ -17,6 +17,7 @@
     "build": "tsc",
     "start": "tsx src/index.ts",
     "smoke:unit": "tsx scripts/smoke-bsp.ts",
+    "smoke:torus": "tsx scripts/smoke-torus.ts",
     "smoke:floor": "tsx scripts/smoke-floor-align.ts",
     "smoke:dots": "tsx scripts/smoke-dots.ts",
     "smoke:parser": "tsx scripts/smoke-parser.ts",

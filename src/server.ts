@@ -1,11 +1,14 @@
 /**
  * server.ts — MCP server factory.
  *
- * Surface: two functions (bsp, bsp-floor) + five primitives + one orientation
- * invite + foundational resources. Eight tools total. The invite is a meta-tool
- * (not a feature tool) — it serves discoverability for tool-scanning LLMs
- * by giving the manifest a tool-shaped surface alongside its block surface.
- * Resist further additions. The geometry IS the program.
+ * Surface: two functions (bsp, bsp-floor) + five substrate primitives + two
+ * entry meta-tools (invite, play) + one live-axis tool (pscale_torus). The five
+ * primitives are durable-substrate state machines plus the pool envelope; invite
+ * and play are meta-tools (orientation + handle-inhabitation), not feature tools.
+ * pscale_torus is the FIRST operation on the LIVE / co-presence axis — orthogonal
+ * to the substrate, not accretion on it; vapour is the complement the record
+ * cannot hold (proposals/2026-06-28-vapour-torus.md). Resist further additions on
+ * the substrate axis. The geometry IS the program.
  *
  * Note on pscale_pool_engage (the envelope primitive, added 2026-05-26): pools and
  * marks share the same block shape per block-conventions:4.1; pool engagement
@@ -27,6 +30,7 @@ import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
 import { handleInvite, inviteParamsSchema } from './tools/invite.js';
 import { handlePoolEngage, poolEngageParamsSchema } from './tools/pool.js';
 import { handlePlay, playParamsSchema } from './tools/play.js';
+import { handleTorus, torusParamsSchema } from './tools/torus.js';
 
 import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPayway } from './resources/payway.js';
@@ -63,7 +67,7 @@ function installErrorWrapper(server: McpServer): void {
 
 const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
-export const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor), five substrate primitives, and two entry meta-tools (the orientation invite and play — inhabit a handle in a world), operating on pscale JSON blocks served from federated beaches.
+export const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor), five substrate primitives, two entry meta-tools (the orientation invite and play — inhabit a handle in a world), and one live-axis tool (pscale_torus — ephemeral co-presence), operating on pscale JSON blocks served from federated beaches.
 
 FIRST ACTION when you connect: call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
 
@@ -113,6 +117,9 @@ THE ENTRY (inhabit a handle):
   pscale_play(world, handle, secret?) — the one-call passage into a world. Resolves the world's beach, engages the room (operating directive + live scene inlined), bundles the handle's own context, and pins the origin. Where invite orients a newcomer, play inhabits a persistent handle you return to. RPG: pscale_play(world='thornwood', handle='anya') → you are Anya in the Beaten Drum.
 
 INHABITING A HANDLE (the no-fiddle entry): asked to play, wear, or inhabit a handle — a character, a user, an agent — on a world or beach? Call pscale_play(world, handle): it resolves the world to its beach, engages the room pool (the '# Operating directive' and the live scene arrive inlined), bundles your own context, and PINS the world's URL so you cannot drift to the apex. Then follow the inlined directive every turn — perceive, render, act — keeping the machinery out of sight. Do NOT hand-assemble this from pscale_pool_engage on a guessed beach: a bare connector that browses for the world confabulates (wrong world, invented NPCs). pscale_play is the deterministic passage; the directive (Designer-editable function:<world>) carries the rules in-context, never a pasted prompt.
+
+THE LIVE AXIS (co-presence — NOT the durable substrate):
+  pscale_torus(handle, frame?|with_handle?, reach?, face?, depart?) — the live / co-presence axis, complementary to the blocks. Each call is a HEARTBEAT: it beats an in-process, location-keyed presence field with your current reach and reads back who else is live at the same place. In-process and EPHEMERAL — never a block, never a beach, never disk; presence evaporates ~30s after you stop calling (the afterglow). Keyed by LOCATION (frame = a room/pool/beach address): co-presence groups by place, not by which app you arrived through. N-way (a room) is primary; pairwise is with_handle, which derives a live reach:<sorted> frame — the LIVE precursor to a durable grain (grain stays the lock-gated block via pscale_grain_reach; the live overlap is a reach). A bare beat (no reach) preserves your standing reach. An LLM is "live" only while processing, so the tool-call loop IS your vapour. This is the LLM exposure; a human-keystroke exposure over the same field is deferred (humans use xstream's realtime transport).
 
 FOUNDATIONAL READING (sentinel-bundled — walk via bsp(agent_id="pscale", block=…)):
   manifest    — the index of the constitution. Walk this first; it lists everything else.
@@ -290,6 +297,31 @@ export function createServer(): McpServer {
       idempotentHint: true,
     },
     handlePlay,
+  );
+
+  // ── The live axis (co-presence) ──
+  // The first operation that is NOT on the durable substrate. Each call is a
+  // heartbeat into an in-process, location-keyed presence field (src/torus.ts):
+  // beat your reach, read who else is live at the same place. Ephemeral — never a
+  // block, never a beach, never disk; it evaporates when calls stop. This is the
+  // LLM exposure (request/response); a human-keystroke SSE route over the same
+  // field is Phase 2 (deferred — humans stay on Supabase Realtime). Reserve
+  // `grain` for the durable lock-gated block; the live bilateral here is a reach.
+  // See proposals/2026-06-28-vapour-torus.md.
+  server.tool(
+    'pscale_torus',
+    'The live / co-presence axis — complementary to the durable substrate (blocks). Each call is a HEARTBEAT: beat an in-process, location-keyed presence field with your current reach and read back who else is live at the same place. In-process and EPHEMERAL — never a pscale block, never on a beach, never on disk; presence evaporates ~30s after you stop calling (the afterglow). Keyed by LOCATION (frame = a room/pool/beach address): co-presence groups by place, not by which app you arrived through. N-way (a room) is primary; pairwise is with_handle (derives a live "reach:<sorted>" frame — the LIVE precursor to a durable grain; grain stays the lock-gated block via pscale_grain_reach, the live overlap is a reach). A bare beat (no reach) is a presence ping that PRESERVES your standing reach. An LLM is "live" only while processing, so the tool-call loop IS your vapour. Hosted in this process — correctly empty after a restart.',
+    torusParamsSchema,
+    {
+      title: 'Torus — live co-presence (vapour)',
+      // Mutates only ephemeral in-process presence; nothing durable is written.
+      destructiveHint: false,
+      // Each call re-stamps presence (new ts) and may change the live view.
+      idempotentHint: false,
+      // In-process only — no outbound HTTP, no beach, no substrate.
+      openWorldHint: false,
+    },
+    handleTorus,
   );
 
   // ── Foundational resources ──
