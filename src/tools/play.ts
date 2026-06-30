@@ -118,19 +118,35 @@ export async function handlePlay(
     return { content: [{ type: 'text', text: `No world at "${world}" (resolved to ${origin}) — it is not a federated beach. Check the world name, or pass a full beach URL.` }] };
   }
 
-  // 2. Resolve the room pool. One room → use it; several → ask which (location-
-  //    based derivation is the documented next step, not v1).
+  // 2. Resolve the room pool — DERIVED FROM LOCATION. A room IS a focal pool at a
+  //    spatial target (block-conventions:4.8); so the room a handle meets in is
+  //    pool:<addr>, where <addr> is its own position (passport:3 → spatial:<world>:<addr>).
+  //    Co-located handles share a pool automatically; MOVING (a write to passport:3)
+  //    moves you between pools; a party that splits ends up in separate pools. This is
+  //    how pools stay small (a handful at one spot) while a world holds millions — scale
+  //    is spatial breadth, not pool size, and a crowded cell subdivides at a higher
+  //    pscale (a deeper addr → a deeper pool). An explicit `room` overrides. Falls back
+  //    to the single-pool / ask behaviour for worlds not yet on location-keyed pools.
   let roomName = room?.trim();
   if (!roomName) {
-    const rooms = (await beachIndex(resolved))
-      .filter((b) => b.startsWith('pool:') && !b.startsWith('liquid:'))
-      .map((b) => b.slice('pool:'.length));
-    if (rooms.length === 1) {
-      roomName = rooms[0];
-    } else if (rooms.length === 0) {
-      return { content: [{ type: 'text', text: `World ${resolved} has no room yet — an author must open one (pscale_pool_engage with purpose=...).` }] };
+    const index = await beachIndex(resolved);
+    const myPassport = await loadBlock(resolved, `passport:${handle}`);
+    const locAddr = myPassport?.block ? passportLocation(myPassport.block) : null;
+    if (locAddr && index.includes(`pool:${locAddr}`)) {
+      roomName = locAddr;                              // location-derived room
     } else {
-      return { content: [{ type: 'text', text: `World ${resolved} has several rooms: ${rooms.join(', ')}. Pass room=<name> to choose.` }] };
+      const rooms = index
+        .filter((b) => b.startsWith('pool:') && !b.startsWith('liquid:'))
+        .map((b) => b.slice('pool:'.length));
+      if (rooms.length === 1) {
+        roomName = rooms[0];                           // fallback: the world's single room
+      } else if (rooms.length === 0) {
+        return { content: [{ type: 'text', text: `World ${resolved} has no room yet — an author must open one (pscale_pool_engage with purpose=...).` }] };
+      } else if (locAddr) {
+        return { content: [{ type: 'text', text: `World ${resolved} has several rooms but none open at your location (pool:${locAddr}). Open it with pscale_pool_engage(purpose=...), or pass room=<name>. Rooms present: ${rooms.join(', ')}.` }] };
+      } else {
+        return { content: [{ type: 'text', text: `World ${resolved} has several rooms: ${rooms.join(', ')}. Pass room=<name> to choose.` }] };
+      }
     }
   }
 
