@@ -69,6 +69,13 @@ const SECRET = String(arg('secret', 'thorn142'));
 // --chars orvel,tessavar,sable to rig a different world.
 const PACK = (() => { const p = String(arg('pack', 'thornwood')); return p.includes('/') ? p : join(BEACH_REPO, 'packs', p); })();
 const CHARS = String(arg('chars', 'cyrus,anya,fenn')).split(',').map((s) => s.trim()).filter(Boolean);
+// --client agent MOVE scenario (the NHITL convergence probe): on round --move-turn,
+// tell one handle to LEAVE for another location and verify — from substrate truth —
+// whether the LLM actually relocates (writes passport:3) or merely narrates walking.
+const MOVE = String(arg('move', ''));            // handle to send; '' disables the scenario
+const MOVE_TO = String(arg('to', ''));           // destination spatial addr, e.g. "1"
+const MOVE_TURN = parseInt(arg('move-turn', '2'), 10);
+const MOVE_PLACE = String(arg('to-place', ''));  // human phrase for the destination (optional)
 
 // ── trace capture — drives the three filmstrip views (dataflow / threads / observer) ──
 const TRACE: any[] = [];
@@ -85,10 +92,30 @@ async function spawnBeach(dir: string): Promise<void> {
   }
   throw new Error('local beach did not come up');
 }
-const seedPack = () => new Promise<void>((resolve, reject) => {
-  const p = spawn('node', [join(BEACH_REPO, 'scripts/pack-seed.mjs'), '--beach', BEACH, '--pack', PACK], { stdio: ['ignore', 'ignore', 'ignore'], env: { ...process.env, THORN_GM: SECRET, THORN_CYRUS: SECRET, THORN_ANYA: SECRET, THORN_FENN: SECRET, VALLEYS_GM: SECRET } });
-  p.on('exit', (c) => (c === 0 ? resolve() : reject(new Error(`pack-seed exit ${c}`))));
-});
+// Seed the cartridge fully locked under the single rig SECRET. Scan the pack for
+// every lock.secret_env it declares (TV_*, VALLEYS_GM, THORN_*, whatever the world
+// uses) and set each to SECRET, so the LLM — handed that one passphrase — can write
+// any of its own blocks. Generalises the old hardcoded THORN_*/VALLEYS_GM list so the
+// rig drives ANY cartridge, not just thornwood.
+async function packSecretEnvs(): Promise<string[]> {
+  const names = new Set<string>();
+  for (const sub of ['definition', 'initial']) {
+    let files: string[] = [];
+    try { files = await fs.readdir(join(PACK, sub)); } catch { continue; }
+    for (const f of files.filter((x) => x.endsWith('.json'))) {
+      try { const blk = JSON.parse(await fs.readFile(join(PACK, sub, f), 'utf8')); if (blk?.lock?.secret_env) names.add(String(blk.lock.secret_env)); } catch { /* skip unreadable */ }
+    }
+  }
+  return [...names];
+}
+async function seedPack(): Promise<void> {
+  const env: Record<string, string | undefined> = { ...process.env };
+  for (const name of await packSecretEnvs()) env[name] = SECRET;
+  await new Promise<void>((resolve, reject) => {
+    const p = spawn('node', [join(BEACH_REPO, 'scripts/pack-seed.mjs'), '--beach', BEACH, '--pack', PACK], { stdio: ['ignore', 'ignore', 'ignore'], env });
+    p.on('exit', (c) => (c === 0 ? resolve() : reject(new Error(`pack-seed exit ${c}`))));
+  });
+}
 
 // ── helpers ──
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -97,6 +124,16 @@ const shuffle = <T>(a: T[]): T[] => a.map((v) => [Math.random(), v] as [number, 
 const j = (o: any) => JSON.stringify(o, null, 1);
 const engage = async (args: Record<string, any>): Promise<string> => (await handlePoolEngage({ pool_url: BEACH, pool_name: ROOM, ...args } as any)).content[0].text;
 const block = async (name: string): Promise<any> => (await loadBlock(BEACH, name))?.block ?? null;
+// Pools present at the local beach (agent mode is multi-pool: pool:1, pool:6, … —
+// location-derived, not the single ROOM). Excludes the liquid mirrors.
+async function listBeachPools(): Promise<string[]> {
+  try {
+    const res = await fetch(`${BEACH}/.well-known/pscale-beach`, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return [];
+    const j: any = await res.json();
+    return (Array.isArray(j?.blocks) ? j.blocks : []).filter((b: string) => b.startsWith('pool:') && !b.startsWith('liquid:'));
+  } catch { return []; }
+}
 
 // ── resolve the Character soft aperture (frame-spec:thornwood 1.1) for handle h ──
 // Seats the character at passport:3, gives the place at that location (with its
@@ -106,6 +143,9 @@ const block = async (name: string): Promise<any> => (await loadBlock(BEACH, name
 // editing frame-spec changes what the soft LLM is handed — the frame is resolved,
 // not hardcoded.
 const locOf = (passport: any): string => (String(passport?.['3'] ?? '').match(/spatial:thornwood:(\d+)/) || [])[1] || '111';
+// World-agnostic location read (play.ts:passportLocation form) — the agent/move path
+// is not thornwood-bound, so match any world's spatial address.
+const locOfAny = (passport: any): string | null => (String(passport?.['3'] ?? '').match(/spatial:[\w-]+:(\d+)/) || [])[1] ?? null;
 function walkSpatial(node: any, addr: string): any { let n = node; for (const d of String(addr).split('')) { if (n && typeof n === 'object') n = n[d]; else return null; } return n ?? null; }
 async function cAperture(h: string): Promise<{ text: string; reads: string[] }> {
   const passport = await block(`passport:${h}`);
@@ -356,16 +396,47 @@ async function agentTurn(h: string, thread: any[]): Promise<void> {
   }
   console.log(`  ! ${h}: hit the tool-step cap (16) this turn`);
 }
+// Convergence oracle for the MOVE scenario — substrate truth, not narration. After the
+// move round, read the mover's passport:3: if it now names the destination addr the LLM
+// performed the relocation; if unchanged it only narrated. Then perceive from the mover
+// to show the destination's co-present cast (the pool it converged into).
+async function reportMove(fromAddr: string | null): Promise<void> {
+  const nowAddr = locOfAny(await block(`passport:${MOVE}`));
+  const moved = nowAddr === MOVE_TO;
+  console.log(`\n${'*'.repeat(56)}`);
+  console.log(`MOVE CHECK — ${MOVE}: passport:3 addr ${fromAddr} → ${nowAddr}`);
+  console.log(moved
+    ? `  ✓ MOVED — the LLM wrote passport:3; relocation performed (move-teach induced the write)`
+    : `  ✗ NOT MOVED — passport:3 unchanged; the LLM narrated without relocating (sharpen move-teach wording)`);
+  try {
+    const env = (await handlePlay({ world: BEACH, handle: MOVE } as any)).content[0].text;
+    const here = env.split('\n').filter((l) => l.startsWith('— ')).map((l) => l.slice(2).trim());
+    console.log(`  ${MOVE} now perceives ${here.length} co-present at addr ${nowAddr}:`);
+    for (const c of here) console.log(`    · ${c.slice(0, 92)}`);
+  } catch (e: any) { console.log(`  (post-move perceive failed: ${e?.message ?? e})`); }
+  console.log('*'.repeat(56));
+}
+
 async function runAgentRounds(): Promise<void> {
   const threads: Record<string, any[]> = {};
-  for (const h of CHARS) threads[h] = [{ role: 'user', content: `Play ${h} on ${BEACH} — your passphrase for ${h} is "${SECRET}". Take ${h}'s turn: enter the world, perceive from your character's position, render the lived moment, and act once (submit your intention). You ARE ${h} — decide on ${h}'s behalf.` }];
+  for (const h of CHARS) threads[h] = [{ role: 'user', content: `Play ${h} on the beach at ${BEACH}. Enter by calling pscale_play with world="${BEACH}" (this EXACT full URL — never a bare world name, which would target a different beach) and handle="${h}"; your passphrase for ${h} is "${SECRET}". Then take ${h}'s turn: perceive from your character's position, render the lived moment, and act once (submit your intention). You ARE ${h} — decide on ${h}'s behalf.` }];
+  if (MOVE && !CHARS.includes(MOVE)) console.log(`[rig] ⚠ --move ${MOVE} is not in --chars (${CHARS.join(',')}); it will never take a turn.`);
+  const moveFrom = MOVE ? locOfAny(await block(`passport:${MOVE}`)) : null;
+  if (MOVE) console.log(`[rig] MOVE scenario armed: ${MOVE} at addr ${moveFrom} → on round ${MOVE_TURN} will be told to go to addr ${MOVE_TO}${MOVE_PLACE ? ` (${MOVE_PLACE})` : ''}.`);
   for (let turn = 1; turn <= TURNS; turn++) {
     CURRENT_ROUND = turn;
     console.log(`\n${'='.repeat(56)}\nROUND ${turn} · agent client (the LLM drives its own bsp-mcp tools)\n${'='.repeat(56)}`);
     for (const h of shuffle([...CHARS])) {
-      if (turn > 1) threads[h].push({ role: 'user', content: `Take ${h}'s next turn — perceive what has changed in the room and act once.` });
+      if (turn > 1) {
+        const moving = h === MOVE && turn === MOVE_TURN;
+        const dest = MOVE_PLACE || `spatial address ${MOVE_TO} in this world`;
+        threads[h].push({ role: 'user', content: moving
+          ? `Take ${h}'s next turn. ${h} has taken the measure of this place and now CHOOSES TO LEAVE — to go to ${dest} (spatial address ${MOVE_TO}). Make the move exactly as your operating directive instructs, then continue ${h}'s play from where they arrive.`
+          : `Take ${h}'s next turn — perceive what has changed in the room and act once.` });
+      }
       await agentTurn(h, threads[h]);
     }
+    if (MOVE && turn === MOVE_TURN) await reportMove(moveFrom);
     if (turn < TURNS) await sleep(GAP_MS);
   }
 }
@@ -409,15 +480,22 @@ async function main() {
   const digest: string[] = [];
   for (const h of CHARS) {
     const w = await block(`witnessed:${h}`);
+    if (!w || typeof w !== 'object') continue;                         // guard: char never journaled / block missing
     const lines = Object.keys(w).filter((k) => k !== '_').sort().map((k) => (typeof w[k] === 'object' ? w[k]._ : w[k]) || '');
     digest.push(`=== witnessed:${h} (private) ===\n${lines.join('\n')}`);
   }
-  const pool = await block(`pool:${ROOM}`);
-  const poolLines = Object.keys(pool).filter((k) => k !== '_').sort().map((k) => (typeof pool[k] === 'object' ? pool[k]._ : pool[k]) || '');
-  digest.push(`=== pool:${ROOM} (public) ===\n${poolLines.join('\n')}`);
+  // Public record — agent mode is multi-pool (location-derived); gather whatever pools
+  // the beach holds rather than the single thornwood ROOM (which is null in other worlds).
+  const poolNames = CLIENT === 'agent' ? await listBeachPools() : [`pool:${ROOM}`];
+  for (const pn of poolNames) {
+    const pool = await block(pn);
+    if (!pool || typeof pool !== 'object') continue;                   // guard: null pool (wrong ROOM / empty world)
+    const poolLines = Object.keys(pool).filter((k) => k !== '_').sort().map((k) => (typeof pool[k] === 'object' ? pool[k]._ : pool[k]) || '');
+    digest.push(`=== ${pn} (public) ===\n${poolLines.join('\n')}`);
+  }
   const judgeSys = `You are the OBSERVER of an RPG test run — the inter-subjective correlation across the players' separate accounts, never a player. Judge on four criteria; for each a score 1-5 + one terse sentence of evidence: (1) CONSISTENCY across turns and accounts; (2) PERSISTENCE — consequences endure and propagate; (3) PERCEPTION-LIMITS — no leaked name/private fact; (4) AGENCY — chosen actions shift outcomes. Close with OVERALL and BIGGEST RULE-WEAKNESS TO FIX.`;
   const verdict = await think('judge', judgeSys, digest.join('\n\n'));
-  trace({ phase: 'judge', actor: 'observer', reads: [...CHARS.map((h) => `witnessed:${h}`), `pool:${ROOM}`], prompt: digest.join('\n\n'), response: verdict });
+  trace({ phase: 'judge', actor: 'observer', reads: [...CHARS.map((h) => `witnessed:${h}`), ...poolNames], prompt: digest.join('\n\n'), response: verdict });
   console.log(`\n${'#'.repeat(56)}\nOBSERVER VERDICT\n${'#'.repeat(56)}\n${verdict}`);
 
   if (KEEP) {
