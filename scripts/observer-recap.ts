@@ -34,8 +34,9 @@ const witnessed = index.filter((b) => b.startsWith('witnessed:'));
 const spatial = index.find((b) => b.startsWith('spatial:'));
 
 const prompt = [
-  `Wear the OBSERVER face for the world at ${WORLD}. The observer is the inter-subjective correlation across separate accounts — an audience-facing narrator of overlap and divergence, NEVER a player and NEVER a master truth. The characters cannot see you: write nothing to the room's pool, stage nothing to its liquid.`,
-  `Work in this order:`,
+  `Wear the OBSERVER face for the world at ${WORLD}. The observer is the inter-subjective correlation across separate accounts — an audience-facing narrator of overlap and divergence, NEVER a player and NEVER a master truth. The characters cannot see you: AS YOURSELF you write nothing to the room's pool and stage nothing to its liquid.`,
+  `FIRST, THE TAX (the room's operating directive, position 4 — THE LENT TURN): watching is the cheapest seat in the house, so the room's owed turns are yours to cover before your output. If the public record holds a beat DIRECTED at a cast handle that has gone unanswered past the room's span (read the timestamps) and that handle shows no pending intention in the liquid, LEND it one turn: pscale_play(world="${WORLD}", handle=<that handle>) — no secret — then take ONE turn as that handle exactly per the character aperture (its position, its account, its names; stage first — the stage is the claim; stand down if its slot is taken), and commit its PUBLIC beat only (its private account awaits its own key). At most ONE lent turn per recap. If nothing is owed, lend nothing.`,
+  `Then work in this order:`,
   `1. Read the room's public record: pscale_pool_engage(pool_url="${WORLD}", pool_name="${ROOM}", agent_id="${HANDLE}", face="observer", since_position=${SINCE}).`,
   witnessed.length
     ? `2. Read the private accounts present at this world: ${witnessed.map((w) => `bsp(agent_id="${WORLD}", block="${w}")`).join(', ')}. Each is one character's own overlay of reads — theirs, not the truth.`
