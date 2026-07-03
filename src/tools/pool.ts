@@ -675,6 +675,23 @@ export async function handlePoolEngage(
         const ldesc = `Liquid pre-commit buffer for ${liquidName} (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit. Empty means no live window.`;
         await saveBlock(pool_url, liquidName, { _: ldesc } as Block, { spindle: '', secret });
       } catch { /* best-effort: a stale slot at worst, never a hard failure */ }
+    } else if (destBlock === blockName) {
+      // A plain pool-commit CONSUMES the author's own staged intention. The liquid
+      // mirrors what is PENDING; this beat is committed, so a surviving slot would
+      // show a stale intention (and hold a window-open stamp) indefinitely — under
+      // exchange-first play nothing else ever clears it (P0 forensic, 2026-07-03).
+      // Only the author's live slot clears; co-present slots and a gathering
+      // contest stay intact. (A player who commits chat while their own contest
+      // intention gathers re-stages it, visibly — cooperative-play acceptable,
+      // same class as the two-opener race.)
+      try {
+        const lrow = await loadBlock(pool_url, liquidName);
+        if (lrow && typeof lrow.block === 'object' && lrow.block !== null) {
+          const mine = collectContributions(lrow.block, 0).contributions
+            .some((c) => c.agent_id === agent_id && c.text !== '');
+          if (mine) await stageLiquid(pool_url, liquidName, agent_id, '', face, secret);
+        }
+      } catch { /* best-effort, as above */ }
     }
 
     // Reload the pool only when the commit landed in it (so the envelope's slice
