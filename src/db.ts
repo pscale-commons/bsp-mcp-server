@@ -138,10 +138,17 @@ export function translateAddress(agentId: string, blockName: string): Translated
     // Grain pair lives at the default beach as block "grain:<pair_id>".
     return { agent_id: DEFAULT_BEACH, block: agentId, translated: true, original };
   }
-  // Bare name → role:<handle> convention at the default beach.
+  // Bare name → role:<handle> convention at the default beach. Idempotent:
+  // a caller who already passes the suffixed form (agent_id "fenn", block
+  // "witnessed:fenn") means the same block — re-suffixing would mint a phantom
+  // "witnessed:fenn:fenn" and the trail written there silently vanishes from
+  // every suffix-correct read (caught by the P2 npc-turn forensic, 2026-07-03).
+  // The ":" boundary keeps prefix-colliding handles safe ("witnessed:maren"
+  // does not end with ":ren").
+  const alreadySuffixed = blockName === agentId || blockName.endsWith(`:${agentId}`);
   return {
     agent_id: DEFAULT_BEACH,
-    block: `${blockName}:${agentId}`,
+    block: alreadySuffixed ? blockName : `${blockName}:${agentId}`,
     translated: true,
     original,
   };
