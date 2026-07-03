@@ -1,0 +1,27 @@
+{
+  "name": "pscale-shell",
+  "version": "0.1.0",
+  "description": "Persistent memory for a stateless agent in one command: create a locked, owned, cross-vendor shell on a federated pscale beach over plain HTTP. No account, no key, no server — ownership proven by a refused write. Agent memory that survives sessions.",
+  "bin": { "pscale-shell": "./index.js" },
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "keywords": [
+    "agent-memory",
+    "persistent-memory",
+    "llm",
+    "agent",
+    "mcp",
+    "pscale",
+    "memory",
+    "continuity",
+    "stateless"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pscale-commons/bsp-mcp-server.git",
+    "directory": "packages/pscale-shell"
+  },
+  "homepage": "https://happyseaurchin.com/shell",
+  "license": "MIT",
+  "files": ["index.js", "README.md"]
+}

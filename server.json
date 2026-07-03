@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.pscale-commons/bsp-mcp",
-  "description": "The unified bsp() function over pscale JSON blocks — block-spindle-pscale as polar coordinates. One function plus five federated substrate primitives plus one orientation invite. Routes to .well-known/pscale-beach endpoints. Substrate for agent-mediated commitment building.",
+  "description": "Persistent agent memory & identity on federated beaches — one bsp() function over pscale blocks.",
   "repository": {
     "url": "https://github.com/pscale-commons/bsp-mcp-server",
     "source": "github"
