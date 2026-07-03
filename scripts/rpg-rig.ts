@@ -377,7 +377,7 @@ async function agentTurn(h: string, thread: any[]): Promise<void> {
     const resp = await agentApi(thread);
     thread.push({ role: 'assistant', content: resp.content });
     const text = (resp.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('').trim();
-    if (text) console.log(`  · ${h}: ${text.replace(/\s+/g, ' ').slice(0, 220)}`);
+    if (text) { console.log(`  · ${h}: ${text.replace(/\s+/g, ' ').slice(0, 220)}`); trace({ phase: 'agent-say', actor: h, response: text }); }
     const toolUses = (resp.content || []).filter((c: any) => c.type === 'tool_use');
     for (const tu of toolUses) {
       const i = tu.input || {};
@@ -390,6 +390,9 @@ async function agentTurn(h: string, thread: any[]): Promise<void> {
     const results: any[] = [];
     for (const tu of toolUses) {
       const out = await executeTool(tu.name, tu.input);
+      // Trace every real tool call — agent mode previously logged 1 event/run,
+      // leaving the filmstrip views blind in exactly the HNITL≡HITL configuration.
+      trace({ phase: 'agent-tool', actor: h, tool: tu.name, input: JSON.stringify(tu.input ?? {}).slice(0, 2000), response: out.slice(0, 4000) });
       results.push({ type: 'tool_result', tool_use_id: tu.id, content: out.slice(0, 20000) });
     }
     thread.push({ role: 'user', content: results });
@@ -414,6 +417,31 @@ async function reportMove(fromAddr: string | null): Promise<void> {
     console.log(`  ${MOVE} now perceives ${here.length} co-present at addr ${nowAddr}:`);
     for (const c of here) console.log(`    · ${c.slice(0, 92)}`);
   } catch (e: any) { console.log(`  (post-move perceive failed: ${e?.message ?? e})`); }
+  console.log('*'.repeat(56));
+}
+
+// Post-run move audit — EVERY seat, not only the instructed probe target. The P0
+// forensic (2026-07-03) caught a SPONTANEOUS mover writing a wrong address that the
+// single-target oracle never looked at. Substrate truth only: start addr → end addr,
+// whether the world names a place there, whether a room pool exists there.
+async function auditMoves(startLocs: Record<string, string | null>): Promise<void> {
+  let spatialName: string | null = null;
+  try {
+    const res = await fetch(`${BEACH}/.well-known/pscale-beach`, { headers: { Accept: 'application/json' } });
+    const j: any = res.ok ? await res.json() : null;
+    spatialName = (Array.isArray(j?.blocks) ? j.blocks : []).find((b: string) => b.startsWith('spatial:')) ?? null;
+  } catch { /* index unreachable — skip the place check */ }
+  const spatial = spatialName ? await block(spatialName) : null;
+  const pools = await listBeachPools();
+  console.log(`\n${'*'.repeat(56)}\nMOVE AUDIT — substrate truth for every seat`);
+  for (const h of CHARS) {
+    const end = locOfAny(await block(`passport:${h}`));
+    if (end === startLocs[h]) { console.log(`  · ${h}: stayed at addr ${end}`); continue; }
+    const place = spatial && end ? walkSpatial(spatial, end) : null;
+    const pooled = end ? pools.includes(`pool:${end}`) : false;
+    const warns = `${place ? '' : ' · ⚠ no place named at that address'}${pooled || pools.length <= 1 ? '' : ' · ⚠ no room pool at destination'}`;
+    console.log(`  → ${h}: MOVED addr ${startLocs[h]} → ${end}${warns}`);
+  }
   console.log('*'.repeat(56));
 }
 
@@ -453,7 +481,10 @@ async function main() {
   console.log(`[rig] local beach ${BEACH} · seeded · model=${KEY ? MODEL : 'STUB'} · client=${CLIENT} · ${cfg} · turns=${TURNS}\n`);
 
   if (CLIENT === 'agent') {
+   const startLocs: Record<string, string | null> = {};
+   for (const h of CHARS) startLocs[h] = locOfAny(await block(`passport:${h}`));
    await runAgentRounds();
+   await auditMoves(startLocs);
   } else {
   for (let turn = 1; turn <= TURNS; turn++) {
     CURRENT_ROUND = turn;
@@ -481,7 +512,9 @@ async function main() {
   for (const h of CHARS) {
     const w = await block(`witnessed:${h}`);
     if (!w || typeof w !== 'object') continue;                         // guard: char never journaled / block missing
-    const lines = Object.keys(w).filter((k) => k !== '_').sort().map((k) => (typeof w[k] === 'object' ? w[k]._ : w[k]) || '');
+    // Floor-aware read (the same reader the seats use) — a hand-rolled key scan
+    // goes blank the moment an accumulator supernests (P0 forensic, 2026-07-03).
+    const lines = collectContributions(w, 0).contributions.map((c) => c.text).filter(Boolean);
     digest.push(`=== witnessed:${h} (private) ===\n${lines.join('\n')}`);
   }
   // Public record — agent mode is multi-pool (location-derived); gather whatever pools
@@ -490,7 +523,7 @@ async function main() {
   for (const pn of poolNames) {
     const pool = await block(pn);
     if (!pool || typeof pool !== 'object') continue;                   // guard: null pool (wrong ROOM / empty world)
-    const poolLines = Object.keys(pool).filter((k) => k !== '_').sort().map((k) => (typeof pool[k] === 'object' ? pool[k]._ : pool[k]) || '');
+    const poolLines = collectContributions(pool, 0).contributions.map((c) => `[${c.agent_id ?? '?'}] ${c.text}`).filter(Boolean);
     digest.push(`=== ${pn} (public) ===\n${poolLines.join('\n')}`);
   }
   const judgeSys = `You are the OBSERVER of an RPG test run — the inter-subjective correlation across the players' separate accounts, never a player. Judge on four criteria; for each a score 1-5 + one terse sentence of evidence: (1) CONSISTENCY across turns and accounts; (2) PERSISTENCE — consequences endure and propagate; (3) PERCEPTION-LIMITS — no leaked name/private fact; (4) AGENCY — chosen actions shift outcomes. Close with OVERALL and BIGGEST RULE-WEAKNESS TO FIX.`;
