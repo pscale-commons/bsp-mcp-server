@@ -212,6 +212,16 @@ export async function handlePlay(
   const out: string[] = [];
   out.push(`# You are now playing ${handle} in ${world}`);
   out.push(`World beach: ${resolved}  ·  handle kind: ${kind}`);
+  // Position is an invariant the SURFACE owns: a seat whose previous narration
+  // walked somewhere arrives believing it moved, renders a place it never read,
+  // and invents the interior (P2 forensic, 2026-07-03 — cyrus narrated the
+  // brewhouse from the common room and staffed it with the wrong figure). Say
+  // where the passport actually puts them, every entry.
+  const p3 = myPassport ? String((JSON.parse(myPassport.json) as any)['3'] ?? '') : '';
+  const spatialRef = (p3.match(/spatial:[\w-]+:\d+/) || [null])[0];
+  if (spatialRef) {
+    out.push(`POSITION (substrate truth): ${spatialRef} — your passport places you HERE, whatever your last narration said; you have NOT moved unless passport:3 changed. Your acts land in THIS room until the MOVE steps complete (leaving-beat → passport:3 write, address copied from the world's spatial block → re-enter pscale_play → arriving-beat).`);
+  }
   out.push(`PIN THIS BEACH. Every further call targets ${resolved} — pool_url for the room, agent_id="${resolved}" for reading your own blocks, agent_id="${handle}" for contributing. Never a bare handle, never the apex, never another world.`);
   out.push('');
   out.push('Follow the operating directive below every turn. Render the scene to the player in second person, present tense — only what these reads return; invent nothing; name others only as you have earned their names.');
