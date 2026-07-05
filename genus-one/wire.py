@@ -61,7 +61,7 @@ def save_block(origin, block, content, secret=None, new_lock=None, confirm=True)
     """Whole-block write, confirmed by read-back. Raises on mismatch — a lost
     write must fail loudly, never silently. new_lock creates-locked or rotates
     (the beach's four lock rules); secret proves current authority."""
-    body = {"content": content}
+    body = {"content": content, "confirm": True}   # the beach gates whole-block REPLACE behind confirm
     if secret:
         body["secret"] = secret
     if new_lock:
