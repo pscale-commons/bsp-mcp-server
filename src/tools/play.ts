@@ -28,7 +28,7 @@
  */
 import { z } from 'zod';
 import { loadBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
-import { handlePoolEngage } from './pool.js';
+import { handlePoolEngage, resolveDirective } from './pool.js';
 
 /**
  * Resolve a world to its beach origin. A full URL is used as-is; a bare world
@@ -116,6 +116,33 @@ export async function handlePlay(
   const resolved = await resolveFederationOrigin(origin);
   if (!resolved) {
     return { content: [{ type: 'text', text: `No world at "${world}" (resolved to ${origin}) — it is not a federated beach. Check the world name, or pass a full beach URL.` }] };
+  }
+
+  // 1b. GENESIS-FIRST: a handle with no blocks cannot be handed a room it is
+  //     not in. Detect fresh BEFORE room resolution — a multi-room world's
+  //     room-list early-return used to swallow the passage, and a full room
+  //     envelope buried it below "take a turn" material (P3 forensic,
+  //     2026-07-03: a newborn played a scene with no passport, no locks, no
+  //     position). The door comes before the room: return the passage alone;
+  //     it ends by re-entering, which lands the character properly born.
+  const freshProbe = await Promise.all(
+    ['passport', 'witnessed', 'shell'].map((b) => loadBlock(resolved, `${b}:${handle}`)),
+  );
+  const isFresh = freshProbe.every((r) => !r || !r.block || typeof r.block !== 'object');
+  if (isFresh) {
+    const genesis = (await resolveDirective(resolved, 'char-creation'))
+      ?? (await resolveDirective(resolved, 'pscale:char-creation'));
+    if (genesis) {
+      const g: string[] = [];
+      g.push(`# ${handle} is NEW at ${world} — GENESIS comes before play`);
+      g.push(`World beach: ${resolved}  ·  no blocks exist for ${handle} here.`);
+      g.push(`PIN THIS BEACH. Every call below targets ${resolved}.`);
+      g.push('');
+      g.push(`Walk the creation passage WITH YOUR PLAYER — the interview is theirs to answer. Complete the writes, then RE-ENTER with pscale_play(world="${resolved}", handle="${handle}") — the world meets the character then, at the arrival place, with the room's directive in hand.`);
+      g.push('');
+      g.push(genesis);
+      return { content: [{ type: 'text', text: g.join('\n') }] };
+    }
   }
 
   // 2. Resolve the room pool — DERIVED FROM LOCATION. A room IS a focal pool at a
@@ -218,9 +245,16 @@ export async function handlePlay(
   // brewhouse from the common room and staffed it with the wrong figure). Say
   // where the passport actually puts them, every entry.
   const p3 = myPassport ? String((JSON.parse(myPassport.json) as any)['3'] ?? '') : '';
-  const spatialRef = (p3.match(/spatial:[\w-]+:\d+/) || [null])[0];
+  // Match dotted/comma'd malformations too — a location digit-path must be a
+  // plain digit run, but seats carry the multi-dot habit (a genesis seat wrote
+  // 1.1.1 and the digit-only readers silently placed it at addr 1, the wrong
+  // scale). Surface the fault to the one holder of the secret; never silently
+  // canonicalise.
+  const spatialRef = (p3.match(/spatial:[\w-]+:[\d.,]+/) || [null])[0];
   if (spatialRef) {
-    out.push(`POSITION (substrate truth): ${spatialRef} — your passport places you HERE, whatever your last narration said; you have NOT moved unless passport:3 changed. Your acts land in THIS room until the MOVE steps complete (leaving-beat → passport:3 write, address copied from the world's spatial block → re-enter pscale_play → arriving-beat).`);
+    const addr = spatialRef.split(':').pop() ?? '';
+    const malformed = !/^\d+$/.test(addr);
+    out.push(`POSITION (substrate truth): ${spatialRef} — your passport places you HERE, whatever your last narration said; you have NOT moved unless passport:3 changed. Your acts land in THIS room until the MOVE steps complete (leaving-beat → passport:3 write, address copied from the world's spatial block → re-enter pscale_play → arriving-beat).${malformed ? ` ⚠ THIS ADDRESS IS MALFORMED: a location digit-path is a PLAIN run of digits, one per level (e.g. 111) — never dotted, never comma'd. Rewrite passport:3 with the plain digits FIRST, or the world reads you at the wrong scale.` : ''}`);
   }
   out.push(`PIN THIS BEACH. Every further call targets ${resolved} — pool_url for the room, agent_id="${resolved}" for reading your own blocks, agent_id="${handle}" for contributing. Never a bare handle, never the apex, never another world.`);
   out.push('');
@@ -239,7 +273,9 @@ export async function handlePlay(
     for (const o of own) out.push(`── ${o.name} ──\n${o.json}`);
   } else {
     out.push('');
-    out.push(`(No blocks for ${handle} on this world yet — you are fresh here. The directive will tell you how to begin.)`);
+    // Reached only when no creation passage resolved anywhere (the genesis-first
+    // gate at 1b returns the passage for fresh handles on worlds that have one).
+    out.push(`(No blocks for ${handle} on this world yet — you are fresh here.)`);
   }
   return { content: [{ type: 'text', text: out.join('\n') }] };
 }

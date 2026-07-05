@@ -37,6 +37,7 @@ import blockConventions from './block-conventions.json' with { type: 'json' };
 import gatekeeper from './gatekeeper.json' with { type: 'json' };
 import softAgent from './soft-agent.json' with { type: 'json' };
 import grit from './grit.json' with { type: 'json' };
+import charCreation from './char-creation.json' with { type: 'json' };
 import payway from './payway.json' with { type: 'json' };
 import ecologyRouter from './ecology-router.json' with { type: 'json' };
 import sandRider from './sand-rider.json' with { type: 'json' };
@@ -115,6 +116,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: grit as unknown as Block,
     description:
       'GRIT — Group Resolution In Time. The canonical, daemonless play-loop for running a role-played world on pscale blocks: a contributor-driven room with no server, no round-timer, no central resolver. MOST of play is SIMPLE (perceive → act → commit a terse public fact; no dice, no waiting); a CHECK is the exception and the only time dice are read (a CONTEST gathers both actors and one resolver weaves the outcome; a solo TRIAL self-resolves on fixed seeded dice). The pool is public reality in identifiers; each character\'s witnessed is their private narrative; names are earned in-fiction. GRIT decides WHEN a check is needed and HOW its outcome is gathered, written once, and made to bite — it does NOT define the dice or the bands: those belong to a world\'s RESOLUTION RULES block (the reference system is rules:nomad; a world may mount any rules, D&D-style or other). A world mounts on GRIT by supplying its own rules + place (spatial:<world>/rules:<world>) + cast and pointing the room pool\'s underscore here; GRIT itself never changes. Branches: _ the framing + simple/check essence + the mount note, 1 soft (wear a character), 2 check (the resolving aperture), 3 hard (occasional upkeep). Supersedes the daemon-era meaning of GRIT (timer-window rounds + server-dispatched resolution + first-valid-wins compressors), now retired. See block-conventions for how a world mounts on it; rules:nomad for the reference resolution system.',
+  },
+  {
+    name: 'char-creation',
+    json: charCreation as unknown as Block,
+    description:
+      'Char-creation — GENESIS, the door where a person becomes a character. Substrate-wide canonical creation passage, walked once per handle per world (a world-hosted char-creation block overrides it — the gatekeeper fallback chain; pscale_play inlines it for a fresh handle). A world is JOINED, never booted: arrival happens at a place whose prose receives strangers (arrival is a property of PLACES held in the spatial block, not a spawn mechanism — that is how it scales). Branches: 1 the interview (name, capability in the world\'s rules terms, want, appearance, thin knows seed, choice of arrival place), 2 the writes (passport/knows/purpose locked at birth under the player\'s passphrase; witnessed opened by appending the arrival memory), 3 the arrival (re-enter via pscale_play; arriving-beat by appearance), 4 arriving together (a party is a shared arrival place; co-presence is the introduction), 9 the gate (open by default; payway may gate the walk — conventions land with the payway implementation).',
   },
   {
     name: 'payway',
