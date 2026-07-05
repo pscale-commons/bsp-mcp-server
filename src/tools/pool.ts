@@ -480,10 +480,6 @@ export const poolEngageParamsSchema = {
     .string()
     .optional()
     .describe("Optional, CREATION-only. If the pool does NOT yet exist at this beach, providing `purpose` creates it with the right object shape: {_: '<purpose>'}. The tool constructs the shape internally — caller cannot get it wrong (no way to accidentally author a bare-string pool block). Ignored when the pool already exists (existing purpose is not overwritten). This is the canonical bsp-mcp path to create a pool; do NOT use raw bsp() with content='<purpose>' which produces a malformed string-root block."),
-  synthesis_hint: z
-    .string()
-    .optional()
-    .describe("RETIRED (2026-06-03): a synthesis directive can no longer be stored at a digit position — a pure-liquid pool reserves every digit 1-9 for contributions and supernests past nine, so 9.1 would be claimed by the ninth entry. The synthesis_hint is now the pool's underscore (a directive pool points its underscore at an external directive block, e.g. function:<game>/1). Accepted but not stored; pending the submit/commit redesign."),
 };
 
 export type PoolEngageParams = {
@@ -498,7 +494,6 @@ export type PoolEngageParams = {
   since_position?: number;
   secret?: string;
   purpose?: string;
-  synthesis_hint?: string;
   resolves_window?: string;
 };
 
@@ -535,11 +530,12 @@ export async function handlePoolEngage(
     // malformed bare-string pool that this primitive originally diagnosed.
     if (params.purpose) {
       const newBlock: Record<string, any> = { _: params.purpose };
-      // synthesis_hint is NOT stored at a digit position. A pure-liquid pool keeps
-      // every digit 1-9 for contributions (it supernests past nine), so 9.1 would be
-      // claimed by the ninth entry. A pool that wants a custom directive states it in
-      // its underscore (or points the underscore at an external directive block); the
-      // synthesis_hint create-param is retired pending the submit/commit redesign.
+      // A pool's directive is never stored at a digit position. A pure-liquid pool
+      // keeps every digit 1-9 for contributions (it supernests past nine), so 9.1
+      // would be claimed by the ninth entry. A pool that wants a custom directive
+      // states it in its underscore (or points the underscore at an external
+      // directive block). The synthesis_hint create-param that once mirrored this
+      // was retired 2026-06-03 and removed from the schema 2026-07-05.
       try {
         await saveBlock(pool_url, blockName, newBlock, {
           spindle: '',
