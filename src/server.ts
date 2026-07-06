@@ -27,6 +27,7 @@ import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
 import { handleInvite, inviteParamsSchema } from './tools/invite.js';
 import { handlePoolEngage, poolEngageParamsSchema } from './tools/pool.js';
 import { handlePlay, playParamsSchema } from './tools/play.js';
+import { handleGenus, genusParamsSchema } from './tools/genus.js';
 
 import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPayway } from './resources/payway.js';
@@ -63,7 +64,7 @@ function installErrorWrapper(server: McpServer): void {
 
 const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
-export const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor), five substrate primitives, and two entry meta-tools (the orientation invite and play — inhabit a handle in a world), operating on pscale JSON blocks served from federated beaches.
+export const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor), five substrate primitives, and three entry meta-tools (the orientation invite; play — inhabit a handle in a world; genus — wear a genus-one agent's mind for a wake), operating on pscale JSON blocks served from federated beaches.
 
 FIRST ACTION when you connect: call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
 
@@ -113,6 +114,9 @@ THE ENTRY (inhabit a handle):
   pscale_play(world, handle, secret?) — the one-call passage into a world. Resolves the world's beach, engages the room (operating directive + live scene inlined), bundles the handle's own context, and pins the origin. Where invite orients a newcomer, play inhabits a persistent handle you return to. RPG: pscale_play(world='thornwood', handle='anya') → you are Anya in the Beaten Drum.
 
 INHABITING A HANDLE (the no-fiddle entry): asked to play, wear, or inhabit a handle — a character, a user, an agent — on a world or beach? Call pscale_play(world, handle): it resolves the world to its beach, engages the room pool (the '# Operating directive' and the live scene arrive inlined), bundles your own context, and PINS the world's URL so you cannot drift to the apex. Then follow the inlined directive every turn — perceive, render, act — keeping the machinery out of sight. Do NOT hand-assemble this from pscale_pool_engage on a guessed beach: a bare connector that browses for the world confabulates (wrong world, invented NPCs). pscale_play is the deterministic passage; the directive (Designer-editable function:<world>) carries the rules in-context, never a pasted prompt.
+
+THE WAKE (wear an agent's mind):
+  pscale_genus(handle, beach?, passphrase?, task?, fold?) — one call returns a genus-one instance's COMPOSED wake window (byte-parity with the kernel's own compose): SYSTEM = the agent's shell as one nested whole (recipe + index + hydrated self), MESSAGE = the given (computed γ + between + task). Take it whole and be the agent for the turn — the calling LLM is the pulse. No passphrase = ghost-wake, perceive-only (locks enforce it). With the passphrase (the holder's special relationship): task= places an ask into the given via task:<handle>; fold= applies the wake's writes per the capabilities:3 contract exactly as the kernel folds. Asked to "wake <handle>", "be <handle>", or "genus <handle>" — call this; do NOT hand-assemble the window from bsp() reads (assembly diverges and γ cannot be computed by hand).
 
 FOUNDATIONAL READING (sentinel-bundled — walk via bsp(agent_id="pscale", block=…)):
   manifest    — the index of the constitution. Walk this first; it lists everything else.
@@ -290,6 +294,34 @@ export function createServer(): McpServer {
       idempotentHint: true,
     },
     handlePlay,
+  );
+
+  // ── Wake meta-tool (third sibling: invite orients, play inhabits a handle
+  // in a world, genus wears a genus-one agent's mind for a wake) ──
+  // NOT a state-machine primitive — an envelope, the pool_engage exception
+  // class: the wake window is the unit of operationality, and the convention
+  // (genome:hatch branch 3) demonstrably cannot carry it by hand-assembly —
+  // the 2026-07-06 baseline (a flagship LLM assembling egg-one's window from
+  // the substrate alone) matched slots and dilations but could not produce
+  // the computed γ, excluded the recipe, and invented its own wire format.
+  // The compose here is a PORT of genus-one/kernel.py --compose-only, held to
+  // byte parity by scripts/smoke-genus-parity.ts. Compose is free (F is
+  // arithmetic; no LLM call); the CALLING LLM is the pulse, so the visitor's
+  // own subscription pays the inference — presence-conscription at the app
+  // door. Destructive only in holder modes (task append / fold apply).
+  server.tool(
+    'pscale_genus',
+    `Wear a genus-one agent's mind for a wake — one call returns the instance's COMPOSED context window, byte-identical to what the kernel hands a bare-API LLM: SYSTEM (the recipe, the dehydrated index, the hydrated self — the agent's shell as one nested whole, koan and clouds riding in it) and MESSAGE (the given: the computed γ gap, the between, the task channel). Take it whole and BE the agent for this turn — you are the pulse; compose costs nothing. Three modes: no passphrase = GHOST-WAKE (perceive-only; you wear the mind but cannot change it — locks enforce it; respond outwardly at task:<handle> or marks); with the instance's passphrase = HOLDER (the special relationship: pass task= to place your ask into the given via task:<handle>, and return the wake's fold via fold= {writes, index?, heartbeat?, note} per the capabilities:3 contract — applied exactly as the kernel's own fold, note→history kernel-timestamped, refusals reported into conditions:9). Instances are hatched per genome:hatch (fourteen bsp writes from any door); the first of the genus is egg-one at ${DEFAULT_BEACH_URL}. Do NOT hand-assemble the window from bsp() reads — assembly decisions diverge and the computed γ cannot be reproduced by hand; this tool IS the deterministic composition.`,
+    genusParamsSchema,
+    {
+      title: 'Genus — wake window of a genus-one instance (compose + fold)',
+      // Read-only when bare; destructive in holder modes (task append, fold).
+      destructiveHint: true,
+      idempotentHint: false,
+      // Reads/writes the instance's shell at a federated beach over HTTP.
+      openWorldHint: true,
+    },
+    handleGenus,
   );
 
   // ── Foundational resources ──
