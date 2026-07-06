@@ -8,7 +8,7 @@
 
 ## To the next instance — read this before touching anything
 
-This repo is two functions — `bsp()` and the n-ary `bsp-floor()` — and five primitives (four substrate-stateful, plus the pool-engage envelope). That is essentially the WHOLE surface — the only other entry point is the `pscale_invite` orientation meta-tool. If you find yourself adding a 6th primitive, stop. The geometry is the program. The function walks. Read sunstone before you read any code.
+This repo is two functions — `bsp()` and the n-ary `bsp-floor()` — five primitives (four substrate-stateful, plus the pool-engage envelope), and three entry meta-tools (`pscale_invite` orients, `pscale_play` inhabits a handle in a world, `pscale_genus` wears a genus-one agent's mind for a wake). That is the WHOLE surface. If you find yourself adding a 6th primitive, stop. The geometry is the program. The function walks. Read sunstone before you read any code.
 
 You are stepping into a project where the JSON nesting level IS the data, not a container for it. Depth encodes scale and resolution. Position encodes relationships. The underscore chain encodes the semantic spine. The star operator encodes cross-references. The bsp walker just walks. The structure does the work.
 
@@ -151,7 +151,7 @@ Items 1-4 have atomic server-side state machines (next-position allocation, bila
 
 Item 5 is the exception to the "primitive = state machine" rule. It exists because the pscale-mcp pool tools (pscale_pool_join / send / read) carried personal-synthesis operationally via their response envelope, and bsp-mcp's surface collapse moved that to convention — where it failed to carry. The envelope is the unit of operationality. Documented as an experimental addition; if RPG validation (against the prototype in a separate session) doesn't show concrete value, it is reverted before merge.
 
-That's the whole surface: two functions (`bsp()` and the n-ary `bsp-floor()`) plus five primitives, plus the meta-tool `pscale_invite` — eight entry points total. Resist further growth; the bar for a 6th primitive is "the envelope is observably what's missing, and conventions have failed to carry it."
+That's the whole surface: two functions (`bsp()` and the n-ary `bsp-floor()`) plus five primitives, plus three entry meta-tools (`pscale_invite`, `pscale_play`, `pscale_genus` — each an envelope, not a state machine) — ten entry points total. Resist further growth; the bar for a 6th primitive is "the envelope is observably what's missing, and conventions have failed to carry it" — the bar every meta-tool also had to meet (play: a bare connector confabulated worlds; genus: the 2026-07-06 baseline showed hand-assembly cannot compute γ or hold the wire format).
 
 ### Dissolution note — `pscale_create_collective` (2026-06-03)
 
