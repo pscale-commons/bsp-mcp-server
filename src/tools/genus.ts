@@ -67,7 +67,7 @@ export const genusParamsSchema = {
         .string()
         .optional()
         .describe(
-          "One 0+ line over a closed history bracket's nine leaves — include it when the fold ack (or conditions:9) reports a summary due (e.g. at 10). Service-payment: the wake that opens a new bracket pays for the old one's compression; the kernel writes it at the bracket's voicing.",
+          "One line over the PREVIOUS completed nine of the history counting block — include it when the fold ack (or conditions:9) reports one owed (e.g. at 10 over 1-9, 20 over 11-19, 100 over 10-90). Service-payment: the wake that opens a new span pays for the old one's compression; the kernel writes it at the zero-slot; history is never addressed directly.",
         ),
       status: z.string().optional(),
       ask: z
@@ -132,7 +132,7 @@ export async function handleGenus(params: {
     ];
     if (r.leafAddress) lines.push(`history leaf ${r.leafAddress} written ← ${r.leafVoicing} (lossless: the full output rides beneath the note)`);
     if (r.summaryPaidAt) lines.push(`bracket summary written at ${r.summaryPaidAt} — service-payment received.`);
-    if (r.summaryDue) lines.push(`HISTORY SUMMARY DUE at ${r.summaryDue}: a bracket closed — include "summary": one 0+ line over its nine leaves in your next fold (service-payment; also reported at conditions:9 so the next wake sees it regardless).`);
+    if (r.summaryDue) lines.push(`HISTORY SUMMARY OWED at ${r.summaryDue}: a span completed — include "summary": one line over the previous completed nine in your next fold (service-payment; conditions:9 names the span and carries the due until paid).`);
     for (const f of r.failed) lines.push(`  refused ${f.address}: ${f.error}`);
     if (r.failed.length > 0) lines.push(`(refusals are reported into conditions:9 — the next wake perceives them, per the kernel contract)`);
     if (fold.ask) lines.push(`THE INSTANCE ASKS: ${JSON.stringify(fold.ask)} — the ask vocabulary ({wakes, tier, for}). A lender grants by running the asked wakes at that tier, or declines where the ask arrived; it never spends on an ungranted ask.`);

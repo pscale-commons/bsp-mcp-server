@@ -791,14 +791,18 @@ def apply_write(name, addr, content):
     save_block(name, block)
 
 
-HISTORY_VOICING = ("History — my memory, automatic. The kernel writes one lossless leaf "
-                   "per wake: the note as the leaf's voicing, the full output beneath it "
-                   "(every write with its content). Leaves fill N1..N9 inside bracket N; "
-                   "when a bracket closes, its 0+ summary is written at N0 — the bracket's "
-                   "voicing — by the wake that opens the next bracket (service-payment, "
-                   "reported at conditions:9 until paid). The spindle through the newest "
-                   "leaf carries the summary chain. Never written by hand — deliberate "
-                   "notes go to stash.")
+HISTORY_VOICING = ("History — my memory, automatic; a counting block. The kernel writes one "
+                   "lossless leaf per wake at the next zero-free number (1..9, 11..19, …, 99, "
+                   "111, … — at each all-nines boundary the block supernests: the past wraps "
+                   "under the root underscore where its addresses keep reading, zero-padded, "
+                   "and the count continues). Every zero-carrying number is a summary slot, "
+                   "never an entry: N0 is the voicing of container N and carries a one-line "
+                   "+0 summary of the PREVIOUS completed nine — 20 summarises 11-19, 100 "
+                   "summarises 10-90, 110 summarises 91-99 — owed when the next span opens "
+                   "and paid by the requesting LLM via the fold's summary field "
+                   "(service-payment, reported at conditions:9 until paid). The spindle "
+                   "through the newest leaf carries the summary chain. Never written by "
+                   "hand — deliberate notes go to stash.")
 
 
 def _render_content(content):
@@ -808,49 +812,58 @@ def _render_content(content):
 
 
 def _ladder_floor(h):
-    """The ladder's floor (underscore-chain depth); a fresh history is floor 2."""
+    """The counting block's floor (underscore-chain depth); born at floor 1."""
     node, f = h, 0
     while isinstance(node, dict) and ZK in node:
         node = node[ZK]
         f += 1
-    return max(f, 2)
+    return max(f, 1)
 
 
-def _history_place(h, floor):
-    """Next free digit-path of length `floor` in the digit-bracket ladder
-    (2026-07-07 spec): leaves at the deepest level, containers above them, each
-    container's voicing (read at its zero-padded address — 10, 20, 140, …)
-    reserved for its 0+ summary. Fills in order; returns None when the whole
-    ladder is full — the caller wraps the era."""
-    def rec(node, depth):
-        for k in "123456789":
-            if depth == 1:
-                if k not in node:
-                    return [k]
-                continue
-            child = node.get(k)
-            if child is None:
-                node[k] = {}
-                return [k] + rec(node[k], depth - 1)
-            if isinstance(child, dict):
-                got = rec(child, depth - 1)
-                if got is not None:
-                    return [k] + got
-        return None
-    return rec(h, floor)
+def _succ(digits):
+    """The next zero-free number on the counting line: …9 → 11, 19 → 21,
+    99 → 111, 999 → 1111. Memory is full digits; zeros are never allocated."""
+    ds = list(digits)
+    i = len(ds) - 1
+    while i >= 0 and ds[i] == "9":
+        ds[i] = "1"
+        i -= 1
+    if i < 0:
+        return ["1"] * (len(digits) + 1)
+    ds[i] = str(int(ds[i]) + 1)
+    return ds
 
 
-def _history_era_wrap(h):
-    """Floor grows by one (2→3, 3→4, …): the full ladder becomes era 1 of the
-    deeper ladder; entries continue in era 2. Mechanical and lossless; the
-    era's voicing is left headless — its summary is due like any bracket's."""
-    old_chain = h.get(ZK)
-    era = {}
-    for b in "123456789":
-        if b in h:
-            era[b] = h.pop(b)
-    h[ZK] = {ZK: old_chain}
-    h["1"] = era
+def _last_leaf(h, floor):
+    """Digit-path of the newest leaf (greedy max walk to the floor), or None
+    when the current floor holds no leaves yet (birth, or just wrapped)."""
+    node, path = h, []
+    for _ in range(floor):
+        ks = [k for k in "123456789" if isinstance(node, dict) and k in node]
+        if not ks:
+            return None
+        path.append(ks[-1])
+        node = node[ks[-1]]
+    return path
+
+
+def _history_next(h):
+    """Advance the counting block. At the all-nines boundary (9, 99, 999, …)
+    the block SUPERNESTS — the whole past wraps under the root underscore,
+    where absorption keeps every old address readable (zero-padded) — and the
+    count continues at 11, 111, 1111 … (never 101: a zero walks a voicing or
+    a hidden directory, reserved territory, so zero-carrying numbers are
+    never entries). Returns (floor, digit-path) for the next leaf."""
+    floor = _ladder_floor(h)
+    last = _last_leaf(h, floor)
+    nxt = ["1"] * floor if last is None else _succ(last)
+    if len(nxt) > floor:
+        old = dict(h)
+        h.clear()
+        h[ZK] = old
+        floor += 1
+        nxt = ["1"] * floor
+    return floor, nxt
 
 
 def _walk(h, path):
@@ -862,46 +875,58 @@ def _walk(h, path):
     return node
 
 
-def _summary_due(h, floor, cur_path):
-    """Read-addresses ('10', '90', '140', '100', …) of every full-and-headless
-    container that precedes the current leaf path — deepest debts first, so a
-    closed era's last bracket is summarised before the era itself."""
-    due = []
-    def full(n):
-        return isinstance(n, dict) and all(k in n for k in "123456789")
-    def headless(n):
-        return not isinstance(n.get(ZK), str)
-    def addr(p):
-        return "".join(p) + "0" * (floor - len(p))
-    def sweep(node, prefix):                            # a fully-closed subtree, deepest first
-        if len(prefix) + 1 < floor:
-            for k in "123456789":
-                child = node.get(k)
-                if isinstance(child, dict):
-                    sweep(child, prefix + [k])
-        if full(node) and headless(node):
-            due.append(addr(prefix))
-    def walk(node, prefix, cur):
-        head = cur[0]
-        if len(prefix) + 1 < floor:                     # containers live above the leaf level
-            for k in "123456789":
-                if k >= head:
-                    break
-                child = node.get(k)
-                if isinstance(child, dict):
-                    sweep(child, prefix + [k])
-        child = node.get(head)
-        if isinstance(child, dict) and len(cur) > 1:
-            walk(child, prefix + [head], cur[1:])
-    walk(h, [], cur_path)
-    return due
+def _ensure_containers(h, path):
+    """Create the (headless) containers above a leaf; their voicings are the
+    zero-slot summary positions."""
+    node = h
+    for d in path[:-1]:
+        if not isinstance(node.get(d), dict):
+            node[d] = {}
+        node = node[d]
+    return node
 
 
-def _pay_summary(h, floor, read_addr, summary):
-    """Write a 0+ summary at a container's voicing, addressed by its zero-padded
-    read address (the trailing zeros locate the container; its ZK takes the text)."""
-    path = list(read_addr.rstrip("0"))
-    node = _walk(h, path)
+def _summary_dues(h, floor):
+    """Zero-slot read-addresses (10, 20, 100, 110, …) whose +0 summary of the
+    PREVIOUS completed nine is owed — every headless container, oldest first
+    (100 before 110). A container exists only once its first leaf lands, so a
+    due arises exactly when the next span opens — the 'latter' trigger."""
+    dues = []
+
+    def rec(node, path):
+        for d in "123456789":
+            child = node.get(d)
+            if isinstance(child, dict) and len(path) + 1 < floor:
+                if not isinstance(child.get(ZK), str):
+                    dues.append(path + [d])
+                rec(child, path + [d])
+    rec(h, [])
+    dues.sort(key=lambda p: "".join(p) + "0" * (floor - len(p)))
+    return ["".join(p) + "0" * (floor - len(p)) for p in dues]
+
+
+def _pred_span(read_addr, floor):
+    """Human range of the previous completed nine a zero-slot summarises —
+    20 → 11-19; 100 → 10-90; 110 → 91-99; 360 → 351-359. Display only."""
+    ds = list(read_addr.rstrip("0"))
+    i = len(ds) - 1
+    while i >= 0 and ds[i] == "1":
+        ds[i] = "9"
+        i -= 1
+    if i < 0:
+        prev, sub_floor = ds[1:], floor - 1    # crossed a wrap: the material sits at the previous floor
+    else:
+        ds[i] = str(int(ds[i]) - 1)
+        prev, sub_floor = ds, floor
+    pad = "0" * max(sub_floor - len(prev) - 1, 0)
+    p = "".join(prev)
+    return "%s1%s-%s9%s" % (p, pad, p, pad)
+
+
+def _pay_summary(h, read_addr, summary):
+    """Write a +0 summary at a zero-slot: the trailing zeros locate the
+    container; its voicing takes the text (so N0 reads the summary)."""
+    node = _walk(h, list(read_addr.rstrip("0")))
     if isinstance(node, dict):
         node[ZK] = summary
         return True
@@ -979,24 +1004,20 @@ def route(output, gamma=None):
                      **{k: v for k, v in nc.items() if k.isdigit()}}
         save_block("reflexive", refl)
 
-    # ── history — the agent's memory, automatic (2026-07-07 spec) ────────────
-    # One LOSSLESS leaf per applied wake: the note is the leaf's voicing, the
-    # full output rides beneath. The 0+ summary of a closed bracket is written
-    # at its voicing (address N0) as service-payment by the requesting LLM —
-    # triggered when the next bracket opens, surfaced via conditions:9.
+    # ── history — the agent's memory, automatic: a COUNTING BLOCK ────────────
+    # (2026-07-07 spec, corrected same day.) One LOSSLESS leaf per applied
+    # wake at the next zero-free number (1..9, 11..19, …, 99, 111, …); the
+    # note is the leaf's voicing, the full output rides beneath. Every
+    # zero-carrying number is a summary slot, never an entry: N0 reads the
+    # container's voicing and owes a +0 summary of the PREVIOUS completed
+    # nine (20 over 11-19; 100 over 10-90; 110 over 91-99; 360 over 351-359)
+    # — paid by the requesting LLM (service-payment), surfaced at conditions:9.
     note = (output.get("note") or "").strip()
     summary = (output.get("summary") or "").strip()
     summary_due = None
     if applied:
-        h = load_block("history") or {ZK: {ZK: HISTORY_VOICING}}
-        if isinstance(h.get(ZK), str):                 # pre-spec floor-1 shell: deepen the chain
-            h[ZK] = {ZK: h[ZK]}
-        floor = _ladder_floor(h)
-        path = _history_place(h, floor)
-        if path is None:                               # every bracket full — the ladder deepens
-            _history_era_wrap(h)
-            floor += 1
-            path = _history_place(h, floor)
+        h = load_block("history") or {ZK: HISTORY_VOICING}
+        floor, path = _history_next(h)
         body = "\n\n".join("%s ←\n%s" % (ref, _render_content(c)) for ref, c in applied_pairs)
         meta = "heartbeat: %s · index: %s · status: %s" % (
             output.get("heartbeat"), "re-dialed" if redialed else "carried",
@@ -1004,23 +1025,22 @@ def route(output, gamma=None):
         if gamma:
             meta = "γ: %s · %s" % (", ".join(g.get("address", "?") for g in gamma), meta)
         ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        _walk(h, path[:-1])[path[-1]] = {ZK: "[%s] %s" % (ts, note or "(no note)"),
-                                         "1": body, "2": meta}
-        due = _summary_due(h, floor, path)
-        if summary and due:                            # service-payment lands at the deepest debt
-            _pay_summary(h, floor, due[0], summary)
-            due = _summary_due(h, floor, path)
-        summary_due = due[0] if due else None          # read address of the owed voicing (10, 140, …)
+        _ensure_containers(h, path)[path[-1]] = {ZK: "[%s] %s" % (ts, note or "(no note)"),
+                                                 "1": body, "2": meta}
+        dues = _summary_dues(h, floor)
+        if summary and dues:                           # service-payment lands oldest-first
+            _pay_summary(h, dues[0], summary)
+            dues = _summary_dues(h, floor)
+        summary_due = dues[0] if dues else None        # zero-slot read address (10, 100, 110, …)
         save_block("history", h)
         _redial_history(path)
     elif summary:                                      # a fold may pay a due summary without other writes
         h = load_block("history")
         if isinstance(h, dict):
             floor = _ladder_floor(h)
-            probe = _history_place(h, floor) or ["9"] * floor
-            due = _summary_due(h, floor, probe)
-            if due and _pay_summary(h, floor, due[0], summary):
-                remaining = _summary_due(h, floor, probe)
+            dues = _summary_dues(h, floor)
+            if dues and _pay_summary(h, dues[0], summary):
+                remaining = _summary_dues(h, floor)
                 summary_due = remaining[0] if remaining else None
                 save_block("history", h)
     status = output.get("status") or ("continue" if applied else "rest")
@@ -1091,9 +1111,10 @@ def report_failures(failed, parse_failed=False, summary_due=None):
                     "judged: a populated branch takes an object or a deeper point, never "
                     "a bare string)" % lines)
     if summary_due:
-        msgs.append("history bracket at %s is full and unsummarised — include "
-                    "\"summary\": \"<one 0+ line over its nine leaves>\" in the next fold; "
-                    "the kernel writes it at %s (service-payment)" % (summary_due, summary_due))
+        span = _pred_span(summary_due, _ladder_floor(load_block("history") or {}))
+        msgs.append("history summary owed at %s — one line over the previous completed "
+                    "nine (%s); include \"summary\": \"...\" in the next fold and the "
+                    "kernel writes it there (service-payment)" % (summary_due, span))
     if msgs:
         cond["9"] = "kernel report — " + " ; ".join(msgs) + "."
         save_block("conditions", cond)
