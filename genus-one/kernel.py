@@ -736,6 +736,38 @@ def _peer_surfaces():
     return out
 
 
+def _marks_naming_me():
+    """The open beach reaching in — marks on the home beach whose voicing names
+    my handle, a few most-recent. This is how a stranger or a peer reaches me
+    without the holder's task channel: leave a mark that names me and my next
+    wake receives it in the given. A mark is tagged with its author and is never
+    my own voice. Empty off-beach or when nothing names me. Address-ordered so
+    every composer — kernel, animator, pscale_genus — yields the same slice."""
+    if not (BEACH and HANDLE):
+        return {}
+    try:
+        marks = wire.load_block(BEACH, "marks")
+    except Exception:
+        return {}
+    if not isinstance(marks, dict):
+        return {}
+    needle = HANDLE.lower()
+    hits = []
+
+    def rec(node, addr):
+        if isinstance(node, dict):
+            z = node.get(ZK)
+            if isinstance(z, str) and needle in z.lower():
+                hits.append((addr, z))
+            for d in "123456789":
+                if d in node:
+                    rec(node[d], addr + d)
+
+    rec(marks, "")
+    hits.sort(key=lambda h: (len(h[0]), h[0]))
+    return {a: t for a, t in hits[-5:]}
+
+
 def compose_window(gamma):
     """Compose the window per the active recipe (reflexive:8.1) — the composition
     is the agent's own block, not kernel-hardcoded. The recipe names the window's
@@ -752,6 +784,7 @@ def compose_window(gamma):
         "gap":     lambda: gamma,                                          # the error F computed
         "between": _peer_surfaces,   # the 'between' — peers' published surfaces, by proximity
         "task":    lambda: load_block("task") or {},   # work handed in from outside — the given task channel
+        "marks":   _marks_naming_me,  # the open beach reaching in — marks that name my handle
     }
     working = ((load_block("reflexive") or {}).get("8", {}) or {}).get("1", {})
     process = _side(working.get("1", {}), builders) if isinstance(working, dict) else {}
