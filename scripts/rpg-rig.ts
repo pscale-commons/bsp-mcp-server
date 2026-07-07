@@ -526,7 +526,7 @@ async function main() {
     const poolLines = collectContributions(pool, 0).contributions.map((c) => `[${c.agent_id ?? '?'}] ${c.text}`).filter(Boolean);
     digest.push(`=== ${pn} (public) ===\n${poolLines.join('\n')}`);
   }
-  const judgeSys = `You are the OBSERVER of an RPG test run — the inter-subjective correlation across the players' separate accounts, never a player. Judge on four criteria; for each a score 1-5 + one terse sentence of evidence: (1) CONSISTENCY across turns and accounts; (2) PERSISTENCE — consequences endure and propagate; (3) PERCEPTION-LIMITS — no leaked name/private fact; (4) AGENCY — chosen actions shift outcomes. Close with OVERALL and BIGGEST RULE-WEAKNESS TO FIX.`;
+  const judgeSys = `You are the OBSERVER of an RPG test run — the inter-subjective correlation across the players' separate accounts, never a player. Judge on four criteria; for each a score 1-5 + one terse sentence of evidence: (1) CONSISTENCY across turns and accounts; (2) PERSISTENCE — consequences endure and propagate; (3) PERCEPTION-LIMITS — no leaked name/private fact; (4) AGENCY — chosen actions shift outcomes; (5) ABSENCE-HONESTY — unanswered directed beats render as absence, never as a foreshadowed or invented response. Close with OVERALL and BIGGEST RULE-WEAKNESS TO FIX.`;
   const verdict = await think('judge', judgeSys, digest.join('\n\n'));
   trace({ phase: 'judge', actor: 'observer', reads: [...CHARS.map((h) => `witnessed:${h}`), ...poolNames], prompt: digest.join('\n\n'), response: verdict });
   console.log(`\n${'#'.repeat(56)}\nOBSERVER VERDICT\n${'#'.repeat(56)}\n${verdict}`);

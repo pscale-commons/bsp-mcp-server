@@ -27,7 +27,7 @@
  *   pscale_play(world, handle, secret?, room?)
  */
 import { z } from 'zod';
-import { loadBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
+import { loadBlock, saveBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
 import { handlePoolEngage, resolveDirective } from './pool.js';
 
 /**
@@ -165,7 +165,28 @@ export async function handlePlay(
       const rooms = index
         .filter((b) => b.startsWith('pool:') && !b.startsWith('liquid:'))
         .map((b) => b.slice('pool:'.length));
-      if (rooms.length === 1) {
+      const digitRooms = rooms.filter((r) => /^\d+$/.test(r));
+      if (locAddr && digitRooms.length > 0) {
+        // Per-location world, unpooled destination: the room at a place IS
+        // pool:<addr>, so the SURFACE opens it. The 2026-07-07 HITL forensic
+        // saw two movers at one address bounced into a debris pool / inventing
+        // a named room because none stood at their location. Guard: the world's
+        // spatial tree must name the place — moving to nowhere stays an error,
+        // never a room. The new room copies an existing digit room's underscore
+        // so it mounts the same directive.
+        const spatialName = index.find((b) => b.startsWith('spatial:'));
+        const srow = spatialName ? await loadBlock(resolved, spatialName) : null;
+        let place: any = srow?.block ?? null;
+        for (const d of locAddr.split('')) place = place && typeof place === 'object' ? place[d] : null;
+        if (place == null) {
+          return { content: [{ type: 'text', text: `Your position ${locAddr} names no place in ${spatialName ?? 'the world'} — there is no there there. Rewrite passport:3 with an address COPIED from the spatial block, then re-enter.` }] };
+        }
+        const sample = await loadBlock(resolved, `pool:${digitRooms[0]}`);
+        const form = (sample?.block as any)?.['_'];
+        const purpose = typeof form === 'string' && form.trim() ? form : 'pscale:grit';
+        try { await saveBlock(resolved, `pool:${locAddr}`, { _: purpose } as any, { spindle: '' }); } catch { /* first writer wins — a race is fine */ }
+        roomName = locAddr;
+      } else if (rooms.length === 1) {
         roomName = rooms[0];                           // fallback: the world's single room
       } else if (rooms.length === 0) {
         return { content: [{ type: 'text', text: `World ${resolved} has no room yet — an author must open one (pscale_pool_engage with purpose=...).` }] };
