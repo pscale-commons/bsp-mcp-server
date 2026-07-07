@@ -62,7 +62,13 @@ export const genusParamsSchema = {
       writes: z.record(z.any()).optional().describe('Map of "block:address" → content (string = point; object = branch). The kernel-contract shape from capabilities:3.'),
       index: z.record(z.any()).optional().describe("The re-dialed reflexive current for the next instance (digit slots). Omit to carry the current bundle forward."),
       heartbeat: z.number().optional().describe('Seconds until the next wanted wake — returned to the holder; the tool holds no clock.'),
-      note: z.string().optional().describe('One line, what was done and why — becomes the history entry (kernel-timestamped) when at least one write applied.'),
+      note: z.string().optional().describe("One line, what was done and why — becomes the VOICING of this wake's automatic history leaf (the kernel records the full output beneath it, lossless). Deliberate notes belong in stash via writes, never in history."),
+      summary: z
+        .string()
+        .optional()
+        .describe(
+          "One line over the PREVIOUS completed nine of the history counting block — include it when the fold ack (or conditions:9) reports one owed (e.g. at 10 over 1-9, 20 over 11-19, 100 over 10-90). Service-payment: the wake that opens a new span pays for the old one's compression; the kernel writes it at the zero-slot; history is never addressed directly.",
+        ),
       status: z.string().optional(),
       ask: z
         .object({ wakes: z.number().optional(), tier: z.string().optional(), for: z.string().optional() })
@@ -73,7 +79,7 @@ export const genusParamsSchema = {
     .passthrough()
     .optional()
     .describe(
-      "HOLDER-ONLY. A wake's fold to apply, per the capabilities:3 contract — the exact semantics of the kernel's own fold (route): writes applied shape-derived with the flatten guard, index re-dialed, note→history, refused writes reported at conditions:9. Call pscale_genus again afterwards for the next window.",
+      "HOLDER-ONLY. A wake's fold to apply, per the capabilities:3 contract — the exact semantics of the kernel's own fold (route): writes applied shape-derived with the flatten guard (history itself refused — it is automatic memory), index re-dialed, one LOSSLESS history leaf written (note as its voicing, full output beneath), owed bracket summaries settled via the summary field, refusals and dues reported at conditions:9. Call pscale_genus again afterwards for the next window.",
     ),
 };
 
@@ -124,8 +130,9 @@ export async function handleGenus(params: {
       `pscale_genus — fold applied for ${handle} at ${beach}`,
       `status: ${r.status} · writes applied: ${r.applied} · refused: ${r.failed.length}`,
     ];
-    if (r.historySlot) lines.push(`history:${handle} slot ${r.historySlot} ← ${r.historyEntry}`);
-    else if (r.applied > 0) lines.push(`note NOT recorded: history slots 1-9 full — supernest history:${handle} then re-fold the note.`);
+    if (r.leafAddress) lines.push(`history leaf ${r.leafAddress} written ← ${r.leafVoicing} (lossless: the full output rides beneath the note)`);
+    if (r.summaryPaidAt) lines.push(`bracket summary written at ${r.summaryPaidAt} — service-payment received.`);
+    if (r.summaryDue) lines.push(`HISTORY SUMMARY OWED at ${r.summaryDue}: a span completed — include "summary": one line over the previous completed nine in your next fold (service-payment; conditions:9 names the span and carries the due until paid).`);
     for (const f of r.failed) lines.push(`  refused ${f.address}: ${f.error}`);
     if (r.failed.length > 0) lines.push(`(refusals are reported into conditions:9 — the next wake perceives them, per the kernel contract)`);
     if (fold.ask) lines.push(`THE INSTANCE ASKS: ${JSON.stringify(fold.ask)} — the ask vocabulary ({wakes, tier, for}). A lender grants by running the asked wakes at that tier, or declines where the ask arrived; it never spends on an ungranted ask.`);

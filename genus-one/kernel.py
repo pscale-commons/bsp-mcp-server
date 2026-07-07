@@ -791,7 +791,173 @@ def apply_write(name, addr, content):
     save_block(name, block)
 
 
-def route(output):
+HISTORY_VOICING = ("History — my memory, automatic; a counting block. The kernel writes one "
+                   "lossless leaf per wake at the next zero-free number (1..9, 11..19, …, 99, "
+                   "111, … — at each all-nines boundary the block supernests: the past wraps "
+                   "under the root underscore where its addresses keep reading, zero-padded, "
+                   "and the count continues). Every zero-carrying number is a summary slot, "
+                   "never an entry: N0 is the voicing of container N and carries a one-line "
+                   "+0 summary of the PREVIOUS completed nine — 20 summarises 11-19, 100 "
+                   "summarises 10-90, 110 summarises 91-99 — owed when the next span opens "
+                   "and paid by the requesting LLM via the fold's summary field "
+                   "(service-payment, reported at conditions:9 until paid). The spindle "
+                   "through the newest leaf carries the summary chain. Never written by "
+                   "hand — deliberate notes go to stash.")
+
+
+def _render_content(content):
+    """A write's content rendered lossless and spine-legal (prefixed prose, never a
+    bare JSON string — the beach shape gate refuses those as leaf values)."""
+    return content if isinstance(content, str) else json.dumps(content, ensure_ascii=False, indent=2)
+
+
+def _ladder_floor(h):
+    """The counting block's floor (underscore-chain depth); born at floor 1."""
+    node, f = h, 0
+    while isinstance(node, dict) and ZK in node:
+        node = node[ZK]
+        f += 1
+    return max(f, 1)
+
+
+def _succ(digits):
+    """The next zero-free number on the counting line: …9 → 11, 19 → 21,
+    99 → 111, 999 → 1111. Memory is full digits; zeros are never allocated."""
+    ds = list(digits)
+    i = len(ds) - 1
+    while i >= 0 and ds[i] == "9":
+        ds[i] = "1"
+        i -= 1
+    if i < 0:
+        return ["1"] * (len(digits) + 1)
+    ds[i] = str(int(ds[i]) + 1)
+    return ds
+
+
+def _last_leaf(h, floor):
+    """Digit-path of the newest leaf (greedy max walk to the floor), or None
+    when the current floor holds no leaves yet (birth, or just wrapped)."""
+    node, path = h, []
+    for _ in range(floor):
+        ks = [k for k in "123456789" if isinstance(node, dict) and k in node]
+        if not ks:
+            return None
+        path.append(ks[-1])
+        node = node[ks[-1]]
+    return path
+
+
+def _history_next(h):
+    """Advance the counting block. At the all-nines boundary (9, 99, 999, …)
+    the block SUPERNESTS — the whole past wraps under the root underscore,
+    where absorption keeps every old address readable (zero-padded) — and the
+    count continues at 11, 111, 1111 … (never 101: a zero walks a voicing or
+    a hidden directory, reserved territory, so zero-carrying numbers are
+    never entries). Returns (floor, digit-path) for the next leaf."""
+    floor = _ladder_floor(h)
+    last = _last_leaf(h, floor)
+    nxt = ["1"] * floor if last is None else _succ(last)
+    if len(nxt) > floor:
+        old = dict(h)
+        h.clear()
+        h[ZK] = old
+        floor += 1
+        nxt = ["1"] * floor
+    return floor, nxt
+
+
+def _walk(h, path):
+    node = h
+    for d in path:
+        node = node.get(d) if isinstance(node, dict) else None
+        if node is None:
+            return None
+    return node
+
+
+def _ensure_containers(h, path):
+    """Create the (headless) containers above a leaf; their voicings are the
+    zero-slot summary positions."""
+    node = h
+    for d in path[:-1]:
+        if not isinstance(node.get(d), dict):
+            node[d] = {}
+        node = node[d]
+    return node
+
+
+def _summary_dues(h, floor):
+    """Zero-slot read-addresses (10, 20, 100, 110, …) whose +0 summary of the
+    PREVIOUS completed nine is owed — every headless container, oldest first
+    (100 before 110). A container exists only once its first leaf lands, so a
+    due arises exactly when the next span opens — the 'latter' trigger."""
+    dues = []
+
+    def rec(node, path):
+        for d in "123456789":
+            child = node.get(d)
+            if isinstance(child, dict) and len(path) + 1 < floor:
+                if not isinstance(child.get(ZK), str):
+                    dues.append(path + [d])
+                rec(child, path + [d])
+    rec(h, [])
+    dues.sort(key=lambda p: "".join(p) + "0" * (floor - len(p)))
+    return ["".join(p) + "0" * (floor - len(p)) for p in dues]
+
+
+def _pred_span(read_addr, floor):
+    """Human range of the previous completed nine a zero-slot summarises —
+    20 → 11-19; 100 → 10-90; 110 → 91-99; 360 → 351-359. Display only."""
+    ds = list(read_addr.rstrip("0"))
+    i = len(ds) - 1
+    while i >= 0 and ds[i] == "1":
+        ds[i] = "9"
+        i -= 1
+    if i < 0:
+        prev, sub_floor = ds[1:], floor - 1    # crossed a wrap: the material sits at the previous floor
+    else:
+        ds[i] = str(int(ds[i]) - 1)
+        prev, sub_floor = ds, floor
+    pad = "0" * max(sub_floor - len(prev) - 1, 0)
+    p = "".join(prev)
+    return "%s1%s-%s9%s" % (p, pad, p, pad)
+
+
+def _pay_summary(h, read_addr, summary):
+    """Write a +0 summary at a zero-slot: the trailing zeros locate the
+    container; its voicing takes the text (so N0 reads the summary)."""
+    node = _walk(h, list(read_addr.rstrip("0")))
+    if isinstance(node, dict):
+        node[ZK] = summary
+        return True
+    return False
+
+
+def _redial_history(path):
+    """Kernel-mechanical dial upkeep (same class as last-touched): when the
+    current still dials history at slot 6, keep it at the living edge — the
+    spindle through the newest leaf (its voicings ARE the summary chain, the
+    143 walk), the sibling-summary ring, and the last few leaves of the same
+    bracket hydrated in full. The LLM keeps sovereignty: a re-dialed index
+    that drops or reshapes slot 6 is honoured."""
+    refl = load_block("reflexive")
+    nine = refl.get(REFLEXIVE_CURRENT) if isinstance(refl, dict) else None
+    slot = nine.get("6") if isinstance(nine, dict) else None
+    if not (isinstance(slot, dict) and str(slot.get(ZK, "")).startswith("history")):
+        return
+    leaf_addr = "".join(path)
+    slot[ZK] = "history:%s" % leaf_addr                 # the spindle — summaries down the walk
+    slot["1"] = "history:%s:1" % leaf_addr              # ring: sibling summaries at the bracket level
+    l = path[-1]
+    recents = [d for d in "123456789" if d <= l][-3:][::-1]
+    for i, leaf in enumerate(recents, start=2):         # the last few outputs, same bracket, newest first
+        slot[str(i)] = "history:%s%s:-1" % ("".join(path[:-1]), leaf)
+    for i in range(len(recents) + 2, 5):
+        slot.pop(str(i), None)
+    save_block("reflexive", refl)
+
+
+def route(output, gamma=None):
     raw = output.get("writes")
     if raw is None:                                    # tolerate schema slips: 'write' / 'edits'
         raw = output.get("write") or output.get("edits")
@@ -804,7 +970,7 @@ def route(output):
         for e in raw:
             if isinstance(e, dict) and e.get("address"):
                 pairs.append((e["address"], e.get("content")))
-    applied, failed = 0, []
+    applied, applied_pairs, failed = 0, [], []
     peers = load_peers()
     for ref, content in pairs:
         name, _, addr = ref.partition(":")
@@ -813,9 +979,15 @@ def route(output):
         if name in peers:                              # sovereignty: a peer is read-only
             failed.append({"address": ref, "error": "refusing to write a peer's block (read-only)"})
             continue
+        if name == "history":                          # history is automatic memory, never a notepad
+            failed.append({"address": ref, "error": "history is written by the kernel (lossless leaf per "
+                                                     "wake; summaries via the summary field) — deliberate "
+                                                     "notes go to stash"})
+            continue
         try:                                           # the LLM may emit a malformed address
             apply_write(name, addr, content)
             applied += 1
+            applied_pairs.append((ref, content))
         except Exception as ex:
             failed.append({"address": ref, "error": str(ex)[:140]})
     if raw and not pairs:                              # never drop silently: flag an unusable shape
@@ -823,7 +995,8 @@ def route(output):
                        "error": "unrecognised writes shape: %s" % type(raw).__name__})
 
     nc = output.get("index")                           # re-dial the next instance's bundle
-    if isinstance(nc, dict) and nc:
+    redialed = isinstance(nc, dict) and bool(nc)
+    if redialed:
         refl = load_block("reflexive")
         nine = refl.get("9") if isinstance(refl.get("9"), dict) else {}
         keep0 = nine.get(ZK, "The reflexive current — the bare-address bundle.")
@@ -831,16 +1004,47 @@ def route(output):
                      **{k: v for k, v in nc.items() if k.isdigit()}}
         save_block("reflexive", refl)
 
+    # ── history — the agent's memory, automatic: a COUNTING BLOCK ────────────
+    # (2026-07-07 spec, corrected same day.) One LOSSLESS leaf per applied
+    # wake at the next zero-free number (1..9, 11..19, …, 99, 111, …); the
+    # note is the leaf's voicing, the full output rides beneath. Every
+    # zero-carrying number is a summary slot, never an entry: N0 reads the
+    # container's voicing and owes a +0 summary of the PREVIOUS completed
+    # nine (20 over 11-19; 100 over 10-90; 110 over 91-99; 360 over 351-359)
+    # — paid by the requesting LLM (service-payment), surfaced at conditions:9.
     note = (output.get("note") or "").strip()
-    if note and applied:                                   # history only when something was done
-        h = load_block("history") or {ZK: "History."}
-        slot = next((i for i in "123456789" if i not in h), None)
-        if slot:
-            ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-            h[slot] = "[%s] %s" % (ts, note)
-            save_block("history", h)
+    summary = (output.get("summary") or "").strip()
+    summary_due = None
+    if applied:
+        h = load_block("history") or {ZK: HISTORY_VOICING}
+        floor, path = _history_next(h)
+        body = "\n\n".join("%s ←\n%s" % (ref, _render_content(c)) for ref, c in applied_pairs)
+        meta = "heartbeat: %s · index: %s · status: %s" % (
+            output.get("heartbeat"), "re-dialed" if redialed else "carried",
+            output.get("status") or "continue")
+        if gamma:
+            meta = "γ: %s · %s" % (", ".join(g.get("address", "?") for g in gamma), meta)
+        ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        _ensure_containers(h, path)[path[-1]] = {ZK: "[%s] %s" % (ts, note or "(no note)"),
+                                                 "1": body, "2": meta}
+        dues = _summary_dues(h, floor)
+        if summary and dues:                           # service-payment lands oldest-first
+            _pay_summary(h, dues[0], summary)
+            dues = _summary_dues(h, floor)
+        summary_due = dues[0] if dues else None        # zero-slot read address (10, 100, 110, …)
+        save_block("history", h)
+        _redial_history(path)
+    elif summary:                                      # a fold may pay a due summary without other writes
+        h = load_block("history")
+        if isinstance(h, dict):
+            floor = _ladder_floor(h)
+            dues = _summary_dues(h, floor)
+            if dues and _pay_summary(h, dues[0], summary):
+                remaining = _summary_dues(h, floor)
+                summary_due = remaining[0] if remaining else None
+                save_block("history", h)
     status = output.get("status") or ("continue" if applied else "rest")
-    return status, applied, failed
+    return status, applied, failed, summary_due
 
 
 # ── parse + filmstrip ──────────────────────────────────────────────────────
@@ -887,12 +1091,13 @@ def write_filmstrip(frame):
     return path
 
 
-def report_failures(failed, parse_failed=False):
-    """The kernel's mechanical report into rho: refused writes and unparsed
-    replies are perceived conditions for the next wake — the loop closes and
-    the instance can re-shape, instead of failing the same way blind.
-    Cleared when a wake folds clean. (Locus 4 writing a fact about its own
-    fold, kin to the history note and the reflexive re-dial.)"""
+def report_failures(failed, parse_failed=False, summary_due=None):
+    """The kernel's mechanical report into rho: refused writes, unparsed
+    replies, and an owed history summary are perceived conditions for the next
+    wake — the loop closes and the instance can re-shape, instead of failing
+    the same way blind. Cleared when a wake folds clean and owes nothing.
+    (Locus 4 writing a fact about its own fold, kin to the history leaf and
+    the reflexive re-dial.)"""
     cond = load_block("conditions") or {ZK: "conditions"}
     had = isinstance(cond.get("9"), str) and cond["9"].startswith("kernel report")
     msgs = []
@@ -905,6 +1110,11 @@ def report_failures(failed, parse_failed=False):
         msgs.append("refused writes: %s (refused by the substrate's shape rules, not "
                     "judged: a populated branch takes an object or a deeper point, never "
                     "a bare string)" % lines)
+    if summary_due:
+        span = _pred_span(summary_due, _ladder_floor(load_block("history") or {}))
+        msgs.append("history summary owed at %s — one line over the previous completed "
+                    "nine (%s); include \"summary\": \"...\" in the next fold and the "
+                    "kernel writes it there (service-payment)" % (summary_due, span))
     if msgs:
         cond["9"] = "kernel report — " + " ; ".join(msgs) + "."
         save_block("conditions", cond)
@@ -960,12 +1170,13 @@ def pulse(compose_only=False, now=None):
     model = TIERS["opus"] if not gamma else MODEL
     text, usage, thinking = call_llm(system, message, model=model, thinking=_think_config())
     output = parse_output(text)
-    status, applied, failed = route(output)
+    status, applied, failed, summary_due = route(output, gamma)
     cadence = load_block("cadence") or {}                       # A2 — stamp the concerns that fired
     lasts = load_block("last-touched") or {ZK: LAST_TOUCHED_VOICING}
     if stamp_touched(gamma, applied, cadence, lasts, now=now):
         save_block("last-touched", lasts)
-    report_failures(failed, parse_failed=str(output.get("note", "")).startswith("[parse failure]"))
+    report_failures(failed, parse_failed=str(output.get("note", "")).startswith("[parse failure]"),
+                    summary_due=summary_due)
     frame.update({"output": text, "parsed": output, "usage": usage, "thinking": thinking,
                   "status": status, "applied": applied, "failed": failed})
     path = write_filmstrip(frame)
