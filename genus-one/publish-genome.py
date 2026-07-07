@@ -40,9 +40,10 @@ def main():
     for bname, content in blocks.items():
         kw = {"secret": secret, "new_lock": secret} if update else {"new_lock": secret}
         wire.save_block(origin, bname, content, **kw)
+        wire.seal(origin, bname, secret)      # sovereign: holder-only at every position, not just _
         ok += 1
-        print("  published %s" % bname)
-    print("%d genome blocks live at %s (locked)." % (ok, origin))
+        print("  published + sealed %s" % bname)
+    print("%d genome blocks live at %s (sealed — holder-only at every position)." % (ok, origin))
 
 
 if __name__ == "__main__":

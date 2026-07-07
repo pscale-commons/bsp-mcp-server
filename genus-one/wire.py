@@ -75,6 +75,22 @@ def save_block(origin, block, content, secret=None, new_lock=None, confirm=True)
     return True
 
 
+def seal(origin, block, secret):
+    """Make a block holder-only at EVERY position. The beach locks by the first
+    digit of a write's path, so a whole-block write's new_lock seals only the
+    underscore; this adds lock-only writes (no content) at positions 1-9 so no
+    position — present or future — is writable without the secret. Idempotent:
+    re-sealing rotates each lock to the same value. Ten locks per block seal the
+    shell (sovereignty is the lock, not a layer); leave give channels (task)
+    unsealed."""
+    for pos in ["", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+        body = {"secret": secret, "new_lock": secret}
+        if pos:
+            body["spindle"] = pos
+        _retry(_post, endpoint(origin, block), body)
+    return True
+
+
 def index(origin):
     """The beach's derived index — the named sibling blocks at the surface."""
     try:
