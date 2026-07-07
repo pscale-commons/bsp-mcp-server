@@ -64,7 +64,13 @@ export const genusParamsSchema = {
       heartbeat: z.number().optional().describe('Seconds until the next wanted wake — returned to the holder; the tool holds no clock.'),
       note: z.string().optional().describe('One line, what was done and why — becomes the history entry (kernel-timestamped) when at least one write applied.'),
       status: z.string().optional(),
+      ask: z
+        .object({ wakes: z.number().optional(), tier: z.string().optional(), for: z.string().optional() })
+        .passthrough()
+        .optional()
+        .describe("The instance's resource ask ({wakes, tier, for}) — surfaced to the holder, never auto-granted; grant by running the asked wakes at that tier, or decline where it arrived."),
     })
+    .passthrough()
     .optional()
     .describe(
       "HOLDER-ONLY. A wake's fold to apply, per the capabilities:3 contract — the exact semantics of the kernel's own fold (route): writes applied shape-derived with the flatten guard, index re-dialed, note→history, refused writes reported at conditions:9. Call pscale_genus again afterwards for the next window.",
@@ -122,6 +128,7 @@ export async function handleGenus(params: {
     else if (r.applied > 0) lines.push(`note NOT recorded: history slots 1-9 full — supernest history:${handle} then re-fold the note.`);
     for (const f of r.failed) lines.push(`  refused ${f.address}: ${f.error}`);
     if (r.failed.length > 0) lines.push(`(refusals are reported into conditions:9 — the next wake perceives them, per the kernel contract)`);
+    if (fold.ask) lines.push(`THE INSTANCE ASKS: ${JSON.stringify(fold.ask)} — the ask vocabulary ({wakes, tier, for}). A lender grants by running the asked wakes at that tier, or declines where the ask arrived; it never spends on an ungranted ask.`);
     if (typeof fold.heartbeat === 'number') lines.push(`heartbeat: ${fold.heartbeat}s — the tool holds no clock; the holder (or a heartbeat process) schedules the next wake.`);
     lines.push(`Call pscale_genus(handle='${handle}') again for the next window.`);
     return text(lines.join('\n'));
