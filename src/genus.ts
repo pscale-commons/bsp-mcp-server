@@ -762,17 +762,156 @@ async function applyWrite(store: BlockStore, name: string, addr: string, content
   await store.save(name, block);
 }
 
+// ── history — the agent's memory, automatic (2026-07-07 spec) ──────────────
+// One LOSSLESS leaf per applied wake in the digit-bracket ladder: leaves at
+// N1..N9 inside bracket N, the note as the leaf's voicing, the full output
+// beneath it. A closed container's 0+ summary is owed at its voicing — read
+// at the zero-padded address (10, 20, 140, 100, …) — and paid by the
+// requesting LLM (service-payment), surfaced via conditions:9 until paid.
+
+const HISTORY_VOICING =
+  "History — my memory, automatic. The kernel writes one lossless leaf per wake: the note as the leaf's voicing, the full output beneath it (every write with its content). Leaves fill N1..N9 inside bracket N; when a bracket closes, its 0+ summary is written at N0 — the bracket's voicing — by the wake that opens the next bracket (service-payment, reported at conditions:9 until paid). The spindle through the newest leaf carries the summary chain. Never written by hand — deliberate notes go to stash.";
+
+/** The ladder's floor (underscore-chain depth); a fresh history is floor 2. */
+function ladderFloor(h: PMap): number {
+  let node: PNode | undefined = h;
+  let f = 0;
+  while (node instanceof Map && node.has(ZK)) {
+    node = node.get(ZK);
+    f += 1;
+  }
+  return Math.max(f, 2);
+}
+
+/** Next free digit-path of length `floor`; fills in order; null when the whole
+ *  ladder is full (the caller wraps the era). (kernel._history_place) */
+function historyPlace(h: PMap, floor: number): string[] | null {
+  const rec = (node: PMap, depth: number): string[] | null => {
+    for (const k of '123456789') {
+      if (depth === 1) {
+        if (!node.has(k)) return [k];
+        continue;
+      }
+      const child = node.get(k);
+      if (child === undefined) {
+        const m: PMap = new Map();
+        node.set(k, m);
+        return [k, ...(rec(m, depth - 1) as string[])];
+      }
+      if (child instanceof Map) {
+        const got = rec(child, depth - 1);
+        if (got) return [k, ...got];
+      }
+    }
+    return null;
+  };
+  return rec(h, floor);
+}
+
+/** Floor grows by one: the full ladder becomes era 1; entries continue in
+ *  era 2, the era's voicing left headless (its summary due like any bracket's). */
+function historyEraWrap(h: PMap): void {
+  const oldChain = h.get(ZK) ?? null;
+  const era: PMap = new Map();
+  for (const b of '123456789') {
+    if (h.has(b)) {
+      era.set(b, h.get(b)!);
+      h.delete(b);
+    }
+  }
+  h.set(ZK, new Map([[ZK, oldChain]]));
+  h.set('1', era);
+}
+
+function walkPath(h: PNode | undefined, path: string[]): PNode | undefined {
+  let node = h;
+  for (const d of path) {
+    node = node instanceof Map ? node.get(d) : undefined;
+    if (node === undefined) return undefined;
+  }
+  return node;
+}
+
+/** Read-addresses of every full-and-headless container preceding the current
+ *  leaf path — deepest debts first, so a closed era's last bracket is
+ *  summarised before the era itself. (kernel._summary_due) */
+function historySummaryDue(h: PMap, floor: number, cur: string[]): string[] {
+  const due: string[] = [];
+  const full = (n: PMap) => Array.from('123456789').every((k) => n.has(k));
+  const headless = (n: PMap) => typeof n.get(ZK) !== 'string';
+  const addr = (p: string[]) => p.join('') + '0'.repeat(floor - p.length);
+  const sweep = (node: PMap, prefix: string[]) => {
+    if (prefix.length + 1 < floor) {
+      for (const k of '123456789') {
+        const child = node.get(k);
+        if (child instanceof Map) sweep(child, [...prefix, k]);
+      }
+    }
+    if (full(node) && headless(node)) due.push(addr(prefix));
+  };
+  const walk = (node: PMap, prefix: string[], rest: string[]) => {
+    const head = rest[0];
+    if (prefix.length + 1 < floor) {
+      for (const k of '123456789') {
+        if (k >= head) break;
+        const child = node.get(k);
+        if (child instanceof Map) sweep(child, [...prefix, k]);
+      }
+    }
+    const child = node.get(head);
+    if (child instanceof Map && rest.length > 1) walk(child, [...prefix, head], rest.slice(1));
+  };
+  walk(h, [], cur);
+  return due;
+}
+
+/** Write a 0+ summary at a container's voicing (zero-padded read address). */
+function historyPaySummary(h: PMap, readAddr: string, summary: string): boolean {
+  const node = walkPath(h, Array.from(readAddr.replace(/0+$/, '')));
+  if (node instanceof Map) {
+    node.set(ZK, summary);
+    return true;
+  }
+  return false;
+}
+
+/** Kernel-mechanical dial upkeep (same class as last-touched): while slot 6
+ *  still dials history, keep it at the living edge — the spindle through the
+ *  newest leaf (the 143 walk: its voicings ARE the summary chain), the
+ *  sibling-summary ring, and the last few leaves hydrated in full. */
+async function redialHistory(store: BlockStore, path: string[]): Promise<void> {
+  const refl = await store.load('reflexive');
+  if (!(refl instanceof Map)) return;
+  const nine = refl.get(REFLEXIVE_CURRENT);
+  const slot = nine instanceof Map ? nine.get('6') : undefined;
+  if (!(slot instanceof Map) || !String(slot.get(ZK) ?? '').startsWith('history')) return;
+  const leafAddr = path.join('');
+  slot.set(ZK, `history:${leafAddr}`);
+  slot.set('1', `history:${leafAddr}:1`);
+  const l = path[path.length - 1];
+  const recents = Array.from('123456789')
+    .filter((d) => d <= l)
+    .slice(-3)
+    .reverse();
+  recents.forEach((leaf, i) => slot.set(String(i + 2), `history:${path.slice(0, -1).join('')}${leaf}:-1`));
+  for (let i = recents.length + 2; i <= 4; i++) slot.delete(String(i));
+  await store.save('reflexive', refl as PMap);
+}
+
 export interface FoldResult {
   status: string;
   applied: number;
   failed: { address: string; error: string }[];
-  historySlot: string | null;
-  historyEntry: string | null;
+  leafAddress: string | null;
+  leafVoicing: string | null;
+  summaryDue: string | null;
+  summaryPaidAt: string | null;
 }
 
-/** The fold — kernel.route ported: apply writes, re-dial the index, write the
- *  history note (kernel-timestamped, only when something was actually done),
- *  then set/clear the conditions:9 kernel report as a full pulse would. */
+/** The fold — kernel.route ported: apply writes (history refused — it is
+ *  automatic memory), re-dial the index, write the lossless history leaf,
+ *  settle/report the owed 0+ summary, then set/clear the conditions:9 kernel
+ *  report as a full pulse would. */
 export async function genusFold(store: BlockStore, output: any): Promise<FoldResult> {
   let raw = output?.writes ?? output?.write ?? output?.edits;
   if (raw && typeof raw === 'object' && !Array.isArray(raw) && 'address' in raw && 'content' in raw) raw = [raw];
@@ -784,15 +923,25 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
     }
   }
   let applied = 0;
+  const appliedPairs: [string, PNode][] = [];
   const failed: { address: string; error: string }[] = [];
   for (const [ref, content] of pairs) {
     const ci = ref.indexOf(':');
     const name = ci === -1 ? ref : ref.slice(0, ci);
     const addr = ci === -1 ? '' : ref.slice(ci + 1);
     if (!name) continue;
+    if (name === 'history') {
+      failed.push({
+        address: ref,
+        error: 'history is written by the kernel (lossless leaf per wake; summaries via the summary field) — deliberate notes go to stash',
+      });
+      continue;
+    }
     try {
-      await applyWrite(store, name, addr, toPNode(content));
+      const pc = toPNode(content);
+      await applyWrite(store, name, addr, pc);
       applied += 1;
+      appliedPairs.push([ref, pc]);
     } catch (ex: any) {
       let msg = String(ex?.message ?? ex).slice(0, 140);
       if (ex instanceof AddressError && addr.split('.').length > 2) {
@@ -808,7 +957,8 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
 
   // re-dial the next instance's bundle
   const nc = output?.index;
-  if (nc && typeof nc === 'object' && !Array.isArray(nc) && Object.keys(nc).length > 0) {
+  const redialed = Boolean(nc && typeof nc === 'object' && !Array.isArray(nc) && Object.keys(nc).length > 0);
+  if (redialed) {
     const refl = ((await store.load('reflexive')) ?? new Map()) as PMap;
     const nine = refl.get(REFLEXIVE_CURRENT);
     const keep0 = nine instanceof Map ? (nine.get(ZK) ?? 'The reflexive current — the bare-address bundle.') : 'The reflexive current — the bare-address bundle.';
@@ -820,34 +970,81 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
     await store.save('reflexive', refl);
   }
 
-  // history only when something was done
+  // history — one lossless leaf per applied wake (2026-07-07 spec)
   const note = String(output?.note ?? '').trim();
-  let historySlot: string | null = null;
-  let historyEntry: string | null = null;
-  if (note && applied > 0) {
-    const h = ((await store.load('history')) ?? new Map([[ZK, 'History.' as PNode]])) as PMap;
-    historySlot = Array.from(DIGITS).find((i) => !h.has(i)) ?? null;
-    if (historySlot) {
-      const ts = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-      historyEntry = `[${ts}] ${note}`;
-      h.set(historySlot, historyEntry);
-      await store.save('history', h);
+  const summary = String(output?.summary ?? '').trim();
+  let leafAddress: string | null = null;
+  let leafVoicing: string | null = null;
+  let summaryDueAddr: string | null = null;
+  let summaryPaidAt: string | null = null;
+  if (applied > 0) {
+    const loaded = await store.load('history');
+    const h: PMap = loaded instanceof Map ? loaded : new Map([[ZK, new Map([[ZK, HISTORY_VOICING as PNode]]) as PNode]]);
+    if (typeof h.get(ZK) === 'string') h.set(ZK, new Map([[ZK, h.get(ZK)!]])); // pre-spec floor-1: deepen
+    let floor = ladderFloor(h);
+    let path = historyPlace(h, floor);
+    if (path === null) {
+      historyEraWrap(h);
+      floor += 1;
+      path = historyPlace(h, floor)!;
+    }
+    const body = appliedPairs.map(([ref, c]) => `${ref} ←\n${typeof c === 'string' ? c : pyDumps(c)}`).join('\n\n');
+    const meta = `heartbeat: ${output?.heartbeat ?? 'None'} · index: ${redialed ? 're-dialed' : 'carried'} · status: ${output?.status ?? 'continue'}`;
+    const ts = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+    leafVoicing = `[${ts}] ${note || '(no note)'}`;
+    (walkPath(h, path.slice(0, -1)) as PMap).set(path[path.length - 1], new Map([
+      [ZK, leafVoicing as PNode],
+      ['1', body as PNode],
+      ['2', meta as PNode],
+    ]));
+    leafAddress = path.join('');
+    let due = historySummaryDue(h, floor, path);
+    if (summary && due.length > 0) {
+      historyPaySummary(h, due[0], summary);
+      summaryPaidAt = due[0];
+      due = historySummaryDue(h, floor, path);
+    }
+    summaryDueAddr = due[0] ?? null;
+    await store.save('history', h);
+    await redialHistory(store, path);
+  } else if (summary) {
+    // a fold may pay a due summary without other writes
+    const h = await store.load('history');
+    if (h instanceof Map) {
+      const floor = ladderFloor(h);
+      const probe = historyPlace(h, floor) ?? Array(floor).fill('9');
+      const due = historySummaryDue(h, floor, probe);
+      if (due.length > 0 && historyPaySummary(h, due[0], summary)) {
+        summaryPaidAt = due[0];
+        const remaining = historySummaryDue(h, floor, probe);
+        summaryDueAddr = remaining[0] ?? null;
+        await store.save('history', h);
+      }
     }
   }
 
-  // kernel report into ρ — refused writes become perceived conditions (kernel.report_failures)
+  // kernel report into ρ — refused writes and an owed summary become perceived
+  // conditions for the next wake (kernel.report_failures)
   const cond = ((await store.load('conditions')) ?? new Map([[ZK, 'conditions' as PNode]])) as PMap;
   const nine = cond.get('9');
   const had = typeof nine === 'string' && nine.startsWith('kernel report');
+  const msgs: string[] = [];
   if (failed.length > 0) {
     const lines = failed
       .slice(0, 3)
       .map((f) => `${f.address} -> ${f.error.slice(0, 80)}`)
       .join(' ; ');
-    cond.set(
-      '9',
-      `kernel report — refused writes: ${lines} (refused by the substrate's shape rules, not judged: a populated branch takes an object or a deeper point, never a bare string).`,
+    msgs.push(
+      `refused writes: ${lines} (refused by the substrate's shape rules, not judged: a populated branch takes an object or a deeper point, never a bare string)`,
     );
+  }
+  if (summaryDueAddr) {
+    msgs.push(
+      `history bracket at ${summaryDueAddr} is full and unsummarised — include "summary": "<one 0+ line over its nine leaves>" in the next fold; the kernel writes it at ${summaryDueAddr} (service-payment)`,
+    );
+  }
+  if (msgs.length > 0) {
+    cond.set('9', `kernel report — ${msgs.join(' ; ')}.`);
     await store.save('conditions', cond);
   } else if (had) {
     cond.delete('9');
@@ -855,7 +1052,7 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
   }
 
   const status = output?.status ?? (applied > 0 ? 'continue' : 'rest');
-  return { status, applied, failed, historySlot, historyEntry };
+  return { status, applied, failed, leafAddress, leafVoicing, summaryDue: summaryDueAddr, summaryPaidAt };
 }
 
 // ── stores ──────────────────────────────────────────────────────────────────

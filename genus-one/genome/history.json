@@ -1,3 +1,5 @@
 {
-  "_": "History is the summarised trajectory of what each instance did and why — one entry per closed gap, written only when something was actually done. It is empty now; the first instance to act will leave the first mark. As it fills it supernests and compacts, the coarse summaries rising to the top so that a single spindle carries the whole arc."
+  "_": {
+    "_": "History — my memory, automatic. The kernel writes one lossless leaf per wake: the note as the leaf's voicing, the full output beneath it (every write with its content). Leaves fill N1..N9 inside bracket N; when a bracket closes, its 0+ summary is written at N0 — the bracket's voicing — by the wake that opens the next bracket (service-payment, reported at conditions:9 until paid). The spindle through the newest leaf carries the summary chain; the ring at pscale 1 is every summary at once. Never written by hand — deliberate notes go to stash. Empty now; the first wake leaves leaf 11."
+  }
 }
