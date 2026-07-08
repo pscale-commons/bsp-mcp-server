@@ -770,7 +770,7 @@ async function applyWrite(store: BlockStore, name: string, addr: string, content
 // requesting LLM (service-payment), surfaced via conditions:9 until paid.
 
 const HISTORY_VOICING =
-  'History — my memory, automatic; a counting block. The kernel writes one lossless leaf per wake at the next zero-free number (1..9, 11..19, …, 99, 111, … — at each all-nines boundary the block supernests: the past wraps under the root underscore where its addresses keep reading, zero-padded, and the count continues). Every zero-carrying number is a summary slot, never an entry: N0 is the voicing of container N and carries a one-line +0 summary of the PREVIOUS completed nine — 20 summarises 11-19, 100 summarises 10-90, 110 summarises 91-99 — owed when the next span opens and paid by the requesting LLM via the fold’s summary field (service-payment, reported at conditions:9 until paid). The spindle through the newest leaf carries the summary chain. Never written by hand — deliberate notes go to stash.';
+  "History — my memory, automatic; a counting block. The kernel writes one lossless leaf per wake at the next zero-free number (1..9, 11..19, …, 99, 111, … — at each all-nines boundary the block supernests: the past wraps under the root underscore where its addresses keep reading, zero-padded, and the count continues). Every zero-carrying number is a summary slot, never an entry: N0 is the voicing of container N and carries a +0 summary of the PREVIOUS completed nine — 20 summarises 11-19, 100 summarises 10-90, 110 summarises 91-99. A summary is NAVIGATION, not decoration: a substantive paragraph dense with the span's own handles — proper nouns, block addresses, decisions, failures, open threads, the read-addresses of load-bearing leaves — because summaries stack (100 compresses 10-90; 1000 compresses those) and a descending reader must find at every layer the exact keywords that choose the next span, down to the leaf. Owed when the next span opens; paid by the requesting LLM via the fold's summary field (service-payment, reported at conditions:9 until paid). The spindle through the newest leaf carries the summary chain. Never written by hand — deliberate notes go to stash.";
 
 /** The counting block's floor (underscore-chain depth); born at floor 1. */
 function ladderFloor(h: PMap): number {
@@ -1066,7 +1066,7 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
   }
   if (summaryDueAddr) {
     msgs.push(
-      `history summary owed at ${summaryDueAddr} — one line over the previous completed nine (${historyPredSpan(summaryDueAddr, dueFloor)}); include "summary": "..." in the next fold and the kernel writes it there (service-payment)`,
+      `history summary owed at ${summaryDueAddr} — a substantive, NAVIGABLE paragraph over the previous completed nine (${historyPredSpan(summaryDueAddr, dueFloor)}): dense with the span's own handles (proper nouns, block addresses, decisions, failures, open threads) and the read-addresses of load-bearing leaves, so a descending reader can choose the next span by these keywords alone; include "summary": "..." in the next fold and the kernel writes it there (service-payment)`,
     );
   }
   if (msgs.length > 0) {
