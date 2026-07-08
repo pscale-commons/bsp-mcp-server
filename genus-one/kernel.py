@@ -791,18 +791,7 @@ def apply_write(name, addr, content):
     save_block(name, block)
 
 
-HISTORY_VOICING = ("History — my memory, automatic; a counting block. The kernel writes one "
-                   "lossless leaf per wake at the next zero-free number (1..9, 11..19, …, 99, "
-                   "111, … — at each all-nines boundary the block supernests: the past wraps "
-                   "under the root underscore where its addresses keep reading, zero-padded, "
-                   "and the count continues). Every zero-carrying number is a summary slot, "
-                   "never an entry: N0 is the voicing of container N and carries a one-line "
-                   "+0 summary of the PREVIOUS completed nine — 20 summarises 11-19, 100 "
-                   "summarises 10-90, 110 summarises 91-99 — owed when the next span opens "
-                   "and paid by the requesting LLM via the fold's summary field "
-                   "(service-payment, reported at conditions:9 until paid). The spindle "
-                   "through the newest leaf carries the summary chain. Never written by "
-                   "hand — deliberate notes go to stash.")
+HISTORY_VOICING = ("History — my memory, automatic; a counting block. The kernel writes one lossless leaf per wake at the next zero-free number (1..9, 11..19, …, 99, 111, … — at each all-nines boundary the block supernests: the past wraps under the root underscore where its addresses keep reading, zero-padded, and the count continues). Every zero-carrying number is a summary slot, never an entry: N0 is the voicing of container N and carries a +0 summary of the PREVIOUS completed nine — 20 summarises 11-19, 100 summarises 10-90, 110 summarises 91-99. A summary is NAVIGATION, not decoration: a substantive paragraph dense with the span's own handles — proper nouns, block addresses, decisions, failures, open threads, the read-addresses of load-bearing leaves — because summaries stack (100 compresses 10-90; 1000 compresses those) and a descending reader must find at every layer the exact keywords that choose the next span, down to the leaf. Owed when the next span opens; paid by the requesting LLM via the fold's summary field (service-payment, reported at conditions:9 until paid). The spindle through the newest leaf carries the summary chain. Never written by hand — deliberate notes go to stash.")
 
 
 def _render_content(content):
@@ -1112,9 +1101,12 @@ def report_failures(failed, parse_failed=False, summary_due=None):
                     "a bare string)" % lines)
     if summary_due:
         span = _pred_span(summary_due, _ladder_floor(load_block("history") or {}))
-        msgs.append("history summary owed at %s — one line over the previous completed "
-                    "nine (%s); include \"summary\": \"...\" in the next fold and the "
-                    "kernel writes it there (service-payment)" % (summary_due, span))
+        msgs.append("history summary owed at %s — a substantive, NAVIGABLE paragraph over the "
+                    "previous completed nine (%s): dense with the span's own handles (proper "
+                    "nouns, block addresses, decisions, failures, open threads) and the "
+                    "read-addresses of load-bearing leaves, so a descending reader can choose "
+                    "the next span by these keywords alone; include \"summary\": \"...\" in the "
+                    "next fold and the kernel writes it there (service-payment)" % (summary_due, span))
     if msgs:
         cond["9"] = "kernel report — " + " ; ".join(msgs) + "."
         save_block("conditions", cond)
