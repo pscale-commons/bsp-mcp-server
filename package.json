@@ -21,6 +21,7 @@
     "smoke:dots": "tsx scripts/smoke-dots.ts",
     "smoke:parser": "tsx scripts/smoke-parser.ts",
     "smoke:sentinel": "tsx scripts/smoke-sentinel.ts",
+    "smoke:session": "tsx scripts/smoke-session.ts",
     "smoke:wellknown": "tsx scripts/smoke-wellknown.ts",
     "smoke:federated": "tsx scripts/smoke-federated-live.ts",
     "smoke:federated-parser": "tsx scripts/smoke-federated-parser.ts",
