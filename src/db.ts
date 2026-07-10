@@ -86,6 +86,20 @@ export function isSentinelOwner(ownerId: string): boolean {
   return SENTINEL_OWNERS.has(ownerId);
 }
 
+/**
+ * List the bundled block names for a sentinel owner (agent_id="pscale"). The
+ * derived index of the sentinel registry — the in-memory analogue of a beach's
+ * no-?block= surface listing. Returns sorted names; empty if the owner has no
+ * bundled blocks.
+ */
+export function listSentinelNames(ownerId: string): string[] {
+  const prefix = `${ownerId}/`;
+  return Object.keys(SENTINEL_BLOCKS)
+    .filter((k) => k.startsWith(prefix))
+    .map((k) => k.slice(prefix.length))
+    .sort();
+}
+
 function loadSentinelBlock(ownerId: string, name: string): BlockRow | null {
   const block = SENTINEL_BLOCKS[`${ownerId}/${name}`];
   if (!block) return null;
@@ -345,6 +359,48 @@ async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<B
     position_hashes: {},
     created_at: now,
     updated_at: now,
+  };
+}
+
+/** The derived surface index a beach returns for a no-?block= GET. */
+export interface BeachIndex {
+  _?: string;
+  origin: string;
+  blocks: string[];
+}
+
+/**
+ * Read a federated beach's derived surface index — the {_, origin, blocks:[…]}
+ * a beach returns for a GET with no ?block= parameter. The URL is the surface;
+ * this lists the named sibling blocks present at it. Returns null when the host
+ * is not federated. This is the tool-side analogue of `curl <origin>/.well-known/
+ * pscale-beach` (no ?block=): discovery without leaving bsp().
+ */
+export async function loadBeachIndex(ownerId: string): Promise<BeachIndex | null> {
+  const origin = await resolveFederationOrigin(ownerId);
+  if (!origin) return null;
+  const url = `${origin}/.well-known/pscale-beach`;
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
+  } catch (e: any) {
+    throw new Error(`Beach index fetch failed (${url}): ${e?.message ?? e}`);
+  }
+  if (!res.ok) {
+    let detail = '';
+    try { detail = ' — ' + (await res.text()).slice(0, 200); } catch {}
+    throw new Error(`Beach index load failed (${res.status} ${res.statusText})${detail}`);
+  }
+  let parsed: any;
+  try {
+    parsed = await res.json();
+  } catch (e: any) {
+    throw new Error(`Beach index response was not JSON: ${e?.message ?? e}`);
+  }
+  return {
+    _: typeof parsed?._ === 'string' ? parsed._ : undefined,
+    origin: typeof parsed?.origin === 'string' ? parsed.origin : origin,
+    blocks: Array.isArray(parsed?.blocks) ? parsed.blocks.map(String) : [],
   };
 }
 

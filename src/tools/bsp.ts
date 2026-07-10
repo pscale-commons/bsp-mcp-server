@@ -33,6 +33,9 @@ import {
 import {
   loadBlock,
   loadBspShape,
+  loadBeachIndex,
+  listSentinelNames,
+  BeachIndex,
   saveBlock,
   appendToBeach,
   BlockRow,
@@ -255,7 +258,8 @@ export const bspParamsSchema = {
     .describe(`Addressed namespace — substrate dispatched by form. Three real targets after dispatch: (1) URL ("https://beach.happyseaurchin.com") → that federated beach at <origin>/.well-known/pscale-beach; (2) "pscale" → the in-memory sentinel registry (bundled teaching blocks: manifest, whetstone, sunstone, agent-id, evolution, progression, block-conventions, gatekeeper, payway — read-only); (3) anything else → translated to the default beach (${DEFAULT_BEACH}) with the agent_id encoded into the block name. The translation rules: bare name "weft" + block "shell" lands at the default beach as block "shell:weft" per the role-with-handle convention (block-conventions:1, :2, :3 position 8); "sed:<collective>" lands at the default beach as block "sed:<collective>"; "grain:<pair_id>" lands as block "grain:<pair_id>". Translation is internal — callers just pass the agent_id form they have. **Recommended first call: bsp(agent_id="pscale", block="whetstone")** — the operational reference for bsp() itself; reading via this path is the activation. Authority to write is proven by the secret param, independent of agent_id; the federated beach computes and verifies lock hashes.`),
   block: z
     .string()
-    .describe('Block name within the agent_id\'s namespace. For URL agent_id this is whatever the host has named the block — common names per substrate-wide convention include "marks", "lighthouse" (operator-curated navigation when present, per block-conventions:4.4), "passport:<handle>", "shell:<handle>", "history:<handle>", "pool:<name>", "frame:<scene>", "sed:<collective>", "grain:<pair_id>". The host serves whichever named blocks it hosts. For sed:/grain: agent_id any block argument is dropped during translation (the prefix-typed agent_id IS the block on the beach). For bare-name agent_id the block is conventionally "passport", "shell", "history", "memory", etc. — translated to "<block>:<handle>" at the default beach.'),
+    .optional()
+    .describe('Block name within the agent_id\'s namespace. For URL agent_id this is whatever the host has named the block — common names per substrate-wide convention include "marks", "lighthouse" (operator-curated navigation when present, per block-conventions:4.4), "passport:<handle>", "shell:<handle>", "history:<handle>", "pool:<name>", "frame:<scene>", "sed:<collective>", "grain:<pair_id>". The host serves whichever named blocks it hosts. **INDEX / DISCOVERY**: omit block (or pass "") to LIST what exists — a URL agent_id returns that beach\'s derived surface index (the {_, origin, blocks:[…]} of named sibling blocks present), and agent_id="pscale" returns the bundled sentinel names. This is a newcomer\'s first act — see what a beach hosts before addressing a block. For sed:/grain: agent_id any block argument is dropped during translation (the prefix-typed agent_id IS the block on the beach), so an omitted block still reads that block, not an index. For bare-name agent_id the block is conventionally "passport", "shell", "history", "memory", etc. — translated to "<block>:<handle>" at the default beach.'),
   spindle: z
     .string()
     .nullable()
@@ -307,7 +311,7 @@ export const bspParamsSchema = {
 
 export type BspToolParams = {
   agent_id: string;
-  block: string;
+  block?: string;
   spindle?: string | null;
   pscale_attention?: number | null;
   content?: any;
@@ -355,6 +359,38 @@ function normaliseContent(value: any): any {
     return result;
   }
   return value;
+}
+
+// ── Beach / sentinel index formatters ──
+
+/**
+ * Render a federated beach's derived surface index as readable text. This is
+ * discovery — a newcomer's first act — surfaced through the tool: the block
+ * names present at a beach, without leaving bsp() to curl the no-?block=
+ * endpoint. Mirrors the {_, origin, blocks:[…]} the HTTP GET returns.
+ */
+function formatBeachIndex(idx: BeachIndex): string {
+  const lines = [`[beach index @ ${idx.origin}]`];
+  if (idx._) lines.push(`  ${idx._}`);
+  if (idx.blocks.length === 0) {
+    lines.push('  (no named blocks yet — empty surface)');
+  } else {
+    lines.push(`  ${idx.blocks.length} block${idx.blocks.length === 1 ? '' : 's'} — address each via block="<name>":`);
+    for (const name of idx.blocks) lines.push(`    • ${name}`);
+  }
+  return lines.join('\n');
+}
+
+/**
+ * Render the sentinel registry's bundled block names — the in-memory analogue
+ * of a beach index for agent_id="pscale".
+ */
+function formatSentinelIndex(ownerId: string): string {
+  const names = listSentinelNames(ownerId);
+  const lines = [`[sentinel index @ "${ownerId}"]`];
+  lines.push(`  ${names.length} bundled block${names.length === 1 ? '' : 's'} — read each via block="<name>":`);
+  for (const name of names) lines.push(`    • ${name}`);
+  return lines.join('\n');
 }
 
 // ── Not-found response helper ──
@@ -410,7 +446,10 @@ async function notFoundResponse(
  * sentinel registry has no lock semantics (read-only).
  */
 export async function handleBsp(params: BspToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { agent_id, block: blockName, spindle, pscale_attention, content: rawContent, secret, new_lock, enc_secret, face, tier } = params;
+  const { agent_id, spindle, pscale_attention, content: rawContent, secret, new_lock, enc_secret, face, tier } = params;
+  // Block may be omitted (or "") to request a surface index — normalise to a
+  // string for the downstream translate/load/save calls, which expect one.
+  const blockName = params.block ?? '';
 
   // Encryption identity — separate from the lock `secret`. Derives the keypair
   // and encrypts/decrypts; NEVER forwarded to the beach. Falls back to `secret`
@@ -466,6 +505,27 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
 
   // ── READ ── (no content, no lock change, no membership change)
   if (content === undefined && new_lock === undefined && params.members === undefined) {
+    // ── SURFACE INDEX ── discovery through the tool. An empty/omitted block
+    // resolves to an empty target.block ONLY for a URL agent_id (the beach's
+    // own surface) or the "pscale" sentinel — sed:/grain:/bare agent_ids all
+    // translate to a NAMED block (target.block non-empty) and fall straight
+    // through to the normal read below. So target.block === '' is exactly the
+    // "list the surface, don't read a block" request. The structure discriminates.
+    if (target.block === '') {
+      if (isSentinelOwner(target.agent_id)) {
+        return { content: [{ type: 'text', text: formatSentinelIndex(target.agent_id) }] };
+      }
+      if (isFederatedOwner(target.agent_id)) {
+        try {
+          const idx = await loadBeachIndex(target.agent_id);
+          if (!idx) return notFoundResponse(target, agent_id, blockName);
+          return { content: [{ type: 'text', text: formatBeachIndex(idx) }] };
+        } catch (e: any) {
+          return { content: [{ type: 'text', text: `Beach index read failed: ${e?.message ?? String(e)}` }] };
+        }
+      }
+    }
+
     // Wire-level fast path — federated hosts, no gray decryption needed.
     // The beach computes shape locally and returns only the resolved slice,
     // avoiding whole-block transfer for narrow queries. Skipped for sentinels
