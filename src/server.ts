@@ -98,6 +98,8 @@ SUBSTRATE DISPATCH: three real targets after dispatch.
 
 The translation happens inside bsp-mcp; callers just pass the agent_id form they have. To target a specific federated beach, pass its URL as agent_id; otherwise the default beach handles bare/sed:/grain: forms.
 
+DISCOVERY (what exists at a surface): omit block (or pass "") to LIST rather than read. A URL agent_id returns that beach's derived index — {_, origin, blocks:[…]} of the named sibling blocks present — and agent_id="pscale" returns the bundled sentinel names. This is a newcomer's first act: see what a beach hosts, then address a named block. (sed:/grain:/bare agent_ids translate to a named block, so an omitted block still reads that block, not an index.)
+
 THE FIVE PRIMITIVES (substrate state machines bsp() alone cannot subsume, plus the pool-engage envelope):
   pscale_register          — register at a sed: collective on a federated beach. Server-assigned position; per-position lock; proof-of-presence-in-time. Founding a collective is NOT a primitive — it is a plain bsp() write (content={_:conventions}, new_lock=admin); the beach has no founding state machine.
   pscale_grain_reach       — symmetric reach/accept across a bilateral pair_id, hosted at a federated beach.
@@ -144,7 +146,7 @@ export function createServer(): McpServer {
   // ── The unified function ──
   server.tool(
     'bsp',
-    'The unified bsp() function. Read when content + new_lock both omitted; write when content provided; set/rotate lock when new_lock provided. Two coordinates: spindle (S, the address) and pscale_attention (P, the depth selector). Shape derives from (S, P). Lock semantics: secret = proof of current authority; new_lock = target lock value (the two never overlap). See pscale://whetstone branch 2 for shape derivation, branch 3 for modifiers, branch 4 for storage. Substrate dispatch via agent_id prefix (sed:, grain:, ordinary).',
+    'The unified bsp() function. Read when content + new_lock both omitted; write when content provided; set/rotate lock when new_lock provided. Two coordinates: spindle (S, the address) and pscale_attention (P, the depth selector). Shape derives from (S, P). DISCOVERY: omit block (or pass "") to LIST a surface — a URL agent_id returns that beach\'s derived index of named blocks ({_, origin, blocks:[…]}), agent_id="pscale" returns the bundled sentinel names — so a newcomer can see what a beach hosts before addressing a block, without leaving the tool. (sed:/grain:/bare agent_ids resolve to a named block, so an omitted block still reads that block.) Lock semantics: secret = proof of current authority; new_lock = target lock value (the two never overlap). See pscale://whetstone branch 2 for shape derivation, branch 3 for modifiers, branch 4 for storage. Substrate dispatch via agent_id prefix (sed:, grain:, ordinary).',
     bspParamsSchema,
     {
       title: 'BSP — unified read / write / lock',

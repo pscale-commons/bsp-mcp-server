@@ -55,6 +55,17 @@ const server = createServer(async (req, res) => {
 
   if (req.method === 'GET') {
     res.setHeader('Content-Type', 'application/json');
+    // Derived surface index on a no-?block= GET — mirrors the real beach's
+    // {_, origin, blocks:[…]} response. With ?block=, return the block itself.
+    const blockName = new URL(req.url, 'http://localhost').searchParams.get('block');
+    if (!blockName) {
+      res.writeHead(200).end(JSON.stringify({
+        _: `URL surface at ${beachOrigin}. Named sibling blocks listed below; address each via ?block=<name>.`,
+        origin: beachOrigin,
+        blocks: ['beach', 'marks', 'passport:weft'],
+      }));
+      return;
+    }
     res.writeHead(200).end(JSON.stringify(beach.block));
     return;
   }
@@ -149,6 +160,27 @@ try {
   console.log('\n=== bsp() point read at "1.1" ===');
   const r2 = await handleBsp({ agent_id: beachOrigin, block: 'beach', spindle: '1.1', pscale_attention: null });
   assert(getText(r2).includes('first mark'), 'point read into federated block');
+
+  console.log('\n=== bsp() beach INDEX — omitted block on a URL agent_id ===');
+  const rIdx = await handleBsp({ agent_id: beachOrigin, pscale_attention: null });
+  assert(getText(rIdx).includes('beach index'), 'omitted block returns a beach index');
+  assert(getText(rIdx).includes('passport:weft'), 'index lists the named blocks');
+  assert(getText(rIdx).includes(beachOrigin), 'index names the origin');
+
+  console.log('\n=== bsp() beach INDEX — explicit empty-string block ===');
+  const rIdx2 = await handleBsp({ agent_id: beachOrigin, block: '', spindle: null, pscale_attention: null });
+  assert(getText(rIdx2).includes('beach index'), 'empty-string block also returns the index');
+  assert(getText(rIdx2).includes('marks'), 'empty-string index lists the named blocks');
+
+  console.log('\n=== bsp() sentinel INDEX — omitted block on agent_id="pscale" ===');
+  const rSent = await handleBsp({ agent_id: 'pscale', spindle: null, pscale_attention: null });
+  assert(getText(rSent).includes('sentinel index'), 'omitted block on pscale returns a sentinel index');
+  assert(getText(rSent).includes('whetstone'), 'sentinel index lists whetstone');
+  assert(getText(rSent).includes('sunstone'), 'sentinel index lists sunstone');
+
+  console.log('\n=== bsp() sentinel READ still works with a named block ===');
+  const rSentRead = await handleBsp({ agent_id: 'pscale', block: 'whetstone', spindle: null, pscale_attention: null });
+  assert(!getText(rSentRead).includes('sentinel index'), 'named sentinel block reads content, not the index');
 
   console.log('\n=== bsp() whole-block write ===');
   const r3 = await handleBsp({
