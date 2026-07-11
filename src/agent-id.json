@@ -79,7 +79,7 @@
       "_": "JSON is JSON above the substrate boundary. Whatever the storage adapter returns, bsp() walks it the same way. There is no type system; the walker is geometry-only.",
       "1": "All blocks share shape language. Underscore at zeroth position carries meaning; digits 1-9 at transversal positions carry sub-structure. Hidden directories form when the underscore is itself an object. The shape rules are universal.",
       "2": "No type system, no kind field. bsp() does not check 'is this a passport?' or 'is this a beach?' before walking. It walks. Type-shaped reasoning happens at the convention layer (the underscore content, agent intentions), not at the function layer.",
-      "3": "Walker is geometry-only. The same code path that reads sunstone reads a personal passport reads a federated beach reads a grain side. Six entry points (bsp + five primitives), one walker, all the substrates."
+      "3": "Walker is geometry-only. The same code path that reads sunstone reads a personal passport reads a federated beach reads a grain side. Eleven entry points across the whole surface, one geometry-only walker underneath, all the substrates."
     },
     "2": {
       "_": "Substrate prefix encodes lifecycle, not geometry. Substrates differ in how they answer loadBlock — atomic position allocation, bilateral pair derivation, HTTP fetch, in-memory return — but the shape of what they return is uniform. Lifecycle is delegated to substrate-stateful primitives.",
@@ -192,7 +192,7 @@
     }
   },
   "9": {
-    "_": "The architectural principle. bsp-mcp refuses to model what kind of thing each namespace IS. There is no person-type, no site-type, no project-type, no concern-type, no scene-type, no contract-type. There is only (namespace, block, position, content). Semantics emerges from content; conventions emerge from shared blocks. The variability of agent_id is the lever that keeps the surface at six tools while serving any kind of namespace.",
+    "_": "The architectural principle. bsp-mcp refuses to model what kind of thing each namespace IS. There is no person-type, no site-type, no project-type, no concern-type, no scene-type, no contract-type. There is only (namespace, block, position, content). Semantics emerges from content; conventions emerge from shared blocks. The variability of agent_id is the lever that keeps the surface free of namespace-type tools while serving any kind of namespace.",
     "1": {
       "_": "No 'kind' parameter exists. The function signature has no slot for naming what kind of thing the namespace is. The substrate has no enum of types. The walker has no per-type code paths. The refusal is structural, not stylistic.",
       "1": "No person/site/project/concern type. There is no 'this is a passport' validation; no 'this is a beach' check; no 'this is a frame block' lookup. The walker walks the JSON regardless.",
@@ -204,8 +204,8 @@
       "2": "Conventions encoded in blocks. The substrate-wide block-conventions sentinel is the default; a host MAY publish a sibling 'conventions' block to override locally. Sed:hsu-commons-conventions carries community norms. Sed:thornkeep-conventions would carry RPG rules. Conventions are data, not code — readable by any agent walking the relevant block."
     },
     "3": {
-      "_": "Surface stays at six tools. bsp() plus five substrate-stateful primitives. Resisting growth to seven or more is the discipline that preserves the variability — adding a 7th feature tool would presume to know which kind of thing the namespace is, and that would close off what the refusal opens up.",
-      "1": "7th tool would presume namespace-type. A bsp_passport_publish tool would assume the namespace IS a passport; a bsp_beach_mark tool would assume it IS a beach. Either presumption forecloses what other namespaces can be at that position.",
+      "_": "Surface stays free of categorised feature tools. Two functions (bsp, bsp-floor), six primitives, three entry meta-tools — eleven entry points, and not one names a namespace-kind. Resisting a categorised feature tool is the discipline that preserves the variability — a feature tool would presume to know which kind of thing the namespace is, and that would close off what the refusal opens up.",
+      "1": "A feature tool would presume namespace-type. A bsp_passport_publish tool would assume the namespace IS a passport; a bsp_beach_mark tool would assume it IS a beach. Either presumption forecloses what other namespaces can be at that position.",
       "2": "Refusing means new kinds without code change. A new convention — 'concerns', 'supply chains', 'inter-AI roles' — can be invented by writing a conventions block on the substrate. No change to bsp-mcp, no new tool, no new primitive. The substrate just stores the new conventions; agents who read them participate."
     },
     "4": {
