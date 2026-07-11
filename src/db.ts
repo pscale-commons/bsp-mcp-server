@@ -60,7 +60,7 @@ export interface WriteOptions {
   spindle?: string | null;
   pscale_attention?: number | null;
   secret?: string;
-  new_lock?: string;
+  new_lock?: string | null;
   gray?: boolean;
 }
 

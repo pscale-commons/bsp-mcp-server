@@ -107,12 +107,13 @@ bsp(
 
 Read when content AND new_lock are both omitted. Write when content is provided. Set/rotate lock when new_lock is provided. The selection shape (`block` / `path-walk` / `disc` / `point` / `path-walk+descent` / `star` — canonical 2026-05-17 vocabulary) DERIVES from the relationship between spindle length (terminal pscale `P_end = floor - len(digits)`) and `pscale_attention` (`P_att`). The pscale formula is `pscale = floor - depth`; depth 0 (root) is off-pscale, structural wrapping only. See `src/sunstone.json` branch 2 for the geometry, `src/whetstone.json` branch 2 for the derivation table, and `bsp-test-materials/` (eight test batteries, 72 cases) for the acceptance contract.
 
-**Lock semantics — four rules.** `secret` is ALWAYS proof of current authority; `new_lock` is ALWAYS the target lock value. They never overlap.
+**Lock semantics — five rules.** `secret` is ALWAYS proof of current authority; `new_lock` is ALWAYS the target lock value (null/`""` = no lock). They never overlap.
 
 - (R1) Block doesn't exist + `new_lock`            → create locked, no `secret` needed.
-- (R2) Block unlocked       + `new_lock`            → set lock, no `secret` needed.
+- (R2) Block unlocked       + `new_lock`            → set lock, no `secret` needed (homestead).
 - (R3) Block locked         + `secret`              → secret proves authority for content writes.
 - (R4) Block locked         + `secret` + `new_lock` → rotate lock (with optional content in same call).
+- (R5) Block locked         + `secret` + `new_lock` null/`""` → RELINQUISH (landed 2026-07-11; [proposal](proposals/2026-07-11-lock-relinquish.md)): the lock entry is deleted; the position returns to its **pre-lock** state — open, byte-identical to never-having-been-locked (a lock IS nothing but a hash entry; no tombstone; the correct asymmetry stands — claiming is free, relinquishing needs proof). Ordinary blocks only; `sed:`/`grain:` refuse with 405 (registration immutability). Relinquishing an open position is an idempotent no-op — the old footgun (`new_lock:""` STORED the un-provable `hash("")` and bricked the position forever) is disarmed by construction: the input that bricked is now the ensure-open act. Historical bricks are data residue; `pscale-beach scripts/sweep-empty-locks.js` removes them once per Upstash (happyseaurchin swept 2026-07-11 — `roles` and `probe-open` recovered).
 
 `new_lock` locks ordinary blocks — and a sed: collective's root: founding a collective is a `bsp()` write with `new_lock` (content={_:conventions}, locked at `_` under the sed: salt). Per-registrant sed: positions and grain: sides are locked atomically by `pscale_register` and `pscale_grain_reach` instead — those allocate position-and-lock together because they have to.
 

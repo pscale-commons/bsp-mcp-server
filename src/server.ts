@@ -79,12 +79,13 @@ Selection shape derives from (spindle length P_end, pscale_attention P_att):
   no spindle, no P     → block   (whole tree)
   spindle ends '*'     → star    (enter hidden directory, recurse)
 
-LOCK SEMANTICS (four rules — enforced at the federated beach):
+LOCK SEMANTICS (five rules — enforced at the federated beach):
   R1: block does not exist + new_lock           → create locked, no secret needed.
-  R2: block unlocked       + new_lock           → set lock, no secret needed.
+  R2: block unlocked       + new_lock           → set lock, no secret needed (homestead).
   R3: block locked         + secret             → secret proves authority for content writes.
   R4: block locked         + secret + new_lock  → rotate lock (with optional content).
-  secret is ALWAYS proof of current authority. new_lock is ALWAYS the target lock value. They never overlap.
+  R5: block locked         + secret + new_lock null|"" → RELINQUISH — the lock entry is deleted and the position returns to its pre-lock state (open, as if never locked; no tombstone). Ordinary blocks only; sed:/grain: positions stay locked to their registrants (405). Relinquishing an open position is an idempotent no-op.
+  secret is ALWAYS proof of current authority. new_lock is ALWAYS the target lock value (null/"" = no lock). They never overlap.
   bsp-mcp does not compute or verify lock hashes — it forwards secret/new_lock to the beach, which hashes under the canonical salt namespaces and stores/verifies.
 
 ADDRESS INVARIANT: pscale 0 is anchored at the floor (decimal point), not at the top of the tree. Floor = depth of the underscore chain. Walk algorithm: parse, pad LEFT to floor width with zeros, strip TRAILING zeros, then walk one digit at a time. Digit 0 → key '_'. Single decimal point as floor marker (stripped before walking). Trailing zeros are floor-width notation, not walk steps.
