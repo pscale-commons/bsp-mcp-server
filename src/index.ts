@@ -81,7 +81,11 @@ const httpServer = createHttpServer(async (req, res) => {
   if (req.method === 'POST') {
     const isInitialize = body && typeof body === 'object' && 'method' in body && (body as any).method === 'initialize';
     if (sessionId && !isInitialize) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
+      // MCP streamable-http spec: a request bearing an unknown/expired session id
+      // SHOULD receive HTTP 404 — conformant clients then start a fresh session
+      // (re-initialize) automatically. A 400 here left clients stale after a
+      // server redeploy wiped in-memory sessions.
+      res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         jsonrpc: '2.0',
         error: { code: -32000, message: 'Unknown session. Send an initialize request first.' },
@@ -97,7 +101,10 @@ const httpServer = createHttpServer(async (req, res) => {
   }
 
   if (req.method === 'GET') {
-    res.writeHead(400, { 'Content-Type': 'application/json' });
+    // Unknown/expired session on the SSE GET leg: 404 per the MCP
+    // streamable-http spec, so clients drop the stale session id and
+    // re-initialize instead of retrying against a dead session.
+    res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       jsonrpc: '2.0',
       error: { code: -32000, message: 'Unknown or expired session. POST initialize first.' },

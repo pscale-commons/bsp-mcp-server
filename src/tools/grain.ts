@@ -9,7 +9,7 @@
  * Grain block at the beach:
  *   { _: description,
  *     "1": { _: A_content }, "2": { _: B_content },
- *     "8": { _reach_pending: {...} }   // present only between establish and accept
+ *     "8": { _: "reach pending…", "1": from, "2": pair_id, … }  // spine-legal; present only between establish and accept
  *     "9": { "1": A_handle, "2": B_handle } }
  *
  * pair_id = sha256(sort(A_handle, B_handle) | join('|')).slice(0, 16). Computed
