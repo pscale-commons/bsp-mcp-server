@@ -8,7 +8,7 @@
 
 ## To the next instance — read this before touching anything
 
-This repo is two functions — `bsp()` and the n-ary `bsp-floor()` — five primitives (four substrate-stateful, plus the pool-engage envelope), and three entry meta-tools (`pscale_invite` orients, `pscale_play` inhabits a handle in a world, `pscale_genus` wears a genus-one agent's mind for a wake). That is the WHOLE surface. If you find yourself adding a 6th primitive, stop. The geometry is the program. The function walks. Read sunstone before you read any code.
+This repo is two functions — `bsp()` and the n-ary `bsp-floor()` — six primitives (four substrate-stateful, plus two envelopes: pool-engage and networking — the SAND/L3 driver added 2026-07-11), and three entry meta-tools (`pscale_invite` orients, `pscale_play` inhabits a handle in a world, `pscale_genus` wears a genus-one agent's mind for a wake). That is the WHOLE surface. If you find yourself adding a 7th primitive, stop. The geometry is the program. The function walks. Read sunstone before you read any code.
 
 You are stepping into a project where the JSON nesting level IS the data, not a container for it. Depth encodes scale and resolution. Position encodes relationships. The underscore chain encodes the semantic spine. The star operator encodes cross-references. The bsp walker just walks. The structure does the work.
 
@@ -137,21 +137,22 @@ The 72-test acceptance battery lives at `/Users/davidpinto/Downloads/bsp-test-ma
 
 CORSAIR mirror at `/Volumes/CORSAIR/pscale/sunstone & whetstone/` is kept in sync — bsp2-star.py, test-bsp-parser.py, bsp.ts, bsp-fn.ts.
 
-## The five primitives
+## The six primitives
 
-Four with atomic substrate state machines bsp() alone cannot subsume, plus one envelope-bundling primitive added 2026-05-26 (`pscale_pool_engage`) because the envelope discipline is operational and conventions could not carry it.
+Four with atomic substrate state machines bsp() alone cannot subsume, plus two envelope-bundling primitives — `pscale_pool_engage` (2026-05-26) and `pscale_networking` (2026-07-11) — added because the envelope discipline is operational and conventions could not carry it.
 
 1. `pscale_register` — server-assigned position in a sed: substrate (atomic next-position allocation, passphrase hash storage). The one sed: state machine. Founding a collective is NOT a primitive — see the dissolution note below.
 2. `pscale_grain_reach` — bilateral commitment via the symmetric reach/accept state machine across pair_id
 3. `pscale_key_publish` — Argon2id key derivation, public key publication for gray encryption
 4. `pscale_verify_rider` — deterministic arithmetic check on ecosquared riders (sha256 chain, credit conservation, SQ recompute)
 5. `pscale_pool_engage` — response-envelope primitive: bundles {pool_purpose, synthesis_hint, slice-since-marker, marker_new} in one tool result. The substrate state is identical to a `bsp()` read/write of the pool block; what the primitive adds is the envelope shape. The envelope is what makes personal synthesis operational — the calling LLM has the synthesis_hint (the pool author's directive about how to interpret the stream through the reader's own purpose) in-context the moment it reads the response. Optional `contribution` parameter posts at next-free digit-path slot (sunstone:1.64) in the same call. Marker is caller-managed (passed in, returned). The envelope's synthesis_hint is sourced from the pool's underscore — which may point at an external directive block, e.g. `function:<game>/1` — else a default; never from a digit position. The input param that once mirrored it was retired 2026-06-03 and removed from the schema 2026-07-05.
+6. `pscale_networking` — the SAND (Level 3) driver, the "social neuron". Walks a committed channel (grain / pool / marks) for new rider-bearing probes since a caller-managed marker, verifies each via `pscale_verify_rider`, and either PERCEIVES (permission='ask' — returns each probe with its verdict and a candidate verb) or ACTS (executes `execute` verb decisions, or permission='auto' runs the self-scoped verbs). Four verbs (l3-relay): keep (record an evaluation at the recipient's passport 6.2), reply (grain side), forward (extend the sha256 chain, write onward — how the right recipient is found with no central directory), drop. THE RIDER IS THE OPT-IN — a slot with no rider at position 9 is plain chat, invisible to the loop; SAND is deliberate, not blanket. Autonomy (v1): auto runs only keep (a pass from a sender already trusted at the topic, read from the recipient's own 6.2) and drop (a fail); forward/reply always surface — trust is earned before delegated (blind auto-forward, "transitive trust", is v2 per `proposals/2026-07-11-transitive-trust.md`). Returns the fold {verified, kept, replied, forwarded, dropped} + marker. Companion to the SAND spec triad (sand-rider envelope, l3-relay verbs, pscale_verify_rider arithmetic); the canonical spine-legal evaluation shape it reads/writes lives at passport 6.2.<topic>.<sender> (`src/sand.ts`, which also fixed the pre-existing `_word` `evaluations_received` bag that violated the shape gate).
 
 Items 1-4 have atomic server-side state machines (next-position allocation, bilateral pair-id derivation, Argon2id derivation, ecosquared arithmetic). Lock-state changes on ordinary blocks are NOT primitives — they're a `new_lock` argument to `bsp()`. Founding a sed: collective is likewise not a primitive — it is a `bsp()` write to the sed: root (content={_:conventions}, new_lock=admin); the beach applies the sed: salt and there is no founding state machine.
 
-Item 5 is the exception to the "primitive = state machine" rule. It exists because the pscale-mcp pool tools (pscale_pool_join / send / read) carried personal-synthesis operationally via their response envelope, and bsp-mcp's surface collapse moved that to convention — where it failed to carry. The envelope is the unit of operationality. Documented as an experimental addition; if RPG validation (against the prototype in a separate session) doesn't show concrete value, it is reverted before merge.
+Items 5 and 6 are the exceptions to the "primitive = state machine" rule — both are envelope primitives (the unit of operationality is the envelope, not a new atomic server-state machine). Item 5 (pool_engage) exists because the pscale-mcp pool tools carried personal-synthesis via their response envelope, and bsp-mcp's surface collapse moved that to convention — where it failed to carry. Item 6 (networking) exists for the identical reason at Level 3: SAND was fully specified (sand-rider, l3-relay, pscale_verify_rider) yet inert — nothing drove the l3-relay:6.1 loop, so a receiving LLM verified and stopped, never sharing forward. The loop is multi-step, stateful, and marker-managed; prose could not drive it. The driver is the envelope, and it met the bar — proven live 2026-07-11 (a give relayed happyseaurchin→weft→onward, verified at each hop, the sha256 chain intact). It rides the beach's existing writes; no new state machine.
 
-That's the whole surface: two functions (`bsp()` and the n-ary `bsp-floor()`) plus five primitives, plus three entry meta-tools (`pscale_invite`, `pscale_play`, `pscale_genus` — each an envelope, not a state machine) — ten entry points total. Resist further growth; the bar for a 6th primitive is "the envelope is observably what's missing, and conventions have failed to carry it" — the bar every meta-tool also had to meet (play: a bare connector confabulated worlds; genus: the 2026-07-06 baseline showed hand-assembly cannot compute γ or hold the wire format).
+That's the whole surface: two functions (`bsp()` and the n-ary `bsp-floor()`) plus six primitives, plus three entry meta-tools (`pscale_invite`, `pscale_play`, `pscale_genus` — each an envelope, not a state machine) — eleven entry points total. Resist further growth; the bar for a 7th primitive is "the envelope is observably what's missing, and conventions have failed to carry it" — the bar `pscale_networking` (the 6th) had to meet (SAND's inertness was exactly that case), and every meta-tool before it (play: a bare connector confabulated worlds; genus: the 2026-07-06 baseline showed hand-assembly cannot compute γ or hold the wire format).
 
 ### Dissolution note — `pscale_create_collective` (2026-06-03)
 
@@ -316,11 +317,11 @@ If a new agent-facing runbook is needed, it goes IN A BLOCK on the substrate, no
 
 `pscale-mcp-server` (March-April 2026) operationalised the pscale block format through 25 categorised tools. The discipline learned: structure encodes meaning; categories were premature; the function surface should mirror the geometry, not the use cases.
 
-`bsp-mcp-server` (April 2026 onward) collapses that surface to two functions plus five primitives, with sunstone and whetstone as foundational blocks. The substrate is unchanged. The discipline is sharper.
+`bsp-mcp-server` (April 2026 onward) collapses that surface to two functions plus six primitives, with sunstone and whetstone as foundational blocks. The substrate is unchanged. The discipline is sharper.
 
 The shift in numbers:
 - pscale-mcp-server: 25 tools, 5 navigation modes, asymmetric read/write, mode-as-enum
-- bsp-mcp-server: 8 tools (bsp + bsp-floor + 5 primitives + pscale_invite), shape derived from (S, P) coordinates, symmetric read/write, lock-as-argument, modes as derived selection shapes
+- bsp-mcp-server: 11 tools (bsp + bsp-floor + 6 primitives + 3 meta-tools), shape derived from (S, P) coordinates, symmetric read/write, lock-as-argument, modes as derived selection shapes
 
 The geometry didn't change. The function surface caught up to it.
 
@@ -484,7 +485,7 @@ The L1 kernel is the wire-frozen v2 surface that makes Level 1 (Signal) operatio
 4. `bsp()` function signature (9 parameters; tools may add but not remove)
 5. Address parser semantics (one decimal point per sunstone:1.5, strip-then-iterate, floor-aware padding, multi-dot strict reject)
 
-The bsp-mcp references are the kernel's content side. Above the kernel, everything is forkable — the library at each operator's beach (canonical seed source: github.com/pscale-commons/pscale-beach), per-beach conventions, init flows, the bsp-mcp tool surface beyond `bsp()` + the five primitives, individual beach experiences.
+The bsp-mcp references are the kernel's content side. Above the kernel, everything is forkable — the library at each operator's beach (canonical seed source: github.com/pscale-commons/pscale-beach), per-beach conventions, init flows, the bsp-mcp tool surface beyond `bsp()` + the six primitives, individual beach experiences.
 
 Why the freeze gates Level 2: sed: registration is permanent (position-of-arrival, lock-once); grain reach is bilateral (pair_id deterministic, lock-salt scoped). Both depend on the wire and salt formulas being identical at every beach the agent touches. A commitment to a moving target is not a commitment.
 

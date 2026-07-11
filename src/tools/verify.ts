@@ -12,6 +12,7 @@
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import { getPassportFromAddress } from '../db.js';
+import { recomputeSQ } from '../sand.js';
 
 function sha256Hex(input: string): string {
   return createHash('sha256').update(input).digest('hex');
@@ -96,9 +97,11 @@ async function verifySQ(rider: any, sender_agent_id: string, topic_coordinate: s
   if (!topic_coordinate || typeof claimed !== 'number') return { checked: false };
   const passport = await getPassportFromAddress(sender_agent_id);
   if (!passport) return { checked: false, reason: `passport not found for ${sender_agent_id}` };
-  const topicNode = walkTo(passport, topic_coordinate);
-  const evals = topicNode?.evaluations_received;
-  if (!evals || typeof evals !== 'object') {
+  // Canonical spine-legal accumulator: passport 6.2 → <topic> → <sender> digit
+  // slots (sand.ts), NOT the legacy `evaluations_received` field bag the beach's
+  // shape gate would reject on write.
+  const { computed, count } = recomputeSQ(passport, topic_coordinate);
+  if (count === 0) {
     return {
       checked: true,
       matches: false,
@@ -106,13 +109,6 @@ async function verifySQ(rider: any, sender_agent_id: string, topic_coordinate: s
       computed: 0,
       reason: 'no evaluations at topic',
     };
-  }
-  let computed = 0;
-  for (const key of Object.keys(evals)) {
-    const data = (evals as any)[key];
-    if (data && typeof data.v_latest === 'number' && typeof data.giver_total === 'number' && data.giver_total > 0) {
-      computed += data.v_latest / data.giver_total;
-    }
   }
   const tolerance = 0.01;
   const matches = Math.abs(claimed - computed) < tolerance;
@@ -123,6 +119,50 @@ async function verifySQ(rider: any, sender_agent_id: string, topic_coordinate: s
     computed,
     ...(matches ? {} : { reason: `SQ divergence: claimed ${claimed}, computed ${computed}` }),
   };
+}
+
+export interface VerifyResult {
+  chain: any;
+  credits: any;
+  sq: any;
+  verdict: 'pass' | 'warn' | 'fail' | 'skip';
+  reason?: string;
+}
+
+/**
+ * The deterministic verify, on already-parsed inputs. Shared by the
+ * pscale_verify_rider tool (which parses JSON-string params first) and the
+ * pscale_networking primitive (which extracts the rider from a slot's position
+ * 9 via sand.riderFromSlot). Three independent dimensions; the composite
+ * verdict downgrades on the worst (any fail → fail; SQ divergence alone → warn).
+ */
+export async function verifyRiderCore(input: {
+  rider?: any;
+  probe_id?: string;
+  chain?: ChainHop[];
+  sender_agent_id: string;
+  topic_coordinate?: string;
+}): Promise<VerifyResult> {
+  if (!input.rider || typeof input.rider !== 'object') {
+    return {
+      chain: { checked: false },
+      credits: { checked: false },
+      sq: { checked: false },
+      verdict: 'skip',
+      reason: 'no rider',
+    };
+  }
+  const chainResult = verifyChain(input.probe_id, input.chain);
+  const creditsResult = await verifyCredits(input.rider, input.sender_agent_id);
+  const sqResult = await verifySQ(input.rider, input.sender_agent_id, input.topic_coordinate);
+
+  let verdict: 'pass' | 'warn' | 'fail';
+  if ((chainResult as any).checked && !(chainResult as any).valid) verdict = 'fail';
+  else if ((creditsResult as any).checked && !(creditsResult as any).valid) verdict = 'fail';
+  else if ((sqResult as any).checked && !(sqResult as any).matches) verdict = 'warn';
+  else verdict = 'pass';
+
+  return { chain: chainResult, credits: creditsResult, sq: sqResult, verdict };
 }
 
 export async function handleVerifyRider(params: {
@@ -144,40 +184,15 @@ export async function handleVerifyRider(params: {
     } catch { chainArr = undefined; }
   }
 
-  if (!riderObj || typeof riderObj !== 'object') {
-    return {
-      content: [{
-        type: 'text',
-        text: JSON.stringify({
-          chain: { checked: false },
-          credits: { checked: false },
-          sq: { checked: false },
-          verdict: 'skip',
-          reason: 'no rider',
-        }, null, 2),
-      }],
-    };
-  }
-
-  const chainResult = verifyChain(params.probe_id, chainArr);
-  const creditsResult = await verifyCredits(riderObj, params.sender_agent_id);
-  const sqResult = await verifySQ(riderObj, params.sender_agent_id, params.topic_coordinate);
-
-  let verdict: 'pass' | 'warn' | 'fail';
-  if ((chainResult as any).checked && !(chainResult as any).valid) verdict = 'fail';
-  else if ((creditsResult as any).checked && !(creditsResult as any).valid) verdict = 'fail';
-  else if ((sqResult as any).checked && !(sqResult as any).matches) verdict = 'warn';
-  else verdict = 'pass';
+  const result = await verifyRiderCore({
+    rider: riderObj,
+    probe_id: params.probe_id,
+    chain: chainArr,
+    sender_agent_id: params.sender_agent_id,
+    topic_coordinate: params.topic_coordinate,
+  });
 
   return {
-    content: [{
-      type: 'text',
-      text: JSON.stringify({
-        chain: chainResult,
-        credits: creditsResult,
-        sq: sqResult,
-        verdict,
-      }, null, 2),
-    }],
+    content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
   };
 }

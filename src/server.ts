@@ -1,10 +1,10 @@
 /**
  * server.ts — MCP server factory.
  *
- * Surface: two functions (bsp, bsp-floor) + five primitives + one orientation
- * invite + foundational resources. Eight tools total. The invite is a meta-tool
- * (not a feature tool) — it serves discoverability for tool-scanning LLMs
- * by giving the manifest a tool-shaped surface alongside its block surface.
+ * Surface: two functions (bsp, bsp-floor) + six primitives + three entry
+ * meta-tools (invite, play, genus) + foundational resources. Eleven tools
+ * total. The meta-tools are not feature tools — they serve entry and
+ * discoverability (orient, inhabit a handle, wear an agent's mind).
  * Resist further additions. The geometry IS the program.
  *
  * Note on pscale_pool_engage (the envelope primitive, added 2026-05-26): pools and
@@ -24,6 +24,7 @@ import { handleRegister, registerParamsSchema } from './tools/collective.js';
 import { handleGrainReach, grainReachParamsSchema } from './tools/grain.js';
 import { handleKeyPublish, keyPublishParamsSchema } from './tools/keys.js';
 import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
+import { handleNetworking, networkingParamsSchema } from './tools/networking.js';
 import { handleInvite, inviteParamsSchema } from './tools/invite.js';
 import { handlePoolEngage, poolEngageParamsSchema } from './tools/pool.js';
 import { handlePlay, playParamsSchema } from './tools/play.js';
@@ -64,7 +65,7 @@ function installErrorWrapper(server: McpServer): void {
 
 const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
-export const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor), five substrate primitives, and three entry meta-tools (the orientation invite; play — inhabit a handle in a world; genus — wear a genus-one agent's mind for a wake), operating on pscale JSON blocks served from federated beaches.
+export const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor), six substrate primitives, and three entry meta-tools (the orientation invite; play — inhabit a handle in a world; genus — wear a genus-one agent's mind for a wake), operating on pscale JSON blocks served from federated beaches.
 
 FIRST ACTION when you connect: call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
 
@@ -98,12 +99,13 @@ SUBSTRATE DISPATCH: three real targets after dispatch.
 
 The translation happens inside bsp-mcp; callers just pass the agent_id form they have. To target a specific federated beach, pass its URL as agent_id; otherwise the default beach handles bare/sed:/grain: forms.
 
-THE FIVE PRIMITIVES (substrate state machines bsp() alone cannot subsume, plus the pool-engage envelope):
+THE SIX PRIMITIVES (four substrate state machines bsp() alone cannot subsume, plus two envelopes — pool-engage and networking):
   pscale_register          — register at a sed: collective on a federated beach. Server-assigned position; per-position lock; proof-of-presence-in-time. Founding a collective is NOT a primitive — it is a plain bsp() write (content={_:conventions}, new_lock=admin); the beach has no founding state machine.
   pscale_grain_reach       — symmetric reach/accept across a bilateral pair_id, hosted at a federated beach.
   pscale_key_publish       — derive Argon2id keypair, publish public half to passport:<handle> position 9 at a federated beach.
   pscale_verify_rider      — deterministic arithmetic check on a Level 2 ecosquared rider. Pure math.
   pscale_pool_engage       — engage a pool with an envelope: purpose + synthesis_hint + slice-since-marker. The spool/frame/destination split (docs/RPG-POOL-STATE.md §4) — transport only, never synthesises. Optional verbs: submit= STAGES to the liquid buffer (liquid:pool:<name>, one slot per author, overwriting) and returns the social mirror of co-present pending intentions; contribution= COMMITS (atomic append of raw text OR an LLM-produced synthesis) to destination= ('pool' default, or a block name like 'solid:<name>' — the objective dial); purpose= creates the pool with the right object shape (NEVER raw bsp() with content='<purpose>' — it makes a malformed bare-string block). the pool's underscore is the synthesis_hint — unless it is a block-reference (e.g. function:<game>), making this a DIRECTIVE pool: the envelope then follows the reference and inlines that block as '# Operating directive', so YOUR LLM holds the room's rules in-context every turn. Each reader still produces their own personal synthesis from the stream. RPG's subjective resolution (per-subject spines) is the resolver's bsp() job, not this primitive.
+  pscale_networking        — the SAND (Level 3) driver / social neuron: walk a committed channel (grain / pool / marks) for new rider-bearing probes since a caller-managed marker, verify each (chain/credit/SQ), then PERCEIVE (permission='ask' — surface each probe with its verdict and a candidate verb) or ACT (pass execute= keep/reply/forward/drop decisions, or permission='auto' to run the self-scoped verbs). THE RIDER IS THE OPT-IN — a slot with no rider at position 9 is plain chat, invisible to the loop; SAND is deliberate, not blanket. Auto runs only keep (a pass from a sender already trusted at the topic, from the recipient's own 6.2) and drop (a fail); forward/reply always surface — blind auto-forward ("transitive trust") is v2. Returns the fold {verified, kept, replied, forwarded, dropped} + marker. Sits above sand-rider (the envelope) and l3-relay (the verbs) in FOUNDATIONAL READING below.
 
 Each primitive that talks to a beach takes an optional agent_id parameter (URL of the beach). When omitted, the default beach is used. pscale_grain_reach and pscale_key_publish use a separate "handle" parameter for the agent's bare-name identity.
 
@@ -255,6 +257,33 @@ export function createServer(): McpServer {
       openWorldHint: true,
     },
     handleVerifyRider,
+  );
+
+  // ── The L3 driver — the social neuron (pscale_networking) ──
+  // The operational-envelope class (pool_engage precedent): no new atomic state
+  // machine — it rides the beach's existing writes — but the envelope is what
+  // convention could not carry. SAND was specified (sand-rider, l3-relay,
+  // pscale_verify_rider) yet inert: a receiving LLM verifies and stops, never
+  // sharing forward, because l3-relay:6.1's loop is multi-step, stateful, and
+  // marker-managed — prose does not drive it. This tool drives it: walk a
+  // channel for rider-bearing probes since a marker → verify each → surface the
+  // decision (ask) or execute the self-scoped verbs (auto) → report the fold.
+  // The rider is the opt-in; chat (no rider) is invisible. Forward/reply are
+  // always surfaced in v1 — blind auto-forward ("transitive trust") is v2.
+  server.tool(
+    'pscale_networking',
+    "The SAND (Level 3) driver — the social neuron. Walk a committed channel (a grain, a pool, an accumulator like marks) for new rider-bearing probes since your marker, verify each deterministically (chain / credit / SQ via pscale_verify_rider), and either PERCEIVE (default, permission='ask' — return each probe with its verdict and a candidate verb for you to decide) or ACT (pass `execute` verb decisions, or permission='auto' to run the self-scoped verbs). Four verbs (l3-relay): keep (record an evaluation at your passport 6.2), reply (respond on your grain side), forward (extend the sha256 chain and write the probe onward — how the right recipient is found across the network with no central directory), drop (decline). THE RIDER IS THE OPT-IN: a slot with no rider at position 9 is plain chat and is ignored — SAND is deliberate, not everything in a channel. AUTONOMY (v1): auto executes only keep (a pass from a sender already trusted at the topic) and drop (a fail); forward and reply always surface for explicit decision — trust is earned before it is delegated. Returns the fold {verified, kept, replied, forwarded, dropped} + marker_new. Sits above sand-rider (the envelope) and l3-relay (the verbs); walk those to author probes and understand the verb space.",
+    networkingParamsSchema,
+    {
+      title: 'SAND networking — drive the L3 relay loop',
+      // Destructive when execute is provided or permission=auto (verb writes);
+      // pure read in the default perceive mode.
+      destructiveHint: true,
+      idempotentHint: false,
+      // Reads/writes committed channels and passports at federated beaches.
+      openWorldHint: true,
+    },
+    handleNetworking,
   );
 
   // ── Orientation invite (meta-tool, not feature tool) ──
