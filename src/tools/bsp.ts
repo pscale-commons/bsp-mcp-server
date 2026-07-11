@@ -281,8 +281,9 @@ export const bspParamsSchema = {
     .describe('Proof of current authority. Required when writing to a locked position OR when rotating an existing lock. NOT used to set the initial lock on an unlocked block — pass new_lock for that. Forwarded to the federated beach which computes the hash and verifies.'),
   new_lock: z
     .string()
+    .nullable()
     .optional()
-    .describe('Target lock value. Sets or rotates the write-lock at the addressed position. Four cases: (1) block does not exist + new_lock → create locked, no secret needed; (2) block unlocked + new_lock → lock with new_lock, no secret needed; (3) block locked + secret + new_lock → rotate from current to new_lock (secret proves current authority); (4) without new_lock, lock state is unchanged. Forwarded to the federated beach.'),
+    .describe('Target lock value. Sets, rotates, or RELINQUISHES the write-lock at the addressed position. Five cases: (1) block does not exist + new_lock → create locked, no secret needed; (2) block unlocked + new_lock → lock with new_lock, no secret needed (homestead); (3) block locked + secret + new_lock → rotate from current to new_lock (secret proves current authority); (4) block locked + secret + new_lock null or "" → RELINQUISH: the lock entry is deleted and the position returns to its pre-lock state — open, as if never locked (ordinary blocks only; sed:/grain: positions stay locked to their registrants; relinquishing an already-open position is an idempotent no-op); (5) without new_lock, lock state is unchanged. Forwarded to the federated beach.'),
   gray: z
     .boolean()
     .optional()
@@ -316,7 +317,7 @@ export type BspToolParams = {
   pscale_attention?: number | null;
   content?: any;
   secret?: string;
-  new_lock?: string;
+  new_lock?: string | null;
   gray?: boolean;
   enc_secret?: string;
   members?: string[];
@@ -433,14 +434,19 @@ async function notFoundResponse(
 // ── The handler ──
 
 /**
- * Four-rule semantics for content + new_lock interaction (enforced at the beach):
+ * Five-rule semantics for content + new_lock interaction (enforced at the beach):
  *   (R1) Block doesn't exist + new_lock     → create locked at new_lock, no secret needed.
- *   (R2) Block unlocked       + new_lock     → set lock to new_lock, no secret needed.
+ *   (R2) Block unlocked       + new_lock     → set lock to new_lock, no secret needed (homestead).
  *   (R3) Block locked         + secret       → secret proves current authority for content writes.
  *   (R4) Block locked         + secret + new_lock → rotate current→new_lock (with optional content).
+ *   (R5) Block locked         + secret + new_lock null|'' → relinquish: the lock
+ *        entry is deleted; the position returns to its pre-lock state (open, as
+ *        if never locked — a lock IS nothing but a hash entry, so pre-lock is
+ *        literal). Ordinary blocks only — sed:/grain: refuse (405). Relinquish
+ *        of an open position is an idempotent no-op, so '' can never brick.
  *
  * `secret` is ALWAYS proof of current authority. Never the initial lock value.
- * `new_lock` is ALWAYS the target lock value. Never used as proof.
+ * `new_lock` is ALWAYS the target lock value (null/'' = no lock). Never used as proof.
  *
  * bsp-mcp forwards both to the beach without local hash computation. The
  * sentinel registry has no lock semantics (read-only).
