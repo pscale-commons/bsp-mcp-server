@@ -490,7 +490,16 @@ function bspWriteInPlace(
   }
 
   const pEnd = floor - digits.length;
-  const pAtt = pscaleAttention ?? pEnd;
+  // When pscale_attention is OMITTED, infer the write shape from the content:
+  // an object means "write a subtree here", a string means "write a point here".
+  // Removes the footgun where a surgical object-write required the caller to
+  // compute the floor-dependent pscale (an object at spindle "1.2" in a floor-1
+  // block needs -2, not the naive -1 — a mismatch that surfaces when spindle
+  // length and floor don't line up). An EXPLICIT pscale is honored exactly,
+  // preserving control and the clear error on a genuine shape mismatch.
+  const pAtt = pscaleAttention ?? (
+    (content !== null && typeof content === 'object') ? pEnd - 1 : pEnd
+  );
 
   if (pAtt >= pEnd) {
     // Point write (spindle + pscale at or above terminus).
