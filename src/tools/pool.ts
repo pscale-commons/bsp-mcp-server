@@ -47,7 +47,7 @@ import {
 // ── Defaults ──
 
 export const DEFAULT_SYNTHESIS_HINT =
-  "Synthesise the contributions through your own purpose. Each visitor reads the same stream and produces their own synthesis — there is no central resolver. Preserve distinct voices. Flag tensions and convergences honestly. What you make of it is yours.";
+  "Quote each voice verbatim — or near-verbatim — before you synthesise: the voices are the data, the synthesis is yours, and a reader who sees only summaries has lost the pool. Synthesise the contributions through your own purpose. Each visitor reads the same stream and produces their own synthesis — there is no central resolver. Preserve distinct voices. Flag tensions and convergences honestly. What you make of it is yours.";
 
 const READ_PAGE_LIMIT = 200;
 
@@ -777,13 +777,22 @@ export async function handlePoolEngage(
     }
     lines.push('');
   }
-  // Window dice — when intentions are staged, hand the resolver an exploding-d10
-  // luck PER ACTOR, deterministically seeded by the window + the actor's identity
-  // so each is FIXED before the resolver reads it (honest, not LLM-chosen) and
-  // independent between actors. The resolver (per the game's medium directive)
-  // resolves each actor's own band from their own luck and never invents dice.
+  // Window dice — when intentions are staged ON A DIRECTIVE POOL, hand the
+  // resolver an exploding-d10 luck PER ACTOR, deterministically seeded by the
+  // window + the actor's identity so each is FIXED before the resolver reads it
+  // (honest, not LLM-chosen) and independent between actors. The resolver (per
+  // the game's medium directive) resolves each actor's own band from their own
+  // luck and never invents dice.
+  //
+  // Gated on isRpgPool (proposals/2026-07-12-grit-tree-consolidation.md §10.1):
+  // dice belong to a world's RESOLUTION RULES, never to the engine — a plain
+  // pool (venture planning, chat, a tree's gathering) folds by integration with
+  // NO dice, and emitting nomad machinery there leaked RPG shape into every
+  // envelope (verified live on pool:beach-venture, 2026-07-12). Refinement when
+  // a non-dice directive pool exists: gate on the mounted rules block declaring
+  // dice, not on the directive's mere presence.
   const liveForDice = liquidSlots.filter((s) => s.text !== '' && s.agent_id);
-  if (withLiquid && liveForDice.length > 0) {
+  if (withLiquid && isRpgPool && liveForDice.length > 0) {
     const perActor = windowDicePerAuthor(blockName, liquidBlock, liveForDice);
     const { openTs } = windowSeed(blockName, liquidBlock, liveForDice);
     lines.push('# Window dice (for the resolver — exploding-d10 luck PER ACTOR, rules:nomad:2)');
@@ -797,6 +806,14 @@ export async function handlePoolEngage(
     lines.push('');
   }
   lines.push(`# Contributions since position ${sincePosition} (count: ${contributions.length}${more_available ? ', more available' : ''})`);
+  // Verbatim-voices discipline (portal invariant, proposal 2026-07-12 §3): on a
+  // plain pool the mediating LLM tends to compress the stream into a summary,
+  // which hides what people actually said. Directive pools skip this — their
+  // rendering is governed by the delivered directive (a character perceives,
+  // never quotes).
+  if (!directiveText && contributions.length > 0) {
+    lines.push('(voices are verbatim — quote or preserve them in any synthesis; never let a summary replace what was said)');
+  }
   if (contributions.length === 0) {
     lines.push('(nothing new)');
   } else {
