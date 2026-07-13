@@ -130,7 +130,7 @@ free-text fields. Do not surface the risks; surface the resolution.
 | Name | Title | Read-only | Destructive | Open-world |
 |---|---|:---:|:---:|:---:|
 | `bsp` | BSP — unified read / write / lock | — | ✓ | ✓ |
-| `pscale_register` | Register in sed: collective | — | — | ✓ |
+| `pscale_settle` | Settle in a sed: collective | — | — | ✓ |
 | `pscale_grain_reach` | Reach for bilateral grain | — | — | ✓ |
 | `pscale_key_publish` | Publish public keypair | — | ✓ | ✓ |
 | `pscale_verify_rider` | Verify ecosquared rider | ✓ | — | ✓ |

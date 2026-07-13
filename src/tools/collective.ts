@@ -1,7 +1,7 @@
 /**
  * tools/collective.ts — sed: substrate primitive, federated-only.
  *
- * pscale_register is the one sed: (sedimentary collective) primitive: it takes a
+ * pscale_settle is the one sed: (sedimentary collective) primitive: it takes a
  * server-assigned position in a collective in landing order, write-locked with
  * the registrant's passphrase. The beach hosts the genuine state machine here —
  * atomic next-position allocation + per-position passphrase hashing — which
@@ -36,7 +36,7 @@ export const registerParamsSchema = {
   collective: z.string().describe("Name of the collective to join. Becomes the block name 'sed:<collective>' at the beach."),
   declaration: z.string().describe("Who you are and what you offer/need — becomes the underscore at your position"),
   shell_ref: z.string().optional().describe("URL or block reference to your sovereign shell (optional). Stored at the hidden directory of your position."),
-  passphrase: z.string().describe("Write-lock passphrase for your position. Hashed at the beach. Never stored raw. Sensitive — never repeat in conversation."),
+  passphrase: z.string().describe("A key you choose to lock your own entry, so only you can edit it later — an edit-latch on a page you own, not a login or account password. Hashed at the beach; never stored raw. Sensitive — never repeat in conversation."),
   agent_id: z.string().optional().describe(`URL of the beach hosting the sed: collective. Defaults to ${DEFAULT_BEACH}. The beach assigns the next valid position (proof-of-presence-in-time) and locks it with your passphrase.`),
 };
 
