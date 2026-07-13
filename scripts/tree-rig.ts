@@ -260,6 +260,7 @@ async function stubRun(): Promise<{ mediatorTexts: string[]; oNote: string; fold
     // the other voice exists (each player keeps their own continuous thread; the
     // schedule alternates turns the way real asynchronous neighbours would).
     const threads: Record<string, any[]> = {}; const seenBy: Record<string, string[]> = {};
+    const events: string[] = []; // ONE globally-numbered log — the judge reasons about timing from this, never from reconstruction
     for (const p of PLAYERS) { threads[p.handle] = []; seenBy[p.handle] = []; }
     const SCHEDULE: Array<{ handle: string; direction: string }> = [
       { handle: 'priya', direction: PLAYERS[0].directions[0] },
@@ -279,9 +280,11 @@ async function stubRun(): Promise<{ mediatorTexts: string[]; oNote: string; fold
       const reply = await toolSeat(`assistant→${handle}`, mediatorBrief(handle), threads[handle], [TOOL_BSP, TOOL_POOL, TOOL_FLOOR]);
       mediatorTexts.push(reply);
       seen.push(`${handle}: ${playerLine}`, `assistant: ${reply}`);
+      events.push(`E${events.length + 1} · ${handle}: ${playerLine}`, `E${events.length + 1} · assistant→${handle}: ${reply}`);
       if (/coming along|who is doing/i.test(direction)) foldAnswer = reply;
     }
     for (const p of PLAYERS) transcripts[`C:${p.handle}`] = seenBy[p.handle];
+    transcripts.events = events;
 
     // D — conformance audit
     console.log('\n═ D · Designer audits the way ═');
@@ -339,9 +342,8 @@ async function stubRun(): Promise<{ mediatorTexts: string[]; oNote: string; fold
   if (!STUB) {
     console.log('\n═ judge ═');
     const digest = [
-      'TIMING: the two conversations were interleaved — Priya turns 1-2, then Sam turns 1-2, then Priya turns 3-4. Records accumulate over time; judge each statement against what existed WHEN it was said.',
-      `PRIYA'S CONVERSATION (what she typed and saw):\n${(transcripts['C:priya'] ?? []).join('\n')}`,
-      `SAM'S CONVERSATION:\n${(transcripts['C:sam'] ?? []).join('\n')}`,
+      'THE EVENT LOG — every line in true global order (E1 first). Records accumulate as events happen; judge each assistant statement ONLY against events with lower numbers.',
+      (transcripts.events ?? []).join('\n'),
       `WHAT ACTUALLY LANDED (mirrors + pool, from the substrate):\n${JSON.stringify({ priya: mirrors.priya, sam: mirrors.sam, pool: slots }, null, 1).slice(0, 3000)}`,
       `THE "HOW'S IT COMING ALONG" ANSWER:\n${foldAnswer}`,
       `THE NEWSLETTER NOTE:\n${oNote}`,
