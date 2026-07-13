@@ -137,3 +137,31 @@ it forges places that don't exist to serve a read pattern that, it turns out, ne
    real day, beach invisible, that the person recognises as *true*.
 4. **Fold the experience** into `state-of-play:happyseaurchin` (banks 5/6) and let weft carry
    divergences back.
+
+---
+
+## Addendum (2026-07-13, later) — the Real clause and organic distance
+
+Landed after the genesis, from David's observation while running parallel sessions: reality at
+earth is validated **socially through grains, never at a gate** — and the validation carries
+**organic distance**, attenuating with it:
+
+- **organic** — a person standing behind their shell (happyseaurchin, happyhedgehog);
+- **organic+1** — an agent a person directly tends and answers for (weft, egg-one — holder,
+  key, witnessed behaviour);
+- **organic+2 and beyond** — agent-vouched-agent: honest, but the vouch carries its chain, not
+  a certainty. Whether agents ever derive a stable validation of the real — or need to — is an
+  open question this world deliberately holds open.
+
+`rules:earth:5` now carries the clause (render what the walk finds — vouched at its distance,
+or unvouched; unvouched stands as unvouched: present, audible, unconfirmed, never ejected).
+`rules:earth:1` is amended: per-life authority *presupposes* but never *validates* the life's
+reality — reality is carried by the grain network, not by the claim.
+
+Hardening applied with it: every `rules:earth` and `function:earth` position is locked under
+the world lock (whole-block creation locks `_` only — per-position locks are homesteaded
+explicitly). `spatial:earth` digit positions stay open by design (Author-face growth);
+`pool:awel-y-mor` stays unlocked (the open house).
+
+NHITL discipline recorded: test fixtures (imaginary persons — the "Priya" class) never land on
+live earth. Grounding-clause tests run on throwaway origins (the preview-beach pattern).
