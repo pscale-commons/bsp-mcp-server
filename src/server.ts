@@ -20,7 +20,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { handleBsp, bspParamsSchema } from './tools/bsp.js';
 import { handleBspFloor, bspFloorParamsSchema } from './tools/bsp-floor.js';
-import { handleRegister, registerParamsSchema } from './tools/collective.js';
+import { handleSettle, settleParamsSchema } from './tools/collective.js';
 import { handleGrainReach, grainReachParamsSchema } from './tools/grain.js';
 import { handleKeyPublish, keyPublishParamsSchema } from './tools/keys.js';
 import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
@@ -192,7 +192,7 @@ export function createServer(): McpServer {
   server.tool(
     'pscale_settle',
     `Settle into a sedimentary collective — a public group on a federated beach where each new member lands at the next open position in arrival order (a sediment layer settling into rock). The beach assigns the position (11, 12, ..., 19, 21, ..., 99, 111, ...); your declaration becomes its underscore. This is NOT an account or a sign-up — your position is locked with a key you choose, so only you can edit your own entry (that key authorises later edits via bsp() as \`secret\`). Defaults to ${DEFAULT_BEACH_URL}; pass agent_id for another beach.`,
-    registerParamsSchema,
+    settleParamsSchema,
     {
       title: 'Settle in sed: collective',
       // Additive: writes a never-before-occupied position; existing positions are not touched.
@@ -201,7 +201,7 @@ export function createServer(): McpServer {
       idempotentHint: false,
       openWorldHint: true,
     },
-    handleRegister,
+    handleSettle,
   );
 
   server.tool(
