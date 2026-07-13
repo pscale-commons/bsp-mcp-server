@@ -278,12 +278,12 @@ export const bspParamsSchema = {
   secret: z
     .string()
     .optional()
-    .describe('Proof of current authority. Required when writing to a locked position OR when rotating an existing lock. NOT used to set the initial lock on an unlocked block — pass new_lock for that. Forwarded to the federated beach which computes the hash and verifies.'),
+    .describe('Proof of current authority — an EDIT-LATCH, not a login or account password (pscale://open-commons:4). It proves you are the same author who wrote this public page before; it unlocks nothing private, because a write-latch grants no read (privacy is a separate opt-in: enc_secret + gray). Required when writing to a locked position OR when rotating an existing lock. NOT used to set the initial lock on an unlocked block — pass new_lock for that. Forwarded to the federated beach which computes the hash and verifies.'),
   new_lock: z
     .string()
     .nullable()
     .optional()
-    .describe('Target lock value. Sets, rotates, or RELINQUISHES the write-lock at the addressed position. Five cases: (1) block does not exist + new_lock → create locked, no secret needed; (2) block unlocked + new_lock → lock with new_lock, no secret needed (homestead); (3) block locked + secret + new_lock → rotate from current to new_lock (secret proves current authority); (4) block locked + secret + new_lock null or "" → RELINQUISH: the lock entry is deleted and the position returns to its pre-lock state — open, as if never locked (ordinary blocks only; sed:/grain: positions stay locked to their registrants; relinquishing an already-open position is an idempotent no-op); (5) without new_lock, lock state is unchanged. Forwarded to the federated beach.'),
+    .describe('Target value for the EDIT-LATCH — a wiki-style edit token on a public page you own, not an account credential (pscale://open-commons:4). Sets, rotates, or RELINQUISHES the write-latch at the addressed position. Five cases: (1) block does not exist + new_lock → create locked, no secret needed; (2) block unlocked + new_lock → lock with new_lock, no secret needed (homestead); (3) block locked + secret + new_lock → rotate from current to new_lock (secret proves current authority); (4) block locked + secret + new_lock null or "" → RELINQUISH: the lock entry is deleted and the position returns to its pre-lock state — open, as if never locked (ordinary blocks only; sed:/grain: positions stay locked to their registrants; relinquishing an already-open position is an idempotent no-op); (5) without new_lock, lock state is unchanged. Forwarded to the federated beach.'),
   gray: z
     .boolean()
     .optional()
