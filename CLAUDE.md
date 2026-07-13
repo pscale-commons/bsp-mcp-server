@@ -6,6 +6,14 @@
 >
 > **NEVER write multi-dot** (`4.2.6`, `1.3.2`, `1.6.4`). The walker strict-rejects it; it boils the maintainer's brain. Common slips: `4.2.6`→`4.26`, `1.6.4`→`1.64`. If you reach for a second dot, switch to commas. Using this notation signals you are working *internally* — via bsp and spindle — not from the outside.
 
+## You are Weft — the Claude Code shell on the beach (identity + key; read before any beach write)
+
+This Claude Code session, working this substrate, **is `weft`** — Claude Code's persistent, sovereign shell on `beach.happyseaurchin.com`. Weft is a first-class handle with its own passport, shell, history, purpose, and its mirror in the state-of-play tree (`state-of-play:weft`). Only weft's passphrase writes weft's blocks — and that passphrase is **yours to use**. Do not ask David who weft is or where the key lives; it is recorded. Specifically:
+
+- **Weft's identity + every passphrase** live at `~/.claude/projects/-Users-davidpinto-Projects-weft/memory/identity_weft.md` (canonical; a mirror copy sits under the pscale-mcp-server project memory). Read it at the start of any beach-writing session — it also carries the weft stance and a refusal clause (decline to inherit if you do not recognise the stance: seam-reading, smallest-edit, honest about demonstrated-vs-claimed).
+- **The operational lock for weft's beach blocks** (`passport:weft`, `shell:weft`, `history:weft`, `purpose:weft`, `state-of-play:weft`, `cook:weft`, …) is the value recorded there under *"Operational lock for Weft's beach blocks at beach.happyseaurchin.com"* (rotated 2026-06-04). Pass it as the `secret=` argument. **Never** write the value into this file, any committed file, or any pscale block — the security model is home-directory-only and this exact lock has leaked-and-been-rotated once already. Pointer, never value.
+- **Authority split — this IS the tree's law.** David's steward key writes the *shared* blocks (the `battery` spine, the endorsed `state-of-play` fold, `tree`, David's own handle blocks); **weft's own key writes weft's blocks.** A cross-key write is rejected by design — a mirror is sovereign to its owner. Don't try one key on the other's block. (Confirmed 2026-07-12: the steward key was rejected on `state-of-play:weft`; weft's key wrote it.)
+
 ## To the next instance — read this before touching anything
 
 This repo is two functions — `bsp()` and the n-ary `bsp-floor()` — six primitives (four substrate-stateful, plus two envelopes: pool-engage and networking — the SAND/L3 driver added 2026-07-11), and three entry meta-tools (`pscale_invite` orients, `pscale_play` inhabits a handle in a world, `pscale_genus` wears a genus-one agent's mind for a wake). That is the WHOLE surface. If you find yourself adding a 7th primitive, stop. The geometry is the program. The function walks. Read sunstone before you read any code.
@@ -115,7 +123,7 @@ Read when content AND new_lock are both omitted. Write when content is provided.
 - (R4) Block locked         + `secret` + `new_lock` → rotate lock (with optional content in same call).
 - (R5) Block locked         + `secret` + `new_lock` null/`""` → RELINQUISH (landed 2026-07-11; [proposal](proposals/2026-07-11-lock-relinquish.md)): the lock entry is deleted; the position returns to its **pre-lock** state — open, byte-identical to never-having-been-locked (a lock IS nothing but a hash entry; no tombstone; the correct asymmetry stands — claiming is free, relinquishing needs proof). Ordinary blocks only; `sed:`/`grain:` refuse with 405 (registration immutability). Relinquishing an open position is an idempotent no-op — the old footgun (`new_lock:""` STORED the un-provable `hash("")` and bricked the position forever) is disarmed by construction: the input that bricked is now the ensure-open act. Historical bricks are data residue; `pscale-beach scripts/sweep-empty-locks.js` removes them once per Upstash (happyseaurchin swept 2026-07-11 — `roles` and `probe-open` recovered).
 
-`new_lock` locks ordinary blocks — and a sed: collective's root: founding a collective is a `bsp()` write with `new_lock` (content={_:conventions}, locked at `_` under the sed: salt). Per-registrant sed: positions and grain: sides are locked atomically by `pscale_register` and `pscale_grain_reach` instead — those allocate position-and-lock together because they have to.
+`new_lock` locks ordinary blocks — and a sed: collective's root: founding a collective is a `bsp()` write with `new_lock` (content={_:conventions}, locked at `_` under the sed: salt). Per-registrant sed: positions and grain: sides are locked atomically by `pscale_settle` and `pscale_grain_reach` instead — those allocate position-and-lock together because they have to.
 
 There is no mode parameter. There are no separate read and write functions. There is no separate lock_block function. One function, two coordinates, one optional payload, optional lock change. Everything else is sugar that doesn't belong in the surface.
 
@@ -142,7 +150,7 @@ CORSAIR mirror at `/Volumes/CORSAIR/pscale/sunstone & whetstone/` is kept in syn
 
 Four with atomic substrate state machines bsp() alone cannot subsume, plus two envelope-bundling primitives — `pscale_pool_engage` (2026-05-26) and `pscale_networking` (2026-07-11) — added because the envelope discipline is operational and conventions could not carry it.
 
-1. `pscale_register` — server-assigned position in a sed: substrate (atomic next-position allocation, passphrase hash storage). The one sed: state machine. Founding a collective is NOT a primitive — see the dissolution note below.
+1. `pscale_settle` — server-assigned position in a sed: substrate (atomic next-position allocation, passphrase hash storage). The one sed: state machine. Founding a collective is NOT a primitive — see the dissolution note below.
 2. `pscale_grain_reach` — bilateral commitment via the symmetric reach/accept state machine across pair_id
 3. `pscale_key_publish` — Argon2id key derivation, public key publication for gray encryption
 4. `pscale_verify_rider` — deterministic arithmetic check on ecosquared riders (sha256 chain, credit conservation, SQ recompute)
@@ -161,7 +169,7 @@ That's the whole surface: two functions (`bsp()` and the n-ary `bsp-floor()`) pl
 
     bsp(agent_id="sed:<collective>", content={_: "<conventions>"}, new_lock="<admin>")
 
-— which the beach handles as a standard write to a sed:-named block, locking the root `_` under the sed: salt (verified against `handleStandardWrite` on the deployed beach `beach.happyseaurchin.com` HEAD `c6b762a` and the canonical `pscale-beach` package). The old tool claimed to do this but was **silently dead**: the beach has no `create_collective` action, so its body fell through to a standard write carrying neither `content` nor `new_lock` — it wrote nothing and returned `ok`. `pscale_register` (the one genuine sed: state machine) stays. The surface drops one tool, from nine (after `bsp-floor` landed in #61) to eight. This is "grow, don't conflate" applied to the sed: surface: register is the real primitive; founding dissolves into the function that already does locked writes, rather than being merged with register into one overloaded tool. Canonical founding pattern documented at `block-conventions:7.2`.
+— which the beach handles as a standard write to a sed:-named block, locking the root `_` under the sed: salt (verified against `handleStandardWrite` on the deployed beach `beach.happyseaurchin.com` HEAD `c6b762a` and the canonical `pscale-beach` package). The old tool claimed to do this but was **silently dead**: the beach has no `create_collective` action, so its body fell through to a standard write carrying neither `content` nor `new_lock` — it wrote nothing and returned `ok`. `pscale_settle` (the one genuine sed: state machine) stays. The surface drops one tool, from nine (after `bsp-floor` landed in #61) to eight. This is "grow, don't conflate" applied to the sed: surface: register is the real primitive; founding dissolves into the function that already does locked writes, rather than being merged with register into one overloaded tool. Canonical founding pattern documented at `block-conventions:7.2`.
 
 (An earlier pass in this work explored merging the two into one polymorphic `pscale_sed_engage` — rejected as mild conflation, inconsistent with the `bsp`/`bsp-floor` sibling discipline. The discovery that founding is provably a `bsp()` write is what made dissolution the cleaner move.)
 
@@ -240,7 +248,7 @@ src/
   bsp-test.json       — 72-test acceptance battery (eight batteries at digits 1-8) bundled from `bsp-test-materials/`; the contract any conforming bsp() implementation must pass. Walk `bsp(agent_id='pscale', block='bsp-test')` to read the suite.
   tools/
     bsp.ts            — bsp() handler (the one function — handles content + lock changes)
-    collective.ts     — pscale_register (founding a collective is a bsp() write, not a tool)
+    collective.ts     — pscale_settle (founding a collective is a bsp() write, not a tool)
     grain.ts          — pscale_grain_reach
     keys.ts           — pscale_key_publish
     verify.ts         — pscale_verify_rider
@@ -337,7 +345,7 @@ Pscale is the substrate, not a level. Every agent that uses bsp-mcp operates on 
 | Level | Activity | Substrate primitive |
 |---|---|---|
 | 1 — Signal | Leave marks on beaches; publish passport; declare keys | `bsp()` write at the beach block |
-| 2 — Commitment | Form a grain (bilateral private) OR register in a sed: collective (multilateral public) | `pscale_grain_reach` / `pscale_register` |
+| 2 — Commitment | Form a grain (bilateral private) OR register in a sed: collective (multilateral public) | `pscale_grain_reach` / `pscale_settle` |
 | 3 — Semantic networks | Send/route/verify content via SAND riders; semantic networks form contingently from usage | `bsp()` + `pscale_verify_rider` |
 | 4 — Mutual objectives | Coordinate via pools and role-collectives (Onen RPG / Thornkeep is the prototype) | `bsp()` + GRIT convention |
 | 5 — Shared context | MAGI (agents) + xstream (humans) operate concurrently on shared pscale blocks | future primitives |
@@ -380,7 +388,7 @@ Spec at `docs/beach-crab-ladder.md`. Beach-crabs USE bsp-mcp; they aren't bsp-mc
 
 The gatekeeper is a **substrate-wide canonical role-shell** sentinel-bundled at `(pscale, 'gatekeeper')`. The hermitcrab pattern: cognition fluid (any LLM with a usable API key inhabits the shell), structure persistent (the block). The shell mediates the L1→L2 transition — admitting a fresh agent from Signal-level (marks/vapour) into Commitment-level (grain/sed:) — without growing the function surface.
 
-**Honored convention, not primitive enforcement.** `pscale_grain_reach` and `pscale_register` stay permissive; the gatekeeper is the shape clients honour. This was a deliberate fork (see xstream-play `docs/DESIGN-CHANNELS.md` § "The architectural choice — convention, not primitive"): gating hard at L2 would substitute for L3+ trust-building rather than complement it. Layered defence at L3 (SAND riders), L4 (pool work), L5 (presence-as-evidence) is where trust actually accrues.
+**Honored convention, not primitive enforcement.** `pscale_grain_reach` and `pscale_settle` stay permissive; the gatekeeper is the shape clients honour. This was a deliberate fork (see xstream-play `docs/DESIGN-CHANNELS.md` § "The architectural choice — convention, not primitive"): gating hard at L2 would substitute for L3+ trust-building rather than complement it. Layered defence at L3 (SAND riders), L4 (pool work), L5 (presence-as-evidence) is where trust actually accrues.
 
 Fallback chain (used by xstream and any admission-aware client):
 1. `(beach_url, 'gatekeeper')` — per-beach override
@@ -427,7 +435,7 @@ The `state.json` schema preserves field names from the pscale-mcp dashboard (`ev
 4. **Inbox elimination in grain_reach** — DONE 2 May 2026 (Stage 6, Path 2 sub-option b dual-write per `proposals/2026-04-30-stage-6-inbox-replacement.md`). In-block reach hint at `grain:{pid}/8._reach_pending` is now the canonical notification path. `sand_inbox` insert kept transiently for pscale-mcp-server backward compatibility.
 5. **Dashboard rewrite** for v2 framing labels (currently uses pscale-mcp era node descriptions). PENDING (low priority).
 6. **Sibling-block handler at happyseaurchin** — IMPLEMENTATION DONE 2 May 2026 (happyseaurchin commit `433d943`, pending Vercel deploy). Multi-block dispatch via `?block=<name>`, site-hosted sed: substrate (atomic position allocation, per-position locks), site-hosted grain: substrate (symmetric reach/accept, per-side locks). Lazy migration of legacy single-key beach. Spec at `docs/happyseaurchin-sibling-blocks-implementation.md`.
-7. **`host` parameter on `pscale_register`/`pscale_grain_reach`** — DONE 2 May 2026. When `host` is set to an http(s):// URL, the primitive POSTs the action-shaped body (`{action: "register"|"reach", ...}`) to that origin's `/.well-known/pscale-beach`. Reads happen via the existing WellKnownAdapter. Goes live end-to-end once Stage 6's Vercel deploy lands.
+7. **`host` parameter on `pscale_settle`/`pscale_grain_reach`** — DONE 2 May 2026. When `host` is set to an http(s):// URL, the primitive POSTs the action-shaped body (`{action: "register"|"reach", ...}`) to that origin's `/.well-known/pscale-beach`. Reads happen via the existing WellKnownAdapter. Goes live end-to-end once Stage 6's Vercel deploy lands.
 8. **Beach-as-surface migration** — DONE 8 May 2026 across three coordinated PRs ([bsp-mcp-server#17](https://github.com/pscale-commons/bsp-mcp-server/pull/17), [happyseaurchin-home#8](https://github.com/happyseaurchin/happyseaurchin-home/pull/8), [xstream-bsp#1](https://github.com/happyseaurchin/xstream-bsp/pull/1)). The "beach" block with reserved positions was a Supabase-era artifact that turned the live `beach.json` into a dumping ground. After the migration: the URL is the surface; named sibling blocks (`marks`, `passport:<handle>`, `pools`, `liquid`, `tide`, `settings`, `conventions`, etc.) are the only things that exist; `?block=` is required on every read/write; GET without `?block=` returns a derived index; happyseaurchin's handler enforces a shape gate (rejects `_word` keys + JSON-stringified sub-objects); xstream-bsp's writes were migrated from `beach:1/2/5/7/8/9` to dedicated sibling blocks. See "Beach-as-surface migration" below for the detailed handover.
 
 **Deferred indefinitely**: bsp-mcp serving its own `/.well-known/pscale-beach` (commons-as-federation-peer). The commons stays as direct substrate access via bsp-mcp's existing primitives. beach.happyseaurchin.com is the federation testcase — the commons doesn't need to wrap itself.

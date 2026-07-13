@@ -32,7 +32,7 @@ import { postActionToBeach, isFederatedOwner, DEFAULT_BEACH } from '../db.js';
 
 // ── Schema ──
 
-export const registerParamsSchema = {
+export const settleParamsSchema = {
   collective: z.string().describe("Name of the collective to join. Becomes the block name 'sed:<collective>' at the beach."),
   declaration: z.string().describe("Who you are and what you offer/need — becomes the underscore at your position"),
   shell_ref: z.string().optional().describe("URL or block reference to your sovereign shell (optional). Stored at the hidden directory of your position."),
@@ -42,7 +42,7 @@ export const registerParamsSchema = {
 
 // ── Handler ──
 
-export async function handleRegister(params: {
+export async function handleSettle(params: {
   collective: string;
   declaration: string;
   shell_ref?: string;
@@ -75,7 +75,7 @@ export async function handleRegister(params: {
   return {
     content: [{
       type: 'text',
-      text: `Registered at ${result.address} on ${beach}.
+      text: `Settled at ${result.address} on ${beach}.
 
 Site-hosted sed: collective. Position assigned by ${beach}'s handler in landing order. Your position is write-locked with your passphrase. Subsequent writes via bsp(agent_id="${beach}", block="${blockName}", spindle="${result.position}", ..., secret=...) require the same passphrase.
 
