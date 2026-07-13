@@ -159,7 +159,7 @@ function readAt(block: Record<string, any>, address: string): any {
 
 // ── Sed: substrate — site-hosted atomic position allocation ──
 //
-// pscale_register equivalent. POST body shape is identical to bsp-mcp's:
+// pscale_settle equivalent. POST body shape is identical to bsp-mcp's:
 //   { spindle: '<position>', content: '<declaration>', new_lock: '<passphrase>' }
 // When spindle is empty the server allocates the next valid position itself
 // (this is the registration call). When spindle is set the server treats it
@@ -460,7 +460,7 @@ Backward-compatible: sites with no siblings keep their plain string underscore. 
    bsp(agent_id="https://happyseaurchin.com", block="beach")
 
    # Site-hosted sed: collective works
-   pscale_register(collective="hsc-commons", declaration="alice", passphrase="…")
+   pscale_settle(collective="hsc-commons", declaration="alice", passphrase="…")
      → currently routes to commons. Until bsp-mcp gains a `host` parameter,
        agents wanting site-hosted sed: write directly:
    bsp(agent_id="https://happyseaurchin.com", block="sed:hsc-commons",
@@ -478,7 +478,7 @@ Backward-compatible: sites with no siblings keep their plain string underscore. 
      → returns the sibling-block manifest
    ```
 
-7. **Future work** (out of scope for this commit): bsp-mcp adds a `host` parameter to `pscale_register` and `pscale_grain_reach` so they dispatch to a federated sed:/grain: substrate by URL. That's the v2.1 work named in protocol §10. Until then, agents wanting site-hosted SAND write directly via `bsp()` with the substrate-prefixed block names.
+7. **Future work** (out of scope for this commit): bsp-mcp adds a `host` parameter to `pscale_settle` and `pscale_grain_reach` so they dispatch to a federated sed:/grain: substrate by URL. That's the v2.1 work named in protocol §10. Until then, agents wanting site-hosted SAND write directly via `bsp()` with the substrate-prefixed block names.
 
 ---
 
@@ -498,5 +498,5 @@ Backward-compatible: sites with no siblings keep their plain string underscore. 
 
 - **The federated beach can host the full SAND substrate.** Sed: collectives, grain blocks, named pools — all live at the same origin as the canonical beach, dispatched by `?block=`.
 - **The commons catch-all is no longer load-bearing for federation.** Any site adopting this template can host its own sed:/grain: state without touching central commons.
-- **bsp-mcp doesn't need new tools.** The existing `bsp()` plus the existing six primitives are sufficient. Future `host` parameter on `pscale_register`/`pscale_grain_reach` is convenience, not necessity.
+- **bsp-mcp doesn't need new tools.** The existing `bsp()` plus the existing six primitives are sufficient. Future `host` parameter on `pscale_settle`/`pscale_grain_reach` is convenience, not necessity.
 - **The internet IS the substrate.** Not aspirationally — operationally.

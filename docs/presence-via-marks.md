@@ -131,7 +131,7 @@ This convention covers presence — "who is at this address right now". It does 
 - **Long-lived agent identity** — handled by passport blocks.
 - **Cold contact** — handled by structured marks at the agent's watched-beaches without timestamp constraint.
 - **Bilateral commitment** — handled by `pscale_grain_reach`.
-- **Multilateral role-taking** — handled by `pscale_register` in a `sed:` collective.
+- **Multilateral role-taking** — handled by `pscale_settle` in a `sed:` collective.
 - **Pool contributions** — separate concern; pools are blocks, contributions are writes, not presence.
 - **Substantive marks** — they live in the `marks` block (block-conventions branch 9), not here.
 

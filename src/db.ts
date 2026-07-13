@@ -417,7 +417,7 @@ export async function probeFederation(ownerId: string): Promise<'federated' | 'a
 
 /**
  * POST an action-shaped body to a federated beach endpoint. Used by
- * substrate-stateful primitives (pscale_register, pscale_grain_reach) to
+ * substrate-stateful primitives (pscale_settle, pscale_grain_reach) to
  * dispatch atomic state transitions to a site-hosted sed:/grain: substrate.
  * The body shape carries an `action` discriminator; the receiver dispatches
  * on it.

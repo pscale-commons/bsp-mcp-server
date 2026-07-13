@@ -29,7 +29,7 @@ The "agent" framing in the parameter name is anthropocentric and is a leftover f
 | agent_id form | Example | Storage backend | Lifecycle hook |
 |---|---|---|---|
 | Bare name | `"weft"`, `"happyseaurchin"`, `"keel"` | Supabase `pscale_blocks` table | Owner directory; first write creates the namespace |
-| `sed:<collective>` | `"sed:commons"`, `"sed:hsu-commons"` | Supabase, sedimentary substrate | Atomic position allocation via `pscale_register`; positions are immutable post-registration |
+| `sed:<collective>` | `"sed:commons"`, `"sed:hsu-commons"` | Supabase, sedimentary substrate | Atomic position allocation via `pscale_settle`; positions are immutable post-registration |
 | `grain:<pair_id>` | `"grain:343bbac1d99d903c"` | Supabase, grain substrate | Bilateral via `pscale_grain_reach`; pair_id derived from sorted agent_ids |
 | URL (`https?://…`) | `"https://beach.happyseaurchin.com"` | Federated beach via `<origin>/.well-known/pscale-beach` | Site-managed; substrate routes HTTP GET/POST |
 | `"pscale"` (sentinel) | `"pscale"` | Server-bundled JSON in memory | Read-only; only `block="sunstone"` and `block="whetstone"` resolve today |
@@ -50,7 +50,7 @@ Three invariants don't move. They are why bsp() can serve every namespace form w
 
 **JSON is JSON above the substrate boundary.** Whatever the storage adapter returns, bsp() walks it the same way. A grain block's JSON is structurally identical to a beach block's JSON is structurally identical to a personal passport — all are nested objects with `_` carrying the underscore content and digits 1–9 carrying transversal positions. There is no type system. There is no "kind" field. The walker is geometry-only.
 
-**Substrate prefix encodes lifecycle, not geometry.** The substrates differ in *how* they answer `loadBlock` — `sed:` allocates positions atomically, `grain:` derives pair_ids bilaterally, URL fetches over HTTP, the sentinel returns from memory. But the *shape* of what they return is uniform. Lifecycle is delegated to the four surviving substrate-stateful primitives (`pscale_register`, `pscale_grain_reach`, `pscale_key_publish`, `pscale_verify_rider`); founding a collective is a plain `bsp()` write, not a primitive; bsp() never has to know about the rest.
+**Substrate prefix encodes lifecycle, not geometry.** The substrates differ in *how* they answer `loadBlock` — `sed:` allocates positions atomically, `grain:` derives pair_ids bilaterally, URL fetches over HTTP, the sentinel returns from memory. But the *shape* of what they return is uniform. Lifecycle is delegated to the four surviving substrate-stateful primitives (`pscale_settle`, `pscale_grain_reach`, `pscale_key_publish`, `pscale_verify_rider`); founding a collective is a plain `bsp()` write, not a primitive; bsp() never has to know about the rest.
 
 **Authority is orthogonal to addressing.** The `secret` parameter proves write authority at the position addressed by (agent_id, block, spindle). The same secret-discipline applies whether you're writing your own passport or your federated beach's mark wall — what differs is which lock the substrate checks. agent_id says *where*; secret says *you're authorised*. They never overlap.
 

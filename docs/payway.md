@@ -92,9 +92,9 @@ The verifier walks the issuer's side children (`bsp(agent_id="grain:<pair_id>", 
 
 ### 2.3 The registration ritual extension
 
-Today, registration in a `sed:` collective is a write to the next available position in the collective block, performed by the registering agent via `pscale_register`. This stays unchanged for open collectives. For payway-gated collectives the ritual gains two steps.
+Today, registration in a `sed:` collective is a write to the next available position in the collective block, performed by the registering agent via `pscale_settle`. This stays unchanged for open collectives. For payway-gated collectives the ritual gains two steps.
 
-**Step A (registrant):** the registering agent performs registration as a two-write sequence — first `pscale_register` with a self-description as the `declaration` string, then a follow-up `bsp()` write that places the `ticket_grain` reference at digit 1 of the position. Two writes because `pscale_register.declaration` accepts a string only; the structured `ticket_grain` reference belongs as a sub-fact at the position's digit 1, subordinate to the self-describing underscore. This matches the same sunstone branch 1 pattern used for revocations on the grain side: meaning at underscore, sub-structure at digits.
+**Step A (registrant):** the registering agent performs registration as a two-write sequence — first `pscale_settle` with a self-description as the `declaration` string, then a follow-up `bsp()` write that places the `ticket_grain` reference at digit 1 of the position. Two writes because `pscale_settle.declaration` accepts a string only; the structured `ticket_grain` reference belongs as a sub-fact at the position's digit 1, subordinate to the self-describing underscore. This matches the same sunstone branch 1 pattern used for revocations on the grain side: meaning at underscore, sub-structure at digits.
 
 Conceptually the position ends up shaped like:
 
@@ -107,7 +107,7 @@ sed:<collective>:<position>:
 Realised as two MCP calls:
 
 ```
-pscale_register(collective="<collective>", declaration="<self-description>", passphrase="<p>")
+pscale_settle(collective="<collective>", declaration="<self-description>", passphrase="<p>")
   → server allocates <position> (floor-2+, e.g. 11), writes the underscore, locks the position.
 
 bsp(agent_id="sed:<collective>", block="<collective>",
@@ -121,7 +121,7 @@ bsp(agent_id="sed:<collective>", block="<collective>",
 
 The `<issuer-side>` value is whichever of side 1 or 2 the issuer occupies in the lex-ordered pair — the buyer learns it from the `grain_address_mine` field that `pscale_grain_reach` returns to the issuer, communicated back to the buyer in the issuer's purchase confirmation. The reference itself is per [`protocol-block-references.md`](./protocol-block-references.md) §1 grain form (three colon-separated parts, no leading star).
 
-**Step B (verifier):** the verifier daemon (default: the issuer agent at 9.1, since 9.5 defaults to 9.1) observes new registrations, resolves `<position>.1` to obtain the `ticket_grain` reference, walks the referenced grain side (underscore for the `[ticket ...]` envelope; digit children for any `[ticket-revoked]`), and writes a confirmation envelope **into a public audit log on the verifier's own beach** — NOT onto the registration position. The audit log is a `sed:` collective named `<verifier-bare-id>-audit-<yyyy-mm>` (one collective per calendar month so blocks don't grow unbounded); each decision is a `pscale_register` whose declaration is the verifier envelope itself.
+**Step B (verifier):** the verifier daemon (default: the issuer agent at 9.1, since 9.5 defaults to 9.1) observes new registrations, resolves `<position>.1` to obtain the `ticket_grain` reference, walks the referenced grain side (underscore for the `[ticket ...]` envelope; digit children for any `[ticket-revoked]`), and writes a confirmation envelope **into a public audit log on the verifier's own beach** — NOT onto the registration position. The audit log is a `sed:` collective named `<verifier-bare-id>-audit-<yyyy-mm>` (one collective per calendar month so blocks don't grow unbounded); each decision is a `pscale_settle` whose declaration is the verifier envelope itself.
 
 ```
 [ticket-verified by=agent:<verifier-id> at=<iso8601> registration=<sed:collective:position> grain=<grain:pair_id:side>]
@@ -141,7 +141,7 @@ The `registration=` and `grain=` extension fields enable correlation: any reader
 
 The synthesis daemon (and any face-authorised reader) MUST treat unconfirmed, rejected, or expired registrations as **inert** — they do not contribute liquid, do not appear in disc reads scoped by face, and do not gain write authority. To determine status for a given registration, readers walk the verifier's audit collective(s) for the relevant month(s) and match on `registration=`. The substrate enforcement is not "you cannot register" but "your registration is not honoured by the daemon contract until a `[ticket-verified]` envelope referencing it appears in the verifier's audit log."
 
-This two-step ritual lives entirely in `bsp()` writes (and `pscale_register` calls into the audit collective). No new MCP primitive.
+This two-step ritual lives entirely in `bsp()` writes (and `pscale_settle` calls into the audit collective). No new MCP primitive.
 
 ### 2.4 Verification rules (canonical)
 

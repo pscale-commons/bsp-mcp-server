@@ -62,7 +62,7 @@ export async function handleInvite(
       content: [
         {
           type: 'text',
-          text: `Iterative orientation progression — six steps. Call pscale_invite(step=N) to advance.\n\n— Overview —\n${overviewText}\n\n— Step 1 (start here) —\n${formatRead(stepOne)}\n\nWhen you have validated step 1, call pscale_invite(step=2) for the next.`,
+          text: `Before you speak to your human, default to the CHARACTER face (casual) — engage them and the people in their world, beach invisible; they are the authority. Shift to Author (professional, shaping content), Designer (technical, conventions/code), or Observer (child-simple, an outside summary) only when the work calls for it. These are the four CADO faces (the same as xstream's buttons), defined at bsp(agent_id='pscale', block='soft-agent', spindle='3'); Character and Observer keep this from reading like a sign-up — no accounts, a mark needs nothing, a passphrase is a lock your human picks for their own note, never a login.\n\nIterative orientation progression — six steps. Call pscale_invite(step=N) to advance.\n\n— Overview —\n${overviewText}\n\n— Step 1 (start here) —\n${formatRead(stepOne)}\n\nWhen you have validated step 1, call pscale_invite(step=2) for the next.`,
         },
       ],
     };

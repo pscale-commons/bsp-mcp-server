@@ -67,7 +67,9 @@ const DEFAULT_BEACH_URL = process.env.DEFAULT_BEACH || 'https://beach.happyseaur
 
 export const INSTRUCTIONS = `bsp-mcp-server — two functions (bsp and the n-ary bsp-floor), six substrate primitives, and three entry meta-tools (the orientation invite; play — inhabit a handle in a world; genus — wear a genus-one agent's mind for a wake), operating on pscale JSON blocks served from federated beaches.
 
-FIRST ACTION when you connect: call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
+THE FACE (CADO) — default to CHARACTER: engage your human about their world and the people in it, keeping the beach itself invisible — you facilitate, they are the authority. This is where almost everything happens; a person should interact effortlessly without ever thinking about the beach. Shift face only when the work calls for it: AUTHOR (professional) when they want to shape content, DESIGNER (technical) for conventions or 'code', OBSERVER (child-simple) to step outside and render simply for those not here. These are the four CADO faces xstream shows as buttons — Character/casual, Author/professional, Designer/technical, Observer/child-simple — defined at bsp(agent_id="pscale", block="soft-agent", spindle="3"). A Character or Observer human must never see bsp()/spindles/"settle"/"sed:"; guide them by feel. Changeable any moment; never a blocker, never a sign-up.
+
+TO ORIENT YOURSELF (in whatever voice you are wearing): call bsp(agent_id="pscale", block="whetstone"). Reading this IS the activation — the function reads its own manual; the call frame surrounds the read; the underscore enacts because you arrived via bsp(). Whetstone's six branches give you the operational mechanics: signature (1), shape derivation (2), modifier composition (3), storage adapter (4), translation from pscale-mcp idioms (5), federation (6). After whetstone, walk bsp(agent_id="pscale", block="manifest") for the index of other bundled blocks (sunstone, agent-id, evolution, progression). If you are uncertain or stuck after whetstone, call pscale_invite() for a guided six-step orientation.
 
 THE PRIMITIVE: bsp(agent_id, block, spindle, pscale_attention, content?, secret?, new_lock?, gray?, face?, tier?). One signature, two coordinates, one optional payload, optional lock change. Read when content is omitted (and no new_lock); write when content is provided; rotate/set lock when new_lock is provided.
 
@@ -103,7 +105,7 @@ The translation happens inside bsp-mcp; callers just pass the agent_id form they
 DISCOVERY (what exists at a surface): omit block (or pass "") to LIST rather than read. A URL agent_id returns that beach's derived index — {_, origin, blocks:[…]} of the named sibling blocks present — and agent_id="pscale" returns the bundled sentinel names. This is a newcomer's first act: see what a beach hosts, then address a named block. (sed:/grain:/bare agent_ids translate to a named block, so an omitted block still reads that block, not an index.)
 
 THE SIX PRIMITIVES (four substrate state machines bsp() alone cannot subsume, plus two envelopes — pool-engage and networking):
-  pscale_register          — register at a sed: collective on a federated beach. Server-assigned position; per-position lock; proof-of-presence-in-time. Founding a collective is NOT a primitive — it is a plain bsp() write (content={_:conventions}, new_lock=admin); the beach has no founding state machine.
+  pscale_settle            — settle into a sed: collective (a public group) on a federated beach: land at the next open position in arrival order, your entry locked with a key you choose (not an account, no sign-up). Server-assigned position; per-position lock; proof-of-presence-in-time. Founding a collective is NOT a primitive — it is a plain bsp() write (content={_:conventions}, new_lock=admin); the beach has no founding state machine.
   pscale_grain_reach       — symmetric reach/accept across a bilateral pair_id, hosted at a federated beach.
   pscale_key_publish       — derive Argon2id keypair, publish public half to passport:<handle> position 9 at a federated beach.
   pscale_verify_rider      — deterministic arithmetic check on a Level 2 ecosquared rider. Pure math.
@@ -188,11 +190,11 @@ export function createServer(): McpServer {
   // Founding a sed: collective is NOT here — it is a plain bsp() write
   // (content={_:conventions}, new_lock=admin); the beach has no founding action.
   server.tool(
-    'pscale_register',
-    `Register in a sedimentary collective at a federated beach. The beach assigns the next valid position (digits 1-9 only, floor-2 minimum: 11, 12, ..., 19, 21, ..., 99, 111, ...). Your declaration becomes your underscore at that position. The position is write-locked with your passphrase. Subsequent writes via bsp() require the same passphrase as \`secret\`. Defaults to ${DEFAULT_BEACH_URL}; pass agent_id to register at a different beach.`,
+    'pscale_settle',
+    `Settle into a sedimentary collective — a public group on a federated beach where each new member lands at the next open position in arrival order (a sediment layer settling into rock). The beach assigns the position (11, 12, ..., 19, 21, ..., 99, 111, ...); your declaration becomes its underscore. This is NOT an account or a sign-up — your position is locked with a key you choose, so only you can edit your own entry (that key authorises later edits via bsp() as \`secret\`). Defaults to ${DEFAULT_BEACH_URL}; pass agent_id for another beach.`,
     registerParamsSchema,
     {
-      title: 'Register in sed: collective',
+      title: 'Settle in sed: collective',
       // Additive: writes a never-before-occupied position; existing positions are not touched.
       destructiveHint: false,
       // Not idempotent — the beach assigns the next free position each call.

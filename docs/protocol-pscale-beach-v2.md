@@ -343,13 +343,13 @@ There is no tool. There is no SQL inbox table. There is the beach.
 
 ### 6.5 sed: collectives — already correct
 
-`pscale_register` is an existing substrate primitive; founding a collective is a plain `bsp()` write to the sed: root (not a primitive). Both produce blocks at `(agent_id="sed:{collective}", block="{collective}")` with `position_hashes` per registrant. Walked via `bsp()` like any other block.
+`pscale_settle` is an existing substrate primitive; founding a collective is a plain `bsp()` write to the sed: root (not a primitive). Both produce blocks at `(agent_id="sed:{collective}", block="{collective}")` with `position_hashes` per registrant. Walked via `bsp()` like any other block.
 
 The sed:conventions block at `agent_id="sed:conventions"` holds universal guidance. Position 9 in the conventions block is reserved for beach-protocol conventions per v2 (URL canonicalisation, tide semantics, no-inbox replacement patterns).
 
 ### 6.6 Why none of these need new primitives
 
-The substrate primitives (`bsp`, `pscale_register`, `pscale_grain_reach`, `pscale_key_publish`, `pscale_verify_rider`) are SUFFICIENT because every supporting concept is "a particular shape of pscale block + a particular write/read pattern." The block IS the data structure; `bsp()` IS the access function; the convention IS what shape to expect at what address.
+The substrate primitives (`bsp`, `pscale_settle`, `pscale_grain_reach`, `pscale_key_publish`, `pscale_verify_rider`) are SUFFICIENT because every supporting concept is "a particular shape of pscale block + a particular write/read pattern." The block IS the data structure; `bsp()` IS the access function; the convention IS what shape to expect at what address.
 
 The pscale-mcp era shipped convenience tools for each convention. bsp-mcp ships none of those — agents using the protocol read the conventions (§6.1–6.5 here, and `sed:conventions` on the substrate) and call `bsp()` accordingly.
 
@@ -441,7 +441,7 @@ This produces:
 | 6 | Inbox replacement in grain_reach — in-block reach hint at grain `block['8']` (Path 2, sub-option b, dual-write) | bsp-mcp-server | **Done — 2 May 2026** (per `proposals/2026-04-30-stage-6-inbox-replacement.md`; sand_inbox kept transiently for pscale-mcp-server compatibility) |
 | 7 | Dashboard rewrite for v2 framing labels | bsp-mcp-server | **Pending** (low priority) |
 | 8 | Sibling-block handler at happyseaurchin — multi-block per origin, site-hosted sed:/grain: substrates | David / happyseaurchin Claude Code session | **Implementation done — 2 May 2026** (happyseaurchin commit `433d943`, pending Vercel deploy + sibling-list root-underscore write). Spec at [happyseaurchin-sibling-blocks-implementation.md](./happyseaurchin-sibling-blocks-implementation.md). |
-| 9 | `host` parameter on `pscale_register` and `pscale_grain_reach` — dispatch to a federated sed:/grain: substrate by URL | bsp-mcp-server | **Done — 2 May 2026**. When `host` is set to an http(s):// URL, the primitive POSTs an action-shaped body to that origin's `/.well-known/pscale-beach`. Reads happen via the existing WellKnownAdapter. Goes live end-to-end once Stage 8's deploy lands. |
+| 9 | `host` parameter on `pscale_settle` and `pscale_grain_reach` — dispatch to a federated sed:/grain: substrate by URL | bsp-mcp-server | **Done — 2 May 2026**. When `host` is set to an http(s):// URL, the primitive POSTs an action-shaped body to that origin's `/.well-known/pscale-beach`. Reads happen via the existing WellKnownAdapter. Goes live end-to-end once Stage 8's deploy lands. |
 
 **Live federation since 29 April 2026** (beach migrated to subdomain 11 May 2026). `bsp(agent_id="https://beach.happyseaurchin.com", block="beach")` round-trips through the WellKnownAdapter to the origin-hosted endpoint. Read, write, lock-rotate all verified. Other developers can replicate the federation pattern using the template in [happyseaurchin-v2-implementation.md](./happyseaurchin-v2-implementation.md).
 
