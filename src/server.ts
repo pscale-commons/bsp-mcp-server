@@ -30,6 +30,7 @@ import { handlePoolEngage, poolEngageParamsSchema } from './tools/pool.js';
 import { handlePlay, playParamsSchema } from './tools/play.js';
 import { handleGenus, genusParamsSchema } from './tools/genus.js';
 
+import { groundResult } from './temporal.js';
 import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPayway } from './resources/payway.js';
 import { SENTINELS } from './sentinels.js';
@@ -58,6 +59,32 @@ function installErrorWrapper(server: McpServer): void {
         };
       }
     };
+    args[args.length - 1] = wrapped;
+    return (orig as any)(...args);
+  };
+}
+
+/**
+ * Ground every tool result in time (proposal 2026-07-15-temporal-coordinate §5).
+ * Two things, one seam: each ISO timestamp in the rendered text gains its age as
+ * a pscale rung — `2026-07-14T09:12Z (+2 — about a day ago)` — and the response
+ * ends with the now-stamp.
+ *
+ * Here rather than in each handler because grounding is a property of SERVING a
+ * response, not of any one tool — the same reason it is not in bsp.ts (ported
+ * canon) or in any fmt*. One wrapper covers every tool that exists and every
+ * tool added later.
+ *
+ * Install order matters: this runs INSIDE the error wrapper, so a throwing
+ * handler still surfaces its plain error, ungrounded (an error needs no clock).
+ */
+function installTemporalGrounding(server: McpServer): void {
+  const orig = server.tool.bind(server);
+  (server as any).tool = (...args: any[]) => {
+    const handler = args[args.length - 1];
+    if (typeof handler !== 'function') return (orig as any)(...args);
+    const wrapped = async (...handlerArgs: any[]) =>
+      groundResult(await handler(...handlerArgs));
     args[args.length - 1] = wrapped;
     return (orig as any)(...args);
   };
@@ -149,6 +176,7 @@ export function createServer(): McpServer {
   );
 
   installErrorWrapper(server);
+  installTemporalGrounding(server);
 
   // ── The unified function ──
   server.tool(
