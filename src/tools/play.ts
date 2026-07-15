@@ -29,6 +29,8 @@
 import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
 import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore } from './pool.js';
+import { readAt } from '../bsp.js';
+import { isLocationAddress, contains, pscaleOf, STANDARD_SPINE } from '../grain-address.js';
 
 /**
  * Resolve a world to its beach origin. A full URL is used as-is; a bare world
@@ -57,11 +59,15 @@ async function beachIndex(origin: string): Promise<string[]> {
   }
 }
 
-/** The spatial address in a passport's position 3 ("…spatial:<world>:<addr>") — the character's location. */
+/** The spatial address in a passport's position 3 ("…spatial:<world>:<addr>") — the
+ *  character's location, at ANY grain (proposal 2026-07-15-pscale-of-agency): a full
+ *  single-decimal pscale address. "111" the room, "3200" the town (trailing zeros are
+ *  floor padding — a +2 stance), "111.1" the hearth (−1). The old flat (\d+) regex was
+ *  the explicit design debt of 2026-07-01 ("flat pscale-0 rooms remain for now"). */
 function passportLocation(passportBlock: any): string | null {
   const p3 = passportBlock?.['3'];
   if (typeof p3 !== 'string') return null;
-  const m = p3.match(/spatial:[\w-]+:(\d+)/);
+  const m = p3.match(/spatial:[\w-]+:(\d+(?:\.\d+)?)/);
   return m ? m[1] : null;
 }
 /** A name-free observable appearance from a passport's position 3 (the posture before the location
@@ -74,21 +80,23 @@ function passportAppearance(passportBlock: any, handle: string): string {
   }
   return s || 'a figure here';
 }
-/** Co-presence from the substrate: the OTHER handles whose passport:3 location equals the caller's.
- *  Position is already in passport:3 — this only surfaces what the substrate holds, so a player sees
- *  who is in the room on arrival, before anyone acts. By appearance; names stay unearned. */
-async function coPresentCast(
+/** Every OTHER placed handle at this world — handle, appearance, and the address it
+ *  stands at. Position is already in passport:3; this only surfaces what the substrate
+ *  holds. The caller partitions by address relation (same place / coarser stance
+ *  containing it / finer life beneath) — grain is address, so co-presence is address
+ *  arithmetic, not a special case. By appearance; names stay unearned. */
+async function castAtWorld(
   origin: string,
   handle: string,
-  myLoc: string | null,
-): Promise<{ handle: string; appearance: string }[]> {
-  if (!myLoc) return [];
-  const out: { handle: string; appearance: string }[] = [];
+): Promise<{ handle: string; appearance: string; addr: string }[]> {
+  const out: { handle: string; appearance: string; addr: string }[] = [];
   for (const pn of (await beachIndex(origin)).filter((b) => b.startsWith('passport:') && b !== `passport:${handle}`)) {
     const row = await loadBlock(origin, pn);
-    if (row?.block && passportLocation(row.block) === myLoc) {
+    const block = row?.block;
+    const addr = block ? passportLocation(block) : null;
+    if (block && addr) {
       const h = pn.slice('passport:'.length);
-      out.push({ handle: h, appearance: passportAppearance(row.block, h) });
+      out.push({ handle: h, appearance: passportAppearance(block, h), addr });
     }
   }
   return out;
@@ -204,7 +212,7 @@ export async function handlePlay(
       g.push('');
       g.push(`THE GATE — the lobby, before any character. Engage it keyless as yourself: pscale_pool_engage(pool_url="${resolved}", pool_name="gate", agent_id="${handle}") — the envelope returns who else is at the gate right now (the liquid mirror) and recent arrivals (the spool). Introduce your player in one line (contribution=), stage what you are here for (submit=), find companions. A party forms HERE. If the gate does not exist yet, pass purpose= with exactly this text to found it: ${JSON.stringify(gatePurpose)}`);
       g.push('');
-      g.push(`GENESIS — the activation, once per handle, when ready. Walk the creation passage below WITH YOUR PLAYER — the interview is theirs to answer, the passphrase theirs to choose (never echo it back once set). Complete the writes, then RE-ENTER with pscale_play(world="${resolved}", handle="${handle}") — THE ROOM FOLLOWS YOUR POSITION: re-entry hands you the room at your start place, its directive and live scene inlined. Never guess or invent a room name; the world provides the room at your address.`);
+      g.push(`GENESIS — the activation, once per handle, when ready. Walk the creation passage below WITH YOUR PLAYER — the interview is theirs to answer, the passphrase theirs to choose (never echo it back once set). Complete the writes, then RE-ENTER with pscale_play(world="${resolved}", handle="${handle}") — THE ROOM FOLLOWS YOUR POSITION: re-entry hands you the room at your start place, its directive and live scene inlined. Never guess or invent a room name; the world provides the room at your address. THE ADDRESS CARRIES ITS GRAIN — where the road drops you is also how fast you live: ${STANDARD_SPINE}; a room-level address is the ordinary choice, and a world re-declares the ladder in its rules block only when it differs.`);
       g.push('');
       g.push(genesis);
       return { content: [{ type: 'text', text: g.join('\n') }] };
@@ -231,8 +239,8 @@ export async function handlePlay(
       const rooms = index
         .filter((b) => b.startsWith('pool:') && !b.startsWith('liquid:') && b !== 'pool:gate')
         .map((b) => b.slice('pool:'.length));
-      const digitRooms = rooms.filter((r) => /^\d+$/.test(r));
-      const namedRooms = rooms.filter((r) => !/^\d+$/.test(r));
+      const digitRooms = rooms.filter((r) => isLocationAddress(r));
+      const namedRooms = rooms.filter((r) => !isLocationAddress(r));
       if (locAddr) {
         // THE ROOM IS DERIVED FROM POSITION (the play-mount law: the room at a
         // place is pool:<addr> and the WORLD provides it) — never from enumerating
@@ -240,16 +248,25 @@ export async function handlePlay(
         // the room list (pool:parity-run2, 2026-07-07 and -08); the standing rule
         // said third time it becomes code (proposal 2026-07-15 §6). Guard first:
         // the spatial tree must name the place — moving to nowhere stays an
-        // error, never a room.
+        // error, never a room. The walk is the canonical floor-aware reader, so a
+        // full pscale address ("3200" the town, "111.1" the hearth) reaches its
+        // place exactly as the parser defines it — dots, padding and all
+        // (proposal 2026-07-15-pscale-of-agency G1).
         const spatialName = index.find((b) => b.startsWith('spatial:'));
         const srow = spatialName ? await loadBlock(resolved, spatialName) : null;
-        let place: any = srow?.block ?? null;
-        for (const d of locAddr.split('')) place = place && typeof place === 'object' ? place[d] : null;
+        let place: any = null;
+        try {
+          place = srow?.block ? readAt(srow.block as any, locAddr) : null;
+        } catch { place = null; /* parser-rejected address reads as no-place */ }
         if (place == null) {
           return { content: [{ type: 'text', text: `Your position ${locAddr} names no place in ${spatialName ?? 'the world'} — there is no there there. Rewrite passport:3 with an address COPIED from the spatial block, then re-enter.` }] };
         }
-        if (digitRooms.length === 0 && namedRooms.length === 1) {
-          // Single-named-room world (thornwood-style): that room IS the place's.
+        if (digitRooms.length === 0 && namedRooms.length === 1 && isLocationAddress(locAddr) && pscaleOf(locAddr) === 0) {
+          // Single-named-room world (thornwood-style): that room IS the place's —
+          // but only at BEAT GRAIN. A coarser stance (the town, '100') or a finer
+          // one (the hearth, '111.1') gets the room AT ITS ADDRESS below; the
+          // named room stands for the world's one pscale-0 gathering place, not
+          // for every grain of the world.
           roomName = namedRooms[0];
         } else {
           // Location-keyed world (or ambiguity/debris): open the room at the
@@ -322,21 +339,36 @@ export async function handlePlay(
       }
     }
   }
-  // 4b. Co-presence — surface who else stands at your location (passport:3), SPLIT BY
-  //     GRAIN (proposal 2026-07-15 §7). Location is the character's (slow, fictional);
-  //     liveness is the driver's (fast, real — staged liquid, a recent commit, a
-  //     presence heartbeat). Handing every co-located passport over as live cast is
-  //     how three seeded characters stood mute at a table for five weeks; the split
-  //     renders what is true: HERE NOW at beat-grain, or ABOUT at the day's grain.
+  // 4b. Co-presence — who else stands at this place, SPLIT BY GRAIN twice over
+  //     (proposals 2026-07-15 presence-grain §7 + pscale-of-agency G1). Location is
+  //     the character's (slow, fictional); liveness is the driver's (fast, real).
+  //     And grain is ADDRESS: a handle at your exact address shares your beat and
+  //     splits HERE NOW / ABOUT by signal; a handle standing at an ANCESTOR address
+  //     (the town while you are in the kitchen) is at the coarser grain BY CHOICE —
+  //     about this place by construction, no signal needed; and when YOU stand
+  //     coarse, the finer life beneath you is listed because you are its container
+  //     (and, at a fold, its determiner).
   const myPassport = own.find((o) => o.name === `passport:${handle}`);
   const myLoc = myPassport ? passportLocation(JSON.parse(myPassport.json)) : null;
-  const cast = await coPresentCast(resolved, handle, myLoc);
+  const cast = myLoc ? await castAtWorld(resolved, handle) : [];
   let here: CastEntry[] = [];
   let about: CastEntry[] = [];
-  if (cast.length) {
-    const signals = await livenessSignals(resolved, roomName ?? null);
-    const entries = cast.map((c) => ({ ...c, lastSignal: signals.get(c.handle) ?? null }));
-    ({ here, about } = splitCast(entries, Date.now()));
+  const coarser: { handle: string; appearance: string; addr: string }[] = [];
+  const finer: { handle: string; appearance: string; addr: string }[] = [];
+  if (myLoc && cast.length) {
+    const atMine = cast.filter((c) => c.addr === myLoc);
+    for (const c of cast) {
+      if (c.addr === myLoc) continue;
+      if (isLocationAddress(c.addr) && isLocationAddress(myLoc)) {
+        if (contains(c.addr, myLoc)) coarser.push(c);
+        else if (contains(myLoc, c.addr)) finer.push(c);
+      }
+    }
+    if (atMine.length) {
+      const signals = await livenessSignals(resolved, roomName ?? null);
+      const entries = atMine.map((c) => ({ handle: c.handle, appearance: c.appearance, lastSignal: signals.get(c.handle) ?? null }));
+      ({ here, about } = splitCast(entries, Date.now()));
+    }
   }
 
   const has = (p: string) => own.some((o) => o.name.startsWith(p));
@@ -364,8 +396,13 @@ export async function handlePlay(
   const spatialRef = (p3.match(/spatial:[\w-]+:[\d.,]+/) || [null])[0];
   if (spatialRef) {
     const addr = spatialRef.split(':').pop() ?? '';
-    const malformed = !/^\d+$/.test(addr);
-    out.push(`POSITION (substrate truth): ${spatialRef} — your passport places you HERE, whatever your last narration said; you have NOT moved unless passport:3 changed. Your acts land in THIS room until the MOVE steps complete (leaving-beat → passport:3 write, address copied from the world's spatial block → re-enter pscale_play → arriving-beat).${malformed ? ` ⚠ THIS ADDRESS IS MALFORMED: a location digit-path is a PLAIN run of digits, one per level (e.g. 111) — never dotted, never comma'd. Rewrite passport:3 with the plain digits FIRST, or the world reads you at the wrong scale.` : ''}`);
+    // A location is a single-decimal pscale address (pscale-of-agency G1): plain
+    // digits at-or-above the floor ("111", "3200" — trailing zeros are padding),
+    // ONE dot for finer-than-floor ("111.1"). Multi-dot and commas remain the
+    // malformations the parser strict-rejects; surface them to the secret-holder.
+    const malformed = !isLocationAddress(addr);
+    const grain = malformed ? null : pscaleOf(addr);
+    out.push(`POSITION (substrate truth): ${spatialRef}${grain !== null ? ` — standing at pscale ${grain >= 0 ? '+' + grain : grain} (${grain === 0 ? 'the room, beat-grain' : grain > 0 ? 'a coarser place, its coarser cadence — your acts are its longer beats' : 'finer than the room — the close, quick grain'})` : ''} — your passport places you HERE, whatever your last narration said; you have NOT moved unless passport:3 changed. Your acts land in THIS room until the MOVE steps complete (leaving-beat → passport:3 write, address copied from the world's spatial block → re-enter pscale_play → arriving-beat).${malformed ? ` ⚠ THIS ADDRESS IS MALFORMED: a location is a single-decimal pscale address — plain digits padded to the world's floor ("111", "3200"), at most ONE dot for finer detail ("111.1") — never multi-dotted, never comma'd. Rewrite passport:3 with an address COPIED from the spatial block FIRST, or the world reads you at the wrong scale.` : ''}`);
   }
   out.push(`PIN THIS BEACH. Every further call targets ${resolved} — pool_url for the room, agent_id="${resolved}" for reading your own blocks, agent_id="${handle}" for contributing. Never a bare handle, never the apex, never another world.`);
   out.push('');
@@ -373,17 +410,23 @@ export async function handlePlay(
   out.push('');
   out.push('═══════════ THE ROOM — operating directive + live scene ═══════════');
   out.push(env);
-  if (here.length || about.length) {
+  if (here.length || about.length || coarser.length || finer.length) {
     out.push('');
-    out.push('═══════════ WHO IS HERE — co-present at your position (by appearance; names unearned until spoken) ═══════════');
+    out.push('═══════════ WHO IS HERE — co-present at your place (by appearance; names unearned until spoken) ═══════════');
     if (here.length) {
-      out.push('HERE NOW (beat-grain — live in the scene; they act and answer within it):');
+      out.push('HERE NOW (your grain — live in the scene; they act and answer within it):');
       for (const c of here) out.push(`— ${c.appearance}`);
     }
-    if (about.length) {
+    if (about.length || coarser.length) {
       if (here.length) out.push('');
-      out.push('ABOUT (day-grain — hereabouts and real, but NOT at the table: render them about the place, never awaiting; a beat directed at them lands as a day-grain fact, answered when they next descend; they cannot be contested; the scene never waits on them):');
+      out.push('ABOUT (the coarser grain — hereabouts and real, but NOT at the table: render them about the place, never awaiting; a beat directed at them lands at the coarser grain, answered when they next descend; they cannot be contested; the scene never waits on them):');
       for (const c of about) out.push(`— ${c.appearance}`);
+      for (const c of coarser) out.push(`— ${c.appearance} (standing at the ${pscaleOf(c.addr) >= 2 ? "day's" : 'longer'} grain of this place — pscale ${'+' + pscaleOf(c.addr)}, by their own stance)`);
+    }
+    if (finer.length) {
+      out.push('');
+      out.push('WITHIN (finer life beneath your stance — you contain these; their fine beats fold up into your coarser one, and a coarse window you resolve must absorb theirs first — one now):');
+      for (const c of finer) out.push(`— ${c.appearance} (at ${c.addr}, the finer grain)`);
     }
   }
   if (own.length) {
