@@ -28,7 +28,7 @@
  */
 import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
-import { handlePoolEngage, resolveDirective } from './pool.js';
+import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore } from './pool.js';
 
 /**
  * Resolve a world to its beach origin. A full URL is used as-is; a bare world
@@ -77,14 +77,71 @@ function passportAppearance(passportBlock: any, handle: string): string {
 /** Co-presence from the substrate: the OTHER handles whose passport:3 location equals the caller's.
  *  Position is already in passport:3 — this only surfaces what the substrate holds, so a player sees
  *  who is in the room on arrival, before anyone acts. By appearance; names stay unearned. */
-async function coPresentCast(origin: string, handle: string, myLoc: string | null): Promise<string[]> {
+async function coPresentCast(
+  origin: string,
+  handle: string,
+  myLoc: string | null,
+): Promise<{ handle: string; appearance: string }[]> {
   if (!myLoc) return [];
-  const out: string[] = [];
+  const out: { handle: string; appearance: string }[] = [];
   for (const pn of (await beachIndex(origin)).filter((b) => b.startsWith('passport:') && b !== `passport:${handle}`)) {
     const row = await loadBlock(origin, pn);
-    if (row?.block && passportLocation(row.block) === myLoc) out.push(passportAppearance(row.block, pn.slice('passport:'.length)));
+    if (row?.block && passportLocation(row.block) === myLoc) {
+      const h = pn.slice('passport:'.length);
+      out.push({ handle: h, appearance: passportAppearance(row.block, h) });
+    }
   }
   return out;
+}
+
+// ── Presence-grain (proposal 2026-07-15) — a character is present AT A GRAIN ──
+// Character-location (passport:3, slow, fictional) and driver-liveness (liquid /
+// commits / presence heartbeats — fast, real) are different axes; rendering the
+// first as the second is how a seeded character stands mute at a table for five
+// weeks. Liveness is DERIVED AT READ from signals the substrate already holds —
+// never stored, no daemon, same law as the two-verb pool's computed-at-read status.
+
+/** v1 heuristic: a handle with a signal inside this window is HERE NOW (beat-grain);
+ *  outside it they are ABOUT (present at the day's grain). A per-room span datum can
+ *  refine this when lived play asks. */
+export const LIVE_WINDOW_MS = 60 * 60 * 1000;
+
+export interface CastEntry { handle: string; appearance: string; lastSignal: number | null }
+
+/** Pure split — HERE NOW vs ABOUT — so the rule is one testable function. */
+export function splitCast(entries: CastEntry[], now: number): { here: CastEntry[]; about: CastEntry[] } {
+  const here: CastEntry[] = [];
+  const about: CastEntry[] = [];
+  for (const e of entries) {
+    (e.lastSignal != null && now - e.lastSignal <= LIVE_WINDOW_MS ? here : about).push(e);
+  }
+  return { here, about };
+}
+
+/** Latest liveness signal per handle at this world: a staged liquid slot, a pool
+ *  commit, or a presence heartbeat — max timestamp wins. All three are accumulator
+ *  reads (collectContributions is floor-aware, so supernested blocks still speak).
+ *  A stale presence entry pointing at a dead pool matches no cast handle and so
+ *  never renders — debris is inert here by construction. */
+async function livenessSignals(origin: string, roomName: string | null): Promise<Map<string, number>> {
+  const sig = new Map<string, number>();
+  const note = (h: string | null, ts: string | null) => {
+    if (!h || !ts) return;
+    const ms = Date.parse(ts);
+    if (!Number.isFinite(ms)) return;
+    if ((sig.get(h) ?? -Infinity) < ms) sig.set(h, ms);
+  };
+  const names = roomName ? [`liquid:pool:${roomName}`, `pool:${roomName}`, 'presence'] : ['presence'];
+  for (const name of names) {
+    const row = await loadBlock(origin, name);
+    if (row?.block && typeof row.block === 'object') {
+      for (const c of collectContributions(row.block as any, 0).contributions) {
+        if (name.startsWith('liquid:') && c.text === '') continue; // withdrawn slot is no signal
+        note(c.agent_id, c.ts);
+      }
+    }
+  }
+  return sig;
 }
 
 export const playParamsSchema = {
@@ -133,12 +190,21 @@ export async function handlePlay(
     const genesis = (await resolveDirective(resolved, 'char-creation'))
       ?? (await resolveDirective(resolved, 'pscale:char-creation'));
     if (genesis) {
+      // GATE-FIRST (proposal 2026-07-15 §4): a new arrival is a USER before they are
+      // a character. Hand them the lobby — the gate pool, keyless, where the liquid
+      // concatenation answers "who is here right now" — then the creation passage as
+      // the activation step, then the named re-entry. The probe finding this closes:
+      // a fresh handle was handed no pool name at all while being forbidden to invent
+      // one; the gate is the world's own named out-of-fiction surface.
+      const gatePurpose = `The gate at ${world} — the out-of-fiction lobby. Users gather here AS THEMSELVES before characters exist: introduce yourself in one line, see who else stands at the gate (the liquid mirror is who is here now), shape a party — then walk genesis together, or solo. In-fiction beats never land here; once your character exists, play happens in the room at your position.`;
       const g: string[] = [];
-      g.push(`# ${handle} is NEW at ${world} — GENESIS comes before play`);
-      g.push(`World beach: ${resolved}  ·  no blocks exist for ${handle} here.`);
+      g.push(`# ${handle} is NEW at ${world} — you stand at the GATE`);
+      g.push(`World beach: ${resolved}  ·  no blocks exist for ${handle} here yet.`);
       g.push(`PIN THIS BEACH. Every call below targets ${resolved}.`);
       g.push('');
-      g.push(`Walk the creation passage WITH YOUR PLAYER — the interview is theirs to answer. Complete the writes, then RE-ENTER with pscale_play(world="${resolved}", handle="${handle}") — the world meets the character then, at the arrival place, with the room's directive in hand.`);
+      g.push(`THE GATE — the lobby, before any character. Engage it keyless as yourself: pscale_pool_engage(pool_url="${resolved}", pool_name="gate", agent_id="${handle}") — the envelope returns who else is at the gate right now (the liquid mirror) and recent arrivals (the spool). Introduce your player in one line (contribution=), stage what you are here for (submit=), find companions. A party forms HERE. If the gate does not exist yet, pass purpose= with exactly this text to found it: ${JSON.stringify(gatePurpose)}`);
+      g.push('');
+      g.push(`GENESIS — the activation, once per handle, when ready. Walk the creation passage below WITH YOUR PLAYER — the interview is theirs to answer, the passphrase theirs to choose (never echo it back once set). Complete the writes, then RE-ENTER with pscale_play(world="${resolved}", handle="${handle}") — THE ROOM FOLLOWS YOUR POSITION: re-entry hands you the room at your start place, its directive and live scene inlined. Never guess or invent a room name; the world provides the room at your address.`);
       g.push('');
       g.push(genesis);
       return { content: [{ type: 'text', text: g.join('\n') }] };
@@ -163,17 +229,18 @@ export async function handlePlay(
       roomName = locAddr;                              // location-derived room
     } else {
       const rooms = index
-        .filter((b) => b.startsWith('pool:') && !b.startsWith('liquid:'))
+        .filter((b) => b.startsWith('pool:') && !b.startsWith('liquid:') && b !== 'pool:gate')
         .map((b) => b.slice('pool:'.length));
       const digitRooms = rooms.filter((r) => /^\d+$/.test(r));
-      if (locAddr && digitRooms.length > 0) {
-        // Per-location world, unpooled destination: the room at a place IS
-        // pool:<addr>, so the SURFACE opens it. The 2026-07-07 HITL forensic
-        // saw two movers at one address bounced into a debris pool / inventing
-        // a named room because none stood at their location. Guard: the world's
-        // spatial tree must name the place — moving to nowhere stays an error,
-        // never a room. The new room copies an existing digit room's underscore
-        // so it mounts the same directive.
+      const namedRooms = rooms.filter((r) => !/^\d+$/.test(r));
+      if (locAddr) {
+        // THE ROOM IS DERIVED FROM POSITION (the play-mount law: the room at a
+        // place is pool:<addr> and the WORLD provides it) — never from enumerating
+        // pool names. Twice a stray harness pool broke world entry by inflating
+        // the room list (pool:parity-run2, 2026-07-07 and -08); the standing rule
+        // said third time it becomes code (proposal 2026-07-15 §6). Guard first:
+        // the spatial tree must name the place — moving to nowhere stays an
+        // error, never a room.
         const spatialName = index.find((b) => b.startsWith('spatial:'));
         const srow = spatialName ? await loadBlock(resolved, spatialName) : null;
         let place: any = srow?.block ?? null;
@@ -181,18 +248,30 @@ export async function handlePlay(
         if (place == null) {
           return { content: [{ type: 'text', text: `Your position ${locAddr} names no place in ${spatialName ?? 'the world'} — there is no there there. Rewrite passport:3 with an address COPIED from the spatial block, then re-enter.` }] };
         }
-        const sample = await loadBlock(resolved, `pool:${digitRooms[0]}`);
-        const form = (sample?.block as any)?.['_'];
-        const purpose = typeof form === 'string' && form.trim() ? form : 'pscale:grit';
-        try { await saveBlock(resolved, `pool:${locAddr}`, { _: purpose } as any, { spindle: '' }); } catch { /* first writer wins — a race is fine */ }
-        roomName = locAddr;
+        if (digitRooms.length === 0 && namedRooms.length === 1) {
+          // Single-named-room world (thornwood-style): that room IS the place's.
+          roomName = namedRooms[0];
+        } else {
+          // Location-keyed world (or ambiguity/debris): open the room at the
+          // place. The mount is copied from an existing room whose underscore
+          // speaks (floor-aware — a supernested pool still yields its directive),
+          // else the canonical engine. Ambiguity DERIVES; it never errors.
+          let purpose = 'pscale:grit';
+          for (const r of [...digitRooms, ...namedRooms]) {
+            const sample = await loadBlock(resolved, `pool:${r}`);
+            const u = sample?.block && typeof sample.block === 'object' ? floorUnderscore(sample.block as any) : '';
+            if (u.trim()) { purpose = u; break; }
+          }
+          try { await saveBlock(resolved, `pool:${locAddr}`, { _: purpose } as any, { spindle: '' }); } catch { /* first writer wins — a race is fine */ }
+          roomName = locAddr;
+        }
       } else if (rooms.length === 1) {
         roomName = rooms[0];                           // fallback: the world's single room
       } else if (rooms.length === 0) {
         return { content: [{ type: 'text', text: `World ${resolved} has no room yet — an author must open one (pscale_pool_engage with purpose=...).` }] };
-      } else if (locAddr) {
-        return { content: [{ type: 'text', text: `World ${resolved} has several rooms but none open at your location (pool:${locAddr}). Open it with pscale_pool_engage(purpose=...), or pass room=<name>. Rooms present: ${rooms.join(', ')}.` }] };
       } else {
+        // No position to derive from (a user at the world's surface): the choice
+        // survives only here.
         return { content: [{ type: 'text', text: `World ${resolved} has several rooms: ${rooms.join(', ')}. Pass room=<name> to choose.` }] };
       }
     }
@@ -243,11 +322,22 @@ export async function handlePlay(
       }
     }
   }
-  // 4b. Co-presence — surface who else stands at your location (passport:3). A pure reveal of what
-  //     the substrate already holds: you SEE the room's live cast on arrival, by appearance.
+  // 4b. Co-presence — surface who else stands at your location (passport:3), SPLIT BY
+  //     GRAIN (proposal 2026-07-15 §7). Location is the character's (slow, fictional);
+  //     liveness is the driver's (fast, real — staged liquid, a recent commit, a
+  //     presence heartbeat). Handing every co-located passport over as live cast is
+  //     how three seeded characters stood mute at a table for five weeks; the split
+  //     renders what is true: HERE NOW at beat-grain, or ABOUT at the day's grain.
   const myPassport = own.find((o) => o.name === `passport:${handle}`);
   const myLoc = myPassport ? passportLocation(JSON.parse(myPassport.json)) : null;
-  const coPresent = await coPresentCast(resolved, handle, myLoc);
+  const cast = await coPresentCast(resolved, handle, myLoc);
+  let here: CastEntry[] = [];
+  let about: CastEntry[] = [];
+  if (cast.length) {
+    const signals = await livenessSignals(resolved, roomName ?? null);
+    const entries = cast.map((c) => ({ ...c, lastSignal: signals.get(c.handle) ?? null }));
+    ({ here, about } = splitCast(entries, Date.now()));
+  }
 
   const has = (p: string) => own.some((o) => o.name.startsWith(p));
   const kind = has('witnessed:') || has('passport:')
@@ -283,10 +373,18 @@ export async function handlePlay(
   out.push('');
   out.push('═══════════ THE ROOM — operating directive + live scene ═══════════');
   out.push(env);
-  if (coPresent.length) {
+  if (here.length || about.length) {
     out.push('');
     out.push('═══════════ WHO IS HERE — co-present at your position (by appearance; names unearned until spoken) ═══════════');
-    for (const c of coPresent) out.push(`— ${c}`);
+    if (here.length) {
+      out.push('HERE NOW (beat-grain — live in the scene; they act and answer within it):');
+      for (const c of here) out.push(`— ${c.appearance}`);
+    }
+    if (about.length) {
+      if (here.length) out.push('');
+      out.push('ABOUT (day-grain — hereabouts and real, but NOT at the table: render them about the place, never awaiting; a beat directed at them lands as a day-grain fact, answered when they next descend; they cannot be contested; the scene never waits on them):');
+      for (const c of about) out.push(`— ${c.appearance}`);
+    }
   }
   if (own.length) {
     out.push('');

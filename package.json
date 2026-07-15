@@ -37,7 +37,8 @@
     "smoke:group2b-live": "tsx scripts/smoke-group2b-live.ts",
     "smoke:spool-live": "tsx scripts/smoke-spool-live.ts",
     "smoke:genus": "node --import tsx ./scripts/smoke-genus-parity.ts",
-    "smoke:genus-live": "node --import tsx ./scripts/smoke-genus-live.ts"
+    "smoke:genus-live": "node --import tsx ./scripts/smoke-genus-live.ts",
+    "smoke:play-split": "tsx scripts/smoke-play-split.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
