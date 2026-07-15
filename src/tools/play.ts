@@ -30,7 +30,7 @@ import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
 import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore } from './pool.js';
 import { readAt } from '../bsp.js';
-import { isLocationAddress, contains, pscaleOf } from '../grain-address.js';
+import { isLocationAddress, contains, pscaleOf, STANDARD_SPINE } from '../grain-address.js';
 
 /**
  * Resolve a world to its beach origin. A full URL is used as-is; a bare world
@@ -212,7 +212,7 @@ export async function handlePlay(
       g.push('');
       g.push(`THE GATE — the lobby, before any character. Engage it keyless as yourself: pscale_pool_engage(pool_url="${resolved}", pool_name="gate", agent_id="${handle}") — the envelope returns who else is at the gate right now (the liquid mirror) and recent arrivals (the spool). Introduce your player in one line (contribution=), stage what you are here for (submit=), find companions. A party forms HERE. If the gate does not exist yet, pass purpose= with exactly this text to found it: ${JSON.stringify(gatePurpose)}`);
       g.push('');
-      g.push(`GENESIS — the activation, once per handle, when ready. Walk the creation passage below WITH YOUR PLAYER — the interview is theirs to answer, the passphrase theirs to choose (never echo it back once set). Complete the writes, then RE-ENTER with pscale_play(world="${resolved}", handle="${handle}") — THE ROOM FOLLOWS YOUR POSITION: re-entry hands you the room at your start place, its directive and live scene inlined. Never guess or invent a room name; the world provides the room at your address.`);
+      g.push(`GENESIS — the activation, once per handle, when ready. Walk the creation passage below WITH YOUR PLAYER — the interview is theirs to answer, the passphrase theirs to choose (never echo it back once set). Complete the writes, then RE-ENTER with pscale_play(world="${resolved}", handle="${handle}") — THE ROOM FOLLOWS YOUR POSITION: re-entry hands you the room at your start place, its directive and live scene inlined. Never guess or invent a room name; the world provides the room at your address. THE ADDRESS CARRIES ITS GRAIN — where the road drops you is also how fast you live: ${STANDARD_SPINE}; a room-level address is the ordinary choice, and a world re-declares the ladder in its rules block only when it differs.`);
       g.push('');
       g.push(genesis);
       return { content: [{ type: 'text', text: g.join('\n') }] };
