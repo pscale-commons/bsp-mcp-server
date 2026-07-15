@@ -38,6 +38,7 @@
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import { Block, writeAt, readAt } from '../bsp.js';
+import { isLocationAddress, ancestorsOf, pscaleOf, walkedOf } from '../grain-address.js';
 import {
   loadBlock,
   saveBlock,
@@ -433,6 +434,86 @@ async function stageLiquid(
   return mySlot;
 }
 
+// ── Cross-grain composition (proposal 2026-07-15-pscale-of-agency G3) ──
+// An address-shaped room ("3241", "111.1") sits in a spatial tree, and the tree
+// carries time: ancestors run coarser cadences, descendants finer. Two reads
+// join the envelope for such rooms — BACKGROUND (the coarser life at this
+// place: the day around your beat, rendered as the world's weather, never as
+// beats to answer) and FINER WINDOWS (live liquid in the spatial subtree — the
+// one-now gate: a coarse window cannot close over live finer windows beneath
+// it; whoever folds the coarse window absorbs their resolutions first). Named
+// rooms (no address) are untouched. No beach change — the store's
+// single-resolution claim already works at any pool; the gate is
+// envelope-informed judgment, per the 2026-07-01 regimes 1+2.
+
+/** The beach's block index (local copy of play.ts's — a circular import would
+ *  otherwise tie the entry tool to the envelope primitive). Empty on failure. */
+async function poolBeachIndex(origin: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${origin.replace(/\/+$/, '')}/.well-known/pscale-beach`, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return [];
+    const j: any = await res.json();
+    return Array.isArray(j?.blocks) ? j.blocks : [];
+  } catch {
+    return [];
+  }
+}
+
+const BACKGROUND_ANCESTORS = 3;   // nearest coarser places woven in
+const BACKGROUND_PER_PLACE = 2;   // most recent commits each
+const FINER_WINDOWS_LISTED = 5;   // live finer windows named before "+n more"
+
+/** Background lines — the nearest ancestors' most recent commits and live
+ *  intentions, nearest-first, bounded. Empty for non-address rooms. */
+export async function assembleBackground(url: string, poolName: string): Promise<string[]> {
+  if (!isLocationAddress(poolName)) return [];
+  const lines: string[] = [];
+  for (const anc of ancestorsOf(poolName).slice(0, BACKGROUND_ANCESTORS)) {
+    const [prow, lrow] = await Promise.all([
+      loadBlock(url, `pool:${anc}`),
+      loadBlock(url, `liquid:pool:${anc}`),
+    ]);
+    const entries: string[] = [];
+    if (prow?.block && typeof prow.block === 'object') {
+      const cs = collectContributions(prow.block as Block, 0).contributions;
+      for (const c of cs.slice(-BACKGROUND_PER_PLACE)) {
+        entries.push(`${c.agent_id ?? 'someone'}${c.ts ? ` (${c.ts.slice(0, 10)})` : ''}: ${c.text.slice(0, 240)}`);
+      }
+    }
+    if (lrow?.block && typeof lrow.block === 'object') {
+      for (const s of collectContributions(lrow.block as Block, 0).contributions.filter((s) => s.text !== '')) {
+        entries.push(`${s.agent_id ?? 'someone'} intends: ${s.text.slice(0, 160)}`);
+      }
+    }
+    if (entries.length) {
+      lines.push(`at ${anc} (pscale +${pscaleOf(anc)}, the coarser cadence):`);
+      for (const e of entries) lines.push(`  - ${e}`);
+    }
+  }
+  return lines;
+}
+
+/** Live finer windows in this room's spatial subtree — {addr, authors} per
+ *  liquid buffer holding at least one live intention. Empty for non-address
+ *  rooms. One index fetch + one read per candidate buffer. */
+export async function finerWindows(url: string, poolName: string): Promise<{ addr: string; authors: number }[]> {
+  if (!isLocationAddress(poolName)) return [];
+  const mine = walkedOf(poolName);
+  const out: { addr: string; authors: number }[] = [];
+  const candidates = (await poolBeachIndex(url))
+    .filter((b) => b.startsWith('liquid:pool:'))
+    .map((b) => b.slice('liquid:pool:'.length))
+    .filter((a) => isLocationAddress(a) && a !== poolName && walkedOf(a).length > mine.length && walkedOf(a).startsWith(mine));
+  for (const addr of candidates) {
+    const row = await loadBlock(url, `liquid:pool:${addr}`);
+    if (row?.block && typeof row.block === 'object') {
+      const live = collectContributions(row.block as Block, 0).contributions.filter((s) => s.text !== '').length;
+      if (live > 0) out.push({ addr, authors: live });
+    }
+  }
+  return out;
+}
+
 // ── Schema ──
 
 export const poolEngageParamsSchema = {
@@ -788,6 +869,29 @@ export async function handlePoolEngage(
       }
     }
     lines.push('');
+  }
+  // ── Cross-grain sections — address-shaped rooms only (pscale-of-agency G3) ──
+  // Background rides every engage of an address room (the coarser life IS the
+  // place's weather); finer windows ride the withLiquid path (arrival and the
+  // resolver's read — the one-now gate is theirs to honour).
+  if (isLocationAddress(pool_name)) {
+    const bg = await assembleBackground(pool_url, pool_name);
+    if (bg.length) {
+      lines.push('# Background — the coarser life at this place (render as the world around your beat: weather, the day, the town — never as beats to answer)');
+      lines.push(...bg);
+      lines.push('');
+    }
+    if (withLiquid) {
+      const fw = await finerWindows(pool_url, pool_name);
+      if (fw.length) {
+        lines.push('# Finer windows live beneath (ONE NOW — a window at this grain cannot close over these: wait, absorb their resolutions, then fold; the coarse fold is the determiner)');
+        for (const w of fw.slice(0, FINER_WINDOWS_LISTED)) {
+          lines.push(`- pool:${w.addr} — ${w.authors} live ${w.authors === 1 ? 'intention' : 'intentions'}`);
+        }
+        if (fw.length > FINER_WINDOWS_LISTED) lines.push(`(+${fw.length - FINER_WINDOWS_LISTED} more finer windows)`);
+        lines.push('');
+      }
+    }
   }
   // Window dice — when intentions are staged ON A DIRECTIVE POOL, hand the
   // resolver an exploding-d10 luck PER ACTOR, deterministically seeded by the
