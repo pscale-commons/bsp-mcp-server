@@ -11,7 +11,9 @@
  * Polymorphic by the optional verbs (the spool / frame / destination split —
  * see docs/RPG-POOL-STATE.md §4). The primitive owns transport only; it never
  * synthesises:
- *   (read)        no submit, no contribution → purpose + synthesis_hint + slice
+ *   (read)        no submit, no contribution → purpose + synthesis_hint + slice.
+ *                   A KEYLESS read also carries the liquid concatenation — a visitor
+ *                   (no secret) is handed who is HERE NOW, not only what was said.
  *   submit=<text> → STAGE to the liquid buffer (liquid:pool:<name>): one slot per
  *                   author, OVERWRITING; returns the social mirror of co-present
  *                   pending intentions. No pool append, no synthesis. Empty =
@@ -462,7 +464,7 @@ export const poolEngageParamsSchema = {
   with_liquid: z
     .boolean()
     .optional()
-    .describe("Optional. Include the liquid mirror (all co-present pending intentions from liquid:pool:<name>) in the envelope. Implied true when `submit` is provided; default false otherwise to skip the extra fetch."),
+    .describe("Optional. Include the liquid mirror (all co-present pending intentions from liquid:pool:<name>) in the envelope. Implied true when `submit` is provided, and DEFAULT TRUE for a KEYLESS caller — a visitor with no secret is handed the room's live pending aggregate as their answer, because that is the presence they arrived for (the spool is what was said; liquid is who is here now). Defaults false for a KEYED caller, to skip the extra fetch. An explicit value is always honoured either way."),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
@@ -504,7 +506,17 @@ export async function handlePoolEngage(
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { agent_id, pool_url, pool_name, contribution, submit, destination, face, secret } = params;
   const sincePosition = params.since_position ?? 0;
-  const withLiquid = params.with_liquid === true || submit !== undefined;
+  // Keyless → the liquid concatenation IS the answer. A caller with no secret is a
+  // VISITOR, and what a visitor most needs handed back is the room's live pending
+  // aggregate — who is here and what they are about to say. That is the presence a
+  // newcomer actually arrives for ("someone is there"), which the committed record
+  // alone cannot give: the spool is what was said, liquid is who is here now. A keyed
+  // caller is an author/operator who asks for the mirror when they want it, so the
+  // extra fetch stays opt-in for them. submit always implies the mirror (you staged,
+  // you want to see the room); an explicit with_liquid is always honoured either way.
+  const withLiquid =
+    submit !== undefined ||
+    (params.with_liquid !== undefined ? params.with_liquid === true : !secret);
 
   if (!isFederatedOwner(pool_url)) {
     return {
