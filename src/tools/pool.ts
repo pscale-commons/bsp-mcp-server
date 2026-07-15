@@ -475,7 +475,7 @@ export async function assembleBackground(url: string, poolName: string): Promise
     ]);
     const entries: string[] = [];
     if (prow?.block && typeof prow.block === 'object') {
-      const cs = collectContributions(prow.block as Block, 0).contributions;
+      const cs = collectContributions(prow.block as Block, 0).contributions.filter((c) => c.text.trim() !== '');
       for (const c of cs.slice(-BACKGROUND_PER_PLACE)) {
         entries.push(`${c.agent_id ?? 'someone'}${c.ts ? ` (${c.ts.slice(0, 10)})` : ''}: ${c.text.slice(0, 240)}`);
       }
@@ -486,7 +486,8 @@ export async function assembleBackground(url: string, poolName: string): Promise
       }
     }
     if (entries.length) {
-      lines.push(`at ${anc} (pscale +${pscaleOf(anc)}, the coarser cadence):`);
+      const p = pscaleOf(anc);
+      lines.push(`at ${anc} (pscale ${p > 0 ? '+' + p : p}, the coarser cadence):`);
       for (const e of entries) lines.push(`  - ${e}`);
     }
   }

@@ -261,8 +261,12 @@ export async function handlePlay(
         if (place == null) {
           return { content: [{ type: 'text', text: `Your position ${locAddr} names no place in ${spatialName ?? 'the world'} — there is no there there. Rewrite passport:3 with an address COPIED from the spatial block, then re-enter.` }] };
         }
-        if (digitRooms.length === 0 && namedRooms.length === 1) {
-          // Single-named-room world (thornwood-style): that room IS the place's.
+        if (digitRooms.length === 0 && namedRooms.length === 1 && isLocationAddress(locAddr) && pscaleOf(locAddr) === 0) {
+          // Single-named-room world (thornwood-style): that room IS the place's —
+          // but only at BEAT GRAIN. A coarser stance (the town, '100') or a finer
+          // one (the hearth, '111.1') gets the room AT ITS ADDRESS below; the
+          // named room stands for the world's one pscale-0 gathering place, not
+          // for every grain of the world.
           roomName = namedRooms[0];
         } else {
           // Location-keyed world (or ambiguity/debris): open the room at the
