@@ -6,8 +6,11 @@ and `2026-07-15-pscale-of-agency.md`)
 timestamp's age beside it and carries a now-stamp. Architecture justified from first principles
 (§3); the ladder ruled by David 2026-07-15 (§7 — base ten at the ends, analogue between; the
 Gregorian year IS the address; **no epoch**), verified 49/49 + 23/23, no regressions.
-`src/temporal.ts` is the kernel, `server.ts` the one seam. §8 is what remains for David; §11 the
-sequence. Next: S3 (the sundial sentinel), S4 (beach wire `now`, xstream buckets, genus-one port).
+`src/temporal.ts` is the kernel, `server.ts` the one seam, `src/sundial.json` the law. **S4 closed
+too** — xstream's soft-LLM built (`c0d7b19`); the beach `now` field and the xstream bucket
+alignment both **dissolved on inspection** (no clock-less consumer exists; a person reads "6h ago"
+better than "+1"); genus-one and `passport:3` are **blocked on David** by this repo's own laws
+(port-not-fork; genesis is the player's). §8 is what remains for David; §11.4 has the detail.
 **Companions**: `2026-07-15-pscale-of-agency.md` (the ACCEPTED standard ladder this rides),
 `spatial:earth` (the S precedent), `spine:beach-venture` (the live temporal *worktable*, not the
 coordinate), `block-conventions:3.4–3.6` (the counting line), `src/grain-address.ts`
@@ -342,8 +345,45 @@ subtraction. Exact deltas are Layer R's job, rendered by code; the sundial block
      composed window is untouched — grounding is on the MCP result, not the filmstrip).
 3. **S3 — the sundial sentinel**: `src/sundial.json` + one `sentinels.ts` entry — the law, the
    bands, the carry caveat, the S·T·I fold, the re-anchoring rule.
-4. **S4 — the edges**: beach wire `now` field; xstream bucket alignment; genus-one kernel port
-   (dialect); `passport:3` for David; venture re-floor if §8.5 is ruled in.
+4. **S4 — the edges: one built, two dissolved, three are David's.** Investigated rather than
+   executed, and most of the list did not survive contact.
+   - **xstream's soft-LLM — BUILT** (xstream `c0d7b19`, branch `claude/soft-llm-now`). The real
+     remaining gap: a soft turn that makes no bsp call had no now at all (one that *does* is
+     already stamped by bsp-mcp on the way back, via the connector). `nowStamp()` joins `ago()` in
+     `src/lib/ago.ts` — whose docstring already said *"An LLM has no clock"* — and
+     `buildRecipeSystemPrompt` prepends it: one seam, every recipe/tier/face, same shape and same
+     reasoning as the bsp-mcp wrapper. A PORT of `src/temporal.ts`, parity proved exact on six
+     instants; only the address side ported, since `ago` already serves this repo's readers.
+   - **xstream bucket alignment — NOT NEEDED, and the scope item was wrong.** Already merged by
+     David (#122). More importantly the premise was mistaken: xstream's cards are read by
+     **humans**, and "6h ago" beats "+1" for a person. The rungs are the LLM's vocabulary, not the
+     column's. Two audiences, two phrasings, one module — deliberately not aligned.
+   - **Beach wire `now` — NOT BUILT, deliberately.** Every direct-HTTP consumer already has a
+     clock: xstream is a browser (`Date.now()`), genus-one is Python (`time.time()`), render.html
+     is a browser. The stamp's value is for an LLM, and an LLM's context is composed *client-side*
+     by something holding a clock — so the field would add nothing and touch a deployed service for
+     it. **Trigger to revisit**: a genuinely clock-less consumer appears, or server-authoritative
+     ordering is wanted (clock-skew between writers) — which is a different feature, not this one.
+   - **genus-one — BLOCKED, needs David.** Two of this repo's own laws bite: the kernel is a **PORT**
+     (`pscale-biome/src/agent` is canonical — re-base, never fork), so the change starts at the
+     biome, not here; and *"the window is a bsp read of a bundle, nothing more — no kernel
+     composition parts, one was added and reverted"*, which is precisely what a `now` part would
+     be. Sundial:8.2 says a pulse agent is the one agent that must derive its own now, so the need
+     is real and the route is a design decision, not a mechanical port. **Not taken unilaterally.**
+   - **`passport:3` for David — BLOCKED, needs David.** Two dead ends found by reading rather than
+     assuming: (a) `pscale_play(world='earth')` reads passports from the **earth** beach, which
+     hosts *no* `passport:happyseaurchin` at all — so this is the **genesis** act (char-creation:
+     his interview, his passphrase, "never echo it back once set"), his to walk, not mine; (b) the
+     apex identity passport **has no defined position 3** — the substrate-wide convention
+     (block-conventions:1) is `_` who-you-are, 1 offers, 2 needs, 8 federated, 9 keys, and
+     location-at-3 is the *character-seat* convention from `play.ts`. Writing it would import a
+     world-seat shape into an identity card. Which passport, and whether identity cards carry a
+     standpoint at all, is a convention call.
+     - **Verified while there, and worth keeping**: `spatial:earth` is floor 11, and David's own
+       authored places satisfy the standard ladder exactly — **Ceidio +2 (the town), Awel Y Mor +1
+       (the building), the room 0**. The address of the room is `spatial:earth:31110100111`. A
+       block authored two days before the ladder was ruled lands on it precisely.
+   - **Venture re-floor** — §8.5, unruled, untouched.
 
 ## 12. Identity — the third axis, now scoped-lite
 
