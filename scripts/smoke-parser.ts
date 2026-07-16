@@ -17,7 +17,6 @@ import {
   formatAddress,
   floorDepth,
   InvalidAddressError,
-  bsp,
   writeAt,
   readAt,
 } from '../src/bsp.js';
@@ -353,26 +352,45 @@ console.log('\n=== Multi-dot rejection at write surface ===');
   );
 }
 
-// ── bsp() legacy API uses parseSpindle internally ──
+// ── bspRead uses parseSpindle internally ──
+//
+// These two cases used to run against a second walker exported from bsp.ts.
+// That walker was unreachable from the server and had missed the 2026-05-17
+// canonical update — it still computed pscale = (floor - 1) - depth. These
+// cases never caught it, because they asserted the walk TERMINUS and the
+// multi-dot reject and never looked at a pscale. Repointed at the shipped
+// path, with the pscale now asserted (see the floor-anchor cases below).
 
-console.log('\n=== Legacy bsp() at floor 3 with "34.5" walks the auto-padded path ===');
+console.log('\n=== bspRead at floor 3 with "34.5" walks the auto-padded path ===');
 {
-  const r = bsp(blockF3, '34.5');
-  assert(r.mode === 'spindle', 'legacy bsp() shape');
-  // The chain should END at the leaf (last entry).
-  if (r.mode === 'spindle') {
-    const last = r.nodes[r.nodes.length - 1];
-    assert(last.text === 'leaf at 34.5', 'legacy bsp(F3, "34.5") chain ends at leaf');
-  }
+  const r = bspRead(blockF3, '34.5', null);
+  const entries = (r as any).entries ?? [];
+  const last = entries[entries.length - 1];
+  assert(last?.content === 'leaf at 34.5', 'bspRead(F3, "34.5") chain ends at leaf');
 }
 
-// ── Multi-dot at legacy bsp() ──
-console.log('\n=== Legacy bsp() rejects multi-dot ===');
+// ── Multi-dot at bspRead ──
+console.log('\n=== bspRead rejects multi-dot ===');
 assertThrows(
-  () => bsp(blockF1, '1.2.3'),
-  'legacy bsp(F1, "1.2.3") rejects multi-dot',
+  () => bspRead(blockF1, '1.2.3', null),
+  'bspRead(F1, "1.2.3") rejects multi-dot',
   InvalidAddressError,
 );
+
+// ── The canonical pscale formula — the case the legacy walker would have failed ──
+//
+// pscale = floor - depth (bsp2-star.py, bsp-alt.py). The removed walker used
+// (floor - 1) - depth and would report every rung one low. Asserted here so no
+// future port can drift back without a red test.
+console.log('\n=== pscale = floor - depth (not the pre-canonical floor-1) ===');
+{
+  const r: any = bspRead(blockF3, '345', null);
+  const entries = r.entries ?? [];
+  assert(entries.length === 3, 'floor-3 walk of "345" yields three entries, root off-pscale');
+  assert(entries[0].pscale === 2, `depth 1 at floor 3 is pscale 2 (got ${entries[0].pscale})`);
+  assert(entries[1].pscale === 1, `depth 2 at floor 3 is pscale 1 (got ${entries[1].pscale})`);
+  assert(entries[2].pscale === 0, `depth 3 at floor 3 is pscale 0 — the floor (got ${entries[2].pscale})`);
+}
 
 // ── Disc emit canonical form ──
 
