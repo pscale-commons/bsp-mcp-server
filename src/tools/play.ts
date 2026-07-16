@@ -30,7 +30,7 @@ import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
 import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore } from './pool.js';
 import { readAt } from '../bsp.js';
-import { isLocationAddress, contains, pscaleOf, STANDARD_SPINE } from '../grain-address.js';
+import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
 
 /**
  * Resolve a world to its beach origin. A full URL is used as-is; a bare world
@@ -204,13 +204,13 @@ export async function handlePlay(
       // the activation step, then the named re-entry. The probe finding this closes:
       // a fresh handle was handed no pool name at all while being forbidden to invent
       // one; the gate is the world's own named out-of-fiction surface.
-      const gatePurpose = `The gate at ${world} — the out-of-fiction lobby. Users gather here AS THEMSELVES before characters exist. NOTHING COMMITS HERE: stage one line — who you are, what you are looking for — and the liquid mirror shows everyone else standing at the gate right now, each with the moment they arrived. A staged line is revisable, and clearing it leaves no trace; the gate keeps no record, because a lobby that remembers its own small talk becomes the first thing every later arrival must read. A party forms by agreeing here and walking genesis together. Where the party needs someone to go first, the EARLIEST arrival in the mirror walks first: that walker chooses the arrival place from the world's receiving places, and everyone else gives that walker's handle at their interview, which lands them at the same door — exact where a place-name is vague, and still true if the party has already moved. In-fiction beats never land here; the first thing you ever commit is your arriving beat, in the room at your position, once your character exists.`;
+      const gatePurpose = `The gate at ${world} — the out-of-fiction lobby. Users gather here AS THEMSELVES before characters exist. NOTHING COMMITS HERE: stage one line — who you are, what you are looking for — and the liquid mirror shows everyone else standing at the gate right now, each with the moment they FIRST staged (the arrival stamp — revising a line never moves it). A staged line is revisable, and clearing it leaves no trace; the gate keeps no record, because a lobby that remembers its own small talk becomes the first thing every later arrival must read. A party forms by agreeing here and walking genesis together. Where the party needs someone to go first, the EARLIEST arrival in the mirror walks first — earliest by the arrival stamp, so revising to answer a companion costs nobody their place: that walker chooses the arrival place from the world's receiving places, and everyone else gives that walker's handle at their interview, which lands them at the same door — exact where a place-name is vague, and still true if the party has already moved. In-fiction beats never land here; the first thing you ever commit is your arriving beat, in the room at your position, once your character exists.`;
       const g: string[] = [];
       g.push(`# ${handle} is NEW at ${world} — you stand at the GATE`);
       g.push(`World beach: ${resolved}  ·  no blocks exist for ${handle} here yet.`);
       g.push(`PIN THIS BEACH. Every call below targets ${resolved}.`);
       g.push('');
-      g.push(`THE GATE — the lobby, before any character. Engage it keyless as yourself, staging one line about who you are and what you are looking for: pscale_pool_engage(pool_url="${resolved}", pool_name="gate", agent_id="${handle}", submit="<your line>") — the envelope returns the liquid mirror: everyone standing at the gate right now, each with the moment they arrived. STAGE, NEVER COMMIT: submit= is revisable, clears without trace, and IS the lobby; contribution= would nail a permanent line to the world's front door, where every later arrival reads it forever — that is not what a gate is for. Re-engage to see who has answered; a companion who arrives while you are away is waiting in the mirror when you look. When the party is agreed, clear your line (submit="") and walk genesis. If the gate does not exist yet, pass purpose= with exactly this text to found it: ${JSON.stringify(gatePurpose)}`);
+      g.push(`THE GATE — the lobby, before any character. Engage it keyless as yourself, staging one line about who you are and what you are looking for: pscale_pool_engage(pool_url="${resolved}", pool_name="gate", agent_id="${handle}", submit="<your line>") — the envelope returns the liquid mirror: everyone standing at the gate right now, each with their arrival stamp (first-staged; revising never moves it). STAGE, NEVER COMMIT: submit= is revisable, clears without trace, and IS the lobby; contribution= would nail a permanent line to the world's front door, where every later arrival reads it forever — that is not what a gate is for. Re-engage to see who has answered; a companion who arrives while you are away is waiting in the mirror when you look. When the party is agreed, clear your line (submit="") and walk genesis. If the gate does not exist yet, pass purpose= with exactly this text to found it: ${JSON.stringify(gatePurpose)}`);
       g.push('');
       g.push(`GENESIS — the activation, once per handle, when ready. Walk the creation passage below WITH YOUR PLAYER — the interview is theirs to answer, the passphrase theirs to choose (never echo it back once set). Complete the writes, then RE-ENTER with pscale_play(world="${resolved}", handle="${handle}") — THE ROOM FOLLOWS YOUR POSITION: re-entry hands you the room at your start place, its directive and live scene inlined. Never guess or invent a room name; the world provides the room at your address. THE ADDRESS CARRIES ITS GRAIN — where the road drops you is also how fast you live: ${STANDARD_SPINE}; a room-level address is the ordinary choice, and a world re-declares the ladder in its rules block only when it differs.`);
       g.push('');
@@ -356,9 +356,15 @@ export async function handlePlay(
   const coarser: { handle: string; appearance: string; addr: string }[] = [];
   const finer: { handle: string; appearance: string; addr: string }[] = [];
   if (myLoc && cast.length) {
-    const atMine = cast.filter((c) => c.addr === myLoc);
+    // Same-place is WALKED-FORM equality, never raw-string: '111', '1110' at a
+    // wider floor, and any padding variant all walk the same digits — a raw
+    // compare makes co-located players invisible to each other the moment two
+    // writers canonicalise differently (the recognition failure's latent class).
+    const samePlace = (a: string, b: string) =>
+      isLocationAddress(a) && isLocationAddress(b) ? walkedOf(a) === walkedOf(b) : a === b;
+    const atMine = cast.filter((c) => samePlace(c.addr, myLoc));
     for (const c of cast) {
-      if (c.addr === myLoc) continue;
+      if (samePlace(c.addr, myLoc)) continue;
       if (isLocationAddress(c.addr) && isLocationAddress(myLoc)) {
         if (contains(c.addr, myLoc)) coarser.push(c);
         else if (contains(myLoc, c.addr)) finer.push(c);

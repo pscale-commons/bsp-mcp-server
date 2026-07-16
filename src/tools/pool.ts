@@ -402,7 +402,14 @@ async function stageLiquid(
   const exists = !!lrow && typeof lrow.block === 'object' && lrow.block !== null;
   const baseDesc = `Liquid pre-commit buffer for ${liquidName} (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit.`;
 
-  const slotObj: Record<string, any> = { _: text, '1': agentId, '2': '', '3': new Date().toISOString() };
+  // Slot shape: _ text · 1 author · 2 FIRST-STAGED (arrival — written once at slot
+  // creation, never moved by a revise) · 3 last-touched (restamped every write).
+  // NHITL round 2 §2a: the first-walker rule read 3 and a player who revised their
+  // line lost their place in the queue — "a player should not be doing timestamp
+  // forensics in a lobby." Arrival order reads 2; legacy slots without 2 fall back
+  // to 3 at render.
+  const nowIso = new Date().toISOString();
+  const slotObj: Record<string, any> = { _: text, '1': agentId, '2': nowIso, '3': nowIso };
   if (face) slotObj['4'] = face;
 
   const liveCount = exists
@@ -426,9 +433,16 @@ async function stageLiquid(
 
   // Window already live (or a withdraw): surgical — only this author's slot
   // changes; peers' slots and the stamp at the underscore stay fixed for the
-  // window's whole life.
+  // window's whole life. A REVISE preserves the slot's first-staged stamp
+  // (position 2): arrival never moves; only 3 restamps.
   const lblock: Block = JSON.parse(JSON.stringify(lrow!.block));
-  const mySlot = findAuthorSlot(lblock, agentId) ?? findNextSlot(lblock);
+  const existingSlot = findAuthorSlot(lblock, agentId);
+  const mySlot = existingSlot ?? findNextSlot(lblock);
+  if (existingSlot) {
+    const prior = readAt(lblock, existingSlot) as Record<string, any> | null;
+    const firstStaged = prior && typeof prior === 'object' && typeof prior['2'] === 'string' && prior['2'] !== '' ? prior['2'] : null;
+    if (firstStaged) slotObj['2'] = firstStaged;
+  }
   writeAt(lblock, mySlot, slotObj);
   await saveBlock(url, liquidName, lblock, { spindle: mySlot, pscale_attention: -1, secret });
   return mySlot;
@@ -546,7 +560,7 @@ export const poolEngageParamsSchema = {
   with_liquid: z
     .boolean()
     .optional()
-    .describe("Optional. Include the liquid mirror (all co-present pending intentions from liquid:pool:<name>) in the envelope. Implied true when `submit` is provided, and DEFAULT TRUE for a KEYLESS caller — a visitor with no secret is handed the room's live pending aggregate as their answer, because that is the presence they arrived for (the spool is what was said; liquid is who is here now). Defaults false for a KEYED caller, to skip the extra fetch. An explicit value is always honoured either way."),
+    .describe("Optional. The liquid mirror (all co-present pending intentions from liquid:pool:<name>) rides the envelope BY DEFAULT for every caller — the spool is what was said; liquid is who is here now, and who-is-here-now is what an engage is for. Pass false to opt out (a cheap read of a quiet archive). submit implies it as ever."),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
@@ -588,17 +602,16 @@ export async function handlePoolEngage(
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { agent_id, pool_url, pool_name, contribution, submit, destination, face, secret } = params;
   const sincePosition = params.since_position ?? 0;
-  // Keyless → the liquid concatenation IS the answer. A caller with no secret is a
-  // VISITOR, and what a visitor most needs handed back is the room's live pending
-  // aggregate — who is here and what they are about to say. That is the presence a
-  // newcomer actually arrives for ("someone is there"), which the committed record
-  // alone cannot give: the spool is what was said, liquid is who is here now. A keyed
-  // caller is an author/operator who asks for the mirror when they want it, so the
-  // extra fetch stays opt-in for them. submit always implies the mirror (you staged,
-  // you want to see the room); an explicit with_liquid is always honoured either way.
+  // The liquid mirror is the DEFAULT channel, for every caller (NHITL round 2,
+  // §2c: "the channel that IS the lobby is opt-in" — a seat that never passed
+  // with_liquid=true never saw its companion at all). The spool is what was
+  // said; liquid is who is here now — and who-is-here-now is what an engage
+  // is for. Explicit with_liquid=false opts out (a cheap read of a quiet
+  // archive); submit implies it as ever. One extra fetch per engage is the
+  // honest price of a room that shows its people.
   const withLiquid =
     submit !== undefined ||
-    (params.with_liquid !== undefined ? params.with_liquid === true : !secret);
+    (params.with_liquid !== undefined ? params.with_liquid === true : true);
 
   if (!isFederatedOwner(pool_url)) {
     return {
@@ -865,8 +878,13 @@ export async function handlePoolEngage(
       for (const s of liquidSlots) {
         const who = s.agent_id ?? '(anon)';
         const mine = s.agent_id === agent_id ? ' (you)' : '';
-        const when = s.ts ?? '';
-        lines.push(`- ${who}${mine} ${when}: ${s.text || '(empty)'}`);
+        // Arrival is the FIRST-STAGED stamp (slot position 2, surfaced as
+        // `address`); a revise restamps only 3. Legacy slots without 2 fall
+        // back to 3. Arrival order reads from what is printed here — nobody
+        // does timestamp forensics in a lobby.
+        const arrived = s.address && /^\d{4}-\d{2}-\d{2}T/.test(s.address) ? s.address : s.ts;
+        const revised = s.ts && arrived !== s.ts ? `, revised ${s.ts}` : '';
+        lines.push(`- ${who}${mine} (arrived ${arrived ?? '?'}${revised}): ${s.text || '(empty)'}`);
       }
     }
     lines.push('');
