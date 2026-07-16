@@ -437,3 +437,51 @@ symmetric finish is one sentence per axis in every envelope:
 
 Same trio, own scoping note, after the sundial proves the pattern. **The S·T·I fold itself needs
 nothing** — it is `bsp-floor` at one address, and it has been there since PR #61.
+
+## 13. The full-width label — "working everywhere" audit (2026-07-16)
+
+The path-walk label printed `[202]` for the decade. `202` is a *different* address: a semantic
+number is always floor-relative, and `parseSpindle` reads a short dotless form by LEFT-padding to
+the floor, so `202` walks `0000000202` (seven underscores into the root chain), not the decade.
+The label an agent copies into its next spindle would misroute. Fixed by emitting the floor-relative
+**full-width** form (`2020000000`) — a display helper `fullWidthAddress` in `bsp-fn.ts`, all five
+emit sites repointed (`677ade6`).
+
+**Why this is new, not a long-standing bug**: the label only misleads for **coarse** addresses —
+pscale above the floor, carrying trailing zeros. Nothing had content up there until the temporal
+spine put the decade at +7 and the year at +6. The spatial ladder had the same latency (a town at
++2) but rarely rendered coarse. So the temporal coordinate is the first real user of the coarse end,
+and it surfaced a latent display fault the whole substrate shared.
+
+**Canonical `formatAddress` was NOT changed — deliberately, and verified.** It strips leading *and*
+trailing zeros to the shortest form, and the Python suite `test-bsp-parser.py` asserts exactly that
+(`format_address(['0','1'],2)=='1'`, `(['1','0','0'],1)=='1'`). A full-width `format_address`
+fails those. The stripping is correct for its purpose — floor-growth robustness: an address written
+at floor 2 still locates after a supernest to floor 3 via left-pad. The asymmetry only bites when a
+*coarse* address (well above floor, trailing zeros) is emitted for re-use, which display fixes
+without touching canon. Full-width is a **display** form, not the canonical stored form.
+
+**Where the fault BITES vs where it is LATENT** — the map behind "everywhere":
+
+| surface | emits walk labels to an LLM? | reads coarse content? | status |
+|---|---|---|---|
+| **bsp-mcp `formatRead`** | yes (the tool result) | yes — the venture spine, `spatial:earth` towns, any commons block | **FIXED** (`677ade6`); needs Railway deploy to go live |
+| xstream soft-LLM | via the bsp-mcp **connector** | inherits bsp-mcp's `formatRead` | **covered by the bsp-mcp deploy** — no xstream change |
+| **genus-one `spark.py` `_disc`** | yes (its window) | no — reads its own near-floor shells (`purpose:`, `conditions:`, `reflexive:`), pscale ≈ 0 where full-width ≡ stripped | **latent, not biting**; and a **biome-canonical PORT** — fix at `pscale-biome/src/agent` first, never fork |
+| xstream `animator.ts` / `bsp.ts` `_disc` | yes (genus-in-xstream) | no — same near-floor shells | **latent, not biting**; fix when that surface is next touched |
+| xstream `ViewerDrawer` breadcrumb | **no — human nav** | can, if a person browses coarse | not LLM-facing; short form is arguably right for a breadcrumb — leave |
+| beach handler (`api/pscale-beach.js`) | **no — returns raw JSON**; disc/walk is the client's job | — | nothing to fix |
+
+**Conclusion**: the fault bites in exactly one place — bsp-mcp's `formatRead`, over coarse commons
+content — and that is fixed. Everywhere else is either downstream of it (xstream via the connector),
+latent-not-biting on near-floor content (genus-one, xstream animator — same code pattern, no coarse
+reads today), human-not-LLM (the breadcrumb), or raw-JSON (the beach). So "working everywhere" =
+**deploy bsp-mcp**, and carry the `fullWidthAddress` pattern into genus-one (biome-first) and the
+xstream animator when those surfaces next grow coarse reads.
+
+**Deploy path** (the one action that makes it live, and the one I cannot take): the fix rides the
+whole temporal arc on `claude/pscale-of-agency` (7 commits `f2d8968..677ade6`, plus David's
+`c57cd38`). bsp-mcp deploys from `main` on Railway (no in-repo CI/`railway.toml` — dashboard-wired),
+so it goes live when the arc merges to `main`. The branch already round-tripped one squash-merge
+(#150), so it needs a rebase-onto-`origin/main` (dropping the already-merged grain commits) before a
+clean PR — a history operation on a branch David is actively committing to, his to drive.
