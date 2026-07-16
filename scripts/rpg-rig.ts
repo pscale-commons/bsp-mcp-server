@@ -28,7 +28,7 @@ import { promises as fs, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { handlePoolEngage, windowOpenTs, collectContributions, windowDicePerAuthor, poolEngageParamsSchema } from '../src/tools/pool.js';
+import { handlePoolEngage, windowOpenTs, collectContributions, windowDicePerAuthor, poolEngageParamsSchema, renderDirective } from '../src/tools/pool.js';
 import { handlePlay, playParamsSchema } from '../src/tools/play.js';
 import { handleBsp, bspParamsSchema } from '../src/tools/bsp.js';
 import { INSTRUCTIONS } from '../src/server.js';
@@ -62,7 +62,7 @@ const KEEP = !!arg('keep', false);
 const BEACH_REPO = process.env.BEACH_REPO || fileURLToPath(new URL('../../pscale-beach', import.meta.url));
 const PORT = parseInt(process.env.RIG_PORT || '8799', 10);
 const BEACH = `http://localhost:${PORT}`;
-const ROOM = String(arg('room', 'beaten-drum-main'));
+const ROOM = String(arg('room', '111'));
 const SECRET = String(arg('secret', 'thorn142'));
 // --pack <name|path>: which cartridge to seed (a bare name resolves under <beach-repo>/packs/).
 // Default thornwood; pass --pack thousand-valleys --room thousand-valleys-commons --secret valleys142
@@ -170,8 +170,9 @@ async function cAperture(h: string): Promise<{ text: string; reads: string[] }> 
 
 // ── raw blocks (the bare-claude condition): the blocks the directive tells the soft to read,
 // with NO seat/typing pre-framing and NO pre-derived co-present list. The directive (system
-// prompt = function:thornwood:1, now carrying position-origin + typing) must do that work
-// itself — exactly as a bare claude.ai client does. Tests the DIRECTIVE, not the composer. ──
+// prompt = the engine's character turn, grit branch 1, carrying position-origin + typing)
+// must do that work itself — exactly as a bare claude.ai client does. Tests the DIRECTIVE,
+// not the composer. ──
 async function rawBlocks(h: string): Promise<{ text: string; reads: string[] }> {
   const passport = await block(`passport:${h}`);
   const locAddr = locOf(passport);
@@ -472,9 +473,14 @@ async function runAgentRounds(): Promise<void> {
 async function main() {
   const dir = await fs.mkdtemp(join(os.tmpdir(), 'rpg-rig-'));
   await spawnBeach(dir); await seedPack();
+  // The engine is pscale:grit (the tree — bsp-mcp #152): source the legacy prompt
+  // clients from the same canon the envelope inlines, plus the world's thin mount
+  // (function:<world> carries deltas only — window span, rules pointers, addressing).
+  const grit = JSON.parse(readFileSync(fileURLToPath(new URL('../src/grit.json', import.meta.url)), 'utf8'));
   const fn = await block('function:thornwood');
-  softDir = fn?.['1'] ?? ''; resolveDir = fn?.['2'] ?? '';
-  fnWhole = [fn?.['_'], fn?.['1'], fn?.['2'], fn?.['3']].filter((x) => typeof x === 'string').join('\n\n');
+  const fnDeltas = [fn?.['_'], fn?.['1'], fn?.['2'], fn?.['3']].filter((x) => typeof x === 'string').join('\n\n');
+  softDir = renderDirective(grit?.['1']); resolveDir = [renderDirective(grit?.['2']), fnDeltas].filter(Boolean).join('\n\n');
+  fnWhole = [renderDirective(grit), fnDeltas].filter(Boolean).join('\n\n');
   placeRules = j(await block('rules:thornwood')); nomad = j(await block('rules:nomad'));
   frameC = (await block('frame-spec:thornwood'))?.['1']?.['1'] ?? null;   // resolve the C soft aperture from the substrate
   const cfg = CLIENT === 'agent' ? `gap=${GAP_MS}ms` : `timing=${TIMING} · aperture=${APERTURE} · window=${WINDOW_MS}ms`;
