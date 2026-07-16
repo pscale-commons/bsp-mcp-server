@@ -39,7 +39,8 @@
     "smoke:genus": "node --import tsx ./scripts/smoke-genus-parity.ts",
     "smoke:genus-live": "node --import tsx ./scripts/smoke-genus-live.ts",
     "smoke:play-split": "tsx scripts/smoke-play-split.ts",
-    "smoke:grain-address": "tsx scripts/smoke-grain-address.ts"
+    "smoke:grain-address": "tsx scripts/smoke-grain-address.ts",
+    "smoke:grit-tree": "tsx scripts/smoke-grit-tree.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
