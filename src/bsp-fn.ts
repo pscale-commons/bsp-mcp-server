@@ -37,7 +37,6 @@ import {
   Block,
   collectUnderscore,
   floorDepth,
-  formatAddress,
   parseSpindle as parseSpindleCanonical,
   walk as walkLegacy,
   writeAt,
@@ -255,7 +254,7 @@ export function bspRead(
       spindle: typeof spindle === 'string' ? spindle : null,
       pscale: pscaleAttention as number,
       depth: target,
-      address: formatAddress(prefix, floor),
+      address: fullWidthAddress(prefix, floor),
       content: semantic(node),
     };
   }
@@ -276,13 +275,30 @@ export function bspRead(
 
 // ── Shape helpers ──
 
+/** The floor-relative FULL-WIDTH address of a walked digit sequence, for the
+ *  labels bsp() emits. A semantic number is ALWAYS relative to the floor — else
+ *  the floor is useless (David, 2026-07-16; sunstone:1.5). Right-pads the walk to
+ *  floor width (the trailing zeros ARE the floor-width padding: the unwalked finer
+ *  positions) and uses a single decimal only where the walk runs below the floor.
+ *
+ *  Distinct from formatAddress (bsp.ts), which strips trailing zeros to the
+ *  shortest form. That short form does NOT round-trip when the walk carries any
+ *  trailing zero: parseSpindle left-pads a short dotless address, so "202" reads
+ *  back as 0000000202, a different position. A label an agent may copy verbatim
+ *  into its next spindle must therefore be the padded form — "2020000000" walks
+ *  the decade, "202" does not. Emit labels are exactly such copyable text. */
+function fullWidthAddress(digits: string[], floor: number): string {
+  if (digits.length <= floor) return digits.join('').padEnd(floor, '0');
+  return `${digits.slice(0, floor).join('')}.${digits.slice(floor).join('')}`;
+}
+
 function buildPathWalk(block: Block, digits: string[], floor: number): PathWalkEntry[] {
   const entries: PathWalkEntry[] = [];
   for (let i = 1; i <= digits.length; i++) {
     const prefix = digits.slice(0, i);
     const node = walk(block, prefix);
     entries.push({
-      address: formatAddress(prefix, floor),
+      address: fullWidthAddress(prefix, floor),
       depth: i,
       pscale: pscaleAt(i, floor),
       content: semantic(node),
@@ -303,7 +319,7 @@ function collectDisc(block: Block, targetDepth: number, floor: number): DiscEntr
         node !== null &&
         typeof node === 'object';
       if (!onChainIntermediate) {
-        results.push({ address: formatAddress(walked, floor), content: semantic(node) });
+        results.push({ address: fullWidthAddress(walked, floor), content: semantic(node) });
       }
       return;
     }
@@ -315,7 +331,7 @@ function collectDisc(block: Block, targetDepth: number, floor: number): DiscEntr
       } else if (typeof u === 'string') {
         const onFloorChain = walked.every((w) => w === '0');
         if (onFloorChain && depth + 1 === targetDepth) {
-          results.push({ address: formatAddress(walked.concat(['0']), floor), content: u });
+          results.push({ address: fullWidthAddress(walked.concat(['0']), floor), content: u });
         }
       }
     }
@@ -348,7 +364,7 @@ function collectDescent(
           const child = node[d];
           const childDepth = walkedPath.length + 1;
           results.push({
-            address: formatAddress(walkedPath.concat([d]), floor),
+            address: fullWidthAddress(walkedPath.concat([d]), floor),
             depth: childDepth,
             pscale: pscaleAt(childDepth, floor),
             content: semantic(child),
