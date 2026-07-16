@@ -55,7 +55,7 @@ export const genusParamsSchema = {
     .string()
     .optional()
     .describe(
-      'HOLDER-ONLY. Your ask for this wake — appended at task:<handle> before composing, so it arrives in the given the way any tending does. Without the passphrase this is refused: engage from outside by writing task:<handle> via bsp() instead (hatch:4).',
+      'HOLDER-ONLY. Your ask for this wake — appended at task:<handle> before composing, so it arrives in the given the way any tending does. Without the passphrase this is refused (task:<handle> is sealed to the holder): engage from outside as a peer instead — leave a mark that names the shell, or add to its room at pool:<handle>, via bsp(); the next seat wake sweeps both (hatch:4).',
     ),
   fold: z
     .object({
