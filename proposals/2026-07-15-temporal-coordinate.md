@@ -383,7 +383,42 @@ subtraction. Exact deltas are Layer R's job, rendered by code; the sundial block
        authored places satisfy the standard ladder exactly — **Ceidio +2 (the town), Awel Y Mor +1
        (the building), the room 0**. The address of the room is `spatial:earth:31110100111`. A
        block authored two days before the ladder was ruled lands on it precisely.
-   - **Venture re-floor** — §8.5, unruled, untouched.
+   - **Venture re-floor — DONE, LIVE 2026-07-16** (David: "go ahead with venture resetting to
+     canonical"). `spine:beach-venture` re-floored 6 → 10; **the address IS the date**. The live
+     backcast path, in canonical full-width form:
+
+     | address | pscale | holds |
+     |---|---|---|
+     | `2020000000` | +7 | the decade objective — the internet reconstituted as beach |
+     | `2026000000` | +6 | the year — millions of players on the Onen RPG through xstream |
+     | `2026300000` | +5 | the season — Summer 2026, Jul–Sep, milestone end-August |
+     | `2026310000` | +4 | July 2026 — the onen-build area-4 precursors |
+     | `2026312000` | +3 | the week of 8–14 July |
+     | `2026312400` | +2 | 11 July — today's actions toward the week |
+
+     **Write addresses FULL WIDTH — the number is floor-relative, always** (David, 2026-07-16;
+     sunstone:1.5). `2020000000` is the decade at +7; `202` is a *different* address — pscale
+     2/1/0, right-anchored at the floor, reached by walking seven underscores into the root chain,
+     and empty. Verified live both ways on this block. In `2026312400` the trailing `00` are not
+     decoration: they are pscale 1 (the gathering) and pscale 0 (the beat), unwritten because
+     nobody has stood there. That is the ladder doing its job — *"otherwise the floor is useless."*
+     - Every objective preserved; only the `NOW` rung-placeholder dissolved into the root text —
+       a beat needs no node, and **that is the gain**: nothing is rewritten as time passes, where
+       the floor-6 skeleton's TODAY had to be re-authored daily and was four days stale when
+       retired.
+     - Two editorial calls, recorded in-block: the week sits at band **2** (8–14 Jul), not band 1,
+       because the 11th is there and that preserves the backcast's week-contains-day nesting — the
+       seven-day-band trade, made concrete; and one new line voices the century-0 rung.
+     - Substrate lessons paid for live: a surgical `path-walk+descent` write **merges**, it does
+       not replace (band 1 survived a rewrite, and a nested `_` never landed) — restructure a
+       subtree with a whole-block write. And a node's underscore has no direct address: `20263120`
+       strips its trailing zero back to `2026312`.
+     - Lock: David's `happyseaurchin` beach key. Pre-reset floor-6 block backed up before any
+       attempt.
+     - **Display note, not a substrate fault**: a path-walk prints `[202]` beside `d3 p7` — the
+       walked digits, unpadded, not the canonical address. `formatAddress` renders the walk rather
+       than re-padding it to the floor. The parser is correct and floor-relative (proved above);
+       this is the emit label only. Flagged, not touched — canon, and the Python is the source.
 
 ## 12. Identity — the third axis, now scoped-lite
 
