@@ -597,10 +597,15 @@ export function formatRead(r: BspReadResult): string {
     case 'block':
       return `[whole block]\n${JSON.stringify(r.block, null, 2)}`;
     case 'path-walk': {
+      // Ancestors frame; the TERMINUS is what was asked for — render it whole.
+      // (NHITL round 4: the fold law's own clauses were cut exactly where "who
+      // folds" would be, and pulling one leaf in full took a third call.)
       const lines = [`[path-walk @ "${r.spindle}"]`];
-      for (const e of (r.entries as PathWalkEntry[]) ?? []) {
-        const content = e.content ?? '(no content)';
-        lines.push(`  d${e.depth} p${e.pscale} [${e.address}]: ${truncate(String(content), 150)}`);
+      const entries = (r.entries as PathWalkEntry[]) ?? [];
+      for (const [i, e] of entries.entries()) {
+        const content = String(e.content ?? '(no content)');
+        const text = i === entries.length - 1 ? content : truncate(content, 150);
+        lines.push(`  d${e.depth} p${e.pscale} [${e.address}]: ${text}`);
       }
       return lines.join('\n');
     }
@@ -617,9 +622,13 @@ export function formatRead(r: BspReadResult): string {
     case 'path-walk+descent': {
       const lines = [`[path-walk+descent @ "${r.spindle}" pscale ${r.pscale}]`];
       lines.push('  path-walk:');
-      for (const e of r.path_walk ?? []) {
-        const c = e.content ?? '(no content)';
-        lines.push(`    d${e.depth} p${e.pscale} [${e.address}]: ${truncate(String(c), 150)}`);
+      // The walk's own terminus renders whole (the descent beneath stays the
+      // truncated breadth view — point-read a child for its full text).
+      const pw = r.path_walk ?? [];
+      for (const [i, e] of pw.entries()) {
+        const c = String(e.content ?? '(no content)');
+        const text = i === pw.length - 1 ? c : truncate(c, 150);
+        lines.push(`    d${e.depth} p${e.pscale} [${e.address}]: ${text}`);
       }
       lines.push('  descent:');
       for (const e of r.descent ?? []) {

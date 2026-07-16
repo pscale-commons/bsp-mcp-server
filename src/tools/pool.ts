@@ -885,6 +885,14 @@ export async function handlePoolEngage(
     // trace" is the gate's own promise, and NHITL round 3 met the broken half
     // of it (cleared slots rendered "(empty)" and padded the author count).
     const standing = liquidSlots.filter((s) => s.text !== '');
+    // Read-your-writes: the mirror fetch is a separate wire read moments after
+    // the stage write, and a lagging read can miss the caller's own slot (NHITL
+    // round 4: every "submitted: liquid slot N" ack sat beside a mirror reading
+    // "0 authors" — a solo stager could never verify their own intention).
+    // What was just written is known without asking the wire: render it.
+    if (submit && submit.trim() !== '' && submittedSlot !== null && !standing.some((s) => s.agent_id === agent_id)) {
+      standing.push({ position: parseInt(submittedSlot, 10) || 0, agent_id, text: submit, ts: null, address: null } as PoolContribution);
+    }
     lines.push(`# Liquid — pending, not yet committed (${standing.length} ${standing.length === 1 ? 'author' : 'authors'})`);
     if (standing.length === 0) {
       lines.push('(no pending intentions)');
