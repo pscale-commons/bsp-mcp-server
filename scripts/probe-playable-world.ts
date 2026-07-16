@@ -144,8 +144,8 @@ Output ONLY the JSON object (the spatial content). No prose, no "name" wrapper.`
   // ── 4. VERIFY — did they enter + act in the generated geography? ──
   const enteredAll = CHARS.every((h) => allCalls[h].some((c) => c.startsWith('pscale_play')));
   const actedAll = CHARS.every((h) => allCalls[h].some((c) => /pscale_pool_engage/.test(c)));
-  const liquid = await block(`liquid:pool:beaten-drum-main`);
-  const pool = await block(`pool:beaten-drum-main`);
+  const liquid = await block(`liquid:pool:111`);
+  const pool = await block(`pool:111`);
   const liveCount = liquid ? Object.keys(liquid).filter((k) => /^[1-9]$/.test(k)).length : 0;
   console.log(`\n${'='.repeat(56)}\nVERIFY`);
   console.log(`  · all three entered via pscale_play: ${enteredAll ? 'yes' : 'NO'}`);

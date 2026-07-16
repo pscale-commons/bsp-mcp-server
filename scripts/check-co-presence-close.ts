@@ -24,7 +24,7 @@ import { loadBlock } from '../src/db.js';
 const BEACH_REPO = process.env.BEACH_REPO || fileURLToPath(new URL('../../pscale-beach', import.meta.url));
 const PORT = parseInt(process.env.CHECK_PORT || '8801', 10);
 const BEACH = `http://localhost:${PORT}`;
-const ROOM = 'beaten-drum-main';
+const ROOM = '111';
 const SECRET = 'thorn142';
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
