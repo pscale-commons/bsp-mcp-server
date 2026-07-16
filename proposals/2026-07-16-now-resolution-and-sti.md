@@ -39,7 +39,20 @@ sundial makes canonical:
 |---|---|---|---|
 | **S** — space | **AUTHORED** | `spatial:<world>` | federation should diversify worlds |
 | **T** — time | **COMPUTED** | value: the envelope's grounding; law: `pscale:sundial`; record: `pool:<addr>` (appended time at the spatial coordinate — supernest is deep time, liquid is the pending edge) | a stored now is stale before the write returns; the clock is the one thing federation must not fork |
-| **I** — identity | **REGISTERED** | `witnessed:` / `knows:` / `passport:` per handle, the handle holding an address-pointer (passport:3) | sovereignty — the interior stays with its keeper |
+| **I** — identity | **REGISTERED** | `identity:<world>` — the aspect block on the borrowed spatial skeleton: group perspectives fan at each place's coordinate (`identity:earth` is live at earth.beach); finer than the group rungs the holding turns personal — `witnessed:` / `knows:` / `passport:` per handle (passport:3 the address-pointer), `sed:` registering landing order | sovereignty — the interior stays with its keeper; accounts stay plural, folded at read, never merged into canon |
+
+> **Correction (2026-07-16, same day, after reading the biome's `fold-synthesis` and the
+> live `identity:earth`):** the I row originally named only the per-handle organs — the
+> personal rung mistaken for the coordinate. The Identity coordinate is the aspect block
+> on the borrowed spatial skeleton: at a place's coordinate the digits fan into GROUP
+> perspectives — the place as each "we" holds it (the barbarians' Thornkeep, the
+> villagers' Thornkeep; fold-synthesis 2.2–2.3 and 4.1: carving is perspectival, plural
+> accounts are intrinsic, the merge is synthesis on demand and never a forced canon).
+> Individuals attach at room scale, groups at building/settlement, cultures above — the
+> identity ladder falls out of scale-matching with space, and at its finest rung the
+> holding moves to the per-handle blocks. `sed:` is one registration mechanism inside
+> this, not the coordinate. The row is corrected in place; this note records the change.
+> The fantasy-side identity block (`identity:thornwood`) is owed, authored from play.
 
 The fold across aspects at one coordinate is `bsp-floor` and the tree pattern (spine +
 mirrors at self-same addresses + fold) — already operational (battery/state-of-play).
