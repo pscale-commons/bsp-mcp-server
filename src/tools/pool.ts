@@ -854,8 +854,17 @@ export async function handlePoolEngage(
     lines.push('');
   }
   if (directiveText) {
-    lines.push("# Operating directive — the room's rules, authored by the designer; READ AND FOLLOW THIS EVERY TURN, do not merely acknowledge it");
-    lines.push(directiveText);
+    if (sincePosition > 0) {
+      // Marker-aware delivery (NHITL round 3): the full directive arrived with
+      // the seat's first engage (marker 0); a continuing seat gets the pointer,
+      // so the scene breathes above the law. A returning seat re-enters at
+      // marker 0 and receives the whole map again.
+      lines.push(`# Operating directive — ${purpose} (standing law, delivered in full at your first engage; follow it every turn)`);
+      lines.push('The map stands as delivered. When the moment names a branch, walk the directive block at that branch for its detail.');
+    } else {
+      lines.push("# Operating directive — the room's rules, authored by the designer; READ AND FOLLOW THIS EVERY TURN, do not merely acknowledge it");
+      lines.push(directiveText);
+    }
     lines.push('');
   } else {
     lines.push('# Purpose');
@@ -871,11 +880,16 @@ export async function handlePoolEngage(
     lines.push('');
   }
   if (withLiquid) {
-    lines.push(`# Liquid — pending, not yet committed (${liquidSlots.length} ${liquidSlots.length === 1 ? 'author' : 'authors'})`);
-    if (liquidSlots.length === 0) {
+    // A withdrawn slot keeps its stamps (the window seed must not move) but its
+    // empty text is a trace the mirror must not show — "clearing leaves no
+    // trace" is the gate's own promise, and NHITL round 3 met the broken half
+    // of it (cleared slots rendered "(empty)" and padded the author count).
+    const standing = liquidSlots.filter((s) => s.text !== '');
+    lines.push(`# Liquid — pending, not yet committed (${standing.length} ${standing.length === 1 ? 'author' : 'authors'})`);
+    if (standing.length === 0) {
       lines.push('(no pending intentions)');
     } else {
-      for (const s of liquidSlots) {
+      for (const s of standing) {
         const who = s.agent_id ?? '(anon)';
         const mine = s.agent_id === agent_id ? ' (you)' : '';
         // Arrival is the FIRST-STAGED stamp (slot position 2, surfaced as

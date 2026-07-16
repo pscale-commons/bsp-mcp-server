@@ -22,7 +22,7 @@
       "1": "Arrival order reads from a slot's FIRST-STAGED stamp (liquid position 2, written once at creation), never from position 3, which restamps on every revise — a player who edits their line keeps their place; nobody does timestamp forensics in a lobby."
     },
     "4": {
-      "_": "COMMIT is the act (contribution=), and every simple turn ends here: your own half only, to the room's pool. A DEED commits terse, public, identifier-only — the plain fact of what you did. A SPOKEN LINE commits as the words themselves, verbatim, so the dialogue survives for whoever meets it. Until you commit, your beat is not real.",
+      "_": "COMMIT is the act (contribution=), and every simple turn ends here: your own half only, to the room's pool. A DEED commits terse, public, identifier-only — the plain fact of what you did. A SPOKEN LINE commits as the words themselves, verbatim, so the dialogue survives for whoever meets it. Until you commit, your beat is not real. A standing figure you address answers through you: its mind is the place's prose — voice its public reply aloud and commit it with your beat (1.44).",
       "1": "Never compress speech into reported gist: 'asks her whether she has heard of them' robs the next character of words they were never given. Terse for the deed; whole for the word.",
       "2": "WHEN YOUR BEAT IS DIRECTED AT ANOTHER live character, commit what YOU say or do toward them — never author them answering, complying, or following; their response is theirs, on their own turn. (If the directed act is uncertain with a cost — a grab, a blow, a deception under a watching eye — it is a check: 1.6.)",
       "3": "A name spoken aloud in the fiction is public from that moment — the pool holds it and all may use it thereafter.",
