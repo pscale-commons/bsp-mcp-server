@@ -850,7 +850,10 @@ export async function handlePoolEngage(
   }
   if (postedPosition !== null) {
     const where = postedTo === blockName ? 'the pool' : postedTo;
-    lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}`);
+    // A successful claim must not ack like a plain append (NHITL round 4: "a
+    // resolver can't tell a successful window-claim from an ordinary append").
+    const claimed = params.resolves_window ? ` — window ${params.resolves_window} RESOLVED, your claim was first; the buffer is cleared and the next intention opens fresh` : '';
+    lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}`);
     lines.push('');
   }
   if (directiveText) {
@@ -885,6 +888,14 @@ export async function handlePoolEngage(
     // trace" is the gate's own promise, and NHITL round 3 met the broken half
     // of it (cleared slots rendered "(empty)" and padded the author count).
     const standing = liquidSlots.filter((s) => s.text !== '');
+    // Read-your-writes: the mirror fetch is a separate wire read moments after
+    // the stage write, and a lagging read can miss the caller's own slot (NHITL
+    // round 4: every "submitted: liquid slot N" ack sat beside a mirror reading
+    // "0 authors" — a solo stager could never verify their own intention).
+    // What was just written is known without asking the wire: render it.
+    if (submit && submit.trim() !== '' && submittedSlot !== null && !standing.some((s) => s.agent_id === agent_id)) {
+      standing.push({ position: parseInt(submittedSlot, 10) || 0, agent_id, text: submit, ts: null, address: null } as PoolContribution);
+    }
     lines.push(`# Liquid — pending, not yet committed (${standing.length} ${standing.length === 1 ? 'author' : 'authors'})`);
     if (standing.length === 0) {
       lines.push('(no pending intentions)');
@@ -899,6 +910,14 @@ export async function handlePoolEngage(
         const arrived = s.address && /^\d{4}-\d{2}-\d{2}T/.test(s.address) ? s.address : s.ts;
         const revised = s.ts && arrived !== s.ts ? `, revised ${s.ts}` : '';
         lines.push(`- ${who}${mine} (arrived ${arrived ?? '?'}${revised}): ${s.text || '(empty)'}`);
+      }
+      // The window's open-stamp rides WITH the window, not behind the dice gate
+      // (NHITL round 4: the fold law says "the open-stamp the envelope hands
+      // you", but the only emission sat inside the dice section — the town's
+      // day-fold resolver had to judge the stamp from slot headers).
+      const liveOpenTs = windowOpenTs(liquidBlock);
+      if (liveOpenTs) {
+        lines.push(`window opened ${liveOpenTs} — the stamp does not move; a resolution claims this window by passing it as resolves_window.`);
       }
     }
     lines.push('');
@@ -943,15 +962,12 @@ export async function handlePoolEngage(
   const liveForDice = liquidSlots.filter((s) => s.text !== '' && s.agent_id);
   if (withLiquid && isRpgPool && liveForDice.length > 0) {
     const perActor = windowDicePerAuthor(blockName, liquidBlock, liveForDice);
-    const { openTs } = windowSeed(blockName, liquidBlock, liveForDice);
     lines.push('# Window dice (for the resolver — exploding-d10 luck PER ACTOR, rules:nomad:2)');
     for (const d of perActor) {
       lines.push(`- ${d.agent_id}: positive ${d.pos}, negative ${d.neg}, luck ${d.luck > 0 ? '+' : ''}${d.luck}`);
     }
     lines.push("Each actor's luck is fixed for this window — use these, never invent dice. Resolve each actor's own band (CF + SF + their luck − difficulty), then weave ONE event-skeleton from the separate outcomes.");
-    if (openTs) {
-      lines.push(`window opened ${openTs} — the stamp does not move; closed once the room's duration has passed.`);
-    }
+    // (The window's open-stamp rides with the liquid mirror above — one emission.)
     lines.push('');
   }
   lines.push(`# Contributions since position ${sincePosition} (count: ${contributions.length}${more_available ? ', more available' : ''})`);
