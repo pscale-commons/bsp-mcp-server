@@ -113,7 +113,7 @@ API_KEY = _load_api_key()
 # call, opus for coarse review/reorient.
 TIERS = {
     "haiku":  os.environ.get("GENUS_HAIKU",  "claude-haiku-4-5-20251001"),
-    "sonnet": os.environ.get("GENUS_SONNET", "claude-sonnet-4-6"),
+    "sonnet": os.environ.get("GENUS_SONNET", "claude-sonnet-5"),
     "opus":   os.environ.get("GENUS_OPUS",   "claude-opus-4-8"),
 }
 MODEL = os.environ.get("GENUS_MODEL", TIERS["sonnet"])    # δ (reflective) call
