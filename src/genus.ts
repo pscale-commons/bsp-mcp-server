@@ -738,6 +738,11 @@ export async function genusCompose(load: Loader, now: number, peers: Map<string,
 export interface BlockStore {
   load: Loader;
   save: (name: string, block: PMap) => Promise<void>;
+  /** Accumulator append — the beach allocates the next free slot atomically
+   *  and supernests on rollover. Required for room writes (the room is an
+   *  accumulator; a fold never addresses or replaces it) and used for the
+   *  per-wake trace. Optional: a store without it refuses room writes. */
+  append?: (name: string, entry: PMap) => Promise<{ ok: boolean; slot?: string; error?: string }>;
   /** The instance's own handle, when known — lets the fold normalise the
    *  substrate spelling of an organ (name:handle) back to the bare organ. */
   handle?: string;
@@ -995,8 +1000,53 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
       });
       continue;
     }
+    if (name === 'pool') {
+      // THE ROOM IS AN ACCUMULATOR — fold writes APPEND like everyone else's
+      // speech; the beach allocates the slot. An addressed write through this
+      // door once overwrote a peer's entry, and a root write once replaced a
+      // whole room (2026-07-17, the animator's lesson — the same law at
+      // every door).
+      const ts = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+      let entry: PMap | null = null;
+      if (typeof content === 'string') {
+        entry = new Map([[ZK, content as PNode], ['1', (store.handle ?? '') as PNode], ['3', ts as PNode]]);
+      } else if (content && typeof content === 'object' && !Array.isArray(content)) {
+        const pc = toPNode(content);
+        if (pc instanceof Map) {
+          entry = pc;
+          const who = entry.get('1');
+          if (typeof who !== 'string' || !who) entry.set('1', (store.handle ?? '') as PNode);
+          const when = entry.get('3');
+          if (typeof when !== 'string' || !when) entry.set('3', ts as PNode);
+        }
+      }
+      if (!entry) {
+        failed.push({ address: ref, error: 'a room entry is words — a string, or {_, 1, 3}' });
+        continue;
+      }
+      if (!store.append) {
+        failed.push({ address: ref, error: 'room writes append and this store cannot append — speak in the room via bsp() instead' });
+        continue;
+      }
+      const ack = await store.append('pool', entry);
+      if (ack.ok) {
+        applied += 1;
+        appliedPairs.push([`pool (appended at ${ack.slot ?? '?'})`, toPNode(content)]);
+      } else {
+        failed.push({ address: ref, error: `room append failed — ${String(ack.error ?? 'unknown').slice(0, 120)}` });
+      }
+      continue;
+    }
     try {
       const pc = toPNode(content);
+      if (!addr && pc instanceof Map) {
+        // a root replace of a populated organ erases its record — refuse
+        const existing = await store.load(name);
+        if (existing instanceof Map && Array.from(existing.keys()).some((k) => /^[1-9]$/.test(k))) {
+          failed.push({ address: ref, error: 'root replace refused — the block is populated; address a position' });
+          continue;
+        }
+      }
       await applyWrite(store, name, addr, pc);
       applied += 1;
       appliedPairs.push([ref, pc]);
@@ -1166,7 +1216,34 @@ export function wireStore(beach: string, handle: string, secret?: string, teachi
     const back = await load(name); // confirm by read-back — a lost write must fail loudly
     if (!back || !deepEq(back, block)) throw new Error(`write to ${name} did not read back identical`);
   };
-  return { load, save, handle: storeHandle };
+  const append = async (name: string, entry: PMap): Promise<{ ok: boolean; slot?: string; error?: string }> => {
+    // Accumulator append — the beach allocates the slot atomically (and
+    // supernests on rollover); the ack carries the server-assigned slot.
+    const body: PMap = new Map([
+      ['content', entry as PNode],
+      ['append', true as PNode],
+    ]);
+    if (secret) body.set('secret', secret);
+    try {
+      const { status, text } = await fetchText(endpoint(name), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: pyDumps(body),
+      });
+      if (status >= 400) return { ok: false, error: `HTTP ${status} ${text.slice(0, 120)}` };
+      cache.delete(name);
+      let slot: string | undefined;
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed && typeof parsed.slot === 'string') slot = parsed.slot;
+        else if (parsed && typeof parsed.slot === 'number') slot = String(parsed.slot);
+      } catch { /* an ack without a body is still an ack */ }
+      return { ok: true, slot };
+    } catch (ex: any) {
+      return { ok: false, error: String(ex?.message ?? ex).slice(0, 120) };
+    }
+  };
+  return { load, save, append, handle: storeHandle };
 }
 
 /** In-memory store for tests. */
@@ -1177,6 +1254,17 @@ export function memStore(initial: Record<string, PNode> = {}): BlockStore & { bl
     load: async (name) => (blocks.has(name) ? blocks.get(name)! : null),
     save: async (name, block) => {
       blocks.set(name, block);
+    },
+    // Accumulator append — next zero-free top-level slot (the floor-1 counting
+    // line; enough for tests — the live beach supernests on rollover).
+    append: async (name, entry) => {
+      const cur = blocks.get(name);
+      const block: PMap = cur instanceof Map ? (cur as PMap) : new Map([[ZK, name as PNode]]);
+      let n = 1;
+      while (block.has(String(n)) || String(n).includes('0')) n += 1;
+      block.set(String(n), entry);
+      blocks.set(name, block);
+      return { ok: true, slot: String(n) };
     },
   };
 }

@@ -140,15 +140,38 @@ async function foldUnits() {
 
   // role-with-handle write keys — the room resolves to the organ (kernel._split_ref;
   // the located:5 fault: "pool:egg-one" misread as block "pool" + non-digit path "egg-one")
+  // — and the room is an ACCUMULATOR: fold writes APPEND ({_,1,3}, signed,
+  // beach-allocated slot); an addressed slot is set aside (the 2026-07-17
+  // lesson — an addressed write overwrote a peer, a root write wiped a room).
   {
     const store = memStore({ pool: toPNode({ _: 'my room' }) });
     store.handle = 'egg-one';
     const r = await genusFold(store, { writes: { 'pool:egg-one:5': 'an answer in my room' }, note: 'answered' });
     check('own-handle write key normalises to the organ', r.applied === 1 && r.failed.length === 0, JSON.stringify(r.failed));
     const pool = (await store.load('pool')) as PMap;
-    check('the room carries the answer at 5', String(pool.get('5')) === 'an answer in my room', String(pool.get('5')));
+    const roomEntry = pool.get('1') as PMap;
+    check(
+      'the room APPENDS the answer — {_,1,3} signed, addressed slot set aside',
+      roomEntry instanceof Map
+        && String(roomEntry.get('_')) === 'an answer in my room'
+        && String(roomEntry.get('1')) === 'egg-one'
+        && typeof roomEntry.get('3') === 'string'
+        && !pool.has('5'),
+      JSON.stringify(Array.from(pool.keys())),
+    );
+    const rootWipe = await genusFold(store, { writes: { 'pool:egg-one': { _: 'a fresh room' } }, note: 'x' });
+    const poolAfter = (await store.load('pool')) as PMap;
+    check(
+      'a root write to the room appends too — the record cannot be wiped',
+      rootWipe.applied === 1 && poolAfter.get('1') instanceof Map && poolAfter.get('2') instanceof Map,
+      JSON.stringify(Array.from(poolAfter.keys())),
+    );
     const foreign = await genusFold(store, { writes: { 'pool:weft:5': 'graft' }, note: 'x' });
     check('foreign-handle write key refused as not-an-organ', foreign.applied === 0 && (foreign.failed[0]?.error ?? '').includes('not an organ'), foreign.failed[0]?.error);
+    const populated = memStore({ located: toPNode({ _: 'where I stand', 1: 'a place' }) });
+    populated.handle = 'egg-one';
+    const rr = await genusFold(populated, { writes: { located: { _: 'wiped' } }, note: 'x' });
+    check('root replace of a populated organ refused', rr.applied === 0 && (rr.failed[0]?.error ?? '').includes('root replace'), rr.failed[0]?.error);
     check('splitRef: address is the trailing digit segment', JSON.stringify(splitRef('purpose:3.2', 'egg-one')) === '["purpose","3.2"]');
     check('splitRef: own-handle suffix is the organ', JSON.stringify(splitRef('pool:egg-one', 'egg-one')) === '["pool",""]');
     check('splitRef: multi-dot rides whole to the address error', JSON.stringify(splitRef('conditions:1.1.4', 'egg-one')) === '["conditions","1.1.4"]');

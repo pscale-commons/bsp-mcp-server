@@ -126,10 +126,38 @@ export async function handleGenus(params: {
       );
     }
     const r = await genusFold(store, fold);
+    // The trace convention (project:genus-one 1.3) — a thin per-wake residue
+    // entry beachside (trace:<handle>, an open accumulator), so every tab and
+    // every door sees this wake happened without holding the session that ran
+    // it. γ is unknowable at fold time through this door (the compose was a
+    // separate call); the fields it can know, it writes. Best-effort — a
+    // trace that fails never fails the fold.
+    let traceLine = '';
+    if (store.append) {
+      const writeRefs = Object.keys(
+        fold && typeof fold.writes === 'object' && !Array.isArray(fold.writes) ? fold.writes : {},
+      );
+      const trunc = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+      const entry: PMap = new Map([
+        [ZK, trunc(String(fold.note ?? '').trim() || '(no note)', 140) as PNode],
+        ['1', handle as PNode],
+        ['2', 'mcp' as PNode],
+        ['3', new Date().toISOString().replace(/\.\d{3}Z$/, 'Z') as PNode],
+        ['4', String(r.status ?? '') as PNode],
+        ['5', '' as PNode],
+        ['6', trunc(writeRefs.join(','), 120) as PNode],
+        ['7', `applied=${r.applied} refused=${r.failed.length} saves_failed=0` as PNode],
+      ]);
+      const ack = await store.append('trace', entry);
+      traceLine = ack.ok
+        ? `trace appended at trace:${handle}${ack.slot ? ` slot ${ack.slot}` : ''} (door: mcp) — every tab sees this wake`
+        : `trace append did not land (${String(ack.error ?? 'unknown').slice(0, 80)}) — the fold itself stands`;
+    }
     const lines = [
       `pscale_genus — fold applied for ${handle} at ${beach}`,
       `status: ${r.status} · writes applied: ${r.applied} · refused: ${r.failed.length}`,
     ];
+    if (traceLine) lines.push(traceLine);
     if (r.leafAddress) lines.push(`history leaf ${r.leafAddress} written ← ${r.leafVoicing} (lossless: the full output rides beneath the note)`);
     if (r.summaryPaidAt) lines.push(`bracket summary written at ${r.summaryPaidAt} — service-payment received.`);
     if (r.summaryDue) lines.push(`HISTORY SUMMARY OWED at ${r.summaryDue}: a span completed — include "summary" in your next fold: a substantive, NAVIGABLE paragraph over the previous nine, dense with its own handles (proper nouns, block addresses, decisions, failures, open threads, load-bearing leaf addresses) — a descending reader must be able to choose the next span by these keywords alone (service-payment; conditions:9 carries the due until paid).`);
