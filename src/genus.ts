@@ -738,6 +738,30 @@ export async function genusCompose(load: Loader, now: number, peers: Map<string,
 export interface BlockStore {
   load: Loader;
   save: (name: string, block: PMap) => Promise<void>;
+  /** The instance's own handle, when known — lets the fold normalise the
+   *  substrate spelling of an organ (name:handle) back to the bare organ. */
+  handle?: string;
+}
+
+/** A fold write key is "name[:addr]" — but block names may themselves carry
+ *  colons (role-with-handle at the beach), so splitting at the FIRST colon
+ *  truncates the name and misreads the rest as an address ("pool:egg-one" →
+ *  addr "egg-one", a non-digit path — the fault egg-one recorded at its
+ *  located:5). The address is the TRAILING segment, and only when it reads
+ *  as one (digits and dots); otherwise the whole key is the name. An
+ *  own-handle suffix then normalises back to the bare organ: "pool:egg-one"
+ *  ≡ "pool" for egg-one itself. (kernel._split_ref parity)
+ */
+export function splitRef(ref: string, handle?: string): [string, string] {
+  const ci = ref.lastIndexOf(':');
+  let name = ref;
+  let addr = '';
+  if (ci !== -1 && /^[0-9.]*$/.test(ref.slice(ci + 1))) {
+    name = ref.slice(0, ci);
+    addr = ref.slice(ci + 1);
+  }
+  if (handle && name.endsWith(':' + handle)) name = name.slice(0, -handle.length - 1);
+  return [name, addr];
 }
 
 /** Apply one spark write; shape derives from address + content. (kernel.apply_write) */
@@ -954,10 +978,16 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
   const appliedPairs: [string, PNode][] = [];
   const failed: { address: string; error: string }[] = [];
   for (const [ref, content] of pairs) {
-    const ci = ref.indexOf(':');
-    const name = ci === -1 ? ref : ref.slice(0, ci);
-    const addr = ci === -1 ? '' : ref.slice(ci + 1);
+    const [name, addr] = splitRef(ref, store.handle);
     if (!name) continue;
+    if (name.includes(':')) {
+      // a name outside this shell's organs
+      failed.push({
+        address: ref,
+        error: `not an organ of this shell — writes land in your own shell only (v0): bare organ names (pool, surface, stash, ...), which the wire spells name:${store.handle ?? '<handle>'} at the beach; another handle's block is read-only from here`,
+      });
+      continue;
+    }
     if (name === 'history') {
       failed.push({
         address: ref,
@@ -1088,6 +1118,7 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
  *  whole-block confirmed saves ({confirm: true} per the beach's replace gate). */
 export function wireStore(beach: string, handle: string, secret?: string, teaching?: Map<string, PNode>): BlockStore {
   const origin = beach.replace(/\/+$/, '');
+  const storeHandle = handle;
   const cache = new Map<string, PNode | null>();
   const endpoint = (name: string) => `${origin}/.well-known/pscale-beach?block=${encodeURIComponent(`${name}:${handle}`).replace(/%3A/gi, ':')}`;
   const fetchText = async (url: string, init?: RequestInit): Promise<{ status: number; text: string }> => {
@@ -1135,7 +1166,7 @@ export function wireStore(beach: string, handle: string, secret?: string, teachi
     const back = await load(name); // confirm by read-back — a lost write must fail loudly
     if (!back || !deepEq(back, block)) throw new Error(`write to ${name} did not read back identical`);
   };
-  return { load, save };
+  return { load, save, handle: storeHandle };
 }
 
 /** In-memory store for tests. */
