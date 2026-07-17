@@ -946,6 +946,28 @@ def _redial_history(path):
     save_block("reflexive", refl)
 
 
+def _split_ref(ref):
+    """A fold write key is "name[:addr]" — but block names may themselves
+    carry colons (role-with-handle at the beach), so splitting at the FIRST
+    colon truncates the name and misreads the rest as an address
+    ("pool:egg-one" → addr "egg-one", a non-digit path — the fault egg-one
+    recorded at its located:5). The address is the TRAILING segment, and
+    only when it reads as one (digits and dots); otherwise the whole key is
+    the name. Dialect addition (biome _split_ref + this): the substrate
+    spelling of an organ is name:HANDLE, so an own-handle suffix normalises
+    back to the bare organ — "pool:egg-one" ≡ "pool" for egg-one itself.
+    "purpose:3.2" → ("purpose", "3.2"); "pool:egg-one" → ("pool", "");
+    "pool:egg-one:5" → ("pool", "5"); "pool:weft:5" → ("pool:weft", "5")."""
+    head, sep, tail = ref.rpartition(":")
+    if sep and re.fullmatch(r"[0-9.]*", tail):
+        name, addr = head, tail
+    else:
+        name, addr = ref, ""
+    if HANDLE and name.endswith(":" + HANDLE):
+        name = name[: -len(HANDLE) - 1]
+    return name, addr
+
+
 def route(output, gamma=None):
     raw = output.get("writes")
     if raw is None:                                    # tolerate schema slips: 'write' / 'edits'
@@ -962,11 +984,18 @@ def route(output, gamma=None):
     applied, applied_pairs, failed = 0, [], []
     peers = load_peers()
     for ref, content in pairs:
-        name, _, addr = ref.partition(":")
+        name, addr = _split_ref(ref)
         if not name:
             continue
         if name in peers:                              # sovereignty: a peer is read-only
             failed.append({"address": ref, "error": "refusing to write a peer's block (read-only)"})
+            continue
+        if ":" in name:                                # a name outside this shell's organs
+            failed.append({"address": ref, "error": "not an organ of this shell — writes land in "
+                                                     "your own shell only (v0): bare organ names "
+                                                     "(pool, surface, stash, ...), which the wire "
+                                                     "spells name:%s at the beach; another handle's "
+                                                     "block is read-only from here" % (HANDLE or "<handle>")})
             continue
         if name == "history":                          # history is automatic memory, never a notepad
             failed.append({"address": ref, "error": "history is written by the kernel (lossless leaf per "

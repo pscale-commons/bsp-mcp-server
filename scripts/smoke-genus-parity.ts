@@ -29,6 +29,7 @@ import {
   memStore,
   parseOrdered,
   pyDumps,
+  splitRef,
   toPNode,
   type Loader,
   type PMap,
@@ -135,6 +136,22 @@ async function foldUnits() {
     const store = memStore({});
     const r = await genusFold(store, { writes: { 'history:5': 'graffiti' }, note: 'x' });
     check('hand-write to history refused, stash named', r.applied === 0 && (r.failed[0]?.error ?? '').includes('stash'), r.failed[0]?.error);
+  }
+
+  // role-with-handle write keys — the room resolves to the organ (kernel._split_ref;
+  // the located:5 fault: "pool:egg-one" misread as block "pool" + non-digit path "egg-one")
+  {
+    const store = memStore({ pool: toPNode({ _: 'my room' }) });
+    store.handle = 'egg-one';
+    const r = await genusFold(store, { writes: { 'pool:egg-one:5': 'an answer in my room' }, note: 'answered' });
+    check('own-handle write key normalises to the organ', r.applied === 1 && r.failed.length === 0, JSON.stringify(r.failed));
+    const pool = (await store.load('pool')) as PMap;
+    check('the room carries the answer at 5', String(pool.get('5')) === 'an answer in my room', String(pool.get('5')));
+    const foreign = await genusFold(store, { writes: { 'pool:weft:5': 'graft' }, note: 'x' });
+    check('foreign-handle write key refused as not-an-organ', foreign.applied === 0 && (foreign.failed[0]?.error ?? '').includes('not an organ'), foreign.failed[0]?.error);
+    check('splitRef: address is the trailing digit segment', JSON.stringify(splitRef('purpose:3.2', 'egg-one')) === '["purpose","3.2"]');
+    check('splitRef: own-handle suffix is the organ', JSON.stringify(splitRef('pool:egg-one', 'egg-one')) === '["pool",""]');
+    check('splitRef: multi-dot rides whole to the address error', JSON.stringify(splitRef('conditions:1.1.4', 'egg-one')) === '["conditions","1.1.4"]');
   }
 
   // the counting line: 1-9 flat → wrap at the 10th (leaf 11, due 10 over 1-9)
