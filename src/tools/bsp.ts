@@ -274,7 +274,7 @@ export const bspParamsSchema = {
   content: z
     .any()
     .optional()
-    .describe('Payload for writes. Shape MUST match the shape derived from (spindle, pscale_attention). Omit for reads.'),
+    .describe('Payload for writes. Shape MUST match the shape derived from (spindle, pscale_attention). Omit for reads. Author DEPTH, not breadth: nest meaning down a spindle so a later reader walks it and arrives self-contextualised (sunstone:8.5) — design by CONCEPT, which nests, never by CATEGORY, which fans flat. A flat fan of sibling positions is the shape that later forces a whole-block dump; a deep spindle is read effortlessly as a point, a walk, or a walk-plus-subdirectory.'),
   secret: z
     .string()
     .optional()
