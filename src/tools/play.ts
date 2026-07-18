@@ -33,18 +33,52 @@ import { readAt } from '../bsp.js';
 import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
 
 /**
- * Resolve a world to its beach origin. A full URL is used as-is; a bare world
- * name resolves to the sub-domain convention <world>.beach.<host>
- * (block-conventions:4.8 — each world is its own isolated beach), derived from
- * the default beach's host. "thornwood" → https://thornwood.beach.happyseaurchin.com.
+ * Resolve a world to its beach origin. A full URL is used as-is. A BARE world
+ * name resolves as DATA, not code (Fable, 2026-07-18): consult the `worlds`
+ * directory block at the default beach (name → route) — a new named world is one
+ * authored line, never a deploy. Falls back to the sub-domain convention
+ * <world>.beach.<host> (block-conventions:4.8) for legacy worlds not in the
+ * directory, so "thornwood" still resolves whether or not it has a directory row.
  */
-function worldOrigin(world: string): string {
+function subdomainOrigin(world: string): string {
   const w = world.trim().replace(/\/+$/, '');
-  if (/^https?:\/\//i.test(w)) return w;
   let host = 'beach.happyseaurchin.com';
   try { host = new URL(DEFAULT_BEACH).host; } catch { /* keep fallback */ }
   const base = host.startsWith('beach.') ? host.slice('beach.'.length) : host;
   return `https://${w}.beach.${base}`;
+}
+
+/** Look a bare world-name up in the `worlds` directory at the default beach. Each
+ *  entry is a string '<name> → <route>'; a route beginning '/' is a path on the
+ *  default beach ('/w/brackenfoot'), anything else is a host or full URL. Read
+ *  fresh, operator-curated (named canonical worlds only — ephemeral tables are not
+ *  listed). No worlds block, no matching row → null, and the caller falls back. */
+async function lookupWorldRoute(name: string): Promise<string | null> {
+  const base = DEFAULT_BEACH.replace(/\/+$/, '');
+  const row = await loadBlock(base, 'worlds').catch(() => null);
+  const w: any = row?.block;
+  if (!w || typeof w !== 'object') return null;
+  const want = name.trim().toLowerCase();
+  for (const k of Object.keys(w)) {
+    if (k === '_') continue;
+    const entry = w[k];
+    if (typeof entry !== 'string' || !entry.includes('→')) continue;
+    const [n, ...rest] = entry.split('→');
+    const route = rest.join('→').trim();
+    if (n.trim().toLowerCase() !== want || !route) continue;
+    if (/^https?:\/\//i.test(route)) return route.replace(/\/+$/, '');
+    if (route.startsWith('/')) return base + route.replace(/\/+$/, '');
+    return `https://${route.replace(/\/+$/, '')}`;
+  }
+  return null;
+}
+
+/** World → beach origin. Full URL as-is; bare name via the worlds directory, then
+ *  the sub-domain fallback. */
+async function resolveWorld(world: string): Promise<string> {
+  const w = world.trim().replace(/\/+$/, '');
+  if (/^https?:\/\//i.test(w)) return w;
+  return (await lookupWorldRoute(w)) ?? subdomainOrigin(w);
 }
 
 /** The beach's no-block index (its named blocks). Empty on any failure. */
@@ -57,6 +91,42 @@ async function beachIndex(origin: string): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+/** Render a lighthouse sub-block (its underscore, then digit children) as readable
+ *  lines — surfaces the fork recipe faithfully in the canon lead, one level deep. */
+function subBlockText(node: any): string {
+  if (typeof node === 'string') return node;
+  if (!node || typeof node !== 'object') return '';
+  const lines: string[] = [];
+  if (typeof node._ === 'string') lines.push(node._);
+  for (const k of Object.keys(node).filter((x) => /^[1-9]$/.test(x)).sort()) {
+    const v = node[k];
+    lines.push(typeof v === 'string' ? `  ${k}. ${v}` : `  ${k}. ${subBlockText(v).replace(/\n/g, '\n  ')}`);
+  }
+  return lines.join('\n');
+}
+
+/** The world's front sign speaks before the door opens (Fable, 2026-07-18): if the
+ *  target hosts a `lighthouse` whose play-disposition (9.3) begins 'canon', play
+ *  LEADS with its fork recipe and hands NO gate+genesis — canon is a read-only
+ *  scenario, and play happens in a forked table. The semantic is AUTHORED in the
+ *  block; a beach with no such signage returns null and behaves exactly as before.
+ *  Never an auto-fork — the copy stays the player's conventional act (lighthouse:1). */
+async function canonSignage(origin: string, world: string, handle: string): Promise<string | null> {
+  const row = await loadBlock(origin, 'lighthouse').catch(() => null);
+  const lh: any = row?.block;
+  if (!lh || typeof lh !== 'object') return null;
+  const disposition = lh['9'] && typeof lh['9'] === 'object' ? lh['9']['3'] : undefined;
+  if (typeof disposition !== 'string' || !/^\s*canon\b/i.test(disposition)) return null;
+  const out: string[] = [];
+  out.push(`# ${world} is a SCENARIO (canon) — ${handle} does not play here`);
+  if (typeof lh._ === 'string') { out.push(''); out.push(lh._); }
+  if (lh['1']) { out.push(''); out.push('─── OPEN A TABLE ───'); out.push(subBlockText(lh['1'])); }
+  if (lh['2']) { out.push(''); out.push('─── THEN GENESIS INTO YOUR TABLE ───'); out.push(subBlockText(lh['2'])); }
+  out.push('');
+  out.push(`Do the copies above to your own table, then call pscale_play again with world set to your table's full URL. This canon surface stays untouched; nothing plays here.`);
+  return out.join('\n');
 }
 
 /** The spatial address in a passport's position 3 ("…spatial:<world>:<addr>") — the
@@ -155,7 +225,7 @@ async function livenessSignals(origin: string, roomName: string | null): Promise
 export const playParamsSchema = {
   world: z
     .string()
-    .describe("The world to inhabit — a bare world-name that resolves to its own sub-beach (<world>.beach.<host>, e.g. 'thornwood' → https://thornwood.beach.happyseaurchin.com), or a full beach URL. Worlds are isolated sub-beaches (block-conventions:4.8); the apex commons is itself a world for users/agents."),
+    .describe("The world to inhabit — a bare world-name (resolved via the `worlds` directory block at the default beach: name → route, e.g. 'brackenfoot' → /w/brackenfoot; falling back to the sub-beach convention <world>.beach.<host> for legacy worlds), or a full beach URL. A scenario surface that declares itself canon (lighthouse:9.3) routes you to fork a private table rather than playing in place. The apex commons is itself a world for users/agents."),
   handle: z
     .string()
     .describe("The handle you inhabit — a character ('anya'), a user ('happyseaurchin'), or an agent ('weft'). The substrate makes no distinction: a handle with its blocks. Used as your contribution attribution and as the suffix of your own blocks (witnessed:<handle>, passport:<handle>, shell:<handle>)."),
@@ -175,13 +245,23 @@ export async function handlePlay(
   params: PlayParams,
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { world, handle, room } = params;
-  const origin = worldOrigin(world);
+  const origin = await resolveWorld(world);
 
   // 1. The world must be a live beach.
   const resolved = await resolveFederationOrigin(origin);
   if (!resolved) {
     return { content: [{ type: 'text', text: `No world at "${world}" (resolved to ${origin}) — it is not a federated beach. Check the world name, or pass a full beach URL.` }] };
   }
+
+  // 1a. The world's front sign speaks before the door opens (Fable, 2026-07-18):
+  //     a canon SCENARIO surface routes the player to fork a private table and
+  //     hands NO gate/genesis here. Authored in the lighthouse (9.3), never
+  //     hardcoded — a beach with no such signage falls straight through to normal
+  //     entry below. This is the machinery 1.3 reserved for exactly the signal the
+  //     blind NHITL fired: the convention carried fork+copy+genesis, but the
+  //     DOORWAY did not point at it. One envelope read of a block the author owns.
+  const canon = await canonSignage(resolved, world, handle);
+  if (canon) return { content: [{ type: 'text', text: canon }] };
 
   // 1b. GENESIS-FIRST: a handle with no blocks cannot be handed a room it is
   //     not in. Detect fresh BEFORE room resolution — a multi-room world's
