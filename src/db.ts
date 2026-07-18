@@ -176,7 +176,14 @@ export function translateAddress(agentId: string, blockName: string): Translated
  *   - Strip default ports (:443/:80)
  *   - Drop fragments and query
  *   - Strip trailing slash
+ *
+ * Path-based world routes (pscale-beach proposal 2026-07-18): a single
+ * /w/<world> path segment names an isolated world namespace at the host and
+ * is part of the beach origin — preserved, lowercased. Any other path is not
+ * an origin component and strips as before; an invalid world label folds to
+ * the bare host, mirroring the beach handler's own fold-to-apex.
  */
+const WORLD_LABEL_RE = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
 export function canonicaliseOrigin(rawUrl: string): string {
   const url = new URL(rawUrl);
   const scheme = url.protocol.toLowerCase();
@@ -186,7 +193,10 @@ export function canonicaliseOrigin(rawUrl: string): string {
     (scheme === 'https:' && (port === '' || port === '443')) ||
     (scheme === 'http:' && (port === '' || port === '80'));
   const portPart = isDefaultPort ? '' : `:${port}`;
-  return `${scheme}//${host}${portPart}`;
+  const m = url.pathname.match(/^\/w\/([A-Za-z0-9-]{1,64})\/?$/);
+  const label = m ? m[1].toLowerCase() : null;
+  const worldPart = label && WORLD_LABEL_RE.test(label) ? `/w/${label}` : '';
+  return `${scheme}//${host}${portPart}${worldPart}`;
 }
 
 function beachEndpoint(origin: string, blockName: string): string {
@@ -264,7 +274,10 @@ function beachSubdomainOf(canonical: string): string | null {
   if (host.startsWith('beach.')) return null;
   if (host === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(host) || host.includes(':')) return null;
   const portPart = url.port ? `:${url.port}` : '';
-  return `${url.protocol}//beach.${host}${portPart}`;
+  // A /w/<world> route rides the fallback too — the world lives at whichever
+  // host answers, so the path must not be dropped when trying beach.<host>.
+  const pathPart = url.pathname !== '/' ? url.pathname : '';
+  return `${url.protocol}//beach.${host}${portPart}${pathPart}`;
 }
 
 /**
