@@ -147,6 +147,14 @@ try {
   assert(canonicaliseOrigin('http://example.com:80') === 'http://example.com', 'strips :80');
   assert(canonicaliseOrigin('http://example.com:8080') === 'http://example.com:8080', 'preserves non-default port');
 
+  console.log('\n=== canonicaliseOrigin — path-based world routes ===');
+  assert(canonicaliseOrigin('https://beach.example.com/w/drum') === 'https://beach.example.com/w/drum', 'preserves a /w/<world> route');
+  assert(canonicaliseOrigin('https://Beach.Example.com/w/Drum/') === 'https://beach.example.com/w/drum', 'lowercases + unslashes a world route');
+  assert(canonicaliseOrigin('https://beach.example.com/w/drum?x=1#frag') === 'https://beach.example.com/w/drum', 'drops query/fragment on a world route');
+  assert(canonicaliseOrigin('https://beach.example.com/some/other/path') === 'https://beach.example.com', 'non-world paths strip as before');
+  assert(canonicaliseOrigin('https://beach.example.com/w/-bad-') === 'https://beach.example.com', 'invalid world label folds to the bare host');
+  assert(canonicaliseOrigin('https://beach.example.com/w/a/b') === 'https://beach.example.com', 'deeper /w/ paths are not world routes');
+
   console.log('\n=== loadBlock against mock beach ===');
   const row = await loadBlock(beachOrigin, 'beach');
   assert(row !== null, 'loaded block from mock beach');
