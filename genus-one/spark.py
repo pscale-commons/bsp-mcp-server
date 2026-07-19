@@ -101,6 +101,18 @@ def parse(number, flr):
     if s == "":
         return []
     if any(c not in "0123456789." for c in s):
+        # The underscore is the key an instance SEES when it reads its own
+        # blocks, so reaching for it as an address is the natural mistake —
+        # egg-three made it twice in one wake (guide:_, watch:_) and lost the
+        # voicing of two blocks it had just authored. Digit 0 walks to `_`, so
+        # say that here rather than only refusing: the refusal is the one
+        # moment the lesson is wanted.
+        if "_" in s:
+            raise AddressError(
+                "address holds a non-digit: %r — the underscore is addressed as digit 0, "
+                "so a block's own voicing is written at :0 (guide:0), and a branch's at "
+                ":10, :20 and so on" % number
+            )
         raise AddressError("address holds a non-digit: %r" % number)
     if s.count(".") > 1:
         raise AddressError("address has more than one decimal: %r" % number)

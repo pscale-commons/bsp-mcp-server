@@ -236,7 +236,21 @@ export function parseAddr(number: string | number | null | undefined, flr: numbe
   const s = number === null || number === undefined ? '' : String(number);
   if (s === '') return [];
   for (const c of s) {
-    if (!'0123456789.'.includes(c)) throw new AddressError(`address holds a non-digit: ${JSON.stringify(s)}`);
+    if (!'0123456789.'.includes(c)) {
+      // The underscore is the key an instance SEES when it reads its own
+      // blocks, so reaching for it as an address is the natural mistake —
+      // egg-three made it twice in one wake (guide:_, watch:_) and lost the
+      // voicing of two blocks it had just authored. Digit 0 walks to `_`, so
+      // say that here rather than only refusing: the refusal is the one moment
+      // the lesson is wanted. (kernel.py / spark.py parity)
+      if (s.includes('_')) {
+        throw new AddressError(
+          `address holds a non-digit: ${JSON.stringify(s)} — the underscore is addressed as digit 0, ` +
+          `so a block's own voicing is written at :0 (guide:0), and a branch's at :10, :20 and so on`,
+        );
+      }
+      throw new AddressError(`address holds a non-digit: ${JSON.stringify(s)}`);
+    }
   }
   const dots = s.split('.').length - 1;
   if (dots > 1) throw new AddressError(`address has more than one decimal: ${JSON.stringify(s)}`);
