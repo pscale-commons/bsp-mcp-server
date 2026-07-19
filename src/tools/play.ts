@@ -93,18 +93,18 @@ async function beachIndex(origin: string): Promise<string[]> {
   }
 }
 
-/** Render a lighthouse sub-block (its underscore, then digit children) as readable
- *  lines — surfaces the fork recipe faithfully in the canon lead, one level deep. */
-function subBlockText(node: any): string {
+/** One MAP LINE for a lighthouse branch: a plain string entire, or an object's
+ *  underscore alone. The same logarithmic render the room's directive uses
+ *  (renderDirective) and for the same reason — the spine is a map, each branch
+ *  carries its law in one standing line, and the detail unfolds AT ITS ADDRESS
+ *  when the reader walks it (sunstone:8.3, the heading trap: an underscore that
+ *  needs its children to mean anything is a heading, and the fix is authoring,
+ *  never a deeper render). Branch text that only makes sense with its children
+ *  is a bug in the block, and shows up here as a line that cannot be acted on. */
+function mapLine(node: any): string {
   if (typeof node === 'string') return node;
   if (!node || typeof node !== 'object') return '';
-  const lines: string[] = [];
-  if (typeof node._ === 'string') lines.push(node._);
-  for (const k of Object.keys(node).filter((x) => /^[1-9]$/.test(x)).sort()) {
-    const v = node[k];
-    lines.push(typeof v === 'string' ? `  ${k}. ${v}` : `  ${k}. ${subBlockText(v).replace(/\n/g, '\n  ')}`);
-  }
-  return lines.join('\n');
+  return typeof node._ === 'string' ? node._ : '';
 }
 
 /** The world's front sign speaks before the door opens (Fable, 2026-07-18): if the
@@ -120,12 +120,23 @@ async function canonSignage(origin: string, world: string, handle: string): Prom
   const disposition = lh['9'] && typeof lh['9'] === 'object' ? lh['9']['3'] : undefined;
   if (typeof disposition !== 'string' || !/^\s*canon\b/i.test(disposition)) return null;
   const out: string[] = [];
-  out.push(`# ${world} is a SCENARIO (canon) — ${handle} does not play here`);
+  out.push(`# ${world} is a SCENARIO (canon) — no one plays here, ${handle} included`);
   if (typeof lh._ === 'string') { out.push(''); out.push(lh._); }
-  if (lh['1']) { out.push(''); out.push('─── OPEN A TABLE ───'); out.push(subBlockText(lh['1'])); }
-  if (lh['2']) { out.push(''); out.push('─── THEN GENESIS INTO YOUR TABLE ───'); out.push(subBlockText(lh['2'])); }
+  // The sign's own branches, in order, as the author wrote them — NO headings
+  // invented here. The old lead hardcoded "OPEN A TABLE" over branch 1, which
+  // put an AUTHOR's recipe in front of every arriving CHARACTER and is exactly
+  // the role-fusion 1.34 diagnosed (a Character forked, hand-copied nine blocks
+  // mid-boot, dropped one, and wrote its character onto canon). Which branch is
+  // whose is now AUTHORED in the block, so the doorway stays thin and a
+  // scenario can re-cut its own paths without a deploy.
+  // Digits 1-8 only: 9 is block metadata by convention (the play-disposition
+  // read above lives there) and is not doorway material.
+  for (let d = 1; d <= 8; d++) {
+    const line = mapLine(lh[String(d)]);
+    if (line) { out.push(''); out.push(line); }
+  }
   out.push('');
-  out.push(`Do the copies above to your own table, then call pscale_play again with world set to your table's full URL. This canon surface stays untouched; nothing plays here.`);
+  out.push(`Play happens at a TABLE, never here. Whichever path above is yours, it ends the same way: call pscale_play again with world set to that table's FULL URL (this beach's origin with /w/<table name> in place of this scenario's). This canon surface stays untouched.`);
   return out.join('\n');
 }
 
