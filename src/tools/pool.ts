@@ -572,7 +572,7 @@ export function renderPlaceWalk(spatial: Block, addr: string): string | null {
   for (let i = 0; i < digits.length; i++) {
     cur = cur?.[digits[i] === '0' ? '_' : digits[i]];
     if (cur === undefined || cur === null) return null;
-    const a = formatAddress(digits.slice(0, i + 1), floor);
+    const a = movableAddress(digits.slice(0, i + 1), floor);
     if (i < digits.length - 1) {
       const u = typeof cur === 'string' ? cur : floorUnderscore(cur as Block);
       if (u) out.push(`[${a}] ${u}`);
@@ -590,6 +590,29 @@ export function renderPlaceWalk(spatial: Block, addr: string): string | null {
     }
   }
   return out.join('\n');
+}
+
+/** A MOVABLE address label. formatAddress canonicalises by stripping padding —
+ *  but at-or-above-floor runs SHORTER than floor then collide with the
+ *  underscore-walk short forms (parseSpindle left-pads: at floor 3, '1' walks
+ *  _._.1, not the village — the village is '100'). Round 2's disaster, 2026-07-20:
+ *  the ways digest emitted '[1]', a player copied it, and the party walked into
+ *  the hidden 0-space and authored a hall there. Labels meant to be COPIED
+ *  right-pad to floor width, and leading-zero walks keep their zeros — honest
+ *  either side of the floor. (The core formatAddress collision is filed as a
+ *  proposal — Python-first lockstep; this fixes every surface that hands out
+ *  addresses.) */
+export function movableAddress(digits: string[], floor: number): string {
+  if (digits.some((d) => d === '0') || digits.length >= floor) {
+    // below-floor detail or 0-walks: single-decimal via the canonical formatter,
+    // but keep leading zeros (a 0-walk label must not masquerade as a ground)
+    if (digits[0] === '0') {
+      const below = digits.length > floor ? '.' + digits.slice(floor).join('') : '';
+      return digits.slice(0, floor).join('') + below;
+    }
+    return formatAddress(digits, floor);
+  }
+  return digits.concat(Array(floor - digits.length).fill('0')).join('');
 }
 
 /** The holding's WAYS — a wayfinding digest from the spatial block: the top
@@ -613,13 +636,13 @@ export function renderWays(spatial: Block, hereAddr: string): string | null {
   for (let g = 1; g <= 9; g++) {
     const ground = (spatial as any)[String(g)];
     if (ground === undefined || ground === null) continue;
-    const gAddr = formatAddress([String(g)], floor);
+    const gAddr = movableAddress([String(g)], floor);
     out.push(`[${gAddr}] ${first(ground)}`);
     if (String(g) === hereTop && ground && typeof ground === 'object') {
       for (let b = 1; b <= 9; b++) {
         const bld = ground[String(b)];
         if (bld === undefined || bld === null) continue;
-        out.push(`  [${formatAddress([String(g), String(b)], floor)}] ${first(bld)}`);
+        out.push(`  [${movableAddress([String(g), String(b)], floor)}] ${first(bld)}`);
       }
     }
   }
