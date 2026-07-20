@@ -257,8 +257,8 @@ console.log('\n=== renderPlaceWalk — ancestors frame the terminus; one level o
   } as any;
   const walk = renderPlaceWalk(spatial, '211');
   assert(walk !== null && /The valley\./.test(walk!), 'root underscore frames the walk');
-  assert(/\[2\] The market quarter/.test(walk!), 'ancestor at [2] delivered');
-  assert(/\[21\] The approach track/.test(walk!), 'ancestor at [21] delivered');
+  assert(/\[200\] The market quarter/.test(walk!), 'ancestor delivered at its PADDED address [200] — a copyable label, never a 0-walk collision');
+  assert(/\[210\] The approach track/.test(walk!), 'ancestor delivered padded at [210]');
   assert(/\[211\] The Slip/.test(walk!), 'terminus delivered whole at its address');
   assert(/\[211\.1\] The leaning rope-post/.test(walk!) && /\[211\.2\] The shallow crossing/.test(walk!), 'interior one level, single-decimal addresses');
   assert(!/knot detail/.test(walk!), 'two levels down is walked when entered, not delivered');
@@ -295,3 +295,20 @@ console.log('\n=== hasAuthorTrace — the full law arrives once, whoever manages
   assert(hasAuthorTrace(null, withdrawn, 'ghost'), 'a withdrawn slot still traces — they were here');
 }
 console.log(`\n=== summary (returning-author) ===\n  pass: ${pass}\n  fail: ${fail}`);
+
+// ── Movable addresses right-pad to the floor (round-2 lesson, 2026-07-20) ──
+import { movableAddress, renderWays } from '../src/tools/pool.js';
+console.log('\n=== movableAddress — what a player copies must walk where it says ===');
+{
+  assert(movableAddress(['1'], 3) === '100', "a ground at floor 3 is '100', never '1' (which walks _._.1)");
+  assert(movableAddress(['1','2'], 3) === '120', "a building is '120'");
+  assert(movableAddress(['1','2','1'], 3) === '121', 'full-width runs unchanged');
+  assert(movableAddress(['1','2','1','2'], 3) === '121.2', 'below-floor detail keeps the decimal');
+  assert(movableAddress(['0','0','1'], 3) === '001', 'a 0-walk label keeps its zeros — never masquerades as a ground');
+  const spatial: Block = { _: { _: { _: 'land.' } }, 1: { _: 'The Village — grey.', 2: { _: 'The alehouse — low.' } }, 2: { _: 'The Road — long.' } } as any;
+  const ways = renderWays(spatial, '121')!;
+  assert(/\[100\] The Village/.test(ways) && /\[120\] The alehouse/.test(ways) && /\[200\] The Road/.test(ways), 'the ways hand out padded, walkable addresses');
+  assert(!/\[1\] /.test(ways) && !/\[12\] /.test(ways), 'no short forms escape');
+}
+console.log(`\n=== summary (movable) ===\n  pass: ${pass}\n  fail: ${fail}`);
+process.exit(fail > 0 ? 1 : 0);
