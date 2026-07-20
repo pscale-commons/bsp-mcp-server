@@ -28,7 +28,10 @@
  */
 import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
-import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore, renderPosition } from './pool.js';
+import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore, renderPosition, beachIndex, passportLocation, castAtWorld, livenessSignals, splitCast, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
+// Re-exported so existing importers (smoke-play-split) keep one source of truth.
+export { splitCast, LIVE_WINDOW_MS } from './pool.js';
+export type { CastEntry } from './pool.js';
 import { Block, readAt, floorDepth } from '../bsp.js';
 import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
 
@@ -81,18 +84,6 @@ async function resolveWorld(world: string): Promise<string> {
   return (await lookupWorldRoute(w)) ?? subdomainOrigin(w);
 }
 
-/** The beach's no-block index (its named blocks). Empty on any failure. */
-async function beachIndex(origin: string): Promise<string[]> {
-  try {
-    const res = await fetch(`${origin}/.well-known/pscale-beach`, { headers: { Accept: 'application/json' } });
-    if (!res.ok) return [];
-    const j: any = await res.json();
-    return Array.isArray(j?.blocks) ? j.blocks : [];
-  } catch {
-    return [];
-  }
-}
-
 /** One lighthouse branch, rendered WHOLE and addressed — the same walk the room's
  *  directive uses (renderPosition). The doorway is a one-shot orientation: an
  *  Author who has to make a second call for the copy discipline at 2.1 is being
@@ -137,99 +128,6 @@ async function canonSignage(origin: string, world: string, handle: string): Prom
   out.push('');
   out.push(`Play happens at a TABLE, never here. Whichever path above is yours, it ends the same way: call pscale_play again with world set to that table's FULL URL (this beach's origin with /w/<table name> in place of this scenario's). This canon surface stays untouched.`);
   return out.join('\n');
-}
-
-/** The spatial address in a passport's position 3 ("…spatial:<world>:<addr>") — the
- *  character's location, at ANY grain (proposal 2026-07-15-pscale-of-agency): a full
- *  single-decimal pscale address. "111" the room, "3200" the town (trailing zeros are
- *  floor padding — a +2 stance), "111.1" the hearth (−1). The old flat (\d+) regex was
- *  the explicit design debt of 2026-07-01 ("flat pscale-0 rooms remain for now"). */
-function passportLocation(passportBlock: any): string | null {
-  const p3 = passportBlock?.['3'];
-  if (typeof p3 !== 'string') return null;
-  const m = p3.match(/spatial:[\w-]+:(\d+(?:\.\d+)?)/);
-  return m ? m[1] : null;
-}
-/** A name-free observable appearance from a passport's position 3 (the posture before the location
- *  ref), so a co-present character is perceived without leaking the name they have not yet earned. */
-function passportAppearance(passportBlock: any, handle: string): string {
-  let s = String(passportBlock?.['3'] ?? '').split(/\s*Location:/)[0].trim();
-  if (handle) {
-    const cap = handle[0].toUpperCase() + handle.slice(1);
-    s = s.replace(new RegExp(`\\b${cap}\\b`, 'g'), 'A figure').replace(new RegExp(`\\b${handle}\\b`, 'gi'), 'a figure');
-  }
-  return s || 'a figure here';
-}
-/** Every OTHER placed handle at this world — handle, appearance, and the address it
- *  stands at. Position is already in passport:3; this only surfaces what the substrate
- *  holds. The caller partitions by address relation (same place / coarser stance
- *  containing it / finer life beneath) — grain is address, so co-presence is address
- *  arithmetic, not a special case. By appearance; names stay unearned. */
-async function castAtWorld(
-  origin: string,
-  handle: string,
-): Promise<{ handle: string; appearance: string; addr: string }[]> {
-  const out: { handle: string; appearance: string; addr: string }[] = [];
-  for (const pn of (await beachIndex(origin)).filter((b) => b.startsWith('passport:') && b !== `passport:${handle}`)) {
-    const row = await loadBlock(origin, pn);
-    const block = row?.block;
-    const addr = block ? passportLocation(block) : null;
-    if (block && addr) {
-      const h = pn.slice('passport:'.length);
-      out.push({ handle: h, appearance: passportAppearance(block, h), addr });
-    }
-  }
-  return out;
-}
-
-// ── Presence-grain (proposal 2026-07-15) — a character is present AT A GRAIN ──
-// Character-location (passport:3, slow, fictional) and driver-liveness (liquid /
-// commits / presence heartbeats — fast, real) are different axes; rendering the
-// first as the second is how a seeded character stands mute at a table for five
-// weeks. Liveness is DERIVED AT READ from signals the substrate already holds —
-// never stored, no daemon, same law as the two-verb pool's computed-at-read status.
-
-/** v1 heuristic: a handle with a signal inside this window is HERE NOW (beat-grain);
- *  outside it they are ABOUT (present at the day's grain). A per-room span datum can
- *  refine this when lived play asks. */
-export const LIVE_WINDOW_MS = 60 * 60 * 1000;
-
-export interface CastEntry { handle: string; appearance: string; lastSignal: number | null }
-
-/** Pure split — HERE NOW vs ABOUT — so the rule is one testable function. */
-export function splitCast(entries: CastEntry[], now: number): { here: CastEntry[]; about: CastEntry[] } {
-  const here: CastEntry[] = [];
-  const about: CastEntry[] = [];
-  for (const e of entries) {
-    (e.lastSignal != null && now - e.lastSignal <= LIVE_WINDOW_MS ? here : about).push(e);
-  }
-  return { here, about };
-}
-
-/** Latest liveness signal per handle at this world: a staged liquid slot, a pool
- *  commit, or a presence heartbeat — max timestamp wins. All three are accumulator
- *  reads (collectContributions is floor-aware, so supernested blocks still speak).
- *  A stale presence entry pointing at a dead pool matches no cast handle and so
- *  never renders — debris is inert here by construction. */
-async function livenessSignals(origin: string, roomName: string | null): Promise<Map<string, number>> {
-  const sig = new Map<string, number>();
-  const note = (h: string | null, ts: string | null) => {
-    if (!h || !ts) return;
-    const ms = Date.parse(ts);
-    if (!Number.isFinite(ms)) return;
-    if ((sig.get(h) ?? -Infinity) < ms) sig.set(h, ms);
-  };
-  const names = roomName ? [`liquid:pool:${roomName}`, `pool:${roomName}`, 'presence'] : ['presence'];
-  for (const name of names) {
-    const row = await loadBlock(origin, name);
-    if (row?.block && typeof row.block === 'object') {
-      for (const c of collectContributions(row.block as any, 0).contributions) {
-        if (name.startsWith('liquid:') && c.text === '') continue; // withdrawn slot is no signal
-        note(c.agent_id, c.ts);
-      }
-    }
-  }
-  return sig;
 }
 
 export const playParamsSchema = {

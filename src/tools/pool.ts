@@ -38,7 +38,7 @@
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import { Block, writeAt, readAt, floorDepth, formatAddress, parseSpindle } from '../bsp.js';
-import { isLocationAddress, ancestorsOf, pscaleOf, walkedOf } from '../grain-address.js';
+import { isLocationAddress, ancestorsOf, contains, pscaleOf, walkedOf } from '../grain-address.js';
 import {
   loadBlock,
   saveBlock,
@@ -391,6 +391,263 @@ export async function resolveDirective(poolUrl: string, ref: string): Promise<st
   } catch {
     return null;
   }
+}
+
+// ── The situated current — the loop-side compiler (2026-07-20) ──
+// GRIT 1.1's perceive set — the place, your own account, the names you carry,
+// the co-present cast — was charged to the seat as mid-loop tool calls, while
+// the door (pscale_play) compiled the same set at entry and never again. The
+// law (David, 2026-07-20, from genus-one): the frame is a bundle of addresses;
+// the compile is MECHANICAL; the seat receives the CURRENT complete and spends
+// its calls on ACTS. So a location-addressed ROOM engage now carries the moment
+// whole — law + stream + liquid (above) and the situated part compiled here.
+// Named pools (commons, worktables, gates) are not rooms and keep the lean
+// envelope. Costs a handful of beach reads per engage, all server-side; a
+// table's cast is a handful by design (scale is spatial breadth, not pool
+// size). The cast/presence helpers live HERE and are re-used by play.ts (entry
+// and loop must speak one law; pool.ts cannot import play.ts — play imports
+// pool).
+
+/** The beach's no-block index (its named blocks). Empty on any failure. */
+export async function beachIndex(origin: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${origin}/.well-known/pscale-beach`, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return [];
+    const j: any = await res.json();
+    return Array.isArray(j?.blocks) ? j.blocks : [];
+  } catch {
+    return [];
+  }
+}
+
+/** The spatial address in a passport's position 3 ("…spatial:<world>:<addr>") — the
+ *  character's location, at ANY grain (proposal 2026-07-15-pscale-of-agency): a full
+ *  single-decimal pscale address. "111" the room, "3200" the town (trailing zeros are
+ *  floor padding — a +2 stance), "111.1" the hearth (−1). */
+export function passportLocation(passportBlock: any): string | null {
+  const p3 = passportBlock?.['3'];
+  if (typeof p3 !== 'string') return null;
+  const m = p3.match(/spatial:[\w-]+:(\d+(?:\.\d+)?)/);
+  return m ? m[1] : null;
+}
+
+/** A name-free observable appearance from a passport's position 3 (the posture before
+ *  the location ref), so a co-present character is perceived without leaking the name
+ *  they have not yet earned. */
+export function passportAppearance(passportBlock: any, handle: string): string {
+  let s = String(passportBlock?.['3'] ?? '').split(/\s*Location:/)[0].trim();
+  if (handle) {
+    const cap = handle[0].toUpperCase() + handle.slice(1);
+    s = s.replace(new RegExp(`\\b${cap}\\b`, 'g'), 'A figure').replace(new RegExp(`\\b${handle}\\b`, 'gi'), 'a figure');
+  }
+  return s || 'a figure here';
+}
+
+// Presence-grain (proposal 2026-07-15) — a character is present AT A GRAIN.
+// Character-location (passport:3, slow, fictional) and driver-liveness (liquid /
+// commits / presence heartbeats — fast, real) are different axes. Liveness is
+// DERIVED AT READ from signals the substrate already holds — never stored.
+
+/** v1 heuristic: a handle with a signal inside this window is HERE NOW (beat-grain);
+ *  outside it they are ABOUT (present at the day's grain). */
+export const LIVE_WINDOW_MS = 60 * 60 * 1000;
+
+export interface CastEntry { handle: string; appearance: string; lastSignal: number | null }
+
+/** Pure split — HERE NOW vs ABOUT — so the rule is one testable function. */
+export function splitCast(entries: CastEntry[], now: number): { here: CastEntry[]; about: CastEntry[] } {
+  const here: CastEntry[] = [];
+  const about: CastEntry[] = [];
+  for (const e of entries) {
+    (e.lastSignal != null && now - e.lastSignal <= LIVE_WINDOW_MS ? here : about).push(e);
+  }
+  return { here, about };
+}
+
+/** Every OTHER placed handle at this world — handle, appearance, and the address it
+ *  stands at. By appearance; names stay unearned. */
+export async function castAtWorld(
+  origin: string,
+  handle: string,
+): Promise<{ handle: string; appearance: string; addr: string }[]> {
+  const out: { handle: string; appearance: string; addr: string }[] = [];
+  for (const pn of (await beachIndex(origin)).filter((b) => b.startsWith('passport:') && b !== `passport:${handle}`)) {
+    const row = await loadBlock(origin, pn);
+    const block = row?.block;
+    const addr = block ? passportLocation(block) : null;
+    if (block && addr) {
+      const h = pn.slice('passport:'.length);
+      out.push({ handle: h, appearance: passportAppearance(block, h), addr });
+    }
+  }
+  return out;
+}
+
+/** Latest liveness signal per handle at this world: a staged liquid slot, a pool
+ *  commit, or a presence heartbeat — max timestamp wins. */
+export async function livenessSignals(origin: string, roomName: string | null): Promise<Map<string, number>> {
+  const sig = new Map<string, number>();
+  const note = (h: string | null, ts: string | null) => {
+    if (!h || !ts) return;
+    const ms = Date.parse(ts);
+    if (!Number.isFinite(ms)) return;
+    if ((sig.get(h) ?? -Infinity) < ms) sig.set(h, ms);
+  };
+  const names = roomName ? [`liquid:pool:${roomName}`, `pool:${roomName}`, 'presence'] : ['presence'];
+  for (const name of names) {
+    const row = await loadBlock(origin, name);
+    if (row?.block && typeof row.block === 'object') {
+      for (const c of collectContributions(row.block as any, 0).contributions) {
+        if (name.startsWith('liquid:') && c.text === '') continue; // withdrawn slot is no signal
+        note(c.agent_id, c.ts);
+      }
+    }
+  }
+  return sig;
+}
+
+/** Pure partition of the cast against an address: same place / a coarser stance
+ *  containing it / finer life beneath. Same-place is WALKED-FORM equality, never
+ *  raw-string — '111', '1110' at a wider floor, and any padding variant all walk
+ *  the same digits (the recognition failure's latent class). */
+export function partitionCast(
+  cast: { handle: string; appearance: string; addr: string }[],
+  myLoc: string,
+): {
+  atMine: { handle: string; appearance: string; addr: string }[];
+  coarser: { handle: string; appearance: string; addr: string }[];
+  finer: { handle: string; appearance: string; addr: string }[];
+} {
+  const samePlace = (a: string, b: string) =>
+    isLocationAddress(a) && isLocationAddress(b) ? walkedOf(a) === walkedOf(b) : a === b;
+  const atMine: { handle: string; appearance: string; addr: string }[] = [];
+  const coarser: { handle: string; appearance: string; addr: string }[] = [];
+  const finer: { handle: string; appearance: string; addr: string }[] = [];
+  for (const c of cast) {
+    if (samePlace(c.addr, myLoc)) { atMine.push(c); continue; }
+    if (isLocationAddress(c.addr) && isLocationAddress(myLoc)) {
+      if (contains(c.addr, myLoc)) coarser.push(c);
+      else if (contains(myLoc, c.addr)) finer.push(c);
+    }
+  }
+  return { atMine, coarser, finer };
+}
+
+/** The place walked to its address: ancestor underscores framing the terminus, the
+ *  terminus whole, then ONE level of contained places by their underscores — this is
+ *  perception at grain, not a subtree dump (a coarse stance would otherwise inline a
+ *  whole town's interior; interiors are walked when entered). Null when the address
+ *  names no place — the caller skips the section, never invents a there. */
+export function renderPlaceWalk(spatial: Block, addr: string): string | null {
+  const floor = floorDepth(spatial);
+  let digits: string[];
+  try { digits = parseSpindle(addr, floor).digits; } catch { return null; }
+  if (!digits.length) return null;
+  const out: string[] = [];
+  const rootU = floorUnderscore(spatial);
+  if (rootU) out.push(rootU);
+  let cur: any = spatial;
+  for (let i = 0; i < digits.length; i++) {
+    cur = cur?.[digits[i] === '0' ? '_' : digits[i]];
+    if (cur === undefined || cur === null) return null;
+    const a = formatAddress(digits.slice(0, i + 1), floor);
+    if (i < digits.length - 1) {
+      const u = typeof cur === 'string' ? cur : floorUnderscore(cur as Block);
+      if (u) out.push(`[${a}] ${u}`);
+    } else if (typeof cur === 'string') {
+      out.push(`[${a}] ${cur}`);
+    } else {
+      const u = floorUnderscore(cur as Block);
+      if (u) out.push(`[${a}] ${u}`);
+      for (let d = 1; d <= 9; d++) {
+        const child = (cur as any)[String(d)];
+        if (child === undefined || child === null) continue;
+        const cu = typeof child === 'string' ? child : floorUnderscore(child as Block);
+        if (cu) out.push(`  [${formatAddress([...digits, String(d)], floor)}] ${cu}`);
+      }
+    }
+  }
+  return out.join('\n');
+}
+
+/** Compile the situated current for a room engage: the place at the room's address,
+ *  the engager's own tail (witnessed recent + knows), and the co-present cast at
+ *  grain. Every part degrades gracefully to absence — an observer with no blocks
+ *  still receives the place and the cast; a world with no spatial block yields
+ *  cast alone; a non-room pool yields null and the envelope is unchanged. */
+export async function composeCurrent(origin: string, poolName: string, agentId: string): Promise<string | null> {
+  if (!isLocationAddress(poolName)) return null;
+  const parts: string[] = [];
+  const index = await beachIndex(origin);
+
+  const spatialName = index.find((b) => b.startsWith('spatial:'));
+  if (spatialName) {
+    const srow = await loadBlock(origin, spatialName);
+    if (srow?.block && typeof srow.block === 'object') {
+      const walk = renderPlaceWalk(srow.block as Block, poolName);
+      if (walk) {
+        parts.push(`# The place — ${spatialName}:${poolName} (walked to its address; contained places one level down, entered by moving)\n${walk}`);
+      }
+    }
+  }
+
+  const wrow = await loadBlock(origin, `witnessed:${agentId}`);
+  if (wrow?.block && typeof wrow.block === 'object') {
+    const all = collectContributions(wrow.block as Block, 0).contributions;
+    const tail = all.slice(-3);
+    if (tail.length) {
+      const head = `# Your account — witnessed:${agentId}, last ${tail.length} of ${all.length} (private; journal by APPEND, never a slot write)`;
+      parts.push([head, ...tail.map((c) => `[${c.position}] ${c.text}`)].join('\n'));
+    }
+  }
+
+  const krow = await loadBlock(origin, `knows:${agentId}`);
+  if (krow?.block && typeof krow.block === 'object') {
+    const k = krow.block as any;
+    const lines: string[] = [];
+    const u = floorUnderscore(k);
+    if (u) lines.push(u);
+    for (let d = 1; d <= 9; d++) {
+      const v = k[String(d)];
+      if (v === undefined || v === null) continue;
+      const t = typeof v === 'string' ? v : floorUnderscore(v as Block);
+      if (t) lines.push(`(${d}) ${t}`);
+    }
+    if (lines.length) parts.push(`# You know — knows:${agentId}\n${lines.join('\n')}`);
+  }
+
+  const cast = await castAtWorld(origin, agentId);
+  if (cast.length) {
+    const { atMine, coarser, finer } = partitionCast(cast, poolName);
+    let here: CastEntry[] = [];
+    let about: CastEntry[] = [];
+    if (atMine.length) {
+      const signals = await livenessSignals(origin, poolName);
+      ({ here, about } = splitCast(
+        atMine.map((c) => ({ handle: c.handle, appearance: c.appearance, lastSignal: signals.get(c.handle) ?? null })),
+        Date.now(),
+      ));
+    }
+    if (here.length || about.length || coarser.length || finer.length) {
+      const lines: string[] = ['# Co-present at your place (by appearance; names unearned until spoken)'];
+      if (here.length) {
+        lines.push('HERE NOW (your grain — live in the scene; they act and answer within it):');
+        for (const c of here) lines.push(`— ${c.appearance}`);
+      }
+      if (about.length || coarser.length) {
+        lines.push('ABOUT (the coarser grain — hereabouts and real, but NOT at the table: render them about the place, never awaiting; a beat directed at them lands at the coarser grain, answered when they next descend; they cannot be contested; the scene never waits on them):');
+        for (const c of about) lines.push(`— ${c.appearance}`);
+        for (const c of coarser) lines.push(`— ${c.appearance} (standing at the ${pscaleOf(c.addr) >= 2 ? "day's" : 'longer'} grain of this place — pscale ${'+' + pscaleOf(c.addr)}, by their own stance)`);
+      }
+      if (finer.length) {
+        lines.push('WITHIN (finer life beneath your stance — you contain these; their fine beats fold up into your coarser one):');
+        for (const c of finer) lines.push(`— ${c.appearance} (at ${c.addr}, the finer grain)`);
+      }
+      parts.push(lines.join('\n'));
+    }
+  }
+
+  return parts.length ? parts.join('\n\n') : null;
 }
 
 // ── Window-open trace (honest dice + honest clock) ──
@@ -830,7 +1087,7 @@ export async function handlePoolEngage(
       return {
         content: [{
           type: 'text',
-          text: `window already resolved by ${ack.resolvedBy ?? 'another player'} — stand down: do NOT write a second outcome. Re-read the pool since your marker and perceive the resolution that now exists.`,
+          text: `window already resolved by ${ack.resolvedBy ?? 'another player'} — stand down: do NOT write a second outcome. Re-read the pool since your marker and perceive the resolution that now exists. If you had staged into this window you are already INSIDE it — it folded you in; do not re-narrate your arrival. Your next commit is simply your TURN in the running scene.`,
         }],
       };
     }
@@ -955,6 +1212,19 @@ export async function handlePoolEngage(
     lines.push(synthesisHint);
     lines.push('');
   }
+  // The situated current — a ROOM engage (location-addressed pool) delivers the
+  // moment complete: the place at this address, the engager's own tail, the
+  // co-present cast at grain. Compiled mechanically, every engage — it is the
+  // part that changes instant to instant. Named pools return null here and the
+  // envelope is unchanged. (2026-07-20; the A/B measured seats spending mid-loop
+  // tool calls fetching exactly this set, which the door had compiled at entry.)
+  try {
+    const situated = await composeCurrent(pool_url, pool_name, agent_id);
+    if (situated) {
+      lines.push(situated);
+      lines.push('');
+    }
+  } catch { /* a room that cannot situate still speaks — never break an engage */ }
   if (withLiquid) {
     // A withdrawn slot keeps its stamps (the window seed must not move) but its
     // empty text is a trace the mirror must not show — "clearing leaves no
