@@ -1075,7 +1075,16 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
       failed.push({ address: ref, error: msg });
     }
   }
-  if (raw && pairs.length === 0) failed.push({ address: '(writes)', error: `unrecognised writes shape: ${Array.isArray(raw) ? 'list' : typeof raw}` });
+  // An EMPTY writes is legitimate — a seat wake did its writing in-loop and
+  // folds with nothing to apply. Only a NON-empty value that yielded no pairs
+  // is genuinely malformed. (Before seat wakes, every fold carried writes, so
+  // `writes: {}` never arrived and this over-broad check never fired.)
+  const rawEmpty =
+    (Array.isArray(raw) && raw.length === 0) ||
+    (raw && typeof raw === 'object' && !Array.isArray(raw) && Object.keys(raw).length === 0);
+  if (raw && pairs.length === 0 && !rawEmpty) {
+    failed.push({ address: '(writes)', error: `unrecognised writes shape: ${Array.isArray(raw) ? 'list' : typeof raw}` });
+  }
 
   // re-dial the next instance's bundle
   const nc = output?.index;
@@ -1098,16 +1107,30 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
   // line over the PREVIOUS completed nine.
   const note = String(output?.note ?? '').trim();
   const summary = String(output?.summary ?? '').trim();
+  // A SEAT wake does its writes IN-LOOP (through the bsp tool) and folds with an
+  // empty writes map — so `applied` is 0 even though the wake acted. `acted` is
+  // the count of those in-loop writes, passed by a seat driver (the headless
+  // crab, a tab). Without this, pscale_genus — built for holder/ghost wakes
+  // where the fold CARRIES its writes — wrote no history leaf for a seat wake,
+  // and the instance's own memory silently missed every autonomous wake it ran.
+  // The animator (the tab's route) already had this subtlety; this is the third
+  // port catching up. The leaf is earned by acting, whichever door the write
+  // took.
+  const acted = Math.max(0, Number(output?.acted ?? 0) || 0);
   let leafAddress: string | null = null;
   let leafVoicing: string | null = null;
   let summaryDueAddr: string | null = null;
   let dueFloor = 1;
   let summaryPaidAt: string | null = null;
-  if (applied > 0) {
+  if (applied > 0 || acted > 0) {
     const loaded = await store.load('history');
     const h: PMap = loaded instanceof Map ? loaded : new Map([[ZK, HISTORY_VOICING as PNode]]);
     const { floor, path } = historyNext(h);
-    const body = appliedPairs.map(([ref, c]) => `${ref} ←\n${typeof c === 'string' ? c : pyDumps(c)}`).join('\n\n');
+    const seatLine = acted > 0 ? `(+ ${acted} in-loop write${acted === 1 ? '' : 's'} landed by the seat, already in their blocks)` : '';
+    const body = [
+      appliedPairs.map(([ref, c]) => `${ref} ←\n${typeof c === 'string' ? c : pyDumps(c)}`).join('\n\n'),
+      seatLine,
+    ].filter(Boolean).join('\n\n') || seatLine;
     const meta = `heartbeat: ${output?.heartbeat ?? 'None'} · index: ${redialed ? 're-dialed' : 'carried'} · status: ${output?.status ?? 'continue'}`;
     const ts = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
     leafVoicing = `[${ts}] ${note || '(no note)'}`;
@@ -1171,7 +1194,10 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
     await store.save('conditions', cond);
   }
 
-  const status = output?.status ?? (applied > 0 ? 'continue' : 'rest');
+  // A wake that ACTED — via fold writes or in-loop — continues by default; only
+  // a wake that touched nothing rests. (Seat wakes act in-loop, so `acted`
+  // counts here as much as `applied`.)
+  const status = output?.status ?? (applied > 0 || acted > 0 ? 'continue' : 'rest');
   return { status, applied, failed, leafAddress, leafVoicing, summaryDue: summaryDueAddr, summaryPaidAt };
 }
 

@@ -138,6 +138,36 @@ async function foldUnits() {
     check('hand-write to history refused, stash named', r.applied === 0 && (r.failed[0]?.error ?? '').includes('stash'), r.failed[0]?.error);
   }
 
+  // SEAT wake: writes happened IN-LOOP (through the bsp tool), so the fold
+  // carries none — but the wake acted, and its memory leaf must land. Without
+  // `acted`, applied=0 wrote no leaf and the instance's own memory silently
+  // missed every autonomous crab wake (the headless-seat crab, 2026-07-20).
+  {
+    const store = memStore({});
+    const noLeaf = await genusFold(store, { writes: {}, note: 'read the room, answered — all in-loop' });
+    check('a fold with no writes and no acted writes leaves NO leaf (unchanged)', noLeaf.leafAddress === null);
+
+    const store2 = memStore({});
+    const seat = await genusFold(store2, { writes: {}, note: 'read the room, answered — all in-loop', acted: 3 });
+    check('a seat wake (acted>0, empty writes) EARNS a leaf', seat.leafAddress === '1', String(seat.leafAddress));
+    const h = (await store2.load('history')) as PMap;
+    const leaf = h.get('1') as PMap;
+    check('the seat leaf keeps the note as its voicing', /read the room, answered/.test(String(leaf?.get('_'))));
+    check('the seat leaf body records the in-loop count', String(leaf?.get('1')).includes('+ 3 in-loop writes landed by the seat'), String(leaf?.get('1')));
+    const cond = (await store2.load('conditions')) as PMap | null;
+    check('a seat wake that acted continues (not rest) and raises no report', seat.status === 'continue' && !(cond && cond.has('9')));
+  }
+
+  // acted alongside fold writes: both counted, leaf body carries writes AND the count
+  {
+    const store = memStore({ surface: toPNode({ _: 'surface' }) });
+    const both = await genusFold(store, { writes: { 'surface:2': 'a fold-carried reply' }, note: 'mixed', acted: 2 });
+    check('fold writes still apply when acted is also set', both.applied === 1 && both.leafAddress === '1');
+    const h = (await store.load('history')) as PMap;
+    const body = String((h.get('1') as PMap)?.get('1'));
+    check('the leaf body carries the fold write AND the in-loop count', body.includes('surface:2 ←') && body.includes('+ 2 in-loop writes'), body);
+  }
+
   // role-with-handle write keys — the room resolves to the organ (kernel._split_ref;
   // the located:5 fault: "pool:egg-one" misread as block "pool" + non-digit path "egg-one")
   // — and the room is an ACCUMULATOR: fold writes APPEND ({_,1,3}, signed,
