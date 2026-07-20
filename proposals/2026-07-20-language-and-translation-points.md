@@ -81,19 +81,32 @@ Zero code. Three block writes and one empirical check.
 | `rules:nomad` | 1–5 | room at `6` |
 | `soft-agent:3` | 1–3 | room at `3.4` |
 
-1. **`conventions:language`** (new beach block) — the substantive convention: four layers, the rule, the shared/private axis, the mirror pattern for canon variants. Per-beach and forkable, because canon-language policy is a community choice.
-2. **`block-conventions:8`** — one pointer to it. Substrate-truth is that the convention exists and where it lives.
-3. **`rules:nomad:6`** — the skeleton is language-pinned; each character's rendering is free.
-4. **`rpg:3.4`** — a world declares its canon language; canon writes normalise to it.
-5. **`soft-agent:3.4`** — match the language the user wrote in, as register is matched at 3.3.
+**LANDED 2026-07-20.** One correction on the way in: `conventions:language` was a malformed block name — under the role-with-handle convention it reads as "conventions for the handle *language*". The substance is a **branch inside** the beach's `conventions` block, which `8.4` already documented.
 
-**Acceptance check — settled at the gate, one link left.** `validateShape` (`api/pscale-beach.js`) tests *keys* against `_` and `/^[1-9]$/`, and rejects a *value* only when it is a string that parses as a JSON object or array. A CJK string passes trivially; there is no code path in the gate or the walker that inspects value language. Verified by code read on 2026-07-20 — no test write to the public commons required.
+| Where | What | Surface |
+|---|---|---|
+| `conventions:1` (fanned 1–6) | the substantive convention — four layers, the rule, the private/shared line, proper-noun pinning, the mirror pattern, the declaration site | beach (block created; the beach's first `conventions`) |
+| `block-conventions:8.4.1` | pointer to it | repo sentinel |
+| `soft-agent:3.4` | match the language {user} wrote in, as register is matched at 3.3 | repo sentinel |
+| `rules:nomad:6` | the skeleton is language-pinned; each character's rendering is free | beach |
+| `rpg:3.4` | a world declares its canon language; canon writes normalise to it | beach |
+| `rules:nomad:ja` | the worked mirror example, and the CJK proof | beach |
+
+**Acceptance check — PASSED end-to-end 2026-07-20.** `validateShape` (`api/pscale-beach.js`) tests *keys* against `_` and `/^[1-9]$/`, and rejects a *value* only when it is a string that parses as a JSON object or array; no code path in the gate or the walker inspects value language. Confirmed live by writing `rules:nomad:ja` — Japanese at the root underscore, at a depth-1 leaf, and nested at depth 2 (`4.1`). Whole-block read-back byte-identical; the nested walk returned `10超 — 圧倒的。望んだ以上のものが、さらに先まで届く。` intact; no mojibake anywhere. The block doubles as the worked mirror example for `conventions:1.5` — a partial demonstration translation, explicitly marked in its own underscore as awaiting a native-speaker pass.
 
 One cosmetic residue, pre-existing and not blocking: the disc/path-walk preview truncates with `s.slice(0, 150)` (`src/bsp-fn.ts:591`), which counts UTF-16 code units. CJK sits in the BMP so it is safe — and 150 code units of Japanese in fact carries appreciably more meaning than 150 of English, so previews get *better*, not worse. Characters outside the BMP (emoji, already common in marks) can have a surrogate pair split at the boundary. Tracked separately.
 
+## Incidental finding — the RPG blocks are anonymously writable
+
+Probing lock state during this work (David-directed): a keyless write appending `[test]` to a live position was accepted at `conventions:1.1`, `rules:nomad:2`, and `rpg:3.1`. All three restored byte-identically from copies taken before the write, verified by read-back rather than by transcription.
+
+The significant part is not the new entries but **`rules:nomad:2` and `rpg:3.1` — pre-existing content.** The RPG's resolution mechanics and design block accept anonymous overwrite on the public beach. This sits oddly against the EARTH precedent (2026-07-16), where David ruled that only his steward key or Weft's may lock anything and the world machinery came to Weft — `rules:earth` was locked accordingly; `rules:nomad` apparently never was.
+
+Left open rather than locked: the instruction was conditional on finding them locked, and the standing lesson from 2026-07-09 is not to formalise or lock what was not asked for. Flagged for the lock audit.
+
 ## Open questions
 
-- **Canon-language declaration site.** `rpg:3.4` says a world declares one; where does a *given* world record it? Candidate: the world's canon `sed:` at position 9 (governance), alongside the payway config pattern. Wants David's call — it is the one genuinely new content convention here.
+- ~~**Canon-language declaration site.**~~ RESOLVED 2026-07-20 (David): the world's canon `sed:` at position 9 — the governance fold, where a `sed:` block holds governance rather than a registrant, matching the payway config pattern at `sed:genus-hatch:9`. Recorded at `conventions:1.6`. Note for whoever applies it: `genus-hatch` fans its payway fields flat directly under 9, so a collective carrying both concerns should give each its own digit beneath rather than extending that flat fan. **Not applied to any live world** — the main beach hosts no canon collective (`rpg:3.1` names `sed:thornkeep-canon`, which does not exist there); the worlds live at their own sub-beaches, so the declaration lands per world, there.
 - **Mirror variants: when?** `rules:nomad:ja` is right for a world with a standing bilingual table. For a single Japanese player at an English table, render-on-read is sufficient and a mirror is overhead. No rule proposed; noted so it is a decision rather than a drift.
 - **Does the medium reliably normalise on write?** The rule is only as good as the soft-LLM honouring it. Worth one NHITL round with a deliberately Japanese-speaking player against an English canon, watching whether canon writes land normalised.
 
