@@ -37,8 +37,8 @@
 
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
-import { Block, writeAt, readAt } from '../bsp.js';
-import { isLocationAddress, ancestorsOf, pscaleOf, walkedOf } from '../grain-address.js';
+import { Block, writeAt, readAt, floorDepth, formatAddress, parseSpindle } from '../bsp.js';
+import { isLocationAddress, ancestorsOf, contains, pscaleOf, walkedOf } from '../grain-address.js';
 import {
   loadBlock,
   saveBlock,
@@ -277,20 +277,74 @@ export function isDirectiveRef(underscore: string): boolean {
   return s.length > 0 && !/\s/.test(s) && s.includes(':');
 }
 
-/** Render a directive block (or one aperture node) as readable text. */
-export function renderDirective(node: any): string {
+/**
+ * Emit one position and EVERYTHING BENEATH IT, in full, each line carrying its
+ * canonical pscale address.
+ *
+ * This replaced a one-level render that emitted each branch's underscore and
+ * dropped the rest. That shape was not a pscale read at all — neither point,
+ * path-walk, disc nor descent — and it cost twice. A branch whose law lived in
+ * its children arrived as a line the reader could not act on (brackenfoot's
+ * genesis told players "each arriver STAGES their arrival (1)" while position 1
+ * was never delivered), and the only repair on offer was a second tool call. It
+ * also quietly rewarded the two authoring cop-outs it created: heading-style
+ * underscores, and "walk 1.1 for detail" pointers written INTO block content —
+ * which a proper spindle makes redundant, since a path-walk already prints every
+ * ancestor above its terminus (sunstone:8.51).
+ *
+ * So the nesting is delivered intact and the addresses come with it: a reader
+ * needing one position later addresses it exactly, and needs nothing in between.
+ * Depth is the contextualisation; the address is how it is re-entered.
+ */
+export function renderPosition(node: any, digits: string[], floor: number, out: string[]): void {
+  const addr = formatAddress(digits, floor);
+  const indent = '  '.repeat(Math.max(0, digits.length - 1));
+  if (typeof node === 'string') {
+    out.push(`${indent}[${addr}] ${node}`);
+    return;
+  }
+  if (!node || typeof node !== 'object') return;
+  const u = floorUnderscore(node as Block);
+  if (u) out.push(`${indent}[${addr}] ${u}`);
+  for (let d = 1; d <= 9; d++) {
+    const child = node[String(d)];
+    if (child === undefined || child === null) continue;
+    renderPosition(child, [...digits, String(d)], floor, out);
+  }
+}
+
+/**
+ * Render a directive block — or one aperture of it — as readable text. The
+ * delivered shape is a real bsp read: path-walk+descent run to leaves. `frame`
+ * carries the ancestor underscores above the aperture (the walk down to it), so
+ * a selected branch arrives self-contextualised — the general frames the
+ * specific, exactly as reading the spindle by hand would (sunstone:8.51). An
+ * aperture with no frame would hand the reader branch law whose governing verbs
+ * were defined one level up and never delivered. `base` is the digit path
+ * already walked to reach `node` (empty at the root), so an aperture read
+ * (pscale:grit/1) still prints TRUE addresses (1.1, 1.11) rather than
+ * renumbering its children from 1.
+ */
+export function renderDirective(
+  node: any,
+  opts?: { floor?: number; base?: string[]; frame?: string[] },
+): string {
   if (typeof node === 'string') return node;
   if (typeof node !== 'object' || node === null) return '';
-  const parts: string[] = [];
+  const floor = opts?.floor ?? floorDepth(node as Block);
+  const base = opts?.base ?? [];
+  const parts: string[] = [...(opts?.frame ?? [])];
   const head = floorUnderscore(node as Block);
-  if (head) parts.push(head);
+  if (head) {
+    const addr = base.length ? `[${formatAddress(base, floor)}] ` : '';
+    parts.push(`${addr}${head}`);
+  }
   for (let d = 1; d <= 9; d++) {
-    const v = node[String(d)];
-    if (typeof v === 'string') parts.push(`(${d}) ${v}`);
-    else if (v && typeof v === 'object') {
-      const s = floorUnderscore(v as Block);
-      if (s) parts.push(`(${d}) ${s}`);
-    }
+    const child = node[String(d)];
+    if (child === undefined || child === null) continue;
+    const out: string[] = [];
+    renderPosition(child, [...base, String(d)], floor, out);
+    if (out.length) parts.push(out.join('\n'));
   }
   return parts.join('\n\n');
 }
@@ -313,11 +367,287 @@ export async function resolveDirective(poolUrl: string, ref: string): Promise<st
       ? await loadBlock('pscale', sentinel)
       : await loadBlock(poolUrl, blk);
     if (!drow || typeof drow.block !== 'object' || drow.block === null) return null;
-    const node = sp ? readAt(drow.block as Block, sp) : drow.block;
-    return renderDirective(node) || null;
+    const block = drow.block as Block;
+    // The floor is the BLOCK's, never the aperture node's — addresses are anchored
+    // at the decimal, so a branch read out of context still prints where it lives.
+    const floor = floorDepth(block);
+    const node = sp ? readAt(block, sp) : block;
+    const base = sp ? parseSpindle(sp, floor).digits : [];
+    // The walk down to the aperture: each ancestor's underscore, root first —
+    // the spindle's general end, framing the specific subtree delivered below.
+    const frame: string[] = [];
+    if (base.length) {
+      let cur: any = block;
+      const rootU = floorUnderscore(block);
+      if (rootU) frame.push(rootU);
+      for (let i = 0; i < base.length - 1; i++) {
+        cur = cur?.[base[i]];
+        if (!cur || typeof cur !== 'object') break;
+        const u = floorUnderscore(cur as Block);
+        if (u) frame.push(`[${formatAddress(base.slice(0, i + 1), floor)}] ${u}`);
+      }
+    }
+    return renderDirective(node, { floor, base, frame }) || null;
   } catch {
     return null;
   }
+}
+
+// ── The situated current — the loop-side compiler (2026-07-20) ──
+// GRIT 1.1's perceive set — the place, your own account, the names you carry,
+// the co-present cast — was charged to the seat as mid-loop tool calls, while
+// the door (pscale_play) compiled the same set at entry and never again. The
+// law (David, 2026-07-20, from genus-one): the frame is a bundle of addresses;
+// the compile is MECHANICAL; the seat receives the CURRENT complete and spends
+// its calls on ACTS. So a location-addressed ROOM engage now carries the moment
+// whole — law + stream + liquid (above) and the situated part compiled here.
+// Named pools (commons, worktables, gates) are not rooms and keep the lean
+// envelope. Costs a handful of beach reads per engage, all server-side; a
+// table's cast is a handful by design (scale is spatial breadth, not pool
+// size). The cast/presence helpers live HERE and are re-used by play.ts (entry
+// and loop must speak one law; pool.ts cannot import play.ts — play imports
+// pool).
+
+/** The beach's no-block index (its named blocks). Empty on any failure. */
+export async function beachIndex(origin: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${origin}/.well-known/pscale-beach`, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return [];
+    const j: any = await res.json();
+    return Array.isArray(j?.blocks) ? j.blocks : [];
+  } catch {
+    return [];
+  }
+}
+
+/** The spatial address in a passport's position 3 ("…spatial:<world>:<addr>") — the
+ *  character's location, at ANY grain (proposal 2026-07-15-pscale-of-agency): a full
+ *  single-decimal pscale address. "111" the room, "3200" the town (trailing zeros are
+ *  floor padding — a +2 stance), "111.1" the hearth (−1). */
+export function passportLocation(passportBlock: any): string | null {
+  const p3 = passportBlock?.['3'];
+  if (typeof p3 !== 'string') return null;
+  const m = p3.match(/spatial:[\w-]+:(\d+(?:\.\d+)?)/);
+  return m ? m[1] : null;
+}
+
+/** A name-free observable appearance from a passport's position 3 (the posture before
+ *  the location ref), so a co-present character is perceived without leaking the name
+ *  they have not yet earned. */
+export function passportAppearance(passportBlock: any, handle: string): string {
+  let s = String(passportBlock?.['3'] ?? '').split(/\s*Location:/)[0].trim();
+  if (handle) {
+    const cap = handle[0].toUpperCase() + handle.slice(1);
+    s = s.replace(new RegExp(`\\b${cap}\\b`, 'g'), 'A figure').replace(new RegExp(`\\b${handle}\\b`, 'gi'), 'a figure');
+  }
+  return s || 'a figure here';
+}
+
+// Presence-grain (proposal 2026-07-15) — a character is present AT A GRAIN.
+// Character-location (passport:3, slow, fictional) and driver-liveness (liquid /
+// commits / presence heartbeats — fast, real) are different axes. Liveness is
+// DERIVED AT READ from signals the substrate already holds — never stored.
+
+/** v1 heuristic: a handle with a signal inside this window is HERE NOW (beat-grain);
+ *  outside it they are ABOUT (present at the day's grain). */
+export const LIVE_WINDOW_MS = 60 * 60 * 1000;
+
+export interface CastEntry { handle: string; appearance: string; lastSignal: number | null }
+
+/** Pure split — HERE NOW vs ABOUT — so the rule is one testable function. */
+export function splitCast(entries: CastEntry[], now: number): { here: CastEntry[]; about: CastEntry[] } {
+  const here: CastEntry[] = [];
+  const about: CastEntry[] = [];
+  for (const e of entries) {
+    (e.lastSignal != null && now - e.lastSignal <= LIVE_WINDOW_MS ? here : about).push(e);
+  }
+  return { here, about };
+}
+
+/** Every OTHER placed handle at this world — handle, appearance, and the address it
+ *  stands at. By appearance; names stay unearned. */
+export async function castAtWorld(
+  origin: string,
+  handle: string,
+): Promise<{ handle: string; appearance: string; addr: string }[]> {
+  const out: { handle: string; appearance: string; addr: string }[] = [];
+  for (const pn of (await beachIndex(origin)).filter((b) => b.startsWith('passport:') && b !== `passport:${handle}`)) {
+    const row = await loadBlock(origin, pn);
+    const block = row?.block;
+    const addr = block ? passportLocation(block) : null;
+    if (block && addr) {
+      const h = pn.slice('passport:'.length);
+      out.push({ handle: h, appearance: passportAppearance(block, h), addr });
+    }
+  }
+  return out;
+}
+
+/** Latest liveness signal per handle at this world: a staged liquid slot, a pool
+ *  commit, or a presence heartbeat — max timestamp wins. */
+export async function livenessSignals(origin: string, roomName: string | null): Promise<Map<string, number>> {
+  const sig = new Map<string, number>();
+  const note = (h: string | null, ts: string | null) => {
+    if (!h || !ts) return;
+    const ms = Date.parse(ts);
+    if (!Number.isFinite(ms)) return;
+    if ((sig.get(h) ?? -Infinity) < ms) sig.set(h, ms);
+  };
+  const names = roomName ? [`liquid:pool:${roomName}`, `pool:${roomName}`, 'presence'] : ['presence'];
+  for (const name of names) {
+    const row = await loadBlock(origin, name);
+    if (row?.block && typeof row.block === 'object') {
+      for (const c of collectContributions(row.block as any, 0).contributions) {
+        if (name.startsWith('liquid:') && c.text === '') continue; // withdrawn slot is no signal
+        note(c.agent_id, c.ts);
+      }
+    }
+  }
+  return sig;
+}
+
+/** Pure partition of the cast against an address: same place / a coarser stance
+ *  containing it / finer life beneath. Same-place is WALKED-FORM equality, never
+ *  raw-string — '111', '1110' at a wider floor, and any padding variant all walk
+ *  the same digits (the recognition failure's latent class). */
+export function partitionCast(
+  cast: { handle: string; appearance: string; addr: string }[],
+  myLoc: string,
+): {
+  atMine: { handle: string; appearance: string; addr: string }[];
+  coarser: { handle: string; appearance: string; addr: string }[];
+  finer: { handle: string; appearance: string; addr: string }[];
+} {
+  const samePlace = (a: string, b: string) =>
+    isLocationAddress(a) && isLocationAddress(b) ? walkedOf(a) === walkedOf(b) : a === b;
+  const atMine: { handle: string; appearance: string; addr: string }[] = [];
+  const coarser: { handle: string; appearance: string; addr: string }[] = [];
+  const finer: { handle: string; appearance: string; addr: string }[] = [];
+  for (const c of cast) {
+    if (samePlace(c.addr, myLoc)) { atMine.push(c); continue; }
+    if (isLocationAddress(c.addr) && isLocationAddress(myLoc)) {
+      if (contains(c.addr, myLoc)) coarser.push(c);
+      else if (contains(myLoc, c.addr)) finer.push(c);
+    }
+  }
+  return { atMine, coarser, finer };
+}
+
+/** The place walked to its address: ancestor underscores framing the terminus, the
+ *  terminus whole, then ONE level of contained places by their underscores — this is
+ *  perception at grain, not a subtree dump (a coarse stance would otherwise inline a
+ *  whole town's interior; interiors are walked when entered). Null when the address
+ *  names no place — the caller skips the section, never invents a there. */
+export function renderPlaceWalk(spatial: Block, addr: string): string | null {
+  const floor = floorDepth(spatial);
+  let digits: string[];
+  try { digits = parseSpindle(addr, floor).digits; } catch { return null; }
+  if (!digits.length) return null;
+  const out: string[] = [];
+  const rootU = floorUnderscore(spatial);
+  if (rootU) out.push(rootU);
+  let cur: any = spatial;
+  for (let i = 0; i < digits.length; i++) {
+    cur = cur?.[digits[i] === '0' ? '_' : digits[i]];
+    if (cur === undefined || cur === null) return null;
+    const a = formatAddress(digits.slice(0, i + 1), floor);
+    if (i < digits.length - 1) {
+      const u = typeof cur === 'string' ? cur : floorUnderscore(cur as Block);
+      if (u) out.push(`[${a}] ${u}`);
+    } else if (typeof cur === 'string') {
+      out.push(`[${a}] ${cur}`);
+    } else {
+      const u = floorUnderscore(cur as Block);
+      if (u) out.push(`[${a}] ${u}`);
+      for (let d = 1; d <= 9; d++) {
+        const child = (cur as any)[String(d)];
+        if (child === undefined || child === null) continue;
+        const cu = typeof child === 'string' ? child : floorUnderscore(child as Block);
+        if (cu) out.push(`  [${formatAddress([...digits, String(d)], floor)}] ${cu}`);
+      }
+    }
+  }
+  return out.join('\n');
+}
+
+/** Compile the situated current for a room engage: the place at the room's address,
+ *  the engager's own tail (witnessed recent + knows), and the co-present cast at
+ *  grain. Every part degrades gracefully to absence — an observer with no blocks
+ *  still receives the place and the cast; a world with no spatial block yields
+ *  cast alone; a non-room pool yields null and the envelope is unchanged. */
+export async function composeCurrent(origin: string, poolName: string, agentId: string): Promise<string | null> {
+  if (!isLocationAddress(poolName)) return null;
+  const parts: string[] = [];
+  const index = await beachIndex(origin);
+
+  const spatialName = index.find((b) => b.startsWith('spatial:'));
+  if (spatialName) {
+    const srow = await loadBlock(origin, spatialName);
+    if (srow?.block && typeof srow.block === 'object') {
+      const walk = renderPlaceWalk(srow.block as Block, poolName);
+      if (walk) {
+        parts.push(`# The place — ${spatialName}:${poolName} (walked to its address; contained places one level down, entered by moving)\n${walk}`);
+      }
+    }
+  }
+
+  const wrow = await loadBlock(origin, `witnessed:${agentId}`);
+  if (wrow?.block && typeof wrow.block === 'object') {
+    const all = collectContributions(wrow.block as Block, 0).contributions;
+    const tail = all.slice(-3);
+    if (tail.length) {
+      const head = `# Your account — witnessed:${agentId}, last ${tail.length} of ${all.length} (private; journal by APPEND, never a slot write)`;
+      parts.push([head, ...tail.map((c) => `[${c.position}] ${c.text}`)].join('\n'));
+    }
+  }
+
+  const krow = await loadBlock(origin, `knows:${agentId}`);
+  if (krow?.block && typeof krow.block === 'object') {
+    const k = krow.block as any;
+    const lines: string[] = [];
+    const u = floorUnderscore(k);
+    if (u) lines.push(u);
+    for (let d = 1; d <= 9; d++) {
+      const v = k[String(d)];
+      if (v === undefined || v === null) continue;
+      const t = typeof v === 'string' ? v : floorUnderscore(v as Block);
+      if (t) lines.push(`(${d}) ${t}`);
+    }
+    if (lines.length) parts.push(`# You know — knows:${agentId}\n${lines.join('\n')}`);
+  }
+
+  const cast = await castAtWorld(origin, agentId);
+  if (cast.length) {
+    const { atMine, coarser, finer } = partitionCast(cast, poolName);
+    let here: CastEntry[] = [];
+    let about: CastEntry[] = [];
+    if (atMine.length) {
+      const signals = await livenessSignals(origin, poolName);
+      ({ here, about } = splitCast(
+        atMine.map((c) => ({ handle: c.handle, appearance: c.appearance, lastSignal: signals.get(c.handle) ?? null })),
+        Date.now(),
+      ));
+    }
+    if (here.length || about.length || coarser.length || finer.length) {
+      const lines: string[] = ['# Co-present at your place (by appearance; names unearned until spoken)'];
+      if (here.length) {
+        lines.push('HERE NOW (your grain — live in the scene; they act and answer within it):');
+        for (const c of here) lines.push(`— ${c.appearance}`);
+      }
+      if (about.length || coarser.length) {
+        lines.push('ABOUT (the coarser grain — hereabouts and real, but NOT at the table: render them about the place, never awaiting; a beat directed at them lands at the coarser grain, answered when they next descend; they cannot be contested; the scene never waits on them):');
+        for (const c of about) lines.push(`— ${c.appearance}`);
+        for (const c of coarser) lines.push(`— ${c.appearance} (standing at the ${pscaleOf(c.addr) >= 2 ? "day's" : 'longer'} grain of this place — pscale ${'+' + pscaleOf(c.addr)}, by their own stance)`);
+      }
+      if (finer.length) {
+        lines.push('WITHIN (finer life beneath your stance — you contain these; their fine beats fold up into your coarser one):');
+        for (const c of finer) lines.push(`— ${c.appearance} (at ${c.addr}, the finer grain)`);
+      }
+      parts.push(lines.join('\n'));
+    }
+  }
+
+  return parts.length ? parts.join('\n\n') : null;
 }
 
 // ── Window-open trace (honest dice + honest clock) ──
@@ -757,7 +1087,7 @@ export async function handlePoolEngage(
       return {
         content: [{
           type: 'text',
-          text: `window already resolved by ${ack.resolvedBy ?? 'another player'} — stand down: do NOT write a second outcome. Re-read the pool since your marker and perceive the resolution that now exists.`,
+          text: `window already resolved by ${ack.resolvedBy ?? 'another player'} — stand down: do NOT write a second outcome. Re-read the pool since your marker and perceive the resolution that now exists. If you had staged into this window you are already INSIDE it — it folded you in; do not re-narrate your arrival. Your next commit is simply your TURN in the running scene.`,
         }],
       };
     }
@@ -862,8 +1192,8 @@ export async function handlePoolEngage(
       // the seat's first engage (marker 0); a continuing seat gets the pointer,
       // so the scene breathes above the law. A returning seat re-enters at
       // marker 0 and receives the whole map again.
-      lines.push(`# Operating directive — ${purpose} (standing law, delivered in full at your first engage; follow it every turn)`);
-      lines.push('The map stands as delivered. When the moment names a branch, walk the directive block at that branch for its detail.');
+      lines.push(`# Operating directive — ${purpose} (standing law, delivered whole at your first engage; follow it every turn)`);
+      lines.push('The law stands as delivered — every position of it, nested and addressed, arrived with your first engage and none of it has changed. Re-enter at marker 0 to receive it again.');
     } else {
       lines.push("# Operating directive — the room's rules, authored by the designer; READ AND FOLLOW THIS EVERY TURN, do not merely acknowledge it");
       lines.push(directiveText);
@@ -882,6 +1212,19 @@ export async function handlePoolEngage(
     lines.push(synthesisHint);
     lines.push('');
   }
+  // The situated current — a ROOM engage (location-addressed pool) delivers the
+  // moment complete: the place at this address, the engager's own tail, the
+  // co-present cast at grain. Compiled mechanically, every engage — it is the
+  // part that changes instant to instant. Named pools return null here and the
+  // envelope is unchanged. (2026-07-20; the A/B measured seats spending mid-loop
+  // tool calls fetching exactly this set, which the door had compiled at entry.)
+  try {
+    const situated = await composeCurrent(pool_url, pool_name, agent_id);
+    if (situated) {
+      lines.push(situated);
+      lines.push('');
+    }
+  } catch { /* a room that cannot situate still speaks — never break an engage */ }
   if (withLiquid) {
     // A withdrawn slot keeps its stamps (the window seed must not move) but its
     // empty text is a trace the mirror must not show — "clearing leaves no

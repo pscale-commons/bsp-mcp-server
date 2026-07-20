@@ -222,3 +222,60 @@ console.log('\n=== summary ===');
 console.log(`  pass: ${pass}`);
 console.log(`  fail: ${fail}`);
 if (fail > 0) process.exit(1);
+
+// ── The situated current — pure parts (2026-07-20) ──
+import { partitionCast, renderPlaceWalk, splitCast as sc2, LIVE_WINDOW_MS as LW } from '../src/tools/pool.js';
+
+console.log('\n=== partitionCast — address arithmetic, walked-form equality ===');
+{
+  const cast = [
+    { handle: 'a', appearance: 'a fig', addr: '211' },     // same place
+    { handle: 'b', appearance: 'b fig', addr: '2110' },    // same place, padding variant
+    { handle: 'c', appearance: 'c fig', addr: '200' },     // coarser (the quarter contains the room)
+    { handle: 'd', appearance: 'd fig', addr: '211.1' },   // finer (within the room)
+    { handle: 'e', appearance: 'e fig', addr: '311' },     // elsewhere
+  ];
+  const { atMine, coarser, finer } = partitionCast(cast, '211');
+  assert(atMine.length === 2 && atMine.some(x => x.handle === 'b'), 'padding variant is the SAME place (walked-form equality)');
+  assert(coarser.length === 1 && coarser[0].handle === 'c', 'a containing stance is coarser');
+  assert(finer.length === 1 && finer[0].handle === 'd', 'a contained address is finer');
+  assert(!atMine.some(x => x.handle === 'e') && !coarser.some(x => x.handle === 'e') && !finer.some(x => x.handle === 'e'), 'elsewhere is nowhere in the partition');
+}
+
+console.log('\n=== renderPlaceWalk — ancestors frame the terminus; one level of interior ===');
+{
+  // Floor 3 — a room-scale world: three-digit addresses ('211') sit at the floor,
+  // dot-free; the hearth beneath is '211.1'. The fixture's floor must match its
+  // address style exactly as a real spatial block's does.
+  const spatial: Block = {
+    _: { _: { _: 'The valley.' } },
+    2: { _: 'The market quarter, stalls and mud.',
+         1: { _: 'The approach track.',
+              1: { _: 'The Slip — the cold ford where the good road gives out.',
+                   1: { _: 'The leaning rope-post.', 1: { _: 'a knot detail never delivered' } },
+                   2: 'The shallow crossing itself, shin-deep.' } } },
+  } as any;
+  const walk = renderPlaceWalk(spatial, '211');
+  assert(walk !== null && /The valley\./.test(walk!), 'root underscore frames the walk');
+  assert(/\[2\] The market quarter/.test(walk!), 'ancestor at [2] delivered');
+  assert(/\[21\] The approach track/.test(walk!), 'ancestor at [21] delivered');
+  assert(/\[211\] The Slip/.test(walk!), 'terminus delivered whole at its address');
+  assert(/\[211\.1\] The leaning rope-post/.test(walk!) && /\[211\.2\] The shallow crossing/.test(walk!), 'interior one level, single-decimal addresses');
+  assert(!/knot detail/.test(walk!), 'two levels down is walked when entered, not delivered');
+  assert(renderPlaceWalk(spatial, '9') === null, 'an address naming no place yields null, never an invented there');
+}
+
+console.log('\n=== splitCast wired from pool.ts (one source of truth) ===');
+{
+  const now = 1_000_000_000_000;
+  const { here, about } = sc2([
+    { handle: 'x', appearance: 'x', lastSignal: now - LW + 1000 },
+    { handle: 'y', appearance: 'y', lastSignal: now - LW - 1000 },
+    { handle: 'z', appearance: 'z', lastSignal: null },
+  ], now);
+  assert(here.length === 1 && here[0].handle === 'x', 'signal inside the window is HERE NOW');
+  assert(about.length === 2, 'stale or no signal is ABOUT');
+}
+
+console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);
+process.exit(fail > 0 ? 1 : 0);
