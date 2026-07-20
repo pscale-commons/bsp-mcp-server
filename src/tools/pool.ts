@@ -1337,7 +1337,7 @@ export async function handlePoolEngage(
     if (submit && submit.trim() !== '' && submittedSlot !== null && !standing.some((s) => s.agent_id === agent_id)) {
       standing.push({ position: parseInt(submittedSlot, 10) || 0, agent_id, text: submit, ts: null, address: null } as PoolContribution);
     }
-    lines.push(`# Liquid — pending, not yet committed (${standing.length} ${standing.length === 1 ? 'author' : 'authors'})`);
+    lines.push(`# Liquid — pending intentions, not yet determined (${standing.length} ${standing.length === 1 ? 'author' : 'authors'}; STAGE yours first — the fold gathers only what is staged)`);
     if (standing.length === 0) {
       lines.push('(no pending intentions)');
     } else {
