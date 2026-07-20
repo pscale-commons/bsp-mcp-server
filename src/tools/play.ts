@@ -28,8 +28,8 @@
  */
 import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
-import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore } from './pool.js';
-import { readAt } from '../bsp.js';
+import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore, renderPosition } from './pool.js';
+import { Block, readAt, floorDepth } from '../bsp.js';
 import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
 
 /**
@@ -93,18 +93,14 @@ async function beachIndex(origin: string): Promise<string[]> {
   }
 }
 
-/** One MAP LINE for a lighthouse branch: a plain string entire, or an object's
- *  underscore alone. The same logarithmic render the room's directive uses
- *  (renderDirective) and for the same reason — the spine is a map, each branch
- *  carries its law in one standing line, and the detail unfolds AT ITS ADDRESS
- *  when the reader walks it (sunstone:8.3, the heading trap: an underscore that
- *  needs its children to mean anything is a heading, and the fix is authoring,
- *  never a deeper render). Branch text that only makes sense with its children
- *  is a bug in the block, and shows up here as a line that cannot be acted on. */
-function mapLine(node: any): string {
-  if (typeof node === 'string') return node;
-  if (!node || typeof node !== 'object') return '';
-  return typeof node._ === 'string' ? node._ : '';
+/** One lighthouse branch, rendered WHOLE and addressed — the same walk the room's
+ *  directive uses (renderPosition). The doorway is a one-shot orientation: an
+ *  Author who has to make a second call for the copy discipline at 2.1 is being
+ *  charged for the render's shape, not the block's depth. */
+function branchText(node: any, digit: string, floor: number): string {
+  const out: string[] = [];
+  renderPosition(node, [digit], floor, out);
+  return out.join('\n');
 }
 
 /** The world's front sign speaks before the door opens (Fable, 2026-07-18): if the
@@ -131,9 +127,12 @@ async function canonSignage(origin: string, world: string, handle: string): Prom
   // scenario can re-cut its own paths without a deploy.
   // Digits 1-8 only: 9 is block metadata by convention (the play-disposition
   // read above lives there) and is not doorway material.
+  const floor = floorDepth(lh as Block);
   for (let d = 1; d <= 8; d++) {
-    const line = mapLine(lh[String(d)]);
-    if (line) { out.push(''); out.push(line); }
+    const node = lh[String(d)];
+    if (node === undefined || node === null) continue;
+    const text = branchText(node, String(d), floor);
+    if (text) { out.push(''); out.push(text); }
   }
   out.push('');
   out.push(`Play happens at a TABLE, never here. Whichever path above is yours, it ends the same way: call pscale_play again with world set to that table's FULL URL (this beach's origin with /w/<table name> in place of this scenario's). This canon surface stays untouched.`);

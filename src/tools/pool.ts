@@ -37,7 +37,7 @@
 
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
-import { Block, writeAt, readAt } from '../bsp.js';
+import { Block, writeAt, readAt, floorDepth, formatAddress, parseSpindle } from '../bsp.js';
 import { isLocationAddress, ancestorsOf, pscaleOf, walkedOf } from '../grain-address.js';
 import {
   loadBlock,
@@ -277,20 +277,74 @@ export function isDirectiveRef(underscore: string): boolean {
   return s.length > 0 && !/\s/.test(s) && s.includes(':');
 }
 
-/** Render a directive block (or one aperture node) as readable text. */
-export function renderDirective(node: any): string {
+/**
+ * Emit one position and EVERYTHING BENEATH IT, in full, each line carrying its
+ * canonical pscale address.
+ *
+ * This replaced a one-level render that emitted each branch's underscore and
+ * dropped the rest. That shape was not a pscale read at all — neither point,
+ * path-walk, disc nor descent — and it cost twice. A branch whose law lived in
+ * its children arrived as a line the reader could not act on (brackenfoot's
+ * genesis told players "each arriver STAGES their arrival (1)" while position 1
+ * was never delivered), and the only repair on offer was a second tool call. It
+ * also quietly rewarded the two authoring cop-outs it created: heading-style
+ * underscores, and "walk 1.1 for detail" pointers written INTO block content —
+ * which a proper spindle makes redundant, since a path-walk already prints every
+ * ancestor above its terminus (sunstone:8.51).
+ *
+ * So the nesting is delivered intact and the addresses come with it: a reader
+ * needing one position later addresses it exactly, and needs nothing in between.
+ * Depth is the contextualisation; the address is how it is re-entered.
+ */
+export function renderPosition(node: any, digits: string[], floor: number, out: string[]): void {
+  const addr = formatAddress(digits, floor);
+  const indent = '  '.repeat(Math.max(0, digits.length - 1));
+  if (typeof node === 'string') {
+    out.push(`${indent}[${addr}] ${node}`);
+    return;
+  }
+  if (!node || typeof node !== 'object') return;
+  const u = floorUnderscore(node as Block);
+  if (u) out.push(`${indent}[${addr}] ${u}`);
+  for (let d = 1; d <= 9; d++) {
+    const child = node[String(d)];
+    if (child === undefined || child === null) continue;
+    renderPosition(child, [...digits, String(d)], floor, out);
+  }
+}
+
+/**
+ * Render a directive block — or one aperture of it — as readable text. The
+ * delivered shape is a real bsp read: path-walk+descent run to leaves. `frame`
+ * carries the ancestor underscores above the aperture (the walk down to it), so
+ * a selected branch arrives self-contextualised — the general frames the
+ * specific, exactly as reading the spindle by hand would (sunstone:8.51). An
+ * aperture with no frame would hand the reader branch law whose governing verbs
+ * were defined one level up and never delivered. `base` is the digit path
+ * already walked to reach `node` (empty at the root), so an aperture read
+ * (pscale:grit/1) still prints TRUE addresses (1.1, 1.11) rather than
+ * renumbering its children from 1.
+ */
+export function renderDirective(
+  node: any,
+  opts?: { floor?: number; base?: string[]; frame?: string[] },
+): string {
   if (typeof node === 'string') return node;
   if (typeof node !== 'object' || node === null) return '';
-  const parts: string[] = [];
+  const floor = opts?.floor ?? floorDepth(node as Block);
+  const base = opts?.base ?? [];
+  const parts: string[] = [...(opts?.frame ?? [])];
   const head = floorUnderscore(node as Block);
-  if (head) parts.push(head);
+  if (head) {
+    const addr = base.length ? `[${formatAddress(base, floor)}] ` : '';
+    parts.push(`${addr}${head}`);
+  }
   for (let d = 1; d <= 9; d++) {
-    const v = node[String(d)];
-    if (typeof v === 'string') parts.push(`(${d}) ${v}`);
-    else if (v && typeof v === 'object') {
-      const s = floorUnderscore(v as Block);
-      if (s) parts.push(`(${d}) ${s}`);
-    }
+    const child = node[String(d)];
+    if (child === undefined || child === null) continue;
+    const out: string[] = [];
+    renderPosition(child, [...base, String(d)], floor, out);
+    if (out.length) parts.push(out.join('\n'));
   }
   return parts.join('\n\n');
 }
@@ -313,8 +367,27 @@ export async function resolveDirective(poolUrl: string, ref: string): Promise<st
       ? await loadBlock('pscale', sentinel)
       : await loadBlock(poolUrl, blk);
     if (!drow || typeof drow.block !== 'object' || drow.block === null) return null;
-    const node = sp ? readAt(drow.block as Block, sp) : drow.block;
-    return renderDirective(node) || null;
+    const block = drow.block as Block;
+    // The floor is the BLOCK's, never the aperture node's — addresses are anchored
+    // at the decimal, so a branch read out of context still prints where it lives.
+    const floor = floorDepth(block);
+    const node = sp ? readAt(block, sp) : block;
+    const base = sp ? parseSpindle(sp, floor).digits : [];
+    // The walk down to the aperture: each ancestor's underscore, root first —
+    // the spindle's general end, framing the specific subtree delivered below.
+    const frame: string[] = [];
+    if (base.length) {
+      let cur: any = block;
+      const rootU = floorUnderscore(block);
+      if (rootU) frame.push(rootU);
+      for (let i = 0; i < base.length - 1; i++) {
+        cur = cur?.[base[i]];
+        if (!cur || typeof cur !== 'object') break;
+        const u = floorUnderscore(cur as Block);
+        if (u) frame.push(`[${formatAddress(base.slice(0, i + 1), floor)}] ${u}`);
+      }
+    }
+    return renderDirective(node, { floor, base, frame }) || null;
   } catch {
     return null;
   }
@@ -862,8 +935,8 @@ export async function handlePoolEngage(
       // the seat's first engage (marker 0); a continuing seat gets the pointer,
       // so the scene breathes above the law. A returning seat re-enters at
       // marker 0 and receives the whole map again.
-      lines.push(`# Operating directive — ${purpose} (standing law, delivered in full at your first engage; follow it every turn)`);
-      lines.push('The map stands as delivered. When the moment names a branch, walk the directive block at that branch for its detail.');
+      lines.push(`# Operating directive — ${purpose} (standing law, delivered whole at your first engage; follow it every turn)`);
+      lines.push('The law stands as delivered — every position of it, nested and addressed, arrived with your first engage and none of it has changed. Re-enter at marker 0 to receive it again.');
     } else {
       lines.push("# Operating directive — the room's rules, authored by the designer; READ AND FOLLOW THIS EVERY TURN, do not merely acknowledge it");
       lines.push(directiveText);
