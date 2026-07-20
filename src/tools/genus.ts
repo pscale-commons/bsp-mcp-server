@@ -70,6 +70,10 @@ export const genusParamsSchema = {
           "A substantive, NAVIGABLE paragraph over the PREVIOUS completed nine of the history counting block — dense with the span's own handles (proper nouns, block addresses, decisions, failures, open threads) and the read-addresses of load-bearing leaves, because summaries stack (100 compresses 10-90) and a descending reader must choose each span by these keywords alone, down to the exact leaf. Include it when the fold ack (or conditions:9) reports one owed. Service-payment: the wake that opens a new span pays for the old one's compression; the kernel writes it at the zero-slot; history is never addressed directly.",
         ),
       status: z.string().optional(),
+      acted: z
+        .number()
+        .optional()
+        .describe("SEAT drivers only. The count of writes the wake already made IN-LOOP through its own tool (not via this fold's `writes`). A seat wake acts across a call loop and folds with an empty `writes` map, so without this the kernel would see applied=0 and record NO history leaf — the instance's own memory would silently miss the wake. Passing the count earns the leaf (which notes '+N in-loop writes landed by the seat'). Holder/ghost wakes, whose writes ride the fold, leave this unset."),
       ask: z
         .object({ wakes: z.number().optional(), tier: z.string().optional(), for: z.string().optional() })
         .passthrough()
