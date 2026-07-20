@@ -279,3 +279,19 @@ console.log('\n=== splitCast wired from pool.ts (one source of truth) ===');
 
 console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);
 process.exit(fail > 0 ? 1 : 0);
+
+// ── Returning-author trace (2026-07-20) ──
+import { hasAuthorTrace } from '../src/tools/pool.js';
+
+console.log('\n=== hasAuthorTrace — the full law arrives once, whoever manages the marker ===');
+{
+  const pool: Block = { _: 'pscale:grit/1', 1: { _: 'a beat', 1: 'julie', 3: 'ts' } } as any;
+  const liquid: Block = { _: 'w', 1: { _: 'staged', 1: 'stager', 2: 'ts0', 3: 'ts' } } as any;
+  assert(hasAuthorTrace(pool, null, 'julie'), 'a committed slot is a trace');
+  assert(hasAuthorTrace(null, liquid, 'stager'), 'a liquid slot is a trace (staging is presence)');
+  assert(!hasAuthorTrace(pool, liquid, 'newcomer'), 'no slot anywhere → genuinely new → full law');
+  assert(!hasAuthorTrace(null, null, 'anyone'), 'empty room → new');
+  const withdrawn: Block = { _: 'w', 1: { _: '', 1: 'ghost', 2: 'ts0', 3: 'ts' } } as any;
+  assert(hasAuthorTrace(null, withdrawn, 'ghost'), 'a withdrawn slot still traces — they were here');
+}
+console.log(`\n=== summary (returning-author) ===\n  pass: ${pass}\n  fail: ${fail}`);

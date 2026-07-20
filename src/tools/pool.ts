@@ -153,6 +153,28 @@ export function findAuthorSlot(block: Block | null, agentId: string): string | n
   return null;
 }
 
+// ── Returning-author detection (2026-07-20) ──
+// The full directive used to key on since_position === 0 — conflating "read
+// from the start" with "first time here". A seat that drops the marker on its
+// commits (the first two-player HITL: one seat passed markers and saw the
+// pointer; the other omitted them and was re-served the whole law on every
+// beat) is NOT a newcomer. The trace is already in the substrate: an author
+// with a slot in the pool or its liquid has engaged before. Stateless,
+// derived at read, like everything else here.
+
+/** True when the author has any prior trace at this pool: a committed slot, or
+ *  a liquid slot (even a withdrawn one — staging is presence). */
+export function hasAuthorTrace(pool: Block | null, liquid: Block | null, agentId: string): boolean {
+  try {
+    if (pool && typeof pool === 'object' &&
+        collectContributions(pool, 0).contributions.some((c) => c.agent_id === agentId)) return true;
+  } catch { /* malformed pool reads as no trace */ }
+  try {
+    if (liquid && typeof liquid === 'object' && findAuthorSlot(liquid, agentId) !== null) return true;
+  } catch { /* ditto */ }
+  return false;
+}
+
 // ── Envelope assembly ──
 
 export interface PoolContribution {
@@ -958,6 +980,14 @@ export async function handlePoolEngage(
   // ── Load pool ──
   let row = await loadBlock(pool_url, blockName);
   let created = false;
+  // Returning-author check runs against the PRE-CALL state — the commit or
+  // stage this very call performs must not count as the prior trace, or a
+  // first-touch committer would be judged returning and never see the law.
+  let returningAuthor = false;
+  if ((params.since_position ?? 0) === 0 && row?.block && typeof row.block === 'object') {
+    const lrowEarly = await loadBlock(pool_url, liquidName).catch(() => null);
+    returningAuthor = hasAuthorTrace(row.block as Block, (lrowEarly?.block as Block) ?? null, agent_id);
+  }
   if (!row) {
     // Pool absent — create it if purpose was provided, otherwise surface the
     // gap so the caller can decide. Creation goes through this primitive
@@ -1187,13 +1217,14 @@ export async function handlePoolEngage(
     lines.push('');
   }
   if (directiveText) {
-    if (sincePosition > 0) {
-      // Marker-aware delivery (NHITL round 3): the full directive arrived with
-      // the seat's first engage (marker 0); a continuing seat gets the pointer,
-      // so the scene breathes above the law. A returning seat re-enters at
-      // marker 0 and receives the whole map again.
+    if (sincePosition > 0 || returningAuthor) {
+      // Marker-aware delivery (NHITL round 3), widened 2026-07-20: the full
+      // directive arrives ONCE — at an author's genuinely first engage. A
+      // continuing seat gets the pointer whether it manages its marker or not
+      // (the returning-author trace covers the seat that drops the
+      // bookkeeping); the scene breathes above the law.
       lines.push(`# Operating directive — ${purpose} (standing law, delivered whole at your first engage; follow it every turn)`);
-      lines.push('The law stands as delivered — every position of it, nested and addressed, arrived with your first engage and none of it has changed. Re-enter at marker 0 to receive it again.');
+      lines.push('The law stands as delivered at your first engage, and none of it has changed. To hold it again, read it at its source: the mount named above is a block address — bsp reads it whole, and a /N suffix is one branch at its own address.');
     } else {
       lines.push("# Operating directive — the room's rules, authored by the designer; READ AND FOLLOW THIS EVERY TURN, do not merely acknowledge it");
       lines.push(directiveText);
