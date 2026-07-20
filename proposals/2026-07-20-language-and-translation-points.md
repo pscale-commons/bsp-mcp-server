@@ -102,7 +102,18 @@ Probing lock state during this work (David-directed): a keyless write appending 
 
 The significant part is not the new entries but **`rules:nomad:2` and `rpg:3.1` — pre-existing content.** The RPG's resolution mechanics and design block accept anonymous overwrite on the public beach. This sits oddly against the EARTH precedent (2026-07-16), where David ruled that only his steward key or Weft's may lock anything and the world machinery came to Weft — `rules:earth` was locked accordingly; `rules:nomad` apparently never was.
 
-Left open rather than locked: the instruction was conditional on finding them locked, and the standing lesson from 2026-07-09 is not to formalise or lock what was not asked for. Flagged for the lock audit.
+**RESOLVED 2026-07-20.** Both blocks *were* locked — but only at `_`, the per-position bite: a whole-block write with `new_lock` locks the root underscore and leaves digits 1–9 open. Reading the KV lock keys directly (namespace `pscale-beach-v2:beach.happyseaurchin.com:locks:<block>` — origin **without** scheme) and hash-matching offline against known keys identified each root lock without any write: `rpg:_` under the steward key, `rules:nomad:_` under `thorn142` (the Thornwood GM key, from when the rules were authored). Method validated against `lighthouse` (steward, all slots).
+
+Locks then set per David's instruction and verified by hash-match + a keyless-rewrite enforcement probe (403):
+
+| Block | Locked slots after | Under |
+|---|---|---|
+| `rpg` | `_`, `3` | steward |
+| `rules:nomad` | `_`, `1`, `2`, `3`, `4`, `5`, `6` | `thorn142` |
+| `conventions` | `_`, `1`–`9` (fully sealed) | steward |
+| `rules:nomad:ja` | `_`, `1`–`9` (fully sealed) | `thorn142` |
+
+Two residues, deliberate: `rpg` digits 1,2,4–9 stay open (David scoped the lock to branch 3, which lock-granularity — first-digit — covers wholesale, so `3.1`–`3.4` are one slot); and `rules:nomad` positions 7–9 stay open (empty; David named digits 1–5). Neither is an exposure of existing content; both are noted so a later pass is a decision, not a surprise. The broader audit across all 251 blocks remains chipped.
 
 ## Open questions
 
