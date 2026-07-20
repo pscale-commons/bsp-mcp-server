@@ -592,6 +592,40 @@ export function renderPlaceWalk(spatial: Block, addr: string): string | null {
   return out.join('\n');
 }
 
+/** The holding's WAYS — a wayfinding digest from the spatial block: the top
+ *  grounds and, for the ground containing the current address, its buildings —
+ *  first sentence of each PUBLIC face, addressed. This is what makes a raw
+ *  spatial read unnecessary for movement (ab5: seats read the whole block —
+ *  hidden directories and all — because the move law told them to copy an
+ *  address from it and nothing else carried one). Faces only; the finer place
+ *  reveals on arrival. */
+export function renderWays(spatial: Block, hereAddr: string): string | null {
+  const floor = floorDepth(spatial);
+  let hereTop = '';
+  try { hereTop = parseSpindle(hereAddr, floor).digits[0] ?? ''; } catch { /* no here */ }
+  const first = (n: any): string => {
+    const u = typeof n === 'string' ? n : floorUnderscore(n as Block);
+    if (!u) return '';
+    const m = u.match(/^[^.!?]*[.!?]/);
+    return (m ? m[0] : u).trim();
+  };
+  const out: string[] = [];
+  for (let g = 1; g <= 9; g++) {
+    const ground = (spatial as any)[String(g)];
+    if (ground === undefined || ground === null) continue;
+    const gAddr = formatAddress([String(g)], floor);
+    out.push(`[${gAddr}] ${first(ground)}`);
+    if (String(g) === hereTop && ground && typeof ground === 'object') {
+      for (let b = 1; b <= 9; b++) {
+        const bld = ground[String(b)];
+        if (bld === undefined || bld === null) continue;
+        out.push(`  [${formatAddress([String(g), String(b)], floor)}] ${first(bld)}`);
+      }
+    }
+  }
+  return out.length ? out.join('\n') : null;
+}
+
 /** Compile the situated current for a room engage: the place at the room's address,
  *  the engager's own tail (witnessed recent + knows), and the co-present cast at
  *  grain. Every part degrades gracefully to absence — an observer with no blocks
@@ -609,6 +643,10 @@ export async function composeCurrent(origin: string, poolName: string, agentId: 
       const walk = renderPlaceWalk(srow.block as Block, poolName);
       if (walk) {
         parts.push(`# The place — ${spatialName}:${poolName} (walked to its address; contained places one level down, entered by moving)\n${walk}`);
+      }
+      const ways = renderWays(srow.block as Block, poolName);
+      if (ways) {
+        parts.push(`# The ways (public faces, addressed — MOVE by copying one of these; finer places reveal on arrival; never read a world block whole)\n${ways}`);
       }
     }
   }
@@ -987,6 +1025,12 @@ export async function handlePoolEngage(
   if ((params.since_position ?? 0) === 0 && row?.block && typeof row.block === 'object') {
     const lrowEarly = await loadBlock(pool_url, liquidName).catch(() => null);
     returningAuthor = hasAuthorTrace(row.block as Block, (lrowEarly?.block as Block) ?? null, agent_id);
+    // NOT passport-existence: a fresh handle's door returns the genesis passage
+    // with no room engage, so its first real engage comes passport-in-hand —
+    // counting the passport as trace delivered the law ZERO times (ab6). The
+    // room's law is received where the room is engaged; a handful of full
+    // deliveries across the tight genesis-to-arrival window then converge to
+    // pointers at the first stage, sloppy marker or not.
   }
   if (!row) {
     // Pool absent — create it if purpose was provided, otherwise surface the
