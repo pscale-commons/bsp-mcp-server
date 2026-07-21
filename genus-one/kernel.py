@@ -736,6 +736,62 @@ def _peer_surfaces():
     return out
 
 
+def _reaching(block, handle, limit=5):
+    """The RESPONSIVENESS read — recent entries by OTHERS in one of the agent's
+    accumulators (its room, its liquid). Walks digit children to their leaves
+    (an accumulator supernests, so the newest live under the highest bracket),
+    keeps each voiced slot NOT authored by the agent itself, and returns the
+    most recent `limit` as a NEWEST-FIRST LIST of {"1": who, "3": when, "_":
+    words} — the slot shape, minus the agent's own noise. Empty when nothing
+    has reached it.
+
+    A list, not an address-keyed map: the entries' numbers are integer-like
+    keys, and a JS object reorders those ascending (the port in animator.ts
+    serializes with JSON.stringify) — which would flip newest-first to oldest-
+    first and break byte-parity. A JSON array preserves order everywhere. The
+    field order is "1","3","_" — integer keys first, which every serializer
+    agrees on. The counting-block address is dropped: these are a read-only
+    given (words to answer, in the room), not something to address back.
+
+    The agent's OWN entries are excluded: its history already carries what it
+    said; the given is for what OTHERS have said to it."""
+    leaves = []
+
+    def walk(node, prefix):
+        if not isinstance(node, dict):
+            return
+        for k in "123456789":
+            child = node.get(k)
+            if not isinstance(child, dict):
+                continue
+            # a LEAF has a string voicing and only scalar digit-fields; a
+            # BRACKET (an era container) has object digit-children — recurse it.
+            is_bracket = any(
+                d in child and isinstance(child[d], dict) for d in "123456789"
+            )
+            if is_bracket:
+                walk(child, prefix + k)
+            else:
+                leaves.append((prefix + k, child))
+
+    walk(block if isinstance(block, dict) else {}, "")
+    # also the sunk era under the root underscore (recently supernested tail)
+    if isinstance(block, dict) and isinstance(block.get("_"), dict):
+        walk(block["_"], "")
+    out = []
+    for addr, slot in sorted(leaves, key=lambda t: int(t[0]), reverse=True):
+        who = slot.get("1")
+        text = slot.get("_")
+        if not isinstance(text, str) or not text.strip():
+            continue                      # empty / withdrawn slot
+        if who == handle:
+            continue                      # the agent's own voice is not a request
+        out.append({k: slot.get(k) for k in ("1", "3", "_") if k in slot})
+        if len(out) >= limit:
+            break
+    return out
+
+
 def compose_window(gamma):
     """Compose the window per the active recipe (reflexive:8.1) — the composition
     is the agent's own block, not kernel-hardcoded. The recipe names the window's
@@ -752,6 +808,15 @@ def compose_window(gamma):
         "gap":     lambda: gamma,                                          # the error F computed
         "between": _peer_surfaces,   # the 'between' — peers' published surfaces, by proximity
         "task":    lambda: load_block("task") or {},   # work handed in from outside — the given task channel
+        # RESPONSIVENESS — what has reached the agent in its own room and who is
+        # present there now. task is the HOLDER's directed line; these are the
+        # OPEN door — anyone on the beach. room = recent speech committed to
+        # pool:<handle> by others; liquid = who stands in liquid:pool:<handle>
+        # now, composing (presence, not yet content). The agent used to have to
+        # go read these with its own tool mid-wake; composing them means a bare
+        # pulse perceives them too, and a seat wake wakes already knowing.
+        "room":    lambda: _reaching(load_block("pool"), HANDLE),
+        "liquid":  lambda: _reaching(load_block("liquid:pool"), HANDLE),
     }
     working = ((load_block("reflexive") or {}).get("8", {}) or {}).get("1", {})
     process = _side(working.get("1", {}), builders) if isinstance(working, dict) else {}

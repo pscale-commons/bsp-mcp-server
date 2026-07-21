@@ -198,7 +198,7 @@ export async function handleGenus(params: {
 
   // ── compose — the window, byte-parity with kernel.py --compose-only ──
   const now = Date.now() / 1000;
-  const w = await genusCompose(store.load, now);
+  const w = await genusCompose(store.load, now, new Map(), handle);
   const mode = passphrase
     ? 'HOLDER — the special relationship: you may return this wake’s fold via the fold parameter (writes / index / heartbeat / note, per capabilities:3 in the window), or edit the shell as designer via bsp().'
     : `GHOST-WAKE — no passphrase: you are borrowing this mind, not changing it (the locks enforce it). Perceive, think, enact the wake in words; report what the fold WOULD write. Respond outwardly at task:${handle} (via bsp) or marks.`;

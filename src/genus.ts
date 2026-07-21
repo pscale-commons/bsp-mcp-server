@@ -696,7 +696,47 @@ export interface GenusWindow {
  * without peers.json. (The peers-into-the-shell move is project:genus-one 2.7;
  * when the kernel lands it, port it here in lockstep.)
  */
-export async function genusCompose(load: Loader, now: number, peers: Map<string, PNode> = new Map()): Promise<GenusWindow> {
+/** The RESPONSIVENESS read — recent entries by OTHERS in one of the agent's
+ *  accumulators (its room, its liquid). Walks digit children to their leaves
+ *  (an accumulator supernests, so the newest live under the highest bracket),
+ *  keeps each voiced slot NOT authored by the agent, and returns the most
+ *  recent `limit` as a NEWEST-FIRST LIST of {1: who, 3: when, _: words}. A
+ *  list, not an address-keyed map: entry numbers are integer-like keys that a
+ *  JS object reorders ascending (animator.ts serializes via JSON.stringify),
+ *  which would flip newest-first and break parity; a JSON array preserves
+ *  order everywhere. The agent's own entries are excluded — its history holds
+ *  what it said; the given is for what OTHERS said to it. Byte-parity with
+ *  kernel._reaching. */
+function reaching(block: PNode, handle: string | undefined, limit = 5): PNode[] {
+  const leaves: Array<[string, PMap]> = [];
+  const walk = (node: PNode, prefix: string): void => {
+    if (!(node instanceof Map)) return;
+    for (const k of '123456789') {
+      const child = node.get(k);
+      if (!(child instanceof Map)) continue;
+      const isBracket = '123456789'.split('').some((d) => child.get(d) instanceof Map);
+      if (isBracket) walk(child, prefix + k);
+      else leaves.push([prefix + k, child]);
+    }
+  };
+  walk(block instanceof Map ? block : new Map(), '');
+  const sunk = block instanceof Map ? block.get('_') : undefined;
+  if (sunk instanceof Map) walk(sunk, '');
+  leaves.sort((a, b) => Number(b[0]) - Number(a[0]));
+  const out: PNode[] = [];
+  for (const [, slot] of leaves) {
+    const text = slot.get('_');
+    if (typeof text !== 'string' || !text.trim()) continue;
+    if (slot.get('1') === handle) continue;
+    const entry: PMap = new Map();
+    for (const k of ['1', '3', '_']) if (slot.has(k)) entry.set(k, slot.get(k)!);
+    out.push(entry);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+export async function genusCompose(load: Loader, now: number, peers: Map<string, PNode> = new Map(), handle?: string): Promise<GenusWindow> {
   // F — structural gaps only (kernel.run_F with use_llm=False)
   const purpose = await load('purpose');
   const conditions = await load('conditions');
@@ -720,6 +760,13 @@ export async function genusCompose(load: Loader, now: number, peers: Map<string,
       return m;
     },
     task: async () => (await load('task')) ?? new Map(),
+    // RESPONSIVENESS — the OPEN door (task is the holder's directed line).
+    // room = recent speech committed to pool:<handle> by others; liquid = who
+    // stands in liquid:pool:<handle> now, composing (presence, not yet
+    // content). Composed so a bare pulse perceives them and a seat wake wakes
+    // already knowing, instead of having to go read them mid-wake.
+    room: async () => reaching((await load('pool')) ?? new Map(), handle) as unknown as PNode,
+    liquid: async () => reaching((await load('liquid:pool')) ?? new Map(), handle) as unknown as PNode,
   };
   const eight = refl.get('8');
   const workingNode = eight instanceof Map ? eight.get('1') : undefined;
