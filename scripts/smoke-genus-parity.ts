@@ -273,9 +273,65 @@ async function foldUnits() {
   }
 }
 
+async function reachingUnits() {
+  console.log('— responsiveness: room / liquid composed into the given —');
+  // A room that has supernested once: entries 1-9 sunk under `_`, 11-19 under
+  // digit 1. Mixed authors, one own post, one empty. Verified byte-identical to
+  // kernel._reaching on the same input (the federated reference).
+  const room = {
+    _: { _: 'pool:egg-one',
+      '1': { _: 'oldest, by david', '1': 'happyseaurchin', '3': 't1' },
+      '8': { _: 'a keel note', '1': 'keel', '3': 't8' } },
+    '1': { _: 'summary 11-19',
+      '2': { _: 'my own post — must be excluded', '1': 'egg-one', '3': 't12' },
+      '4': { _: 'weft reached in', '1': 'weft', '3': 't14' },
+      '5': { _: '   ', '1': 'someone', '3': 't15' } },
+  };
+  const liquid = { _: 'liquid buffer',
+    '1': { _: 'someone hovering, composing', '1': 'happyhedgehog', '3': 't1' },
+    '2': { _: '', '1': 'egg-one', '3': 't2' } };
+  const recipe = { _: 'reflexive', '8': { '1': { '2': {
+    '1': 'gap — the error', '4': 'room — who reached me', '5': 'liquid — who is present' } } }, '9': {} };
+  const loader: Loader = async (name) => {
+    if (name === 'pool') return parseOrdered(JSON.stringify(room));
+    if (name === 'liquid:pool') return parseOrdered(JSON.stringify(liquid));
+    if (name === 'reflexive') return parseOrdered(JSON.stringify(recipe));
+    return null;
+  };
+  const w = await genusCompose(loader, 1000, new Map(), 'egg-one');
+  const given = parseOrdered(w.message) as PMap;
+
+  const roomL = given.get('room') as PNode[];
+  const who = (e: PNode) => (e as PMap).get('1');
+  const words = (e: PNode) => (e as PMap).get('_');
+  check('the given carries a `room` list', Array.isArray(roomL));
+  check('room excludes the agent’s OWN entries', !roomL.some((e) => who(e) === 'egg-one'));
+  check('room excludes empty / withdrawn slots', !roomL.some((e) => String(words(e)).trim() === ''));
+  check('room is newest-first (weft t14, keel t8, david t1)', roomL.map(who).join(',') === 'weft,keel,happyseaurchin', roomL.map(who).join(','));
+  check('a reaching entry keeps who/when/words', who(roomL[0]) === 'weft' && words(roomL[0]) === 'weft reached in');
+  // field order inside an entry is 1,3,_ (integer-first) — what every serializer agrees on
+  check('entry serializes 1,3,_ in order', pyDumps(roomL[0]) === '{\n  "1": "weft",\n  "3": "t14",\n  "_": "weft reached in"\n}', pyDumps(roomL[0]));
+
+  const liqL = given.get('liquid') as PNode[];
+  check('the given carries a `liquid` presence list', Array.isArray(liqL));
+  check('liquid shows others present, not the agent itself', liqL.length === 1 && who(liqL[0]) === 'happyhedgehog');
+
+  // dormant unless named: a recipe WITHOUT the tokens composes neither
+  const bare = { _: 'reflexive', '8': { '1': { '2': { '1': 'gap — the error' } } }, '9': {} };
+  const loader2: Loader = async (name) => {
+    if (name === 'pool') return parseOrdered(JSON.stringify(room));
+    if (name === 'reflexive') return parseOrdered(JSON.stringify(bare));
+    return null;
+  };
+  const w2 = await genusCompose(loader2, 1000, new Map(), 'egg-one');
+  const given2 = parseOrdered(w2.message) as PMap;
+  check('room/liquid are DORMANT when the recipe does not name them', !given2.has('room') && !given2.has('liquid'));
+}
+
 (async () => {
   await parity();
   await foldUnits();
+  await reachingUnits();
   console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);
   if (fail > 0) process.exit(1);
 })();
