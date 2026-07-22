@@ -970,6 +970,10 @@ export const poolEngageParamsSchema = {
     .string()
     .optional()
     .describe("RESOLVER-ONLY (function:thornwood:2). When committing a window's resolution event-skeleton, pass the window's open-stamp — the 'window opened <ts>' value handed back in this envelope. The beach admits the FIRST resolver of that window and rejects every other with a stand-down (single-resolution enforced atomically at the store, not by convention — two LLMs can both judge a window closed and both try to resolve). Omit for ordinary contributions / chat."),
+  resolves_seen: z
+    .string()
+    .optional()
+    .describe("RESOLVER-ONLY companion to resolves_window: the NEWEST 'arrived' stamp among the pending intentions in the mirror you are folding (each liquid line renders one). The guard against the stage-vs-claim race — if an intention staged after your read, the beach answers WINDOW MOVED with the live buffer and you re-weave, instead of a staged act being silently dropped. Copy it from the same envelope you copied resolves_window from."),
   with_liquid: z
     .boolean()
     .optional()
@@ -1006,6 +1010,7 @@ export type PoolEngageParams = {
   secret?: string;
   purpose?: string;
   resolves_window?: string;
+  resolves_seen?: string;
 };
 
 // ── Handler ──
@@ -1147,6 +1152,7 @@ export async function handlePoolEngage(
   let postedPosition: number | null = null;
   let postedTo: string | null = null;
   let postedSupernested = false;
+  let foldCleared: Block | null = null;
   if (contribution !== undefined && contribution.trim() !== '') {
     const entry: Record<string, any> = {
       _: contribution,
@@ -1172,39 +1178,71 @@ export async function handlePoolEngage(
       }
     }
 
-    let ack: { slot?: string; supernested?: boolean; floor?: number; alreadyResolved?: boolean; resolvedBy?: string | null };
+    let ack: {
+      slot?: string; supernested?: boolean; floor?: number; cleared?: Block | null;
+      alreadyResolved?: boolean; resolvedBy?: string | null;
+      landed?: { slot?: string; entry?: any } | null;
+      windowMoved?: boolean; buffer?: Block | null;
+    };
     try {
-      ack = await appendToBeach(pool_url, destBlock, entry as Block, secret, params.resolves_window);
+      ack = await appendToBeach(pool_url, destBlock, entry as Block, secret, params.resolves_window, params.resolves_seen);
     } catch (e: any) {
       return { content: [{ type: 'text', text: `Pool commit rejected by beach: ${e?.message ?? String(e)}` }] };
+    }
+    if (ack.windowMoved) {
+      // The resolves_seen guard fired: an intention staged AFTER the mirror this
+      // folder read. Nothing landed and nothing was dropped — the live buffer
+      // rides back so the re-weave needs no extra read.
+      const b: any = ack.buffer ?? {};
+      const slots = Object.keys(b).filter((k) => k !== '_').sort((x, y) => Number(x) - Number(y));
+      const rows = slots
+        .map((k) => b[k])
+        .filter((s: any) => s && typeof s === 'object' && typeof s['_'] === 'string' && s['_'] !== '')
+        .map((s: any) => `- ${s['1'] ?? '?'} (arrived ${s['2'] ?? '?'}): ${s['_']}`);
+      const newest = slots.map((k) => String(b[k]?.['2'] ?? '')).filter(Boolean).sort().pop() ?? '';
+      return {
+        content: [{
+          type: 'text',
+          text: `window MOVED — an intention staged after the mirror you read. Nothing landed and nothing was dropped. The live window now holds:\n${rows.join('\n') || '(no live intentions — re-read the room)'}\n\nRe-weave EVERY voice above into your fold, then claim again with the same resolves_window and resolves_seen=${newest || '<the newest arrived stamp above>'}.`,
+        }],
+      };
     }
     if (ack.alreadyResolved) {
       // The single-resolution claim refused this write — another resolver got the
       // window first. Not an error: stand down, do not write a second outcome.
+      // The landed fold rides the stand-down (beach-side, 2026-07-22) so the
+      // stood-down author VERIFIES their inclusion instead of being assured of it
+      // — the old text promised "you are already INSIDE it", which the
+      // stage-vs-claim race made a lie exactly when it mattered.
+      const landedEntry = ack.landed?.entry;
+      const landedTxt = landedEntry && typeof landedEntry === 'object' && typeof landedEntry['_'] === 'string'
+        ? `\n\nThe beat that landed (slot ${ack.landed?.slot ?? '?'}, by ${landedEntry['1'] ?? ack.resolvedBy ?? '?'}):\n${landedEntry['_']}`
+        : '';
       return {
         content: [{
           type: 'text',
-          text: `window already resolved by ${ack.resolvedBy ?? 'another player'} — stand down: do NOT write a second outcome. Re-read the pool since your marker and perceive the resolution that now exists. If you had staged into this window you are already INSIDE it — it folded you in; do not re-narrate your arrival. Your next commit is simply your TURN in the running scene.`,
+          text: `window already resolved by ${ack.resolvedBy ?? 'another player'} — stand down: do NOT write a second outcome.${landedTxt}\n\nVERIFY rather than assume: if you had staged into this window, read the landed beat for your staged words. Woven — you are inside it; do not re-narrate your act. NOT woven — the fold missed your stage: commit your act now as your own beat in the running scene (no window claim). Either way your next commit is simply your TURN.`,
         }],
       };
     }
     postedPosition = ack.slot ? parseInt(ack.slot, 10) : null;
     postedTo = destBlock;
     postedSupernested = ack.supernested === true;
+    foldCleared = ack.cleared ?? null;
 
-    // Window resolved → CLEAR the room's liquid so the next intention opens a FRESH
-    // window. A resolver can only clear its OWN slot (submit='' is caller-scoped);
-    // co-present slots would otherwise persist, the window-open stamp would never
-    // reset, and single-resolution (keyed on that stamp) would dead-lock every future
-    // resolution — the room freezes into one perpetual already-resolved window. Caught
-    // by the high-fidelity agent rig 2026-06-22 (a scripted rig force-cleared all slots
-    // and so hid it). Clearing the whole buffer on a successful resolve is the fix; the
-    // resolver no longer clears by hand (function:thornwood:2 updated to match).
+    // Window resolved → the liquid must clear so the next intention opens a FRESH
+    // window (else single-resolution dead-locks on one perpetual window — caught
+    // 2026-06-22). A beach that returns `cleared` did the snapshot-and-clear
+    // server-side, atomically with the claim (2026-07-22 — closes the sliver where
+    // a stage landing between claim and a client-side clear was wiped unseen);
+    // the client-side clear below remains ONLY for beaches that predate it.
     if (params.resolves_window) {
-      try {
-        const ldesc = `Liquid pre-commit buffer for ${liquidName} (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit. Empty means no live window.`;
-        await saveBlock(pool_url, liquidName, { _: ldesc } as Block, { spindle: '', secret });
-      } catch { /* best-effort: a stale slot at worst, never a hard failure */ }
+      if (!foldCleared) {
+        try {
+          const ldesc = `Liquid pre-commit buffer for ${liquidName} (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit. Empty means no live window.`;
+          await saveBlock(pool_url, liquidName, { _: ldesc } as Block, { spindle: '', secret });
+        } catch { /* best-effort: a stale slot at worst, never a hard failure */ }
+      }
     } else if (destBlock === blockName) {
       // A plain pool-commit CONSUMES the author's own staged intention. The liquid
       // mirrors what is PENDING; this beat is committed, so a surviving slot would
@@ -1282,6 +1320,23 @@ export async function handlePoolEngage(
     const claimed = params.resolves_window ? ` — window ${params.resolves_window} RESOLVED, your claim was first; the buffer is cleared and the next intention opens fresh` : '';
     lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}`);
     lines.push('');
+    // What the winning claim cleared, exactly as the beach snapshotted it. The
+    // folder KNOWS what it wove; this list is the audit — any voice below that
+    // is not in the fold was dropped by the stage-vs-claim race, and the folder
+    // owes it as a supplement beat (grit 2.6).
+    if (foldCleared && typeof foldCleared === 'object') {
+      const clearedRows = Object.keys(foldCleared)
+        .filter((k) => k !== '_')
+        .sort((x, y) => Number(x) - Number(y))
+        .map((k) => (foldCleared as any)[k])
+        .filter((s: any) => s && typeof s === 'object' && typeof s['_'] === 'string' && s['_'] !== '')
+        .map((s: any) => `- ${s['1'] ?? '?'} (arrived ${s['2'] ?? '?'}): ${s['_']}`);
+      if (clearedRows.length > 0) {
+        lines.push(`cleared with this fold (${clearedRows.length} staged voice${clearedRows.length === 1 ? '' : 's'} — VERIFY each is woven in your beat; any you did not weave, you owe as a supplement beat):`);
+        for (const r of clearedRows) lines.push(r);
+        lines.push('');
+      }
+    }
   }
   if (directiveText) {
     if (sincePosition > 0 || returningAuthor) {
@@ -1358,7 +1413,7 @@ export async function handlePoolEngage(
       // day-fold resolver had to judge the stamp from slot headers).
       const liveOpenTs = windowOpenTs(liquidBlock);
       if (liveOpenTs) {
-        lines.push(`window opened ${liveOpenTs} — the stamp does not move; a resolution claims this window by passing it as resolves_window.`);
+        lines.push(`window opened ${liveOpenTs} — the stamp does not move; a resolution claims this window by passing it as resolves_window, WITH resolves_seen=<the newest arrived stamp above> as the guard: an intention staged after this read then answers WINDOW MOVED instead of being silently dropped.`);
       }
     }
     lines.push('');

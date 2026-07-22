@@ -572,7 +572,17 @@ export async function appendToBeach(
   entry: Block,
   secret?: string,
   resolveWindow?: string,
-): Promise<{ slot?: string; supernested?: boolean; floor?: number; alreadyResolved?: boolean; resolvedBy?: string | null; window?: string }> {
+  resolveSeen?: string,
+): Promise<{
+  slot?: string; supernested?: boolean; floor?: number;
+  /** Liquid buffer the beach snapshot-and-cleared with a winning fold claim. */
+  cleared?: Block | null;
+  alreadyResolved?: boolean; resolvedBy?: string | null; window?: string;
+  /** The fold that landed, returned with a stand-down (best-effort). */
+  landed?: { slot?: string; entry?: any } | null;
+  /** resolve_seen was stale — an intention staged after the folder's read. */
+  windowMoved?: boolean; buffer?: Block | null;
+}> {
   const t = translateAddress(ownerId, name);
   if (isSentinelOwner(t.agent_id)) {
     throw new Error(`"${t.agent_id}" is a read-only sentinel; cannot append.`);
@@ -588,6 +598,10 @@ export async function appendToBeach(
   // single-resolution (atomic SET-NX). A 409 window_already_resolved comes back as
   // a discriminated result below — another resolver claimed the window first.
   if (resolveWindow !== undefined) body.resolve_window = resolveWindow;
+  // Companion guard: the newest first-staged stamp the folder saw. A stage that
+  // landed after that read makes the claim stale — the beach answers 409
+  // window_moved with the live buffer, and the folder re-weaves (nothing lost).
+  if (resolveSeen !== undefined) body.resolve_seen = resolveSeen;
   let res: Response;
   try {
     res = await fetchWithTimeout(url, {
@@ -606,7 +620,13 @@ export async function appendToBeach(
     // claim doing its job (another resolver got this window first). Surface it as
     // a discriminated result so the caller stands the resolver down, not throws.
     if (res.status === 409 && parsed?.code === 'window_already_resolved') {
-      return { alreadyResolved: true, resolvedBy: parsed.resolved_by ?? null, window: parsed.window };
+      return { alreadyResolved: true, resolvedBy: parsed.resolved_by ?? null, window: parsed.window, landed: parsed.landed ?? null };
+    }
+    // 409 window_moved is likewise NOT an error — the resolve_seen guard fired:
+    // an intention staged after the folder's read. The live buffer rides back so
+    // the folder re-weaves without another read.
+    if (res.status === 409 && parsed?.code === 'window_moved') {
+      return { windowMoved: true, window: parsed.window, buffer: parsed.buffer ?? null };
     }
     let errMsg = `Beach append rejected (${res.status} ${res.statusText})`;
     if (parsed?.error) errMsg = `Beach append rejected: ${parsed.error}`;
@@ -614,8 +634,8 @@ export async function appendToBeach(
     throw new Error(errMsg);
   }
   try {
-    const j = JSON.parse(await res.text()) as { slot?: string; supernested?: boolean; floor?: number };
-    return { slot: j.slot, supernested: j.supernested, floor: j.floor };
+    const j = JSON.parse(await res.text()) as { slot?: string; supernested?: boolean; floor?: number; cleared?: Block | null };
+    return { slot: j.slot, supernested: j.supernested, floor: j.floor, cleared: j.cleared ?? null };
   } catch {
     return {};
   }

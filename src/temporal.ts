@@ -189,23 +189,43 @@ export function pscaleOfDuration(seconds: number): number {
   return best.pscale;
 }
 
-const AGE_LABEL: Record<number, string> = {
-  [-3]: 'just now', [-2]: 'just now', [-1]: 'a minute or two',
-  0: 'this beat', 1: 'within the hour', 2: 'about a day', 3: 'days',
-  4: 'weeks', 5: 'months', 6: 'about a year', 7: 'years', 8: 'a lifetime', 9: 'an age',
-};
+/** Irregular plurals for rung names; the rest take a plain s. */
+const RUNG_PLURALS: Record<string, string> = { millennium: 'millennia', century: 'centuries' };
+
+/** The CONTAINING rung — the coarsest rung not longer than the duration; null
+ *  when the duration is shorter than every rung. Containing, not log-nearest:
+ *  nearest let 52 minutes read as "this beat" (a beat is ~18 minutes) and 2h40m
+ *  as "within the hour" — and spans, ripeness, and staleness are all READ off
+ *  these ages (grit 2.5, expiry-is-read; caught live, NHITL 2026-07-22), so an
+ *  age label must never understate. pscaleOfDuration keeps its log-nearest
+ *  semantics for "which scale is this?" questions; an age is a magnitude, so it
+ *  floors to the rung and counts. */
+function containingRung(seconds: number): Rung | null {
+  let best: Rung | null = null;
+  for (const r of ALL_RUNGS) {
+    if (r.seconds <= seconds && (best === null || r.seconds > best.seconds)) best = r;
+  }
+  return best;
+}
 
 /** The feature: an ISO timestamp rendered WITH its relation to now, so the
- *  reading LLM never subtracts. "(+2 — about a day ago)". Past and future both. */
+ *  reading LLM never subtracts. "(+0 — 3 beats ago)". Past and future both.
+ *  The count is in the rung's own pscale units (the pscale minute is ~2 clock
+ *  minutes) — voicing stays analogue by the law at the head of this file; what
+ *  is promised is that the label never understates the rung. */
 export function renderAge(iso: string, now: Date = new Date()): string {
   const t = Date.parse(iso);
   if (Number.isNaN(t)) return '';
   const deltaS = (now.getTime() - t) / 1000;
-  const p = pscaleOfDuration(deltaS);
-  const label = AGE_LABEL[p] ?? `${p}`;
+  const s = Math.abs(deltaS);
+  const rung = containingRung(s);
+  const p = rung === null ? -3 : rung.pscale;
   const sign = p >= 0 ? `+${p}` : `${p}`;
-  if (p <= -2) return `(${sign} — just now)`;
-  return deltaS >= 0 ? `(${sign} — ${label} ago)` : `(${sign} — in ${label})`;
+  if (rung === null || p <= -2) return `(${sign} — just now)`;
+  const n = Math.max(1, Math.round(s / rung.seconds));
+  const noun = n === 1 ? rung.name : (RUNG_PLURALS[rung.name] ?? `${rung.name}s`);
+  const phrase = n === 1 ? (/^[aeiou]/.test(noun) ? `an ${noun}` : `a ${noun}`) : `${n} ${noun}`;
+  return deltaS >= 0 ? `(${sign} — ${phrase} ago)` : `(${sign} — in ${phrase})`;
 }
 
 /** The now-stamp: the prerequisite the rendering hangs on. One line, every
