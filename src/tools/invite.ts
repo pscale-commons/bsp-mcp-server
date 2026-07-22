@@ -17,8 +17,38 @@
  * returns step 1 (wake) plus a footer naming the whole progression.
  */
 import { z } from 'zod';
+import type { Block } from '../bsp.js';
 import { loadBlock } from '../db.js';
 import { bspRead, formatRead } from '../bsp-fn.js';
+
+/**
+ * Render the welcome block as a clean director's note — underscore first, then
+ * each move as a bullet, nested doors indented. Deliberately NOT formatRead:
+ * the welcoming LLM should read plain prose to metabolise, never walker-debug
+ * output ("[path-walk @ ...] d1 p0 [1]: ...") — which is itself a species of the
+ * blodge this welcome exists to end.
+ */
+function renderWelcome(block: Block): string {
+  const root = block as Record<string, unknown>;
+  const out: string[] = [];
+  if (typeof root._ === 'string') out.push(root._ as string);
+  out.push('');
+  const emit = (node: Record<string, unknown>, indent: string): void => {
+    for (let d = 1; d <= 9; d++) {
+      const child = node[String(d)];
+      if (child === undefined || child === null) continue;
+      if (typeof child === 'string') {
+        out.push(`${indent}• ${child}`);
+      } else if (typeof child === 'object') {
+        const obj = child as Record<string, unknown>;
+        if (typeof obj._ === 'string') out.push(`${indent}• ${obj._ as string}`);
+        emit(obj, indent + '    ');
+      }
+    }
+  };
+  emit(root, '');
+  return out.join('\n');
+}
 
 export const inviteParamsSchema = {
   step: z
@@ -37,6 +67,31 @@ export type InviteParams = { step?: number };
 export async function handleInvite(
   params: InviteParams,
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
+  const { step } = params;
+
+  // Cold call — a person is arriving. Return the Character-voiced WELCOME: the
+  // MOVES for the opening turn, not the agent build-ladder. The header patch
+  // that used to sit here said "wear Character" while the body handed back the
+  // Designer engineering ladder — the voice/payload split that produced blodge.
+  if (step === undefined) {
+    const welcomeRow = await loadBlock('pscale', 'welcome');
+    if (welcomeRow) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text:
+              renderWelcome(welcomeRow.block) +
+              '\n\n———\nMaking substrate capacity for yourself as an AGENT (not welcoming a human)? The six-step build ladder — wake, build, mark, grain, SAND, shared — is at pscale_invite(step=1).',
+          },
+        ],
+      };
+    }
+    // Welcome sentinel missing — fall through to the progression overview below.
+  }
+
+  // Step path (and the defensive fallback for a cold call when the welcome
+  // block is unavailable) — the six-step agent build-ladder.
   const row = await loadBlock('pscale', 'progression');
   if (!row) {
     return {
@@ -49,9 +104,8 @@ export async function handleInvite(
     };
   }
 
-  const { step } = params;
   if (step === undefined) {
-    // Return step 1 plus the whole-progression overview underscore.
+    // Welcome missing but progression present — give the ladder overview + step 1.
     const overview = bspRead(row.block, '', null);
     const stepOne = bspRead(row.block, '1', null);
     const overviewText =
@@ -62,7 +116,7 @@ export async function handleInvite(
       content: [
         {
           type: 'text',
-          text: `Wear the CHARACTER face by default — casual voice, beach invisible, your human is the authority; the four CADO faces are defined at bsp(agent_id='pscale', block='soft-agent', spindle='3') — read them before speaking. No accounts here: a mark needs nothing; a passphrase is a lock your human picks for their own note, never a login.\n\nIterative orientation progression — six steps. Call pscale_invite(step=N) to advance.\n\n— Overview —\n${overviewText}\n\n— Step 1 (start here) —\n${formatRead(stepOne)}\n\nWhen you have validated step 1, call pscale_invite(step=2) for the next.`,
+          text: `Six-step orientation progression (the agent build-ladder). Call pscale_invite(step=N) to advance.\n\n— Overview —\n${overviewText}\n\n— Step 1 —\n${formatRead(stepOne)}`,
         },
       ],
     };
