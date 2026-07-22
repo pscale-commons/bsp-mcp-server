@@ -96,6 +96,8 @@ These take effect at the *next* session boundary — and any time you're about t
 
 **Verify branch divergence at session start.** Don't assume your branch base is current. Recent merges to `main` may have happened during prior sessions; before deciding what's new vs. what's existing state, run `git fetch origin && git log origin/main..HEAD --oneline` in each touched repo. (Lesson learned the hard way in May 2026 — see "Beach-as-surface migration" below.)
 
+**Multi-session hygiene — beach work is git-free; code work needs its own worktree.** Most work on this substrate changes the *beach* (`bsp()` writes land in Upstash KV and touch NO repo files), not GitHub code — which is why many concurrent sessions can change the beach at once without ever colliding, and why beach sessions need zero git coordination. Code sessions DO share the one repo, and the failure mode is several of them piling uncommitted edits into a single dirty checkout. The rule: each code session gets its OWN worktree + branch (`git worktree add ../wt-<feature> -b claude/<feature>`), commits-pushes-PRs there, and prunes when merged. Keep the MAIN checkout (`~/Projects/bsp-mcp-server`) on a clean, current `main` — never do feature work directly in it, and never leave it parked on a stale feature branch. (Observed 2026-07-22: the main checkout sat on an already-merged `well-formed-battery` duplicate, so a fresh invite/welcome change stacked on top of it; the fix was to lift that change onto its own branch rebased onto `main`, and switch the checkout back to `main`.) Untracked files left loose in the main checkout belong to whichever session created them — that session commits them to its own branch; another session must not sweep them.
+
 ## The unified function
 
 ```
