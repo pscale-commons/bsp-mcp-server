@@ -42,7 +42,9 @@
     "smoke:grain-address": "tsx scripts/smoke-grain-address.ts",
     "smoke:grit-tree": "tsx scripts/smoke-grit-tree.ts",
     "smoke:temporal": "tsx scripts/smoke-temporal.ts",
-    "smoke:temporal-envelope": "tsx scripts/smoke-temporal-envelope.ts"
+    "smoke:temporal-envelope": "tsx scripts/smoke-temporal-envelope.ts",
+    "smoke:wellformed": "tsx scripts/smoke-wellformed.ts",
+    "lint:block": "tsx scripts/lint-block.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
