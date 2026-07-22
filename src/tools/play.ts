@@ -97,12 +97,25 @@ async function lookupWorldRoute(name: string): Promise<string | null> {
   return null;
 }
 
+/** A path-world at the default beach: /w/<name> is real iff its surface lists
+ *  blocks. Bubbles and forked tables live here (mint:gal, brackenfoot forks) and
+ *  are deliberately NOT in the operator-curated worlds directory — yet "play
+ *  gal-alder" is the sentence a player actually says (all three blind seats hit
+ *  exactly this, NHITL 2026-07-22). One index GET decides; an empty or absent
+ *  surface falls through to the sub-domain convention unchanged. */
+async function pathWorldOrigin(world: string): Promise<string | null> {
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/.test(world)) return null;
+  const candidate = `${DEFAULT_BEACH.replace(/\/+$/, '')}/w/${world}`;
+  const blocks = await beachIndex(candidate);
+  return blocks.length > 0 ? candidate : null;
+}
+
 /** World → beach origin. Full URL as-is; bare name via the worlds directory, then
- *  the sub-domain fallback. */
+ *  the path-world probe at the default beach, then the sub-domain fallback. */
 async function resolveWorld(world: string): Promise<string> {
   const w = world.trim().replace(/\/+$/, '');
   if (/^https?:\/\//i.test(w)) return w;
-  return (await lookupWorldRoute(w)) ?? subdomainOrigin(w);
+  return (await lookupWorldRoute(w)) ?? (await pathWorldOrigin(w.toLowerCase())) ?? subdomainOrigin(w);
 }
 
 /** One lighthouse branch, rendered WHOLE and addressed — the same walk the room's
