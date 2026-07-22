@@ -47,6 +47,7 @@ import sandRider from './sand-rider.json' with { type: 'json' };
 import l3Relay from './l3-relay.json' with { type: 'json' };
 import directory from './directory.json' with { type: 'json' };
 import bspTest from './bsp-test.json' with { type: 'json' };
+import wellFormed from './well-formed.json' with { type: 'json' };
 
 export interface SentinelEntry {
   /** bsp() block name; resource URI is `pscale://<name>` unless exposeAsResource is false. */
@@ -186,7 +187,13 @@ export const SENTINELS: SentinelEntry[] = [
     name: 'bsp-test',
     json: bspTest as unknown as Block,
     description:
-      'BSP-TEST suite — eight test batteries (72 tests total) for verifying any bsp() implementation against the canonical 2026-05-17 specification. Each battery sits at digits 1-8 as a floor-1 sub-block with 9 numbered tests. Branches: 1 spatial floor-3 fixture (block, path-walk, disc, point, path-walk+descent across pscale 2 down to pscale -3); 2 sunstone (floor 1, hidden directories, underscore-as-object); 3 star operator (X* enters terminus._, recursive (S, P)); 4 absorption across floors (canonical address survives floor changes via left-of-decimal zero-padding); 5 reverse direction (given content, find the call); 6 edge cases (off-spindle pscale, multi-dot reject, invalid chars, empty block, over-long walks); 7 canonical form (multi-dot reject, left-pad to floor, strip trailing zeros); 8 subnesting and supernesting (block-growth operations). Three workflows: verify an existing bsp, author a new bsp from sunstone, or compare two implementations for contract-equivalence. Reference Python bsp-alt.py and bsp-mcp\'s TypeScript both pass 72/72. Fixtures live alongside the test source folder (~/Downloads/bsp-test-materials/); sunstone is also at pscale://sunstone.',
+      'BSP-TEST suite — eight test batteries (72 tests total) for verifying any bsp() implementation against the canonical 2026-05-17 specification. Each battery sits at digits 1-8 as a floor-1 sub-block with 9 numbered tests. Branches: 1 spatial floor-3 fixture (block, path-walk, disc, point, path-walk+descent across pscale 2 down to pscale -3); 2 sunstone (floor 1, hidden directories, underscore-as-object); 3 star operator (X* enters terminus._, recursive (S, P)); 4 absorption across floors (canonical address survives floor changes via left-of-decimal zero-padding); 5 reverse direction (given content, find the call); 6 edge cases (off-spindle pscale, multi-dot reject, invalid chars, empty block, over-long walks); 7 canonical form (multi-dot reject, left-pad to floor, strip trailing zeros); 8 subnesting and supernesting (block-growth operations). Three workflows: verify an existing bsp, author a new bsp from sunstone, or compare two implementations for contract-equivalence. Reference Python bsp-alt.py and bsp-mcp\'s TypeScript both pass 72/72. Fixtures live alongside the test source folder (~/Downloads/bsp-test-materials/); sunstone is also at pscale://sunstone. The AUTHORING companion to this READING suite is pscale://well-formed.',
+  },
+  {
+    name: 'well-formed',
+    json: wellFormed as unknown as Block,
+    description:
+      'Well-formed — the AUTHORING validation battery, companion to bsp-test (which verifies the walker that READS a block; this verifies the block being WRITTEN). Two halves told apart by what can decide them. The MECHANICAL half (branch 1) is what the substrate rejects outright — spine keys (only "_" and single digits 1-9) and no JSON-stringified subtrees, both mirroring the beach shape gate (validateShape), plus address validity from the parser (cross-ref bsp-test:6). A program decides it: scripts/lint-block.ts is the readable, runnable twin of the gate, ported so teaching and enforcement cannot drift. The INTERPRETIVE half (branch 2) is what the gate stays silent on by design — the voicing disciplines of sunstone:8 (the heading trap, depth-not-categories, zeroth-person voice, sign-form match) — which no regex decides and a reading LLM must judge, each carrying a worked bad-then-good pair to calibrate. Branch 3 is how to run both passes. Three workflows: author-and-self-check, validate-a-handed-draft, teach. The block passes its own mechanical half — every bad shape is stated in prose, never as literal malformed structure.',
   },
 ];
 

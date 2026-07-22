@@ -70,7 +70,7 @@ When in doubt: tool call > read the source file > don't curl bsp-mcp. A 404 agai
 Substantive work on this substrate routinely spans three sibling repos:
 
 - **`bsp-mcp-server`** (this repo) — the MCP router, sentinels, conventions
-- **`happyseaurchin-home`** — the federated beach handler at beach.happyseaurchin.com (Vercel + Upstash KV; the bare `happyseaurchin.com` is David's personal site)
+- **`happyseaurchin-home`** — David's home repo (serves the bare `happyseaurchin.com` personal site). It *formerly* hosted the beach handler; that was removed (`45759f0`). beach.happyseaurchin.com is now served by the **`pscale-beach-happyseaurchin`** operator clone (Vercel + Upstash KV) — a fork of the `pscale-beach` package (below)
 - **`xstream-bsp`** — the canonical client (Vite + React; the V-L-S canvas)
 
 Plus, for anyone operating a federated beach via the `pscale-beach` package: their local operator-configured clone (one per deployed beach), which holds the seed library, init wizard, and `.env.local` wiring (`BEACH_URL`, `BEACH_HANDLE`, `BEACH_PASSPHRASE`) for that specific deploy. Adding it lets a session reseed, inspect handler code, or run beach-targeted scripts without re-deriving the config from scratch. Add one entry per beach you operate.
@@ -90,7 +90,7 @@ If you only see one repo at session start, you'll re-derive what's already in an
 }
 ```
 
-These take effect at the *next* session boundary — and any time you're about to assert that something doesn't exist, check the other repos first. The federated beach handler lives in happyseaurchin's `api/pscale-beach.js`; the live client lives in xstream-bsp's `src/`. They speak the same protocol; corruption in one shows up as confusion in the others.
+These take effect at the *next* session boundary — and any time you're about to assert that something doesn't exist, check the other repos first. The federated beach handler is the `pscale-beach` package's `api/pscale-beach.js` (canonical at github.com/pscale-commons/pscale-beach); each live beach runs an operator clone of it — beach.happyseaurchin.com is served by the `pscale-beach-happyseaurchin` clone, NOT by happyseaurchin-home (whose own bare-domain `api/pscale-beach.js` was removed in `45759f0`, 2026-05). The live client lives in xstream-bsp's `src/`. They speak the same protocol; corruption in one shows up as confusion in the others.
 
 **Operator-beach clones carry secrets.** The `.env.local` in each `pscale-beach-*` clone holds `BEACH_PASSPHRASE` (locks passport/shell/history/pool/sed on that beach). Granting a session read access via `additionalDirectories` means agents can read the passphrase. Acceptable for trusted local use; don't add a peer's beach clone you don't own, and don't ask agents to echo `.env.local` contents into transcripts.
 
@@ -175,7 +175,7 @@ That's the whole surface: two functions (`bsp()` and the n-ary `bsp-floor()`) pl
 
 ## The address invariant — locked
 
-This is the single most important thing to get right. The canonical parser lives in `bsp2-star.py` (Python source-of-truth at `~/Projects/hermitcrab-mobius-work/tidy-up/bsp2-star.py`, mirrored on `/Volumes/CORSAIR/pscale/starstone/`). `src/bsp.ts` and `happyseaurchin/api/pscale-beach.js` are faithful ports of that algorithm — both ends of the wire enforce the same form.
+This is the single most important thing to get right. The canonical parser lives in `bsp2-star.py` (Python source-of-truth at `~/Projects/hermitcrab-mobius-work/tidy-up/bsp2-star.py`, mirrored on `/Volumes/CORSAIR/pscale/starstone/`). `src/bsp.ts` and the `pscale-beach` package's `api/pscale-beach.js` (canonical at github.com/pscale-commons/pscale-beach; the deployed beaches run operator clones of it) are faithful ports of that algorithm — both ends of the wire enforce the same form.
 
 **Pscale 0 is anchored at the floor (decimal point), NOT at the top of the tree.** Floor is the depth of the underscore chain — derived from the block, not declared. The decimal point is significant: it anchors pscale 0 to the floor. Pscale addresses are **numbers, not paths** — at most ONE decimal point per address (sunstone:1.5).
 
