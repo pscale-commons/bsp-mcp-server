@@ -34,6 +34,27 @@ export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
 import { Block, readAt, floorDepth } from '../bsp.js';
 import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
+import { compile, renderCompletions, type Completion } from '../compile.js';
+import { toPNode, pyDumps, type Loader, type PNode, type PMap } from '../genus.js';
+import { SENTINELS } from '../sentinels.js';
+
+/** A beach-scoped Loader for compile(): sentinels first (the completion's
+ *  shallow points live there), then named blocks at the world's beach,
+ *  cached per call. Names are FULLY QUALIFIED ('purpose:anya', 'rules:nomad')
+ *  — no handle suffixing; a world's blocks and a handle's blocks read alike. */
+function beachLoader(origin: string): Loader {
+  const teaching = new Map<string, PNode>();
+  for (const s of SENTINELS) teaching.set(s.name, toPNode(s.json));
+  const cache = new Map<string, PNode | null>();
+  return async (name: string) => {
+    if (teaching.has(name)) return teaching.get(name)!;
+    if (cache.has(name)) return cache.get(name)!;
+    const row = await loadBlock(origin, name).catch(() => null);
+    const node = row && row.block && typeof row.block === 'object' ? toPNode(row.block) : null;
+    cache.set(name, node);
+    return node;
+  };
+}
 
 /**
  * Resolve a world to its beach origin. A full URL is used as-is. A BARE world
@@ -290,6 +311,33 @@ export async function handlePlay(
     return { content: [{ type: 'text', text: `Could not engage room "${roomName}" at ${resolved}: ${e?.message ?? String(e)}` }] };
   }
 
+  // 3b. THE FRAME — a world-authored scene bundle, compiled (proposal
+  //     2026-07-22-well-formed-reading, door 1). If the world hosts
+  //     frame:<room> (block-conventions frame:<scene>), its digit positions are
+  //     bsp addresses — place, rules dilations, canon points — and they unfold
+  //     here in ONE call, semantics delivered in one go instead of a chain of
+  //     mid-turn reads. Pure data: a world grows a frame by authoring one
+  //     block, never by a deploy; a world without one sees no change. The room
+  //     pool rides `carried` — this envelope holds the live scene and cast, so
+  //     RELATION is carried by construction and the completion stays quiet.
+  const load = beachLoader(resolved);
+  const completions: Completion[] = [];
+  let frameSection: string[] = [];
+  try {
+    const frameRow = await loadBlock(resolved, `frame:${roomName}`).catch(() => null);
+    if (frameRow && frameRow.block && typeof frameRow.block === 'object') {
+      const r = await compile(toPNode(frameRow.block), load, { carried: [`pool:${roomName}`] });
+      completions.push(...r.completions);
+      const w = r.window;
+      if (w instanceof Map && w.size > 0) {
+        frameSection = [``, `═══════════ THE FRAME — frame:${roomName}, compiled (${r.dialed.length} address${r.dialed.length === 1 ? '' : 'es'} unfolded; dial any deeper via bsp) ═══════════`];
+        for (const [k, v] of w as PMap) frameSection.push(`── ${k} ──\n${pyDumps(v)}`);
+      }
+    }
+  } catch (e: any) {
+    frameSection = [``, `(frame:${roomName} exists but did not compile: ${String(e?.message ?? e).slice(0, 120)} — read it directly via bsp)`];
+  }
+
   // 4. Bundle the handle's own context — whichever standard blocks exist. This
   //    is "the content relevant to them" in one call; the kind is inferred, not
   //    declared (character if it has witnessed/passport; user/agent if a shell).
@@ -306,25 +354,40 @@ export async function handlePlay(
     }
   }
   // Shell-as-context-compiler: the shell's manifest (position 3) is a bundle of
-  // bsp-addresses that scoop the handle's full context. Beyond the default set
-  // above, scoop whatever extra named blocks the manifest references (e.g.
-  // purpose:<h> the drive, stats:<h> the rule sheet, relationships:<h>) — so a
-  // character inhabits the way a hermitcrab does (mobius loads all its blocks),
-  // not from a hardcoded list. Default set + manifest extras (the lean): a thin
-  // or shell-less handle still works; a rich shell pulls its whole context.
+  // bsp-addresses that scoop the handle's full context — now compiled for real
+  // (proposal 2026-07-22-well-formed-reading, door 1). Beyond the default set
+  // above, each manifest entry is a full (spindle, aperture) reference —
+  // 'purpose:anya' a whole block, 'history:anya:1:-1' a dilation, 'vision:9:-5'
+  // a settled backdrop — unfolded in one pass, so a character inhabits the way
+  // a hermitcrab does: the authored bundle IS the delivered context. A thin or
+  // shell-less handle still works; entries the default set already loaded are
+  // skipped; a manifest that fails to compile degrades to a note, never a
+  // broken entry.
   const manifest = shellBlock && shellBlock['3'];
   if (manifest && typeof manifest === 'object') {
-    for (const k of Object.keys(manifest)) {
-      if (k === '_') continue;
-      const v = manifest[k];
-      const ref = typeof v === 'string' ? v : (v && typeof v === 'object' ? v._ : null);
-      if (typeof ref === 'string' && ref.includes(':') && !/\s/.test(ref) && !seen.has(ref)) {
-        seen.add(ref);
-        const row = await loadBlock(resolved, ref);
-        if (row && row.block && typeof row.block === 'object') {
-          own.push({ name: ref, json: JSON.stringify(row.block, null, 1) });
+    try {
+      const bundle: PMap = new Map();
+      for (const k of Object.keys(manifest)) {
+        if (k === '_') continue;
+        const v = (manifest as any)[k];
+        const ref = typeof v === 'string' ? v : (v && typeof v === 'object' ? v._ : null);
+        if (typeof ref === 'string' && ref.includes(':') && !/\s/.test(ref) && !seen.has(ref)) {
+          seen.add(ref);
+          bundle.set(k, ref);
         }
       }
+      if (bundle.size > 0) {
+        const r = await compile(bundle, load, { carried: [`pool:${roomName}`] });
+        completions.push(...r.completions);
+        const w = r.window as PMap;
+        for (const [k, v] of w) {
+          if (v === null || v === undefined) continue;
+          const ref = bundle.get(k);
+          own.push({ name: typeof ref === 'string' ? ref : `shell:3.${k}`, json: pyDumps(v) });
+        }
+      }
+    } catch (e: any) {
+      own.push({ name: `shell:${handle} 3 (manifest)`, json: JSON.stringify(`did not compile: ${String(e?.message ?? e).slice(0, 120)} — read its addresses directly via bsp`) });
     }
   }
   // 4b. Co-presence — who else stands at this place, SPLIT BY GRAIN twice over
@@ -404,6 +467,7 @@ export async function handlePlay(
   out.push('');
   out.push('═══════════ THE ROOM — operating directive + live scene ═══════════');
   out.push(env);
+  for (const line of frameSection) out.push(line);
   if (here.length || about.length || coarser.length || finer.length) {
     out.push('');
     out.push('═══════════ WHO IS HERE — co-present at your place (by appearance; names unearned until spoken) ═══════════');
@@ -432,6 +496,10 @@ export async function handlePlay(
     // Reached only when no creation passage resolved anywhere (the genesis-first
     // gate at 1b returns the passage for fresh handles on worlds that have one).
     out.push(`(No blocks for ${handle} on this world yet — you are fresh here.)`);
+  }
+  if (completions.length) {
+    out.push('');
+    out.push(renderCompletions(completions));
   }
   return { content: [{ type: 'text', text: out.join('\n') }] };
 }

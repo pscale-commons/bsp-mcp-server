@@ -587,7 +587,7 @@ function gammaEntry(c: Candidate): PMap {
 }
 
 /** One node of the reflexive current as a map of addresses. (kernel._index_node) */
-function indexNode(node: PNode, top = false): PNode {
+export function indexNode(node: PNode, top = false): PNode {
   if (!(node instanceof Map)) return node;
   const out: PMap = new Map();
   for (const k of Array.from(node.keys()).sort()) {
@@ -643,7 +643,7 @@ function skeleton(block: PMap): PMap {
 }
 
 /** Hydrate one current from its address, star-resolved. (kernel.scoop) */
-async function scoop(addr: string, load: Loader): Promise<PNode> {
+export async function scoop(addr: string, load: Loader): Promise<PNode> {
   const ref = parseReference(addr);
   if (!ref) return addr;
   const block = await load(ref.name);
@@ -654,7 +654,7 @@ async function scoop(addr: string, load: Loader): Promise<PNode> {
 }
 
 /** Hydrate a (possibly nested) index node; nesting preserved. (kernel._hydrate) */
-async function hydrate(node: PNode, load: Loader): Promise<PNode> {
+export async function hydrate(node: PNode, load: Loader): Promise<PNode> {
   if (typeof node === 'string') return scoop(node, load);
   if (node instanceof Map) {
     const out: PMap = new Map();

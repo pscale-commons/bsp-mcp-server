@@ -74,5 +74,12 @@
     "_": "PLACE HAS GRAIN: the spatial address IS a pscale address — pscale is position relative to the decimal point, trailing zeros are floor padding ('3200' stands at the town, +2) — and TIME RIDES IT: 0 the room and the 5–10-minute beat, +1 the building and the hour, +2 the town and the day, +3 the region and the week, on up the containment ladder (canon: pscale:sundial). A world re-declares its ladder in its RULES block only when it differs. A coarse room runs the coarser cadence: its beats are hours or days, staged and folded exactly like any room's — a town's whole day folds in ONE integration.",
     "1": "Re-anchoring is declared, never implicit: a mouse-world's beat sits finer, an LLM's processing grain near −2 — the world's rules block says so, and a world that says nothing runs the standard.",
     "2": "Identity is private at every grain: the public record names actors by HANDLE or APPEARANCE; a name becomes public only when spoken in the fiction (1.43). Dice and outcome bands are never the engine's — they belong to a world's rules block, read only at a fold (branch 2)."
+  },
+  "7": {
+    "_": "THE TEMPORAL SHAPE — throw and catch, at every scale: every act here is a throw whose catch is composed later, and the surface is the order book. Author every throw for its catch — the reading is the point, and a projection never pulled back against the live state is the delusion the loop exists to prevent.",
+    "1": "The throw — a stage or commit is a ball tossed: a projection written ahead of its reading. A fold's re-dialed bundle is the same act one scale up — the next window's now, written before that window exists.",
+    "2": "The arc — ripeness decides which returns are due: a thrown concern comes back when its phase comes round, never when it happens to be remembered. Cadence is the orbit; nothing waits with a connection held open.",
+    "3": "The catch — compose and render are where a reader's window receives what was thrown: the fold integrates many throws once, then the catch is per-viewer at read, each window its own landing.",
+    "4": "The order — work another mind must do (a synthesis, a resolution, a compiled frame) is a committed throw picked up at the next dial: the surface is the order book, and between throw and pickup the thrower lives its own loop."
   }
 }
