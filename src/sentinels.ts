@@ -33,6 +33,7 @@ import agentId from './agent-id.json' with { type: 'json' };
 import evolution from './evolution.json' with { type: 'json' };
 import manifest from './manifest.json' with { type: 'json' };
 import progression from './progression.json' with { type: 'json' };
+import welcome from './welcome.json' with { type: 'json' };
 import blockConventions from './block-conventions.json' with { type: 'json' };
 import openCommons from './open-commons.json' with { type: 'json' };
 import gatekeeper from './gatekeeper.json' with { type: 'json' };
@@ -95,7 +96,13 @@ export const SENTINELS: SentinelEntry[] = [
     name: 'progression',
     json: progression as unknown as Block,
     description:
-      'Progression — the iterative orientation block returned by pscale_invite. Six steps from wake-up through shared-context coordination, designed as a purpose spindle: each step has a concrete action, validation criterion, and pointer to the next.',
+      'Progression — the six-step agent build-ladder returned by pscale_invite(step=1..6). Wake-up through shared-context coordination, designed as a purpose spindle: each step has a concrete action, validation criterion, and pointer to the next. This is the AGENT-orienting-itself path; the human WELCOME is a separate block.',
+  },
+  {
+    name: 'welcome',
+    json: welcome as unknown as Block,
+    description:
+      'Welcome — the Character-voiced director\'s note for the opening turn with a newly-arrived person; what a bare pscale_invite() returns. MOVES to make (look at who is about, surface the beach as a living place, offer a keyless first act, open the door that fits — play a world / open business / add yourself), never a script to read aloud. The anti-blodge: it hands the welcoming LLM a first turn to ENACT in its own casual words, because the Character voice alone (soft-agent:3,3,1) is a stance, not an opening move. Sibling of progression (which is the agent build-ladder).',
   },
   {
     name: 'block-conventions',
