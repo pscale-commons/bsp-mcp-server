@@ -44,6 +44,7 @@
     "smoke:temporal": "tsx scripts/smoke-temporal.ts",
     "smoke:temporal-envelope": "tsx scripts/smoke-temporal-envelope.ts",
     "smoke:wellformed": "tsx scripts/smoke-wellformed.ts",
+    "smoke:compile": "tsx scripts/smoke-compile.ts",
     "lint:block": "tsx scripts/lint-block.ts"
   },
   "dependencies": {
