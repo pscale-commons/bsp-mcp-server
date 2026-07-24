@@ -18,7 +18,7 @@
 
 import { SENTINELS } from '../src/sentinels.js';
 import { toPNode, type PNode, type PMap, type Loader } from '../src/genus.js';
-import { compile, collectRefs, renderCompletions, COMPLETION_REGISTRY } from '../src/compile.js';
+import { compile, collectRefs, renderCompletions, renderFramedValue, parseStarRef, COMPLETION_REGISTRY, type FetchOrigin } from '../src/compile.js';
 
 let pass = 0;
 let fail = 0;
@@ -123,6 +123,52 @@ console.log('\nMANIFEST SHAPE — the play door bundle (shell:3 entries as digit
   const w = r.window as PMap;
   ok('every entry unfolds', w.size === 3 && w.get('1') instanceof Map && w.get('2') instanceof Map);
   ok('relation carried by the manifest itself', r.completions.length === 0);
+}
+
+console.log('\nSTAR-REFS — the origin-qualified grammar crosses beaches (frames-on-the-spine gap 1)');
+{
+  // A fake world at another origin — colon-bearing block name, floor 1.
+  const world = new Map<string, PNode>();
+  world.set(
+    'spatial:urb',
+    toPNode({
+      _: 'URB entire — the world rung, true everywhere beneath it.',
+      3: { _: 'The Thousand Valleys — resource-rich folds under tribute.', 2: 'The Gal edge — the fringe valleys of the encounter kit.' },
+    }),
+  );
+  const fetchOrigin: FetchOrigin = (o) =>
+    o === 'https://world.example' ? async (name) => world.get(name) ?? null : async () => null;
+
+  const p = parseStarRef('*:https://world.example:spatial:urb:3.2:0');
+  ok('parse: colon-bearing name splits at the final digit run', p?.name === 'spatial:urb' && p?.address === '3.2' && p?.attention === 0);
+  ok('parse: attention optional', parseStarRef('*:https://world.example:spatial:urb:3')?.attention === null);
+  ok('parse: prose never parses', parseStarRef('a sentence with spaces *: not a ref') === null);
+
+  // Attention is the ABSOLUTE pscale of the aperture: at floor 1, the point at
+  // 3.2 sits at −1 (floor − walk length), the way open-commons:3 points at :0.
+  const frame = toPNode({ _: 'a placed frame', 1: 'relationships', 2: '*:https://world.example:spatial:urb:3.2:-1' });
+  const r1 = await compile(frame, load, { fetchOrigin });
+  ok('star point resolves cross-origin', (r1.window as PMap).get('2') === 'The Gal edge — the fringe valleys of the encounter kit.');
+  ok('dialed records the origin', r1.dialed.some((d) => d.origin === 'https://world.example' && d.name === 'spatial:urb'));
+
+  const spindleRef = toPNode({ _: 'walk form', 1: 'relationships', 2: '*:https://world.example:spatial:urb:3.2' });
+  const r2 = await compile(spindleRef, load, { fetchOrigin });
+  const walk = (r2.window as PMap).get('2');
+  ok('star spindle arrives as its walk (ancestors above)', Array.isArray(walk) && walk.length === 2 && String(walk[0]).startsWith('The Thousand Valleys'));
+
+  const r3 = await compile(frame, load); // no factory
+  ok('no fetchOrigin → the leaf rides through raw, visible', (r3.window as PMap).get('2') === '*:https://world.example:spatial:urb:3.2:-1');
+  const r4 = await compile(toPNode({ _: 'x', 1: 'relationships', 2: '*:https://elsewhere.example:spatial:urb:3.2:0' }), load, { fetchOrigin });
+  ok('unknown origin / absent block → raw leaf, never a silent drop', (r4.window as PMap).get('2') === '*:https://elsewhere.example:spatial:urb:3.2:0');
+}
+
+console.log('\nFRAMED APERTURE — the delivery form (gap 2)');
+{
+  ok('a walk renders as bulleted ancestors', renderFramedValue(['URB entire', 'The Gal edge'] as PNode) === '- URB entire\n- The Gal edge');
+  ok('a point renders as its line', renderFramedValue('one settled line') === 'one settled line');
+  const law = await compile(toPNode({ _: 'law-class', 1: 'relationships', 2: 'purpose' }), load);
+  ok('a whole block still hydrates whole (law-class delivery)', renderFramedValue((law.window as PMap).get('2') as PNode).startsWith('{'));
+  ok('absent renders as absent', renderFramedValue(null) === '(absent)');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

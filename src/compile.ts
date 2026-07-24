@@ -1,6 +1,6 @@
 /**
  * compile.ts — the compiler released, and the reading completed
- * (proposal 2026-07-22-well-formed-reading).
+ * (proposals 2026-07-22-well-formed-reading + 2026-07-24-frames-on-the-spine).
  *
  * A BUNDLE is a node of bsp addresses (reflexive:9 is the worked instance; a
  * frame is the RPG's). COMPILE dereferences a bundle into the semantics it
@@ -8,6 +8,21 @@
  * genus door has run since the kernel port (kernel.scoop / kernel._hydrate).
  * This module releases that pair for every door; the genus compose path is
  * untouched and stays under its byte-parity contract.
+ *
+ * Two reference grammars (frames-on-the-spine gap 1):
+ *   - local:  name[:address[:attention]] — resolved at the door's own surface.
+ *   - star:   *:<origin>:<name>:<address>[:<attention>] — the origin-qualified
+ *     star-ref the substrate already speaks (the passport location, the
+ *     placing at notes:<scene>:3). The address anchors as the final digit run,
+ *     so the last ':' splits a colon-bearing name (spatial:urb) from it — the
+ *     same split the horizon walk uses. A star-ref ALWAYS carries an address;
+ *     attention is the ABSOLUTE pscale of the aperture (a point at the
+ *     terminus is floor − walk-length; omit it for the spindle walk).
+ *     Star-refs resolve only when the caller supplies
+ *     `fetchOrigin` (a per-origin loader factory); without it — or on any
+ *     error, or a missing block — the leaf rides through UNRESOLVED as its raw
+ *     string, visible in the window, never a silent misroute. Frames degrade;
+ *     they never break an entry.
  *
  * COMPLETION is the reading monitored so it is well formed — constitutively,
  * not regulatively. At compile time the dialed addresses are read for what
@@ -26,23 +41,44 @@
 
 import {
   scoop,
-  hydrate,
   indexNode,
   parseReference,
   parseAddr,
   descend,
   floorOf,
+  pyDumps,
   type Loader,
   type PNode,
   type PMap,
 } from './genus.js';
 
-/** One dialed reference found in a bundle. */
+/** A per-origin Loader factory — how star-refs reach another beach. The door
+ *  supplies it (play builds one over loadBlock with a per-origin cache); an
+ *  offline caller injects a fake. Reads only — the same public wire the
+ *  horizon walk and any browser already use. */
+export type FetchOrigin = (origin: string) => Loader;
+
+/** One dialed reference found in a bundle. `origin` is set for star-refs. */
 export interface DialedRef {
   ref: string;
   name: string;
   address: string | null;
   attention: number | null;
+  origin?: string;
+}
+
+/** Parse the origin-qualified star-ref: *:<origin>:<name>:<addr>[:<att>].
+ *  The name may carry colons (spatial:urb); the address anchors as the final
+ *  digit run (single-decimal), an optional integer attention after it. */
+const STAR_RE = /^\*:(https?:\/\/[^\s:]+):(\S+?):([\d.]+)(?::(-?\d+))?$/;
+export function parseStarRef(
+  leaf: PNode | undefined,
+): { origin: string; name: string; address: string; attention: number | null } | null {
+  if (typeof leaf !== 'string') return null;
+  const m = STAR_RE.exec(leaf);
+  if (!m) return null;
+  const [, origin, name, address, att] = m;
+  return { origin: origin.replace(/\/+$/, ''), name, address, attention: att === undefined ? null : parseInt(att, 10) };
 }
 
 /** A completion rule — one orientation dimension the compile keeps present. */
@@ -95,7 +131,7 @@ export interface Completion {
 export interface CompileResult {
   /** The hydrated bundle — semantics in one go, nesting preserved. */
   window: PNode;
-  /** Every address reference the bundle dialed. */
+  /** Every address reference the bundle dialed (star-refs carry `origin`). */
   dialed: DialedRef[];
   /** Shallow points added beside the window for uncarried registry dimensions. */
   completions: Completion[];
@@ -104,13 +140,50 @@ export interface CompileResult {
 /** Walk a bundle node and collect every leaf that parses as a reference. */
 export function collectRefs(node: PNode, out: DialedRef[] = []): DialedRef[] {
   if (typeof node === 'string') {
-    const ref = parseReference(node);
-    if (ref) out.push({ ref: node, ...ref });
+    const star = parseStarRef(node);
+    if (star) out.push({ ref: node, name: star.name, address: star.address, attention: star.attention, origin: star.origin });
+    else {
+      const ref = parseReference(node);
+      if (ref) out.push({ ref: node, ...ref });
+    }
     return out;
   }
   if (node instanceof Map) for (const v of node.values()) collectRefs(v, out);
   if (Array.isArray(node)) for (const v of node) collectRefs(v, out);
   return out;
+}
+
+/** Hydrate a bundle node: local refs via scoop at the door's surface; star-refs
+ *  with the same scoop semantics bound to their origin's loader. A star leaf
+ *  that cannot resolve (no factory, fetch error, absent block) rides through
+ *  as its raw string — visible, never silently dropped. */
+async function hydrateFrame(node: PNode, load: Loader, fetchOrigin?: FetchOrigin): Promise<PNode> {
+  if (typeof node === 'string') {
+    const star = parseStarRef(node);
+    if (star) {
+      if (!fetchOrigin) return node;
+      try {
+        const remote = fetchOrigin(star.origin);
+        const local = star.attention === null ? `${star.name}:${star.address}` : `${star.name}:${star.address}:${star.attention}`;
+        const scooped = await scoop(local, remote);
+        return scooped === null ? node : scooped;
+      } catch {
+        return node; // frames degrade, never break an entry
+      }
+    }
+    return scoop(node, load);
+  }
+  if (node instanceof Map) {
+    const out: PMap = new Map();
+    for (const [k, v] of node) out.set(k, await hydrateFrame(v, load, fetchOrigin));
+    return out;
+  }
+  if (Array.isArray(node)) {
+    const out: PNode[] = [];
+    for (const v of node) out.push(await hydrateFrame(v, load, fetchOrigin));
+    return out;
+  }
+  return node;
 }
 
 /**
@@ -123,12 +196,13 @@ export function collectRefs(node: PNode, out: DialedRef[] = []): DialedRef[] {
  * for refs the SURROUNDING ENVELOPE already delivers outside this bundle
  * (play inlines the room pool and the cast, which carry RELATION by
  * construction) — they count toward the completion check, are not hydrated,
- * and never appear in the window.
+ * and never appear in the window. Pass `fetchOrigin` to resolve star-refs
+ * cross-beach; without it they ride through unresolved, visibly.
  */
 export async function compile(
   bundle: PNode | string,
   load: Loader,
-  opts: { complete?: boolean; carried?: string[] } = {},
+  opts: { complete?: boolean; carried?: string[]; fetchOrigin?: FetchOrigin } = {},
 ): Promise<CompileResult> {
   let node: PNode | undefined = bundle;
   if (typeof bundle === 'string') {
@@ -141,7 +215,7 @@ export async function compile(
   }
   node = indexNode(node as PNode, true);
   const dialed = collectRefs(node);
-  const window = await hydrate(node, load);
+  const window = await hydrateFrame(node, load, opts.fetchOrigin);
   const carried: DialedRef[] = [...dialed];
   for (const ref of opts.carried ?? []) {
     const parsed = parseReference(ref);
@@ -157,6 +231,19 @@ export async function compile(
     }
   }
   return { window, dialed, completions };
+}
+
+/** Render one hydrated frame value as the FRAMED APERTURE (frames-on-the-spine
+ *  gap 2): a spindle arrives as its walk — ancestor underscores riding above,
+ *  the terminus beneath — never re-dumped as structure; a point is its line; a
+ *  directory or whole block (law-class delivery) renders as ordered JSON. */
+export function renderFramedValue(v: PNode): string {
+  if (typeof v === 'string') return v;
+  if (v === null || v === undefined) return '(absent)';
+  if (Array.isArray(v)) {
+    return v.map((x) => `- ${typeof x === 'string' ? x : pyDumps(x)}`).join('\n');
+  }
+  return pyDumps(v);
 }
 
 /** Render completions as envelope footer lines, sibling to temporal.ground(). */
