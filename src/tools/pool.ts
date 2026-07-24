@@ -674,6 +674,43 @@ export async function composeCurrent(origin: string, poolName: string, agentId: 
     }
   }
 
+  // The horizon — the world above this place, inherited by placing (proposal
+  // 2026-07-23-urb-sti-spine). The scene's Author hold names the bubble's
+  // coordinate on a world spine as a star-ref at notes:<scene> position 3; the
+  // chain of ancestor underscores walked down to that coordinate IS the
+  // where-am-I a stranger arrives holding — the naked-bubble fix from the first
+  // live table ("I don't know where I am"). Delivered compact (underscores
+  // only), every engage, best-effort: an unplaced bubble floats as before, and
+  // only the derived chain crosses — never the hold around it.
+  if (spatialName) {
+    try {
+      const notesName = `notes:${spatialName.slice('spatial:'.length)}`;
+      const nrow = await loadBlock(origin, notesName);
+      const placing = nrow?.block && typeof nrow.block === 'object' ? (nrow.block as any)['3'] : null;
+      const m = typeof placing === 'string' ? placing.match(/\*:(https?:\/\/[^\s:]+(?::\d+)?):([^:\s]+):([\d.,]+)/) : null;
+      if (m) {
+        const [, worldOrigin, worldBlock, addr] = m;
+        const hrow = await loadBlock(worldOrigin, worldBlock);
+        if (hrow?.block && typeof hrow.block === 'object') {
+          const digits = addr.replace(/[.,]/g, '').split('');
+          const lines: string[] = [];
+          let node: any = hrow.block;
+          const rootU = floorUnderscore(node as Block);
+          if (rootU) lines.push(`- ${rootU}`);
+          for (const d of digits) {
+            node = node && typeof node === 'object' ? node[d] : undefined;
+            if (node === undefined || node === null) break;
+            const u = typeof node === 'string' ? node : floorUnderscore(node as Block);
+            if (u) lines.push(`- ${u}`);
+          }
+          if (lines.length) {
+            parts.push(`# The world above this place (inherited by placing — ${worldBlock} at ${worldOrigin}, coarse to fine; the finer is bound by the coarser)\n${lines.join('\n')}`);
+          }
+        }
+      }
+    } catch { /* best-effort: an unplaced bubble floats as before */ }
+  }
+
   const wrow = await loadBlock(origin, `witnessed:${agentId}`);
   if (wrow?.block && typeof wrow.block === 'object') {
     const all = collectContributions(wrow.block as Block, 0).contributions;
