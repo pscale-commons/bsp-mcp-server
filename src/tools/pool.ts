@@ -687,7 +687,10 @@ export async function composeCurrent(origin: string, poolName: string, agentId: 
       const notesName = `notes:${spatialName.slice('spatial:'.length)}`;
       const nrow = await loadBlock(origin, notesName);
       const placing = nrow?.block && typeof nrow.block === 'object' ? (nrow.block as any)['3'] : null;
-      const m = typeof placing === 'string' ? placing.match(/\*:(https?:\/\/[^\s:]+(?::\d+)?):([^:\s]+):([\d.,]+)/) : null;
+      // Block names carry colons (spatial:urb) — the block segment is greedy and
+      // the address anchors as the final digit run, so the last ':' splits them.
+      // Origin is a bare scheme://host (spine surfaces have no port or path).
+      const m = typeof placing === 'string' ? placing.match(/\*:(https?:\/\/[^\s:]+):(\S+):([\d.,]+)(?=\s|$)/) : null;
       if (m) {
         const [, worldOrigin, worldBlock, addr] = m;
         const hrow = await loadBlock(worldOrigin, worldBlock);
