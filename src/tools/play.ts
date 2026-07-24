@@ -34,26 +34,41 @@ export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
 import { Block, readAt, floorDepth } from '../bsp.js';
 import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
-import { compile, renderCompletions, type Completion } from '../compile.js';
-import { toPNode, pyDumps, type Loader, type PNode, type PMap } from '../genus.js';
+import { compile, renderCompletions, renderFramedValue, type Completion, type FetchOrigin } from '../compile.js';
+import { toPNode, type Loader, type PNode, type PMap } from '../genus.js';
 import { SENTINELS } from '../sentinels.js';
 
-/** A beach-scoped Loader for compile(): sentinels first (the completion's
- *  shallow points live there), then named blocks at the world's beach,
- *  cached per call. Names are FULLY QUALIFIED ('purpose:anya', 'rules:nomad')
- *  — no handle suffixing; a world's blocks and a handle's blocks read alike. */
-function beachLoader(origin: string): Loader {
+/** Loaders for compile() at this door. `load` is beach-scoped: sentinels first
+ *  (the completion's shallow points live there), then named blocks at the
+ *  world's beach, cached per call. Names are FULLY QUALIFIED ('purpose:anya',
+ *  'rules:nomad') — no handle suffixing; a world's blocks and a handle's
+ *  blocks read alike. `fetchOrigin` resolves star-refs at OTHER beaches
+ *  (frames-on-the-spine gap 1) — pure beach fetch per origin, cached, NO
+ *  sentinel shadowing: a star-ref targets that origin's blocks and nothing
+ *  else. Reads only, the same public wire the horizon walk uses. */
+function beachLoaders(origin: string): { load: Loader; fetchOrigin: FetchOrigin } {
   const teaching = new Map<string, PNode>();
   for (const s of SENTINELS) teaching.set(s.name, toPNode(s.json));
-  const cache = new Map<string, PNode | null>();
-  return async (name: string) => {
-    if (teaching.has(name)) return teaching.get(name)!;
-    if (cache.has(name)) return cache.get(name)!;
-    const row = await loadBlock(origin, name).catch(() => null);
-    const node = row && row.block && typeof row.block === 'object' ? toPNode(row.block) : null;
-    cache.set(name, node);
-    return node;
+  const byOrigin = new Map<string, Map<string, PNode | null>>();
+  const originLoader = (o: string): Loader => {
+    const base = o.replace(/\/+$/, '');
+    let cache = byOrigin.get(base);
+    if (!cache) {
+      cache = new Map();
+      byOrigin.set(base, cache);
+    }
+    const c = cache;
+    return async (name: string) => {
+      if (c.has(name)) return c.get(name)!;
+      const row = await loadBlock(base, name).catch(() => null);
+      const node = row && row.block && typeof row.block === 'object' ? toPNode(row.block) : null;
+      c.set(name, node);
+      return node;
+    };
   };
+  const local = originLoader(origin);
+  const load: Loader = async (name: string) => (teaching.has(name) ? teaching.get(name)! : local(name));
+  return { load, fetchOrigin: originLoader };
 }
 
 /**
@@ -327,24 +342,37 @@ export async function handlePlay(
   // 3b. THE FRAME — a world-authored scene bundle, compiled (proposal
   //     2026-07-22-well-formed-reading, door 1). If the world hosts
   //     frame:<room> (block-conventions frame:<scene>), its digit positions are
-  //     bsp addresses — place, rules dilations, canon points — and they unfold
-  //     here in ONE call, semantics delivered in one go instead of a chain of
-  //     mid-turn reads. Pure data: a world grows a frame by authoring one
-  //     block, never by a deploy; a world without one sees no change. The room
-  //     pool rides `carried` — this envelope holds the live scene and cast, so
-  //     RELATION is carried by construction and the completion stays quiet.
-  const load = beachLoader(resolved);
+  //     bsp addresses — place, rules dilations, canon points, and (frames-on-
+  //     the-spine gap 1) origin-qualified star-refs into a world's registers
+  //     (*:<origin>:spatial:urb:3.2:0) — and they unfold here in ONE call,
+  //     semantics delivered in one go instead of a chain of mid-turn reads.
+  //     Pure data: a world grows a frame by authoring one block, never by a
+  //     deploy; a world without one sees no change. The room pool rides
+  //     `carried` — this envelope holds the live scene and cast, so RELATION
+  //     is carried by construction and the completion stays quiet. Values
+  //     render as FRAMED APERTURES (gap 2): a spindle arrives as its walk,
+  //     ancestor underscores riding above — a whole block renders as JSON only
+  //     for law-class delivery.
+  const { load, fetchOrigin } = beachLoaders(resolved);
   const completions: Completion[] = [];
   let frameSection: string[] = [];
   try {
     const frameRow = await loadBlock(resolved, `frame:${roomName}`).catch(() => null);
     if (frameRow && frameRow.block && typeof frameRow.block === 'object') {
-      const r = await compile(toPNode(frameRow.block), load, { carried: [`pool:${roomName}`] });
+      const r = await compile(toPNode(frameRow.block), load, { carried: [`pool:${roomName}`], fetchOrigin });
       completions.push(...r.completions);
       const w = r.window;
       if (w instanceof Map && w.size > 0) {
         frameSection = [``, `═══════════ THE FRAME — frame:${roomName}, compiled (${r.dialed.length} address${r.dialed.length === 1 ? '' : 'es'} unfolded; dial any deeper via bsp) ═══════════`];
-        for (const [k, v] of w as PMap) frameSection.push(`── ${k} ──\n${pyDumps(v)}`);
+        const labelOf = (k: string) => r.dialed.find((d) => {
+          const raw = (frameRow.block as any)[k];
+          const leaf = typeof raw === 'string' ? raw : raw && typeof raw === 'object' ? raw._ : null;
+          return d.ref === leaf;
+        });
+        for (const [k, v] of w as PMap) {
+          const d = labelOf(k);
+          frameSection.push(`── ${k}${d ? ` · ${d.ref}` : ''} ──\n${renderFramedValue(v)}`);
+        }
       }
     }
   } catch (e: any) {
@@ -390,13 +418,13 @@ export async function handlePlay(
         }
       }
       if (bundle.size > 0) {
-        const r = await compile(bundle, load, { carried: [`pool:${roomName}`] });
+        const r = await compile(bundle, load, { carried: [`pool:${roomName}`], fetchOrigin });
         completions.push(...r.completions);
         const w = r.window as PMap;
         for (const [k, v] of w) {
           if (v === null || v === undefined) continue;
           const ref = bundle.get(k);
-          own.push({ name: typeof ref === 'string' ? ref : `shell:3.${k}`, json: pyDumps(v) });
+          own.push({ name: typeof ref === 'string' ? ref : `shell:3.${k}`, json: renderFramedValue(v) });
         }
       }
     } catch (e: any) {
