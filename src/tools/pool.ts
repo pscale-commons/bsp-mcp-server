@@ -695,12 +695,29 @@ export async function composeCurrent(origin: string, poolName: string, agentId: 
         const [, worldOrigin, worldBlock, addr] = m;
         const hrow = await loadBlock(worldOrigin, worldBlock);
         if (hrow?.block && typeof hrow.block === 'object') {
-          const digits = addr.replace(/[.,]/g, '').split('');
+          // The CANONICAL parse, never a hand-rolled split (the whetstone:1.3
+          // trap). A world spine carries zeros by construction — a zero is
+          // UNRESOLVED GROUND, the rung a placing has not decided — so the raw
+          // string is full of them: splitting it walks key '0', which no block
+          // has, and the horizon truncates silently at the first undecided
+          // rung. Live case: spatial:earth addresses a room at 31110100111,
+          // where four of eleven rungs are zeros.
+          const { digits } = parseSpindle(addr, floorDepth(hrow.block as Block));
           const lines: string[] = [];
           let node: any = hrow.block;
           const rootU = floorUnderscore(node as Block);
           if (rootU) lines.push(`- ${rootU}`);
           for (const d of digits) {
+            if (d === '0') {
+              // An undecided rung states nothing of its own — descend the
+              // underscore chain if it continues, and emit no line. Where the
+              // chain ends in a string the spine carves no deeper, and the
+              // deepest carved ancestor is the honest end of the horizon.
+              const chain = node && typeof node === 'object' ? node['_'] : undefined;
+              if (chain === undefined || chain === null || typeof chain === 'string') break;
+              node = chain;
+              continue;
+            }
             node = node && typeof node === 'object' ? node[d] : undefined;
             if (node === undefined || node === null) break;
             const u = typeof node === 'string' ? node : floorUnderscore(node as Block);
