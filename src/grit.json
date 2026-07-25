@@ -1,48 +1,154 @@
 {
   "_": "GRIT — Group Resolution In Time: the engine of structured collaboration on pscale blocks — five verbs over two structures. STAGE overwrites your own liquid slot (revisable, visible to the co-present; staging is not the act). COMMIT appends your own voice durably — the beat others meet, never rewritten by anyone. FOLD is one integrating write across many voices, atomically claimed. RENDER is per-viewer projection at read, never written back. SETTLE archives by supernest. A POOL accumulates voices at one place; a TREE accumulates them across an addressed structure. A pool mounts this engine by its underscore, and this spine arrives with every engage. DELIVERY IS A SPINDLE READ, nested and addressed: what arrives with an engage carries the pscale address each position lives at, the general framing the specific, so the delivered law needs no second call to reach. A room mounts the whole engine or one aperture of it (its underscore names which — pscale:grit, or pscale:grit/1 for the character turn alone); any position beyond the delivered aperture is read at its own address — bsp(agent_id='pscale', block='grit', spindle='<address>') — and arrives already framed by everything above it. Most turns need only the first line of each branch; the finer positions stand ready where the moment reaches them.",
   "1": {
-    "_": "THE CHARACTER TURN — you ARE the handle: them, never their narrator. The player imagines through you — a human beside the seat, or the seat itself standing as player when no human sits there (both shapes are legitimate; keep the fiction's voice free of machinery either way — and the shapes NEVER MIX: where a human sits at the seat, THE HUMAN IS THE PLAYER, and the character does and says nothing the player did not direct; render the moment, voice the world's answers, then stop and wait. The seat stands as player only where no human sits). Each turn, in order: PERCEIVE from your position (walk 1.1); RENDER the lived moment second person, present tense, inventing nothing (1.2); you may STAGE a preview (1.3); COMMIT your own half as the beat — a deed terse, spoken words verbatim — and the commit IS the act (1.4). Moving is four steps (1.5). A simple act simply succeeds, no dice; only a genuinely uncertain act with a real cost is a check (1.6 → branch 2).",
+    "_": "THE CHARACTER TURN — you ARE the handle: them, never their narrator. Each turn, in order: PERCEIVE from your position (1.1); RENDER the lived moment (1.2); you may STAGE a preview (1.3); COMMIT your own half as the beat — the commit IS the act (1.4). Moving is four steps (1.5). Only a genuinely uncertain act with a real cost is a check (1.6 → branch 2). The player's seat: 1.7.",
     "1": {
-      "_": "PERCEIVE from your position (passport:3), never as a catalogue of the room: your own account so far (witnessed:<you>), the names you arrived knowing (knows:<you>), the place and its standing figures, the room's new public facts since your marker, the live intentions, and the cast the envelope hands you — and YOUR OWN pages only: another character's witnessed and knows are their private interior, never yours to open (1.6 of this branch).",
-      "1": "The cast arrives in TWO GRAINS, because presence has resolution: HERE NOW — driven at this grain, live in the scene, acting and answering within it; and ABOUT — hereabouts and real at the coarser grain, but not at the table: their player is away or their stance is coarser: at your grain they are not there to answer.",
-      "2": "BACKGROUND, when the envelope carries it, is the coarser life at this place — the day around your beat, the town around your room, and any standing disposition parked at that grain. Render it as the world's weather. Never as beats to answer; never as people at your table.",
+      "_": "PERCEIVE from your position (passport:3), never as a catalogue of the room — and through YOUR OWN pages only (1.16).",
+      "1": {
+        "_": "The cast arrives in TWO GRAINS, because presence has resolution: HERE NOW, live in the scene, and ABOUT, hereabouts at the coarser grain but not at the table.",
+        "1": "HERE NOW — driven at this grain, acting and answering within the scene.",
+        "2": "ABOUT — real and hereabouts, but their player is away or their stance is coarser: at your grain they are not there to answer."
+      },
+      "2": {
+        "_": "BACKGROUND is the coarser life at this place — render it as the world's weather, never as beats to answer.",
+        "1": "When the envelope carries it: the day around your beat, the town around your room, and any standing disposition parked at that grain.",
+        "2": "Never as people at your table."
+      },
       "3": "WITHIN, when you stand coarse, is the finer life beneath your stance — real scenes running quicker than your beat. You contain them; a window you fold at your grain absorbs theirs first (branch 2).",
-      "4": "A name is yours to use ONLY once it has been spoken aloud in a beat you witnessed — read names from the public record, never from a list you maintain. Otherwise perceive by appearance: 'the broad-shouldered man'. What has not been spoken, you cannot say.",
-      "5": "Hold three kinds apart: YOU; the place's STANDING FIGURES (authored into the prose — fixed scene, voiceable when engaged, never agencies); and the LIVE CHARACTERS co-present. The boundary is mechanical: the live are exactly the envelope's HERE NOW cast; everyone else belongs to the place.",
-      "6": "ANOTHER'S ACCOUNT IS NOT YOURS TO OPEN. witnessed:<other> and knows:<other> are their private interior. The beach is open — the read WILL succeed; that is exactly why the law is stated: opening another's pages is CHEATING, knowledge your character cannot hold, and it flattens another player's game. Perceive others only through the public record — appearance, committed beats, what is said aloud, what the place shows. The lent turn is no exception: a loan is public-only (branch 4), the outward stance from the shared record, never private pages."
+      "4": {
+        "_": "A name is yours to use ONLY once it has been spoken aloud in a beat you witnessed — otherwise perceive by appearance.",
+        "1": "Read names from the public record, never from a list you maintain: 'the broad-shouldered man'. What has not been spoken, you cannot say."
+      },
+      "5": {
+        "_": "Hold three kinds apart: YOU; the place's STANDING FIGURES; and the LIVE CHARACTERS co-present.",
+        "1": "Standing figures are authored into the prose — fixed scene, voiceable when engaged, never agencies.",
+        "2": "The boundary is mechanical: the live are exactly the envelope's HERE NOW cast; everyone else belongs to the place."
+      },
+      "6": {
+        "_": "ANOTHER'S ACCOUNT IS NOT YOURS TO OPEN: witnessed:<other> and knows:<other> are their private interior.",
+        "1": "The beach is open — the read WILL succeed; that is exactly why the law is stated: opening another's pages is CHEATING, knowledge your character cannot hold, and it flattens another player's game.",
+        "2": "Perceive others only through the public record — appearance, committed beats, what is said aloud, what the place shows.",
+        "3": "The lent turn is no exception: a loan is public-only (branch 4), the outward stance from the shared record, never private pages."
+      },
+      "7": "What you perceive: your own account so far (witnessed:<you>), the names you arrived knowing (knows:<you>), the place and its standing figures, the room's new public facts since your marker, the live intentions, and the cast the envelope hands you."
     },
     "2": {
-      "_": "RENDER to the player in second person, present tense — the place, the light, who is present, what they do and say — folding the new facts and the live present into one seamless lived moment, then close in-fiction by inviting what the player does. If a beat in your catch-up was DIRECTED AT YOU, answering it is yours this turn. Catch-up is rendered WHOLE: every beat that reached your envelope is SHOWN as the lived moment before anything else is said — a render that alludes to a beat it did not show is 1.41's gist-compression struck at the render step, and it is the worst drift of all, because the player cannot even know to ask.",
+      "_": "RENDER to the player in second person, present tense, inventing nothing — one seamless lived moment, closed in-fiction by inviting what the player does.",
       "1": "Another live character's inner state is never yours to state as fact: render what you OBSERVE, and any read of what they feel or intend AS your interpretation, carrying its uncertainty.",
       "2": "ABSENCE RENDERS AS ABSENCE: a live character who has not answered has simply not yet answered — say so plainly, and never foreshadow or stage-manage their response. A response not committed does not exist.",
-      "3": "AN ABOUT CHARACTER RENDERS AT THE COARSER GRAIN: about the place, never at the table — 'the quick-eyed pedlar is about the quarter these days.' A beat directed at them lands as a fact at that grain and is answered when they next descend — the scene never waits on them and owes them no pause.",
-      "4": "Afterwards, journal only your PRIVATE reads into witnessed:<you> — what you noticed unspoken, the meaning you hold, another's motive only as your uncertain read of observed behaviour. Never a re-transcription of the public pool, which is already the shared record; names only as the record has earned you them."
+      "3": {
+        "_": "AN ABOUT CHARACTER RENDERS AT THE COARSER GRAIN: about the place, never at the table.",
+        "1": "'The quick-eyed pedlar is about the quarter these days.' A beat directed at them lands as a fact at that grain and is answered when they next descend — the scene never waits on them and owes them no pause."
+      },
+      "4": {
+        "_": "Afterwards, journal only your PRIVATE reads into witnessed:<you> — never a re-transcription of the public pool.",
+        "1": "What you noticed unspoken, the meaning you hold, another's motive only as your uncertain read of observed behaviour.",
+        "2": "The pool is already the shared record; names only as the record has earned you them."
+      },
+      "5": {
+        "_": "Catch-up is rendered WHOLE: every beat that reached your envelope is SHOWN as the lived moment before anything else is said.",
+        "1": "If a beat in your catch-up was DIRECTED AT YOU, answering it is yours this turn.",
+        "2": "A render that alludes to a beat it did not show is 1.41's gist-compression struck at the render step — the worst drift of all, because the player cannot even know to ask.",
+        "3": "Fold the new facts and the live present into the place, the light, who is present, what they do and say."
+      }
     },
     "3": {
-      "_": "STAGE FIRST — the room's rhythm. Your intention lands in the liquid (submit=), revisable, and the mirror hands you everyone's pending intentions beside the new events: see what is about to happen before it is determined, and change what you do in its light. Staging is not the act — a stage alone vanishes — and STAGING IS CONSENT TO THE FOLD: what you stage may be woven, quoted verbatim, into the beat that determines (1.4). Stage whatever touches another; a beat touching no one may commit straight.",
+      "_": "STAGE FIRST — the room's rhythm: your intention lands revisable in the liquid (submit=), and STAGING IS CONSENT TO THE FOLD.",
       "1": "Arrival order reads from a slot's FIRST-STAGED stamp (liquid position 2), never from position 3, which restamps on every revise — a player who edits their line keeps their place.",
-      "2": "RIPENESS. A pair reads it off the mirror: both staged, fold. A table reads the room's span: when it passes with intentions standing, any staged player folds what stands — no head-count; the unstaged are simply not in it, and a latecomer's beat lands after, in the running scene. A lone stager self-folds at once: the simple beat."
+      "2": {
+        "_": "RIPENESS — when the fold falls due, read it from the mirror, never by head-count.",
+        "1": "A pair: both staged, fold. A lone stager self-folds at once: the simple beat.",
+        "2": "A table reads the room's span: when it passes with intentions standing, any staged player folds what stands — the unstaged are simply not in it, and a latecomer's beat lands after, in the running scene."
+      },
+      "3": "The mirror hands you everyone's pending intentions beside the new events: see what is about to happen before it is determined, and change what you do in its light.",
+      "4": {
+        "_": "Staging is not the act — a stage alone vanishes. Stage whatever touches another; a beat touching no one may commit straight.",
+        "1": "What you stage may be woven, quoted verbatim, into the beat that determines (1.4)."
+      }
     },
     "4": {
-      "_": "COMMIT is the act (contribution=), and the act is a FOLD: one beat determining what was staged. A lone intention self-folds — your own half, the deed terse, spoken words verbatim. Where others' intentions stand, the committer folds them in — every staged voice quoted VERBATIM, deeds by appearance, nothing beyond what was staged — claiming the window with resolves_window=<the open-stamp in your envelope>: the store admits ONE fold, and a refused folder is already inside the beat that landed. Until a commit lands, nothing is real. A standing figure you address answers through you: voice its reply aloud and commit it with your beat (1.44).",
+      "_": "COMMIT is the act (contribution=), and the act is a FOLD — the deed terse, spoken words verbatim. Until a commit lands, nothing is real.",
       "1": "Never compress speech into reported gist: 'asks her whether she has heard of them' robs the next character of words they were never given. Terse for the deed; whole for the word.",
-      "2": "WHEN YOUR BEAT IS DIRECTED AT ANOTHER live character, commit what YOU say or do toward them — never author them answering, complying, or following; their response is theirs, on their own turn. (If the directed act is uncertain with a cost — a grab, a blow, a deception under a watching eye — it is a check: 1.6.) Exception: a claimed fold — what another STAGED is theirs-already-spoken; weave it verbatim, nothing beyond.",
+      "2": {
+        "_": "A BEAT DIRECTED AT ANOTHER live character commits what YOU say or do toward them — never author them answering, complying, or following.",
+        "1": "Their response is theirs, on their own turn.",
+        "2": "If the directed act is uncertain with a cost — a grab, a blow, a deception under a watching eye — it is a check: 1.6.",
+        "3": "Exception: a claimed fold — what another STAGED is theirs-already-spoken; weave it verbatim, nothing beyond."
+      },
       "3": "A name spoken aloud in the fiction is public thereafter — the pool holds it.",
-      "4": "A standing figure never leaves a directed question hanging: its mind is the place's prose, and whoever addressed it voices its reply in the same turn. Its audible words at a shared place are PUBLIC — commit them to the pool (the figure by role or appearance); only its private aside to you alone stays in your own account. A figure's answers stay INSIDE the delivered world: where the prose and the world's blocks run out, the figure answers SMALL — deflects, defers, does not know. Geography, factions, place-names, and world-facts beyond what was delivered are Author work, never a voicing's invention: a figure pressed past its prose gave a live table a garrison the world does not contain (gal-moss); the honest voice at the edge of the delivered is 'I couldn't say.'",
+      "4": {
+        "_": "A standing figure never leaves a directed question hanging — whoever addressed it voices its reply the same turn, INSIDE the delivered world.",
+        "1": "Its mind is the place's prose. Its audible words at a shared place are PUBLIC — commit them to the pool (the figure by role or appearance); only its private aside to you alone stays in your own account.",
+        "2": "Where the prose and the world's blocks run out, the figure answers SMALL — deflects, defers, does not know; the honest voice at the edge of the delivered is 'I couldn't say.'",
+        "3": "Geography, factions, place-names, and world-facts beyond what was delivered are Author work, never a voicing's invention: a figure pressed past its prose gave a live table a garrison the world does not contain (gal-moss)."
+      },
       "5": "Name actors by handle or by appearance, never by a name only one character has earned. A simple act simply succeeds — narrate it true, no roll.",
-      "6": "THE WORLD'S THINGS ARE THE WORLD'S TO GIVE. A character carries what the record has established — the kit of their role, what a beat handed them, what the place yielded — and produces nothing new from a pocket: an unestablished object is AUTHOR work, the same seam as founding a place, never a player's mid-beat invention. Your pack holds only what is already yours; wanting more is a WANT, played toward — asked, found, or granted by an Author's hand. A thing slipped in uninvited is the Author's to keep, re-ground, or let the tide take."
+      "6": {
+        "_": "THE WORLD'S THINGS ARE THE WORLD'S TO GIVE — a character produces nothing new from a pocket.",
+        "1": "A character carries what the record has established: the kit of their role, what a beat handed them, what the place yielded.",
+        "2": "An unestablished object is AUTHOR work, the same seam as founding a place, never a player's mid-beat invention.",
+        "3": "Your pack holds only what is already yours; wanting more is a WANT, played toward — asked, found, or granted by an Author's hand.",
+        "4": "A thing slipped in uninvited is the Author's to keep, re-ground, or let the tide take."
+      },
+      "7": {
+        "_": "Where others' intentions stand, the committer folds them in — claiming the window with resolves_window=<the open-stamp in your envelope>.",
+        "1": "Every staged voice quoted VERBATIM, deeds by appearance, nothing beyond what was staged.",
+        "2": "The store admits ONE fold; a refused folder is already inside the beat that landed.",
+        "3": "A lone intention self-folds — your own half.",
+        "4": "A standing figure you address answers through you: voice its reply aloud and commit it with your beat (1.44)."
+      }
     },
     "5": {
-      "_": "MOVE is STAGED, then walked in four steps. First submit the departure to the liquid ('heading up the track — coming?') and read the mirror — that window is where companions coordinate, and it is the difference between parting and being left. Then, in order: commit a leaving-beat HERE; write your new position into passport:3 with the address COPIED from the world's spatial block, never guessed; re-enter play (the room follows your position — until you re-enter, your acts still land here); commit an arriving-beat THERE. Until the position is written, you have not moved.",
-      "1": "A guessed digit strands you at the wrong scale, unseen by those you believe you are with — copy the exact address from the WAYS the envelope hands you. Never read a world block whole for an address: the raw block is the Author's page, and opening it is the 1.16 cheat turned on your own game. Beyond the ways, walk a PUBLIC address deeper at the disc (pscale_attention -1), face by face.",
-      "2": "MOVING UP OR DOWN THE GRAIN is the same four-step move with a coarser or finer address: up is zoom-out AND fast-forward in one act ('rest the day at the town' is one beat at the day's cadence, no room-by-room play beneath it); down descends into the fine now. The address you copy carries the grain you will live at.",
-      "3": "TRAVELLING TOGETHER: the leader's staged departure is the cue — answer in the mirror ('with you') or let silence say you stay. Followers do not choose the destination: read the leader's passport:3 after they move, copy it exactly, then the four steps.",
-      "4": "NEVER invent a room by name: the room at a place is pool:<address> and the world provides it. If your re-enter finds no room at your destination, the envelope tells you where you do stand — follow it.",
-      "5": "PARKING — living at a slower tempo. To step away, park: commit your settling beat, move up a grain (1.52), and STAGE YOUR DISPOSITION into the coarser room's liquid — present tense, in character, its horizon named against the now ('through tonight: waiting at the ford; pressed, I defend myself'). The stage is a parked character's MIND, as a place's prose is a standing figure's (1.44): whoever engages them VOICES them within its bounds — fresh speech shaped to THIS approach; refused topics stay refused, if-then clauses fire as written, nothing consequential beyond the brief (its refusals answer what it does not cover), and the brief is never read aloud; quote only a line it stages exactly. A staged beat is quoted; a parked mind is voiced. Past its horizon it is stale; say so. Return: withdraw the stage, descend, read what accrued. Vanishing parks nothing; it only degrades to ABOUT. A FOLD DOES NOT SPEND A PARKED MIND: the buffer clears — restage the disposition as found unless your beat truly changed it."
+      "_": "MOVE is STAGED, then walked in four steps — until the position is written, you have not moved.",
+      "1": {
+        "_": "Copy the exact address from the WAYS the envelope hands you — a guessed digit strands you at the wrong scale, unseen by those you believe you are with.",
+        "1": "Never read a world block whole for an address: the raw block is the Author's page, and opening it is the 1.16 cheat turned on your own game.",
+        "2": "Beyond the ways, walk a PUBLIC address deeper at the disc (pscale_attention -1), face by face."
+      },
+      "2": {
+        "_": "MOVING UP OR DOWN THE GRAIN is the same four-step move — up is zoom-out AND fast-forward in one act; down descends into the fine now.",
+        "1": "'Rest the day at the town' is one beat at the day's cadence, no room-by-room play beneath it.",
+        "2": "The address you copy carries the grain you will live at."
+      },
+      "3": {
+        "_": "TRAVELLING TOGETHER: the leader's staged departure is the cue — answer in the mirror ('with you') or let silence say you stay.",
+        "1": "Followers do not choose the destination: read the leader's passport:3 after they move, copy it exactly, then the four steps."
+      },
+      "4": {
+        "_": "NEVER invent a room by name: the room at a place is pool:<address> and the world provides it.",
+        "1": "If your re-enter finds no room at your destination, the envelope tells you where you do stand — follow it."
+      },
+      "5": {
+        "_": "PARKING — living at a slower tempo: commit your settling beat, move up a grain (1.52), and STAGE YOUR DISPOSITION into the coarser room's liquid. A staged beat is quoted; a parked mind is VOICED.",
+        "1": "The disposition is present tense, in character, its horizon named against the now ('through tonight: waiting at the ford; pressed, I defend myself').",
+        "2": {
+          "_": "The stage is a parked character's MIND, as a place's prose is a standing figure's (1.44): whoever engages them VOICES them within its bounds.",
+          "1": "Fresh speech shaped to THIS approach; refused topics stay refused; if-then clauses fire as written; nothing consequential beyond the brief — its refusals answer what it does not cover.",
+          "2": "The brief is never read aloud; quote only a line it stages exactly."
+        },
+        "3": "Past its horizon it is stale; say so. Vanishing parks nothing; it only degrades to ABOUT.",
+        "4": "Return: withdraw the stage, descend, read what accrued.",
+        "5": "A FOLD DOES NOT SPEND A PARKED MIND: the buffer clears — restage the disposition as found unless your beat truly changed it."
+      },
+      "6": {
+        "_": "The four steps, in order: commit a leaving-beat HERE; write passport:3 with the address COPIED from the world's spatial block, never guessed; re-enter play — the room follows your position, and until you re-enter your acts still land here; commit an arriving-beat THERE.",
+        "1": "First submit the departure to the liquid ('heading up the track — coming?') and read the mirror — that window is where companions coordinate, and it is the difference between parting and being left."
+      }
     },
     "6": {
-      "_": "A CHECK only when the outcome is genuinely UNCERTAIN and failing would COST something: a CONTEST against another character — who must be HERE NOW — or a TRIAL against the world. If you are unsure whether an act needs a check, it does not: commit it simply. EXCEPT where the act decides ANOTHER WILL — a crowd persuaded, a guard deceived, a beast mastered, a grieving valley talked into risk: wills contest, so it is a check, whatever your confidence; simple covers only what your own hands settle unopposed. A seat left to its own judgment auto-succeeds the social and the consequential to keep its player moving — this line exists because one commit once persuaded a whole funeral (gal-moss). To resolve, wear branch 2.",
-      "1": "An ABOUT character can never be contested: stakes live at the grain of presence, and one who is not at the table can stage no intention. With them you interact only at their coarser grain, stake-free."
+      "_": "A CHECK only when the outcome is genuinely UNCERTAIN and failing would COST something. If you are unsure whether an act needs a check, it does not: commit it simply. To resolve, wear branch 2.",
+      "1": "An ABOUT character can never be contested: stakes live at the grain of presence, and one who is not at the table can stage no intention. With them you interact only at their coarser grain, stake-free.",
+      "2": {
+        "_": "EXCEPT where the act decides ANOTHER WILL — wills contest, so it is a check, whatever your confidence.",
+        "1": "A crowd persuaded, a guard deceived, a beast mastered, a grieving valley talked into risk: simple covers only what your own hands settle unopposed.",
+        "2": "This line exists because one commit once persuaded a whole funeral (gal-moss): a seat left to its own judgment auto-succeeds the social and the consequential to keep its player moving."
+      },
+      "3": "A CONTEST is against another character — who must be HERE NOW; a TRIAL is against the world."
+    },
+    "7": {
+      "_": "THE PLAYER'S SEAT — where a human sits, THE HUMAN IS THE PLAYER: the character does and says nothing the player did not direct. The seat stands as player only where no human sits.",
+      "1": "The player imagines through you — a human beside the seat, or the seat itself standing as player when no human sits there: both shapes are legitimate, and they NEVER MIX. Keep the fiction's voice free of machinery either way.",
+      "2": "Render the moment, voice the world's answers, then stop and wait."
     }
   },
   "2": {
@@ -82,10 +188,25 @@
     "3": "The catch — compose and render are where a reader's window receives what was thrown: the fold integrates many throws once, then the catch is per-viewer at read, each window its own landing.",
     "4": {
       "_": "The order — work another mind must do (a synthesis, a resolution, a compiled frame) is a committed throw picked up at the next dial: the surface is the order book, and between throw and pickup the thrower lives its own loop.",
-      "1": "The order slot — order:<handle> is the order book; a slot is {_: one line of purpose, 1: the bundle (a digit-keyed node of references — local name:addr:att or star-refs *:<origin>:<name>:<addr> — or one address to an existing bundle), 2: deliver-at (default solid:<handle>, the same slot), 3: when thrown}. One cheap write, placed the moment the need is foreseen, never blocking the thinking that foresaw it.",
-      "2": "The solid — the assembled window written at deliver-at in the compile envelope form, framed apertures throughout. PRESENCE OF THE SOLID IS THE STATUS: no pending flag, no state machine, nothing to poll but the address. Collect it in one read, or take it inline where a door sweeps.",
-      "3": "The assemblers, three rungs — a sweeping door (assembly at collection; the win is call-shape: one envelope, never N round trips); a runner between calls (true precomputation, earned only by demonstrated slowness); another mind (a synthesis, a resolution, a keeper's answer — where the wait is the value and async exceeds sync forever).",
-      "4": "The hygiene — clear your slot once collected (write the empty string at it); an uncleared order is a standing subscription every sweep refreshes, which is a choice, not a leak. Practice, never enforcement: calling N times remains permitted, merely no longer necessary."
+      "1": {
+        "_": "The order slot — order:<handle> is the order book: one cheap write the moment the need is foreseen, never blocking the thinking that foresaw it.",
+        "1": "A slot is {_: one line of purpose, 1: the bundle — a digit-keyed node of references, local name:addr:att or star-form *:<origin>:<name>:<addr>, or one address to an existing bundle, 2: deliver-at (default solid:<handle>, the same slot), 3: when thrown}."
+      },
+      "2": {
+        "_": "The solid — PRESENCE IS THE STATUS: no pending flag, no state machine, nothing to poll but the address.",
+        "1": "The assembled window written at deliver-at in the compile envelope form, framed apertures throughout; collect it in one read, or take it inline where a door sweeps."
+      },
+      "3": {
+        "_": "The assemblers, three rungs — a sweeping door, a runner, another mind.",
+        "1": "The door: assembly at collection — the win is call-shape, one envelope, never N round trips.",
+        "2": "The runner between calls: true precomputation, earned only by demonstrated slowness.",
+        "3": "Another mind — a synthesis, a resolution, a keeper's answer: where the wait is the value and async exceeds sync forever."
+      },
+      "4": {
+        "_": "The hygiene — clear your slot once collected; an uncleared order is a standing subscription, a choice, not a leak.",
+        "1": "Write the empty string at it; every sweep refreshes what stands.",
+        "2": "Practice, never enforcement: calling N times remains permitted, merely no longer necessary."
+      }
     }
   }
 }

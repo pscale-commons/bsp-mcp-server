@@ -81,12 +81,16 @@ const badAddr = addrs.filter((a) => {
 check(`all ${addrs.length} addresses round-trip the parser at floor ${floor}`, addrs.length > 30 && badAddr.length === 0, badAddr.slice(0, 5).join(', '));
 check('no multi-dot address leaks', addrs.every((a) => (a.match(/\./g) ?? []).length <= 1));
 
-console.log('\n=== aperture delivery — framed, selective, bounded ===');
-const ap = renderDirective(grit['1'], { floor, base: ['1'], frame: [grit._] });
+console.log('\n=== aperture delivery — framed, selective, bounded (the SPINE, 2026-07-25) ===');
+const ap = renderDirective(grit['1'], { floor, base: ['1'], frame: [grit._], spineDepth: 2 });
 check('the root frame arrives above the aperture (verbs defined at the general end)', /STAGE overwrites/.test(ap) && /COMMIT appends/.test(ap));
-check('the aperture subtree arrives whole at true addresses', /\[1\.11\]/.test(ap) && /\[1\.6\]/.test(ap));
+check('the spine arrives addressed to law-depth', /\[1\.11\]/.test(ap) && /\[1\.6\]/.test(ap) && /\[1\.55\]/.test(ap));
+check('every law-pin survives ON the spine', /HERE NOW/.test(ap) && /spoken aloud/.test(ap) && /ABSENCE RENDERS AS ABSENCE/.test(ap) && /FIRST-STAGED/i.test(ap) && /verbatim/.test(ap) && /four steps/i.test(ap) && /zoom-out AND fast-forward/.test(ap));
+check('depth is dialable, not delivered — reasoning stays beneath its address', !/garrison the world does not contain/.test(ap) && !/broad-shouldered man/.test(ap) && !/refused topics stay refused/.test(ap));
+check('the spine teaches the dial', /dial one deeper/.test(ap) && /spindle='<address>'/.test(ap));
+check('the depth still exists in the whole delivery (nothing lost, only dialable)', /garrison the world does not contain/.test(whole) && /refused topics stay refused/.test(whole));
 const apWords = ap.split(/\s+/).length;
-check(`aperture stays bounded (now ${apWords}; measured 1,566 on 2026-07-20; the monolith was ~4,100)`, apWords < 2200);
+check(`the spine stays a current, not a wadge (now ${apWords}; bound 1450 — a RATCHET: the whole-subtree delivery measured 1,566 on 2026-07-20 and wadged to 2,401 by 2026-07-25; the spine re-authoring cut it to ~1,376, and the ~74-word headroom means the next law must DISPLACE or DEEPEN, never accrete; tighten this bound after any future deepening pass — raising it is capitulation)`, apWords < 1450);
 check('selection is real — the resolver branch is NOT in the /1 aperture', !/\[2\.1\]/.test(ap) && !/ONE NOW, ACROSS TIME AND GRAIN/.test(ap));
 
 console.log('\n=== the mount law lives in data ===');

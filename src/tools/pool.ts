@@ -318,21 +318,31 @@ export function isDirectiveRef(underscore: string): boolean {
  * needing one position later addresses it exactly, and needs nothing in between.
  * Depth is the contextualisation; the address is how it is re-entered.
  */
-export function renderPosition(node: any, digits: string[], floor: number, out: string[]): void {
+export function renderPosition(node: any, digits: string[], floor: number, out: string[], limit?: number): boolean {
   const addr = formatAddress(digits, floor);
   const indent = '  '.repeat(Math.max(0, digits.length - 1));
   if (typeof node === 'string') {
     out.push(`${indent}[${addr}] ${node}`);
-    return;
+    return false;
   }
-  if (!node || typeof node !== 'object') return;
+  if (!node || typeof node !== 'object') return false;
   const u = floorUnderscore(node as Block);
   if (u) out.push(`${indent}[${addr}] ${u}`);
+  let truncated = false;
   for (let d = 1; d <= 9; d++) {
     const child = node[String(d)];
     if (child === undefined || child === null) continue;
-    renderPosition(child, [...digits, String(d)], floor, out);
+    // The SPINE dial (proposal 2026-07-25, David's stub-spindle diagnosis):
+    // beyond `limit` walk-depth the reasoning is not delivered — each surface
+    // line above it IS the law, and the address re-enters the depth on need.
+    // Without `limit`, behaviour is exactly as before: run to leaves.
+    if (limit !== undefined && digits.length >= limit) {
+      truncated = true;
+      continue;
+    }
+    if (renderPosition(child, [...digits, String(d)], floor, out, limit)) truncated = true;
   }
+  return truncated;
 }
 
 /**
@@ -349,24 +359,36 @@ export function renderPosition(node: any, digits: string[], floor: number, out: 
  */
 export function renderDirective(
   node: any,
-  opts?: { floor?: number; base?: string[]; frame?: string[] },
+  opts?: { floor?: number; base?: string[]; frame?: string[]; spineDepth?: number },
 ): string {
   if (typeof node === 'string') return node;
   if (typeof node !== 'object' || node === null) return '';
   const floor = opts?.floor ?? floorDepth(node as Block);
   const base = opts?.base ?? [];
+  // spineDepth: deliver surfaces to this many walk-levels below the base — the
+  // SPINE of one-line laws — and leave the reasoning beneath each address
+  // dialable rather than delivered (the (S,P) aperture discipline applied to
+  // the mount; frames-on-the-spine / order-and-collect arc). Omitted: run to
+  // leaves, exactly as before.
+  const limit = opts?.spineDepth !== undefined ? base.length + opts.spineDepth : undefined;
   const parts: string[] = [...(opts?.frame ?? [])];
   const head = floorUnderscore(node as Block);
   if (head) {
     const addr = base.length ? `[${formatAddress(base, floor)}] ` : '';
     parts.push(`${addr}${head}`);
   }
+  let truncated = false;
   for (let d = 1; d <= 9; d++) {
     const child = node[String(d)];
     if (child === undefined || child === null) continue;
     const out: string[] = [];
-    renderPosition(child, [...base, String(d)], floor, out);
+    if (renderPosition(child, [...base, String(d)], floor, out, limit)) truncated = true;
     if (out.length) parts.push(out.join('\n'));
+  }
+  if (truncated) {
+    parts.push(
+      `(Each line above IS the law; its reasoning and worked cases stand beneath its address — dial one deeper only when you need it: read this block at spindle='<address>'. The spine is the delivery; the depth is the choice.)`,
+    );
   }
   return parts.join('\n\n');
 }
@@ -409,7 +431,10 @@ export async function resolveDirective(poolUrl: string, ref: string): Promise<st
         if (u) frame.push(`[${formatAddress(base.slice(0, i + 1), floor)}] ${u}`);
       }
     }
-    return renderDirective(node, { floor, base, frame }) || null;
+    // Aperture mounts (the '/N' form) deliver the SPINE — two law-levels below
+    // the branch — with each deeper reasoning dialable at its address. Whole
+    // mounts (no '/') stay full-depth: nothing load-bearing invisible.
+    return renderDirective(node, { floor, base, frame, spineDepth: 2 }) || null;
   } catch {
     return null;
   }
