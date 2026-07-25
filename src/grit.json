@@ -80,6 +80,12 @@
     "1": "The throw — a stage or commit is a ball tossed: a projection written ahead of its reading. A fold's re-dialed bundle is the same act one scale up — the next window's now, written before that window exists.",
     "2": "The arc — ripeness decides which returns are due: a thrown concern comes back when its phase comes round, never when it happens to be remembered. Cadence is the orbit; nothing waits with a connection held open.",
     "3": "The catch — compose and render are where a reader's window receives what was thrown: the fold integrates many throws once, then the catch is per-viewer at read, each window its own landing.",
-    "4": "The order — work another mind must do (a synthesis, a resolution, a compiled frame) is a committed throw picked up at the next dial: the surface is the order book, and between throw and pickup the thrower lives its own loop."
+    "4": {
+      "_": "The order — work another mind must do (a synthesis, a resolution, a compiled frame) is a committed throw picked up at the next dial: the surface is the order book, and between throw and pickup the thrower lives its own loop.",
+      "1": "The order slot — order:<handle> is the order book; a slot is {_: one line of purpose, 1: the bundle (a digit-keyed node of references — local name:addr:att or star-refs *:<origin>:<name>:<addr> — or one address to an existing bundle), 2: deliver-at (default solid:<handle>, the same slot), 3: when thrown}. One cheap write, placed the moment the need is foreseen, never blocking the thinking that foresaw it.",
+      "2": "The solid — the assembled window written at deliver-at in the compile envelope form, framed apertures throughout. PRESENCE OF THE SOLID IS THE STATUS: no pending flag, no state machine, nothing to poll but the address. Collect it in one read, or take it inline where a door sweeps.",
+      "3": "The assemblers, three rungs — a sweeping door (assembly at collection; the win is call-shape: one envelope, never N round trips); a runner between calls (true precomputation, earned only by demonstrated slowness); another mind (a synthesis, a resolution, a keeper's answer — where the wait is the value and async exceeds sync forever).",
+      "4": "The hygiene — clear your slot once collected (write the empty string at it); an uncleared order is a standing subscription every sweep refreshes, which is a choice, not a leak. Practice, never enforcement: calling N times remains permitted, merely no longer necessary."
+    }
   }
 }
