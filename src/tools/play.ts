@@ -34,8 +34,8 @@ export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
 import { Block, readAt, floorDepth } from '../bsp.js';
 import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
-import { compile, renderCompletions, renderFramedValue, type Completion, type FetchOrigin } from '../compile.js';
-import { toPNode, type Loader, type PNode, type PMap } from '../genus.js';
+import { compile, orderSweep, renderCompletions, renderFramedValue, renderSweptOrders, type Completion, type FetchOrigin } from '../compile.js';
+import { toPNode, pyDumps, type Loader, type PNode, type PMap } from '../genus.js';
 import { SENTINELS } from '../sentinels.js';
 
 /** Loaders for compile() at this door. `load` is beach-scoped: sentinels first
@@ -431,6 +431,26 @@ export async function handlePlay(
       own.push({ name: `shell:${handle} 3 (manifest)`, json: JSON.stringify(`did not compile: ${String(e?.message ?? e).slice(0, 120)} — read its addresses directly via bsp`) });
     }
   }
+  // 4c. ORDERS SWEPT — the v1 assembler (proposal 2026-07-25-order-and-collect):
+  //     pending bundle-requests at order:<handle> compile here and ride this
+  //     envelope, and each solid lands at its order's delivery address —
+  //     call-shape economy for the caller's loop-A (one envelope, never N round
+  //     trips). Presence of the solid is the status; clearing the order slot is
+  //     the orderer's hygiene; an uncleared order is a standing subscription
+  //     this sweep refreshes. A malformed book or a refused solid write never
+  //     breaks entry — delivery degrades to inline-only.
+  let sweptSection: string[] = [];
+  try {
+    const swept = await orderSweep(handle, load, {
+      fetchOrigin,
+      carried: [`pool:${roomName}`],
+      save: async (name, slot, content) => {
+        const plain = JSON.parse(pyDumps(content));
+        await saveBlock(resolved, name, { _: `solids of ${handle} — assembled windows, one per collected order (order-and-collect, grit:7.4)`, [slot]: plain } as any, { spindle: slot });
+      },
+    });
+    if (swept.length) sweptSection = ['', renderSweptOrders(handle, swept)];
+  } catch { /* an order book must never break entry */ }
   // 4b. Co-presence — who else stands at this place, SPLIT BY GRAIN twice over
   //     (proposals 2026-07-15 presence-grain §7 + pscale-of-agency G1). Location is
   //     the character's (slow, fictional); liveness is the driver's (fast, real).
@@ -538,6 +558,7 @@ export async function handlePlay(
     // gate at 1b returns the passage for fresh handles on worlds that have one).
     out.push(`(No blocks for ${handle} on this world yet — you are fresh here.)`);
   }
+  for (const line of sweptSection) out.push(line);
   if (completions.length) {
     out.push('');
     out.push(renderCompletions(completions));

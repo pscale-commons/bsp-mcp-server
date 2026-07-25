@@ -18,7 +18,7 @@
 
 import { SENTINELS } from '../src/sentinels.js';
 import { toPNode, type PNode, type PMap, type Loader } from '../src/genus.js';
-import { compile, collectRefs, renderCompletions, renderFramedValue, parseStarRef, COMPLETION_REGISTRY, type FetchOrigin } from '../src/compile.js';
+import { compile, collectRefs, orderSweep, renderCompletions, renderFramedValue, renderSweptOrders, parseStarRef, COMPLETION_REGISTRY, type FetchOrigin } from '../src/compile.js';
 
 let pass = 0;
 let fail = 0;
@@ -160,6 +160,42 @@ console.log('\nSTAR-REFS — the origin-qualified grammar crosses beaches (frame
   ok('no fetchOrigin → the leaf rides through raw, visible', (r3.window as PMap).get('2') === '*:https://world.example:spatial:urb:3.2:-1');
   const r4 = await compile(toPNode({ _: 'x', 1: 'relationships', 2: '*:https://elsewhere.example:spatial:urb:3.2:0' }), load, { fetchOrigin });
   ok('unknown origin / absent block → raw leaf, never a silent drop', (r4.window as PMap).get('2') === '*:https://elsewhere.example:spatial:urb:3.2:0');
+}
+
+console.log('\nORDER AND COLLECT — the v1 sweep (proposal 2026-07-25)');
+{
+  const saves: Array<{ name: string; slot: string; content: PNode }> = [];
+  const save = async (name: string, slot: string, content: PNode) => { saves.push({ name, slot, content }); };
+  const empty = await orderSweep('testh', load, { save });
+  ok('no order book → zero cost, zero sections', empty.length === 0 && saves.length === 0);
+
+  shell.set(
+    'order:testh',
+    toPNode({
+      _: 'the order book of testh',
+      1: { _: 'hold my drive and state for the answer step', 1: { 1: 'purpose', 2: 'conditions' }, 3: '2026-07-25T12:00:00Z' },
+      2: { _: 'a malformed order — no bundle at 1' },
+      3: { _: 'deliver elsewhere', 1: { 1: 'relationships' }, 2: 'solid:custom' },
+    }),
+  );
+  const swept = await orderSweep('testh', load, { save, carried: ['pool:1'] });
+  ok('two well-formed orders swept; malformed slot skipped silently', swept.length === 2 && swept.every((s) => s.slot !== '2'));
+  const s1 = swept.find((s) => s.slot === '1')!;
+  ok('order 1 assembled — window carries both refs', (s1.result.window as PMap).get('1') instanceof Map && (s1.result.window as PMap).get('2') instanceof Map);
+  ok('default delivery is solid:<handle>, same slot', s1.deliverAt === 'solid:testh' && saves.some((w) => w.name === 'solid:testh' && w.slot === '1'));
+  ok('explicit deliver-at honoured', swept.find((s) => s.slot === '3')!.deliverAt === 'solid:custom' && saves.some((w) => w.name === 'solid:custom' && w.slot === '3'));
+  ok('solid content voiced with purpose + provenance', (() => { const w = saves.find((x) => x.name === 'solid:testh')!; const u = (w.content as PMap).get('_'); return typeof u === 'string' && u.includes('hold my drive') && u.includes('order:testh slot 1'); })());
+  ok('delivered flagged true when save lands', s1.delivered === true);
+
+  const again = await orderSweep('testh', load, { save });
+  ok('standing subscription — an uncleared order re-sweeps identically', again.length === 2);
+  const failing = await orderSweep('testh', load, { save: async () => { throw new Error('locked'); } });
+  ok('refused solid write degrades to inline-only, never throws', failing.length === 2 && failing.every((s) => s.delivered === false));
+  const noSave = await orderSweep('testh', load, {});
+  ok('no save callback → inline-only by construction', noSave.length === 2 && noSave.every((s) => s.delivered === false));
+  const rendered = renderSweptOrders('testh', swept);
+  ok('sweep declares itself and teaches the clear', rendered.includes('ORDERS SWEPT — order:testh (2)') && rendered.includes('clear a slot once taken'));
+  shell.delete('order:testh');
 }
 
 console.log('\nFRAMED APERTURE — the delivery form (gap 2)');

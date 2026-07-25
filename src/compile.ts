@@ -47,6 +47,7 @@ import {
   descend,
   floorOf,
   pyDumps,
+  ZK,
   type Loader,
   type PNode,
   type PMap,
@@ -254,4 +255,93 @@ export function renderCompletions(completions: Completion[]): string {
       return `completed · ${c.dimension} — ${text}\n  (${c.address}, scooped live: no ${c.dimension} current was dialed)`;
     })
     .join('\n');
+}
+
+// ── order and collect (proposal 2026-07-25-order-and-collect) ──────────────
+
+/** One swept order from an order book. `delivered` reports whether the solid
+ *  write landed (a locked or refusing delivery block degrades to inline-only —
+ *  the envelope still carries the window; nothing breaks). */
+export interface SweptOrder {
+  slot: string;
+  purpose: string;
+  deliverAt: string;
+  result: CompileResult;
+  delivered: boolean;
+}
+
+/**
+ * Sweep a handle's order book (`order:<handle>`): compile each well-formed
+ * order slot and deliver the solid. The v1 assembler — sweep-at-the-door
+ * (proposal §3): assembly executes at collection, and the gain is CALL-SHAPE
+ * (one envelope instead of N round trips of the caller's loop-A). An order
+ * slot is {_: purpose, 1: bundle (node of refs, or an address to one),
+ * 2: deliver-at (default solid:<handle>, same slot), 3: ts} — slots without a
+ * bundle at 1 are skipped, never errored. Presence of the solid IS the
+ * status: nothing here clears the order (clearing is the orderer's hygiene;
+ * an uncleared order is a standing subscription this sweep refreshes).
+ * `save(name, slot, content)` is the door's position-write; absent or
+ * failing, delivery degrades to inline-only.
+ */
+export async function orderSweep(
+  handle: string,
+  load: Loader,
+  opts: {
+    fetchOrigin?: FetchOrigin;
+    carried?: string[];
+    save?: (name: string, slot: string, content: PNode) => Promise<void>;
+  } = {},
+): Promise<SweptOrder[]> {
+  const book = await load(`order:${handle}`);
+  if (!(book instanceof Map)) return [];
+  const swept: SweptOrder[] = [];
+  for (const d of '123456789') {
+    const slot = book.get(d);
+    if (!(slot instanceof Map)) continue;
+    const bundle = slot.get('1');
+    if (bundle === undefined || bundle === null || bundle === '') continue;
+    const purposeRaw = slot.get('_');
+    const purpose = typeof purposeRaw === 'string' ? purposeRaw : '';
+    const deliverRaw = slot.get('2');
+    const deliverAt = typeof deliverRaw === 'string' && deliverRaw.trim() ? deliverRaw.trim() : `solid:${handle}`;
+    let result: CompileResult;
+    try {
+      result = await compile(bundle as PNode | string, load, {
+        carried: opts.carried,
+        fetchOrigin: opts.fetchOrigin,
+      });
+    } catch {
+      continue; // a malformed order never breaks the door's envelope
+    }
+    let delivered = false;
+    if (opts.save) {
+      try {
+        const content: PMap = new Map();
+        content.set(ZK, `${purpose || 'assembled order'} — assembled from order:${handle} slot ${d}`);
+        if (result.window instanceof Map) for (const [k, v] of result.window) content.set(k, v);
+        else content.set('1', result.window);
+        await opts.save(deliverAt, d, content);
+        delivered = true;
+      } catch {
+        delivered = false; // inline-only delivery; the solid can be re-swept
+      }
+    }
+    swept.push({ slot: d, purpose, deliverAt, result, delivered });
+  }
+  return swept;
+}
+
+/** Render swept orders as envelope sections — the sweep declares itself the
+ *  way completions do, which is how the pattern teaches by visible use. */
+export function renderSweptOrders(handle: string, swept: SweptOrder[]): string {
+  const out: string[] = [];
+  out.push(`═══════════ ORDERS SWEPT — order:${handle} (${swept.length}) — collected for you; clear a slot once taken (write "" at order:${handle} spindle <slot>) ═══════════`);
+  for (const s of swept) {
+    out.push(`── slot ${s.slot}${s.purpose ? ` · ${s.purpose}` : ''} → ${s.deliverAt}${s.delivered ? '' : ' (inline only — solid write did not land)'} ──`);
+    const w = s.result.window;
+    if (w instanceof Map) for (const [k, v] of w) out.push(`  [${k}] ${renderFramedValue(v).split('\n').join('\n  ')}`);
+    else out.push(`  ${renderFramedValue(w)}`);
+    if (s.result.completions.length) out.push(renderCompletions(s.result.completions));
+  }
+  return out.join('\n');
 }
