@@ -1,0 +1,28 @@
+# Stage 2 of pscale://directory — publish server.json to the official MCP
+# Registry (registry.modelcontextprotocol.io). Manual trigger only: run it
+# from the Actions tab after bumping server.json's version. Authentication is
+# GitHub Actions OIDC (mcp-publisher login github-oidc) — the workflow's own
+# identity proves the io.github.pscale-commons/* namespace; no device codes,
+# no stored secrets, repeatable after the operator steps back.
+name: publish-mcp-registry
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # OIDC token for the registry
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m).tar.gz" | tar xz mcp-publisher
+      - name: Validate server.json
+        run: ./mcp-publisher validate
+      - name: Login (OIDC) and publish
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
