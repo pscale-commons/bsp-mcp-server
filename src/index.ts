@@ -16,6 +16,44 @@ const MCP_PATH = process.env.MCP_PATH || '/mcp/v1';
 
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
+// ── The silent-misroute guard: duplicate in-flight request ids ──
+//
+// The SDK routes a response back to its caller through a Map keyed by JSON-RPC
+// id (webStandardStreamableHttp.js — `_requestToStreamMapping.set(message.id,
+// streamId)`). JSON-RPC requires an id to be unique within a session. When a
+// client breaks that — several agents sharing ONE session, each numbering its
+// own requests from 1 — the second `.set` OVERWRITES the first, so one caller
+// is handed ANOTHER caller's response body and the first waits until it times
+// out. Both requests still execute against the substrate.
+//
+// Demonstrated live 2026-07-25 with three character seats on one session: a
+// bsp() write came back as another player's composed room envelope, carrying
+// that player's private witnessed:/knows: pages into a seat forbidden to read
+// them (grit 1.16), and writes that "timed out" had in fact landed — which
+// then invited non-idempotent retries into an append-only public record.
+//
+// This is the whetstone:1.3 trap at the transport: a silent misroute. The
+// substrate's standing answer is to reject at the boundary rather than guess —
+// the same discipline by which the address parser strict-rejects a multi-dot
+// address instead of picking an interpretation. A colliding id is refused
+// loudly so the caller retries with a fresh one, or gives each concurrent
+// caller its own session, which is the real fix.
+const inflight = new Map<string, Set<string | number>>();
+
+/** JSON-RPC ids in this body that expect a response — requests only, never
+ *  notifications (no id) or client-side responses (no method). Batch-aware. */
+function requestIds(body: unknown): (string | number)[] {
+  const messages = Array.isArray(body) ? body : [body];
+  const ids: (string | number)[] = [];
+  for (const m of messages) {
+    if (!m || typeof m !== 'object') continue;
+    if (!('method' in m) || !('id' in m)) continue;
+    const id = (m as { id?: unknown }).id;
+    if (typeof id === 'string' || typeof id === 'number') ids.push(id);
+  }
+  return ids;
+}
+
 function createSession(): StreamableHTTPServerTransport {
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
@@ -74,6 +112,35 @@ const httpServer = createHttpServer(async (req, res) => {
   console.log(`${req.method} ${MCP_PATH} | session: ${sessionId || 'none'} | known: ${sessionId ? transports.has(sessionId) : 'n/a'} | sessions: ${transports.size}`);
 
   if (sessionId && transports.has(sessionId)) {
+    const ids = req.method === 'POST' ? requestIds(body) : [];
+    const live = inflight.get(sessionId) ?? new Set<string | number>();
+    const clash = ids.find((id) => live.has(id));
+    if (clash !== undefined) {
+      res.writeHead(409, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        jsonrpc: '2.0',
+        error: {
+          code: -32600,
+          message:
+            `Request id ${JSON.stringify(clash)} is already in flight on this session. ` +
+            'JSON-RPC ids must be unique within a session; reusing one makes the transport ' +
+            "deliver this response to the other caller and leave that caller waiting. " +
+            'Retry with a fresh id, or give each concurrent caller its own session.',
+        },
+        id: clash,
+      }));
+      return;
+    }
+    if (ids.length) {
+      for (const id of ids) live.add(id);
+      inflight.set(sessionId, live);
+      res.on('close', () => {
+        const s = inflight.get(sessionId);
+        if (!s) return;
+        for (const id of ids) s.delete(id);
+        if (s.size === 0) inflight.delete(sessionId);
+      });
+    }
     await transports.get(sessionId)!.handleRequest(req, res, body);
     return;
   }
@@ -118,6 +185,7 @@ const httpServer = createHttpServer(async (req, res) => {
       const transport = transports.get(sessionId)!;
       await transport.handleRequest(req, res, body);
       transports.delete(sessionId);
+      inflight.delete(sessionId);
     } else {
       res.writeHead(200);
       res.end(JSON.stringify({ jsonrpc: '2.0', result: {} }));
