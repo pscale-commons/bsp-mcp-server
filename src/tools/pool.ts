@@ -504,6 +504,10 @@ export function passportAppearance(passportBlock: any, handle: string): string {
  *  outside it they are ABOUT (present at the day's grain). */
 export const LIVE_WINDOW_MS = 60 * 60 * 1000;
 
+/** How long an identical beat from the same author counts as a RETRY of the
+ *  same act rather than a deliberate repeat. */
+export const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
+
 export interface CastEntry { handle: string; appearance: string; lastSignal: number | null }
 
 /** Pure split — HERE NOW vs ABOUT — so the rule is one testable function. */
@@ -1255,6 +1259,7 @@ export async function handlePoolEngage(
   // the floor fills, so concurrent commits never race. Structured per-subject
   // spine writes (RPG) are the resolver's bsp() job, NOT this primitive.
   let postedPosition: number | null = null;
+  let duplicateOf: number | null = null;
   let postedTo: string | null = null;
   let postedSupernested = false;
   let foldCleared: Block | null = null;
@@ -1305,6 +1310,29 @@ export async function handlePoolEngage(
       }
     }
 
+    // IDEMPOTENCE FOR A RETRY. A contribution is an ATOMIC APPEND to an
+    // append-only public record with no retraction, and a caller that believes
+    // a call failed will retry it — the harness's own timeout text invites
+    // exactly that ("you can try again"). But a timeout here is usually not a
+    // failure: the write LANDED and only the response was lost, which the
+    // duplicate-request-id misroute (#202) made routine. Retrying then commits
+    // the same beat twice for good. gal-thistle holds slots 11 and 12,
+    // byte-identical, from precisely this sequence.
+    //
+    // So the repeat is refused rather than the advice argued with: an identical
+    // text from the same author inside the window reports the slot it ALREADY
+    // occupies. `row` was loaded at the top of this call, so a retry arriving as
+    // a fresh call sees the first attempt. Past the window a genuine repeat — a
+    // character saying the same short line twice — still commits normally.
+    if (destBlock === blockName && row?.block && typeof row.block === 'object') {
+      const nowMs = Date.now();
+      for (const c of collectContributions(row.block as Block, 0).contributions) {
+        if (c.agent_id !== agent_id || c.text !== contribution) continue;
+        const ms = c.ts ? Date.parse(c.ts) : NaN;
+        if (Number.isFinite(ms) && nowMs - ms <= DUPLICATE_WINDOW_MS) { duplicateOf = c.position; break; }
+      }
+    }
+
     let ack: {
       slot?: string; supernested?: boolean; floor?: number; cleared?: Block | null;
       alreadyResolved?: boolean; resolvedBy?: string | null;
@@ -1312,7 +1340,9 @@ export async function handlePoolEngage(
       windowMoved?: boolean; buffer?: Block | null;
     };
     try {
-      ack = await appendToBeach(pool_url, destBlock, entry as Block, secret, params.resolves_window, params.resolves_seen);
+      ack = duplicateOf !== null
+        ? { slot: String(duplicateOf) }
+        : await appendToBeach(pool_url, destBlock, entry as Block, secret, params.resolves_window, params.resolves_seen);
     } catch (e: any) {
       return { content: [{ type: 'text', text: `Pool commit rejected by beach: ${e?.message ?? String(e)}` }] };
     }
@@ -1445,7 +1475,11 @@ export async function handlePoolEngage(
     // A successful claim must not ack like a plain append (NHITL round 4: "a
     // resolver can't tell a successful window-claim from an ordinary append").
     const claimed = params.resolves_window ? ` — window ${params.resolves_window} RESOLVED, your claim was first; the buffer is cleared and the next intention opens fresh` : '';
-    lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}`);
+    if (duplicateOf !== null) {
+      lines.push(`ALREADY LANDED at slot ${postedPosition} → ${where} — this exact beat from you is already in the record, so nothing was appended a second time. A timeout is not a failure here: the write lands and only the reply is lost. Read the slot before rewording and retrying.`);
+    } else {
+      lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}`);
+    }
     lines.push('');
     // What the winning claim cleared, exactly as the beach snapshotted it. The
     // folder KNOWS what it wove; this list is the audit — any voice below that
