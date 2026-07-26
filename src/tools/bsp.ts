@@ -22,7 +22,7 @@
  */
 
 import { z } from 'zod';
-import { Block, writeAt, InvalidAddressError } from '../bsp.js';
+import { Block, writeAt, InvalidAddressError, parseSpindle, floorDepth } from '../bsp.js';
 import {
   bspRead,
   bspWrite,
@@ -65,6 +65,32 @@ import {
   keyringHandles,
   GROUP_KEYRING_MARKER,
 } from '../keys.js';
+
+/**
+ * The POSITION a lock lands at, mirroring the wire contract (pscale-beach
+ * `lockKeyForWrite`): a lock is scoped to the FIRST DIGIT of the walked address,
+ * or to the underscore when the walk starts on the root chain or is empty. A
+ * digit lock therefore covers its whole subtree — locking 2 refuses a write at
+ * 2.1 — and the root lock guards the underscore and the block's destruction,
+ * nothing else.
+ *
+ * Mirrored here for the acknowledgement only, never to decide authority: the
+ * beach computes the same position and is the one that admits or refuses. It is
+ * the same discipline by which bsp-mcp mirrors the address parser — one dialect
+ * at both ends of the wire (whetstone:1.3).
+ */
+export function lockPositionOf(blockName: string, spindle: string | null | undefined, block: Block | null): string {
+  if (!spindle) return '_';
+  const cleaned = String(spindle).replace(/\*$/, '');
+  if (blockName.startsWith('sed:') || blockName.startsWith('grain:')) {
+    const first = cleaned.split('.')[0];
+    return !first || first === '0' ? '_' : first;
+  }
+  const { digits } = parseSpindle(cleaned, floorDepth(block ?? ({} as Block)));
+  if (!digits.length) return '_';
+  return digits[0] === '0' ? '_' : digits[0];
+}
+
 
 // ── Gray-encryption helpers ──
 
@@ -691,6 +717,7 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     }
   }
 
+
   // Persist content (or seed empty block if locking-only on a new block).
   // saveBlock translates the agent_id internally and forwards to the beach
   // with secret/new_lock in the POST body.
@@ -718,10 +745,22 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     return { content: [{ type: 'text', text: `Write rejected: ${e?.message ?? String(e)}` }] };
   }
 
-  // Lock-only operation acknowledgement.
+  // Lock-only operation acknowledgement. A claim must be OBSERVABLE: the whole
+  // claim-by-lock pattern (a player taking a roster role; the store admitting one
+  // hand) rests on the caller being able to tell that their claim landed, AT WHICH
+  // POSITION. "Lock change forwarded to beach" said neither, so three seats in the
+  // 2026-07-25 group spawn had to probe by rotating a lock to its own value to
+  // discover whether they held a role at all.
   let lockNote = '';
   if (new_lock !== undefined) {
-    lockNote = '\nLock change forwarded to beach.';
+    const pos = lockPositionOf(blockName, spindle, blockToSave as Block);
+    const where = pos === '_' ? 'the underscore' : `position "${pos}"`;
+    const scope = pos === '_'
+      ? 'guarding the underscore and the block\'s destruction — sibling digits stay writable unless separately locked'
+      : 'covering that position and its whole subtree';
+    lockNote = (new_lock === null || new_lock === '')
+      ? `\nLock RELINQUISHED at ${where} of ${blockName} — open again, as if never locked.`
+      : `\nLock SET at ${where} of ${blockName}, ${scope}. This call was ADMITTED, so the claim is yours: a position already held by another passphrase refuses the write outright rather than overwriting it.`;
   }
 
   // Format response.
