@@ -184,6 +184,9 @@ export interface PoolContribution {
   address: string | null;
   ts: string | null;
   face: string | null;
+  /** Position 5 — the handles whose staged voices this beat WOVE. Present only
+   *  on a claimed fold; an ordinary beat consumes nobody and leaves it null. */
+  woven: string | null;
 }
 
 /**
@@ -226,6 +229,7 @@ export function collectContributions(
         address: null,
         ts: null,
         face: null,
+        woven: null,
       });
     } else if (typeof v === 'object' && v !== null) {
       const obj = v as Record<string, any>;
@@ -240,6 +244,7 @@ export function collectContributions(
         address: typeof obj['2'] === 'string' ? obj['2'] : null,
         ts: typeof obj['3'] === 'string' ? obj['3'] : null,
         face: typeof obj['4'] === 'string' ? obj['4'] : null,
+        woven: typeof obj['5'] === 'string' ? obj['5'] : null,
       });
     }
   }
@@ -530,8 +535,25 @@ export async function castAtWorld(
   return out;
 }
 
+/** The handles a fold WOVE, read from position 5 of a contribution (comma-joined).
+ *  Empty for an ordinary beat — only a claimed fold consumes anyone's voice. */
+export function wovenHandles(field5: unknown): string[] {
+  if (typeof field5 !== 'string' || field5.trim() === '') return [];
+  return field5.split(',').map((h) => h.trim()).filter(Boolean);
+}
+
 /** Latest liveness signal per handle at this world: a staged liquid slot, a pool
- *  commit, or a presence heartbeat — max timestamp wins. */
+ *  commit, a voice WOVEN into someone else's fold, or a presence heartbeat — max
+ *  timestamp wins.
+ *
+ *  The woven case is why position 5 is read. A fold CONSUMES the voices it gathers:
+ *  the beach clears the liquid buffer, and the folded player has no commit of
+ *  their own, so a player who acted seconds ago is left with no signal at all and
+ *  renders ABOUT — "hereabouts but NOT at the table" — while sitting at the
+ *  table. Three seats hit this in the 2026-07-25 group spawn, worst at the cold
+ *  open, where a player who has staged but never yet committed is invisible to
+ *  everyone. Being folded is an act of presence; the fold now records whose
+ *  voices it wove, and liveness reads them at the fold's own timestamp. */
 export async function livenessSignals(origin: string, roomName: string | null): Promise<Map<string, number>> {
   const sig = new Map<string, number>();
   const note = (h: string | null, ts: string | null) => {
@@ -547,6 +569,7 @@ export async function livenessSignals(origin: string, roomName: string | null): 
       for (const c of collectContributions(row.block as any, 0).contributions) {
         if (name.startsWith('liquid:') && c.text === '') continue; // withdrawn slot is no signal
         note(c.agent_id, c.ts);
+        for (const woven of wovenHandles(c.woven)) note(woven, c.ts);
       }
     }
   }
@@ -1039,7 +1062,7 @@ export const poolEngageParamsSchema = {
   contribution: z
     .string()
     .optional()
-    .describe("Optional. COMMIT text — deposit a contribution (raw OR an LLM-produced synthesis; the primitive is agnostic) at the next-free digit-path slot of the destination (1, 2, …, 9, 11, …; sunstone:1.64) with shape {_: text, 1: agent_id, 2: '', 3: ISO-ts, 4: face}, then read the envelope. Atomic append (beach-side). Omit for read-only engagement, or use `submit` to stage to liquid without committing."),
+    .describe("Optional. COMMIT text — deposit a contribution (raw OR an LLM-produced synthesis; the primitive is agnostic) at the next-free digit-path slot of the destination (1, 2, …, 9, 11, …; sunstone:1.64) with shape {_: text, 1: agent_id, 2: '', 3: ISO-ts, 4: face, 5: woven}. Position 5 is written by the tool, never by you: on a claimed fold it records the handles whose staged voices the beat wove, so a folded player still reads as present after the buffer clears, then read the envelope. Atomic append (beach-side). Omit for read-only engagement, or use `submit` to stage to liquid without committing."),
   submit: z
     .string()
     .optional()
@@ -1243,6 +1266,28 @@ export async function handlePoolEngage(
       '3': new Date().toISOString(),
     };
     if (face) entry['4'] = face;
+
+    // A CLAIMED FOLD records the voices it wove, at position 5. A fold consumes
+    // what it gathers — the beach clears the liquid buffer — so without this the
+    // folded player is left with no signal anywhere and renders ABOUT while
+    // sitting at the table (the cold-open case is worst: a player who has staged
+    // but never committed is invisible to everyone). Snapshot the buffer here,
+    // immediately before the append; the resolves_seen guard is what makes the
+    // snapshot safe, because a stage arriving after the folder's read is
+    // rejected as WINDOW MOVED rather than silently landing between the two.
+    // Ordinary beats consume nobody and leave 5 unset.
+    if (params.resolves_window) {
+      try {
+        const lrowFold = await loadBlock(pool_url, liquidName);
+        const staged = lrowFold?.block && typeof lrowFold.block === 'object'
+          ? collectContributions(lrowFold.block as Block, 0).contributions
+              .filter((c) => c.text !== '' && c.agent_id)
+              .map((c) => c.agent_id as string)
+          : [];
+        const unique = [...new Set(staged)];
+        if (unique.length) entry['5'] = unique.join(',');
+      } catch { /* best-effort: a fold still lands without its woven record */ }
+    }
 
     const destBlock = destination && destination !== 'pool' ? destination : blockName;
 
