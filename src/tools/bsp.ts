@@ -71,8 +71,8 @@ import {
  * `lockKeyForWrite`): a lock is scoped to the FIRST DIGIT of the walked address,
  * or to the underscore when the walk starts on the root chain or is empty. A
  * digit lock therefore covers its whole subtree — locking 2 refuses a write at
- * 2.1 — and the root lock guards the underscore and the block's destruction,
- * nothing else.
+ * 2.1 — and since lock inheritance (pscale-beach#46) a lock at the root governs
+ * every position that carries no lock of its own.
  *
  * Mirrored here for the acknowledgement only, never to decide authority: the
  * beach computes the same position and is the one that admits or refuses. It is
@@ -756,8 +756,8 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     const pos = lockPositionOf(blockName, spindle, blockToSave as Block);
     const where = pos === '_' ? 'the underscore' : `position "${pos}"`;
     const scope = pos === '_'
-      ? 'guarding the underscore and the block\'s destruction — sibling digits stay writable unless separately locked'
-      : 'covering that position and its whole subtree';
+      ? 'governing the whole block — every position that carries no lock of its own now answers to this one, and a digit locked separately is a delegation to another holder'
+      : 'covering that position and its whole subtree, and overriding any lock at the root for it';
     lockNote = (new_lock === null || new_lock === '')
       ? `\nLock RELINQUISHED at ${where} of ${blockName} — open again, as if never locked.`
       : `\nLock SET at ${where} of ${blockName}, ${scope}. This call was ADMITTED, so the claim is yours: a position already held by another passphrase refuses the write outright rather than overwriting it.`;
