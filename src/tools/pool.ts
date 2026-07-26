@@ -709,8 +709,20 @@ export async function composeCurrent(origin: string, poolName: string, agentId: 
   // only the derived chain crosses — never the hold around it.
   if (spatialName) {
     try {
-      const notesName = `notes:${spatialName.slice('spatial:'.length)}`;
-      const nrow = await loadBlock(origin, notesName);
+      // The HELD register, keeper:<scene>, with notes:<scene> as the legacy
+      // fallback. The rename aligns bubble scale with world scale, where
+      // keeper:<world> is already the held register and the register law
+      // (keeper:urb:1) says held is everything with a WHY in it.
+      //
+      // The name is the ONLY signal a reader has before opening. 'notes' reads
+      // as innocuous, and a Character seat opened it at gal-thistle "before I
+      // knew what it was" and took the whole scenario solution — SEED, TENSION,
+      // TURN — then quarantined it honestly. An open beach cannot refuse that
+      // read, so the name has to carry the warning the block can only give from
+      // the inside.
+      const scene = spatialName.slice('spatial:'.length);
+      const nrow = (await loadBlock(origin, `keeper:${scene}`))
+        ?? (await loadBlock(origin, `notes:${scene}`));
       const placing = nrow?.block && typeof nrow.block === 'object' ? (nrow.block as any)['3'] : null;
       // Block names carry colons (spatial:urb) — the block segment is greedy and
       // the address anchors as the final digit run, so the last ':' splits them.
