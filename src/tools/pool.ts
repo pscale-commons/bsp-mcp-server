@@ -1525,10 +1525,12 @@ export async function handlePoolEngage(
       lines.push(directiveText);
     }
     // THE RHYTHM rides every directive envelope, first engage and pointer alike:
-    // the three moves seats drop when they compress the law away. The fen's
-    // first table never staged and never re-read — every crossing and every
-    // false "hasn't answered" traces to exactly these lines (grit 1.3/1.4/1.8).
-    lines.push('THE RHYTHM (hold these even where the law is compressed): STAGE what touches another before you commit · COMMIT is the act — yours only, never their answer · CATCH — engage once more before you render; absence only from a read fetched after your beat landed (grit 1.8).');
+    // the moves seats drop when they compress the law away. The fen's first
+    // table never staged and never re-read — every crossing and every false
+    // "hasn't answered" traces to exactly these lines (grit 1.3/1.4/1.8). The
+    // stage/commit grammar is David's 2026-07-27 default: the player's own
+    // words decide the verb, so seats stop committing every utterance.
+    lines.push('THE RHYTHM (hold these even where the law is compressed): DEFAULT TO STAGE — a first-person intention ("I…") stages; only the imperative deed or an explicit commit commits · COMMIT is the act — yours only, never their answer · CATCH — engage once more before you render; absence only from a read fetched after your beat landed (grit 1.8; the craft: grit 8).');
     lines.push('');
   } else {
     lines.push('# Purpose');
