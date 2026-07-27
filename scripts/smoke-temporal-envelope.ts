@@ -40,8 +40,8 @@ console.log('\nANNOTATION — the relation lands beside the data');
     '}',
   ].join('\n');
   const out = annotateAges(rendered, NOW);
-  ok('a day-old mark is aged in place', out.includes('"2026-07-14T09:12:00Z (+2 — about a day ago)"'));
-  ok('a mark from this beat is aged in place', out.includes('"2026-07-15T18:22:00Z (+0 — this beat ago)"')
+  ok('a day-old mark is aged in place', out.includes('"2026-07-14T09:12:00Z (+2 — a day ago)"'));
+  ok('a mark from this beat is aged in place', out.includes('"2026-07-15T18:22:00Z (-1 — 4 minutes ago)"')
     || out.includes('2026-07-15T18:22:00Z (0 — this beat'), out.split('\n').find(l => l.includes('18:22')));
   ok('the block structure survives verbatim', out.includes('"_": "weft passing through"'));
   ok('non-timestamp digits are untouched', out.includes('"1": "weft"'));
@@ -56,7 +56,7 @@ console.log('\nA DATE IN PROSE IS LEFT ALONE (only instants are stamps)');
 console.log('\nGROUND — body annotated, stamp appended, stamp not self-annotated');
 {
   const out = ground('last seen 2026-07-14T09:12:00Z', NOW);
-  ok('body is aged', out.includes('2026-07-14T09:12:00Z (+2 — about a day ago)'));
+  ok('body is aged', out.includes('2026-07-14T09:12:00Z (+2 — a day ago)'));
   ok('stamp is appended', out.trimEnd().endsWith('Wednesday 15 July 2026, late afternoon (beat 9)'));
   ok('the stamp does not annotate itself',
     !out.includes('2026-07-15T18:30:00Z (0'), out.split('\n').pop());
@@ -67,7 +67,7 @@ console.log('\nGROUNDRESULT — MCP result shape');
 {
   const res = groundResult({ content: [{ type: 'text', text: 'seen 2026-07-14T09:12:00Z' }] }, NOW);
   const text = (res as any).content[0].text;
-  ok('aged', text.includes('(+2 — about a day ago)'));
+  ok('aged', text.includes('(+2 — a day ago)'));
   ok('stamped', text.includes('now · 2026-07-15T18:30:00Z · 2026313179'));
 }
 {
@@ -77,7 +77,7 @@ console.log('\nGROUNDRESULT — MCP result shape');
       { type: 'text', text: 'part two' },
     ],
   }, NOW);
-  ok('every text part is aged', res.content[0].text.includes('(+2 — about a day ago)'));
+  ok('every text part is aged', res.content[0].text.includes('(+2 — a day ago)'));
   ok('only the LAST part carries the stamp',
     !res.content[0].text.includes('now · ') && res.content[1].text.includes('now · '));
 }

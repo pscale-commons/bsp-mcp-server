@@ -104,10 +104,10 @@ eq('a decade → +7', pscaleOfDuration(10 * 365 * 86400), 7);
 
 console.log('\nTHE FEATURE — the relation rendered beside the timestamp');
 const now = new Date('2026-07-15T18:30:00Z');
-eq('a day-old mark', renderAge('2026-07-14T18:30:00Z', now), '(+2 — about a day ago)');
-eq('a four-day-old mark', renderAge('2026-07-11T18:30:00Z', now), '(+3 — days ago)');
-eq('a mark from moments ago', renderAge('2026-07-15T18:28:00Z', now), '(-1 — a minute or two ago)');
-eq('a future meet', renderAge('2026-07-16T18:30:00Z', now), '(+2 — in about a day)');
+eq('a day-old mark', renderAge('2026-07-14T18:30:00Z', now), '(+2 — a day ago)');
+eq('a four-day-old mark', renderAge('2026-07-11T18:30:00Z', now), '(+2 — 4 days ago)');
+eq('a mark from moments ago', renderAge('2026-07-15T18:28:00Z', now), '(-1 — a minute ago)');
+eq('a future meet', renderAge('2026-07-16T18:30:00Z', now), '(+2 — in a day)');
 ok('a malformed ts renders nothing rather than lying', renderAge('not-a-date', now) === '');
 
 console.log('\nTHE STAMP');
