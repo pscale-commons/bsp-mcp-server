@@ -718,6 +718,27 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   }
 
 
+  // A STRINGIFIED NULL IS A SERIALISATION SLIP, NEVER A PASSPHRASE. The schema
+  // is string|null, and a caller whose serialiser cannot emit bare JSON null
+  // against that union sends the four characters "null" instead — which is not
+  // the relinquish sentinel (the beach tests `=== null || === ''`), so it SETS
+  // a lock whose passphrase is the literal word. The position then reads closed
+  // to its own author, who believes they opened it, and is openable by anyone
+  // who guesses the most guessable secret there is.
+  //
+  // Observed 2026-07-26: an Author seat minting a table reported relinquishing a
+  // probe lock this way and believed the position open; a live probe showed the
+  // lock standing and answering to "null". Not a brick — hash("null") is
+  // provable, unlike the hash("") footgun this replaced — but a silent lock with
+  // a public secret is the worse failure, because nothing surfaces it.
+  //
+  // Refused at the boundary, as a multi-dot address is: the input almost
+  // certainly means relinquish, and guessing which is not this layer's business.
+  if (typeof params.new_lock === 'string' && /^(null|undefined|none|nil)$/i.test(params.new_lock.trim())) {
+    return { content: [{ type: 'text', text:
+      `new_lock was the literal string "${params.new_lock}", which is a serialisation slip rather than a passphrase — it would SET a lock answering to that word, not relinquish. To relinquish, send JSON null (not the string) or an empty string "". To genuinely lock, choose a passphrase that is not a null-word.` }] };
+  }
+
   // Persist content (or seed empty block if locking-only on a new block).
   // saveBlock translates the agent_id internally and forwards to the beach
   // with secret/new_lock in the POST body.
