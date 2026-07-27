@@ -1524,6 +1524,11 @@ export async function handlePoolEngage(
       lines.push("# Operating directive — the room's rules, authored by the designer; READ AND FOLLOW THIS EVERY TURN, do not merely acknowledge it");
       lines.push(directiveText);
     }
+    // THE RHYTHM rides every directive envelope, first engage and pointer alike:
+    // the three moves seats drop when they compress the law away. The fen's
+    // first table never staged and never re-read — every crossing and every
+    // false "hasn't answered" traces to exactly these lines (grit 1.3/1.4/1.8).
+    lines.push('THE RHYTHM (hold these even where the law is compressed): STAGE what touches another before you commit · COMMIT is the act — yours only, never their answer · CATCH — engage once more before you render; absence only from a read fetched after your beat landed (grit 1.8).');
     lines.push('');
   } else {
     lines.push('# Purpose');
