@@ -23,8 +23,50 @@
  */
 
 import { z } from 'zod';
-import { postActionToBeach, isFederatedOwner, loadBlock, DEFAULT_BEACH } from '../db.js';
+import { postActionToBeach, isFederatedOwner, loadBlock, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
 import { pairId, determineSide } from '../locks.js';
+
+// ── Casing guard ──
+
+/**
+ * Role-with-handle prefixes (block-conventions branches 1-3 and 4.9). A handle's
+ * presence at a beach shows up as these blocks carrying its exact spelling.
+ * Deliberately an explicit list rather than a generic `<word>:<rest>` split —
+ * `sed:` names collectives and `grain:` names pair_ids, not handles, and both
+ * would false-positive against an ordinary name.
+ */
+const HANDLE_BLOCK_PREFIXES = ['passport:', 'shell:', 'history:', 'pool:', 'stash:', 'state-of-play:'];
+
+/**
+ * Spellings of `handle` this beach carries that differ from the one given.
+ *
+ * pair_id is sha256 of the two handles sorted and joined — case-sensitive, with
+ * no normalisation — so `ayush` and `Ayush` derive two DIFFERENT grain blocks,
+ * and each party ends up holding a channel the other cannot see. Observed live
+ * 2026-07-25 between happyhedgehog and Ayush: one block half-formed and holding
+ * the real message, the other complete and holding pleasantries, both parties
+ * correctly reporting that the other had gone quiet. Normalising the derivation
+ * would silently rename every grain already standing on every beach, so the
+ * guard sits at the door instead.
+ *
+ * Empty result means proceed: either the given spelling is present, or nothing
+ * by that name is here at all — a genuinely new handle must stay reachable.
+ * Non-empty means the given spelling has no presence and a differently-cased
+ * one does, which is the typo case and the only one worth refusing.
+ */
+export function casingClashes(index: { blocks: string[] } | null, handle: string): string[] {
+  if (!index) return [];
+  const want = handle.toLowerCase();
+  const spellings = new Set<string>();
+  for (const name of index.blocks) {
+    const prefix = HANDLE_BLOCK_PREFIXES.find(p => name.startsWith(p));
+    if (!prefix) continue;
+    const spelling = name.slice(prefix.length);
+    if (spelling.toLowerCase() === want) spellings.add(spelling);
+  }
+  if (spellings.has(handle)) return [];
+  return [...spellings];
+}
 
 // ── Schemas ──
 
@@ -61,6 +103,33 @@ export async function handleGrainReach(params: {
   if (!isFederatedOwner(beach)) {
     return {
       content: [{ type: 'text', text: `agent_id must be an http(s):// URL (got "${beach}"). Pass a federated beach URL or omit to use the default (${DEFAULT_BEACH}).` }],
+    };
+  }
+
+  // Refuse a mis-cased handle BEFORE it derives a second grain block. One index
+  // read covers both handles; a failed read never blocks a reach — a network
+  // blip must not read as a refusal.
+  let index: { blocks: string[] } | null = null;
+  try {
+    index = await loadBeachIndex(beach);
+  } catch {
+    index = null;
+  }
+  for (const [label, given] of [['partner_handle', partner_handle], ['handle', handle]] as const) {
+    const [use, ...also] = casingClashes(index, given);
+    if (!use) continue;
+    const others = also.length ? ` (also present: ${also.map(s => `"${s}"`).join(', ')})` : '';
+    return {
+      content: [{
+        type: 'text',
+        text: `Reach refused — ${label}="${given}" has no presence at ${beach}, but "${use}" does${others}.
+
+pair_id is derived from the two handles exactly as spelled, so reaching "${given}" would create a SEPARATE grain block that "${use}" can never complete: both parties would then hold a channel the other cannot see, each correctly reporting that the other had gone quiet. Nothing has been written.
+
+Re-run with ${label}="${use}".
+
+If the spelling is deliberate and "${given}" is genuinely someone else, give them any presence at this beach first — a passport is enough — and the reach goes through. Background at bsp(agent_id="${beach}", block="ways:grain").`,
+      }],
     };
   }
 
