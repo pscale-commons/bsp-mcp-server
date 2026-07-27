@@ -1,0 +1,37 @@
+# The offline smoke gate — every PR and every push to main runs the whole
+# deterministic suite, so a merge can never again silently break a contract
+# the way the grit /1 bound (#183/#187) and the honest-ages wording (#186)
+# did: both merged red and were found days later by hand. Live suites
+# (*-live, federated) stay manual — they need beaches and secrets; this gate
+# is everything that proves itself from the repo alone.
+name: smoke
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  offline-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci || npm install
+      - name: Build (tsc)
+        run: npm run build
+      - name: Offline smoke suite
+        run: |
+          set -u
+          FAILED=""
+          for s in parser unit floor dots sentinel session wellknown wire-bsp \
+                   read-gate pool-engage networking gray group genus play-split \
+                   grain-address grit-tree temporal temporal-envelope wellformed compile; do
+            echo "── smoke:$s ──"
+            if ! npm run --silent "smoke:$s"; then FAILED="$FAILED $s"; fi
+          done
+          if [ -n "$FAILED" ]; then
+            echo "FAILED suites:$FAILED"
+            exit 1
+          fi
