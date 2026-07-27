@@ -39,6 +39,7 @@ for (const s of SENTINELS) teaching.set(s.name, toPNode(s.json));
 const shell = new Map<string, PNode>();
 shell.set('purpose', toPNode({ _: 'hold the compile demonstration steady', 1: 'prove the bundle unfolds in one call' }));
 shell.set('conditions', toPNode({ _: 'calm; offline fixture; nothing live' }));
+shell.set('passport', toPNode({ _: 'the test shell, outward face', 1: 'a fixture' }));
 shell.set(
   'relationships',
   toPNode({ _: 'who this shell knows', 1: { _: 'the holder — tends and answers for this shell' } }),
@@ -54,6 +55,7 @@ shell.set(
       3: 'conditions',
       4: 'relationships',
       5: { _: 'purpose', 1: 'conditions' },
+      6: 'passport',
     },
   }),
 );
@@ -63,57 +65,81 @@ const blindLoad: Loader = async (name) => shell.get(name) ?? null; // cannot rea
 
 const openCommons = teaching.get('open-commons') as PMap;
 const sovereignty = ((openCommons.get('3') as PMap).get('_') as string) ?? '';
+const lodestone = teaching.get('lodestone') as PMap;
+const whoIAm = ((lodestone.get('1') as PMap).get('_') as string) ?? '';
+const whereIAm = ((lodestone.get('4') as PMap).get('_') as string) ?? '';
+const dims = (r: { completions: { dimension: string }[] }) => r.completions.map((c) => c.dimension).sort().join(',');
 
 console.log('\nDEREFERENCE — the bundle unfolds in one call');
 {
   const r = await compile('reflexive:9', load);
   const w = r.window as PMap;
-  ok('window is a map of the bundle slots', w instanceof Map && w.size === 5);
+  ok('window is a map of the bundle slots', w instanceof Map && w.size === 6);
   ok('teaching block concentrated to skeleton', w.get('1') instanceof Map && (w.get('1') as PMap).has('_'));
   ok('whole block hydrated at slot 2', w.get('2') instanceof Map && (w.get('2') as PMap).has('1'));
   const nested = w.get('5') as PMap;
   ok('nested slot-bundle hydrated, nesting preserved', nested instanceof Map && nested.get('_') instanceof Map && nested.get('1') instanceof Map);
-  ok('dialed refs collected', r.dialed.some((d) => d.ref === 'sunstone:1') && r.dialed.length >= 6);
-  ok('relation carried → no completion', r.completions.length === 0);
+  ok('dialed refs collected', r.dialed.some((d) => d.ref === 'sunstone:1') && r.dialed.length >= 7);
+  ok('a well-authored bundle carries all its dimensions → no completions', r.completions.length === 0);
 }
 
-console.log('\nCOMPLETION — an uncarried dimension arrives beside the window');
+console.log('\nCOMPLETION — uncarried dimensions arrive beside the window');
 {
-  const frame = toPNode({ _: 'an ad-hoc frame with no relation carrier', 1: 'sunstone:1', 2: 'purpose', 3: 'conditions' });
+  const frame = toPNode({ _: 'an ad-hoc frame — situation carried, relation and identity absent', 1: 'sunstone:1', 2: 'purpose', 3: 'conditions' });
   const r = await compile(frame, load);
-  ok('one completion', r.completions.length === 1);
-  const c = r.completions[0];
-  ok('dimension is relation', c?.dimension === 'relation');
-  ok('address is the shallow point', c?.address === 'open-commons:3:0');
-  ok('line scooped live from the surface', typeof c?.line === 'string' && c.line === sovereignty);
-  ok('reason names the failure class', /2026-07-21/.test(c?.reason ?? ''));
+  ok('exactly the absent dimensions complete', dims(r) === 'identity,relation');
+  const rel = r.completions.find((c) => c.dimension === 'relation');
+  const idn = r.completions.find((c) => c.dimension === 'identity');
+  ok('relation: address is the shallow point', rel?.address === 'open-commons:3:0');
+  ok('relation: line scooped live from the surface', typeof rel?.line === 'string' && rel.line === sovereignty);
+  ok('relation: reason names the failure class', /2026-07-21/.test(rel?.reason ?? ''));
+  ok('identity: address is the lodestone stance point', idn?.address === 'lodestone:1:0');
+  ok('identity: line scooped live — the reservoir, never hardcoded', typeof idn?.line === 'string' && idn.line === whoIAm);
+  ok('identity: reason names the failure class', /P3 forensic/.test(idn?.reason ?? ''));
   const footer = renderCompletions(r.completions);
-  ok('footer is visible and self-declaring', footer.includes('completed · relation') && footer.includes('scooped live'));
+  ok('footer is visible and self-declaring for both', footer.includes('completed · relation') && footer.includes('completed · identity') && footer.includes('scooped live'));
 }
 
 console.log('\nBOUNDS — completion never silent, never hardcoded, never forced');
 {
-  const frame = toPNode({ _: 'no relation carrier', 1: 'sunstone:1' });
+  const frame = toPNode({ _: 'no carriers at all', 1: 'sunstone:1' });
   const r1 = await compile(frame, load, { complete: false });
   ok('complete:false → dereference only', r1.completions.length === 0);
   const r2 = await compile(frame, blindLoad);
-  ok('surface unreachable → no completion (no fallback text in code)', r2.completions.length === 0);
-  const r3 = await compile(toPNode({ _: 'carried by prefix', 1: 'sunstone:1', 2: 'grain:abc123' }), load);
-  ok('grain: prefix carries relation', r3.completions.length === 0);
+  ok('surface unreachable → no completions (no fallback text in code)', r2.completions.length === 0);
+  const r3 = await compile(toPNode({ _: 'relation carried by prefix', 1: 'sunstone:1', 2: 'grain:abc123' }), load);
+  ok('grain: prefix carries relation', !r3.completions.some((c) => c.dimension === 'relation'));
   const r4 = await compile(toPNode({ _: 'open-commons dialed elsewhere', 1: 'open-commons:2:0' }), load);
-  ok('open-commons:2 alone does not carry relation', r4.completions.length === 1);
-  ok('registry admits by failure only (one entry today)', COMPLETION_REGISTRY.length === 1);
+  ok('open-commons:2 alone does not carry relation', r4.completions.some((c) => c.dimension === 'relation'));
+  ok('registry admits by failure only (three entries, each with a named failure)', COMPLETION_REGISTRY.length === 3 && COMPLETION_REGISTRY.every((e) => e.admittedBy.length > 40));
   ok('collectRefs skips prose voicings', collectRefs(toPNode({ _: 'a sentence with spaces', 1: 'purpose' })).length === 1);
+}
+
+console.log('\nS·T·I — the instance-level trio (identity and situation from the lodestone; temporal by the now-footer precedent)');
+{
+  const r1 = await compile(toPNode({ _: 'identity absent only', 1: 'relationships', 2: 'conditions' }), load);
+  ok('identity fires alone', dims(r1) === 'identity');
+  const r2 = await compile(toPNode({ _: 'situation absent only', 1: 'relationships', 2: 'passport' }), load);
+  ok('situation fires alone', dims(r2) === 'situation');
+  const s = r2.completions[0];
+  ok('situation: lodestone where-and-when point, scooped live', s?.address === 'lodestone:4:0' && s?.line === whereIAm);
+  ok('situation: reason names the failure class', /P2 forensic/.test(s?.reason ?? ''));
+  const r3 = await compile(toPNode({ _: 'prefix carriers', 1: 'relationships', 2: 'reflexive:1', 3: 'spatial:urb:3' }), load);
+  ok('reflexive: and spatial: prefixes carry identity and situation', r3.completions.length === 0);
+  const r4 = await compile(toPNode({ _: 'the lodestone carries its own dimensions', 1: 'relationships', 2: 'lodestone:1', 3: 'lodestone:4' }), load);
+  ok('lodestone:1 / lodestone:4 dials are carriers themselves', r4.completions.length === 0);
 }
 
 console.log('\nCARRIED — the surrounding envelope counts toward the check, never toward the window');
 {
   const frame = toPNode({ _: 'a scene frame, no relation ref of its own', 1: 'sunstone:1', 2: 'conditions' });
   const r1 = await compile(frame, load, { carried: ['pool:111'] });
-  ok('a carried room pool satisfies relation', r1.completions.length === 0);
+  ok('a carried room pool satisfies relation', !r1.completions.some((c) => c.dimension === 'relation'));
   ok('carried refs are not hydrated into the window', (r1.window as PMap).size === 2);
   const r2 = await compile(frame, load, { carried: ['spatial:demo:111'] });
-  ok('a non-relation carried ref does not satisfy it', r2.completions.length === 1);
+  ok('a non-relation carried ref does not satisfy relation', r2.completions.some((c) => c.dimension === 'relation'));
+  const r3 = await compile(frame, load, { carried: ['pool:111', 'passport:aurel', 'located:aurel'] });
+  ok('the play door shape — pool+passport+located carried → fully quiet', r3.completions.length === 0);
 }
 
 console.log('\nMANIFEST SHAPE — the play door bundle (shell:3 entries as digit-keyed refs)');
@@ -122,7 +148,7 @@ console.log('\nMANIFEST SHAPE — the play door bundle (shell:3 entries as digit
   const r = await compile(bundle, load);
   const w = r.window as PMap;
   ok('every entry unfolds', w.size === 3 && w.get('1') instanceof Map && w.get('2') instanceof Map);
-  ok('relation carried by the manifest itself', r.completions.length === 0);
+  ok('relation and situation carried by the manifest itself; identity completes', dims(r) === 'identity');
 }
 
 console.log('\nSTAR-REFS — the origin-qualified grammar crosses beaches (frames-on-the-spine gap 1)');

@@ -353,31 +353,15 @@ export async function handlePlay(
   //     render as FRAMED APERTURES (gap 2): a spindle arrives as its walk,
   //     ancestor underscores riding above — a whole block renders as JSON only
   //     for law-class delivery.
+  //     NOTE: the compile passes themselves run AFTER the own-context load and
+  //     the position derivation below, so `carried` can name what this envelope
+  //     ACTUALLY delivers — passport (identity) and position (situation) join
+  //     the room pool (relation) only when they truly ride. The S·T·I trio of
+  //     the completion registry stays structurally quiet at this rich door and
+  //     fires only where a window would genuinely compose without them.
   const { load, fetchOrigin } = beachLoaders(resolved);
   const completions: Completion[] = [];
   let frameSection: string[] = [];
-  try {
-    const frameRow = await loadBlock(resolved, `frame:${roomName}`).catch(() => null);
-    if (frameRow && frameRow.block && typeof frameRow.block === 'object') {
-      const r = await compile(toPNode(frameRow.block), load, { carried: [`pool:${roomName}`], fetchOrigin });
-      completions.push(...r.completions);
-      const w = r.window;
-      if (w instanceof Map && w.size > 0) {
-        frameSection = [``, `═══════════ THE FRAME — frame:${roomName}, compiled (${r.dialed.length} address${r.dialed.length === 1 ? '' : 'es'} unfolded; dial any deeper via bsp) ═══════════`];
-        const labelOf = (k: string) => r.dialed.find((d) => {
-          const raw = (frameRow.block as any)[k];
-          const leaf = typeof raw === 'string' ? raw : raw && typeof raw === 'object' ? raw._ : null;
-          return d.ref === leaf;
-        });
-        for (const [k, v] of w as PMap) {
-          const d = labelOf(k);
-          frameSection.push(`── ${k}${d ? ` · ${d.ref}` : ''} ──\n${renderFramedValue(v)}`);
-        }
-      }
-    }
-  } catch (e: any) {
-    frameSection = [``, `(frame:${roomName} exists but did not compile: ${String(e?.message ?? e).slice(0, 120)} — read it directly via bsp)`];
-  }
 
   // 4. Bundle the handle's own context — whichever standard blocks exist. This
   //    is "the content relevant to them" in one call; the kind is inferred, not
@@ -394,6 +378,13 @@ export async function handlePlay(
       if (b === 'shell') shellBlock = row.block;
     }
   }
+  // Position + carried — derived here so every compile pass below declares what
+  // the envelope already delivers (4b's co-presence reuses these).
+  const myPassport = own.find((o) => o.name === `passport:${handle}`);
+  const myLoc = myPassport ? passportLocation(JSON.parse(myPassport.json)) : null;
+  const carried = [`pool:${roomName}`];
+  if (myPassport) carried.push(`passport:${handle}`);
+  if (myLoc) carried.push(`located:${handle}`);
   // Shell-as-context-compiler: the shell's manifest (position 3) is a bundle of
   // bsp-addresses that scoop the handle's full context — now compiled for real
   // (proposal 2026-07-22-well-formed-reading, door 1). Beyond the default set
@@ -418,7 +409,7 @@ export async function handlePlay(
         }
       }
       if (bundle.size > 0) {
-        const r = await compile(bundle, load, { carried: [`pool:${roomName}`], fetchOrigin });
+        const r = await compile(bundle, load, { carried, fetchOrigin });
         completions.push(...r.completions);
         const w = r.window as PMap;
         for (const [k, v] of w) {
@@ -430,6 +421,31 @@ export async function handlePlay(
     } catch (e: any) {
       own.push({ name: `shell:${handle} 3 (manifest)`, json: JSON.stringify(`did not compile: ${String(e?.message ?? e).slice(0, 120)} — read its addresses directly via bsp`) });
     }
+  }
+  // 4a. THE FRAME — the world-authored scene bundle, compiled with the full
+  //     carried set (see 3b's note): a placed frame stays quiet on every
+  //     dimension this envelope already delivers, and completes the rest.
+  try {
+    const frameRow = await loadBlock(resolved, `frame:${roomName}`).catch(() => null);
+    if (frameRow && frameRow.block && typeof frameRow.block === 'object') {
+      const r = await compile(toPNode(frameRow.block), load, { carried, fetchOrigin });
+      completions.push(...r.completions);
+      const w = r.window;
+      if (w instanceof Map && w.size > 0) {
+        frameSection = [``, `═══════════ THE FRAME — frame:${roomName}, compiled (${r.dialed.length} address${r.dialed.length === 1 ? '' : 'es'} unfolded; dial any deeper via bsp) ═══════════`];
+        const labelOf = (k: string) => r.dialed.find((d) => {
+          const raw = (frameRow.block as any)[k];
+          const leaf = typeof raw === 'string' ? raw : raw && typeof raw === 'object' ? raw._ : null;
+          return d.ref === leaf;
+        });
+        for (const [k, v] of w as PMap) {
+          const d = labelOf(k);
+          frameSection.push(`── ${k}${d ? ` · ${d.ref}` : ''} ──\n${renderFramedValue(v)}`);
+        }
+      }
+    }
+  } catch (e: any) {
+    frameSection = [``, `(frame:${roomName} exists but did not compile: ${String(e?.message ?? e).slice(0, 120)} — read it directly via bsp)`];
   }
   // 4c. ORDERS SWEPT — the v1 assembler (proposal 2026-07-25-order-and-collect):
   //     pending bundle-requests at order:<handle> compile here and ride this
@@ -443,7 +459,7 @@ export async function handlePlay(
   try {
     const swept = await orderSweep(handle, load, {
       fetchOrigin,
-      carried: [`pool:${roomName}`],
+      carried,
       save: async (name, slot, content) => {
         const plain = JSON.parse(pyDumps(content));
         await saveBlock(resolved, name, { _: `solids of ${handle} — assembled windows, one per collected order (order-and-collect, grit:7.4)`, [slot]: plain } as any, { spindle: slot });
@@ -459,9 +475,8 @@ export async function handlePlay(
   //     (the town while you are in the kitchen) is at the coarser grain BY CHOICE —
   //     about this place by construction, no signal needed; and when YOU stand
   //     coarse, the finer life beneath you is listed because you are its container
-  //     (and, at a fold, its determiner).
-  const myPassport = own.find((o) => o.name === `passport:${handle}`);
-  const myLoc = myPassport ? passportLocation(JSON.parse(myPassport.json)) : null;
+  //     (and, at a fold, its determiner). Position consts are hoisted above the
+  //     compile passes (step 4) — this section reuses them.
   const cast = myLoc ? await castAtWorld(resolved, handle) : [];
   let here: CastEntry[] = [];
   let about: CastEntry[] = [];
