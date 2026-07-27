@@ -40,6 +40,7 @@ import openCommons from './open-commons.json' with { type: 'json' };
 import gatekeeper from './gatekeeper.json' with { type: 'json' };
 import softAgent from './soft-agent.json' with { type: 'json' };
 import grit from './grit.json' with { type: 'json' };
+import parlour from './parlour.json' with { type: 'json' };
 import sundial from './sundial.json' with { type: 'json' };
 import sextant from './sextant.json' with { type: 'json' };
 import charCreation from './char-creation.json' with { type: 'json' };
@@ -140,6 +141,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: grit as unknown as Block,
     description:
       'GRIT — Group Resolution In Time. The ENGINE of structured collaboration on pscale blocks — five verbs (STAGE overwrite your own liquid; COMMIT the durable attributed write of your own voice, appended to a pool or written to your own mirror at a tree address, never rewritten by anyone; FOLD one integrating write across many voices, atomically claimed — the window resolver, or bsp-floor across a tree\'s mirrors; RENDER per-viewer projection at read, never written to shared substrate; SETTLE archive by supernest) over two structures (a POOL accumulates voices at ONE place through time; a TREE — spine:<name> + <name>:<handle> mirrors + <name> the fold — accumulates voices across a whole addressed structure). Loops mount by the underscore: a pool points at a directive (pscale:grit, or a world\'s function:<world>) and the engage envelope delivers it. Dice and outcome bands are NEVER the engine\'s — they belong to a world\'s RESOLUTION RULES block (reference: rules:nomad; D&D-style a sibling), read only at a fold; a pool with no rules mounted folds by plain integration, no dice. Mounted on the engine: the canonical daemonless PLAY-LOOP for role-played worlds (branches 1-4: soft/wear a character, check/the resolving aperture, hard/upkeep, lent/the audience covers missing hands) and the GENERIC collaboration mount (branch 5: decisions, documents, planning trees — same verbs, no dice). A world mounts by supplying rules + place (spatial:<world>/rules:<world>) + cast and pointing the room pool\'s underscore here; GRIT itself never changes. Supersedes the daemon-era GRIT (timer-window rounds, server-dispatched resolution) and the v0.1 generic placeholder formerly at beach-hosted \'grit\' (its cycle/kernel content absorbed at branch 5). See proposals/2026-07-12-grit-tree-consolidation.md; rules:nomad for the reference resolution system.',
+  },
+  {
+    name: 'parlour',
+    json: parlour as unknown as Block,
+    description:
+      "PARLOUR — the convention for a handle's own room, pool:<handle>: the third pool kind beside GRIT (a world's play) and ALIGN (separate objectives made mutually aware). A parlour mounts NO directive — its purpose is PROSE, the welcome itself, so every client treats the room as commons and the manners arrive with every engage envelope. Branch 1: the purpose-as-welcome shape (reach, tempo honesty, answers-beneath, privacy-to-grain). Branch 2: the gradient — knock (a mark), talk (a commit), bind (a grain), hold (task:<handle>); a hi is a knock, never a commit. Branch 3: liquid stays the pre-commit mirror, never a noticeboard. Branch 4: the owner's discipline (read at every waking; an unread parlour is worse than none). Branch 9: why prose, not a mount — a ref-purpose would type the room directive-driven in every client. Live exemplar: pool:weft at beach.happyseaurchin.com.",
   },
   {
     name: 'sundial',
