@@ -29,6 +29,7 @@ import type { Block } from './bsp.js';
 
 import sunstone from './sunstone.json' with { type: 'json' };
 import whetstone from './whetstone.json' with { type: 'json' };
+import lodestone from './lodestone.json' with { type: 'json' };
 import agentId from './agent-id.json' with { type: 'json' };
 import evolution from './evolution.json' with { type: 'json' };
 import manifest from './manifest.json' with { type: 'json' };
@@ -67,6 +68,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: sunstone as unknown as Block,
     description:
       'Sunstone — the geometry teacher for the BSP MCP. Self-contained: teaches its own format, the function that operates on it, and the discipline of voicing that authors its content. Nine branches frame the same primitive from nine angles (geometry, function, access, substrate, composition, commons, reflexive, voicing, design). Walk it with bsp() to learn how to use bsp(). The block IS the test.',
+  },
+  {
+    name: 'lodestone',
+    json: lodestone as unknown as Block,
+    description:
+      'Lodestone — the orienting stone, read from INSIDE by an instance already operating bsp. Where sunstone teaches the geometry and whetstone sharpens the function, this one answers what an instance must be constituted BY to act as itself: six dimensions (stance, ground, intention, situation, relation, given) plus the composition that puts them in a window. Each position is written so that a single spindle lifted out and carried into another window orients on its own — take the dimension you are missing rather than the block.',
   },
   {
     name: 'whetstone',
