@@ -94,11 +94,24 @@ export interface CompletionRule {
 }
 
 const RELATION_BLOCKS = new Set(['relationships', 'surface', 'task', 'marks', 'liquid', 'pool', 'between']);
+const IDENTITY_BLOCKS = new Set(['passport', 'shell', 'reflexive', 'witnessed', 'knows', 'identity']);
+const SITUATION_BLOCKS = new Set(['located', 'sundial', 'conditions', 'state-of-play']);
 
 /**
  * Admission by failure — an entry earns its place only by a failure that
  * happened (proposals/2026-07-21-current-constitution/01-the-insight.md).
- * TIME is not an entry: it already rides every envelope via temporal.ts.
+ * The registry now carries the instance-level S·T·I trio (David, 2026-07-26)
+ * plus the founding RELATION entry, each drawing its line LIVE from the
+ * lodestone or open-commons — the reservoir the circulation scoops from:
+ *   - TEMPORAL is satisfied by precedent, not by an entry: temporal.ts stamps
+ *     `now` onto every tool envelope already.
+ *   - SITUATION (spatial) — admitted by the P2 forensic (2026-07-03: a seat
+ *     narrated the brewhouse from the common room — a place it never read);
+ *     play's POSITION line is the door-level fix, this generalises it.
+ *   - IDENTITY — admitted by the P3 forensic (2026-07-03: a newborn played a
+ *     scene with no passport — a window composed selfless); the hardest of
+ *     the trio to land (David), made tractable by the compass mechanic: the
+ *     delivered point opens a directory the instance self-selects from.
  * GROUND is not an entry yet: the doors inject it at connect (server
  * instructions) and pscale_play exists because its absence confabulated —
  * if a compile-path failure is demonstrated, it is admitted the same way.
@@ -118,6 +131,35 @@ export const COMPLETION_REGISTRY: CompletionRule[] = [
       'the sovereignty overstep of 2026-07-21 — the rule stood written at open-commons:3 and in a memory note, ' +
       'both external to the window at the moment of the keyed write; present as a current it would have ' +
       'constituted the writer otherwise (the worked proof of the current-constitution series)',
+  },
+  {
+    dimension: 'identity',
+    carries: (name, address) => {
+      if (IDENTITY_BLOCKS.has(name)) return true;
+      for (const p of IDENTITY_BLOCKS) if (name.startsWith(p + ':')) return true;
+      if (name === 'lodestone') return address === null || address.startsWith('1');
+      return false;
+    },
+    shallowPoint: 'lodestone:1:0',
+    admittedBy:
+      'the P3 forensic of 2026-07-03 — a newborn seated into a scene with no passport: the window composed ' +
+      'selfless, and the seat played anyway; present as a current, WHO-I-AM-HERE composes first and everything ' +
+      'else is read through it (lodestone:1 — the depth beneath is the directory the instance chooses from)',
+  },
+  {
+    dimension: 'situation',
+    carries: (name, address) => {
+      if (SITUATION_BLOCKS.has(name)) return true;
+      for (const p of SITUATION_BLOCKS) if (name.startsWith(p + ':')) return true;
+      if (name.startsWith('spatial:') || name.startsWith('temporal:')) return true;
+      if (name === 'lodestone') return address === null || address.startsWith('4');
+      return false;
+    },
+    shallowPoint: 'lodestone:4:0',
+    admittedBy:
+      'the P2 forensic of 2026-07-03 — a seat narrated the brewhouse from the common room, confidently precise ' +
+      'about a place it never read; present as a current, WHERE-AND-WHEN-I-AM at what grain keeps an act from ' +
+      'resting on a stale or unvisited world (lodestone:4)',
   },
 ];
 
