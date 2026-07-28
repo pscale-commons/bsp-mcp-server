@@ -1,68 +1,82 @@
-# The zero-slot summary is read-addressable and not write-addressable — and the two doors disagree
+# The zero-slot summary write — a missing guard at the beach, not a question about the canon
 
 **Date**: 2026-07-28
-**Status**: recorded, unfixed. The convention has been made safe on both doors; the implementation divergence is still open.
+**Status**: RESOLVED at the handler ([pscale-beach#48](https://github.com/pscale-commons/pscale-beach/pull/48)). The convention was right the whole time.
 **Occasioned by**: an audit of every `history:` and `stash:` block at beach.happyseaurchin.com, after "new notes at the next free digit" was found voiced as law in `stash:happyseaurchin`.
+
+> **Correction, same day.** The first version of this document asked which of two implementations was canonical, and put that choice to the maintainer. The framing was the error: the canon had already decided, and bsp-mcp had already implemented it. What existed was a one-sided drift at the beach handler. The record below is rewritten to say so. The original question — "which door is canon on the trailing-zero strip" — should never have been asked; it came from stopping one function short in the trace.
 
 ## What the convention says
 
-`block-conventions:3.5` — the counting-block law shared by history, stash, marks, and pools:
+`block-conventions:3.4`, on the counting block shared by history, stash, marks, and pools:
 
-> the summary is the container's voicing — saying '300' is the human convention for digit 3's semantic at pscale 2, stored as the underscore subnested in digit 3 (trailing-zero canonicalisation makes N0 read exactly there).
+> Zero-carrying numbers are NEVER entries: a zero in an address walks a voicing (N0 reads container N's underscore) or a hidden directory — reserved territory.
 
-That sentence is true of reading. It is not true of writing, and the block did not say so.
+and `3.5`, on where a summary lives:
 
-## What actually happens
+> the summary is the container's voicing … stored as the underscore subnested in digit 3 (trailing-zero canonicalisation makes N0 read exactly there).
 
-`parseSpindle` strips trailing zeros as floor-width padding ([`src/bsp.ts:220`](../src/bsp.ts), and identically at the beach handler). So `10` parses to digits `['1']`, and `readAt` walks to container 1 — whose rendered semantic IS its underscore. Reading works exactly as documented.
+`N0` names the container's **voicing**. That is the law, and it is unambiguous.
 
-`writeAt`'s terminus is an unconditional assignment — `node[lastKey] = value`. The subnest-on-growth guard that preserves a string in the way applies only to *intermediate* keys, never to the last one. So a write at `10` assigns container 1 itself.
+## What bsp-mcp does — the rule, already there
 
-Verified against the real handler on the offline rig (`pscale-beach scripts/local-beach.mjs`), on a block appended past the all-nines boundary:
+`applyWrite`, the tool's point-write path ([`src/bsp-fn.ts:531`](../src/bsp-fn.ts)):
 
+```ts
+if (key in parent && parent[key] !== null && typeof parent[key] === 'object') {
+  parent[key]._ = content;     // container already there → set its voicing
+} else {
+  parent[key] = content;
+}
 ```
-POST {block, spindle:"10", content:"SUMMARY over 01-09"}   →  {"ok":true}
+
+A scalar written at a position that already holds children sets that position's semantic instead of flattening it. This is the mirror of subnest-on-growth, which moves a string **down** into `_` when a position *gains* children — the same principle at the terminus rather than at the intermediates. Every call through the connector has always been safe.
+
+## What the beach did — no guard at all
+
+`writeAt` in the handler protected intermediate nodes with subnest-on-growth and then ended:
+
+```js
+node[lastKey] = value;   // unconditional
 ```
+
+So over raw HTTP, two ordinary acts destroyed data:
+
+**Paying a summary at `N0`** — the container and its nine entries replaced by the summary sentence. Verified on the file-backed rig:
 
 ```jsonc
-// before                          // after
+// before                          // after  POST {spindle:"10", content:"SUMMARY over 01-09"}
 {"1": {"1": "entry number 10"},    {"1": "SUMMARY over 01-09",
- "_": {…01-09…}}                    "_": {…01-09…}}
+ "_": {…01-09…}}                    "_": {…01-09…}}          →  {"ok":true}
 ```
 
-Entry 11 is gone. No error, no `confirm` requirement — the `confirm: true` guard for a clobbering write exists only for whole-*block* replace ([`api/pscale-beach.js:1079`](https://github.com/pscale-commons/pscale-beach)), and there is nothing one level down.
-
-**There is no address that writes a container's underscore.** Every candidate was probed (`1.0`, `100`, `010`, `0.1`, `11.0`): each either walks past the node, lands on a sibling, or replaces the container. The trailing-zero strip makes the position unreachable as a write target by construction.
-
-## The divergence
-
-The same call through bsp-mcp is **not** destructive:
+**Re-voicing the identity of an already-supernested block at `0`**, where the root `_` is the wrapped past rather than a string — the whole past replaced by one sentence:
 
 ```
-bsp(block="probe:weft-zs", spindle="10", content="SUMMARY over 01-09")
-→ {"1": {"1":"e10", "2":"e11", "_":"SUMMARY over 01-09"}}   // children intact
+pre-fix   POST {block:"h", spindle:"0", content:"h — re-voiced identity"}  → {"ok":true}
+          wrapped past: DESTROYED -> 'h — re-voiced identity'
 ```
 
-Verified live at beach.happyseaurchin.com on a throwaway block (since deleted), then confirmed the other way by raw HTTP to the same live beach, which replaced the container.
+The second is the one that mattered in practice: re-voicing a history or stash is exactly what this day's accumulation-law pass did across six live blocks. Those went through bsp-mcp and were safe. The same call from `genus-one/wire.py`, which talks HTTP to the beach directly, would not have been.
 
-The mechanism is an accident inside bsp-mcp: `saveBlockToBeach` applies the write to a local copy, then re-reads that copy at the same spindle and ships the result as `content` ([`src/db.ts:492`](../src/db.ts)). The re-read resolves to the whole container, so bsp-mcp effectively resends the children without meaning to. Right answer, wrong reason — and it is one refactor away from silently becoming the destructive path.
+Worse: after the clobber, the next `append` re-used the destroyed addresses.
 
-This is a split on L1-kernel contract #5 (address parser semantics), which the v2 freeze declares identical at both ends of the wire. Same address, same block, two different positions depending on the door.
+No `confirm` was required for either — that guard exists only for whole-*block* replace, one level up.
 
-## What was done now
+## The fix
 
-`block-conventions:3.5` and `pscale://shell-genome:1.3` now name the act that is correct on **both** doors: pay a summary by writing `N0` with the container **whole** — the new underscore beside its digit children resent — never as a bare string. That is a read-modify-write, so it carries the ordinary staleness risk of any non-atomic write; it is nonetheless the only formulation that is safe everywhere today.
+Port the rule bsp-mcp already had into the handler's terminus. `scripts/smoke-voicing.js` is the regression battery: 13/13 against the fix, 7 failures against the pre-fix handler.
 
-The same wording was applied to the live `history:` and `stash:` underscores weft owns, and sent to the sovereign handles it does not.
+Replacing a container stays possible and stays explicit — send an object.
 
-## What is still open
+## What this cost, and the lesson
 
-1. **Decide which door is right.** The documented canon (`bsp2-star.py`, CLAUDE.md, bsp-test battery 7) says strip trailing zeros — so the beach matches canon and bsp-mcp diverges. But the *convention* wants `N0` to name the voicing, which is what bsp-mcp accidentally delivers. Either the parser stops stripping on the write path, or the convention stops using `N0` as a write address. Both are kernel-class changes: Python first, then TS, then JS, per the port discipline.
+Nobody had hit it. No accumulator on the beach had reached an all-nines boundary *and* had a summary paid by hand, and every identity re-voice so far had gone through the connector. It was found by reading the law and trying to execute it — which is the argument for the audit: **a convention nobody has run is not a convention that works.**
 
-2. **Guard the sub-container clobber regardless.** A write that replaces an object holding digit children with a scalar should require `confirm: true`, exactly as whole-block replace does. Same rule, one level down. This is small, and it converts a silent nine-entry loss into a refusal.
+The second lesson is about the trace, not the substrate. The divergence was real, but "two implementations disagree" is a symptom, and it was reported as though it were a fork in the design. One of them was simply broken against a law both were meant to serve. Before escalating a disagreement between implementations, find the rule — the rule usually exists, and then there is nothing to decide.
 
-3. **The kernel writes raw.** `genus-one/wire.py` talks HTTP to the beach directly, not through bsp-mcp — so a genus-one instance paying a summary takes the destructive path. The genome underscore now names the whole-container act, which is safe on that path; if (1) resolves toward bsp-mcp's behaviour, the kernel needs the same treatment.
+## Left alone deliberately
 
-## Note on how this surfaced
+bsp-mcp's own low-level `writeAt` in `src/bsp.ts` still has replace-semantics at the terminus, and is documented as such. It is a guarded port of `bsp2-star.py`, and its callers are `applyWrite` (which guards above it) and the accumulator (which only ever writes fresh slots). The guard lives at the write **surface** in both stacks — just at different layers. If strict symmetry inside bsp-mcp is wanted, the Python reference goes first, then TS, then JS, per the port discipline.
 
-Nobody has hit it yet: no accumulator on the beach has reached the all-nines boundary *and* had a summary paid by hand. It was found by reading the law and trying to execute it. That is the argument for the audit — a convention nobody has run is not a convention that works.
+Also still open, and genuinely design rather than plumbing: `block-conventions:9.3` says a mark appends past the *largest* present slot, while `nextZeroFreeSlot` fills the *first free* one — divergent only after a tide wipe, where the convention wants the gaps left as gaps.
