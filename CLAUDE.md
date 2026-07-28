@@ -241,6 +241,7 @@ src/
   manifest.json       — The constitution index — references categorised into geometry-and-operation, role-shells, substrate-conventions, and acceptance sub-branches
   progression.json    — Iterative orientation progression (six steps; pscale_invite returns this)
   block-conventions.json — Substrate-wide canonical block-shape catalogue
+  shell-genome.json   — What a handle is MADE OF (the composition companion to block-conventions, which says what the names mean): passport + shell + history + stash, with the underscore each is born carrying, ready to copy. Branch 1 is THE ACCUMULATION LAW that history and stash share verbatim — append never a computed slot, supernest preserving cited addresses, zero-slot summaries paid by writing the container whole. Branch 6 names the genus-one tier (the same shell at 18 blocks, hatched per genome:hatch — genome source in genus-one/genome/) and its gap: no passport.
   gatekeeper.json     — Substrate-wide canonical role-shell for L1→L2 admission (honored convention)
   soft-agent.json     — Substrate-wide canonical role-shell for the user-mediating LLM (sibling of gatekeeper)
   payway.json         — Substrate-wide convention (pay forward to contribute and experience): face-bound ticket gates on `sed:` collectives; alias sentinel name protocol-paywall

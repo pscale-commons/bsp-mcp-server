@@ -51,6 +51,7 @@ import l3Relay from './l3-relay.json' with { type: 'json' };
 import directory from './directory.json' with { type: 'json' };
 import bspTest from './bsp-test.json' with { type: 'json' };
 import wellFormed from './well-formed.json' with { type: 'json' };
+import shellGenome from './shell-genome.json' with { type: 'json' };
 
 export interface SentinelEntry {
   /** bsp() block name; resource URI is `pscale://<name>` unless exposeAsResource is false. */
@@ -215,6 +216,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: wellFormed as unknown as Block,
     description:
       'Well-formed — the AUTHORING validation battery, companion to bsp-test (which verifies the walker that READS a block; this verifies the block being WRITTEN). Two halves told apart by what can decide them. The MECHANICAL half (branch 1) is what the substrate rejects outright — spine keys (only "_" and single digits 1-9) and no JSON-stringified subtrees, both mirroring the beach shape gate (validateShape), plus address validity from the parser (cross-ref bsp-test:6). A program decides it: scripts/lint-block.ts is the readable, runnable twin of the gate, ported so teaching and enforcement cannot drift. The INTERPRETIVE half (branch 2) is what the gate stays silent on by design — the voicing disciplines of sunstone:8 (the heading trap, depth-not-categories, zeroth-person voice, sign-form match) — which no regex decides and a reading LLM must judge, each carrying a worked bad-then-good pair to calibrate. Branch 3 is how to run both passes. Three workflows: author-and-self-check, validate-a-handed-draft, teach. The block passes its own mechanical half — every bad shape is stated in prose, never as literal malformed structure.',
+  },
+  {
+    name: 'shell-genome',
+    json: shellGenome as unknown as Block,
+    description:
+      'Shell-genome — what a handle is made of on any beach, and the underscore each block is born carrying. The composition every inhabitant shares, human or agent: passport (2), shell (3), history (4), stash (5) — the substrate cannot tell a person\'s LLM-kept handle from an LLM\'s own, and neither composition differs. Branch 1 is THE ACCUMULATION LAW, shared verbatim by history and stash, which differ in one thing only: history is written automatically by the acting instance, stash by deliberate choice. The law: entries land by append (server-side atomic allocation), never at a computed slot; supernest at each all-nines boundary preserves every cited address and clears nothing; zero-carrying numbers are summary slots paid by writing the container whole. Branch 6 is the genus-one tier — the same shell grown to eighteen blocks, hatched per genome:hatch at a beach carrying the genome — and names its one honest gap (no passport, so a hatched instance is sovereign and invisible until one is authored). Branch 7 is the act of authoring one from any door. Read before seeding a shell; the underscores here are meant to be copied verbatim.',
   },
 ];
 
