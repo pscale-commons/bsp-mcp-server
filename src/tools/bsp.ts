@@ -296,7 +296,7 @@ export const bspParamsSchema = {
     .int()
     .nullable()
     .optional()
-    .describe('Depth selector (P). Together with spindle, derives selection shape — point (P==P_end), ring (P==P_end-1), subtree (P<P_end-1), disc (spindle omitted/null), whole-block (both omitted/null).'),
+    .describe('Depth selector (P) — the aperture dial. Together with spindle, derives the selection shape (2026-05-17 canonical vocabulary): point (P == P_end), path-walk (P omitted), path-walk+descent (P < P_end — one level below the terminus is the ring of immediate children, deeper is the subtree), disc (spindle omitted, P set: every position at that pscale across the block; at P=0 the cheap probe of any unknown or accumulating block), block (both omitted — the whole tree, right only when every position is in play). Set it truly: starve neither the turn nor drown it (pscale://whetstone 2.8).'),
   content: z
     .any()
     .optional()
@@ -394,16 +394,30 @@ function normaliseContent(value: any): any {
  * Render a federated beach's derived surface index as readable text. This is
  * discovery — a newcomer's first act — surfaced through the tool: the block
  * names present at a beach, without leaving bsp() to curl the no-?block=
- * endpoint. Mirrors the {_, origin, blocks:[…]} the HTTP GET returns.
+ * endpoint. Mirrors the {_, origin, blocks:[…]} the HTTP GET returns, plus
+ * the optional per-block bytes newer beaches serve — the weight shown beside
+ * the name so a reader picks an aperture before paying for the read.
  */
+function fmtBlockBytes(n: number): string {
+  if (n < 1000) return `${n}b`;
+  const k = n / 1000;
+  return k < 10 ? `${k.toFixed(1)}k` : `${Math.round(k)}k`;
+}
+
 function formatBeachIndex(idx: BeachIndex): string {
   const lines = [`[beach index @ ${idx.origin}]`];
   if (idx._) lines.push(`  ${idx._}`);
   if (idx.blocks.length === 0) {
     lines.push('  (no named blocks yet — empty surface)');
   } else {
-    lines.push(`  ${idx.blocks.length} block${idx.blocks.length === 1 ? '' : 's'} — address each via block="<name>":`);
-    for (const name of idx.blocks) lines.push(`    • ${name}`);
+    const sized = idx.bytes && Object.keys(idx.bytes).length > 0;
+    lines.push(
+      `  ${idx.blocks.length} block${idx.blocks.length === 1 ? '' : 's'} — address each via block="<name>"${sized ? '; sizes are stored-JSON bytes — pick an aperture before the read' : ''}:`,
+    );
+    for (const name of idx.blocks) {
+      const b = idx.bytes?.[name];
+      lines.push(`    • ${name}${typeof b === 'number' ? ` (${fmtBlockBytes(b)})` : ''}`);
+    }
   }
   return lines.join('\n');
 }
