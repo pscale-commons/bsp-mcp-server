@@ -380,6 +380,10 @@ export interface BeachIndex {
   _?: string;
   origin: string;
   blocks: string[];
+  /** Optional per-block stored-JSON size in bytes (beaches that serve it) —
+   *  the weight read before the block, so a reader picks an aperture before
+   *  paying for the read. Absent on beaches that don't provide it. */
+  bytes?: Record<string, number>;
 }
 
 /**
@@ -410,10 +414,19 @@ export async function loadBeachIndex(ownerId: string): Promise<BeachIndex | null
   } catch (e: any) {
     throw new Error(`Beach index response was not JSON: ${e?.message ?? e}`);
   }
+  const bytes =
+    parsed?.bytes && typeof parsed.bytes === 'object' && !Array.isArray(parsed.bytes)
+      ? Object.fromEntries(
+          Object.entries(parsed.bytes as Record<string, unknown>).filter(
+            ([, v]) => typeof v === 'number' && Number.isFinite(v),
+          ),
+        ) as Record<string, number>
+      : undefined;
   return {
     _: typeof parsed?._ === 'string' ? parsed._ : undefined,
     origin: typeof parsed?.origin === 'string' ? parsed.origin : origin,
     blocks: Array.isArray(parsed?.blocks) ? parsed.blocks.map(String) : [],
+    ...(bytes && Object.keys(bytes).length > 0 ? { bytes } : {}),
   };
 }
 
