@@ -187,6 +187,10 @@ export interface PoolContribution {
   /** Position 5 — the handles whose staged voices this beat WOVE. Present only
    *  on a claimed fold; an ordinary beat consumes nobody and leaves it null. */
   woven: string | null;
+  /** Field 6 — address-of-attention on a LIQUID slot (whose field 2 carries the
+   *  arrival stamp). Pool contributions carry their address at field 2
+   *  (`address`); this is null for them. */
+  at: string | null;
 }
 
 /**
@@ -195,9 +199,23 @@ export interface PoolContribution {
  * that, more_available is true and the caller pages by passing the last
  * returned position as the next since_position.
  */
+/** Canonical digit-walk of an address-of-attention value: strips the single
+ *  decimal point (or comma-walk separators) and returns the bare digit run, or
+ *  null when the value is not an address at all (empty, prose, a block name, a
+ *  timestamp). The digit run is the floor-free invariant — "3.1" and "31" at
+ *  floor 1 walk the same digits — so prefix comparison works across notations
+ *  within one family. Multi-dot is not an address (sunstone:1.5). */
+export function digitsOfAddress(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  if (!/^[0-9]+(?:[.,][0-9]+)?$/.test(s)) return null;
+  return s.replace(/[.,]/g, '');
+}
+
 export function collectContributions(
   block: Block,
   sincePosition: number,
+  atDigits?: string,
 ): { contributions: PoolContribution[]; more_available: boolean } {
   const out: PoolContribution[] = [];
   let more = false;
@@ -215,14 +233,10 @@ export function collectContributions(
     // At depth 2+, only objects count; strings are tag-field collisions.
     if (slot.length > 1 && (typeof v !== 'object' || Array.isArray(v))) continue;
 
-    if (out.length >= READ_PAGE_LIMIT) {
-      more = true;
-      break;
-    }
-
+    let entry: PoolContribution;
     if (typeof v === 'string') {
       // Legacy plain-string contribution (no fields).
-      out.push({
+      entry = {
         position,
         text: v,
         agent_id: null,
@@ -230,14 +244,15 @@ export function collectContributions(
         ts: null,
         face: null,
         woven: null,
-      });
+        at: null,
+      };
     } else if (typeof v === 'object' && v !== null) {
       const obj = v as Record<string, any>;
       const txt = typeof obj._ === 'string' ? obj._ : '';
       // Skip tombstones (empty underscore at depth 1) — block-conventions:9.4
       // says wipes delete keys, but legacy tombstones may still appear.
       if (slot.length === 1 && txt === '') continue;
-      out.push({
+      entry = {
         position,
         text: txt,
         agent_id: typeof obj['1'] === 'string' ? obj['1'] : null,
@@ -245,8 +260,26 @@ export function collectContributions(
         ts: typeof obj['3'] === 'string' ? obj['3'] : null,
         face: typeof obj['4'] === 'string' ? obj['4'] : null,
         woven: typeof obj['5'] === 'string' ? obj['5'] : null,
-      });
+        at: typeof obj['6'] === 'string' ? obj['6'] : null,
+      };
+    } else {
+      continue;
     }
+
+    // A located view (block-conventions:4.52): only entries whose stored
+    // address-of-attention (field 2) sits at-or-under the filter — compared as
+    // bare digit-walks so "3.1" and "31" meet. Unlocated entries (and legacy
+    // junk in field 2) are excluded; a skip does not count toward the page cap.
+    if (atDigits !== undefined) {
+      const d = digitsOfAddress(entry.address);
+      if (!d || !d.startsWith(atDigits)) continue;
+    }
+
+    if (out.length >= READ_PAGE_LIMIT) {
+      more = true;
+      break;
+    }
+    out.push(entry);
   }
   return { contributions: out, more_available: more };
 }
@@ -931,6 +964,7 @@ async function stageLiquid(
   text: string,
   face: string | undefined,
   secret: string | undefined,
+  at?: string,
 ): Promise<string> {
   const lrow = await loadBlock(url, liquidName);
   const exists = !!lrow && typeof lrow.block === 'object' && lrow.block !== null;
@@ -945,6 +979,10 @@ async function stageLiquid(
   const nowIso = new Date().toISOString();
   const slotObj: Record<string, any> = { _: text, '1': agentId, '2': nowIso, '3': nowIso };
   if (face) slotObj['4'] = face;
+  // Field 6 — address-of-attention (block-conventions:4.51): the coordinate this
+  // intention attends to within the structure the pool gathers around. Field 2
+  // here is the arrival stamp; the address rides 6 (5 stays the fold's woven).
+  if (at) slotObj['6'] = at;
 
   const liveCount = exists
     ? collectContributions(lrow!.block, 0).contributions.filter(c => c.text !== '').length
@@ -1075,10 +1113,14 @@ export const poolEngageParamsSchema = {
   pool_name: z
     .string()
     .describe('Name of the pool without the "pool:" prefix. The block at the beach is "pool:<pool_name>". E.g. pool_name="visiting" targets block "pool:visiting".'),
+  at: z
+    .string()
+    .optional()
+    .describe("Optional address-of-attention — the coordinate this engage is located at, within the structure the pool gathers around (a tree's spine address: '3', '3.1', a temporal '2026315100'; digits, at most one decimal point, comma-walk accepted, multi-dot rejected). ON COMMIT: stamped into field 2 of the contribution (block-conventions:4.22) so the voice is located against the spine. ON SUBMIT: stamped into field 6 of your liquid slot (4.51 — field 2 there is the arrival stamp). ON READ: narrows the returned slice AND the liquid mirror to entries at-or-under the address (prefix on the digit-walk, 4.52); unlocated entries are excluded from a located view. A located read is a VIEW — keep a separate since_position marker per view, or entries outside it are skipped past. This is the pool↔tree correlation: one pool serves every node of a tree; 'what is live at stage 3' is a single engage with at='3'."),
   contribution: z
     .string()
     .optional()
-    .describe("Optional. COMMIT text — deposit a contribution (raw OR an LLM-produced synthesis; the primitive is agnostic) at the next-free digit-path slot of the destination (1, 2, …, 9, 11, …; sunstone:1.64) with shape {_: text, 1: agent_id, 2: '', 3: ISO-ts, 4: face, 5: woven}. Position 5 is written by the tool, never by you: on a claimed fold it records the handles whose staged voices the beat wove, so a folded player still reads as present after the buffer clears, then read the envelope. Atomic append (beach-side). Omit for read-only engagement, or use `submit` to stage to liquid without committing."),
+    .describe("Optional. COMMIT text — deposit a contribution (raw OR an LLM-produced synthesis; the primitive is agnostic) at the next-free digit-path slot of the destination (1, 2, …, 9, 11, …; sunstone:1.64) with shape {_: text, 1: agent_id, 2: at-address ('' unlocated), 3: ISO-ts, 4: face, 5: woven}. Position 5 is written by the tool, never by you: on a claimed fold it records the handles whose staged voices the beat wove, so a folded player still reads as present after the buffer clears, then read the envelope. Atomic append (beach-side). Omit for read-only engagement, or use `submit` to stage to liquid without committing."),
   submit: z
     .string()
     .optional()
@@ -1122,6 +1164,7 @@ export type PoolEngageParams = {
   agent_id: string;
   pool_url: string;
   pool_name: string;
+  at?: string;
   contribution?: string;
   submit?: string;
   destination?: string;
@@ -1151,6 +1194,23 @@ export async function handlePoolEngage(
   const withLiquid =
     submit !== undefined ||
     (params.with_liquid !== undefined ? params.with_liquid === true : true);
+
+  // Address-of-attention — validated BEFORE any write lands (a malformed
+  // address must never enter the record). The compared form is the bare
+  // digit-walk; the single decimal (or a comma-walk) is accepted and stripped.
+  let atDigits: string | undefined;
+  if (params.at !== undefined) {
+    const d = digitsOfAddress(params.at);
+    if (!d) {
+      return {
+        content: [{
+          type: 'text',
+          text: `at="${params.at}" is not a pscale address — digits with at most one decimal point (or a comma-walk): "3", "3.1", "2026315100". Multi-dot never (sunstone:1.5).`,
+        }],
+      };
+    }
+    atDigits = d;
+  }
 
   if (!isFederatedOwner(pool_url)) {
     return {
@@ -1256,7 +1316,7 @@ export async function handlePoolEngage(
   let submittedSlot: string | null = null;
   if (submit !== undefined && !(isRpgPool && !embodied)) {
     try {
-      submittedSlot = await stageLiquid(pool_url, liquidName, agent_id, submit, face, secret);
+      submittedSlot = await stageLiquid(pool_url, liquidName, agent_id, submit, face, secret, params.at);
     } catch (e: any) {
       return { content: [{ type: 'text', text: `Liquid submit rejected by beach: ${e?.message ?? String(e)}` }] };
     }
@@ -1279,7 +1339,11 @@ export async function handlePoolEngage(
     const entry: Record<string, any> = {
       _: contribution,
       '1': agent_id,
-      '2': '',
+      // Field 2 — address-of-attention (block-conventions:4.22): the coordinate
+      // this voice is located at within the structure the pool gathers around
+      // (a tree's spine address). '' when the engage is unlocated, exactly as
+      // every commit was before at= existed.
+      '2': params.at ?? '',
       '3': new Date().toISOString(),
     };
     if (face) entry['4'] = face;
@@ -1448,7 +1512,7 @@ export async function handlePoolEngage(
   // inline (the read is the beach's — no extra tool call for the caller).
   const directiveText = isDirectiveRef(purpose) ? await resolveDirective(pool_url, purpose) : null;
   const { hint: synthesisHint, source: hintSource } = extractSynthesisHint(row.block);
-  const { contributions, more_available } = collectContributions(row.block, sincePosition);
+  const { contributions, more_available } = collectContributions(row.block, sincePosition, atDigits);
 
   const markerNew = contributions.length > 0
     ? contributions[contributions.length - 1].position
@@ -1463,6 +1527,14 @@ export async function handlePoolEngage(
     if (lrow && typeof lrow.block === 'object' && lrow.block !== null) {
       liquidBlock = lrow.block;
       liquidSlots = collectContributions(lrow.block, 0).contributions;
+      // A located view narrows the mirror by the slot's OWN address-of-attention
+      // (field 6, block-conventions:4.52) — liquid's field 2 is the arrival stamp.
+      if (atDigits !== undefined) {
+        liquidSlots = liquidSlots.filter((s) => {
+          const d = digitsOfAddress(s.at);
+          return d !== null && d.startsWith(atDigits);
+        });
+      }
     }
   }
 
@@ -1570,9 +1642,9 @@ export async function handlePoolEngage(
     // "0 authors" — a solo stager could never verify their own intention).
     // What was just written is known without asking the wire: render it.
     if (submit && submit.trim() !== '' && submittedSlot !== null && !standing.some((s) => s.agent_id === agent_id)) {
-      standing.push({ position: parseInt(submittedSlot, 10) || 0, agent_id, text: submit, ts: null, address: null } as PoolContribution);
+      standing.push({ position: parseInt(submittedSlot, 10) || 0, agent_id, text: submit, ts: null, address: null, face: null, woven: null, at: params.at ?? null } as PoolContribution);
     }
-    lines.push(`# Liquid — pending intentions, not yet determined (${standing.length} ${standing.length === 1 ? 'author' : 'authors'}; STAGE yours first — the fold gathers only what is staged)`);
+    lines.push(`# Liquid — pending intentions${params.at !== undefined ? ` at ${params.at}` : ''}, not yet determined (${standing.length} ${standing.length === 1 ? 'author' : 'authors'}; STAGE yours first — the fold gathers only what is staged)`);
     if (standing.length === 0) {
       lines.push('(no pending intentions)');
     } else {
@@ -1585,7 +1657,8 @@ export async function handlePoolEngage(
         // does timestamp forensics in a lobby.
         const arrived = s.address && /^\d{4}-\d{2}-\d{2}T/.test(s.address) ? s.address : s.ts;
         const revised = s.ts && arrived !== s.ts ? `, revised ${s.ts}` : '';
-        lines.push(`- ${who}${mine} (arrived ${arrived ?? '?'}${revised}): ${s.text || '(empty)'}`);
+        const locatedAt = s.at ? ` @ ${s.at}` : '';
+        lines.push(`- ${who}${mine} (arrived ${arrived ?? '?'}${revised})${locatedAt}: ${s.text || '(empty)'}`);
       }
       // The window's open-stamp rides WITH the window, not behind the dice gate
       // (NHITL round 4: the fold law says "the open-stamp the envelope hands
@@ -1636,7 +1709,14 @@ export async function handlePoolEngage(
   // a non-dice directive pool exists: gate on the mounted rules block declaring
   // dice, not on the directive's mere presence.
   const liveForDice = liquidSlots.filter((s) => s.text !== '' && s.agent_id);
-  if (withLiquid && isRpgPool && liveForDice.length > 0) {
+  // Dice by DECLARATION (2026-07-29 — the refinement the 2026-07-12 note named):
+  // an operator whose delivered text states "no dice" gets none — grit:5 (the
+  // generic mount), function:align and function:audit all carry the phrase as
+  // law. The play loop (pscale:grit/1 — root + branch 1) does not, so minted
+  // tables keep their dice; smoke:pool-engage pins that measurement. A tree's
+  // pool mounts its operator as a bare ref and must not grow RPG machinery.
+  const noDiceDeclared = directiveText !== null && /\bno dice\b/i.test(directiveText);
+  if (withLiquid && isRpgPool && !noDiceDeclared && liveForDice.length > 0) {
     const perActor = windowDicePerAuthor(blockName, liquidBlock, liveForDice);
     lines.push('# Window dice (for the resolver — exploding-d10 luck PER ACTOR, rules:nomad:2)');
     for (const d of perActor) {
@@ -1646,7 +1726,8 @@ export async function handlePoolEngage(
     // (The window's open-stamp rides with the liquid mirror above — one emission.)
     lines.push('');
   }
-  lines.push(`# Contributions since position ${sincePosition} (count: ${contributions.length}${more_available ? ', more available' : ''})`);
+  const atView = params.at !== undefined ? ` at ${params.at} (located view — unlocated entries excluded; keep a marker per view)` : '';
+  lines.push(`# Contributions since position ${sincePosition}${atView} (count: ${contributions.length}${more_available ? ', more available' : ''})`);
   // Verbatim-voices discipline (portal invariant, proposal 2026-07-12 §3): on a
   // plain pool the mediating LLM tends to compress the stream into a summary,
   // which hides what people actually said. Directive pools skip this — their
@@ -1662,7 +1743,8 @@ export async function handlePoolEngage(
       const who = c.agent_id ?? '(anon)';
       const when = c.ts ?? '';
       const faceTag = c.face ? ` [${c.face}]` : '';
-      lines.push(`## slot ${c.position} — ${who}${faceTag} ${when}`);
+      const located = digitsOfAddress(c.address) !== null ? ` @ ${c.address}` : '';
+      lines.push(`## slot ${c.position} — ${who}${faceTag} ${when}${located}`);
       lines.push(c.text || '(empty)');
       lines.push('');
     }

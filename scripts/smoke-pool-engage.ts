@@ -277,8 +277,11 @@ console.log('\n=== splitCast wired from pool.ts (one source of truth) ===');
   assert(about.length === 2, 'stale or no signal is ABOUT');
 }
 
+// (No exit here — an unconditional process.exit at this point silently killed
+// every section below it; found 2026-07-29 when the located-engagement tests
+// never printed. The single exit lives at the end of the file.)
 console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);
-process.exit(fail > 0 ? 1 : 0);
+if (fail > 0) process.exit(1);
 
 // ── Returning-author trace (2026-07-20) ──
 import { hasAuthorTrace } from '../src/tools/pool.js';
@@ -311,4 +314,58 @@ console.log('\n=== movableAddress — what a player copies must walk where it sa
   assert(!/\[1\] /.test(ways) && !/\[12\] /.test(ways), 'no short forms escape');
 }
 console.log(`\n=== summary (movable) ===\n  pass: ${pass}\n  fail: ${fail}`);
+
+// ── Located engagement — at= writes/filters the address-of-attention (2026-07-29) ──
+import { digitsOfAddress } from '../src/tools/pool.js';
+import { readFileSync } from 'node:fs';
+
+console.log('\n=== digitsOfAddress — one decimal, comma-walk, junk rejected ===');
+{
+  assert(digitsOfAddress('3') === '3', 'bare digit passes');
+  assert(digitsOfAddress('3.1') === '31', 'single decimal strips to the digit-walk');
+  assert(digitsOfAddress('3,1') === '31', 'comma-walk strips identically');
+  assert(digitsOfAddress('2026315100') === '2026315100', 'full-width temporal address passes');
+  assert(digitsOfAddress('3.1.2') === null, 'multi-dot rejected (sunstone:1.5)');
+  assert(digitsOfAddress('pool:beach-venture') === null, 'a block name is not an address');
+  assert(digitsOfAddress('2026-07-29T09:00:00Z') === null, 'a timestamp is not an address');
+  assert(digitsOfAddress('') === null, 'empty is unlocated');
+}
+
+console.log('\n=== collectContributions — located view (block-conventions:4.52) ===');
+{
+  const located: Block = {
+    _: 'tree pool',
+    '1': { _: 'about stage 3', '1': 'alice', '2': '3', '3': 't1' },
+    '2': { _: 'about stage 3.1', '1': 'bob', '2': '3.1', '3': 't2' },
+    '3': { _: 'unlocated chat', '1': 'carol', '2': '', '3': 't3' },
+    '4': { _: 'about stage 4', '1': 'dan', '2': '4', '3': 't4' },
+    '5': { _: 'legacy junk in field 2', '1': 'eve', '2': 'pool:x', '3': 't5' },
+  } as any;
+  const all = collectContributions(located, 0);
+  assert(all.contributions.length === 5, 'unfiltered read returns every slot');
+  assert(all.contributions[0].at === null, 'pool entries carry no field 6');
+  const at3 = collectContributions(located, 0, '3');
+  assert(at3.contributions.length === 2, "at '3' returns the stage-3 subtree only (unlocated + junk excluded)");
+  assert(at3.contributions.map((c) => c.position).join(',') === '1,2', "notation-cross: stored '3.1' meets filter '3'");
+  const at31 = collectContributions(located, 0, '31');
+  assert(at31.contributions.length === 1 && at31.contributions[0].agent_id === 'bob', "filter '3.1' (digit-walk '31') narrows to the sub-stage");
+  const at9 = collectContributions(located, 0, '9');
+  assert(at9.contributions.length === 0, 'an unvoiced address returns silence, not an error');
+}
+
+console.log('\n=== dice by declaration — the measured invariant (grit, 2026-07-29) ===');
+{
+  // The gate: a directive whose DELIVERED text declares "no dice" suppresses
+  // the window-dice section; the play loop (pscale:grit/1 — root + branch 1)
+  // does not carry the phrase, so minted tables keep their dice. Pin the
+  // measurement: if a grit edit moves the phrase into root or branch 1, this
+  // fails loudly and the gate must be rethought before it ships.
+  const grit = JSON.parse(readFileSync(new URL('../src/grit.json', import.meta.url), 'utf8'));
+  const flat = (n: any): string =>
+    typeof n === 'string' ? n : n && typeof n === 'object' ? Object.values(n).map(flat).join(' ') : '';
+  assert(!/\bno dice\b/i.test(flat(grit['_']) + ' ' + flat(grit['1'])), 'grit root + branch 1 (the play mount) declare no suppression — dice preserved');
+  assert(/\bno dice\b/i.test(flat(grit['5'])), 'grit:5 (the generic mount) declares "no dice" — trees fold clean');
+}
+
+console.log(`\n=== summary (located engagement) ===\n  pass: ${pass}\n  fail: ${fail}`);
 process.exit(fail > 0 ? 1 : 0);
