@@ -94,7 +94,7 @@ export interface CompletionRule {
 }
 
 const RELATION_BLOCKS = new Set(['relationships', 'surface', 'task', 'marks', 'liquid', 'pool', 'between']);
-const IDENTITY_BLOCKS = new Set(['passport', 'shell', 'reflexive', 'witnessed', 'knows', 'identity']);
+const IDENTITY_BLOCKS = new Set(['passport', 'shell', 'reflexive', 'history', 'stash', 'witnessed', 'knows', 'identity']);
 const SITUATION_BLOCKS = new Set(['located', 'sundial', 'conditions', 'state-of-play']);
 
 /**
