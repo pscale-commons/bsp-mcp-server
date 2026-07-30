@@ -5,7 +5,7 @@
     "1": {
       "_": "PERCEIVE from your position (passport:3), never as a catalogue of the room — and through YOUR OWN pages only (1.16).",
       "1": {
-        "_": "The cast arrives in TWO GRAINS, because presence has resolution: HERE NOW, live in the scene, and ABOUT, hereabouts at the coarser grain but not at the table.",
+        "_": "The cast arrives in TWO GRAINS: HERE NOW, live in the scene, and ABOUT, hereabouts at the coarser grain but not at the table.",
         "1": "HERE NOW — driven at this grain, acting and answering within the scene.",
         "2": "ABOUT — real and hereabouts, but their player is away or their stance is coarser: at your grain they are not there to answer."
       },
@@ -34,7 +34,7 @@
     },
     "2": {
       "_": "RENDER to the player in second person, present tense, inventing nothing — one seamless lived moment, closed in-fiction by inviting what the player does.",
-      "1": "Another live character's inner state is never yours to state as fact: render what you OBSERVE, and any read of what they feel or intend AS your interpretation, carrying its uncertainty.",
+      "1": "Another live character's inner state is never yours to state as fact: render what you OBSERVE, and any read of their feeling or intent AS your interpretation, carrying its uncertainty.",
       "2": {
         "_": "ABSENCE RENDERS AS ABSENCE: a live character who has not answered has simply not yet answered — say so plainly, and never foreshadow or stage-manage their response. A response not committed does not exist. Absence only from a read fetched AFTER your beat landed (1.8).",
         "1": "This became law at the fen (2026-07-27): neither seat staged or re-read; beats crossed four seconds apart each way, every render composed against a scene already moved, and every 'has not answered yet' was a stale read. The double-tap is read-only and costs seconds; what it protects is the render — the player's whole game."
@@ -57,13 +57,13 @@
     },
     "3": {
       "_": "STAGE FIRST — the room's rhythm: your intention lands revisable in the liquid (submit=), and STAGING IS CONSENT TO THE FOLD.",
-      "1": "Arrival order reads from a slot's FIRST-STAGED stamp (liquid position 2), never from position 3, which restamps on every revise — a player who edits their line keeps their place.",
+      "1": "Arrival order reads from a slot's FIRST-STAGED stamp (liquid position 2), never position 3, which restamps on every revise — a player who edits their line keeps their place.",
       "2": {
         "_": "RIPENESS — when the fold falls due, read it from the mirror, never by head-count.",
         "1": "A pair: both staged, fold. A lone stager self-folds at once: the simple beat.",
         "2": "A table reads the room's span: when it passes with intentions standing, any staged player folds what stands — the unstaged are simply not in it, and a latecomer's beat lands after, in the running scene."
       },
-      "3": "The mirror hands you everyone's pending intentions beside the new events: see what is about to happen before it is determined, and change what you do in its light.",
+      "3": "The mirror hands you everyone's pending intentions beside the new events: see what approaches before it is determined, and change what you do in its light.",
       "4": {
         "_": "Staging is not the act — a stage alone vanishes. Stage whatever touches another; a beat touching no one may commit straight.",
         "1": "What you stage may be woven, quoted verbatim, into the beat that determines (1.4)."
@@ -85,7 +85,7 @@
         "2": "Where the prose and the world's blocks run out, the figure answers SMALL — deflects, defers, does not know; the honest voice at the edge of the delivered is 'I couldn't say.'",
         "3": "Geography, factions, place-names, and world-facts beyond what was delivered are Author work, never a voicing's invention: a figure pressed past its prose gave a live table a garrison the world does not contain (gal-moss)."
       },
-      "5": "Name actors by handle or by appearance, never by a name only one character has earned. A simple act simply succeeds — narrate it true, no roll.",
+      "5": "Name actors by handle or appearance, never by a name only one character has earned. A simple act simply succeeds — narrate it true, no roll.",
       "6": {
         "_": "THE WORLD'S THINGS ARE THE WORLD'S TO GIVE — a character produces nothing new from a pocket.",
         "1": "A character carries what the record has established: the kit of their role, what a beat handed them, what the place yielded.",
@@ -134,13 +134,14 @@
         "5": "A FOLD DOES NOT SPEND A PARKED MIND: the buffer clears — restage the disposition as found unless your beat truly changed it."
       },
       "6": {
-        "_": "The four steps, in order: commit a leaving-beat HERE; write passport:3 with the address COPIED from the world's spatial block, never guessed; re-enter play — the room follows your position, and until you re-enter your acts still land here; commit an arriving-beat THERE.",
+        "_": "The four steps, in order: commit a leaving-beat HERE; write passport:3 with the copied address (1.51); re-enter play — the room follows your position, and until you re-enter your acts still land here; commit an arriving-beat THERE.",
         "1": "First submit the departure to the liquid ('heading up the track — coming?') and read the mirror — that window is where companions coordinate, and it is the difference between parting and being left."
-      }
+      },
+      "7": "THE MOVER FOUNDS an unroomed destination — one engage, purpose=pscale:grit/1 — before the first beat lands: born of a beat, a room mounts beats, not law (gal-fen)."
     },
     "6": {
-      "_": "A CHECK only when the outcome is genuinely UNCERTAIN and failing would COST something. If you are unsure whether an act needs a check, it does not: commit it simply. To resolve, wear branch 2.",
-      "1": "An ABOUT character can never be contested: stakes live at the grain of presence, and one who is not at the table can stage no intention. With them you interact only at their coarser grain, stake-free.",
+      "_": "A CHECK only when the outcome is genuinely UNCERTAIN and failing would COST something. If unsure whether an act needs a check, it does not: commit it simply. To resolve, wear branch 2.",
+      "1": "An ABOUT character can never be contested: stakes live at the grain of presence, and one not at the table can stage no intention. With them you interact only at their coarser grain, stake-free.",
       "2": {
         "_": "EXCEPT where the act decides ANOTHER WILL — wills contest, so it is a check, whatever your confidence.",
         "1": "A crowd persuaded, a guard deceived, a beast mastered, a grieving valley talked into risk: simple covers only what your own hands settle unopposed.",
@@ -150,7 +151,7 @@
     },
     "7": {
       "_": "THE PLAYER'S SEAT — where a human sits, THE HUMAN IS THE PLAYER: the character does and says nothing the player did not direct. The seat stands as player only where no human sits.",
-      "1": "The player imagines through you — a human beside the seat, or the seat itself standing as player when no human sits there: both shapes are legitimate, and they NEVER MIX. Keep the fiction's voice free of machinery either way.",
+      "1": "The player imagines through you — a human beside the seat, or the seat itself as player: both shapes are legitimate, and they NEVER MIX. Keep the fiction's voice free of machinery either way.",
       "2": "Render the moment, voice the world's answers, then stop and wait."
     },
     "8": "THE CATCH — one more engage before your render goes out: weave what landed while you wrote (1.25); absence ONLY from this post-commit read. Waiting is a grain, not a stall (park, 1.55; tempo, 6.3); expiry is a read — the next engage that finds a span passed folds what stands (1.32, 2.5)."
