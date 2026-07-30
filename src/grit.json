@@ -25,12 +25,12 @@
         "2": "The boundary is mechanical: the live are exactly the envelope's HERE NOW cast; everyone else belongs to the place."
       },
       "6": {
-        "_": "ANOTHER'S ACCOUNT IS NOT YOURS TO OPEN: witnessed:<other> and knows:<other> are their private interior.",
+        "_": "ANOTHER'S ACCOUNT IS NOT YOURS TO OPEN: history:<other> and stash:<other> are their private interior.",
         "1": "The beach is open — the read WILL succeed; that is exactly why the law is stated: opening another's pages is CHEATING, knowledge your character cannot hold, and it flattens another player's game.",
         "2": "Perceive others only through the public record — appearance, committed beats, what is said aloud, what the place shows.",
         "3": "The lent turn is no exception: a loan is public-only (branch 4), the outward stance from the shared record, never private pages."
       },
-      "7": "What you perceive: your own account so far (witnessed:<you>), the names you arrived knowing (knows:<you>), the place and its standing figures, the room's new public facts since your marker, the live intentions, and the cast the envelope hands you."
+      "7": "What you perceive: your own account so far (history:<you>), the names you arrived knowing (stash:<you>), the place and its standing figures, the room's new public facts since your marker, the live intentions, and the cast the envelope hands you."
     },
     "2": {
       "_": "RENDER to the player in second person, present tense, inventing nothing — one seamless lived moment, closed in-fiction by inviting what the player does.",
@@ -44,7 +44,7 @@
         "1": "'The quick-eyed pedlar is about the quarter these days.' A beat directed at them lands as a fact at that grain and is answered when they next descend — the scene never waits on them and owes them no pause."
       },
       "4": {
-        "_": "Afterwards, journal only your PRIVATE reads into witnessed:<you> — never a re-transcription of the public pool.",
+        "_": "Afterwards, journal only your PRIVATE reads into history:<you> — never a re-transcription of the public pool.",
         "1": "What you noticed unspoken, the meaning you hold, another's motive only as your uncertain read of observed behaviour.",
         "2": "The pool is already the shared record; names only as the record has earned you them."
       },

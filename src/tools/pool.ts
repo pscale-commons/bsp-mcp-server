@@ -735,7 +735,8 @@ export function renderWays(spatial: Block, hereAddr: string): string | null {
 }
 
 /** Compile the situated current for a room engage: the place at the room's address,
- *  the engager's own tail (witnessed recent + knows), and the co-present cast at
+ *  the engager's own tail (recent history + stash; legacy witnessed/knows read
+ *  as the fallback), and the co-present cast at
  *  grain. Every part degrades gracefully to absence — an observer with no blocks
  *  still receives the place and the cast; a world with no spatial block yields
  *  cast alone; a non-room pool yields null and the envelope is unchanged. */
@@ -828,17 +829,32 @@ export async function composeCurrent(origin: string, poolName: string, agentId: 
     } catch { /* best-effort: an unplaced bubble floats as before */ }
   }
 
-  const wrow = await loadBlock(origin, `witnessed:${agentId}`);
+  // The journal organ: history:<handle> — the shell-genome convergence (one
+  // composition for every handle class) — with witnessed:<handle> as the
+  // legacy name characters born before it still carry. Same shape as the
+  // keeper:/notes: fallback above; the label names the block actually read.
+  let accountName = `history:${agentId}`;
+  let wrow = await loadBlock(origin, accountName);
+  if (!wrow?.block || typeof wrow.block !== 'object') {
+    accountName = `witnessed:${agentId}`;
+    wrow = await loadBlock(origin, accountName);
+  }
   if (wrow?.block && typeof wrow.block === 'object') {
     const all = collectContributions(wrow.block as Block, 0).contributions;
     const tail = all.slice(-3);
     if (tail.length) {
-      const head = `# Your account — witnessed:${agentId}, last ${tail.length} of ${all.length} (private; journal by APPEND, never a slot write)`;
+      const head = `# Your account — ${accountName}, last ${tail.length} of ${all.length} (private; journal by APPEND, never a slot write)`;
       parts.push([head, ...tail.map((c) => `[${c.position}] ${c.text}`)].join('\n'));
     }
   }
 
-  const krow = await loadBlock(origin, `knows:${agentId}`);
+  // The curated knowledge: stash:<handle>, with knows:<handle> as the legacy name.
+  let knowsName = `stash:${agentId}`;
+  let krow = await loadBlock(origin, knowsName);
+  if (!krow?.block || typeof krow.block !== 'object') {
+    knowsName = `knows:${agentId}`;
+    krow = await loadBlock(origin, knowsName);
+  }
   if (krow?.block && typeof krow.block === 'object') {
     const k = krow.block as any;
     const lines: string[] = [];
@@ -850,7 +866,7 @@ export async function composeCurrent(origin: string, poolName: string, agentId: 
       const t = typeof v === 'string' ? v : floorUnderscore(v as Block);
       if (t) lines.push(`(${d}) ${t}`);
     }
-    if (lines.length) parts.push(`# You know — knows:${agentId}\n${lines.join('\n')}`);
+    if (lines.length) parts.push(`# You know — ${knowsName}\n${lines.join('\n')}`);
   }
 
   const cast = await castAtWorld(origin, agentId);
