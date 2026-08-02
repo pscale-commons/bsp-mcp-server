@@ -28,7 +28,7 @@
  */
 import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
-import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore, renderPosition, beachIndex, passportLocation, castAtWorld, livenessSignals, splitCast, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
+import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
 // Re-exported so existing importers (smoke-play-split) keep one source of truth.
 export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
@@ -336,14 +336,31 @@ export async function handlePlay(
         // full pscale address ("3200" the town, "111.1" the hearth) reaches its
         // place exactly as the parser defines it — dots, padding and all
         // (proposal 2026-07-15-pscale-of-agency G1).
-        const spatialName = index.find((b) => b.startsWith('spatial:'));
-        const srow = spatialName ? await loadBlock(resolved, spatialName) : null;
+        // THE PLACE MAY LIVE ELSEWHERE — reference, not copy (world-genome:1.2). A
+        // table holding its own spatial copy is read locally and nothing changes:
+        // the frozen-copy path (1.3) is untouched, and every existing world takes it.
+        // A table holding NO spatial at all — characters and pools and nothing else,
+        // which is what the reference model makes a table — resolves its place from
+        // the SCENARIO its location star-ref names. That is what lets a group play
+        // shared canon without forking nine blocks by hand, and why a Character
+        // cannot pollute canon: the place is never on a surface they can write to.
+        // Purely additive; a local spatial always wins.
+        const locRef = myPassport?.block ? passportLocationRef(myPassport.block) : null;
+        let spatialName = index.find((b) => b.startsWith('spatial:'));
+        let placeOrigin = resolved;
+        if (!spatialName && locRef?.origin && locRef.origin !== resolved) {
+          placeOrigin = locRef.origin;
+          spatialName = (await beachIndex(placeOrigin).catch(() => [] as string[]))
+            .find((b) => b.startsWith('spatial:'));
+        }
+        const srow = spatialName ? await loadBlock(placeOrigin, spatialName) : null;
         let place: any = null;
         try {
           place = srow?.block ? readAt(srow.block as any, locAddr) : null;
         } catch { place = null; /* parser-rejected address reads as no-place */ }
         if (place == null) {
-          return { content: [{ type: 'text', text: `Your position ${locAddr} names no place in ${spatialName ?? 'the world'} — there is no there there. Rewrite passport:3 with an address COPIED from the spatial block, then re-enter.` }] };
+          const where = placeOrigin === resolved ? 'the world' : `the scenario at ${placeOrigin}`;
+          return { content: [{ type: 'text', text: `Your position ${locAddr} names no place in ${spatialName ?? where} — there is no there there. Rewrite passport:3 with an address COPIED from the spatial block, then re-enter.` }] };
         }
         if (digitRooms.length === 0 && namedRooms.length === 1 && isLocationAddress(locAddr) && pscaleOf(locAddr) === 0) {
           // Single-named-room world (thornwood-style): that room IS the place's —

@@ -30,8 +30,14 @@ const CASES: { label: string; world: string; handle: string; expect: Route }[] =
     expect: 'canon-signage',
   },
   {
-    label: 'PLAYED world — the-reaper, has spatial + pools',
+    label: 'CANON scenario — the-reaper, upgraded 2026-08-02',
     world: 'https://beach.happyseaurchin.com/w/the-reaper',
+    handle: 'Ayush',
+    expect: 'canon-signage',
+  },
+  {
+    label: 'TABLE — the-reaper-ayush, characters + pools + its own spatial',
+    world: 'https://beach.happyseaurchin.com/w/the-reaper-ayush',
     handle: 'Ayush',
     expect: 'normal-entry',
   },

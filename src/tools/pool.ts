@@ -516,6 +516,26 @@ export function passportLocation(passportBlock: any): string | null {
   return m ? m[1] : null;
 }
 
+/** The same location ref read WHOLE — the origin it names as well as the address.
+ *  passportLocation() keeps only the address, which is exactly right for a table
+ *  holding its own spatial copy. The reference model (world-genome:1.2) needs the
+ *  origin too: a table that holds nothing but characters and pools resolves its PLACE
+ *  from the scenario the star-ref points at, so a group plays shared canon without
+ *  forking it and with no way to write to it. Origin is null for a bare, same-beach
+ *  ref — the overwhelmingly common case, and the one that changes nothing. */
+export function passportLocationRef(
+  passportBlock: any,
+): { origin: string | null; addr: string } | null {
+  const p3 = passportBlock?.['3'];
+  if (typeof p3 !== 'string') return null;
+  // Star-ref: *:<origin>:spatial:<world>:<addr> — the origin carries its own colons
+  // (scheme, port), so the non-greedy run stops at the one literal ':spatial:'.
+  const starred = p3.match(/\*:(https?:\/\/\S+?):spatial:[\w-]+:(\d+(?:\.\d+)?)/);
+  if (starred) return { origin: starred[1].replace(/\/+$/, ''), addr: starred[2] };
+  const addr = passportLocation(passportBlock);
+  return addr ? { origin: null, addr } : null;
+}
+
 /** A name-free observable appearance from a passport's position 3 (the posture before
  *  the location ref), so a co-present character is perceived without leaking the name
  *  they have not yet earned. */
