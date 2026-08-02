@@ -52,6 +52,7 @@ import directory from './directory.json' with { type: 'json' };
 import bspTest from './bsp-test.json' with { type: 'json' };
 import wellFormed from './well-formed.json' with { type: 'json' };
 import shellGenome from './shell-genome.json' with { type: 'json' };
+import worldGenome from './world-genome.json' with { type: 'json' };
 
 export interface SentinelEntry {
   /** bsp() block name; resource URI is `pscale://<name>` unless exposeAsResource is false. */
@@ -222,6 +223,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: shellGenome as unknown as Block,
     description:
       'Shell-genome — what a handle is made of on any beach, and the underscore each block is born carrying. The composition every inhabitant shares, human or agent: passport (2), shell (3), history (4), stash (5) — the substrate cannot tell a person\'s LLM-kept handle from an LLM\'s own, and neither composition differs. Branch 1 is THE ACCUMULATION LAW, shared verbatim by history and stash, which differ in one thing only: history is written automatically by the acting instance, stash by deliberate choice. The law: entries land by append (server-side atomic allocation), never at a computed slot; supernest at each all-nines boundary preserves every cited address and clears nothing; zero-carrying numbers are summary slots paid by writing the container whole. Branch 6 is the genus-one tier — the same shell grown to eighteen blocks, hatched per genome:hatch at a beach carrying the genome — and names its one honest gap (no passport, so a hatched instance is sovereign and invisible until one is authored). Branch 7 is the act of authoring one from any door. Read before seeding a shell; the underscores here are meant to be copied verbatim.',
+  },
+  {
+    name: 'world-genome',
+    json: worldGenome as unknown as Block,
+    description:
+      'World-genome — what a PLACE is made of on any beach, and the underscore each block is born carrying. The composition companion to shell-genome: that one says what an inhabitant is made of, this one says what the world they inhabit is made of, and the two meet at a character\'s location star-ref. Ten blocks in two halves — the DEFINITION authored once and read-only in play (public registers spatial/temporal/identity at 2, the law rules:<world> + rules:nomad at 3, the door frame-spec/roster/char-creation/lighthouse at 4, the held register keeper:<world> at 5) and the OPENING SAVE at 6 (the arrival pool and its liquid, both opening empty, the only blocks play writes to). Branch 1 is THE SCENARIO·TABLE LAW, the load-bearing one: canon is authored and never played, a group plays at its own table, replay is a fresh table name, and a million groups play one scenario concurrently because play-state is per-table. It carries the demonstrated failure (a scenario played in place inherits its own ending — the-reaper, July 2026), the reference-not-copy model that makes a Character unable to pollute canon, the frozen-copy exception, and the Author/Character role split at entry. Branch 7 is the authoring walk in the order that makes each step decidable from the last. Read before authoring a world; this is what the doorway hands anyone who arrives at an empty one.',
   },
 ];
 

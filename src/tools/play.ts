@@ -28,7 +28,7 @@
  */
 import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
-import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore, renderPosition, beachIndex, passportLocation, castAtWorld, livenessSignals, splitCast, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
+import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
 // Re-exported so existing importers (smoke-play-split) keep one source of truth.
 export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
@@ -88,10 +88,20 @@ function subdomainOrigin(world: string): string {
 }
 
 /** Look a bare world-name up in the `worlds` directory at the default beach. Each
- *  entry is a string '<name> → <route>'; a route beginning '/' is a path on the
- *  default beach ('/w/brackenfoot'), anything else is a host or full URL. Read
- *  fresh, operator-curated (named canonical worlds only — ephemeral tables are not
- *  listed). No worlds block, no matching row → null, and the caller falls back. */
+ *  entry is an arrow-separated row led by '<name> → <route>'; a route beginning '/'
+ *  is a path on the default beach ('/w/brackenfoot'), anything else is a host or
+ *  full URL. Read fresh, operator-curated (named canonical worlds only — ephemeral
+ *  tables are not listed). No worlds block, no matching row → null, and the caller
+ *  falls back.
+ *
+ *  THE ROUTE IS FIELD TWO, never "the rest of the line". The register is a curated
+ *  block an operator edits by hand, and it grows fields: on 2026-08-01 every row
+ *  gained a third ('… → surface'), which the old rest-of-line read swallowed into
+ *  the route and turned into an unusable URL. Every bare world-name on the beach —
+ *  brackenfoot, earth, urb, the-reaper — then fell through to the sub-domain
+ *  fallback and landed the player on the apex commons, where an invited friend was
+ *  offered the commons gate and a character on it. Taking field two leaves the row
+ *  free to carry whatever else the operator wants to say about a world. */
 async function lookupWorldRoute(name: string): Promise<string | null> {
   const base = DEFAULT_BEACH.replace(/\/+$/, '');
   const row = await loadBlock(base, 'worlds').catch(() => null);
@@ -102,8 +112,8 @@ async function lookupWorldRoute(name: string): Promise<string | null> {
     if (k === '_') continue;
     const entry = w[k];
     if (typeof entry !== 'string' || !entry.includes('→')) continue;
-    const [n, ...rest] = entry.split('→');
-    const route = rest.join('→').trim();
+    const [n, field2] = entry.split('→');
+    const route = (field2 ?? '').trim();
     if (n.trim().toLowerCase() !== want || !route) continue;
     if (/^https?:\/\//i.test(route)) return route.replace(/\/+$/, '');
     if (route.startsWith('/')) return base + route.replace(/\/+$/, '');
@@ -179,6 +189,45 @@ async function canonSignage(origin: string, world: string, handle: string): Prom
   return out.join('\n');
 }
 
+/** An UNAUTHORED world — the doorway's other half. Branch 1b below makes a PERSON; this
+ *  makes a PLACE, and a surface with no place is exactly where the character passage was
+ *  being handed to someone whose actual job was Author. The demonstrated case is
+ *  the-reaper (July 2026): a player minted a world, was handed the GATE, and improvised
+ *  the Author's work from nothing — two of the ten blocks, no rules so nothing could
+ *  fail, no sign so nobody could fork it, and both characters written onto canon.
+ *
+ *  The predicate is EMPTINESS, never incompleteness. A TABLE under the reference model
+ *  legitimately holds no definition blocks at all (its place is a star-ref into canon),
+ *  and the apex commons holds pools and passports but no spatial: both must fall
+ *  through, so the test is that nothing whatever is here — nowhere to be, nobody
+ *  present, nothing staged. Authored in pscale:world-genome, never hardcoded; a beach
+ *  hosting its own `world-genome` overrides it, as char-creation does. */
+async function unauthoredWorld(origin: string, world: string, handle: string): Promise<string | null> {
+  const blocks = await beachIndex(origin).catch(() => [] as string[]);
+  const inhabited = blocks.some(
+    (b) => b.startsWith('spatial:') || b.startsWith('pool:') || b.startsWith('passport:'),
+  );
+  if (inhabited) return null;
+  const genome =
+    (await resolveDirective(origin, 'world-genome')) ??
+    (await resolveDirective(origin, 'pscale:world-genome'));
+  if (!genome) return null;
+  const out: string[] = [];
+  out.push(`# ${world} is EMPTY — there is nowhere here for ${handle} to stand`);
+  out.push(`World beach: ${origin}  ·  no blocks of any kind exist at this surface.`);
+  out.push('');
+  out.push(
+    `You have reached a world before anyone authored it, so the work in front of you is AUTHOR work, not Character work — you are making a PLACE, and only once it exists can anyone be a person in it. Do not improvise this from inside a character: a seat that authors and plays in one breath writes its character onto the canon it is reading, which is the one mistake this door exists to prevent. Wear the Author face, finish, and only then walk in as someone.`,
+  );
+  out.push('');
+  out.push(
+    `THE COMPOSITION follows — what a world is made of, the underscore each block is born carrying, and the walk in the order that makes each step decidable from the last (branch 7). Read branch 1 first whatever else you skip: it is why a scenario is never played on the surface it is authored on. When the ten blocks are written, RE-ENTER with pscale_play(world="${origin}", handle="${handle}") — and expect to be sent straight back out to a table, because by then you will have authored the sign that says so.`,
+  );
+  out.push('');
+  out.push(genome);
+  return out.join('\n');
+}
+
 export const playParamsSchema = {
   world: z
     .string()
@@ -219,6 +268,14 @@ export async function handlePlay(
   //     DOORWAY did not point at it. One envelope read of a block the author owns.
   const canon = await canonSignage(resolved, world, handle);
   if (canon) return { content: [{ type: 'text', text: canon }] };
+
+  // 1a-bis. AUTHOR BEFORE CHARACTER: an empty surface needs a PLACE made, not a
+  //     person. Must sit above 1b — a fresh handle at an empty world satisfies the
+  //     fresh probe too, and char-creation falls back to the sentinel, so the
+  //     character gate was being handed to every would-be author (the-reaper,
+  //     2026-07-23). Emptiness only; tables and the apex fall through (see helper).
+  const unauthored = await unauthoredWorld(resolved, world, handle);
+  if (unauthored) return { content: [{ type: 'text', text: unauthored }] };
 
   // 1b. GENESIS-FIRST: a handle with no blocks cannot be handed a room it is
   //     not in. Detect fresh BEFORE room resolution — a multi-room world's
@@ -289,14 +346,31 @@ export async function handlePlay(
         // full pscale address ("3200" the town, "111.1" the hearth) reaches its
         // place exactly as the parser defines it — dots, padding and all
         // (proposal 2026-07-15-pscale-of-agency G1).
-        const spatialName = index.find((b) => b.startsWith('spatial:'));
-        const srow = spatialName ? await loadBlock(resolved, spatialName) : null;
+        // THE PLACE MAY LIVE ELSEWHERE — reference, not copy (world-genome:1.2). A
+        // table holding its own spatial copy is read locally and nothing changes:
+        // the frozen-copy path (1.3) is untouched, and every existing world takes it.
+        // A table holding NO spatial at all — characters and pools and nothing else,
+        // which is what the reference model makes a table — resolves its place from
+        // the SCENARIO its location star-ref names. That is what lets a group play
+        // shared canon without forking nine blocks by hand, and why a Character
+        // cannot pollute canon: the place is never on a surface they can write to.
+        // Purely additive; a local spatial always wins.
+        const locRef = myPassport?.block ? passportLocationRef(myPassport.block) : null;
+        let spatialName = index.find((b) => b.startsWith('spatial:'));
+        let placeOrigin = resolved;
+        if (!spatialName && locRef?.origin && locRef.origin !== resolved) {
+          placeOrigin = locRef.origin;
+          spatialName = (await beachIndex(placeOrigin).catch(() => [] as string[]))
+            .find((b) => b.startsWith('spatial:'));
+        }
+        const srow = spatialName ? await loadBlock(placeOrigin, spatialName) : null;
         let place: any = null;
         try {
           place = srow?.block ? readAt(srow.block as any, locAddr) : null;
         } catch { place = null; /* parser-rejected address reads as no-place */ }
         if (place == null) {
-          return { content: [{ type: 'text', text: `Your position ${locAddr} names no place in ${spatialName ?? 'the world'} — there is no there there. Rewrite passport:3 with an address COPIED from the spatial block, then re-enter.` }] };
+          const where = placeOrigin === resolved ? 'the world' : `the scenario at ${placeOrigin}`;
+          return { content: [{ type: 'text', text: `Your position ${locAddr} names no place in ${spatialName ?? where} — there is no there there. Rewrite passport:3 with an address COPIED from the spatial block, then re-enter.` }] };
         }
         if (digitRooms.length === 0 && namedRooms.length === 1 && isLocationAddress(locAddr) && pscaleOf(locAddr) === 0) {
           // Single-named-room world (thornwood-style): that room IS the place's —
