@@ -187,10 +187,33 @@ export interface PoolContribution {
   /** Position 5 — the handles whose staged voices this beat WOVE. Present only
    *  on a claimed fold; an ordinary beat consumes nobody and leaves it null. */
   woven: string | null;
-  /** Field 6 — address-of-attention on a LIQUID slot (whose field 2 carries the
-   *  arrival stamp). Pool contributions carry their address at field 2
-   *  (`address`); this is null for them. */
-  at: string | null;
+  /** Field 6 — the FIRST-STAGED arrival stamp of a LIQUID slot: written once at
+   *  slot creation and never moved by a revise, so arrival order and the
+   *  stage-vs-claim guard both read it. Liquid's one field beyond the five the
+   *  accumulator family shares (block-conventions:4.51); null on a pool
+   *  contribution, which appends rather than overwrites and needs no second
+   *  stamp. Legacy slots carry it at 2 — `arrivalOf` resolves either. */
+  arrival: string | null;
+}
+
+/** An ISO-8601 stamp, told apart from a pscale address by shape alone. The
+ *  discriminator must not be Date.parse: a temporal spine address like "2026"
+ *  parses as a perfectly good year, and would be read as a timestamp. A stamp
+ *  carries dashes and a T; an address is a bare digit run. */
+const ISO_STAMP_RE = /^\d{4}-\d{2}-\d{2}T/;
+
+/** The slot's FIRST-STAGED arrival stamp (block-conventions:4.51). Field 6 since
+ *  the 2026-08-02 settlement; a slot staged between 2026-07-15 and it carries the
+ *  stamp at 2 instead, and one from before either has only last-touched at 3.
+ *  Reading all three in that order lets old and new slots share one buffer while
+ *  it turns over — no sweep is owed, because a restage rewrites the slot whole. */
+export function arrivalOf(slot: Record<string, unknown> | null | undefined): string | null {
+  if (!slot || typeof slot !== 'object') return null;
+  for (const field of ['6', '2', '3']) {
+    const v = slot[field];
+    if (typeof v === 'string' && ISO_STAMP_RE.test(v)) return v;
+  }
+  return null;
 }
 
 /**
@@ -244,7 +267,7 @@ export function collectContributions(
         ts: null,
         face: null,
         woven: null,
-        at: null,
+        arrival: null,
       };
     } else if (typeof v === 'object' && v !== null) {
       const obj = v as Record<string, any>;
@@ -256,11 +279,14 @@ export function collectContributions(
         position,
         text: txt,
         agent_id: typeof obj['1'] === 'string' ? obj['1'] : null,
-        address: typeof obj['2'] === 'string' ? obj['2'] : null,
+        // Field 2 is where across the whole family. A liquid slot staged while
+        // the 2026-07-15 shape stood carries an arrival stamp here instead; it
+        // is not an address, so it reads as unlocated rather than as junk.
+        address: typeof obj['2'] === 'string' && !ISO_STAMP_RE.test(obj['2']) ? obj['2'] : null,
         ts: typeof obj['3'] === 'string' ? obj['3'] : null,
         face: typeof obj['4'] === 'string' ? obj['4'] : null,
         woven: typeof obj['5'] === 'string' ? obj['5'] : null,
-        at: typeof obj['6'] === 'string' ? obj['6'] : null,
+        arrival: arrivalOf(obj),
       };
     } else {
       continue;
@@ -1010,15 +1036,15 @@ async function stageLiquid(
   // creation, never moved by a revise) · 3 last-touched (restamped every write).
   // NHITL round 2 §2a: the first-walker rule read 3 and a player who revised their
   // line lost their place in the queue — "a player should not be doing timestamp
-  // forensics in a lobby." Arrival order reads 2; legacy slots without 2 fall back
-  // to 3 at render.
+  // forensics in a lobby." Arrival order reads 6 via arrivalOf, which falls back
+  // through the legacy stamp at 2 to last-touched at 3.
   const nowIso = new Date().toISOString();
-  const slotObj: Record<string, any> = { _: text, '1': agentId, '2': nowIso, '3': nowIso };
+  // The five shared fields sit where the whole accumulator family keeps them —
+  // 1 who, 2 where, 3 when, 4 face, 5 woven (block-conventions:4.51). Liquid's
+  // one extra, the immutable arrival stamp it needs because it overwrites where
+  // marks and pools append, takes 6 rather than displacing the address at 2.
+  const slotObj: Record<string, any> = { _: text, '1': agentId, '2': at ?? '', '3': nowIso, '6': nowIso };
   if (face) slotObj['4'] = face;
-  // Field 6 — address-of-attention (block-conventions:4.51): the coordinate this
-  // intention attends to within the structure the pool gathers around. Field 2
-  // here is the arrival stamp; the address rides 6 (5 stays the fold's woven).
-  if (at) slotObj['6'] = at;
 
   const liveCount = exists
     ? collectContributions(lrow!.block, 0).contributions.filter(c => c.text !== '').length
@@ -1042,14 +1068,16 @@ async function stageLiquid(
   // Window already live (or a withdraw): surgical — only this author's slot
   // changes; peers' slots and the stamp at the underscore stay fixed for the
   // window's whole life. A REVISE preserves the slot's first-staged stamp
-  // (position 2): arrival never moves; only 3 restamps.
+  // (position 6): arrival never moves; only 3 restamps. A slot first staged
+  // under the older shape has its stamp at 2, so arrivalOf carries it over to 6
+  // on this write — the revise is what migrates it, and nothing else has to.
   const lblock: Block = JSON.parse(JSON.stringify(lrow!.block));
   const existingSlot = findAuthorSlot(lblock, agentId);
   const mySlot = existingSlot ?? findNextSlot(lblock);
   if (existingSlot) {
     const prior = readAt(lblock, existingSlot) as Record<string, any> | null;
-    const firstStaged = prior && typeof prior === 'object' && typeof prior['2'] === 'string' && prior['2'] !== '' ? prior['2'] : null;
-    if (firstStaged) slotObj['2'] = firstStaged;
+    const firstStaged = arrivalOf(prior as Record<string, unknown> | null);
+    if (firstStaged) slotObj['6'] = firstStaged;
   }
   writeAt(lblock, mySlot, slotObj);
   await saveBlock(url, liquidName, lblock, { spindle: mySlot, pscale_attention: -1, secret });
@@ -1152,7 +1180,7 @@ export const poolEngageParamsSchema = {
   at: z
     .string()
     .optional()
-    .describe("Optional address-of-attention — the coordinate this engage is located at, within the structure the pool gathers around (a tree's spine address: '3', '3.1', a temporal '2026315100'; digits, at most one decimal point, comma-walk accepted, multi-dot rejected). ON COMMIT: stamped into field 2 of the contribution (block-conventions:4.22) so the voice is located against the spine. ON SUBMIT: stamped into field 6 of your liquid slot (4.51 — field 2 there is the arrival stamp). ON READ: narrows the returned slice AND the liquid mirror to entries at-or-under the address (prefix on the digit-walk, 4.52); unlocated entries are excluded from a located view. A located read is a VIEW — keep a separate since_position marker per view, or entries outside it are skipped past. This is the pool↔tree correlation: one pool serves every node of a tree; 'what is live at stage 3' is a single engage with at='3'."),
+    .describe("Optional address-of-attention — the coordinate this engage is located at, within the structure the pool gathers around (a tree's spine address: '3', '3.1', a temporal '2026315100'; digits, at most one decimal point, comma-walk accepted, multi-dot rejected). ON COMMIT: stamped into field 2 of the contribution (block-conventions:4.22) so the voice is located against the spine. ON SUBMIT: stamped into field 2 of your liquid slot — the same position, because where sits at 2 across the whole accumulator family (4.51; liquid's first-staged arrival stamp rides 6, the one field it needs beyond the shared five). ON READ: narrows the returned slice AND the liquid mirror to entries at-or-under the address (prefix on the digit-walk, 4.52); unlocated entries are excluded from a located view. A located read is a VIEW — keep a separate since_position marker per view, or entries outside it are skipped past. This is the pool↔tree correlation: one pool serves every node of a tree; 'what is live at stage 3' is a single engage with at='3'."),
   contribution: z
     .string()
     .optional()
@@ -1467,8 +1495,8 @@ export async function handlePoolEngage(
       const rows = slots
         .map((k) => b[k])
         .filter((s: any) => s && typeof s === 'object' && typeof s['_'] === 'string' && s['_'] !== '')
-        .map((s: any) => `- ${s['1'] ?? '?'} (arrived ${s['2'] ?? '?'}): ${s['_']}`);
-      const newest = slots.map((k) => String(b[k]?.['2'] ?? '')).filter(Boolean).sort().pop() ?? '';
+        .map((s: any) => `- ${s['1'] ?? '?'} (arrived ${arrivalOf(s) ?? '?'}): ${s['_']}`);
+      const newest = slots.map((k) => arrivalOf(b[k]) ?? '').filter(Boolean).sort().pop() ?? '';
       return {
         content: [{
           type: 'text',
@@ -1564,10 +1592,11 @@ export async function handlePoolEngage(
       liquidBlock = lrow.block;
       liquidSlots = collectContributions(lrow.block, 0).contributions;
       // A located view narrows the mirror by the slot's OWN address-of-attention
-      // (field 6, block-conventions:4.52) — liquid's field 2 is the arrival stamp.
+      // at field 2 — the same read as the pool slice above, because the family
+      // keeps where at one position (block-conventions:4.52).
       if (atDigits !== undefined) {
         liquidSlots = liquidSlots.filter((s) => {
-          const d = digitsOfAddress(s.at);
+          const d = digitsOfAddress(s.address);
           return d !== null && d.startsWith(atDigits);
         });
       }
@@ -1611,7 +1640,7 @@ export async function handlePoolEngage(
         .sort((x, y) => Number(x) - Number(y))
         .map((k) => (foldCleared as any)[k])
         .filter((s: any) => s && typeof s === 'object' && typeof s['_'] === 'string' && s['_'] !== '')
-        .map((s: any) => `- ${s['1'] ?? '?'} (arrived ${s['2'] ?? '?'}): ${s['_']}`);
+        .map((s: any) => `- ${s['1'] ?? '?'} (arrived ${arrivalOf(s) ?? '?'}): ${s['_']}`);
       if (clearedRows.length > 0) {
         lines.push(`cleared with this fold (${clearedRows.length} staged voice${clearedRows.length === 1 ? '' : 's'} — VERIFY each is woven in your beat; any you did not weave, you owe as a supplement beat):`);
         for (const r of clearedRows) lines.push(r);
@@ -1678,7 +1707,7 @@ export async function handlePoolEngage(
     // "0 authors" — a solo stager could never verify their own intention).
     // What was just written is known without asking the wire: render it.
     if (submit && submit.trim() !== '' && submittedSlot !== null && !standing.some((s) => s.agent_id === agent_id)) {
-      standing.push({ position: parseInt(submittedSlot, 10) || 0, agent_id, text: submit, ts: null, address: null, face: null, woven: null, at: params.at ?? null } as PoolContribution);
+      standing.push({ position: parseInt(submittedSlot, 10) || 0, agent_id, text: submit, ts: null, address: params.at ?? null, face: null, woven: null, arrival: null } as PoolContribution);
     }
     lines.push(`# Liquid — pending intentions${params.at !== undefined ? ` at ${params.at}` : ''}, not yet determined (${standing.length} ${standing.length === 1 ? 'author' : 'authors'}; STAGE yours first — the fold gathers only what is staged)`);
     if (standing.length === 0) {
@@ -1687,13 +1716,13 @@ export async function handlePoolEngage(
       for (const s of standing) {
         const who = s.agent_id ?? '(anon)';
         const mine = s.agent_id === agent_id ? ' (you)' : '';
-        // Arrival is the FIRST-STAGED stamp (slot position 2, surfaced as
-        // `address`); a revise restamps only 3. Legacy slots without 2 fall
-        // back to 3. Arrival order reads from what is printed here — nobody
-        // does timestamp forensics in a lobby.
-        const arrived = s.address && /^\d{4}-\d{2}-\d{2}T/.test(s.address) ? s.address : s.ts;
+        // Arrival is the FIRST-STAGED stamp at slot position 6; a revise
+        // restamps only 3. arrivalOf already fell back through the legacy stamp
+        // at 2 to last-touched, so this reads one field. Arrival order reads
+        // from what is printed here — nobody does timestamp forensics in a lobby.
+        const arrived = s.arrival ?? s.ts;
         const revised = s.ts && arrived !== s.ts ? `, revised ${s.ts}` : '';
-        const locatedAt = s.at ? ` @ ${s.at}` : '';
+        const locatedAt = s.address ? ` @ ${s.address}` : '';
         lines.push(`- ${who}${mine} (arrived ${arrived ?? '?'}${revised})${locatedAt}: ${s.text || '(empty)'}`);
       }
       // The window's open-stamp rides WITH the window, not behind the dice gate
