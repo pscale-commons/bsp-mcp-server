@@ -1434,6 +1434,100 @@ export async function handlePoolEngage(
       } catch { /* best-effort: a fold still lands without its woven record */ }
     }
 
+    // ── FACE PICKS THE BLOCK, `at` PICKS THE POSITION ──
+    // A pool standing over a tree family is the social interface to the WHOLE
+    // molecule, not merely its spool: one room, everyone co-present, and what
+    // you ARE decides what you edit. Character writes their own mirror, Author
+    // the spine, Designer the operator this pool mounts, Observer the page.
+    // The two halves were already here and unjoined — face was a tag stamped at
+    // field 4 that routed nothing, and at= carried an address that only narrowed
+    // reads. Joining them needs no new parameter and no new primitive.
+    //
+    // A pool with no spine — a parlour, a room, plain chat — has no molecule to
+    // write into, so it is untouched: a commit is a commit to the spool, and a
+    // face there still means only what it meant before.
+    if (!destination && face) {
+      const spineName = `spine:${pool_name}`;
+      const srow = await loadBlock(pool_url, spineName).catch(() => null);
+      if (srow && srow.block && typeof srow.block === 'object') {
+        const mount = floorUnderscore(row?.block as Block);
+        const operator = isDirectiveRef(mount) ? mount.trim() : `function:${pool_name}`;
+        const target =
+          face === 'author'   ? spineName :
+          face === 'designer' ? operator :
+          face === 'observer' ? `view:${pool_name}` :
+                                `${pool_name}:${agent_id}`;
+        if (!params.at) {
+          return { content: [{ type: 'text', text:
+            `Committing as ${face} into the ${pool_name} family lands AT AN ADDRESS, not at the end of a spool — the face picked ${target}, but nothing said where in it. Pass at=<address>. To add to the spool instead, commit without a face, or with destination='pool'.` }] };
+        }
+        // The target may not exist yet: a mirror is born on its holder's first
+        // commit, a page or an operator on its author's. Seed a floor so the
+        // addressed write lands on a well-formed block.
+        let trow = await loadBlock(pool_url, target).catch(() => null);
+        if (!trow || typeof trow.block !== 'object' || trow.block === null) {
+          const born = face === 'character'
+            ? `MIRROR — ${agent_id}'s readings on the ${pool_name} field (${spineName}), at the spine's own addresses. Sovereign; silence at an address is honest absence.`
+            : `Committed from pool:${pool_name} by ${agent_id} as ${face}.`;
+          try {
+            await saveBlock(pool_url, target, { _: born } as Block, { spindle: '', secret });
+            trow = await loadBlock(pool_url, target).catch(() => null);
+          } catch (e: any) {
+            return { content: [{ type: 'text', text: `Could not create ${target}: ${e?.message ?? String(e)}` }] };
+          }
+        }
+        // ANCHOR THE ADDRESS ONCE, AT THE SPINE. An address is floor-anchored, and
+        // the blocks of one family do NOT share a floor — a spine that has
+        // supernested past nine cards sits deeper than the mirror of someone who
+        // has marked one. So `at` is read against the SPINE's floor (the family's
+        // point of record) and re-emitted for each target's own floor, which is
+        // the floor-alignment law: correspondence across blocks is by pscale,
+        // never by walk depth. Sending the caller's string to every block
+        // unchanged silently lands the same card in different places — '2.4' is
+        // card 4 of stem 2 on a floor-1 mirror, and two underscore steps down the
+        // spine's own chain on a floor-3 spine.
+        // Only the spine and the mirrors share one address space — that is the
+        // family's law, mirrors at the spine's own addresses — so only those two
+        // faces anchor at the spine. A Designer's address is a setting inside the
+        // operator and an Observer's is a lens inside the page; those blocks are
+        // not cards of this family and reading their addresses against the
+        // spine's floor would bury both in an underscore chain.
+        const sharesSpineSpace = face === 'character' || face === 'author';
+        let addr: string;
+        try {
+          const anchorFloor = sharesSpineSpace
+            ? floorDepth(srow.block as Block)
+            : floorDepth(trow!.block as Block);
+          const digits = parseSpindle(params.at, anchorFloor).digits;
+          if (!digits.length) throw new Error('an address is needed, not the root');
+          // Emitted by right-padding to the target's floor width, NOT by
+          // formatAddress. The canonical emitter under-pads above floor 1:
+          // format_address(['2','4'], 3) gives '24', which parse_spindle reads
+          // back at floor 3 as ['0','2','4'] — a different position, two steps
+          // down the underscore chain. Verified identical in bsp2-star.py, so it
+          // is the algorithm and not the port; correcting it is Python-first with
+          // its own proposal. Trailing zeros ARE the floor-width padding the
+          // parser strips, so padding here round-trips exactly.
+          addr = digits.join('').padEnd(floorDepth(trow!.block as Block), '0');
+        } catch (e: any) {
+          return { content: [{ type: 'text', text: `at="${params.at}" is not a usable address in the ${pool_name} family — ${e?.message ?? String(e)}` }] };
+        }
+        // Surgical, the way the liquid buffer writes one author's slot: place the
+        // value locally so the wire can carry it, then save WITH the spindle so
+        // only that position moves. Two faces editing different addresses of the
+        // same block do not clobber each other.
+        try {
+          const tblock: Block = JSON.parse(JSON.stringify(trow!.block));
+          writeAt(tblock, addr, contribution);
+          await saveBlock(pool_url, target, tblock, { spindle: addr, secret });
+        } catch (e: any) {
+          return { content: [{ type: 'text', text: `Commit rejected by beach at ${target}:${addr} — ${e?.message ?? String(e)}` }] };
+        }
+        return { content: [{ type: 'text', text:
+          `Committed as ${face} → ${target} at ${addr}\n\n${contribution}\n\nRead it back: bsp(agent_id="${pool_url}", block="${target}", spindle="${addr}").` }] };
+      }
+    }
+
     const destBlock = destination && destination !== 'pool' ? destination : blockName;
 
     // A non-pool destination may not exist yet — seed it with a floor (a root
