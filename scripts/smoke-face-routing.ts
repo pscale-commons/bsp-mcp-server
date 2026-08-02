@@ -55,11 +55,11 @@ async function wipe(block: string) {
 
   console.log('the four faces, one room, four blocks:');
   const c = await engage({ pool_name: V, face: 'character', at: '1.1', contribution: 'DONE 2026-08-02 — character mark' });
-  assert(/→ face-verify:face-tester at 1\.1/.test(c), 'character → the mirror');
+  assert(/→ face-verify:face-tester at 11\b/.test(c), 'character → the mirror');
   assert((await textAt(`${V}:${WHO}`, '11')) === 'DONE 2026-08-02 — character mark', '  …and the mark is at 1.1 of the mirror');
 
   const a = await engage({ pool_name: V, face: 'author', at: '1.2', contribution: 'A second card, written from the room.' });
-  assert(/→ spine:face-verify at 1\.2/.test(a), 'author → the spine');
+  assert(/→ spine:face-verify at 12\b/.test(a), 'author → the spine');
   assert((await textAt(`spine:${V}`, '12')) === 'A second card, written from the room.', '  …and the new card stands at 1.2');
 
   const d = await engage({ pool_name: V, face: 'designer', at: '3', contribution: 'access: latched' });
