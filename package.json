@@ -32,6 +32,7 @@
     "smoke:gray": "tsx scripts/smoke-gray.ts",
     "smoke:group": "tsx scripts/smoke-group.ts",
     "smoke:gray-live": "tsx scripts/smoke-gray-live.ts",
+    "smoke:gray-locked": "tsx scripts/smoke-gray-locked.ts",
     "smoke:grain-live": "tsx scripts/smoke-grain-live.ts",
     "smoke:group-live": "tsx scripts/smoke-group-live.ts",
     "smoke:group2b-live": "tsx scripts/smoke-group2b-live.ts",
