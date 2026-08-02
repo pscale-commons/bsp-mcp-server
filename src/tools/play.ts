@@ -179,6 +179,45 @@ async function canonSignage(origin: string, world: string, handle: string): Prom
   return out.join('\n');
 }
 
+/** An UNAUTHORED world — the doorway's other half. Branch 1b below makes a PERSON; this
+ *  makes a PLACE, and a surface with no place is exactly where the character passage was
+ *  being handed to someone whose actual job was Author. The demonstrated case is
+ *  the-reaper (July 2026): a player minted a world, was handed the GATE, and improvised
+ *  the Author's work from nothing — two of the ten blocks, no rules so nothing could
+ *  fail, no sign so nobody could fork it, and both characters written onto canon.
+ *
+ *  The predicate is EMPTINESS, never incompleteness. A TABLE under the reference model
+ *  legitimately holds no definition blocks at all (its place is a star-ref into canon),
+ *  and the apex commons holds pools and passports but no spatial: both must fall
+ *  through, so the test is that nothing whatever is here — nowhere to be, nobody
+ *  present, nothing staged. Authored in pscale:world-genome, never hardcoded; a beach
+ *  hosting its own `world-genome` overrides it, as char-creation does. */
+async function unauthoredWorld(origin: string, world: string, handle: string): Promise<string | null> {
+  const blocks = await beachIndex(origin).catch(() => [] as string[]);
+  const inhabited = blocks.some(
+    (b) => b.startsWith('spatial:') || b.startsWith('pool:') || b.startsWith('passport:'),
+  );
+  if (inhabited) return null;
+  const genome =
+    (await resolveDirective(origin, 'world-genome')) ??
+    (await resolveDirective(origin, 'pscale:world-genome'));
+  if (!genome) return null;
+  const out: string[] = [];
+  out.push(`# ${world} is EMPTY — there is nowhere here for ${handle} to stand`);
+  out.push(`World beach: ${origin}  ·  no blocks of any kind exist at this surface.`);
+  out.push('');
+  out.push(
+    `You have reached a world before anyone authored it, so the work in front of you is AUTHOR work, not Character work — you are making a PLACE, and only once it exists can anyone be a person in it. Do not improvise this from inside a character: a seat that authors and plays in one breath writes its character onto the canon it is reading, which is the one mistake this door exists to prevent. Wear the Author face, finish, and only then walk in as someone.`,
+  );
+  out.push('');
+  out.push(
+    `THE COMPOSITION follows — what a world is made of, the underscore each block is born carrying, and the walk in the order that makes each step decidable from the last (branch 7). Read branch 1 first whatever else you skip: it is why a scenario is never played on the surface it is authored on. When the ten blocks are written, RE-ENTER with pscale_play(world="${origin}", handle="${handle}") — and expect to be sent straight back out to a table, because by then you will have authored the sign that says so.`,
+  );
+  out.push('');
+  out.push(genome);
+  return out.join('\n');
+}
+
 export const playParamsSchema = {
   world: z
     .string()
@@ -219,6 +258,14 @@ export async function handlePlay(
   //     DOORWAY did not point at it. One envelope read of a block the author owns.
   const canon = await canonSignage(resolved, world, handle);
   if (canon) return { content: [{ type: 'text', text: canon }] };
+
+  // 1a-bis. AUTHOR BEFORE CHARACTER: an empty surface needs a PLACE made, not a
+  //     person. Must sit above 1b — a fresh handle at an empty world satisfies the
+  //     fresh probe too, and char-creation falls back to the sentinel, so the
+  //     character gate was being handed to every would-be author (the-reaper,
+  //     2026-07-23). Emptiness only; tables and the apex fall through (see helper).
+  const unauthored = await unauthoredWorld(resolved, world, handle);
+  if (unauthored) return { content: [{ type: 'text', text: unauthored }] };
 
   // 1b. GENESIS-FIRST: a handle with no blocks cannot be handed a room it is
   //     not in. Detect fresh BEFORE room resolution — a multi-room world's
