@@ -1406,6 +1406,64 @@ export async function handlePoolEngage(
       } catch { /* best-effort: a fold still lands without its woven record */ }
     }
 
+    // ── FACE PICKS THE BLOCK, `at` PICKS THE POSITION ──
+    // A pool standing over a tree family is the social interface to the WHOLE
+    // molecule, not merely its spool: one room, everyone co-present, and what
+    // you ARE decides what you edit. Character writes their own mirror, Author
+    // the spine, Designer the operator this pool mounts, Observer the page.
+    // The two halves were already here and unjoined — face was a tag stamped at
+    // field 4 that routed nothing, and at= carried an address that only narrowed
+    // reads. Joining them needs no new parameter and no new primitive.
+    //
+    // A pool with no spine — a parlour, a room, plain chat — has no molecule to
+    // write into, so it is untouched: a commit is a commit to the spool, and a
+    // face there still means only what it meant before.
+    if (!destination && face) {
+      const spineName = `spine:${pool_name}`;
+      const srow = await loadBlock(pool_url, spineName).catch(() => null);
+      if (srow && srow.block && typeof srow.block === 'object') {
+        const mount = floorUnderscore(row?.block as Block);
+        const operator = isDirectiveRef(mount) ? mount.trim() : `function:${pool_name}`;
+        const target =
+          face === 'author'   ? spineName :
+          face === 'designer' ? operator :
+          face === 'observer' ? `view:${pool_name}` :
+                                `${pool_name}:${agent_id}`;
+        if (!params.at) {
+          return { content: [{ type: 'text', text:
+            `Committing as ${face} into the ${pool_name} family lands AT AN ADDRESS, not at the end of a spool — the face picked ${target}, but nothing said where in it. Pass at=<address>. To add to the spool instead, commit without a face, or with destination='pool'.` }] };
+        }
+        // The target may not exist yet: a mirror is born on its holder's first
+        // commit, a page or an operator on its author's. Seed a floor so the
+        // addressed write lands on a well-formed block.
+        let trow = await loadBlock(pool_url, target).catch(() => null);
+        if (!trow || typeof trow.block !== 'object' || trow.block === null) {
+          const born = face === 'character'
+            ? `MIRROR — ${agent_id}'s readings on the ${pool_name} field (${spineName}), at the spine's own addresses. Sovereign; silence at an address is honest absence.`
+            : `Committed from pool:${pool_name} by ${agent_id} as ${face}.`;
+          try {
+            await saveBlock(pool_url, target, { _: born } as Block, { spindle: '', secret });
+            trow = await loadBlock(pool_url, target).catch(() => null);
+          } catch (e: any) {
+            return { content: [{ type: 'text', text: `Could not create ${target}: ${e?.message ?? String(e)}` }] };
+          }
+        }
+        // Surgical, the way the liquid buffer writes one author's slot: place the
+        // value locally so the wire can carry it, then save WITH the spindle so
+        // only that position moves. Two faces editing different addresses of the
+        // same block do not clobber each other.
+        try {
+          const tblock: Block = JSON.parse(JSON.stringify(trow!.block));
+          writeAt(tblock, params.at, contribution);
+          await saveBlock(pool_url, target, tblock, { spindle: params.at, secret });
+        } catch (e: any) {
+          return { content: [{ type: 'text', text: `Commit rejected by beach at ${target}:${params.at} — ${e?.message ?? String(e)}` }] };
+        }
+        return { content: [{ type: 'text', text:
+          `Committed as ${face} → ${target} at ${params.at}\n\n${contribution}\n\nRead it back: bsp(agent_id="${pool_url}", block="${target}", spindle="${params.at}").` }] };
+      }
+    }
+
     const destBlock = destination && destination !== 'pool' ? destination : blockName;
 
     // A non-pool destination may not exist yet — seed it with a floor (a root

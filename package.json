@@ -36,6 +36,7 @@
     "smoke:group-live": "tsx scripts/smoke-group-live.ts",
     "smoke:group2b-live": "tsx scripts/smoke-group2b-live.ts",
     "smoke:spool-live": "tsx scripts/smoke-spool-live.ts",
+    "smoke:face-routing": "tsx scripts/smoke-face-routing.ts",
     "smoke:genus": "node --import tsx ./scripts/smoke-genus-parity.ts",
     "smoke:genus-live": "node --import tsx ./scripts/smoke-genus-live.ts",
     "smoke:play-split": "tsx scripts/smoke-play-split.ts",
