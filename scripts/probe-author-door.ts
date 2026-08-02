@@ -47,6 +47,22 @@ const CASES: { label: string; world: string; handle: string; expect: Route }[] =
     handle: 'weft',
     expect: 'normal-entry',
   },
+  // BARE NAMES — "play the-reaper" is the sentence a friend actually says, and it must
+  // land on the same surface the full URL does. A bare name that silently resolves to
+  // the apex would hand an invited player the commons gate and let them create a
+  // character there, which is the worst reachable outcome of an invitation.
+  {
+    label: 'BARE NAME — "the-reaper" via the worlds register',
+    world: 'the-reaper',
+    handle: 'sam',
+    expect: 'canon-signage',
+  },
+  {
+    label: 'BARE NAME — "brackenfoot" via the worlds register',
+    world: 'brackenfoot',
+    handle: 'sam',
+    expect: 'canon-signage',
+  },
 ];
 
 function classify(text: string): Route {
@@ -67,5 +83,5 @@ for (const c of CASES) {
   if (!ok) console.log(`    expected ${c.expect}; first line: ${text.split('\n')[0].slice(0, 120)}`);
 }
 
-console.log(failed === 0 ? '\nAll four routes correct.' : `\n${failed} route(s) wrong.`);
+console.log(failed === 0 ? `\nAll ${CASES.length} routes correct.` : `\n${failed} route(s) wrong.`);
 process.exit(failed === 0 ? 0 : 1);

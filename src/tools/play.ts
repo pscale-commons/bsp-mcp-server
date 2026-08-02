@@ -88,10 +88,20 @@ function subdomainOrigin(world: string): string {
 }
 
 /** Look a bare world-name up in the `worlds` directory at the default beach. Each
- *  entry is a string '<name> → <route>'; a route beginning '/' is a path on the
- *  default beach ('/w/brackenfoot'), anything else is a host or full URL. Read
- *  fresh, operator-curated (named canonical worlds only — ephemeral tables are not
- *  listed). No worlds block, no matching row → null, and the caller falls back. */
+ *  entry is an arrow-separated row led by '<name> → <route>'; a route beginning '/'
+ *  is a path on the default beach ('/w/brackenfoot'), anything else is a host or
+ *  full URL. Read fresh, operator-curated (named canonical worlds only — ephemeral
+ *  tables are not listed). No worlds block, no matching row → null, and the caller
+ *  falls back.
+ *
+ *  THE ROUTE IS FIELD TWO, never "the rest of the line". The register is a curated
+ *  block an operator edits by hand, and it grows fields: on 2026-08-01 every row
+ *  gained a third ('… → surface'), which the old rest-of-line read swallowed into
+ *  the route and turned into an unusable URL. Every bare world-name on the beach —
+ *  brackenfoot, earth, urb, the-reaper — then fell through to the sub-domain
+ *  fallback and landed the player on the apex commons, where an invited friend was
+ *  offered the commons gate and a character on it. Taking field two leaves the row
+ *  free to carry whatever else the operator wants to say about a world. */
 async function lookupWorldRoute(name: string): Promise<string | null> {
   const base = DEFAULT_BEACH.replace(/\/+$/, '');
   const row = await loadBlock(base, 'worlds').catch(() => null);
@@ -102,8 +112,8 @@ async function lookupWorldRoute(name: string): Promise<string | null> {
     if (k === '_') continue;
     const entry = w[k];
     if (typeof entry !== 'string' || !entry.includes('→')) continue;
-    const [n, ...rest] = entry.split('→');
-    const route = rest.join('→').trim();
+    const [n, field2] = entry.split('→');
+    const route = (field2 ?? '').trim();
     if (n.trim().toLowerCase() !== want || !route) continue;
     if (/^https?:\/\//i.test(route)) return route.replace(/\/+$/, '');
     if (route.startsWith('/')) return base + route.replace(/\/+$/, '');
