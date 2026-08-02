@@ -343,7 +343,7 @@ console.log('\n=== collectContributions — located view (block-conventions:4.52
   } as any;
   const all = collectContributions(located, 0);
   assert(all.contributions.length === 5, 'unfiltered read returns every slot');
-  assert(all.contributions[0].at === null, 'pool entries carry no field 6');
+  assert(all.contributions[0].arrival === null, 'a pool contribution appends, so it carries no arrival stamp');
   const at3 = collectContributions(located, 0, '3');
   assert(at3.contributions.length === 2, "at '3' returns the stage-3 subtree only (unlocated + junk excluded)");
   assert(at3.contributions.map((c) => c.position).join(',') === '1,2', "notation-cross: stored '3.1' meets filter '3'");
@@ -351,6 +351,40 @@ console.log('\n=== collectContributions — located view (block-conventions:4.52
   assert(at31.contributions.length === 1 && at31.contributions[0].agent_id === 'bob', "filter '3.1' (digit-walk '31') narrows to the sub-stage");
   const at9 = collectContributions(located, 0, '9');
   assert(at9.contributions.length === 0, 'an unvoiced address returns silence, not an error');
+}
+
+console.log('\n=== liquid slot: where at 2, arrival at 6 (block-conventions:4.51, settled 2026-08-02) ===');
+{
+  // The family keeps where at 2 — marks, pool contributions and liquid slots
+  // alike — so one filter reads a coordinate wherever it sits. Liquid's extra
+  // field, the arrival stamp it needs because it overwrites, takes 6.
+  const settled: Block = {
+    _: 'liquid buffer',
+    '1': { _: 'staged at stage 3', '1': 'alice', '2': '3', '3': '2026-08-02T10:00:00Z', '6': '2026-08-02T09:00:00Z' },
+    // Staged while the 2026-07-15 shape stood: the arrival stamp sits at 2.
+    // It is not an address, so the slot reads as unlocated rather than as junk,
+    // and the stamp is still found.
+    '2': { _: 'legacy shape', '1': 'bob', '2': '2026-07-20T08:00:00Z', '3': '2026-07-20T08:30:00Z' },
+    // Older still — no stamp anywhere but last-touched.
+    '3': { _: 'oldest shape', '1': 'carol', '2': 'pool:x', '3': '2026-07-01T12:00:00Z' },
+  } as any;
+  const got = collectContributions(settled, 0).contributions;
+  assert(got[0].address === '3', 'a settled slot reads its address at 2');
+  assert(got[0].arrival === '2026-08-02T09:00:00Z', 'a settled slot reads its arrival at 6, not last-touched at 3');
+  assert(got[0].arrival !== got[0].ts, 'arrival and last-touched are distinct — a revise moves only 3');
+  assert(got[1].address === null, 'a legacy stamp at 2 is not an address — the slot reads unlocated');
+  assert(got[1].arrival === '2026-07-20T08:00:00Z', 'a legacy slot still yields its arrival, from 2');
+  assert(got[2].address === 'pool:x', 'a pre-stamp slot keeps whatever sat at 2');
+  assert(got[2].arrival === '2026-07-01T12:00:00Z', 'with no stamp at 6 or 2, arrival falls back to last-touched');
+  // The discriminator is shape, never Date.parse: a temporal spine address
+  // parses as a perfectly good year and must not be mistaken for a stamp.
+  const temporal: Block = {
+    _: 'liquid buffer',
+    '1': { _: 'staged at a temporal address', '1': 'dan', '2': '2026', '3': '2026-08-02T10:00:00Z' },
+  } as any;
+  const t = collectContributions(temporal, 0).contributions[0];
+  assert(t.address === '2026', 'a temporal address at 2 survives — Date.parse would have eaten it');
+  assert(collectContributions(temporal, 0, '2026').contributions.length === 1, 'and it still filters as a located view');
 }
 
 console.log('\n=== dice by declaration — the measured invariant (grit, 2026-07-29) ===');
