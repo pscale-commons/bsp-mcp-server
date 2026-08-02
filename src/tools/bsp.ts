@@ -771,7 +771,17 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
         // Leak fix: a self-gray write to an ordinary block uses `secret` ONLY
         // as the encryption key — it must not reach the beach. Grain writes
         // still forward it (it locks the side); lock changes still forward it.
-        secret: wantGray && !isGrain && !isGroupOp && new_lock === undefined ? undefined : secret,
+        //
+        // But that is true only while `secret` IS the encryption key. When a
+        // distinct `enc_secret` is supplied, `secret` is pure write-authority
+        // and withholding it made LOCKED + GRAY impossible: the beach answered
+        // `secret required` however faithfully the caller passed one. That is
+        // exactly the private-notes case — only I write, only I read — so the
+        // condition asks which role `secret` is playing, not merely whether
+        // the write is gray.
+        secret: wantGray && !isGrain && !isGroupOp && new_lock === undefined && enc_secret === undefined
+          ? undefined
+          : secret,
         new_lock: params.new_lock,
         gray: params.gray,
       },
