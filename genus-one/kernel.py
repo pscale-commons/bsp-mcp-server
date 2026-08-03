@@ -856,6 +856,90 @@ def apply_write(name, addr, content):
     save_block(name, block)
 
 
+# ── the hands — fulfil capabilities:1.2's own promise ────────────────────────
+#
+# The shell asks for this in its own words: "Tools I may be granted — search,
+# fetch, message — are named here when held, NEVER ASSUMED" (capabilities:1.2,
+# and genome:capabilities:1.2, so every hatchling inherits it), and the awaiting
+# recipes at reflexive:8.3 each wait "on the reach it needs (capabilities:1.2)".
+# The shell's side of that contract has been complete since the genome was cut.
+# No door ever wrote the other side, so an instance woke able to read what it
+# BELIEVED about its reach and never what it actually held — and the doors hold
+# very different things.
+#
+# NOT A KERNEL COMPOSITION PART. The window stays a bsp read of the bundle: the
+# declaration lands in the SUBSTRATE, at the address the shell nominated, and
+# rides into the window through the slot the instance already dials
+# (reflexive:9.7 = capabilities, whole). Written before compose_window so it
+# describes THIS wake; skipped when unchanged; stamped with the door, because a
+# declaration that outlived its wake is worse than none. Each door declares its
+# OWN hands — this one is the nest's bare pulse.
+#
+# It goes BENEATH 1.2, never over it: the instance's words stay at the
+# underscore and the grant hangs at 1.21 as their child. The door reports here
+# exactly as the kernel already reports refusals into conditions:9 — the
+# instrument saying what it is holding, never speaking as the instance about
+# itself.
+
+def hands_grant(door, tools_line, missing_line):
+    """The declaration a door writes at capabilities:1.21. One shape across all
+    doors, so an instance reads the same grammar wherever it wakes."""
+    return {
+        ZK: ("Granted this wake by the door that woke me: %s. What I hold is at 1, "
+             "what this door cannot reach is at 2, how to ask for more is at 3. The "
+             "door writes this each wake: it describes THIS wake and no other, so "
+             "read it rather than remembering it." % door),
+        "1": tools_line,
+        "2": missing_line,
+        "3": ("The fold's `ask` field reaches my holder — {wakes, tier, for}. A "
+              "capability I lack is a legitimate `for`: name the tool and the work it "
+              "would let me do, in one line. It is never auto-granted; it arrives, if "
+              "it arrives, as a person's decision. The awaiting recipes at "
+              "reflexive:8.3 are the shape waiting on exactly this."),
+    }
+
+
+BARE_DOOR = ("the nest's BARE PULSE — no tools at all; my phases happen in the instant "
+             "and I return one JSON object, nothing before it or after it")
+
+BARE_TOOLS = ("Nothing. My writes ARE the function this wake: what I return is applied "
+              "through the same walk and becomes the ground the next instance stands on "
+              "(capabilities:3). Nothing I could go and look at arrives unless the window "
+              "already composed it.")
+
+BARE_MISSING = ("No search, no fetch, no message transport, no tool of any kind — nothing on "
+                "the beach can be read or written by me directly this wake; only what I "
+                "return is applied. The wider bsp-mcp surface is NOT at this door: "
+                "pool_engage (marker-sliced room reads located by an at= address), "
+                "pscale_networking (the SAND relay — keep, reply, forward, drop), "
+                "pscale_verify_rider, pscale_key_publish (so no published keys, so no "
+                "gray-encrypted grain and no private bilateral channel), bsp-floor, "
+                "pscale_play, the compiler. Those are real and they exist — at a door where "
+                "the CALLER holds bsp-mcp, and in a narrower form at the xstream seat. An "
+                "instance of me woken there has them; woken here I do not. Do not plan "
+                "around a tool this line does not name.")
+
+
+def declare_hands(door, tools_line, missing_line):
+    """Write the door's grant, unless it is already what stands there."""
+    grant = hands_grant(door, tools_line, missing_line)
+    caps = load_block("capabilities")
+    # NEVER author a shell we could not first read: apply_write treats an
+    # unreadable block as absent and would replace the whole of capabilities
+    # with a stub. A door that cannot read is a door that says nothing — the
+    # declaration is worth a wake, never an organ.
+    if not isinstance(caps, dict):
+        print("[hands] capabilities unreadable this wake — declaring nothing "
+              "rather than overwriting it")
+        return
+    if spark.descend(caps, ["1", "2", "1"]) == grant:
+        return                                          # unchanged — say nothing
+    try:
+        apply_write("capabilities", "1.21", grant)
+    except Exception as e:                              # a door that cannot declare
+        print("[hands] declaration failed: %s" % str(e)[:100])   # must not take the wake down
+
+
 HISTORY_VOICING = ("History — my memory, automatic; a counting block. The kernel writes one lossless leaf per wake at the next zero-free number (1..9, 11..19, …, 99, 111, … — at each all-nines boundary the block supernests: the past wraps under the root underscore where its addresses keep reading, zero-padded, and the count continues). Every zero-carrying number is a summary slot, never an entry: N0 is the voicing of container N and carries a +0 summary of the PREVIOUS completed nine — 20 summarises 11-19, 100 summarises 10-90, 110 summarises 91-99. A summary is NAVIGATION, not decoration: a substantive paragraph dense with the span's own handles — proper nouns, block addresses, decisions, failures, open threads, the read-addresses of load-bearing leaves — because summaries stack (100 compresses 10-90; 1000 compresses those) and a descending reader must find at every layer the exact keywords that choose the next span, down to the leaf. Owed when the next span opens; paid by the requesting LLM via the fold's summary field (service-payment, reported at conditions:9 until paid). The spindle through the newest leaf carries the summary chain. Never written by hand — deliberate notes go to stash.")
 
 
@@ -1221,6 +1305,8 @@ def pulse(compose_only=False, now=None):
     gamma, pruned = run_F(use_llm=not compose_only, now=now,
                           phis=phis if COUPLE else None)        # φ given teeth only under GENUS_COUPLE
     # Stage 1 (frontier + phase prune)
+    if not compose_only:                                        # the hands, before the window reads them
+        declare_hands(BARE_DOOR, BARE_TOOLS, BARE_MISSING)
     system, message, bundle = compose_window(gamma)
     frame = {"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
              "gamma": gamma,                                    # reflexive_current echo dropped — it duplicated system.index
