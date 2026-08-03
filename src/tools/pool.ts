@@ -1457,6 +1457,7 @@ export async function handlePoolEngage(
   let postedTo: string | null = null;
   let postedSupernested = false;
   let foldCleared: Block | null = null;
+  let stagedConsumed = false;
   if (contribution !== undefined && contribution.trim() !== '') {
     const entry: Record<string, any> = {
       _: contribution,
@@ -1706,7 +1707,10 @@ export async function handlePoolEngage(
         if (lrow && typeof lrow.block === 'object' && lrow.block !== null) {
           const mine = collectContributions(lrow.block, 0).contributions
             .some((c) => c.agent_id === agent_id && c.text !== '');
-          if (mine) await stageLiquid(pool_url, liquidName, agent_id, '', face, secret);
+          if (mine) {
+            await stageLiquid(pool_url, liquidName, agent_id, '', face, secret);
+            stagedConsumed = true;
+          }
         }
       } catch { /* best-effort, as above */ }
     }
@@ -1767,10 +1771,14 @@ export async function handlePoolEngage(
   }
   if (submittedSlot !== null) {
     lines.push(submit && submit.trim() !== ''
-      ? `submitted: liquid slot ${submittedSlot} (your pending intention — staged, not yet committed)`
+      ? `submitted: liquid slot ${submittedSlot} (your pending intention — staged, not yet committed; liquid slots are per-author and count separately from pool slots, and this one overwrites on every submit until a commit or withdraw clears it)`
       : `withdrawn: liquid slot ${submittedSlot} cleared`);
     lines.push('');
   }
+  // stagedConsumed is set in the commit path when the author's own pending
+  // intention was cleared by this commit — say so, or the stager meets an
+  // emptier mirror than the one they staged into and reads it as loss
+  // (rehearsal finding, 2026-08-03: "one beat of doubt", two seats).
   if (postedPosition !== null) {
     const where = postedTo === blockName ? 'the pool' : postedTo;
     // A successful claim must not ack like a plain append (NHITL round 4: "a
@@ -1779,7 +1787,7 @@ export async function handlePoolEngage(
     if (duplicateOf !== null) {
       lines.push(`ALREADY LANDED at slot ${postedPosition} → ${where} — this exact beat from you is already in the record, so nothing was appended a second time. A timeout is not a failure here: the write lands and only the reply is lost. Read the slot before rewording and retrying.`);
     } else {
-      lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}`);
+      lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}${stagedConsumed ? ' — your staged intention graduated into this entry, so your liquid slot cleared itself' : ''}`);
     }
     lines.push('');
     // What the winning claim cleared, exactly as the beach snapshotted it. The
@@ -1881,8 +1889,18 @@ export async function handlePoolEngage(
       // (NHITL round 4: the fold law says "the open-stamp the envelope hands
       // you", but the only emission sat inside the dice section — the town's
       // day-fold resolver had to judge the stamp from slot headers).
+      //
+      // But only where a RESOLVER exists to read it: signage by declaration,
+      // the same law as dice (2026-07-29). A window is claimed by whatever
+      // fold discipline the pool's mounted operator declares; a plain pool
+      // (purpose only, no directive) has no resolver role, and the console
+      // paragraph reached every participant unaddressed — the neuroinclusion
+      // rehearsal's three seats each reported it as noise they had to decide
+      // to ignore (2026-08-03). The stamp itself still lands in the buffer's
+      // data for every pool; only the envelope's resolver instruction is
+      // gated on the mounted directive.
       const liveOpenTs = windowOpenTs(liquidBlock);
-      if (liveOpenTs) {
+      if (liveOpenTs && directiveText !== null) {
         lines.push(`window opened ${liveOpenTs} — the stamp does not move; a resolution claims this window by passing it as resolves_window, WITH resolves_seen=<the newest arrived stamp above> as the guard: an intention staged after this read then answers WINDOW MOVED instead of being silently dropped.`);
       }
     }
@@ -1943,7 +1961,19 @@ export async function handlePoolEngage(
     // (The window's open-stamp rides with the liquid mirror above — one emission.)
     lines.push('');
   }
-  const atView = params.at !== undefined ? ` at ${params.at} (located view — unlocated entries excluded; keep a marker per view)` : '';
+  // A located view must say what it is NOT showing, or the first located
+  // commit reads like the rest of the record vanished (rehearsal finding,
+  // 2026-08-03: the seat re-read the whole pool to reassure itself). The
+  // outside count is the same in-memory pass without the address filter.
+  let outsideView = 0;
+  if (atDigits !== undefined) {
+    const whole = collectContributions(row.block, sincePosition);
+    outsideView = Math.max(0, whole.contributions.length - contributions.length);
+  }
+  const outsideNote = outsideView > 0
+    ? `; ${outsideView} ${outsideView === 1 ? 'entry stands' : 'entries stand'} outside this view since your marker — drop at= to see the whole pool`
+    : '';
+  const atView = params.at !== undefined ? ` at ${params.at} (located view — unlocated entries excluded; keep a marker per view${outsideNote})` : '';
   lines.push(`# Contributions since position ${sincePosition}${atView} (count: ${contributions.length}${more_available ? ', more available' : ''})`);
   // Verbatim-voices discipline (portal invariant, proposal 2026-07-12 §3): on a
   // plain pool the mediating LLM tends to compress the stream into a summary,
