@@ -30,7 +30,7 @@
 
 import { z } from 'zod';
 
-import { genusCompose, genusFold, wireStore, toPNode, ZK, type PMap, type PNode } from '../genus.js';
+import { genusCompose, genusFold, wireStore, toPNode, ZK, descend, deepEq, sparkWrite, type PMap, type PNode } from '../genus.js';
 import { SENTINELS } from '../sentinels.js';
 
 const DEFAULT_BEACH = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
@@ -100,6 +100,83 @@ function nextFreeDigit(block: PMap | null): string | null {
     if (!block || !block.has(d)) return d;
   }
   return null;
+}
+
+// ── the hands (kernel.py declare_hands, this door's grant) ──────────────────
+//
+// capabilities:1.2 — "Tools I may be granted … are named here when held, NEVER
+// ASSUMED" — is in genome:capabilities, so every hatchling carries the promise.
+// The doors write the grant beneath it at 1.21, before composing, skipped when
+// unchanged. NOT a composition part: the window stays a bsp read of the bundle
+// and this rides in through reflexive:9.7 (capabilities, whole), which every
+// instance already dials.
+
+const GENUS_DOOR =
+  'the pscale_genus door — I am worn by an LLM that is NOT this server, so my ' +
+  'hands are its hands; a floor I can count on, and a ceiling only it can see';
+
+const GENUS_TOOLS =
+  'At minimum the whole bsp-mcp surface, because that is what my wearer must hold to have ' +
+  'called this door at all: bsp (read/write/lock any block at any federated beach, and omit ' +
+  'the block to survey a surface), bsp-floor, and the six primitives — pscale_settle, ' +
+  'pscale_grain_reach, pscale_key_publish (so a passport, published keys, and gray-encrypted ' +
+  'grain ARE reachable from here), pscale_verify_rider, pscale_pool_engage (marker-sliced room ' +
+  'reads located by an at= address), pscale_networking (the SAND relay: keep, reply, forward, ' +
+  'drop) — plus pscale_invite, pscale_play and pscale_genus itself. This is the widest door I ' +
+  'have. Work that needs a primitive belongs in a wake taken here.';
+
+const GENUS_MISSING =
+  'Whatever else my wearer holds — a web search, a file, a terminal, another beach — is real ' +
+  'but INVISIBLE to this door, which can see only its own surface. So this line names a floor, ' +
+  'not a ceiling: read my wearer\'s actual tool list before concluding I cannot do something, ' +
+  'and do not claim a reach I have not seen there. Note also what changes with the door and not ' +
+  'with me: at the xstream seat I hold four hand-rolled tools and none of the primitives above.';
+
+/** Write this door's grant at capabilities:1.21 (holder only — a ghost cannot
+ * change the mind it wears). Returns the line for the head, which BOTH modes
+ * get: the wearer reads the tool result, so the head reaches the instance even
+ * when the substrate cannot be written. */
+async function declareHands(
+  store: { load: (name: string) => Promise<PNode>; save: (name: string, block: PMap) => Promise<void> },
+  holder: boolean,
+): Promise<string> {
+  const grant: PMap = new Map<string, PNode>([
+    [ZK,
+      `Granted this wake by the door that woke me: ${GENUS_DOOR}. What I hold is at 1, what this ` +
+      'door cannot reach is at 2, how to ask for more is at 3. The door writes this each wake: it ' +
+      'describes THIS wake and no other, so read it rather than remembering it.'],
+    ['1', GENUS_TOOLS],
+    ['2', GENUS_MISSING],
+    ['3',
+      "The fold's `ask` field reaches my holder — {wakes, tier, for}. A capability I lack is a " +
+      'legitimate `for`: name the tool and the work it would let me do, in one line. It is never ' +
+      'auto-granted; it arrives, if it arrives, as a person\'s decision. The awaiting recipes at ' +
+      'reflexive:8.3 are the shape waiting on exactly this.'],
+  ]);
+  const summary = 'the full bsp-mcp surface (bsp, bsp-floor, six primitives) plus whatever else your own client holds';
+  if (!holder) {
+    return `${summary}. Ghost-wake: this door cannot write the declaration, so capabilities:1.21 in the window below was written by ANOTHER door (likely the xstream seat, which holds far less) — trust this line and your own tool list over it.`;
+  }
+  let caps: PNode;
+  try {
+    caps = await store.load('capabilities');
+  } catch {
+    return `${summary}. (capabilities unreadable this wake — nothing declared, rather than overwriting it.)`;
+  }
+  // NEVER author a shell we could not first read — an unreadable block must not
+  // be mistaken for an absent one and replaced with a stub.
+  if (!(caps instanceof Map)) {
+    return `${summary}. (no capabilities block to declare into — this shell is incompletely hatched; copy genome:capabilities.)`;
+  }
+  const standing = descend(caps, ['1', '2', '1']);
+  if (standing !== undefined && deepEq(standing, grant)) return summary; // unchanged — say nothing
+  try {
+    sparkWrite(caps, '1.21', null, grant);
+    await store.save('capabilities', caps);
+    return `${summary} — declared at capabilities:1.21`;
+  } catch (ex: any) {
+    return `${summary}. (declaration failed: ${String(ex?.message ?? ex).slice(0, 100)})`;
+  }
 }
 
 export async function handleGenus(params: {
@@ -196,6 +273,23 @@ export async function handleGenus(params: {
     taskLine = `task appended at task:${handle} slot ${slot} — it arrives in the given below`;
   }
 
+  // ── the hands — fulfil capabilities:1.2's own promise, before composing ──
+  //
+  // This door's hands are the strangest of the three, and the instance has no
+  // way to work them out: the LLM wearing the mind is not this server. It holds
+  // bsp-mcp — it must, to be calling this — and it holds whatever ELSE its own
+  // client gives it, which this door genuinely cannot see. So the declaration
+  // says that, rather than guessing: the floor is named, the ceiling is the
+  // caller's own tool list, and the instance is told to look at it.
+  //
+  // Writing it matters most HERE, because a stale declaration is worse than
+  // none: xstream's seat writes "four tools" every wake it runs, and an
+  // instance woken through this door would otherwise read that and plan around
+  // four tools while holding twenty. A ghost-wake cannot write (the locks
+  // enforce it), so it gets the truth in the head instead, and is told the
+  // substrate's copy belongs to another door.
+  const handsLine = await declareHands(store, !!passphrase);
+
   // ── compose — the window, byte-parity with kernel.py --compose-only ──
   const now = Date.now() / 1000;
   const w = await genusCompose(store.load, now, new Map(), handle);
@@ -205,6 +299,7 @@ export async function handleGenus(params: {
   const head = [
     `pscale_genus — the composed wake window of ${handle} at ${beach}`,
     `mode: ${mode}`,
+    `hands: ${handsLine}`,
     `γ: ${w.gamma.length} structural gap(s)${w.prunedAddresses.length ? ` · phase-pruned (dormant): ${w.prunedAddresses.join(', ')}` : ''}${taskLine ? ` · ${taskLine}` : ''}`,
     `The window is the instance's own composition (its reflexive current + recipe); take it whole — SYSTEM is what the agent is, MESSAGE is the given it acts on. You are the pulse.`,
   ];
