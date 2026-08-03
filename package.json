@@ -23,6 +23,7 @@
     "smoke:sentinel": "tsx scripts/smoke-sentinel.ts",
     "smoke:session": "tsx scripts/smoke-session.ts",
     "smoke:wellknown": "tsx scripts/smoke-wellknown.ts",
+    "smoke:append-spindle": "tsx scripts/smoke-append-spindle.ts",
     "smoke:federated": "tsx scripts/smoke-federated-live.ts",
     "smoke:federated-parser": "tsx scripts/smoke-federated-parser.ts",
     "smoke:wire-bsp": "tsx scripts/smoke-wire-bsp.ts",

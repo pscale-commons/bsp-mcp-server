@@ -333,7 +333,7 @@ export const bspParamsSchema = {
   append: z
     .boolean()
     .optional()
-    .describe('Accumulator append — marks / history / pools. When true the federated beach allocates the next free zero-free slot and SUPERNESTS (wraps {_: old}, raising the floor) when the floor fills; the client does NOT compute a spindle, and the acknowledgement carries the server-assigned slot. `content` is the entry to append (the {_, 1: agent_id, 2: address, 3: ts, …} mark/contribution shape); `secret` is forwarded if the accumulator is locked. Omit spindle and pscale_attention. Atomic server-side — concurrent appends never race on slot allocation. Not compatible with gray/group (those encrypt at a leaf and need a spindle).'),
+    .describe('Accumulator append — marks / history / pools / grain sides. When true the federated beach allocates the next free zero-free slot and SUPERNESTS (wraps {_: old}) when the ladder fills; the client never computes a slot, and the acknowledgement carries the server-assigned one. Without a spindle this grows the BLOCK at its root, exactly as before. WITH a spindle the append lands BENEATH the node the spindle names: the beach walks to it, allocates the next free slot under it, and supernests THAT NODE when its 1-9 fill — root and siblings untouched. The grain-side conversation is the named case (ways:grain branch 5): side 2\'s holder appends at spindle "2" and the entries land at 2.1, then 2.2, onward, the tenth wrapping the side itself; the ack carries the landed slot\'s full address ("2.3"). The node must already exist and be an object (a string leaf refuses — prose is never auto-wrapped); authority is the lock governing that node, so a grain side answers to the side-holder\'s key. `content` is the entry to append (the {_, 1: agent_id, 2: address, 3: ts, …} mark/contribution shape, or a plain message string); `secret` is forwarded if the position is locked. Omit pscale_attention. Atomic server-side — concurrent appends never race on slot allocation. Not compatible with gray/group (those encrypt at a leaf and need a spindle).'),
 };
 
 export type BspToolParams = {
@@ -532,7 +532,11 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   // beach (pscale-beach append mode). THE accumulator write: marks, history,
   // pools. The beach picks the next free zero-free slot and wraps {_: old} when
   // the floor fills, so the client never computes a slot and concurrent appends
-  // never race. `content` is the entry; spindle/pscale_attention do not apply.
+  // never race. `content` is the entry; pscale_attention does not apply. A
+  // spindle scopes the append to the NODE it names (ways:grain branch 5): the
+  // beach allocates beneath that node and supernests IT when its 1-9 fill —
+  // the grain-side conversation (side 2's holder at 2.1, then 2.2, onward) is
+  // the named case, and the ack carries the landed slot's full address.
   if (params.append === true) {
     if (content === undefined) {
       return { content: [{ type: 'text', text: 'Append rejected: append needs `content` (the entry to append).' }] };
@@ -540,8 +544,13 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     if (params.gray === true || params.members !== undefined) {
       return { content: [{ type: 'text', text: 'Append rejected: gray/group encryption is not supported with append — append targets open accumulators. Use a spindled write to encrypt at a leaf.' }] };
     }
+    const appendSpindle = spindle == null ? '' : String(spindle);
     try {
-      const res = await appendToBeach(agent_id, blockName, content, secret);
+      const res = await appendToBeach(agent_id, blockName, content, secret, undefined, undefined, appendSpindle || undefined);
+      if (res.address !== undefined) {
+        const grew = res.supernested ? `  ⤴ node supernested — the ladder continues within` : '';
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}]` }] };
+      }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
       return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}]` }] };
     } catch (e: any) {
