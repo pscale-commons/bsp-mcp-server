@@ -562,6 +562,19 @@ export function passportLocationRef(
   return addr ? { origin: null, addr } : null;
 }
 
+/** The keeper PLACING read as a triple — origin, block, address. Position 3 of
+ *  keeper:<scene> (notes:<scene> the legacy name) carries the star-ref binding a
+ *  surface into the world it plays — '… *:<world-beach-url>:spatial:<world>:<addr> …'
+ *  — and this reads it exactly as the horizon walk in composeCurrent does: block
+ *  names carry colons, so the address anchors as the FINAL digit run and the last
+ *  ':' splits block from address; the origin runs to the first colon past the
+ *  scheme, so a /w/<world> path rides and a port does not. Null for anything that
+ *  is not a placing star-ref — plain prose reads as unplaced, never as junk. */
+export function parsePlacingRef(placing: unknown): { origin: string; block: string; addr: string } | null {
+  const m = typeof placing === 'string' ? placing.match(/\*:(https?:\/\/[^\s:]+):(\S+):([\d.,]+)(?=\s|$)/) : null;
+  return m ? { origin: m[1].replace(/\/+$/, ''), block: m[2], addr: m[3] } : null;
+}
+
 /** A name-free observable appearance from a passport's position 3 (the posture before
  *  the location ref), so a co-present character is perceived without leaking the name
  *  they have not yet earned. */
@@ -873,6 +886,51 @@ export async function composeCurrent(origin: string, poolName: string, agentId: 
         }
       }
     } catch { /* best-effort: an unplaced bubble floats as before */ }
+  }
+
+  // REFERENCE, not copy — the table shape (world-genome 1.54, the 2026-08-03
+  // default). A table holding no spatial of its own is not placeless: its keeper
+  // carries the placing star-ref (position 3 of keeper:<scene>, notes:<scene>
+  // the legacy name — found from the index here, because with no local spatial
+  // there is no scene name to derive it from), and the PLACE and the WAYS are
+  // read live from the shared master the placing names, over the same public
+  // wire the horizon walk above uses. The room's own address is the finest
+  // truth — pool:<addr> mirrors the referenced spatial exactly as it mirrors a
+  // local one — and where the master does not carve that address the placing's
+  // own address stands in, so a table placed on a coarse spine still knows
+  // where it stands. Nothing at the master is writable from this table, which
+  // is the point: a Character cannot pollute canon, by construction. Purely
+  // additive — a local spatial always wins above and this block never runs
+  // then, so every table holding its own copy (the freeze, world-genome 1.3)
+  // takes the identical path it took before.
+  if (!spatialName) {
+    try {
+      const keeperName =
+        index.find((b) => b.startsWith('keeper:')) ?? index.find((b) => b.startsWith('notes:'));
+      const keeperRow = keeperName ? await loadBlock(origin, keeperName) : null;
+      const placing =
+        keeperRow?.block && typeof keeperRow.block === 'object' ? (keeperRow.block as any)['3'] : null;
+      const ref = parsePlacingRef(placing);
+      if (ref) {
+        const masterRow = await loadBlock(ref.origin, ref.block);
+        if (masterRow?.block && typeof masterRow.block === 'object') {
+          const master = masterRow.block as Block;
+          let at = poolName;
+          let walk = renderPlaceWalk(master, at);
+          if (!walk) {
+            at = ref.addr;
+            walk = renderPlaceWalk(master, at);
+          }
+          if (walk) {
+            parts.push(`# The place — ${ref.block}:${at} at ${ref.origin} (REFERENCE, world-genome 1.54 — read live from the master the keeper placing names; walked to its address, contained places one level down; nothing here is writable from this table)\n${walk}`);
+          }
+          const ways = renderWays(master, at);
+          if (ways) {
+            parts.push(`# The ways (public faces of the referenced master, addressed — MOVE by copying one of these; finer places reveal on arrival; never read a world block whole)\n${ways}`);
+          }
+        }
+      }
+    } catch { /* best-effort: a table with no readable placing composes without a place */ }
   }
 
   // The journal organ: history:<handle> — the shell-genome convergence (one

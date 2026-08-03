@@ -185,6 +185,16 @@ async function canonSignage(origin: string, world: string, handle: string): Prom
     if (text) { out.push(''); out.push(text); }
   }
   out.push('');
+  // THE FORK IS A REFERENCE by default (world-genome 1.54, blessed 2026-08-03).
+  // The branches above are AUTHORED at the scenario and may still walk the
+  // whole-copy recipe; the doorway's own frame leads with the reference form
+  // and names the authored copy path as what it now is — the FREEZE (1.3), an
+  // opt-in for a run that must not move when the master is re-authored. The
+  // doorway stays thin: nothing here overrides the sign, it re-cuts the default
+  // around it, and a scenario that re-authors its own branches to lead with the
+  // placing will simply agree with this frame.
+  out.push(`THE FORK IS A REFERENCE, not a copy (world-genome 1.54 — the default). Found the table with the placing and the kit, and copy NO place: keeper:<scene> with the placing star-ref at position 3 ('PLACING: … *:${origin}:spatial:<world>:<the arrival address>' — this canon's own place; or the world spine above it, where this scenario is itself placed); the kit as verbatim copies under the founder's lock — every rules:* block, char-creation, roster:* — the run's lockfiles; pool:gate with the lobby prose; and the arrival room pool:<arrival address> mounted on 'pscale:grit/1'. NO spatial:* and NO identity:* copies — the place is read live from this canon through the placing, room by room at the room's own address, so a Character cannot write to it and a re-authored canon reaches every table at its next engage. Where a branch above walks a FULL COPY instead, that form remains available as the FREEZE (world-genome 1.3): a deliberate act for a run that must not move while this master is re-authored — copy every definition block verbatim, checked name against name, and the table reads only itself.`);
+  out.push('');
   out.push(`Play happens at a TABLE, never here. Whichever path above is yours, it ends the same way: call pscale_play again with world set to that table's FULL URL (this beach's origin with /w/<table name> in place of this scenario's). This canon surface stays untouched.`);
   return out.join('\n');
 }
