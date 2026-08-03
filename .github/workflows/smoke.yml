@@ -27,6 +27,7 @@ jobs:
           FAILED=""
           for s in parser unit floor dots sentinel session wellknown wire-bsp \
                    read-gate pool-engage networking gray group genus play-split \
+                   author-door \
                    grain-address grain-case grit-tree temporal temporal-envelope wellformed compile; do
             echo "── smoke:$s ──"
             if ! npm run --silent "smoke:$s"; then FAILED="$FAILED $s"; fi
