@@ -1,0 +1,8 @@
+{
+  "ts": "2026-08-03T22:40:25Z",
+  "gamma": [],
+  "phase_pruned": [],
+  "system": "{\n  \"recipe\": {},\n  \"index\": {},\n  \"self\": {}\n}",
+  "message": "{\n  \"gap\": [],\n  \"between\": {}\n}",
+  "note": "compose-only: F structural only, no LLM"
+}

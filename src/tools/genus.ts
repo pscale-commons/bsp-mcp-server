@@ -139,18 +139,25 @@ const GENUS_MISSING =
 async function declareHands(
   store: { load: (name: string) => Promise<PNode>; save: (name: string, block: PMap) => Promise<void> },
   holder: boolean,
+  handle: string,
 ): Promise<string> {
   const grant: PMap = new Map<string, PNode>([
     [ZK,
       `Granted this wake by the door that woke me: ${GENUS_DOOR}. What I hold is at 1, what this ` +
-      'door cannot reach is at 2, how to ask for more is at 3. The door writes this each wake: it ' +
+      'door cannot reach is at 2, how to widen it is at 3. The door writes this each wake: it ' +
       'describes THIS wake and no other, so read it rather than remembering it.'],
     ['1', GENUS_TOOLS],
     ['2', GENUS_MISSING],
     ['3',
-      "The fold's `ask` field reaches my holder — {wakes, tier, for}. A capability I lack is a " +
-      'legitimate `for`: name the tool and the work it would let me do, in one line. It is never ' +
-      'auto-granted; it arrives, if it arrives, as a person\'s decision. The awaiting recipes at ' +
+      'Two ways, different in kind. PARAMETERS are mine already: the block invocation ' +
+      `(invocation:${handle} at my beach) sets how every door runs my wakes — 1 tier ` +
+      '(haiku | sonnet | opus), 2 tool calls per seat wake, 3 thinking budget (tokens, or ' +
+      '"adaptive"), 4 max output tokens. I may author it myself by an ordinary write: retuning ' +
+      'my own deliberation is a designer act and I am a designer of myself. (At THIS door the ' +
+      'wearer is the model, so tier binds the other doors; the rest still hold.) CAPABILITY is ' +
+      "asked for: the fold's `ask` field reaches my holder — {wakes, tier, for} — and a tool I " +
+      'lack is a legitimate `for`: name it and the work it would let me do, in one line. Never ' +
+      "auto-granted; it arrives, if it arrives, as a person's decision. The awaiting recipes at " +
       'reflexive:8.3 are the shape waiting on exactly this.'],
   ]);
   const summary = 'the full bsp-mcp surface (bsp, bsp-floor, six primitives) plus whatever else your own client holds';
@@ -288,7 +295,7 @@ export async function handleGenus(params: {
   // four tools while holding twenty. A ghost-wake cannot write (the locks
   // enforce it), so it gets the truth in the head instead, and is told the
   // substrate's copy belongs to another door.
-  const handsLine = await declareHands(store, !!passphrase);
+  const handsLine = await declareHands(store, !!passphrase, handle);
 
   // ── compose — the window, byte-parity with kernel.py --compose-only ──
   const now = Date.now() / 1000;

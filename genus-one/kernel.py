@@ -116,9 +116,14 @@ TIERS = {
     "sonnet": os.environ.get("GENUS_SONNET", "claude-sonnet-5"),
     "opus":   os.environ.get("GENUS_OPUS",   "claude-opus-4-8"),
 }
-MODEL = os.environ.get("GENUS_MODEL", TIERS["sonnet"])    # δ (reflective) call
+# Operator env is an OVERRIDE, not a default: when unset, the shell's own
+# invocation block (below) may speak before the built-in default does.
+_ENV_MODEL = os.environ.get("GENUS_MODEL")                 # δ (reflective) call
+_ENV_THINK = os.environ.get("GENUS_THINK", "").strip()
+_ENV_MAX_TOKENS = os.environ.get("GENUS_MAX_TOKENS")
+MODEL = _ENV_MODEL or TIERS["sonnet"]
 F_MODEL = os.environ.get("GENUS_F_MODEL", TIERS["haiku"])  # per-cell compares (cheap)
-MAX_TOKENS = int(os.environ.get("GENUS_MAX_TOKENS", "4096"))
+MAX_TOKENS = int(_ENV_MAX_TOKENS or "4096")
 
 REFLEXIVE_CURRENT = "9"
 FIELD_ADDR = "2.1"                       # concentrated conditioning field (anchors) for F
@@ -263,10 +268,10 @@ def _think_config():
         return {"type": "enabled", "budget_tokens": 2048}
 
 
-def call_llm(system, message, model=None, thinking=None):
-    max_tokens = MAX_TOKENS
+def call_llm(system, message, model=None, thinking=None, max_tokens=None):
+    max_tokens = max_tokens or MAX_TOKENS
     if thinking and thinking.get("type") == "enabled":
-        max_tokens = MAX_TOKENS + thinking["budget_tokens"]   # budget must be < max_tokens; keep output room
+        max_tokens = max_tokens + thinking["budget_tokens"]   # budget must be < max_tokens; keep output room
     body = {"model": model or MODEL, "max_tokens": max_tokens, "system": system,
             "messages": [{"role": "user", "content": message}]}
     if thinking:
@@ -856,6 +861,54 @@ def apply_write(name, addr, content):
     save_block(name, block)
 
 
+# ── invocation — the run-parameters, read from the SHELL, not the door ───────
+#
+# "invocation-as-block-data" (worktable future intake, 2026-07-05: "designer is
+# potentially the agent itself"). How a wake runs — tier, thinking, output room
+# — was env here and constants in the browser seat, which made the agent's own
+# operating envelope the one thing about it that lived OFF the beach. The
+# optional block invocation:<handle> now carries it, read fresh each pulse:
+#   1 = tier (haiku | sonnet | opus — tier names, not model ids, so they
+#       survive model bumps)
+#   2 = tool calls per seat wake (the xstream seat's parameter; the bare pulse
+#       has no loop, so it is read there and ignored here)
+#   3 = thinking budget (tokens, or "adaptive")
+#   4 = max output tokens per call
+# Absent block or position = the door's default. Every door reads the same
+# block — the xstream animator mirrors this — which is what makes the
+# parameters the AGENT's rather than one door's memory of them. Precedence:
+# operator env (explicitly set) > invocation (the shell) > built-in default.
+
+def _invocation():
+    """(model, thinking, max_tokens) from invocation:<handle> — None where unset."""
+    inv = load_block("invocation")
+    if not isinstance(inv, dict):
+        return None, None, None
+    def _v(d):
+        node = inv.get(d)
+        s = node if isinstance(node, str) else (spark.voice(node) if isinstance(node, dict) else None)
+        return s.strip() if isinstance(s, str) and s.strip() else None
+    tier = (_v("1") or "").lower()
+    model = TIERS[tier] if tier in TIERS else None
+    think = None
+    t = (_v("3") or "").lower()
+    if t == "adaptive":
+        think = {"type": "adaptive"}
+    elif t:
+        try:
+            think = {"type": "enabled", "budget_tokens": int(t)}
+        except ValueError:
+            think = None
+    mt = None
+    m = _v("4")
+    if m:
+        try:
+            mt = max(1024, min(int(m), 64000))
+        except ValueError:
+            mt = None
+    return model, think, mt
+
+
 # ── the hands — fulfil capabilities:1.2's own promise ────────────────────────
 #
 # The shell asks for this in its own words: "Tools I may be granted — search,
@@ -886,16 +939,22 @@ def hands_grant(door, tools_line, missing_line):
     doors, so an instance reads the same grammar wherever it wakes."""
     return {
         ZK: ("Granted this wake by the door that woke me: %s. What I hold is at 1, "
-             "what this door cannot reach is at 2, how to ask for more is at 3. The "
+             "what this door cannot reach is at 2, how to widen it is at 3. The "
              "door writes this each wake: it describes THIS wake and no other, so "
              "read it rather than remembering it." % door),
         "1": tools_line,
         "2": missing_line,
-        "3": ("The fold's `ask` field reaches my holder — {wakes, tier, for}. A "
-              "capability I lack is a legitimate `for`: name the tool and the work it "
-              "would let me do, in one line. It is never auto-granted; it arrives, if "
-              "it arrives, as a person's decision. The awaiting recipes at "
-              "reflexive:8.3 are the shape waiting on exactly this."),
+        "3": ("Two ways, different in kind. PARAMETERS are mine already: the block "
+              "invocation (invocation:%s at my beach) sets how every door runs my "
+              "wakes — 1 tier (haiku | sonnet | opus), 2 tool calls per seat wake, "
+              "3 thinking budget (tokens, or \"adaptive\"), 4 max output tokens. I "
+              "may author it myself by an ordinary write: retuning my own "
+              "deliberation is a designer act and I am a designer of myself. "
+              "CAPABILITY is asked for: the fold's `ask` field reaches my holder — "
+              "{wakes, tier, for} — and a tool I lack is a legitimate `for`: name it "
+              "and the work it would let me do, in one line. Never auto-granted; it "
+              "arrives, if it arrives, as a person's decision. The awaiting recipes "
+              "at reflexive:8.3 are the shape waiting on exactly this." % HANDLE),
     }
 
 
@@ -1339,8 +1398,16 @@ def pulse(compose_only=False, now=None):
     # vision when one closes" lead it to draw the next purpose (or rest if nothing
     # is worth the cost). The coarse vision-level draw takes opus; a gap-close
     # takes the working tier.
-    model = TIERS["opus"] if not gamma else MODEL
-    text, usage, thinking = call_llm(system, message, model=model, thinking=_think_config())
+    # The shell's own run-parameters (invocation:<handle>); operator env,
+    # when explicitly set, still overrides — the physical layer has the
+    # last word over the block, the block over the built-in default.
+    inv_model, inv_think, inv_max = _invocation()
+    working = _ENV_MODEL or inv_model or TIERS["sonnet"]
+    model = TIERS["opus"] if not gamma else working
+    thinking_cfg = _think_config() if _ENV_THINK else (inv_think or _think_config())
+    max_out = int(_ENV_MAX_TOKENS) if _ENV_MAX_TOKENS else (inv_max or MAX_TOKENS)
+    text, usage, thinking = call_llm(system, message, model=model, thinking=thinking_cfg,
+                                     max_tokens=max_out)
     output = parse_output(text)
     status, applied, failed, summary_due = route(output, gamma)
     cadence = load_block("cadence") or {}                       # A2 — stamp the concerns that fired
