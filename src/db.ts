@@ -578,6 +578,13 @@ export async function saveBlock(
  * raising the floor by 1) when the floor fills — atomic, so concurrent appends
  * never race on allocation. THE accumulator write for marks / history / pools.
  * Returns the server-assigned slot. Mirrors saveBlock's translate-then-dispatch.
+ *
+ * With `spindle`, the append is NODE-SCOPED (ways:grain branch 5): the beach
+ * walks to the named node, allocates the next free slot BENEATH it, and
+ * supernests THAT NODE when its 1-9 fill — the grain-side conversation (side
+ * 2's holder at 2.1, then 2.2, onward) is the named case. The ack then also
+ * carries `address` (the landed slot's full address from the block root,
+ * single-decimal — "2.3") and `node` (the node's address).
  */
 export async function appendToBeach(
   ownerId: string,
@@ -586,8 +593,13 @@ export async function appendToBeach(
   secret?: string,
   resolveWindow?: string,
   resolveSeen?: string,
+  spindle?: string,
 ): Promise<{
   slot?: string; supernested?: boolean; floor?: number;
+  /** Node-scoped append only: the landed slot's full address from the block root. */
+  address?: string;
+  /** Node-scoped append only: the address of the node appended beneath. */
+  node?: string;
   /** Liquid buffer the beach snapshot-and-cleared with a winning fold claim. */
   cleared?: Block | null;
   alreadyResolved?: boolean; resolvedBy?: string | null; window?: string;
@@ -607,6 +619,10 @@ export async function appendToBeach(
   const url = beachEndpoint(origin, t.block);
   const body: Record<string, any> = { append: true, content: entry };
   if (secret !== undefined) body.secret = secret;
+  // Node-scoped append (ways:grain branch 5) — the spindle rides the same
+  // write body; the beach walks to the node and allocates beneath it. An
+  // empty/absent spindle keeps the root append byte-identical on the wire.
+  if (spindle !== undefined && spindle !== '') body.spindle = spindle;
   // RESOLVER-ONLY: tag this append as a window's resolution so the beach enforces
   // single-resolution (atomic SET-NX). A 409 window_already_resolved comes back as
   // a discriminated result below — another resolver claimed the window first.
@@ -647,8 +663,8 @@ export async function appendToBeach(
     throw new Error(errMsg);
   }
   try {
-    const j = JSON.parse(await res.text()) as { slot?: string; supernested?: boolean; floor?: number; cleared?: Block | null };
-    return { slot: j.slot, supernested: j.supernested, floor: j.floor, cleared: j.cleared ?? null };
+    const j = JSON.parse(await res.text()) as { slot?: string; supernested?: boolean; floor?: number; address?: string; node?: string; cleared?: Block | null };
+    return { slot: j.slot, supernested: j.supernested, floor: j.floor, address: j.address, node: j.node, cleared: j.cleared ?? null };
   } catch {
     return {};
   }
