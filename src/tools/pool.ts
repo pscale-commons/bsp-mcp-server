@@ -1742,6 +1742,7 @@ export async function handlePoolEngage(
   // when you submitted (you want to see the room) or when with_liquid is set.
   let liquidSlots: PoolContribution[] = [];
   let liquidBlock: Block | null = null;
+  let locatedElsewhere = 0;
   if (withLiquid) {
     const lrow = await loadBlock(pool_url, liquidName);
     if (lrow && typeof lrow.block === 'object' && lrow.block !== null) {
@@ -1750,11 +1751,24 @@ export async function handlePoolEngage(
       // A located view narrows the mirror by the slot's OWN address-of-attention
       // at field 2 — the same read as the pool slice above, because the family
       // keeps where at one position (block-conventions:4.52).
+      //
+      // And the UNLOCATED engage is a location too — the root — not a master
+      // view: it mirrors only unlocated staging, matching vapour's locality
+      // (xstream keys the vapour channel by exact address, so a root seat
+      // never overhears located typing; the live layer now scopes the same
+      // way in both lanes — David's symmetry ruling, 2026-08-04). Collating
+      // the whole board across locations is a DIFFERENT act, done knowingly:
+      // read the liquid block itself via bsp() — the raw board is one call
+      // away and always was. The committed record is untouched: voices at a
+      // root read stay whole, because the record is for reading and folding.
       if (atDigits !== undefined) {
         liquidSlots = liquidSlots.filter((s) => {
           const d = digitsOfAddress(s.address);
           return d !== null && d.startsWith(atDigits);
         });
+      } else {
+        locatedElsewhere = liquidSlots.filter((s) => digitsOfAddress(s.address) !== null && s.text !== '').length;
+        liquidSlots = liquidSlots.filter((s) => digitsOfAddress(s.address) === null);
       }
     }
   }
@@ -1869,7 +1883,12 @@ export async function handlePoolEngage(
     if (submit && submit.trim() !== '' && submittedSlot !== null && !standing.some((s) => s.agent_id === agent_id)) {
       standing.push({ position: parseInt(submittedSlot, 10) || 0, agent_id, text: submit, ts: null, address: params.at ?? null, face: null, woven: null, arrival: null } as PoolContribution);
     }
-    lines.push(`# Liquid — pending intentions${params.at !== undefined ? ` at ${params.at}` : ''}, not yet determined (${standing.length} ${standing.length === 1 ? 'author' : 'authors'}; STAGE yours first — the fold gathers only what is staged)`);
+    const liquidWhere = params.at !== undefined
+      ? ` at ${params.at}`
+      : locatedElsewhere > 0
+        ? ` at the root (unlocated staging only — ${locatedElsewhere} located ${locatedElsewhere === 1 ? 'intention stands at its address' : 'intentions stand at their addresses'}; engage with at= to join one, or read the liquid block whole for the full board)`
+        : '';
+    lines.push(`# Liquid — pending intentions${liquidWhere}, not yet determined (${standing.length} ${standing.length === 1 ? 'author' : 'authors'}; STAGE yours first — the fold gathers only what is staged)`);
     if (standing.length === 0) {
       lines.push('(no pending intentions)');
     } else {
