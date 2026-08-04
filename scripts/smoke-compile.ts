@@ -111,7 +111,7 @@ console.log('\nBOUNDS — completion never silent, never hardcoded, never forced
   ok('grain: prefix carries relation', !r3.completions.some((c) => c.dimension === 'relation'));
   const r4 = await compile(toPNode({ _: 'open-commons dialed elsewhere', 1: 'open-commons:2:0' }), load);
   ok('open-commons:2 alone does not carry relation', r4.completions.some((c) => c.dimension === 'relation'));
-  ok('registry admits by failure only (three entries, each with a named failure)', COMPLETION_REGISTRY.length === 3 && COMPLETION_REGISTRY.every((e) => e.admittedBy.length > 40));
+  ok('registry admits by failure only (four entries, each with a named failure)', COMPLETION_REGISTRY.length === 4 && COMPLETION_REGISTRY.every((e) => e.admittedBy.length > 40));
   ok('collectRefs skips prose voicings', collectRefs(toPNode({ _: 'a sentence with spaces', 1: 'purpose' })).length === 1);
 }
 
@@ -128,6 +128,30 @@ console.log('\nS·T·I — the instance-level trio (identity and situation from 
   ok('reflexive: and spatial: prefixes carry identity and situation', r3.completions.length === 0);
   const r4 = await compile(toPNode({ _: 'the lodestone carries its own dimensions', 1: 'relationships', 2: 'lodestone:1', 3: 'lodestone:4' }), load);
   ok('lodestone:1 / lodestone:4 dials are carriers themselves', r4.completions.length === 0);
+}
+
+console.log('\nSTANCE — the grips reservoir, beach-native (admitted 2026-08-04)');
+{
+  const gripsBlock = toPNode({
+    _: 'CADO, held as grips — the four holds a compound offers the mind working it; a face is read off the hands, never stored.',
+    5: { _: 'the recognition move' },
+  });
+  const stanceTeaching = new Map(teaching);
+  stanceTeaching.set('grips', gripsBlock);
+  const stanceLoad: Loader = async (name) => shell.get(name) ?? stanceTeaching.get(name) ?? null;
+  const gripsLine = (gripsBlock as PMap).get('_') as string;
+  const bare = { _: 'no stance carrier', 1: 'passport', 2: 'conditions', 3: 'relationships' };
+  const r1 = await compile(toPNode(bare), stanceLoad);
+  const st = r1.completions.find((c) => c.dimension === 'stance');
+  ok('uncarried stance completes from the surface-hosted block', st?.address === 'grips:0:0');
+  ok('stance: line scooped live — the reservoir, never hardcoded', typeof st?.line === 'string' && st.line === gripsLine);
+  ok('stance: reason names the failure class', /read off the hands/.test(st?.reason ?? ''));
+  const r2 = await compile(toPNode({ ...bare, 4: 'grips:5' }), stanceLoad);
+  ok('a dialed grips branch carries stance', !r2.completions.some((c) => c.dimension === 'stance'));
+  const r3 = await compile(toPNode({ ...bare, 4: 'reflective-compass:1' }), stanceLoad);
+  ok('the genus compass carries stance by construction', !r3.completions.some((c) => c.dimension === 'stance'));
+  const r4b = await compile(toPNode(bare), load);
+  ok('a surface not hosting grips stays quiet — data activates, never code', !r4b.completions.some((c) => c.dimension === 'stance'));
 }
 
 console.log('\nCARRIED — the surrounding envelope counts toward the check, never toward the window');

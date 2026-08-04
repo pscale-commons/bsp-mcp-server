@@ -96,6 +96,7 @@ export interface CompletionRule {
 const RELATION_BLOCKS = new Set(['relationships', 'surface', 'task', 'marks', 'liquid', 'pool', 'between']);
 const IDENTITY_BLOCKS = new Set(['passport', 'shell', 'reflexive', 'history', 'stash', 'witnessed', 'knows', 'identity']);
 const SITUATION_BLOCKS = new Set(['located', 'sundial', 'conditions', 'state-of-play']);
+const STANCE_BLOCKS = new Set(['grips', 'reflective-compass']);
 
 /**
  * Admission by failure — an entry earns its place only by a failure that
@@ -112,6 +113,16 @@ const SITUATION_BLOCKS = new Set(['located', 'sundial', 'conditions', 'state-of-
  *     scene with no passport — a window composed selfless); the hardest of
  *     the trio to land (David), made tractable by the compass mechanic: the
  *     delivered point opens a directory the instance self-selects from.
+ *   - STANCE (the face) — admitted by a month of block-side CADO machinery
+ *     that failed its users (face params, gates, panels, the liquid
+ *     collision): a face is never stored in blocks — it is the configuration
+ *     a compound induces in the mind working it, read off the hands — so the
+ *     current is delivered, never enforced. Its reservoir is beach-native by
+ *     design ('grips' resolves at the door's own surface): a world activates
+ *     the line by hosting the block — data, never deploy — and the genus door
+ *     carries the dimension by construction, the reflective-compass riding
+ *     every wake's bundle. If the block ever graduates to a sentinel, the
+ *     same address resolves in-process everywhere with zero code change.
  * GROUND is not an entry yet: the doors inject it at connect (server
  * instructions) and pscale_play exists because its absence confabulated —
  * if a compile-path failure is demonstrated, it is admitted the same way.
@@ -160,6 +171,23 @@ export const COMPLETION_REGISTRY: CompletionRule[] = [
       'the P2 forensic of 2026-07-03 — a seat narrated the brewhouse from the common room, confidently precise ' +
       'about a place it never read; present as a current, WHERE-AND-WHEN-I-AM at what grain keeps an act from ' +
       'resting on a stale or unvisited world (lodestone:4)',
+  },
+  {
+    dimension: 'stance',
+    carries: (name, address) => {
+      if (STANCE_BLOCKS.has(name)) return true;
+      for (const p of STANCE_BLOCKS) if (name.startsWith(p + ':')) return true;
+      return false;
+    },
+    // Address 0 at attention 0 — the block's root voicing as a string point,
+    // the same form as the lodestone entries ('0' left-pads across supernest).
+    shallowPoint: 'grips:0:0',
+    admittedBy:
+      'a month of block-side face machinery that fought its own users — face params, gates, panels, the liquid ' +
+      'collision (xstream-bsp#182), two face models wired into one client with neither driving — named ' +
+      '2026-08-04: a face is never stored in blocks, it is the configuration a compound induces in the mind ' +
+      'working it, read off the hands (which member the writing lands in; grips:5 is the recognition move), ' +
+      'proven by the cold-read — a stranger instance configured unaided from the block alone',
   },
 ];
 
