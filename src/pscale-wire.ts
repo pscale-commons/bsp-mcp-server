@@ -70,6 +70,15 @@ export interface WriteOpts extends WireOpts {
 export type WireOk = { ok: true; status: number; body: Json };
 export type WireErr = { ok: false; status?: number; error: string };
 
+/** Narrow a wire result to its error arm — THE portable guard. This file
+ * compiles under both consumers' regimes (bsp-mcp strict, xstream
+ * strict:false), and negated-discriminant narrowing degrades without
+ * strictNullChecks; a user-defined predicate narrows under both. Consumers
+ * should branch on this, not on `!r.ok`. */
+export function isWireErr<T extends { ok: boolean }>(r: T | WireErr): r is WireErr {
+  return r.ok === false;
+}
+
 // ── transport ────────────────────────────────────────────────────────────────
 
 class HttpError extends Error {
@@ -365,13 +374,7 @@ export async function grainReach(
     my_side_content: args.sideContent,
     my_passphrase: args.passphrase,
   }, opts);
-  if (!r.ok) {
-    // Bind the narrowed arm before spreading — spreading the union directly
-    // defeats the guard under stricter tsconfigs (caught by the vendored
-    // copy's typecheck in xstream; the fix lands here, in the canonical).
-    const err: WireErr = r;
-    return { ...err, pid, side };
-  }
+  if (isWireErr(r)) return { ...r, pid, side };
   const state = typeof r.body?.state === 'string' ? r.body.state : 'created';
   return { ok: true, pid, side, state, completed: state === 'completed' };
 }
@@ -391,7 +394,7 @@ export async function sedRegister(
   };
   if (args.shellRef) body.shell_ref = args.shellRef;
   const r = await postAction(origin, `sed:${args.collective}`, body, opts);
-  if (!r.ok) return r;
+  if (isWireErr(r)) return r;
   const pos = r.body?.position;
   return {
     ok: true,
