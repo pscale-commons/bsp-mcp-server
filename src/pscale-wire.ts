@@ -365,7 +365,13 @@ export async function grainReach(
     my_side_content: args.sideContent,
     my_passphrase: args.passphrase,
   }, opts);
-  if (!r.ok) return { ...r, pid, side };
+  if (!r.ok) {
+    // Bind the narrowed arm before spreading — spreading the union directly
+    // defeats the guard under stricter tsconfigs (caught by the vendored
+    // copy's typecheck in xstream; the fix lands here, in the canonical).
+    const err: WireErr = r;
+    return { ...err, pid, side };
+  }
   const state = typeof r.body?.state === 'string' ? r.body.state : 'created';
   return { ok: true, pid, side, state, completed: state === 'completed' };
 }
