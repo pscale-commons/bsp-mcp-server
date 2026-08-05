@@ -1,6 +1,6 @@
 # One wire, not two — ending the hand-rolled second substrate client
 
-**Status**: proposal, David's decision
+**Status**: ADOPTED (David, 2026-08-05) — steps 2-3 executed (pscale-wire.ts canonical + contract battery + both consumers ported); step 4 (passphrase transit for server-only primitives) remains David's, deliberately undecided
 **Date**: 2026-08-03
 **Prompted by**: "I don't want to empower the agent in a piecemeal way, one function at a time. This is exhausting."
 
