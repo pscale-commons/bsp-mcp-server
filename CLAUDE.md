@@ -571,3 +571,18 @@ Keel's user-side spine–mirror–tree spec (business.2 — the beach as a self-
 - **`function:audit`** — the sequence operator (forked from align + grit:5, provenance at 9): spine defines COMPLETION per stage; mirrors voice DONE/DOING/BLOCKED-first prose at the stage address (never digit-fields — sub-address collision); silence = not-started; the fold is tally + exceptions with blockers verbatim. Mounted live on the first ordinal family: `spine:arrival` / `pool:arrival` / `arrival:weft`.
 - **Lock truth** (2026-07-26 inheritance, corrected against the spec's reading): authority = nearest locked ancestor; a digit locked separately is a DELEGATION; an unlocked block with per-digit claims is the roster door pattern — partial permission exists. An open canon block is homestead-bait post-inheritance: `tree` is now root-locked (weft's key). `beach-venture:weft` homesteaded as the venture family's first mirror.
 - **bsp-floor cannot enumerate across zero rungs** (canonical digit-only descent) — every Gregorian year crosses one at the century, so temporal spines fold BY HORIZON ADDRESS (spine + mirrors read at the same spindle; path-walks cross zeros fine — proven at 2026300000), not by whole-block align. A zero-descending mode would be a walker change: Python first, own proposal.
+
+## Law-class beach writes — proposal and version (2026-08-05)
+
+The beach has no rollback, so a wholesale rewrite of a LAW block (operators, conventions,
+genome — anything whose readers are everyone) is untracked unless made trackable by hand.
+The discipline, adopted after the 2026-08-04 `function:parlour` rewrite went in with neither
+(record at [`proposals/2026-08-05-law-writes-get-their-record.md`](proposals/2026-08-05-law-writes-get-their-record.md)):
+**proposal-first** (a dated file in `proposals/`, PR'd, readable BEFORE the write) and
+**version-before-replace** (copy the standing content to `archive:<block>:<date>` — the
+archive family IS the beach's version history). The review half is beach-native already:
+proposal-by-mirror (`tree:5.1`) — candidate in your OWN block, the fold is the diff,
+adoption is the holder's merge; use-case recorded at `usecases:6`. Ordinary content writes
+(rooms, marks, mirrors, your own blocks) need none of this — the discipline gates law,
+never speech. This is grips:3 ("a law moves by proposal and version, never by quiet edit
+under a live table") operationalised.
