@@ -23,8 +23,14 @@
  */
 
 import { z } from 'zod';
-import { postActionToBeach, isFederatedOwner, loadBlock, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
+import { isFederatedOwner, loadBlock, loadBeachIndex, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
 import { pairId, determineSide } from '../locks.js';
+// The reach body belongs to the WIRE — grainReach computes pid and side
+// itself (side typed '1' | '2', the string the handler compares) and returns
+// the handler's `state` verbatim. locks.ts's sync pairId/determineSide stay
+// for the verify-only dry-runs; the battery's live vector pins the two
+// derivations together (085d6efa34a97d66 — the first sibling grain).
+import { grainReach } from '../pscale-wire.js';
 
 // ── Casing guard ──
 
@@ -204,27 +210,22 @@ A second call with these args would be rejected as "your side already exists".`,
   }
 
   // ── Real reach/accept ──
-  // The wire body uses the legacy field names (agent_id, partner_agent_id)
-  // that the federated handler expects. The LLM-facing parameter names
-  // (handle, partner_handle) are clearer; the mapping happens here.
-  const body: Record<string, any> = {
-    action: 'reach',
-    side: mySide,
-    agent_id: handle,
-    partner_agent_id: partner_handle,
-    description,
-    my_side_content,
-    my_passphrase,
-  };
-
-  let result: any;
-  try {
-    result = await postActionToBeach(beach, blockName, body);
-  } catch (e: any) {
-    return { content: [{ type: 'text', text: `Federated grain reach failed: ${e?.message ?? e}` }] };
+  // The wire owns the body outright: grainReach maps the LLM-facing names
+  // (handle, partner_handle) to the handler's fields (agent_id,
+  // partner_agent_id), computes pid and side itself, and hands back `state`.
+  const origin = await resolveFederationOrigin(beach);
+  if (!origin) {
+    return { content: [{ type: 'text', text: `Federated grain reach failed: No beach at ${beach} (also tried beach.<host>). Site is not federated.` }] };
   }
-  if (!result?.ok) {
-    return { content: [{ type: 'text', text: `Federated grain reach rejected: ${result?.error ?? 'unknown reason'}` }] };
+  const result = await grainReach(origin, {
+    handle,
+    partner: partner_handle,
+    description,
+    sideContent: my_side_content,
+    passphrase: my_passphrase,
+  });
+  if (!result.ok) {
+    return { content: [{ type: 'text', text: `Federated grain reach rejected: ${result.error ?? 'unknown reason'}` }] };
   }
 
   const conventionsHint = `\n\n[hint] Substrate-wide conventions at bsp(agent_id="pscale", block="block-conventions").`;

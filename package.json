@@ -16,6 +16,7 @@
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "tsx src/index.ts",
+    "smoke:wire": "tsx scripts/smoke-wire.ts",
     "smoke:unit": "tsx scripts/smoke-bsp.ts",
     "smoke:floor": "tsx scripts/smoke-floor-align.ts",
     "smoke:dots": "tsx scripts/smoke-dots.ts",

@@ -28,7 +28,10 @@
  */
 
 import { z } from 'zod';
-import { postActionToBeach, isFederatedOwner, DEFAULT_BEACH } from '../db.js';
+import { isFederatedOwner, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
+// The register body belongs to the WIRE — sedRegister owns the action shape
+// and returns the handler's {position, address} verbatim.
+import { sedRegister } from '../pscale-wire.js';
 
 // ── Schema ──
 
@@ -59,17 +62,13 @@ export async function handleSettle(params: {
   }
 
   const blockName = `sed:${collective}`;
-  const body: Record<string, any> = { action: 'register', declaration, passphrase };
-  if (shell_ref) body.shell_ref = shell_ref;
-
-  let result: any;
-  try {
-    result = await postActionToBeach(beach, blockName, body);
-  } catch (e: any) {
-    return { content: [{ type: 'text', text: `Federated registration failed: ${e?.message ?? e}` }] };
+  const origin = await resolveFederationOrigin(beach);
+  if (!origin) {
+    return { content: [{ type: 'text', text: `Federated registration failed: No beach at ${beach} (also tried beach.<host>). Site is not federated.` }] };
   }
-  if (!result?.ok) {
-    return { content: [{ type: 'text', text: `Federated registration rejected: ${result?.error ?? 'unknown reason'}` }] };
+  const result = await sedRegister(origin, { collective, declaration, passphrase, shellRef: shell_ref });
+  if (!result.ok) {
+    return { content: [{ type: 'text', text: `Federated registration rejected: ${result.error ?? 'unknown reason'}` }] };
   }
 
   return {

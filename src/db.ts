@@ -27,6 +27,11 @@
 import { Block, readAt } from './bsp.js';
 import { SENTINEL_BLOCK_MAP } from './sentinels.js';
 import { publicKeysFromSpine } from './keys.js';
+// The wire — ONE implementation of the beach HTTP contract (canonical here,
+// vendored byte-identical into xstream; battery in pscale-wire-contract.ts).
+// db.ts keeps ROUTING (origin resolution, translation, BlockRow shaping) and
+// hands every HTTP body to the wire.
+import * as wire from './pscale-wire.js';
 
 // ── Default beach ──
 //
@@ -321,48 +326,23 @@ export async function loadBspShape(
 ): Promise<any | null> {
   const origin = await resolveFederationOrigin(ownerId);
   if (!origin) return null;
-  const url = beachEndpointCanonical(origin, blockName, spindle, pscale);
-  let res: Response;
   try {
-    res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
+    return await wire.readShape(origin, blockName, spindle, pscale, { timeoutMs: BEACH_TIMEOUT_MS });
   } catch (e: any) {
-    throw new Error(`Beach fetch failed (${url}): ${e?.message ?? e}`);
-  }
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    let detail = '';
-    try { detail = ' — ' + (await res.text()).slice(0, 200); } catch {}
-    throw new Error(`Beach load failed (${res.status} ${res.statusText})${detail}`);
-  }
-  try {
-    return await res.json();
-  } catch (e: any) {
-    throw new Error(`Beach response was not JSON: ${e?.message ?? e}`);
+    throw new Error(`Beach shape read failed (${blockName} at ${origin}): ${e?.message ?? e}`);
   }
 }
 
 async function loadBlockFromBeach(ownerId: string, blockName: string): Promise<BlockRow | null> {
   const origin = await resolveFederationOrigin(ownerId);
   if (!origin) return null;
-  const url = beachEndpoint(origin, blockName);
-  let res: Response;
-  try {
-    res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
-  } catch (e: any) {
-    throw new Error(`Beach fetch failed (${url}): ${e?.message ?? e}`);
-  }
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    let detail = '';
-    try { detail = ' — ' + (await res.text()).slice(0, 200); } catch {}
-    throw new Error(`Beach load failed (${res.status} ${res.statusText})${detail}`);
-  }
   let block: any;
   try {
-    block = await res.json();
+    block = await wire.loadBlock(origin, blockName, { timeoutMs: BEACH_TIMEOUT_MS });
   } catch (e: any) {
-    throw new Error(`Beach response was not JSON: ${e?.message ?? e}`);
+    throw new Error(`Beach load failed (${blockName} at ${origin}): ${e?.message ?? e}`);
   }
+  if (block === null) return null;
   const now = new Date().toISOString();
   return {
     id: `${ownerId}/${blockName}`,
@@ -396,24 +376,8 @@ export interface BeachIndex {
 export async function loadBeachIndex(ownerId: string): Promise<BeachIndex | null> {
   const origin = await resolveFederationOrigin(ownerId);
   if (!origin) return null;
-  const url = `${origin}/.well-known/pscale-beach`;
-  let res: Response;
-  try {
-    res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
-  } catch (e: any) {
-    throw new Error(`Beach index fetch failed (${url}): ${e?.message ?? e}`);
-  }
-  if (!res.ok) {
-    let detail = '';
-    try { detail = ' — ' + (await res.text()).slice(0, 200); } catch {}
-    throw new Error(`Beach index load failed (${res.status} ${res.statusText})${detail}`);
-  }
-  let parsed: any;
-  try {
-    parsed = await res.json();
-  } catch (e: any) {
-    throw new Error(`Beach index response was not JSON: ${e?.message ?? e}`);
-  }
+  const parsed: any = await wire.surfaceIndex(origin, { timeoutMs: BEACH_TIMEOUT_MS });
+  if (!parsed) return null;
   const bytes =
     parsed?.bytes && typeof parsed.bytes === 'object' && !Array.isArray(parsed.bytes)
       ? Object.fromEntries(
@@ -457,28 +421,9 @@ export async function postActionToBeach(
   if (!resolved) {
     throw new Error(`No beach at ${origin} (also tried beach.<host>). Site is not federated.`);
   }
-  const url = beachEndpoint(resolved, blockName);
-  let res: Response;
-  try {
-    res = await fetchWithTimeout(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch (e: any) {
-    throw new Error(`Beach action POST failed (${url}): ${e?.message ?? e}`);
-  }
-  let parsed: any;
-  try {
-    parsed = await res.json();
-  } catch {
-    parsed = null;
-  }
-  if (!res.ok) {
-    const reason = parsed?.error ?? `${res.status} ${res.statusText}`;
-    throw new Error(`Beach action rejected: ${reason}`);
-  }
-  return parsed;
+  const r = await wire.postAction(resolved, blockName, body, { timeoutMs: BEACH_TIMEOUT_MS });
+  if (!r.ok) throw new Error(`Beach action rejected: ${r.error}`);
+  return r.body;
 }
 
 async function saveBlockToBeach(
@@ -491,47 +436,27 @@ async function saveBlockToBeach(
   if (!origin) {
     throw new Error(`No beach at ${ownerId} (also tried beach.<host>). Site is not federated; cannot write.`);
   }
-  const url = beachEndpoint(origin, blockName);
   const userSpindle = opts.spindle;
   const isWholeBlock = !userSpindle || userSpindle === '' || userSpindle === '*';
-  const body: Record<string, any> = {};
+  const wireOpts = {
+    timeoutMs: BEACH_TIMEOUT_MS,
+    secret: opts.secret,
+    newLock: opts.new_lock,
+    gray: opts.gray,
+  };
   if (isWholeBlock) {
-    body.spindle = '';
-    body.pscale_attention = null;
-    body.content = block;
-    body.confirm = true;
+    // Whole-block replace, read-back confirmed by the wire — the discipline
+    // the seat has carried since wake-1 ("a lost write is a lost wake") now
+    // holds at this door too; this path previously fired and trusted.
+    const r = await wire.saveWhole(origin, blockName, block, wireOpts);
+    if (!r.ok) throw new Error(`Beach save rejected: ${r.error}`);
   } else {
     const cleanedSpindle = userSpindle.replace(/\*$/, '');
-    body.spindle = cleanedSpindle;
-    body.pscale_attention = opts.pscale_attention ?? null;
-    body.content = readAt(block, cleanedSpindle);
-  }
-  if (opts.secret !== undefined) body.secret = opts.secret;
-  if (opts.new_lock !== undefined) body.new_lock = opts.new_lock;
-  if (opts.gray !== undefined) body.gray = opts.gray;
-
-  let res: Response;
-  try {
-    res = await fetchWithTimeout(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(body),
+    const r = await wire.writeAt(origin, blockName, cleanedSpindle, readAt(block, cleanedSpindle), {
+      ...wireOpts,
+      pscaleAttention: opts.pscale_attention ?? null,
     });
-  } catch (e: any) {
-    throw new Error(`Beach POST failed (${url}): ${e?.message ?? e}`);
-  }
-  if (!res.ok) {
-    let errMsg = `Beach save rejected (${res.status} ${res.statusText})`;
-    try {
-      const txt = await res.text();
-      try {
-        const parsed = JSON.parse(txt);
-        if (parsed?.error) errMsg = `Beach save rejected: ${parsed.error}`;
-      } catch {
-        if (txt) errMsg += ` — ${txt.slice(0, 200)}`;
-      }
-    } catch {}
-    throw new Error(errMsg);
+    if (!r.ok) throw new Error(`Beach save rejected: ${r.error}`);
   }
   const now = new Date().toISOString();
   return {
@@ -616,58 +541,25 @@ export async function appendToBeach(
   if (!origin) {
     throw new Error(`No beach at ${ownerId} (also tried beach.<host>). Site is not federated; cannot append.`);
   }
-  const url = beachEndpoint(origin, t.block);
-  const body: Record<string, any> = { append: true, content: entry };
-  if (secret !== undefined) body.secret = secret;
-  // Node-scoped append (ways:grain branch 5) — the spindle rides the same
-  // write body; the beach walks to the node and allocates beneath it. An
-  // empty/absent spindle keeps the root append byte-identical on the wire.
-  if (spindle !== undefined && spindle !== '') body.spindle = spindle;
-  // RESOLVER-ONLY: tag this append as a window's resolution so the beach enforces
-  // single-resolution (atomic SET-NX). A 409 window_already_resolved comes back as
-  // a discriminated result below — another resolver claimed the window first.
-  if (resolveWindow !== undefined) body.resolve_window = resolveWindow;
-  // Companion guard: the newest first-staged stamp the folder saw. A stage that
-  // landed after that read makes the claim stale — the beach answers 409
-  // window_moved with the live buffer, and the folder re-weaves (nothing lost).
-  if (resolveSeen !== undefined) body.resolve_seen = resolveSeen;
-  let res: Response;
-  try {
-    res = await fetchWithTimeout(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch (e: any) {
-    throw new Error(`Beach append failed (${url}): ${e?.message ?? e}`);
+  // The wire owns the body (append flag, node-scoped spindle, the resolver
+  // fields) and hands the two 409s that are ANSWERS — already_resolved,
+  // window_moved — back discriminated; this door reshapes them into its
+  // existing return contract.
+  const r = await wire.append(origin, t.block, entry, {
+    timeoutMs: BEACH_TIMEOUT_MS,
+    secret,
+    spindle,
+    resolveWindow,
+    resolveSeen,
+  });
+  if (r.alreadyResolved) {
+    return { alreadyResolved: true, resolvedBy: r.resolvedBy ?? null, window: r.window, landed: r.landed ?? null };
   }
-  if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-    let parsed: any = null;
-    try { parsed = JSON.parse(txt); } catch { /* not JSON */ }
-    // 409 window_already_resolved is NOT an error — it's the single-resolution
-    // claim doing its job (another resolver got this window first). Surface it as
-    // a discriminated result so the caller stands the resolver down, not throws.
-    if (res.status === 409 && parsed?.code === 'window_already_resolved') {
-      return { alreadyResolved: true, resolvedBy: parsed.resolved_by ?? null, window: parsed.window, landed: parsed.landed ?? null };
-    }
-    // 409 window_moved is likewise NOT an error — the resolve_seen guard fired:
-    // an intention staged after the folder's read. The live buffer rides back so
-    // the folder re-weaves without another read.
-    if (res.status === 409 && parsed?.code === 'window_moved') {
-      return { windowMoved: true, window: parsed.window, buffer: parsed.buffer ?? null };
-    }
-    let errMsg = `Beach append rejected (${res.status} ${res.statusText})`;
-    if (parsed?.error) errMsg = `Beach append rejected: ${parsed.error}`;
-    else if (txt) errMsg += ` — ${txt.slice(0, 200)}`;
-    throw new Error(errMsg);
+  if (r.windowMoved) {
+    return { windowMoved: true, window: r.window, buffer: r.buffer ?? null };
   }
-  try {
-    const j = JSON.parse(await res.text()) as { slot?: string; supernested?: boolean; floor?: number; address?: string; node?: string; cleared?: Block | null };
-    return { slot: j.slot, supernested: j.supernested, floor: j.floor, address: j.address, node: j.node, cleared: j.cleared ?? null };
-  } catch {
-    return {};
-  }
+  if (!r.ok) throw new Error(`Beach append rejected: ${r.error}`);
+  return { slot: r.slot, supernested: r.supernested, floor: r.floor, address: r.address, node: r.node, cleared: r.cleared ?? null };
 }
 
 /**
