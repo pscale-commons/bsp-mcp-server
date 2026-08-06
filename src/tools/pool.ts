@@ -1139,7 +1139,45 @@ async function stageLiquid(
   }
   writeAt(lblock, mySlot, slotObj);
   await saveBlock(url, liquidName, lblock, { spindle: mySlot, pscale_attention: -1, secret });
-  return mySlot;
+  if (existingSlot) return mySlot;
+
+  // A BIRTH IS VERIFIED, NEVER TRUSTED (2026-08-06). At the second molequle
+  // fold a new author's first slip vanished twice with no error — the surgical
+  // save returned ok and the slot never appeared, while every revision of an
+  // existing slot succeeded (keel's run; provenance at pool:molequle slot 4).
+  // Clean probes did not reproduce it, which points at the transport, not the
+  // walk: the surgical wire write trusts its 200 with no read-back (unlike
+  // saveWhole, which confirms), and under the #202 duplicate-request-id
+  // misroute a 200 can belong to another call entirely. The cure is applied
+  // where the stakes are: a revision's loss is self-evident to its author and
+  // repaired by the next keystroke; a lost birth is invisible to everyone —
+  // the author believes they stand at the table and every fold excludes them.
+  // So: read the buffer back; if the slip is absent, rebuild the whole buffer
+  // with the slip in place (saveWhole read-back-confirms; the whole-block race
+  // is the same one the opening path already accepts); if it is STILL absent,
+  // fail loud — silence is the one outcome this path may never produce again.
+  const verify = await loadBlock(url, liquidName).catch(() => null);
+  const landed = verify?.block && typeof verify.block === 'object'
+    ? (readAt(verify.block as Block, mySlot) as Record<string, any> | null)
+    : null;
+  if (landed && landed['1'] === agentId) return mySlot;
+
+  const rebuilt: Block = verify?.block && typeof verify.block === 'object'
+    ? JSON.parse(JSON.stringify(verify.block))
+    : ({ _: baseDesc } as Block);
+  const rebornSlot = findAuthorSlot(rebuilt, agentId) ?? findNextSlot(rebuilt);
+  writeAt(rebuilt, rebornSlot, slotObj);
+  await saveBlock(url, liquidName, rebuilt, { spindle: '', secret });
+  const check = await loadBlock(url, liquidName).catch(() => null);
+  const relanded = check?.block && typeof check.block === 'object'
+    ? (readAt(check.block as Block, rebornSlot) as Record<string, any> | null)
+    : null;
+  if (!relanded || relanded['1'] !== agentId) {
+    throw new Error(
+      `liquid birth did not land: slot ${rebornSlot} for ${agentId} at ${liquidName} is absent after both the surgical write and the whole-block fallback — refusing to report a stage that did not happen`,
+    );
+  }
+  return rebornSlot;
 }
 
 // ── Cross-grain composition (proposal 2026-07-15-pscale-of-agency G3) ──
