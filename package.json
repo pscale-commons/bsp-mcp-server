@@ -30,6 +30,7 @@
     "smoke:wire-bsp": "tsx scripts/smoke-wire-bsp.ts",
     "smoke:read-gate": "tsx scripts/smoke-read-gate.ts",
     "smoke:pool-engage": "tsx scripts/smoke-pool-engage.ts",
+    "smoke:liquid-birth": "tsx scripts/smoke-liquid-birth.ts",
     "smoke:reference-table": "tsx scripts/smoke-reference-table.ts",
     "smoke:networking": "tsx scripts/smoke-networking.ts",
     "smoke:gray": "tsx scripts/smoke-gray.ts",
