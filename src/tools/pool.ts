@@ -1505,12 +1505,27 @@ export async function handlePoolEngage(
     // A pool with no spine — a parlour, a room, plain chat — has no molecule to
     // write into, so it is untouched: a commit is a commit to the spool, and a
     // face there still means only what it meant before.
-    if (!destination && face) {
+    //
+    // THE MOUNT GATES THE MAP. Two outlet maps are lawful on this substrate —
+    // this family map, and the meeting shape xstream dispatches (#216: Author
+    // → the pool's own underscore, voices → the spool) — so a room must
+    // DECLARE which it runs, and the declaration is the MOUNT: the pool's
+    // underscore being one bare operator ref (tree:9.1 — pool:molequle carries
+    // exactly `function:molequle`). A spine merely EXISTING nearby is not a
+    // declaration: the meeting family grew spines the same week this routing
+    // landed, its dial says commits publish to the spool, and gating on
+    // spine-existence made the same act land differently by door there
+    // (spool via xstream, mirror via bsp). Prose-welcomed rooms therefore
+    // spool through every door, whatever stands beside them; a room joins the
+    // family map by one data write — mounting its operator — and leaves it the
+    // same way. This executes the settlement both lanes recorded 2026-08-06.
+    const mount = floorUnderscore(row?.block as Block);
+    const mounted = isDirectiveRef(mount) ? mount.trim() : null;
+    if (!destination && face && mounted) {
       const spineName = `spine:${pool_name}`;
       const srow = await loadBlock(pool_url, spineName).catch(() => null);
       if (srow && srow.block && typeof srow.block === 'object') {
-        const mount = floorUnderscore(row?.block as Block);
-        const operator = isDirectiveRef(mount) ? mount.trim() : `function:${pool_name}`;
+        const operator = mounted;
         const target =
           face === 'author'   ? spineName :
           face === 'designer' ? operator :

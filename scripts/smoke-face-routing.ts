@@ -84,6 +84,21 @@ async function wipe(block: string) {
   const bare = await engage({ pool_name: 'face-verify-nospine', purpose: 'a room, not a family', face: 'character', at: '1', contribution: 'hello room' });
   assert(/slot \d+ → the pool/.test(bare), 'no spine → commit spools as before (parlours, rooms, chat)');
 
+  console.log('\nTHE MOUNT GATES THE MAP — a spine beside a prose-welcomed room is not a declaration:');
+  // The meeting shape: a room whose underscore is a WELCOME (prose), with a
+  // spine standing beside it (its running order). Its dial says commits
+  // publish to the spool — so a faced commit through THIS door must spool
+  // too, or the same act lands differently by door (the 2026-08-06 seam).
+  await saveBlock(BEACH, 'spine:face-verify-meeting', {
+    _: 'PROBE running order. Delete after.',
+    1: 'The one item.',
+  } as any, { spindle: '' });
+  await engage({ pool_name: 'face-verify-meeting', purpose: 'Welcome — a meeting room; one table, one question.' });
+  const meet = await engage({ pool_name: 'face-verify-meeting', face: 'character', at: '1', contribution: 'a located voice' });
+  assert(/slot \d+ → the pool/.test(meet), 'prose welcome + spine → the spool, through every door');
+  const meetAuthor = await engage({ pool_name: 'face-verify-meeting', face: 'author', at: '1', contribution: 'an author voice' });
+  assert(/slot \d+ → the pool/.test(meetAuthor) && !/→ spine:/.test(meetAuthor), 'author face without a mount never writes the spine');
+
   if (process.env.DEBUG) {
     for (const b of [`${V}:${WHO}`, `spine:${V}`, `function:${V}`, `view:${V}`]) {
       const row: any = await loadBlock(BEACH, b).catch(() => null);
@@ -93,7 +108,8 @@ async function wipe(block: string) {
   }
 
   for (const b of [`spine:${V}`, `pool:${V}`, `liquid:pool:${V}`, `${V}:${WHO}`, `view:${V}`,
-                   `function:${V}`, 'pool:face-verify-nospine', 'liquid:pool:face-verify-nospine']) await wipe(b);
+                   `function:${V}`, 'pool:face-verify-nospine', 'liquid:pool:face-verify-nospine',
+                   'spine:face-verify-meeting', 'pool:face-verify-meeting', 'liquid:pool:face-verify-meeting']) await wipe(b);
 
   console.log(`\n${pass} passed, ${fail} failed\n`);
   process.exit(fail ? 1 : 0);
