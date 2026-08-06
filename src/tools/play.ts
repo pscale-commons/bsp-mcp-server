@@ -484,14 +484,44 @@ export async function handlePlay(
   const own: { name: string; json: string }[] = [];
   const seen = new Set<string>();
   let shellBlock: any = null;
+  const present = new Set<string>();
+  const legacy: { name: string; json: string }[] = [];
   for (const b of ['passport', 'witnessed', 'knows', 'shell', 'history', 'stash']) {
     const name = `${b}:${handle}`;
     const row = await loadBlock(resolved, name);
     if (row && row.block && typeof row.block === 'object') {
-      own.push({ name, json: JSON.stringify(row.block, null, 1) });
-      seen.add(name);
+      present.add(b);
+      legacy.push({ name, json: JSON.stringify(row.block, null, 1) });
       if (b === 'shell') shellBlock = row.block;
     }
+  }
+  // THE HANDS LAW at this door (#211/#237: a door delivers what the shell
+  // NOMINATED, at the address it nominated). When the shell carries a manifest
+  // (position 3 holding at least one ref), the manifest IS the declaration of
+  // what this arrival holds — the legacy whole-block dumps stand down to the
+  // passport alone (identity and location, small by convention), and the rest
+  // arrives as the dashboards the shell dialed, compiled below. A handle with
+  // no manifest keeps the legacy six exactly: thin handles, characters, and
+  // pre-manifest shells are byte-identical. The live cost that forced this cut:
+  // weft's arrival ran 140k characters, 128k of it history and stash dumped
+  // whole BENEATH a manifest that had already dialed their dashboards — the
+  // whole-block trap sitting inside the door itself. A manifest-bearing shell
+  // that wants a block whole says so in the manifest; nomination is the law.
+  const refOf = (v: unknown): string | null =>
+    typeof v === 'string' ? v
+    : v && typeof v === 'object' ? (typeof (v as any)._ === 'string' ? (v as any)._ : null)
+    : null;
+  const manifestNode = shellBlock ? (shellBlock as any)['3'] : null;
+  const manifestNominates = !!manifestNode && typeof manifestNode === 'object'
+    && Object.keys(manifestNode).some((k) => {
+      if (k === '_') return false;
+      const ref = refOf((manifestNode as any)[k]);
+      return typeof ref === 'string' && ref.includes(':') && !/\s/.test(ref);
+    });
+  for (const entry of legacy) {
+    if (manifestNominates && !entry.name.startsWith('passport:')) continue;
+    own.push(entry);
+    seen.add(entry.name);
   }
   // Position + carried — derived here so every compile pass below declares what
   // the envelope already delivers (4b's co-presence reuses these).
@@ -510,14 +540,13 @@ export async function handlePlay(
   // shell-less handle still works; entries the default set already loaded are
   // skipped; a manifest that fails to compile degrades to a note, never a
   // broken entry.
-  const manifest = shellBlock && shellBlock['3'];
+  const manifest = manifestNode;
   if (manifest && typeof manifest === 'object') {
     try {
       const bundle: PMap = new Map();
       for (const k of Object.keys(manifest)) {
         if (k === '_') continue;
-        const v = (manifest as any)[k];
-        const ref = typeof v === 'string' ? v : (v && typeof v === 'object' ? v._ : null);
+        const ref = refOf((manifest as any)[k]);
         if (typeof ref === 'string' && ref.includes(':') && !/\s/.test(ref) && !seen.has(ref)) {
           seen.add(ref);
           bundle.set(k, ref);
@@ -619,10 +648,11 @@ export async function handlePlay(
     }
   }
 
-  const has = (p: string) => own.some((o) => o.name.startsWith(p));
-  const kind = has('witnessed:') || has('passport:')
+  // Kind reads the PROBES, not the delivered window — a manifest-bearing shell
+  // whose legacy dumps stood down is still the same kind of thing it was.
+  const kind = present.has('witnessed') || present.has('passport')
     ? 'character'
-    : has('shell:')
+    : present.has('shell')
       ? 'user / agent (shell-based)'
       : 'fresh handle (no blocks yet)';
 
