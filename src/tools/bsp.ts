@@ -547,12 +547,28 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     const appendSpindle = spindle == null ? '' : String(spindle);
     try {
       const res = await appendToBeach(agent_id, blockName, content, secret, undefined, undefined, appendSpindle || undefined);
+      // The zero-slot the beach just made due, spoken where the appending agent
+      // is standing. The accumulation law is otherwise learned only by reading
+      // block-conventions:3.5 BEFORE acting, which is the one moment nobody
+      // does — so the debt has been created in silence and settled by
+      // re-derivation, wrongly and repeatedly (the covered span mistaken for
+      // the entries beneath; the container overwritten whole; six spans accrued
+      // unnoticed on one history). Said here, it needs no memory at all.
+      const owed = res.due
+        ? `\n  ⤵ zero-slot ${res.due.address} is now DUE — the +0 summary voicing entries `
+          + `${res.due.covers_first}-${res.due.covers_last}, the span this append just closed `
+          + `(NOT the entries beneath it). Pay it in this turn: write a SCALAR at ${res.due.address} `
+          + `— content = the summary text, no children — which sets that container's voicing and leaves `
+          + `every entry under it untouched. Resending the container with its children replaces the span. `
+          + `It is navigation, not decoration: carry the span's proper nouns, addresses, decisions and open `
+          + `threads, since its reader is an agent descending by query. (block-conventions:3.5)`
+        : '';
       if (res.address !== undefined) {
         const grew = res.supernested ? `  ⤴ node supernested — the ladder continues within` : '';
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}]` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}]${owed}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}]` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}]${owed}` }] };
     } catch (e: any) {
       return { content: [{ type: 'text', text: `Append rejected: ${e?.message ?? String(e)}` }] };
     }

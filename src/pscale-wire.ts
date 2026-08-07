@@ -256,6 +256,16 @@ export async function writeAt(origin: string, block: string, spindle: string, co
  * are ANSWERS, not errors, come back discriminated:
  *   alreadyResolved — another resolver claimed the window (SET-NX held)
  *   windowMoved     — an intention staged after the folder's read */
+/** The zero-slot an append just made due — the summary owed over the span it
+ *  closed (block-conventions:3.5). Present only on the 1-in-9 append that opens
+ *  a new span; absent means nothing fell due this call, never that nothing is
+ *  owed on the block. */
+export interface ZeroSlotDue {
+  address: string;
+  covers_first: string;
+  covers_last: string;
+}
+
 export interface AppendResult {
   ok: boolean;
   slot?: string;
@@ -263,6 +273,7 @@ export interface AppendResult {
   floor?: number;
   address?: string;
   node?: string;
+  due?: ZeroSlotDue;
   cleared?: Json | null;
   alreadyResolved?: boolean;
   resolvedBy?: string | null;
@@ -308,6 +319,7 @@ export async function append(
       floor: j.floor,
       address: j.address,
       node: j.node,
+      due: j.due,
       cleared: j.cleared ?? null,
     };
   } catch (e) {

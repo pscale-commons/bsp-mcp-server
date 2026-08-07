@@ -525,6 +525,8 @@ export async function appendToBeach(
   address?: string;
   /** Node-scoped append only: the address of the node appended beneath. */
   node?: string;
+  /** The zero-slot this append made due, when it opened a new span. */
+  due?: wire.ZeroSlotDue;
   /** Liquid buffer the beach snapshot-and-cleared with a winning fold claim. */
   cleared?: Block | null;
   alreadyResolved?: boolean; resolvedBy?: string | null; window?: string;
@@ -559,7 +561,7 @@ export async function appendToBeach(
     return { windowMoved: true, window: r.window, buffer: r.buffer ?? null };
   }
   if (!r.ok) throw new Error(`Beach append rejected: ${r.error}`);
-  return { slot: r.slot, supernested: r.supernested, floor: r.floor, address: r.address, node: r.node, cleared: r.cleared ?? null };
+  return { slot: r.slot, supernested: r.supernested, floor: r.floor, address: r.address, node: r.node, due: r.due, cleared: r.cleared ?? null };
 }
 
 /**
