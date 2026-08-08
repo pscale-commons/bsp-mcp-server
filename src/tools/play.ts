@@ -283,7 +283,7 @@ export const playParamsSchema = {
   room: z
     .string()
     .optional()
-    .describe("Optional gathering-point (a pool name, without the 'pool:' prefix). Omit and play resolves the world's room automatically — the single room pool. A 'room' is the pscale-0 case (a handful of co-present agencies); the general thing is a focal pool at a spatial target. Pass this only when a world has several rooms."),
+    .describe("Optional gathering-point (a pool name, without the 'pool:' prefix). Omit and play resolves it from your location, which is the ordinary case. The substrate's term for pscale 0 is the SCENE SCALE (block-conventions:4.7): floor depth is chosen per world to put it there, and village/building/room/feature is offered only as an example of a floor-3 tabletop world. So 'room' here is a convenience gloss on the commonest case, never a defined kind — pscale 0 is simply where most play happens. Coarser rungs still play, more slowly and with less interaction. Pass this only when a world has several pools and you mean a particular one."),
 };
 
 export type PlayParams = { world: string; handle: string; secret?: string; room?: string };
@@ -354,8 +354,20 @@ export async function handlePlay(
     }
   }
 
-  // 2. Resolve the room pool — DERIVED FROM LOCATION. A room IS a focal pool at a
-  //    spatial target (block-conventions:4.8); so the room a handle meets in is
+  // 2. Resolve the pool — DERIVED FROM LOCATION. The term the substrate uses is
+  //    the SCENE SCALE: block-conventions:4.7 says floor depth is chosen per
+  //    world to put the scene scale at pscale 0, and offers village/building/
+  //    ROOM/feature only as an example of a floor-3 tabletop world. "Room" is
+  //    therefore a convenience gloss on the commonest case, not a defined term
+  //    — pscale 0 is simply where most play happens, because it is where a
+  //    handful of agencies are co-present enough to act on each other. Coarser
+  //    rungs still play: pscale 1 is a holding pattern needing everyone at that
+  //    level, and pscale 5 is a character stating what it does across a year,
+  //    with little interaction. A gradient of interactivity, not a boundary,
+  //    so naming only the bottom rung would be arbitrary. THE ADDRESS ALREADY
+  //    SAYS IT: pool:<addr> at pscale 0. (Cited 4.8 until 2026-08-08 — sub-beach
+  //    worlds, the wrong pointer entirely.)
+  //    So the pool a handle meets in is
   //    pool:<addr>, where <addr> is its own position (passport:3 → spatial:<world>:<addr>).
   //    Co-located handles share a pool automatically; MOVING (a write to passport:3)
   //    moves you between pools; a party that splits ends up in separate pools. This is
