@@ -1077,6 +1077,42 @@ export function windowDicePerAuthor(
  * lives on the beach, so submit makes "see what others intend before committing"
  * a substrate capability, not an xstream-only one.
  */
+/** CLEAR THE WHOLE BUFFER — every author's staged line at once.
+ *
+ * The thing a person actually asks for. "Clear the pool please" means the
+ * liquid, because solid is solid and liquid is the layer that was always meant
+ * to be temporary — and they mean ALL of it, not their own line, and certainly
+ * not a list of handles fed back one at a time. Withdrawing per author was the
+ * only route until now: it needed the caller to first read the buffer, learn
+ * every handle in it, and issue one call each. That is not a tidy function, it
+ * is homework, and the keeper said so at some length.
+ *
+ * Mechanically this is the buffer's own opening path run deliberately: write a
+ * fresh block carrying the description and no slots. stageLiquid already does
+ * exactly this whenever a window opens over a dead buffer, so nothing new is
+ * being invented — the same rebuild, asked for rather than implied. The window
+ * stamp is deliberately NOT written: an empty buffer has no open window, and
+ * leaving a stamp would make the next opener look like a reviser.
+ *
+ * AUTHORITY IS THE BLOCK'S, exactly as everywhere else: `secret` is forwarded,
+ * so a locked buffer answers only to its holder and an unlocked one answers to
+ * anyone — the same bargain every unlocked block on an open beach makes. This
+ * is the whole of the permission model and it needed no addition; what was
+ * missing was never authority, only a verb.
+ */
+async function clearLiquid(
+  url: string,
+  liquidName: string,
+  secret: string | undefined,
+): Promise<number> {
+  const lrow = await loadBlock(url, liquidName);
+  if (!lrow || typeof lrow.block !== 'object' || lrow.block === null) return 0;
+  const cleared = collectContributions(lrow.block, 0).contributions.filter(c => c.text !== '').length;
+  const baseDesc = `Liquid pre-commit buffer for ${liquidName} (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit.`;
+  await saveBlock(url, liquidName, { _: baseDesc } as Block, { spindle: '', secret });
+  return cleared;
+}
+
 async function stageLiquid(
   url: string,
   liquidName: string,
@@ -1281,6 +1317,10 @@ export const poolEngageParamsSchema = {
     .string()
     .optional()
     .describe("Optional. COMMIT text — deposit a contribution (raw OR an LLM-produced synthesis; the primitive is agnostic) at the next-free digit-path slot of the destination (1, 2, …, 9, 11, …; sunstone:1.64) with shape {_: text, 1: agent_id, 2: at-address ('' unlocated), 3: ISO-ts, 4: face, 5: woven}. Position 5 is written by the tool, never by you: on a claimed fold it records the handles whose staged voices the beat wove, so a folded player still reads as present after the buffer clears, then read the envelope. Atomic append (beach-side). Omit for read-only engagement, or use `submit` to stage to liquid without committing."),
+  clear: z
+    .boolean()
+    .optional()
+    .describe("Optional. CLEAR THE WHOLE LIQUID BUFFER — every author's staged line at once, not just yours. This is what a person means by 'clear the pool': the liquid, because solid is the record and liquid is the layer meant to be temporary. Use it whenever someone asks for the pool, the room or the liquid to be cleared, tidied or emptied — no list of handles required, and no need to read the buffer first. Authority is the block's own: pass `secret` when the buffer is locked; an unlocked one answers to anyone, like every unlocked block on an open beach. Returns how many staged lines were cleared. Does NOT touch the pool's committed contributions — those are solid and this cannot reach them."),
   submit: z
     .string()
     .optional()
@@ -1326,6 +1366,7 @@ export type PoolEngageParams = {
   pool_name: string;
   at?: string;
   contribution?: string;
+  clear?: boolean;
   submit?: string;
   destination?: string;
   with_liquid?: boolean;
@@ -1342,7 +1383,7 @@ export type PoolEngageParams = {
 export async function handlePoolEngage(
   params: PoolEngageParams,
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { agent_id, pool_url, pool_name, contribution, submit, destination, face, secret } = params;
+  const { agent_id, pool_url, pool_name, contribution, submit, clear, destination, face, secret } = params;
   const sincePosition = params.since_position ?? 0;
   // The liquid mirror is the DEFAULT channel, for every caller (NHITL round 2,
   // §2c: "the channel that IS the lobby is opt-in" — a seat that never passed
@@ -1473,6 +1514,20 @@ export async function handlePoolEngage(
   // submit is dropped read-only. (Character or no face = embodied, writes as before.)
   const isRpgPool = isDirectiveRef(floorUnderscore(row.block));
   const embodied = !face || face === 'character';
+  // ── Optional: CLEAR — empty the whole liquid buffer ──
+  // Runs BEFORE a submit so "clear it and say this instead" is one call and
+  // lands in that order. Not face-gated: tidying a room is not an act inside
+  // the fiction, so an Author or Observer may do it where their submit would
+  // be dropped. Authority is the block's, forwarded as `secret`.
+  let clearedCount: number | null = null;
+  if (clear === true) {
+    try {
+      clearedCount = await clearLiquid(pool_url, liquidName, secret);
+    } catch (e: any) {
+      return { content: [{ type: 'text', text: `Liquid clear rejected by beach: ${e?.message ?? String(e)}` }] };
+    }
+  }
+
   let submittedSlot: string | null = null;
   if (submit !== undefined && !(isRpgPool && !embodied)) {
     try {
@@ -1834,6 +1889,14 @@ export async function handlePoolEngage(
   lines.push('');
   if (created) {
     lines.push('created: pool authored with purpose at _');
+    lines.push('');
+  }
+  if (clearedCount !== null) {
+    // Say the number. "Cleared" alone leaves a person wondering whether it did
+    // anything, and an empty buffer is the commonest case for a second press.
+    lines.push(clearedCount > 0
+      ? `cleared: the liquid buffer is empty — ${clearedCount} staged ${clearedCount === 1 ? 'line' : 'lines'} withdrawn, from every author, not just yours. The pool's committed contributions are untouched: those are solid.`
+      : 'cleared: the liquid buffer was already empty — nothing was staged. The pool\'s committed contributions are untouched.');
     lines.push('');
   }
   if (submittedSlot !== null) {
