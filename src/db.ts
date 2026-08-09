@@ -527,6 +527,15 @@ export async function appendToBeach(
   node?: string;
   /** Liquid buffer the beach snapshot-and-cleared with a winning fold claim. */
   cleared?: Block | null;
+  /**
+   * Zero-slot summaries this accumulator owes and has not paid, oldest first.
+   * Advisory: the beach never refuses an append for an unpaid due, because the
+   * WRITER does not owe it — block-conventions:3.5 assigns payment to the
+   * requesting LLM as service-payment. Surfaced so the debt is seen where it is
+   * incurred; unseen, it accrues silently (ten stood unpaid for months, and the
+   * marks board reached 82 entries with nine containers unvoiced).
+   */
+  owed?: { slot: string; over: string }[];
   alreadyResolved?: boolean; resolvedBy?: string | null; window?: string;
   /** The fold that landed, returned with a stand-down (best-effort). */
   landed?: { slot?: string; entry?: any } | null;
@@ -559,7 +568,7 @@ export async function appendToBeach(
     return { windowMoved: true, window: r.window, buffer: r.buffer ?? null };
   }
   if (!r.ok) throw new Error(`Beach append rejected: ${r.error}`);
-  return { slot: r.slot, supernested: r.supernested, floor: r.floor, address: r.address, node: r.node, cleared: r.cleared ?? null };
+  return { slot: r.slot, supernested: r.supernested, floor: r.floor, address: r.address, node: r.node, cleared: r.cleared ?? null, owed: r.owed };
 }
 
 /**
