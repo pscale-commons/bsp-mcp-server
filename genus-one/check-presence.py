@@ -55,13 +55,20 @@ def main(live=False):
        kernel._presence_slot({"1": entry("someone", "not-a-date")}, now), "1")
 
     # The tenth agent. Presence never supernests — every write is surgical at a
-    # named slot and nothing appends — so while slot 1 holds an entry, 11 and 12
-    # are that entry's own fields, not free slots beneath it.
+    # named slot and nothing appends — so while slot 1 holds an entry, 11-13 are
+    # that entry's own fields rather than free slots beneath it, and 14 is the
+    # one an unguarded walk takes: 11-13 are non-empty strings it skips, while
+    # field 4 is absent because an entry has none. That absence is the very
+    # thing that makes an entry read as presence, so a claim landing there
+    # deletes the agent it lands on.
     full = {str(n): entry("s%d" % n, fresh) for n in range(1, 10)}
     ok("nine live agents means no slot, never a slot inside one",
        kernel._presence_slot(full, now), None)
     ok("11 is blocked — it is slot 1's field 1", kernel._at_slot(full, "11"), kernel.BLOCKED)
     ok("12 is blocked — it is slot 1's field 2", kernel._at_slot(full, "12"), kernel.BLOCKED)
+    ok("14 is blocked — slot 1's ABSENT field 4, the address that reads free",
+       kernel._at_slot(full, "14"), kernel.BLOCKED)
+    ok("an unguarded walk would have taken it", full["1"].get("4"), None)
     ok("a real supernest container still walks",
        kernel._at_slot({"1": {"1": entry("deep", fresh)}}, "11")["1"], "deep")
     ok("no zero-bearing slot is ever offered",

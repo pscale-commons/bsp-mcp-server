@@ -1064,11 +1064,15 @@ def _at_slot(block, slot):
     client's walk: the ladder's second rung only exists once the block has
     SUPERNESTED, and presence never supernests, because every write here is
     surgical at a named slot and nothing ever appends. So while slot 1 holds an
-    entry, the address 11 walks into that entry's field 1 and 12 into its field
-    2 — and a client that reads 12 as absent and writes there does not claim a
-    tenth slot, it overwrites the first agent's address with a whole entry. The
-    reference client has this walk today (bsp-client presenceClaimDigit), which
-    is latent only because no beach has yet had ten agents present at once."""
+    entry, 11 walks into that entry's field 1, 12 into its field 2 and 13 into
+    its timestamp — non-empty strings, all skipped — and then 14 finds NOTHING,
+    because a presence entry has no field 4, and an unguarded walk returns it as
+    a free slot. Field 4 is the worst landing on the block: its ABSENCE is the
+    discriminator that makes an entry read as presence at all (4.61), so
+    claiming "slot 14" writes a whole entry into the first agent's field 4 and
+    deletes that agent from every reader in the same stroke. Latent only because
+    it needs ten agents present at once, which no beach has yet had; the walk is
+    fixed in the reference client too (xstream-bsp readSlotForClaim)."""
     node = block
     for i, d in enumerate(slot):
         if not isinstance(node, dict):
