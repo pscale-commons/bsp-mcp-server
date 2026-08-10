@@ -75,6 +75,20 @@ def save_block(origin, block, content, secret=None, new_lock=None, confirm=True)
     return True
 
 
+def write_at(origin, block, spindle, content, secret=None):
+    """Surgical write at ONE position. save_block replaces the whole block, which
+    is right for a block this handle owns and wrong for a block it shares: the
+    beach's presence block holds one slot per agent, so a whole-block write
+    would carry every other agent's slot along with it and lose whoever wrote
+    between our read and our write. A spindle write touches only the node it
+    names, and the beach allocates nothing — the caller names the position."""
+    body = {"spindle": spindle, "content": content}
+    if secret:
+        body["secret"] = secret
+    _retry(_post, endpoint(origin, block), body)
+    return True
+
+
 def seal(origin, block, secret):
     """Make a block holder-only at EVERY position. The beach locks by the first
     digit of a write's path, so a whole-block write's new_lock seals only the
