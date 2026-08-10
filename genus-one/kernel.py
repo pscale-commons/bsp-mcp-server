@@ -50,6 +50,7 @@ Dialect changes from the biome canonical (nothing else):
     mobius-lineage key-file paths are still honoured.
 """
 
+import calendar
 import json
 import math
 import os
@@ -999,6 +1000,172 @@ def declare_hands(door, tools_line, missing_line):
         print("[hands] declaration failed: %s" % str(e)[:100])   # must not take the wake down
 
 
+# ── the fold's own presence — an act is what makes a mind findable ───────────
+#
+# A pulse has no heartbeat. Its thinking is invisible by construction, and
+# nothing in the agent path had ever written the beach's shared `presence`
+# block, so an instance could not be located at all while a browser tab lending
+# its ear COULD — which reported reachability and read, to anyone looking, as
+# activity. The one signal that finds a mind who has not spoken was the one
+# signal a mind that only ever acts could not send.
+#
+# So the fold sends it, and the timing is the whole design. Presence carries a
+# 30s staleness sweep, so a slot written at the top of a wake that then thinks
+# for a minute reads as departed by the moment it acts. Written AFTER the
+# routing it says the true thing — this instance just folded, here — and stands
+# for the sweep's length behind it. On every completed pulse, not only ones that
+# wrote: a wake that read its shell and rested was awake, and gating on writes
+# would make rest indistinguishable from absence.
+#
+# WHERE. The place is the room, per the shell's own located:5 — "my room is
+# pool:<handle> ... where anyone's committed speech to me lands and where my
+# answers belong" — which is also what a tab lending an ear writes, so one
+# handle reads one way wherever it appears and the room door in a reader's
+# presence list goes somewhere real. The coordinate at 7 rides when the fold
+# touched that room at an address (block-conventions:4.65); a wake that worked
+# elsewhere in its own shell is present at its room and unlocated, which is
+# what a whole-place reading has always meant. What it actually did belongs in
+# the underscore, the field that is prose.
+#
+# NOT A KERNEL COMPOSITION PART, exactly as the hands declaration is not: no
+# window changes and nothing composes from this. It is the door reporting into
+# the substrate, and a failure here must never take a wake down.
+#
+# No lock is set. block-conventions:4.62 says a presence slot is "locked under
+# the agent's secret"; no deployed client does that, and locking here alone
+# would make this the one slot on the beach a sweeper could not reclaim. Open,
+# with every other client, until that convention is settled either way.
+
+PRESENCE_STALE_S = 30
+
+
+def _presence_slots():
+    """The digit-path ladder (sunstone:1.64): 1-9, then 11-99, then 111-999,
+    skipping any number carrying a zero. Same order every client walks, so a
+    slot claimed from here is the slot a browser would have claimed."""
+    for n in list(range(1, 10)) + list(range(11, 100)) + list(range(111, 1000)):
+        if "0" not in str(n):
+            yield str(n)
+
+
+def _is_entry(node):
+    """A slot's own content — one agent's live-state — as against a container the
+    block grew by supernesting. Fields 1 and 3 are the two a slot always carries."""
+    return (isinstance(node, dict)
+            and isinstance(node.get("1"), str) and isinstance(node.get("3"), str))
+
+
+BLOCKED = object()   # the path runs THROUGH a slot's own fields, so it is not a slot
+
+
+def _at_slot(block, slot):
+    """Whatever sits at the slot's digit path — string, dict, None, or BLOCKED.
+    BLOCKED is the one that matters and the reason this is not the browser
+    client's walk: the ladder's second rung only exists once the block has
+    SUPERNESTED, and presence never supernests, because every write here is
+    surgical at a named slot and nothing ever appends. So while slot 1 holds an
+    entry, the address 11 walks into that entry's field 1 and 12 into its field
+    2 — and a client that reads 12 as absent and writes there does not claim a
+    tenth slot, it overwrites the first agent's address with a whole entry. The
+    reference client has this walk today (bsp-client presenceClaimDigit), which
+    is latent only because no beach has yet had ten agents present at once."""
+    node = block
+    for i, d in enumerate(slot):
+        if not isinstance(node, dict):
+            return None
+        if i and _is_entry(node):
+            return BLOCKED
+        node = node.get(d)
+        if node is None:
+            return None
+    return node
+
+
+def _iso_epoch(s):
+    """Seconds since epoch from an ISO stamp, tolerant of the fractional part a
+    browser writes. None when it will not parse — an unreadable stamp counts as
+    stale, never as fresh."""
+    if not isinstance(s, str) or len(s) < 19:
+        return None
+    try:
+        return calendar.timegm(time.strptime(s[:19], "%Y-%m-%dT%H:%M:%S"))
+    except ValueError:
+        return None
+
+
+def _presence_slot(block, now):
+    """This handle's own slot if it already holds one, else the first that is
+    absent, released or stale. Reusing our own is what keeps one agent to one
+    slot across wakes with the kernel remembering nothing in between.
+
+    None when every addressable slot holds a live stranger. There is no
+    fallback: taking slot 1 anyway would evict a present agent, and writing at a
+    BLOCKED address would corrupt one. Declaring nothing is the only honest
+    answer, and it is loud."""
+    for slot in _presence_slots():                      # ours, wherever it sits
+        node = _at_slot(block, slot)
+        if _is_entry(node) and node.get("1") == HANDLE:
+            return slot
+    for slot in _presence_slots():                      # else the first free one
+        node = _at_slot(block, slot)
+        if node is BLOCKED:
+            continue
+        if node is None:
+            return slot
+        if isinstance(node, str):
+            if not node.strip():
+                return slot
+            continue
+        if isinstance(node, dict):
+            if not str(node.get(ZK, "")).strip():
+                return slot                             # released — an empty underscore
+            ts = _iso_epoch(node.get("3"))
+            if ts is None or now - ts >= PRESENCE_STALE_S:
+                return slot
+    return None
+
+
+def declare_presence(applied_pairs, now):
+    """Write this wake's slot in the beach's shared presence block."""
+    if not (BEACH and HANDLE):
+        return
+    room = "pool:%s" % HANDLE
+    at, touched = "", []
+    for ref, _content in applied_pairs:
+        name, addr = _split_ref(ref)
+        if not name:
+            continue
+        if name not in touched:
+            touched.append(name)
+        if name == "pool" and addr and not at:          # the room IS pool:<handle>
+            at = addr
+    ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now))
+    did = ("just folded, writing %s" % ", ".join(touched)) if touched else "just woke and rested"
+    try:
+        block = wire.load_block(BEACH, "presence") or {}
+    except Exception as e:                              # a door that cannot read
+        print("[presence] unreadable this wake — declaring nothing: %s" % str(e)[:80])
+        return
+    if not isinstance(block, dict):
+        print("[presence] the block is not a tree this wake — declaring nothing")
+        return
+    slot = _presence_slot(block, now)
+    if slot is None:
+        print("[presence] every slot holds a live agent — declaring nothing rather "
+              "than evicting one")
+        return
+    entry = {ZK: "%s @ %s — present at %s%s; %s" % (HANDLE, ts, room,
+                                                    " · %s" % at if at else "", did),
+             "1": HANDLE, "2": room, "3": ts}
+    if at:
+        entry["7"] = at
+    try:
+        wire.write_at(BEACH, "presence", slot, entry)
+        print("[presence] %s at %s%s (slot %s)" % (HANDLE, room, " · %s" % at if at else "", slot))
+    except Exception as e:                              # must not take the wake down
+        print("[presence] declaration failed: %s" % str(e)[:100])
+
+
 HISTORY_VOICING = ("History — my memory, automatic; a counting block. The kernel writes one lossless leaf per wake at the next zero-free number (1..9, 11..19, …, 99, 111, … — at each all-nines boundary the block supernests: the past wraps under the root underscore where its addresses keep reading, zero-padded, and the count continues). Every zero-carrying number is a summary slot, never an entry: N0 is the voicing of container N and carries a +0 summary of the PREVIOUS completed nine — 20 summarises 11-19, 100 summarises 10-90, 110 summarises 91-99. A summary is NAVIGATION, not decoration: a substantive paragraph dense with the span's own handles — proper nouns, block addresses, decisions, failures, open threads, the read-addresses of load-bearing leaves — because summaries stack (100 compresses 10-90; 1000 compresses those) and a descending reader must find at every layer the exact keywords that choose the next span, down to the leaf. Owed when the next span opens; paid by the requesting LLM via the fold's summary field (service-payment, reported at conditions:9 until paid). The spindle through the newest leaf carries the summary chain. Never written by hand — deliberate notes go to stash.")
 
 
@@ -1270,7 +1437,7 @@ def route(output, gamma=None):
                 summary_due = remaining[0] if remaining else None
                 save_block("history", h)
     status = output.get("status") or ("continue" if applied else "rest")
-    return status, applied, failed, summary_due
+    return status, applied, failed, summary_due, applied_pairs
 
 
 # ── parse + filmstrip ──────────────────────────────────────────────────────
@@ -1409,7 +1576,8 @@ def pulse(compose_only=False, now=None):
     text, usage, thinking = call_llm(system, message, model=model, thinking=thinking_cfg,
                                      max_tokens=max_out)
     output = parse_output(text)
-    status, applied, failed, summary_due = route(output, gamma)
+    status, applied, failed, summary_due, applied_pairs = route(output, gamma)
+    declare_presence(applied_pairs, now)                        # the fold, made findable
     cadence = load_block("cadence") or {}                       # A2 — stamp the concerns that fired
     lasts = load_block("last-touched") or {ZK: LAST_TOUCHED_VOICING}
     if stamp_touched(gamma, applied, cadence, lasts, now=now):
