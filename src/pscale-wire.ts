@@ -264,6 +264,10 @@ export interface AppendResult {
   address?: string;
   node?: string;
   cleared?: Json | null;
+  /** Zero-slot summaries owed and unpaid on this accumulator, oldest first.
+   *  Advisory — the beach never refuses an append for a due, since the writer
+   *  does not owe it (block-conventions:3.5). Absent from older beaches. */
+  owed?: { slot: string; over: string }[];
   alreadyResolved?: boolean;
   resolvedBy?: string | null;
   window?: string;

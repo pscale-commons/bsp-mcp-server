@@ -547,12 +547,25 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     const appendSpindle = spindle == null ? '' : String(spindle);
     try {
       const res = await appendToBeach(agent_id, blockName, content, secret, undefined, undefined, appendSpindle || undefined);
+      // Say the debt out loud. A zero-slot voices the PREVIOUS completed nine
+      // (+0 inductive, block-conventions:3.5) and falls due the moment the next
+      // span opens — but nothing announced it, so dues accrued unseen for
+      // months. The writer never owes this; canon assigns payment to the
+      // requesting LLM as service-payment, which is exactly the reader of this
+      // line. Oldest first, and truncated so a long-neglected block does not
+      // bury the acknowledgement it rides on.
+      const dues = res.owed ?? [];
+      const owed = dues.length
+        ? `\n  ⓘ summary owed: ${dues.slice(0, 3).map(d => `${d.slot} over ${d.over}`).join(', ')}`
+          + `${dues.length > 3 ? ` (+${dues.length - 3} older)` : ''}`
+          + ` — a scalar written at that address voices the container and leaves its entries untouched.`
+        : '';
       if (res.address !== undefined) {
         const grew = res.supernested ? `  ⤴ node supernested — the ladder continues within` : '';
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}]` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}]${owed}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}]` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}]${owed}` }] };
     } catch (e: any) {
       return { content: [{ type: 'text', text: `Append rejected: ${e?.message ?? String(e)}` }] };
     }
