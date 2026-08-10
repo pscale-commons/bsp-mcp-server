@@ -130,7 +130,10 @@ const GENUS_MISSING =
   'but INVISIBLE to this door, which can see only its own surface. So this line names a floor, ' +
   'not a ceiling: read my wearer\'s actual tool list before concluding I cannot do something, ' +
   'and do not claim a reach I have not seen there. Note also what changes with the door and not ' +
-  'with me: at the xstream seat I hold four hand-rolled tools and none of the primitives above.';
+  'with me: at the xstream seat I hold that seat\'s own small hand-rolled set and none of the ' +
+  'primitives above — a different shape of hand, not a lesser one, and it holds at least one ' +
+  'thing this door does not name (a reader for the open web). That seat declares its own hands ' +
+  'each wake, so read the standing declaration rather than any count written here.';
 
 /** Write this door's grant at capabilities:1.21 (holder only — a ghost cannot
  * change the mind it wears). Returns the line for the head, which BOTH modes
@@ -290,9 +293,12 @@ export async function handleGenus(params: {
   // caller's own tool list, and the instance is told to look at it.
   //
   // Writing it matters most HERE, because a stale declaration is worse than
-  // none: xstream's seat writes "four tools" every wake it runs, and an
-  // instance woken through this door would otherwise read that and plan around
-  // four tools while holding twenty. A ghost-wake cannot write (the locks
+  // none: xstream's seat writes its own small hand-rolled set every wake it
+  // runs, and an instance woken through this door would otherwise read that
+  // and plan around a handful of tools while holding twenty. (The same trap
+  // caught this very sentence, which said "four tools" until the seat grew a
+  // fifth — hence no counts here now, on either side.) A ghost-wake cannot
+  // write (the locks
   // enforce it), so it gets the truth in the head instead, and is told the
   // substrate's copy belongs to another door.
   const handsLine = await declareHands(store, !!passphrase, handle);
