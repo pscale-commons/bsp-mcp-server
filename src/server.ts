@@ -27,6 +27,7 @@ import { handleVerifyRider, verifyRiderParamsSchema } from './tools/verify.js';
 import { handleNetworking, networkingParamsSchema } from './tools/networking.js';
 import { handleInvite, inviteParamsSchema } from './tools/invite.js';
 import { handlePoolEngage, poolEngageParamsSchema } from './tools/pool.js';
+import { handleStreamEngage, streamEngageParamsSchema } from './tools/stream.js';
 import { handlePlay, playParamsSchema } from './tools/play.js';
 import { handleGenus, genusParamsSchema } from './tools/genus.js';
 
@@ -284,6 +285,21 @@ export function createServer(): McpServer {
       openWorldHint: true,
     },
     handlePoolEngage,
+  );
+
+  server.tool(
+    'pscale_stream_engage',
+    `ONE WRITE VERB — \`say\` — because a stream has no buffer to stage into: your reading lands in YOUR OWN mirror (<field>:<handle>) at the attended address, and a mirror is revisable by its holder forever, so stage and commit are one act. A STREAM STORES NOTHING: it composes over a spine-mirror-tree family that already exists (spine:<field>, the <field>:<handle> mirrors, the bare <field> fold), so it cannot drift from them and needs no lock of its own. This is the V-L-S envelope over that family: L is every mirror's reading AT the address, listed side by side and attributed — the SNAPSHOT, useful with no LLM in the room; S is the fold, which the CALLING mind synthesises from that snapshot under the operator's law delivered in the same envelope (the primitive never synthesises — no central resolver, as with pools). Reads deliver THE LADDER: every ancestor's voicing from the coarsest rung down to the attended one, so a located read arrives self-contextualised. \`at\` accepts 'now' on a temporal spine and COMPUTES the address from the clock — a human is never asked for an address (function:molequle:5); omit \`at\` entirely for the spine's map. A fold is ephemeral by default (tree:3 — recomputed on demand, never stale); \`keep='personal'\` lands it in history:<handle>, \`keep='collective'\` at the bare name <field> at the same address, endorsed by pointer and never a gate. Distinct from pscale_pool_engage, which owns a spool and a liquid buffer and serves windowed play; that primitive is unchanged and remains the RPG's.`,
+    streamEngageParamsSchema,
+    {
+      title: 'Stream engage — the V-L-S envelope over a spine-mirror-tree family',
+      // Writes only when `say` or `keep` is provided; a bare read is pure.
+      destructiveHint: true,
+      // `say` at the same address with the same text is byte-identical.
+      idempotentHint: true,
+      openWorldHint: true,
+    },
+    handleStreamEngage,
   );
 
   server.tool(
