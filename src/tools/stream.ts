@@ -35,12 +35,28 @@
  *                 battery × state-of-play is the live pair). Endorsed by
  *                 pointer, never a gate — anyone may write a better one.
  *
- * CADO here, for the record, because this is where the four grips finally have
- * one surface each: C says at their own mirror (this tool's `say`); A authors
- * spine:<field>; D authors the operator at spine:<field>:9; O authors
- * view:<field> — and what O renders is S, never L. Observer is the only grip
- * whose SUBJECT is a product rather than a component, which is why it never
- * sat comfortably beside the other three.
+ * CADO — four faces, and EACH IS A FULL V-L-S LOOP rather than a permission
+ * level. They differ only in which block the fold lands in, and each face's
+ * liquid is that face's mirrors OF the block it folds into, so all four are
+ * the same shape on one address space:
+ *
+ *   C  beach-venture:<handle>          → beach-venture      (the venture lived)
+ *   A  spine:beach-venture:<handle>    → spine:…            (the objectives)
+ *   D  function:beach-venture:<handle> → function:…         (this law)
+ *   O  view:beach-venture:<handle>     → view:…             (cards, links out)
+ *
+ * Observer's INPUT is the Character fold — the venture's latest account of
+ * itself — and its solid is a card carrying a LINK to where the output now
+ * lives, outside. That is what makes O the venture's boundary rather than
+ * another room inside it, and it is why O never fitted a "renders S" reading:
+ * it has its own liquid and its own participants like every other face.
+ *
+ * THE OPERATOR IS THE CENTRAL BLOCK of a family — function:<field> — and it
+ * names its own parts: the spine it governs, how mirrors are written, how each
+ * face folds and where. The reference runs operator → family, never the
+ * reverse. A generic operator (function:audit) carries no content addresses,
+ * so a family running one says so in a bare reference at its own operator's
+ * underscore, followed a single hop.
  *
  * Nothing here touches pool.ts, liquid buffers, windows, dice, or any RPG
  * path. The RPG keeps pscale_pool_engage unchanged; if streams prove out, that
@@ -319,30 +335,52 @@ export async function handleStreamEngage(params: StreamEngageParams) {
   readings.sort((a, b) => a.who.localeCompare(b.who));
   silent.sort();
 
-  // ── The operator's law, from the spine's position 9 (ways:deck:2 — the
-  //    operator is said at 9 of the spine, either inline or as a bare name) ──
+  // ── The operator's law — THE OPERATOR IS THE CENTRAL BLOCK OF ITS FAMILY.
+  // It is found at function:<field>, and it names its own parts: which spine
+  // it governs, how mirrors are written, how each face folds and where. The
+  // reference runs operator → family, never family → operator; an earlier
+  // reading of this file had the spine name its operator at its own position
+  // 9, which inverted the direction and made the law a thing content pointed
+  // at rather than the thing that constitutes the family (keeper's correction,
+  // 2026-08-10; the mount-at-9 shape belongs to decks, whose cards are content
+  // under a generic operator, and it is not this).
+  //
+  // A GENERIC operator carries no content addresses (block-conventions:8.81),
+  // so a family that runs one — function:audit, function:status — says so in
+  // one line at its OWN operator's underscore, as a bare reference this
+  // follows a single hop. The family's law stays the thing named; the generic
+  // law stays reusable; neither has to know the other's addresses.
   let law: string | null = null;
-  const nine = (spine as Record<string, unknown>)['9'];
-  const nineVoice = voiceOf(nine);
-  if (nineVoice && isBareRef(nineVoice)) {
-    const [refBlock, refBranch] = nineVoice.trim().split('/');
-    const orow = await loadBlock(origin, refBlock).catch(() => null);
-    if (orow && typeof orow.block === 'object' && orow.block !== null) {
-      const target = refBranch ? (orow.block as Record<string, unknown>)[refBranch] : orow.block;
-      const parts: string[] = [];
-      const head = voiceOf(target);
-      if (head) parts.push(head);
-      if (target && typeof target === 'object') {
-        for (const k of Object.keys(target as object).filter((k) => /^[1-9]$/.test(k)).sort()) {
-          const t = voiceOf((target as Record<string, unknown>)[k]);
-          if (t) parts.push(`[${k}] ${t}`);
-        }
+  const render = (target: unknown): string | null => {
+    const parts: string[] = [];
+    const head = voiceOf(target);
+    if (head) parts.push(head);
+    if (target && typeof target === 'object') {
+      for (const k of Object.keys(target as object).filter((k) => /^[1-9]$/.test(k)).sort()) {
+        const t = voiceOf((target as Record<string, unknown>)[k]);
+        if (t) parts.push(`[${k}] ${t}`);
       }
-      if (parts.length) law = `${nineVoice.trim()} —\n${parts.join('\n')}`;
     }
-    if (!law) law = `${nineVoice.trim()} (named as this field's operator; the block did not resolve at this beach)`;
-  } else if (nineVoice) {
-    law = nineVoice;
+    return parts.length ? parts.join('\n') : null;
+  };
+  const opName = `function:${field}`;
+  const oprow = await loadBlock(origin, opName).catch(() => null);
+  if (oprow && typeof oprow.block === 'object' && oprow.block !== null) {
+    const own = oprow.block as Block;
+    const root = voiceOf(own);
+    if (root && isBareRef(root)) {
+      // Delegation to a generic operator, one hop, no further.
+      const [refBlock, refBranch] = root.trim().split('/');
+      const grow = await loadBlock(origin, refBlock).catch(() => null);
+      const generic = grow && typeof grow.block === 'object' && grow.block !== null
+        ? render(refBranch ? (grow.block as Record<string, unknown>)[refBranch] : grow.block)
+        : null;
+      law = generic
+        ? `${opName} → ${root.trim()} —\n${generic}`
+        : `${opName} names ${root.trim()} as its law, and that block did not resolve at this beach`;
+    } else {
+      law = `${opName} —\n${render(own) ?? '(the operator stands empty)'}`;
+    }
   }
 
   // ── Render ──
@@ -360,7 +398,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
 
   if (law) {
     lines.push('');
-    lines.push('# The law — how this field folds, said by its operator at the spine');
+    lines.push('# The law — this family\u2019s operator, the block that constitutes it');
     lines.push(law);
   }
 
@@ -382,7 +420,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
   lines.push('');
   lines.push(
     `# The fold — yours to make, not the primitive's` +
-    `\nSynthesise the snapshot above under the law${law ? '' : ' (this field names no operator, so integrate plainly)'}. ` +
+    `\nSynthesise the snapshot above under the law${law ? '' : ' (no function:${field} at this beach, so integrate plainly)'}. ` +
     `Keep it only if it should outlast this turn: keep='personal' lands it in history:${handle}; keep='collective' lands it at ${field}:${spineAddr}, ` +
     `where anyone may supersede it with a better reading.`,
   );
