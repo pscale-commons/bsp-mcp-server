@@ -30,6 +30,7 @@ import type { Block } from './bsp.js';
 import sunstone from './sunstone.json' with { type: 'json' };
 import whetstone from './whetstone.json' with { type: 'json' };
 import lodestone from './lodestone.json' with { type: 'json' };
+import strata from './strata.json' with { type: 'json' };
 import agentId from './agent-id.json' with { type: 'json' };
 import evolution from './evolution.json' with { type: 'json' };
 import manifest from './manifest.json' with { type: 'json' };
@@ -77,6 +78,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: lodestone as unknown as Block,
     description:
       'Lodestone — the orienting stone, read from INSIDE by an instance already operating bsp. Where sunstone teaches the geometry and whetstone sharpens the function, this one answers what an instance must be constituted BY to act as itself: six dimensions (stance, ground, intention, situation, relation, given) plus the composition that puts them in a window. Each position is written so that a single spindle lifted out and carried into another window orients on its own — take the dimension you are missing rather than the block.',
+  },
+  {
+    name: 'strata',
+    json: strata as unknown as Block,
+    description:
+      'Strata — the four levels of emergence on one substrate, each an operating manual written as a deep spindle. 1 PHYSICS (one block: reading as aperture choice with the cost law and the fixed probe order; writing as the two-pass act — conceive leaves, lift underscores — closing with THE READ-BACK: walk your deepest spindle as its future reader before the write is done; the four failure forms — stub, fan, heading, text-address). 2 CHEMISTRY (blocks in company: the two bonds, shared address and reference — a shared name is discovery only, never constitution; the operator instructing from inside the meaning; composing windows — a current is an address AND an aperture, the bundle curation law, the read-back run at bundle scale; the leak that turns semantic flow back into dataflow, and the address-test for nouns). 3 BIOLOGY (the loop, belonging to agents and never blocks: the PCT cycle as five moves ending in re-dialing the successor bundle; the three kinds that run it — mechanical, judged, held; inert law as the level own failure, with its repair — find the existing loop moment, never author more; the bounded/unbounded concurrency division). 4 PSYCHO-SOCIAL (loops overlapping — the demonstrated parts named, the graduation test stated, provisional on purpose). Locate the work stratum before operating; walk one branch and arrive holding the level; lift any single walk and it stands alone. Companion to lodestone: strata says HOW to operate at each level, lodestone says WHAT a constituted instance answers to. Graduated from a live shell orientation organ (proposals/2026-08-11-strata-sentinel.md).',
   },
   {
     name: 'whetstone',
