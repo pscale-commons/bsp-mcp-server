@@ -237,6 +237,7 @@ src/
   sentinels.ts        — Single source of truth for the JSON sentinel registry. One SENTINELS array drives both the bsp() lookup in db.ts and the pscale://<name> resource registration in server.ts. Add a sentinel = add one entry here.
   sunstone.json       — The teaching block (nine branches; read first)
   whetstone.json      — The operational reference (six branches; signature, derivation, modifiers, storage, translation, federation)
+  strata.json         — The four levels of emergence (physics / chemistry / biology / psycho-social), each branch a deep operating spindle on how to work at that level; carries THE READ-BACK as the writing spindle's closing step (companion battery rule at well-formed:2.5)
   agent-id.json       — Addressing model — five forms of agent_id, three address axes
   evolution.json      — Five-level ecosystem map
   manifest.json       — The constitution index — references categorised into geometry-and-operation, role-shells, substrate-conventions, and acceptance sub-branches
@@ -425,6 +426,7 @@ Fallback chain (used by xstream and any admission-aware client):
 | Payway convention | `docs/payway.md` (also `pscale://payway`, alias `pscale://protocol-paywall`) | Anyone authoring a payway-gated `sed:` collective, building a payway-aware client, or running a verifier — reference build at `pscale-commons/ticketing-agent` |
 | Sibling-block beach upgrade | `docs/happyseaurchin-sibling-blocks-implementation.md` | Anyone extending a v2 single-block beach to host site-hosted sed:/grain: substrates and named pools. Companion to `happyseaurchin-v2-implementation.md`. |
 | Sunstone (geometry teacher) | `src/sunstone.json` | Any reader |
+| Strata (emergence ladder — operating at each level) | `src/strata.json` (also `pscale://strata`) | Any mind locating which level its work sits at — physics (one block), chemistry (blocks in company), biology (the loop), psycho-social (overlap); each branch an operating manual as a deep spindle, closing with the read-back |
 | Whetstone (operational ref) | `src/whetstone.json` | Agent equipped with bsp-mcp |
 | Gatekeeper (L1→L2 admission shell) | `src/gatekeeper.json` (also `pscale://gatekeeper`) | Any LLM inhabiting the shell — host-invoked or reflective; xstream and third-party clients alike |
 | Directory (registry-listing process) | `src/directory.json` (also `pscale://directory`) | Anyone preparing to list a bsp-mcp deployment on the MCP Registry and/or Anthropic Connectors Directory. Branches 1-3 are the staged process (substrate hygiene → MCP Registry → Anthropic Directory); branch 8 lists the in-repo artifacts (`LICENSE`, `README.md`, `server.json`, `PRIVACY.md`, `specs/anthropic-directory-submission.md`); branch 9 holds the current state of the canonical bsp.hermitcrab.me deployment. |
