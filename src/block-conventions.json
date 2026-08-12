@@ -127,7 +127,7 @@
   },
   "8": {
     "_": "Where else conventions live (cross-reference index). Block conventions are scattered intentionally — each layer of the substrate carries its own discipline. This branch points at the other layers, and carries the two disciplines that are themselves cross-cutting: growth (8.7) and association (8.8).",
-    "1": "sunstone:8 — voicing discipline. Zeroth-voice underscores, four sign forms (0+, +0, 0-, -0), plus/minus block sign. The authoring rules.",
+    "1": "sunstone:8 — voicing discipline. Zeroth-voice underscores, four sign forms (0+, +0, 0-, -0), plus/minus block sign. The authoring rules. Write-time checks: well-formed 2.2 (depth frames, never files — transpose first) and 2.5 (the read-back judged as a delivery; failure sends back to transpose); the operating spindle at strata 1.2.",
     "2": "whetstone:1 — bsp() signature. What each parameter does. whetstone:2 the shape derivation; whetstone:3 modifier composition.",
     "3": "agent-id (the bundled block) — addressing model. Five forms of agent_id; three address axes; three architectural disciplines.",
     "4": "(URL, 'conventions') — optional per-beach overrides at a sibling 'conventions' block. Read on landing if present; absent is the common case (defer to substrate-wide).",
