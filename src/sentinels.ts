@@ -3,7 +3,7 @@
  * bundled in bsp-mcp.
  *
  * Each entry serves two access paths intentionally (per agent-id:832 and the
- * whetstone:1.3 enactive underscore):
+ * whetstone:0 enactive underscore (the root voicing)):
  *
  *   1. bsp(agent_id='pscale', block=<name>) → SENTINEL_BLOCKS lookup in db.ts.
  *      The enactive path. An LLM walking via bsp() is INSIDE the function
