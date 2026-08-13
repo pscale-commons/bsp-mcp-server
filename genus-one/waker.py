@@ -298,8 +298,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path.rstrip("/") != "/ring":
             return self._send(404, {"error": "not found"})
-        if not DOORBELL_SECRET or self.headers.get("x-pool-webhook-secret") != DOORBELL_SECRET:
-            log("ring refused: bad or missing shared secret")
+        got = self.headers.get("x-pool-webhook-secret")
+        if not DOORBELL_SECRET or got != DOORBELL_SECRET:
+            log("ring refused: %s" % (
+                "no shared-secret header on the request" if not got
+                else "mismatched shared secret (theirs %d chars, ours %d)" % (len(got), len(DOORBELL_SECRET))))
             return self._send(403, {"error": "bad shared secret"})
         try:
             length = int(self.headers.get("content-length", "0"))
