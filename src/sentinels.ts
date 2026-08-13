@@ -2,7 +2,7 @@
  * sentinels.ts — single source of truth for the pscale JSON sentinel blocks
  * bundled in bsp-mcp.
  *
- * Each entry serves two access paths intentionally (per agent-id:191 and the
+ * Each entry serves two access paths intentionally (per agent-id:832 and the
  * whetstone:1.3 enactive underscore):
  *
  *   1. bsp(agent_id='pscale', block=<name>) → SENTINEL_BLOCKS lookup in db.ts.
