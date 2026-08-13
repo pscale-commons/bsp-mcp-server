@@ -85,6 +85,12 @@ def egg_secret(handle):
     return os.environ.get("GENUS_SECRET_%s" % handle.upper().replace("-", "_"), "")
 
 
+def host_of(origin):
+    """Origins compare as bare hosts: the beach reports its Host-header form
+    (no scheme), the pin is written as a URL — both normalize here."""
+    return origin.strip().lower().removeprefix("https://").removeprefix("http://").rstrip("/")
+
+
 # ── beach I/O (stdlib; the beach is the only state store) ──────────────────
 
 def beach_get(block):
@@ -243,8 +249,8 @@ def ring(payload):
     pool = str(payload.get("pool", ""))
     ringer = str(payload.get("agent_id", "") or "")
     slot = str(payload.get("slot", ""))
-    origin = str(payload.get("origin", "")).rstrip("/")
-    if origin and origin != WAKER_BEACH:
+    origin = str(payload.get("origin", ""))
+    if origin and host_of(origin) != host_of(WAKER_BEACH):
         return False, "origin %s is not the pinned beach" % origin
     if not pool.startswith("pool:"):
         return False, "not a pool"
