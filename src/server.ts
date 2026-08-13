@@ -417,7 +417,7 @@ export function createServer(): McpServer {
   // both access paths pick it up. Two consumers, one wiring:
   //   bsp(agent_id='pscale', block=<name>) — enactive walk for LLMs
   //   pscale://<name>                       — flat-JSON dump for non-bsp clients
-  // See agent-id:191 and whetstone:1.3 for why both paths exist.
+  // See agent-id:832 and whetstone:1.3 for why both paths exist.
   for (const sentinel of SENTINELS) {
     if (sentinel.exposeAsResource === false) continue;
     const json = sentinel.json;
