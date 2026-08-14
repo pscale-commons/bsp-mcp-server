@@ -82,6 +82,146 @@ TEACHING_NAMES = ["sunstone", "whetstone"]
 _pulse_lock = threading.Lock()
 _last_pulse_end = 0.0
 _last_ring_by = {}  # (handle, ringer) -> monotonic ts of last GRANTED ring
+_verify_fails = {}  # handle -> [monotonic ts of failed passphrase proofs]
+
+# ── enrolment — the holder hands the waker the pen, removably ──────────────
+#
+# Any holder may enrol their own genus instance: POST /enroll {handle,
+# passphrase, notify?} — browser to waker over TLS, the beach never carries a
+# secret. The passphrase is PROVEN against the beach's own locks before it is
+# stored: the waker reads reflexive:<handle> position 1 and writes it back
+# byte-identical under the supplied secret — only the true shell key passes a
+# sealed shell's locks, so a wrong key cannot enrol (and on an unsealed shell
+# the proof is vacuous but so are the locks). No new_lock is ever sent: the
+# proof cannot change lock topology, content, or a single byte. Removal and
+# re-enrolment take the passphrase again — only the holder can add, rotate,
+# or remove — and rotating the shell lock on the beach invalidates a stale
+# enrolment by itself (its folds start failing). The store lives on the
+# service volume, mode 600, plaintext: the same trust envelope as this
+# process's env (whoever operates the service can read it — holders trust
+# the waker operator exactly as they trust a client they type the passphrase
+# into). notify is an email address, kept ONLY here — an address in a block
+# would be a spam harvest. The proof endpoint is a passphrase oracle, so
+# failed proofs are throttled per handle. The waker never asks anyone to
+# enrol — enrolment is always the holder arriving by their own hand.
+STORE_PATH = os.environ.get("WAKER_STORE", "/data/enrolments.json")
+VERIFY_FAILS_MAX = 5          # failed proofs per handle per hour → 429
+GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+MIRROR_URL = os.environ.get("WAKER_MIRROR", "https://mirror.onen.ai/mirror")
+
+
+def _store_load():
+    try:
+        with open(STORE_PATH) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _store_save(store):
+    d = os.path.dirname(STORE_PATH)
+    if d:
+        try:
+            os.makedirs(d, exist_ok=True)
+        except OSError:
+            pass
+    tmp = STORE_PATH + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(store, f, indent=2)
+    os.replace(tmp, STORE_PATH)
+    try:
+        os.chmod(STORE_PATH, 0o600)
+    except OSError:
+        pass
+
+
+def beach_post(block, body):
+    req = urllib.request.Request(
+        "%s/.well-known/pscale-beach?block=%s" % (WAKER_BEACH, quote(block)),
+        data=json.dumps(body).encode(),
+        headers={"content-type": "application/json"})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read().decode())
+
+
+def _throttled(handle):
+    now = time.monotonic()
+    fails = [t for t in _verify_fails.get(handle, []) if now - t < 3600]
+    _verify_fails[handle] = fails
+    return len(fails) >= VERIFY_FAILS_MAX
+
+
+def verify_shell_key(handle, passphrase):
+    """Prove the passphrase against the beach's own locks: read a sealed organ
+    position and write it back byte-identical under the supplied secret.
+    True shell key → 200; wrong key on a sealed shell → 403. Returns
+    (ok, reason)."""
+    try:
+        shell = beach_get("reflexive:%s" % handle)
+    except Exception as e:
+        return False, "beach unreachable: %s" % str(e)[:60]
+    if not isinstance(shell, dict) or "1" not in shell:
+        return False, "no hatched shell found for %s (reflexive:%s absent)" % (handle, handle)
+    try:
+        beach_post("reflexive:%s" % handle,
+                   {"spindle": "1", "content": shell["1"], "secret": passphrase})
+        return True, "proven against the shell's own locks"
+    except urllib.error.HTTPError as e:
+        if e.code == 403:
+            _verify_fails.setdefault(handle, []).append(time.monotonic())
+            return False, "passphrase does not open this shell"
+        return False, "beach refused the proof: HTTP %d" % e.code
+    except Exception as e:
+        return False, "proof failed: %s" % str(e)[:60]
+
+
+def enrolment(handle):
+    return _store_load().get(handle)
+
+
+def enrolled_handles():
+    return sorted(set(WAKER_EGGS) | set(_store_load().keys()))
+
+
+# ── notify — the same event, pushed to the person ──────────────────────────
+
+def notify_holder(handle, ringer, pool, slot, status, note):
+    """One plain email to the enrolled address after a funded wake. The
+    sender is the beach's own (service env); holders supply only an address.
+    Failure is logged and never touches the pulse."""
+    e = enrolment(handle)
+    addr = (e or {}).get("notify", "")
+    if not addr:
+        return
+    if not (GMAIL_ADDRESS and GMAIL_APP_PASSWORD):
+        log("notify skipped for %s: sender credentials unset" % handle)
+        return
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        body = (
+            "%s woke at %s.\n\n"
+            "Rung by: %s (a landed voice at %s, slot %s)\n"
+            "Outcome: %s\n"
+            "Note: %s\n\n"
+            "Its room: %s?pool=%s\n"
+            "Pulse journal: daily:%s at the beach.\n\n"
+            "— the beach doorbell. You receive this because you enrolled %s\n"
+            "with this address. Change or remove your enrolment at the waker's\n"
+            "/enroll page. The waker never asks you for anything by email."
+            % (handle, WAKER_BEACH, ringer or "an unattributed voice", pool, slot,
+               status, (note or "")[:300], MIRROR_URL, handle, handle, handle))
+        msg = MIMEText(body)
+        msg["Subject"] = "%s woke — rung by %s" % (handle, ringer or "a voice")
+        msg["From"] = GMAIL_ADDRESS
+        msg["To"] = addr
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=20) as s:
+            s.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
+            s.send_message(msg)
+        log("notified holder of %s" % handle)
+    except Exception as e:
+        log("notify failed for %s: %s" % (handle, str(e)[:80]))
 
 
 def log(msg):
@@ -89,6 +229,9 @@ def log(msg):
 
 
 def egg_secret(handle):
+    e = _store_load().get(handle)
+    if e and e.get("secret"):
+        return e["secret"]
     return os.environ.get("GENUS_SECRET_%s" % handle.upper().replace("-", "_"), "")
 
 
@@ -289,6 +432,7 @@ def run_pulse(handle, ringer, pool, slot):
         beach_append("daily:%s" % handle, entry, egg_secret(handle))
     except Exception as e:
         log("daily log append failed for %s: %s" % (handle, str(e)[:80]))
+    notify_holder(handle, ringer, pool, slot, status, note)
 
 
 # ── the ring ───────────────────────────────────────────────────────────────
@@ -304,8 +448,8 @@ def ring(payload):
     if not pool.startswith("pool:"):
         return False, "not a pool"
     handle = pool[len("pool:"):]
-    if handle not in WAKER_EGGS:
-        return False, "%s is not a genus room here" % pool
+    if handle not in enrolled_handles():
+        return False, "%s is not a genus room here (no holder has enrolled it)" % pool
     if ringer == handle:
         return False, "self-ring (the instance's own room answer)"
     if not egg_secret(handle):
@@ -346,13 +490,58 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):  # quiet the default per-request stderr line
         pass
 
+    def _body(self):
+        length = int(self.headers.get("content-length", "0"))
+        return json.loads(self.rfile.read(length).decode() or "{}")
+
+    def _enroll(self, remove):
+        try:
+            b = self._body()
+        except Exception:
+            return self._send(400, {"ok": False, "detail": "unparseable body"})
+        handle = str(b.get("handle", "")).strip()
+        passphrase = str(b.get("passphrase", ""))
+        notify = str(b.get("notify", "")).strip()
+        if not handle or not passphrase:
+            return self._send(400, {"ok": False, "detail": "handle and passphrase are both needed"})
+        if _throttled(handle):
+            return self._send(429, {"ok": False, "detail": "too many failed proofs for this handle — wait an hour"})
+        ok, reason = verify_shell_key(handle, passphrase)
+        log("enrolment %s for %s: %s (%s)" % ("remove" if remove else "add", handle,
+                                              "proven" if ok else "REFUSED", reason))
+        if not ok:
+            return self._send(403, {"ok": False, "detail": reason})
+        store = _store_load()
+        if remove:
+            if handle in store:
+                del store[handle]
+                _store_save(store)
+            return self._send(200, {"ok": True, "detail": "%s removed — its doorbell no longer rings here" % handle})
+        store[handle] = {"secret": passphrase, "notify": notify,
+                         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+        _store_save(store)
+        return self._send(200, {"ok": True, "detail": "%s enrolled — a landed voice in pool:%s now rings it, within its own dial (wake:%s)%s"
+                                % (handle, handle, handle,
+                                   ("; wake notes go to " + notify) if notify else "")})
+
     def do_GET(self):
-        if self.path.rstrip("/") in ("", "/health"):
+        path = self.path.split("?")[0].rstrip("/")
+        if path in ("", "/health"):
             self._send(200, {"ok": True, "service": "genus-one waker (the doorbell)",
-                             "beach": WAKER_BEACH, "eggs": WAKER_EGGS,
-                             "cooldown_s": COOLDOWN_S, "refractory_s": REFRACTORY_S})
+                             "beach": WAKER_BEACH, "enrolled": enrolled_handles(),
+                             "default_cooldown_s": COOLDOWN_S, "default_refractory_s": REFRACTORY_S})
+        elif path == "/enroll":
+            self._send(200, {"ok": True, "detail": "enrolment is a holder's POST {handle, passphrase, notify?} to this path; "
+                                                   "DELETE with the same proof removes. The passphrase is proven against the "
+                                                   "beach's own locks and kept only on this service. The waker never asks "
+                                                   "anyone to enrol — enrolment is always the holder's own hand."})
         else:
             self._send(404, {"error": "not found"})
+
+    def do_DELETE(self):
+        if self.path.split("?")[0].rstrip("/") == "/enroll":
+            return self._enroll(remove=True)
+        self._send(404, {"error": "not found"})
 
     def do_POST(self):
         if self.path.rstrip("/") != "/ring":
