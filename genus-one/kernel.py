@@ -260,7 +260,12 @@ def _think_config():
     """
     t = os.environ.get("GENUS_THINK", "").strip().lower()
     if not t or t in ("off", "0", "none", "false"):
-        return None
+        # Explicit, never absent: current-generation models (sonnet-5 onward)
+        # think by DEFAULT when the parameter is omitted — observed 2026-08-14,
+        # a whole output ceiling spent thinking with no text. "disabled" is
+        # accepted by every pinned tier (probed: sonnet-5, opus-4-8, haiku-4-5).
+        # UPSTREAM-OWED: pscale-biome src/agent kernel.py carries the same gap.
+        return {"type": "disabled"}
     if t == "adaptive":
         return {"type": "adaptive"}
     try:
@@ -893,7 +898,9 @@ def _invocation():
     model = TIERS[tier] if tier in TIERS else None
     think = None
     t = (_v("3") or "").lower()
-    if t == "adaptive":
+    if t in ("off", "none", "false", "0"):
+        think = {"type": "disabled"}   # explicit — absence means adaptive on current models
+    elif t == "adaptive":
         think = {"type": "adaptive"}
     elif t:
         try:
