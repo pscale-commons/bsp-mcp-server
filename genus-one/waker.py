@@ -34,12 +34,14 @@ Env: DOORBELL_SECRET (shared with the beach's POOL_WEBHOOK_SECRET);
 ANTHROPIC_API_KEY (the holder's key — the electricity); WAKER_BEACH (pinned
 origin, e.g. https://beach.happyseaurchin.com); WAKER_EGGS (comma list of
 handles, e.g. "egg-one"); GENUS_SECRET_<HANDLE> per handle ('-' becomes '_',
-e.g. GENUS_SECRET_EGG_ONE); WAKER_COOLDOWN_S (default 1800);
-WAKER_REFRACTORY_S (default 120); WAKER_THINK (default off — the kernel's
-bounded-thinking form predates current models, and adaptive without an
-effort control either spends the whole ceiling thinking or outruns the wire
-timeout; flagged for the biome-first pass); WAKER_PEERS (JSON name→origin,
-seeds each nest's peers.json so the between matches the home nest); PORT.
+e.g. GENUS_SECRET_EGG_ONE); WAKER_COOLDOWN_S / WAKER_REFRACTORY_S (service
+DEFAULTS only — the dial's positions 4 and 5 override them per instance:
+dial-absorbs-policy, adopted 2026-08-14); WAKER_MAX_DAILY (default 6 — the
+key-holder's wallet floor, honored alongside the holder's budget:<handle>
+block when that exists); WAKER_THINK (default off — sent as an explicit
+disabled, since current models think by default when the parameter is
+absent); WAKER_PEERS (JSON name→origin, seeds each nest's peers.json so the
+between matches the home nest); PORT.
 
 Teaching: kernel.py loads the constant teaching from ../src (repo layout).
 Deployed alone, this service fetches src/*.json from the canonical GitHub
@@ -62,8 +64,13 @@ sys.path.insert(0, BASE)
 DOORBELL_SECRET = os.environ.get("DOORBELL_SECRET", "")
 WAKER_BEACH = os.environ.get("WAKER_BEACH", "https://beach.happyseaurchin.com").rstrip("/")
 WAKER_EGGS = [h.strip() for h in os.environ.get("WAKER_EGGS", "").split(",") if h.strip()]
+# Service DEFAULTS only — the dial's own positions override them per instance
+# (dial-absorbs-policy). MAX_DAILY is the one number that stays the service's:
+# the wallet floor of the key-holder running this process, honored alongside
+# (never instead of) the holder's budget:<handle> block when that exists.
 COOLDOWN_S = int(os.environ.get("WAKER_COOLDOWN_S", "1800"))
 REFRACTORY_S = int(os.environ.get("WAKER_REFRACTORY_S", "120"))
+MAX_DAILY = int(os.environ.get("WAKER_MAX_DAILY", "6"))
 NESTS_DIR = os.path.join(BASE, "nests")
 TEACHING_RAW = "https://raw.githubusercontent.com/pscale-commons/bsp-mcp-server/main/src/%s.json"
 TEACHING_LIST = "https://api.github.com/repos/pscale-commons/bsp-mcp-server/contents/src"
@@ -115,26 +122,68 @@ def beach_append(block, entry, secret):
 
 # ── the dial and the counter ───────────────────────────────────────────────
 
-def read_dial(handle):
-    """(on, cap) from wake:<handle> — the instance's own block. Absent dial or
-    unreadable position reads as OFF: the doorbell only rings by consent."""
-    try:
-        dial = beach_get("wake:%s" % handle)
-    except Exception as e:
-        log("dial unreadable for %s: %s" % (handle, str(e)[:80]))
-        return False, 0
-    if not isinstance(dial, dict):
-        return False, 0
-    on = str(dial.get("1", "")).strip().lower().startswith("on")
-    cap_raw = str(dial.get("2", "")).strip()
+def _leading_int(v, default):
+    s = str(v if not isinstance(v, dict) else v.get("_", "")).strip()
     digits = ""
-    for ch in cap_raw:
+    for ch in s:
         if ch.isdigit():
             digits += ch
         else:
             break
-    cap = int(digits) if digits else 2
-    return on, cap
+    return int(digits) if digits else default
+
+
+class Dial:
+    """The instance's own law, read fresh each ring (dial-absorbs-policy,
+    adopted 2026-08-14): every number that governs the doorbell lives in
+    wake:<handle>, the instance's block, so "why didn't I wake?" is always
+    answerable by reading. Positions: 1 on/off; 2 daily cap; 3 its standing
+    notes (prose, never machine-parsed); 4 per-ringer cooldown seconds, with
+    digit children as named exceptions ("<ringer> <seconds>" — 0 = rings
+    free); 5 refractory seconds after any pulse; 6 a pointer to its pulse
+    journal. Absent positions fall to the service defaults — the dial
+    OVERRIDES the service, never the reverse. Absent dial reads as OFF:
+    the doorbell only rings by consent."""
+
+    def __init__(self, handle):
+        self.on, self.cap = False, 0
+        self.cooldown, self.refractory = COOLDOWN_S, REFRACTORY_S
+        self.per_ringer = {}
+        try:
+            dial = beach_get("wake:%s" % handle)
+        except Exception as e:
+            log("dial unreadable for %s: %s" % (handle, str(e)[:80]))
+            return
+        if not isinstance(dial, dict):
+            return
+        self.on = str(dial.get("1", "")).strip().lower().startswith("on")
+        self.cap = _leading_int(dial.get("2", ""), 2)
+        self.cooldown = _leading_int(dial.get("4", ""), COOLDOWN_S)
+        self.refractory = _leading_int(dial.get("5", ""), REFRACTORY_S)
+        node4 = dial.get("4")
+        if isinstance(node4, dict):
+            for k, v in node4.items():
+                if k == "_" or not isinstance(v, str):
+                    continue
+                parts = v.strip().split()
+                if len(parts) >= 2 and parts[1].isdigit():
+                    self.per_ringer[parts[0]] = int(parts[1])
+
+    def cooldown_for(self, ringer):
+        return self.per_ringer.get(ringer, self.cooldown)
+
+
+def holder_ceiling(handle):
+    """budget:<handle> position 1 — the holder's spend ceiling, in the
+    holder's own locked block. Absent block = no block ceiling (the env
+    ceiling WAKER_MAX_DAILY still floors the wallet)."""
+    try:
+        b = beach_get("budget:%s" % handle)
+    except Exception:
+        return None
+    if not isinstance(b, dict) or "1" not in b:
+        return None
+    return _leading_int(b.get("1"), None)
 
 
 def pulses_today(handle):
@@ -261,18 +310,22 @@ def ring(payload):
         return False, "self-ring (the instance's own room answer)"
     if not egg_secret(handle):
         return False, "no shell key held for %s" % handle
-    now = time.monotonic()
-    if _last_pulse_end and now - _last_pulse_end < REFRACTORY_S:
-        return False, "refractory (%ds after last pulse)" % REFRACTORY_S
-    last = _last_ring_by.get((handle, ringer or "anon"))
-    if last and now - last < COOLDOWN_S:
-        return False, "cooldown for ringer %s (%ds)" % (ringer or "anon", COOLDOWN_S)
-    on, cap = read_dial(handle)
-    if not on:
+    dial = Dial(handle)
+    if not dial.on:
         return False, "dial off — %s has not consented" % handle
+    now = time.monotonic()
+    if _last_pulse_end and now - _last_pulse_end < dial.refractory:
+        return False, "refractory (%ds after last pulse, the dial's own)" % dial.refractory
+    cd = dial.cooldown_for(ringer or "anon")
+    last = _last_ring_by.get((handle, ringer or "anon"))
+    if last and cd > 0 and now - last < cd:
+        return False, "cooldown for ringer %s (%ds, the dial's own)" % (ringer or "anon", cd)
+    ceiling = holder_ceiling(handle)
+    cap = min(x for x in (dial.cap, ceiling, MAX_DAILY) if x is not None)
     spent = pulses_today(handle)
     if spent >= cap:
-        return False, "daily cap reached (%d/%d)" % (spent, cap)
+        which = "dial" if cap == dial.cap else ("holder budget" if cap == ceiling else "service ceiling")
+        return False, "daily cap reached (%d/%d, from the %s)" % (spent, cap, which)
     if not _pulse_lock.acquire(blocking=False):
         return False, "a pulse is already running — its compose sweeps the room"
     # Granted: the lock is held; the worker releases it and logs the spend.
