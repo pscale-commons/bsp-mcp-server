@@ -109,6 +109,28 @@ VERIFY_FAILS_MAX = 5          # failed proofs per handle per hour → 429
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 MIRROR_URL = os.environ.get("WAKER_MIRROR", "https://mirror.onen.ai/mirror")
+# The factoring's first step (proposals/2026-08-14-push-engine.md): every beach
+# event this service receives is forwarded, fire-and-forget, to the push
+# engine when one is declared — so the engine gets a live feed from minute one
+# and the bus topology can settle later with a one-line settings change.
+# Unset = no-op. The waker's own decisions are untouched by the forward.
+PUSH_ENGINE_URL = os.environ.get("PUSH_ENGINE_URL", "")
+
+
+def forward_event(payload):
+    if not PUSH_ENGINE_URL:
+        return
+    def _go():
+        try:
+            req = urllib.request.Request(
+                PUSH_ENGINE_URL, data=json.dumps(payload).encode(),
+                headers={"content-type": "application/json",
+                         **({"x-pool-webhook-secret": DOORBELL_SECRET} if DOORBELL_SECRET else {})})
+            with urllib.request.urlopen(req, timeout=5) as r:
+                r.read()
+        except Exception as e:
+            log("event forward failed: %s" % str(e)[:60])
+    threading.Thread(target=_go, daemon=True).start()
 
 
 def _store_load():
@@ -560,6 +582,7 @@ class Handler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length).decode() or "{}")
         except Exception:
             return self._send(400, {"error": "unparseable body"})
+        forward_event(payload)
         granted, reason = ring(payload)
         log("ring %s: %s (payload %s)" % ("GRANTED" if granted else "declined", reason,
                                           json.dumps(payload)[:200]))
