@@ -51,7 +51,9 @@ const live = [
   ['snapshot present', text.includes('# Readings at')],
   ['fold section present', text.includes('# The fold')],
   ['ancestor voicing carried', text.includes('the internet reconstituted as beach')],
-  ['today carried', text.includes('three strands')],
+  // the attended rung is named by its own address, whatever today holds —
+  // a pin on a specific day's words went stale five days after it was written
+  ['attended address carried', text.includes(namedRungAddress('today', new Date())!)],
 ] as const;
 for (const [m, c] of live) ok(c as boolean, m);
 console.log(`\ntotal: ${pass} passed, ${fail} failed`);

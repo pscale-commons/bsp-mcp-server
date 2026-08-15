@@ -27,9 +27,15 @@
  * each reader of a pool produces their own. No central resolver, here either.
  *
  * WHERE A FOLD GOES, when it is kept (`keep`):
- *   personal    → history:<handle>, appended. A journal is time-located and a
- *                 personal reading IS a moment (tree:8 — journals are not
- *                 mirrors). This is #247's salvage rider, landed.
+ *   personal    → tree:<field>:<handle>, at the SAME address — the holder's own
+ *                 tree of syntheses, latest-standing and revisable like a
+ *                 mirror, superseded by the next fold of the same point
+ *                 (settled 2026-08-15, proposals/2026-08-15-personal-tree-
+ *                 and-fold-homes.md; supersedes the history:<handle> journal
+ *                 destination that #247's salvage rider first landed — a keep
+ *                 that matters as a MOMENT may still leave a pointer in
+ *                 history:<handle>, by the holder's own hand, and losslessness
+ *                 when wanted is the archive convention, never accumulation).
  *   collective  → the bare name <field>, at the SAME address, because the fold
  *                 block is address-aligned with its spine (tree:4.1, tree:8;
  *                 battery × state-of-play is the live pair). Endorsed by
@@ -66,7 +72,7 @@
 
 import { z } from 'zod';
 import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
-import { loadBlock, saveBlock, appendToBeach, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
+import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
 import { momentToAddress } from '../temporal.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
@@ -159,7 +165,7 @@ export const streamEngageParamsSchema = {
     .describe("The family name — the BARE name, no prefix. 'beach-venture' addresses spine:beach-venture, every beach-venture:<handle> mirror, and the fold at 'beach-venture'. Never pass 'spine:beach-venture' or 'pool:beach-venture'."),
   handle: z
     .string()
-    .describe("Your handle. Names your mirror (<field>:<handle>) for `say`, and your journal (history:<handle>) for keep='personal'. The mirror is born on your first say — you never create it by hand."),
+    .describe("Your handle. Names your mirror (<field>:<handle>) for `say`, and your own tree of syntheses (tree:<field>:<handle>) for keep='personal'. Mirror and tree are born on first use — you never create them by hand."),
   at: z
     .string()
     .optional()
@@ -171,7 +177,7 @@ export const streamEngageParamsSchema = {
   keep: z
     .enum(['personal', 'collective'])
     .optional()
-    .describe("Persist a fold you have just synthesised (pass it as `keep_text`). 'personal' appends it to history:<handle> — your own reading at a moment, a journal entry. 'collective' writes it to the bare name <field> at this same address — the shared social product, endorsed by pointer and never a gate, which anyone may supersede with a better one. Omit and the fold stays in the envelope, which is the default the convention prefers (tree:3 — recomputed on demand, never stale)."),
+    .describe("Persist a fold you have just synthesised (pass it as `keep_text`). 'personal' writes it to tree:<field>:<handle> at this same address — your own tree of syntheses, latest-standing, superseded by your next fold of the same point (a keep that matters as a moment may also leave a pointer in history:<handle>, by your own hand). 'collective' writes it to the bare name <field> at this same address — the shared social product, endorsed by pointer and never a gate, which anyone may supersede with a better one. Omit and the fold stays in the envelope, which is the default the convention prefers (tree:3 — recomputed on demand, never stale)."),
   keep_text: z
     .string()
     .optional()
@@ -285,13 +291,21 @@ export async function handleStreamEngage(params: StreamEngageParams) {
     }
     try {
       if (params.keep === 'personal') {
-        const ack = await appendToBeach(
-          origin,
-          `history:${handle}`,
-          { _: text, '1': handle, '2': spineAddr, '3': new Date().toISOString() } as Block,
-          params.secret,
-        );
-        keptTo = `history:${handle} slot ${(ack as any)?.slot ?? '?'}`;
+        const treeName = `tree:${field}:${handle}`;
+        let trow = await loadBlock(origin, treeName).catch(() => null);
+        if (!trow || typeof trow.block !== 'object' || trow.block === null) {
+          const born =
+            `TREE — ${handle}'s own syntheses of ${spineName}, at the spine's own addresses: at each point, the LATEST reading this hand has folded, ` +
+            `revisable forever and superseded by its next fold. A fold that matters as a moment may also leave a pointer in history:${handle}, by this hand's own choice; ` +
+            `losslessness, when wanted, is the archive convention (archive:${treeName}:<date>), never automatic accumulation.`;
+          await saveBlock(origin, treeName, { _: born } as Block, { spindle: '', secret: params.secret });
+          trow = await loadBlock(origin, treeName).catch(() => null);
+        }
+        const tblock: Block = JSON.parse(JSON.stringify(trow!.block));
+        const tAddr = emitFor(digits, tblock);
+        writeAt(tblock, tAddr, text);
+        await saveBlock(origin, treeName, tblock, { spindle: tAddr, secret: params.secret });
+        keptTo = `${treeName}:${tAddr}`;
       } else {
         let frow = await loadBlock(origin, field).catch(() => null);
         if (!frow || typeof frow.block !== 'object' || frow.block === null) {
@@ -421,7 +435,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
   lines.push(
     `# The fold — yours to make, not the primitive's` +
     `\nSynthesise the snapshot above under the law${law ? '' : ' (no function:${field} at this beach, so integrate plainly)'}. ` +
-    `Keep it only if it should outlast this turn: keep='personal' lands it in history:${handle}; keep='collective' lands it at ${field}:${spineAddr}, ` +
+    `Keep it only if it should outlast this turn: keep='personal' lands it at tree:${field}:${handle}:${spineAddr}, your own latest reading of this point; keep='collective' lands it at ${field}:${spineAddr}, ` +
     `where anyone may supersede it with a better reading.`,
   );
 
