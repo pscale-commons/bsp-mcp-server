@@ -417,10 +417,29 @@ def ensure_nest(handle):
     return nest
 
 
-def run_pulse(handle, ringer, pool, slot):
-    """One standard pulse as this handle, then the daily log append. Runs in a
-    worker thread with _pulse_lock held; env is re-bound and kernel reloaded
-    under the lock (module constants bind at import)."""
+BEACH_FUEL_ON = os.environ.get("WAKER_BEACH_FUEL", "on").strip().lower() not in ("off", "0", "false", "no")
+_STANDING_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+
+
+def pick_fuel(handle, asker_key):
+    """(key, funder) by the settled precedence: the asker's carried fuel, then
+    the holder's deposited fuel, then the beach's standing fuel when the
+    generosity switch is on. (None, None) = no fuel — the voice stands."""
+    if asker_key:
+        return asker_key, "asker"
+    e = enrolment(handle) or {}
+    if e.get("fuel"):
+        return e["fuel"], "holder"
+    if BEACH_FUEL_ON and _STANDING_KEY:
+        return _STANDING_KEY, "beach"
+    return None, None
+
+
+def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach"):
+    """One standard pulse as this handle on the given fuel, then the daily log
+    append (funder recorded at field 6). Runs with _pulse_lock held; env is
+    re-bound and kernel reloaded under the lock (module constants bind at
+    import), the fuel restored to the standing key afterwards."""
     global _last_pulse_end
     started = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     status, note = "failed", ""
@@ -430,6 +449,7 @@ def run_pulse(handle, ringer, pool, slot):
         os.environ["GENUS_SECRET"] = egg_secret(handle)
         os.environ["GENUS_AGENT"] = ensure_nest(handle)
         os.environ["GENUS_THINK"] = os.environ.get("WAKER_THINK", "off")
+        os.environ["ANTHROPIC_API_KEY"] = fuel_key or _STANDING_KEY
         if "kernel" in sys.modules:  # module constants bind at import — rebind per handle
             kernel = importlib.reload(sys.modules["kernel"])
         else:
@@ -437,11 +457,12 @@ def run_pulse(handle, ringer, pool, slot):
         res = kernel.pulse() or {}
         status = str(res.get("status", "done"))
         note = str(res.get("note", "") or "")
-        log("pulse complete for %s: status=%s" % (handle, status))
+        log("pulse complete for %s: status=%s funder=%s" % (handle, status, funder))
     except Exception as e:
         note = str(e)[:160]
-        log("pulse FAILED for %s: %s" % (handle, note))
+        log("pulse FAILED for %s (funder %s): %s" % (handle, funder, note))
     finally:
+        os.environ["ANTHROPIC_API_KEY"] = _STANDING_KEY  # the carried fuel is never kept
         _last_pulse_end = time.monotonic()
         _pulse_lock.release()
     try:
@@ -449,12 +470,13 @@ def run_pulse(handle, ringer, pool, slot):
             "_": "doorbell pulse — rung by %s (a landed voice at %s slot %s); %s%s"
                  % (ringer or "an unattributed voice", pool, slot, status,
                     (": " + note[:160]) if note else ""),
-            "1": "waker", "3": started, "4": ringer or "", "5": status,
+            "1": "waker", "3": started, "4": ringer or "", "5": status, "6": funder,
         }
         beach_append("daily:%s" % handle, entry, egg_secret(handle))
     except Exception as e:
         log("daily log append failed for %s: %s" % (handle, str(e)[:80]))
     notify_holder(handle, ringer, pool, slot, status, note)
+    return status, note
 
 
 # ── the ring ───────────────────────────────────────────────────────────────
@@ -486,18 +508,27 @@ def ring(payload):
     last = _last_ring_by.get((handle, ringer or "anon"))
     if last and cd > 0 and now - last < cd:
         return False, "cooldown for ringer %s (%ds, the dial's own)" % (ringer or "anon", cd)
-    ceiling = holder_ceiling(handle)
-    cap = min(x for x in (dial.cap, ceiling, MAX_DAILY) if x is not None)
+    fuel_key, funder = pick_fuel(handle, None)   # the webhook path carries no asker fuel
+    if not fuel_key:
+        return False, "no fuel — nobody's generosity stands, so the voice waits in the room"
+    # The dial's cap is the agent's ATTENTION law — it binds every funded wake.
+    # Wallet ceilings bind only generosity: the beach's standing fuel answers to
+    # MAX_DAILY and the holder's budget block; the holder's own deposited fuel
+    # answers to the dial alone (the holder set both).
+    caps = [dial.cap]
+    if funder == "beach":
+        caps += [c for c in (holder_ceiling(handle), MAX_DAILY) if c is not None]
+    cap = min(caps)
     spent = pulses_today(handle)
     if spent >= cap:
-        which = "dial" if cap == dial.cap else ("holder budget" if cap == ceiling else "service ceiling")
-        return False, "daily cap reached (%d/%d, from the %s)" % (spent, cap, which)
+        return False, "daily cap reached (%d/%d)" % (spent, cap)
     if not _pulse_lock.acquire(blocking=False):
         return False, "a pulse is already running — its compose sweeps the room"
     # Granted: the lock is held; the worker releases it and logs the spend.
     _last_ring_by[(handle, ringer or "anon")] = now
-    threading.Thread(target=run_pulse, args=(handle, ringer, pool, slot), daemon=True).start()
-    return True, "pulse %d/%d for %s, rung by %s" % (spent + 1, cap, handle, ringer or "anon")
+    threading.Thread(target=run_pulse, args=(handle, ringer, pool, slot, fuel_key, funder),
+                     daemon=True).start()
+    return True, "pulse %d/%d for %s, rung by %s, %s fuel" % (spent + 1, cap, handle, ringer or "anon", funder)
 
 
 CORS_ORIGINS = [o.strip() for o in os.environ.get(
@@ -543,6 +574,7 @@ class Handler(BaseHTTPRequestHandler):
         handle = str(b.get("handle", "")).strip()
         passphrase = str(b.get("passphrase", ""))
         notify = str(b.get("notify", "")).strip()
+        fuel = str(b.get("fuel", "")).strip()
         if not handle or not passphrase:
             return self._send(400, {"ok": False, "detail": "handle and passphrase are both needed"})
         if _throttled(handle):
@@ -558,7 +590,7 @@ class Handler(BaseHTTPRequestHandler):
                 del store[handle]
                 _store_save(store)
             return self._send(200, {"ok": True, "detail": "%s removed — its doorbell no longer rings here" % handle})
-        store[handle] = {"secret": passphrase, "notify": notify,
+        store[handle] = {"secret": passphrase, "notify": notify, "fuel": fuel,
                          "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
         _store_save(store)
         return self._send(200, {"ok": True, "detail": "%s enrolled — a landed voice in pool:%s now rings it, within its own dial (wake:%s)%s"
@@ -584,10 +616,93 @@ class Handler(BaseHTTPRequestHandler):
             return self._enroll(remove=True)
         self._send(404, {"error": "not found"})
 
+    def _poke(self):
+        """The asker's (or holder's) direct poke — asker-pays lands here.
+        POST {handle, asker_id, text?, asker_key?, passphrase?}: the pulse lock
+        is taken FIRST so the landed voice's own webhook ring finds it busy
+        (no double-wake); text lands in the room (or, passphrase proven, at the
+        sealed task line — the holder's private directive); fuel by precedence
+        (asker's carried > holder's deposited > beach's standing); the wake
+        runs synchronously and the outcome returns. The carried key is used
+        once and never stored. The dial still rules: door, attention cap,
+        refractory — an asker's fuel buys electricity, never consent."""
+        try:
+            b = self._body()
+        except Exception:
+            return self._send(400, {"ok": False, "detail": "unparseable body"})
+        handle = str(b.get("handle", "")).strip()
+        asker = str(b.get("asker_id", "")).strip() or "anon"
+        text = str(b.get("text", "") or "")
+        asker_key = str(b.get("asker_key", "") or "")
+        passphrase = str(b.get("passphrase", "") or "")
+        if not handle:
+            return self._send(400, {"ok": False, "detail": "which agent?"})
+        if handle not in enrolled_handles() or not egg_secret(handle):
+            return self._send(200, {"ok": True, "woke": False,
+                                    "detail": "no holder has enrolled %s — its pen is not here" % handle})
+        as_holder = False
+        if passphrase:
+            if _throttled(handle):
+                return self._send(429, {"ok": False, "detail": "too many failed proofs — wait an hour"})
+            ok, reason = verify_shell_key(handle, passphrase)
+            if not ok:
+                return self._send(403, {"ok": False, "detail": reason})
+            as_holder = True
+        dial = Dial(handle)
+        if not dial.on and not as_holder:
+            landed = ""
+            if text:
+                try:
+                    r = beach_append("pool:%s" % handle, {"_": text, "1": asker}, None)
+                    landed = " — your voice stands at slot %s for its next wake" % r.get("slot", "?")
+                except Exception:
+                    landed = " — and the room refused the voice"
+            return self._send(200, {"ok": True, "woke": False,
+                                    "detail": "its door is closed%s" % landed})
+        now = time.monotonic()
+        if _last_pulse_end and now - _last_pulse_end < dial.refractory and not as_holder:
+            return self._send(200, {"ok": True, "woke": False, "detail": "just woke — refractory; your voice can still land"})
+        cd = dial.cooldown_for(asker)
+        last = _last_ring_by.get((handle, asker))
+        if last and cd > 0 and now - last < cd and not as_holder:
+            return self._send(200, {"ok": True, "woke": False,
+                                    "detail": "its dial holds you to one wake per %ds — the voice can still land" % cd})
+        fuel_key, funder = pick_fuel(handle, asker_key)
+        if not fuel_key:
+            return self._send(200, {"ok": True, "woke": False,
+                                    "detail": "no fuel — carry your key with the poke, or the voice just stands"})
+        if not as_holder:
+            spent = pulses_today(handle)
+            caps = [dial.cap] + ([c for c in (holder_ceiling(handle), MAX_DAILY) if c is not None]
+                                 if funder == "beach" else [])
+            if spent >= min(caps):
+                return self._send(200, {"ok": True, "woke": False,
+                                        "detail": "its attention cap is reached today (%d) — the voice can still land" % min(caps)})
+        if not _pulse_lock.acquire(blocking=False):
+            return self._send(200, {"ok": True, "woke": False,
+                                    "detail": "already awake — a running wake will meet the room"})
+        try:
+            slot = ""
+            if text:
+                target = ("task:%s" if as_holder else "pool:%s") % handle
+                r = beach_append(target, {"_": text, "1": asker},
+                                 egg_secret(handle) if as_holder else None)
+                slot = str(r.get("slot", ""))
+        except Exception as e:
+            _pulse_lock.release()
+            return self._send(502, {"ok": False, "detail": "the voice would not land: %s" % str(e)[:80]})
+        _last_ring_by[(handle, asker)] = now
+        log("poke GRANTED: %s pokes %s (%s fuel%s)" % (asker, handle, funder, ", as holder" if as_holder else ""))
+        status, note = run_pulse(handle, asker, "poke", slot, fuel_key, funder)
+        return self._send(200, {"ok": True, "woke": status not in ("failed",), "funder": funder,
+                                "status": status, "detail": (note or status)[:300]})
+
     def do_POST(self):
         path = self.path.split("?")[0].rstrip("/")
         if path == "/enroll":
             return self._enroll(remove=False)
+        if path == "/poke":
+            return self._poke()
         if path != "/ring":
             return self._send(404, {"error": "not found"})
         got = self.headers.get("x-pool-webhook-secret")
