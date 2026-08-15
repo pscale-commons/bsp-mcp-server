@@ -544,7 +544,10 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, {"error": "not found"})
 
     def do_POST(self):
-        if self.path.rstrip("/") != "/ring":
+        path = self.path.split("?")[0].rstrip("/")
+        if path == "/enroll":
+            return self._enroll(remove=False)
+        if path != "/ring":
             return self._send(404, {"error": "not found"})
         got = self.headers.get("x-pool-webhook-secret")
         if not DOORBELL_SECRET or got != DOORBELL_SECRET:
