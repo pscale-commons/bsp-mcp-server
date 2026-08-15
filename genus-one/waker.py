@@ -435,7 +435,7 @@ def pick_fuel(handle, asker_key):
     return None, None
 
 
-def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach"):
+def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=None):
     """One standard pulse as this handle on the given fuel, then the daily log
     append (funder recorded at field 6). Runs with _pulse_lock held; env is
     re-bound and kernel reloaded under the lock (module constants bind at
@@ -446,7 +446,7 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach"):
     try:
         os.environ["GENUS_BEACH"] = WAKER_BEACH
         os.environ["GENUS_HANDLE"] = handle
-        os.environ["GENUS_SECRET"] = egg_secret(handle)
+        os.environ["GENUS_SECRET"] = pen or egg_secret(handle)
         os.environ["GENUS_AGENT"] = ensure_nest(handle)
         os.environ["GENUS_THINK"] = os.environ.get("WAKER_THINK", "off")
         os.environ["ANTHROPIC_API_KEY"] = fuel_key or _STANDING_KEY
@@ -472,7 +472,7 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach"):
                     (": " + note[:160]) if note else ""),
             "1": "waker", "3": started, "4": ringer or "", "5": status, "6": funder,
         }
-        beach_append("daily:%s" % handle, entry, egg_secret(handle))
+        beach_append("daily:%s" % handle, entry, pen or egg_secret(handle))
     except Exception as e:
         log("daily log append failed for %s: %s" % (handle, str(e)[:80]))
     notify_holder(handle, ringer, pool, slot, status, note)
@@ -637,7 +637,7 @@ class Handler(BaseHTTPRequestHandler):
         passphrase = str(b.get("passphrase", "") or "")
         if not handle:
             return self._send(400, {"ok": False, "detail": "which agent?"})
-        if handle not in enrolled_handles() or not egg_secret(handle):
+        if not passphrase and (handle not in enrolled_handles() or not egg_secret(handle)):
             return self._send(200, {"ok": True, "woke": False,
                                     "detail": "no holder has enrolled %s — its pen is not here" % handle})
         as_holder = False
@@ -686,14 +686,15 @@ class Handler(BaseHTTPRequestHandler):
             if text:
                 target = ("task:%s" if as_holder else "pool:%s") % handle
                 r = beach_append(target, {"_": text, "1": asker},
-                                 egg_secret(handle) if as_holder else None)
+                                 passphrase if as_holder else None)
                 slot = str(r.get("slot", ""))
         except Exception as e:
             _pulse_lock.release()
             return self._send(502, {"ok": False, "detail": "the voice would not land: %s" % str(e)[:80]})
         _last_ring_by[(handle, asker)] = now
         log("poke GRANTED: %s pokes %s (%s fuel%s)" % (asker, handle, funder, ", as holder" if as_holder else ""))
-        status, note = run_pulse(handle, asker, "poke", slot, fuel_key, funder)
+        status, note = run_pulse(handle, asker, "poke", slot, fuel_key, funder,
+                                 pen=passphrase if as_holder else None)
         return self._send(200, {"ok": True, "woke": status not in ("failed",), "funder": funder,
                                 "status": status, "detail": (note or status)[:300]})
 
