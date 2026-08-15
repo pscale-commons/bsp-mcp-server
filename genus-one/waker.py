@@ -500,14 +500,33 @@ def ring(payload):
     return True, "pulse %d/%d for %s, rung by %s" % (spent + 1, cap, handle, ringer or "anon")
 
 
+CORS_ORIGINS = [o.strip() for o in os.environ.get(
+    "WAKER_CORS_ORIGINS",
+    "https://mirror.onen.ai,https://xstream.onen.ai,http://localhost:5173").split(",") if o.strip()]
+
+
 class Handler(BaseHTTPRequestHandler):
+    def _cors(self):
+        origin = self.headers.get("origin", "")
+        if origin in CORS_ORIGINS:
+            self.send_header("access-control-allow-origin", origin)
+            self.send_header("access-control-allow-methods", "GET, POST, DELETE, OPTIONS")
+            self.send_header("access-control-allow-headers", "content-type")
+
     def _send(self, code, obj):
         body = json.dumps(obj).encode()
         self.send_response(code)
         self.send_header("content-type", "application/json")
         self.send_header("content-length", str(len(body)))
+        self._cors()
         self.end_headers()
         self.wfile.write(body)
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._cors()
+        self.send_header("content-length", "0")
+        self.end_headers()
 
     def log_message(self, fmt, *args):  # quiet the default per-request stderr line
         pass
