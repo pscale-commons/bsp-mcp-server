@@ -847,8 +847,15 @@ def apply_write(name, addr, content):
     populated branch."""
     block = load_block(name) or {ZK: name}
     floor = spark.floor(block)
-    if isinstance(content, str) and addr:              # flatten guard
-        digits = spark.parse(addr, floor)
+    # THE ROOT IS THE CASE THAT MATTERS MOST, and it was the one case exempt: the
+    # guard used to require an address, so a bare string aimed at the block ITSELF
+    # walked no digits, met no check, and replaced the whole underscore chain —
+    # taking the block's own voicing with it and collapsing its floor. That is the
+    # most destructive write the fold can make and it was the only unguarded one.
+    # An empty address now walks zero digits and lands on the block, where the
+    # same digit-children test refuses it.
+    if isinstance(content, str):                       # flatten guard
+        digits = spark.parse(addr, floor) if addr else []
         node = block
         for d in digits:
             k = ZK if d == "0" else d
@@ -857,7 +864,8 @@ def apply_write(name, addr, content):
                 break
         if isinstance(node, dict) and any(k.isdigit() for k in node):
             raise ValueError(
-                "refusing to flatten a populated subtree at %s with a bare string" % addr)
+                "refusing to flatten a populated subtree at %s with a bare string"
+                % (addr or "<the block root>"))
     spark.spark(block, addr or None, content=content)
     save_block(name, block)
 
