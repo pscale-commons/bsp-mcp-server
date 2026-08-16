@@ -142,6 +142,9 @@ def _teaching_names():
         return set()
 
 
+_unreadable = set()   # names the beach was asked for and did not answer
+
+
 def load_block(name):
     """Loader / router. Resolves, in order: my own shell (beach write-through
     home first when configured, local shell/ as working copy and offline
@@ -153,6 +156,7 @@ def load_block(name):
     addressable reference, not an out-of-band read."""
     if name in _cache:
         return _cache[name]
+    _unreadable.discard(name)
     if BEACH and HANDLE and name not in _teaching_names():
         try:
             got = wire.load_block(BEACH, "%s:%s" % (name, HANDLE))
@@ -160,6 +164,12 @@ def load_block(name):
                 _cache[name] = got
                 return got
         except Exception as ex:
+            # A 404 already returned None above: reaching here means the beach
+            # was asked and did not answer. That is NOT the same as absent, and
+            # the difference is the whole of this file's worst failure mode —
+            # see apply_write. Remember it, so a write cannot mistake silence
+            # for emptiness.
+            _unreadable.add(name)
             print("  [wire] load %s fell back local: %s" % (name, str(ex)[:80]))
     for d in (SHELL_DIR, TEACHING_DIR):
         p = os.path.join(d, name + ".json")
@@ -845,7 +855,20 @@ def apply_write(name, addr, content):
     named class: a string writes a point; an object writes that branch as a
     subtree; an object at the root supernests. A bare string never flattens a
     populated branch."""
-    block = load_block(name) or {ZK: name}
+    prior = load_block(name)
+    # NEVER INVENT A BLOCK OVER ONE THAT MIGHT EXIST. `or {ZK: name}` treated "the
+    # beach did not answer" exactly like "there is nothing there" — so a single
+    # timed-out read minted a fresh one-key block, the write landed in it, and
+    # save_block PUT that one key over the real thing with confirm:true. A READ
+    # failure destroyed the block. It cost pool:egg-one three times on 2026-08-16
+    # (124KB of room history each time), and it gets MORE likely as a block grows,
+    # because a bigger block is a slower read — the failure feeds on its own
+    # victim. A 404 still creates: absent is a fact, silence is not.
+    if prior is None and name in _unreadable:
+        raise ValueError(
+            "refusing to write %s: the beach did not answer when asked for its "
+            "current state, and a block that cannot be read cannot be replaced" % name)
+    block = prior or {ZK: name}
     floor = spark.floor(block)
     # THE ROOT IS THE CASE THAT MATTERS MOST, and it was the one case exempt: the
     # guard used to require an address, so a bare string aimed at the block ITSELF
