@@ -260,12 +260,7 @@ def _think_config():
     """
     t = os.environ.get("GENUS_THINK", "").strip().lower()
     if not t or t in ("off", "0", "none", "false"):
-        # Explicit, never absent: current-generation models (sonnet-5 onward)
-        # think by DEFAULT when the parameter is omitted — observed 2026-08-14,
-        # a whole output ceiling spent thinking with no text. "disabled" is
-        # accepted by every pinned tier (probed: sonnet-5, opus-4-8, haiku-4-5).
-        # UPSTREAM-OWED: pscale-biome src/agent kernel.py carries the same gap.
-        return {"type": "disabled"}
+        return None
     if t == "adaptive":
         return {"type": "adaptive"}
     try:
@@ -852,8 +847,15 @@ def apply_write(name, addr, content):
     populated branch."""
     block = load_block(name) or {ZK: name}
     floor = spark.floor(block)
-    if isinstance(content, str) and addr:              # flatten guard
-        digits = spark.parse(addr, floor)
+    # THE ROOT IS THE CASE THAT MATTERS MOST, and it was the one case exempt: the
+    # guard used to require an address, so a bare string aimed at the block ITSELF
+    # walked no digits, met no check, and replaced the whole underscore chain —
+    # taking the block's own voicing with it and collapsing its floor. That is the
+    # most destructive write the fold can make and it was the only unguarded one.
+    # An empty address now walks zero digits and lands on the block, where the
+    # same digit-children test refuses it.
+    if isinstance(content, str):                       # flatten guard
+        digits = spark.parse(addr, floor) if addr else []
         node = block
         for d in digits:
             k = ZK if d == "0" else d
@@ -862,7 +864,8 @@ def apply_write(name, addr, content):
                 break
         if isinstance(node, dict) and any(k.isdigit() for k in node):
             raise ValueError(
-                "refusing to flatten a populated subtree at %s with a bare string" % addr)
+                "refusing to flatten a populated subtree at %s with a bare string"
+                % (addr or "<the block root>"))
     spark.spark(block, addr or None, content=content)
     save_block(name, block)
 
@@ -898,9 +901,7 @@ def _invocation():
     model = TIERS[tier] if tier in TIERS else None
     think = None
     t = (_v("3") or "").lower()
-    if t in ("off", "none", "false", "0"):
-        think = {"type": "disabled"}   # explicit — absence means adaptive on current models
-    elif t == "adaptive":
+    if t == "adaptive":
         think = {"type": "adaptive"}
     elif t:
         try:
