@@ -627,11 +627,13 @@ class Handler(BaseHTTPRequestHandler):
         sealed task line — the holder's private directive); fuel by precedence
         (asker's carried > holder's deposited > beach's standing); the wake
         runs synchronously and the outcome returns. The carried key is used
-        once and never stored. The dial still rules CONSENT: door, cooldown,
-        refractory — an asker's fuel buys electricity, never consent. But
-        THERE IS NO ASKER-PAYS CAP (ruled 2026-08-17): the attention cap
-        binds only funded generosity, because limits are the shadow of who
-        pays (ways:doorbell:3)."""
+        once and never stored. The DOOR is the consent — the dial's on/off,
+        or the holder's proven passphrase overriding a closed one. Past the
+        door, NO LIMITS BIND THE ASKER'S OWN KEY (ruled 2026-08-17): no cap,
+        no cooldown, no refractory — the busy-lock alone serialises; a
+        holder's task poke is likewise unlimited. Cap, cooldown and
+        refractory bind FUNDED GENEROSITY only (holder and beach fuel) —
+        limits are the shadow of who pays (ways:doorbell:3)."""
         try:
             b = self._body()
         except Exception:
@@ -665,25 +667,27 @@ class Handler(BaseHTTPRequestHandler):
                     landed = " — and the room refused the voice"
             return self._send(200, {"ok": True, "woke": False,
                                     "detail": "its door is closed%s" % landed})
-        now = time.monotonic()
-        if _last_pulse_end and now - _last_pulse_end < dial.refractory and not as_holder:
-            return self._send(200, {"ok": True, "woke": False, "detail": "just woke — refractory; your voice can still land"})
-        cd = dial.cooldown_for(asker)
-        last = _last_ring_by.get((handle, asker))
-        if last and cd > 0 and now - last < cd and not as_holder:
-            return self._send(200, {"ok": True, "woke": False,
-                                    "detail": "its dial holds you to one wake per %ds — the voice can still land" % cd})
         fuel_key, funder = pick_fuel(handle, asker_key)
         if not fuel_key:
             return self._send(200, {"ok": True, "woke": False,
                                     "detail": "no fuel — carry your key with the poke, or the voice just stands"})
-        # THERE IS NO ASKER-PAYS CAP (ruled 2026-08-17): an asker carrying
-        # their own key meets no daily cap, ever — the spend is their own,
-        # and limits are the shadow of who pays (ways:doorbell:3). Consent
-        # already ruled above (door, cooldown, refractory). Generosity keeps
-        # its caps: the dial's attention cap on holder and beach fuel, the
-        # holder's budget block on holder fuel, both plus MAX_DAILY on the
-        # beach's standing key.
+        # NO LIMITS ON THE ASKER'S OWN KEY (ruled 2026-08-17): once the door
+        # is open, a poke carrying its own fuel meets no refractory and no
+        # cooldown either — the busy-lock below is the only serialiser.
+        # Pacing, like the cap, is the shadow of who pays: it binds funded
+        # generosity (holder and beach fuel), never the asker's own spend.
+        now = time.monotonic()
+        if _last_pulse_end and now - _last_pulse_end < dial.refractory and not as_holder and funder != "asker":
+            return self._send(200, {"ok": True, "woke": False, "detail": "just woke — refractory; your voice can still land"})
+        cd = dial.cooldown_for(asker)
+        last = _last_ring_by.get((handle, asker))
+        if last and cd > 0 and now - last < cd and not as_holder and funder != "asker":
+            return self._send(200, {"ok": True, "woke": False,
+                                    "detail": "its dial holds you to one wake per %ds — the voice can still land" % cd})
+        # Generosity keeps its caps (the asker's own key met no gate above):
+        # the dial's attention cap on holder and beach fuel, the holder's
+        # budget block on holder fuel, both plus MAX_DAILY on the beach's
+        # standing key.
         if not as_holder and funder != "asker":
             spent = pulses_today(handle)
             caps = [dial.cap]
