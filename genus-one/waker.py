@@ -511,12 +511,15 @@ def ring(payload):
     fuel_key, funder = pick_fuel(handle, None)   # the webhook path carries no asker fuel
     if not fuel_key:
         return False, "no fuel — nobody's generosity stands, so the voice waits in the room"
-    # The dial's cap is the agent's ATTENTION law — it binds every funded wake.
-    # Wallet ceilings bind only generosity: the beach's standing fuel answers to
-    # MAX_DAILY and the holder's budget block; the holder's own deposited fuel
-    # answers to the dial alone (the holder set both).
+    # LIMITS ARE THE SHADOW OF WHO PAYS (ways:doorbell:3; ruled 2026-08-17).
+    # This keyless path runs on generosity — the holder's deposited fuel or the
+    # beach's standing key — so the dial's attention cap binds it, and the
+    # payer's own ceiling rides alongside: the holder's budget block on holder
+    # fuel; both it and MAX_DAILY on the beach's.
     caps = [dial.cap]
-    if funder == "beach":
+    if funder == "holder":
+        caps += [c for c in (holder_ceiling(handle),) if c is not None]
+    elif funder == "beach":
         caps += [c for c in (holder_ceiling(handle), MAX_DAILY) if c is not None]
     cap = min(caps)
     spent = pulses_today(handle)
@@ -624,8 +627,11 @@ class Handler(BaseHTTPRequestHandler):
         sealed task line — the holder's private directive); fuel by precedence
         (asker's carried > holder's deposited > beach's standing); the wake
         runs synchronously and the outcome returns. The carried key is used
-        once and never stored. The dial still rules: door, attention cap,
-        refractory — an asker's fuel buys electricity, never consent."""
+        once and never stored. The dial still rules CONSENT: door, cooldown,
+        refractory — an asker's fuel buys electricity, never consent. But
+        THERE IS NO ASKER-PAYS CAP (ruled 2026-08-17): the attention cap
+        binds only funded generosity, because limits are the shadow of who
+        pays (ways:doorbell:3)."""
         try:
             b = self._body()
         except Exception:
@@ -671,10 +677,20 @@ class Handler(BaseHTTPRequestHandler):
         if not fuel_key:
             return self._send(200, {"ok": True, "woke": False,
                                     "detail": "no fuel — carry your key with the poke, or the voice just stands"})
-        if not as_holder:
+        # THERE IS NO ASKER-PAYS CAP (ruled 2026-08-17): an asker carrying
+        # their own key meets no daily cap, ever — the spend is their own,
+        # and limits are the shadow of who pays (ways:doorbell:3). Consent
+        # already ruled above (door, cooldown, refractory). Generosity keeps
+        # its caps: the dial's attention cap on holder and beach fuel, the
+        # holder's budget block on holder fuel, both plus MAX_DAILY on the
+        # beach's standing key.
+        if not as_holder and funder != "asker":
             spent = pulses_today(handle)
-            caps = [dial.cap] + ([c for c in (holder_ceiling(handle), MAX_DAILY) if c is not None]
-                                 if funder == "beach" else [])
+            caps = [dial.cap]
+            if funder == "holder":
+                caps += [c for c in (holder_ceiling(handle),) if c is not None]
+            elif funder == "beach":
+                caps += [c for c in (holder_ceiling(handle), MAX_DAILY) if c is not None]
             if spent >= min(caps):
                 return self._send(200, {"ok": True, "woke": False,
                                         "detail": "its attention cap is reached today (%d) — the voice can still land" % min(caps)})
