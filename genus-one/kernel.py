@@ -125,6 +125,13 @@ _ENV_MAX_TOKENS = os.environ.get("GENUS_MAX_TOKENS")
 MODEL = _ENV_MODEL or TIERS["sonnet"]
 F_MODEL = os.environ.get("GENUS_F_MODEL", TIERS["haiku"])  # per-cell compares (cheap)
 MAX_TOKENS = int(_ENV_MAX_TOKENS or "4096")
+# The wire must outlast the budget the invocation grants: 180s was sized to a
+# haiku/4096 fold, and an instance that dials its own invocation up (its
+# right — egg-one runs sonnet/16384) can legitimately generate past it. The
+# 2026-08-17 13:00Z pulse died exactly there: "The read operation timed out",
+# the wake spent, nothing landed. (Biome-first flag stands — the ceiling
+# belongs upstream with the rest of the wire; this is the operational knob.)
+WIRE_TIMEOUT_S = int(os.environ.get("GENUS_WIRE_TIMEOUT", "600"))
 
 REFLEXIVE_CURRENT = "9"
 FIELD_ADDR = "2.1"                       # concentrated conditioning field (anchors) for F
@@ -291,7 +298,7 @@ def call_llm(system, message, model=None, thinking=None, max_tokens=None):
         API_URL, data=json.dumps(body).encode(),
         headers={"content-type": "application/json", "x-api-key": API_KEY,
                  "anthropic-version": "2023-06-01"})
-    with urllib.request.urlopen(req, timeout=180) as r:
+    with urllib.request.urlopen(req, timeout=WIRE_TIMEOUT_S) as r:
         result = json.loads(r.read().decode())
     content = result.get("content", [])
     text = "\n".join(b["text"] for b in content if b.get("type") == "text")
