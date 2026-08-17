@@ -833,11 +833,20 @@ export function splitRef(ref: string, handle?: string): [string, string] {
 /** Apply one spark write; shape derives from address + content. (kernel.apply_write) */
 async function applyWrite(store: BlockStore, name: string, addr: string, content: PNode): Promise<void> {
   const loaded = await store.load(name);
+  // NEVER INVENT A BLOCK OVER ONE THAT MIGHT EXIST — the Python door's worst
+  // failure mode, kept out of this one by contract: a loader that cannot answer
+  // must throw rather than resolve empty, because a fresh one-key block written
+  // over a populated one destroys it, and the whole-block write is confirmed.
   const block: PMap = loaded instanceof Map ? loaded : new Map([[ZK, name as PNode]]);
   const flr = floorOf(block);
-  if (typeof content === 'string' && addr) {
+  // THE ROOT IS THE CASE THAT MATTERS MOST, and it was the one case exempt: the
+  // guard required an address, so a bare string aimed at the block ITSELF walked
+  // no digits, met no check, and replaced the whole underscore chain — taking the
+  // block's own voicing with it and collapsing its floor. An empty address now
+  // walks zero digits and lands on the block, where the same test refuses it.
+  if (typeof content === 'string') {
     // flatten guard
-    const digits = parseAddr(addr, flr);
+    const digits = addr ? parseAddr(addr, flr) : [];
     let node: PNode | undefined = block;
     for (const d of digits) {
       const k = key(d);
@@ -845,7 +854,9 @@ async function applyWrite(store: BlockStore, name: string, addr: string, content
       if (node === undefined) break;
     }
     if (node instanceof Map && Array.from(node.keys()).some((k) => /^\d+$/.test(k))) {
-      throw new Error(`refusing to flatten a populated subtree at ${addr} with a bare string`);
+      throw new Error(
+        `refusing to flatten a populated subtree at ${addr || '<the block root>'} with a bare string`,
+      );
     }
   }
   sparkWrite(block, addr || null, null, content);
