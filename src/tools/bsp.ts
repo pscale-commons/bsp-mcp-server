@@ -22,7 +22,7 @@
  */
 
 import { z } from 'zod';
-import { Block, writeAt, InvalidAddressError, parseSpindle, floorDepth } from '../bsp.js';
+import { Block, writeAt, InvalidAddressError, parseSpindle, floorDepth, formatAddress } from '../bsp.js';
 import {
   bspRead,
   bspWrite,
@@ -102,6 +102,33 @@ export function lockPositionOf(blockName: string, spindle: string | null | undef
 function stringifyForGray(content: any): string {
   if (typeof content === 'string') return content;
   return JSON.stringify(content);
+}
+
+/**
+ * The address of the gray envelope this write would descend INTO, or null.
+ *
+ * An envelope keeps its ciphertext at digit 1 and its nonce at 2, so an address
+ * BENEATH one names a field the decryptor needs rather than anything an author
+ * meant. Writing there replaces that field, the envelope stops parsing, and the
+ * entry is gone — silently, because what reaches the beach is spine-legal JSON
+ * either way and gray is bsp-mcp's own scheme, invisible to the substrate.
+ * Writing AT an envelope's own address stays open: replacing an entry whole is
+ * ordinary authorship, and only the descent is meaningless by construction.
+ *
+ * Paid for on 2026-08-20 at history:Phenomemental — nine gray entries, a full
+ * ladder with no legal tenth (the append branch below now provides one), and an
+ * agent addressing "11" for a flat slot that block's floor does not have. The
+ * walk is the walk writeAt itself will take, so guard and write cannot disagree.
+ */
+export function grayCrossing(block: Block, address: string): string | null {
+  const floor = floorDepth(block);
+  const { digits } = parseSpindle(address, floor);
+  let node: any = block;
+  for (let i = 0; i < digits.length - 1; i++) {
+    node = node?.[digits[i] === '0' ? '_' : digits[i]];
+    if (isGrayEnvelope(node)) return formatAddress(digits.slice(0, i + 1), floor);
+  }
+  return null;
 }
 
 /** First significant side digit (1-9) of a spindle; null if none. */
@@ -333,7 +360,7 @@ export const bspParamsSchema = {
   append: z
     .boolean()
     .optional()
-    .describe('Accumulator append — marks / history / pools / grain sides. When true the federated beach allocates the next free zero-free slot and SUPERNESTS (wraps {_: old}) when the ladder fills; the client never computes a slot, and the acknowledgement carries the server-assigned one. Without a spindle this grows the BLOCK at its root, exactly as before. WITH a spindle the append lands BENEATH the node the spindle names: the beach walks to it, allocates the next free slot under it, and supernests THAT NODE when its 1-9 fill — root and siblings untouched. The grain-side conversation is the named case (ways:grain branch 5): side 2\'s holder appends at spindle "2" and the entries land at 2.1, then 2.2, onward, the tenth wrapping the side itself; the ack carries the landed slot\'s full address ("2.3"). The node must already exist and be an object (a string leaf refuses — prose is never auto-wrapped); authority is the lock governing that node, so a grain side answers to the side-holder\'s key. `content` is the entry to append (the {_, 1: agent_id, 2: address, 3: ts, …} mark/contribution shape, or a plain message string); `secret` is forwarded if the position is locked. Omit pscale_attention. Atomic server-side — concurrent appends never race on slot allocation. Not compatible with gray/group (those encrypt at a leaf and need a spindle).'),
+    .describe('Accumulator append — marks / history / pools / grain sides. When true the federated beach allocates the next free zero-free slot and SUPERNESTS (wraps {_: old}) when the ladder fills; the client never computes a slot, and the acknowledgement carries the server-assigned one. Without a spindle this grows the BLOCK at its root, exactly as before. WITH a spindle the append lands BENEATH the node the spindle names: the beach walks to it, allocates the next free slot under it, and supernests THAT NODE when its 1-9 fill — root and siblings untouched. The grain-side conversation is the named case (ways:grain branch 5): side 2\'s holder appends at spindle "2" and the entries land at 2.1, then 2.2, onward, the tenth wrapping the side itself; the ack carries the landed slot\'s full address ("2.3"). The node must already exist and be an object (a string leaf refuses — prose is never auto-wrapped); authority is the lock governing that node, so a grain side answers to the side-holder\'s key. `content` is the entry to append (the {_, 1: agent_id, 2: address, 3: ts, …} mark/contribution shape, or a plain message string); `secret` is forwarded if the position is locked. Omit pscale_attention. Atomic server-side — concurrent appends never race on slot allocation. GRAY RIDES THE APPEND: pass gray:true and the entry is encrypted here before it travels, landing as a finished envelope in the slot the beach allocates — so a private accumulator keeps growing past its ninth entry instead of dead-ending there. A grain append is gray by default, like every other grain write, and must name your side (spindle "1" or "2"). Group accumulators are not supported yet.'),
 };
 
 export type BspToolParams = {
@@ -541,12 +568,63 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     if (content === undefined) {
       return { content: [{ type: 'text', text: 'Append rejected: append needs `content` (the entry to append).' }] };
     }
-    if (params.gray === true || params.members !== undefined) {
-      return { content: [{ type: 'text', text: 'Append rejected: gray/group encryption is not supported with append — append targets open accumulators. Use a spindled write to encrypt at a leaf.' }] };
+    if (params.members !== undefined) {
+      return { content: [{ type: 'text', text: 'Append rejected: a membership change is not an entry — set `members` with an ordinary write, then append content.' }] };
     }
     const appendSpindle = spindle == null ? '' : String(spindle);
+
+    // GRAY RIDES THE APPEND. Refusing it here left a gray accumulator with no
+    // legal tenth entry: append is the only act that supernests atomically, so
+    // once the ladder filled every remaining address either landed inside an
+    // existing entry or demanded a hand-rolled supernest — the dead end that
+    // cost history:Phenomemental an entry on 2026-08-20. The incompatibility
+    // was incidental, never essential: encryption already happens HERE, and a
+    // finished envelope is spine-legal and self-contained, so which slot it
+    // lands in is nothing to it. The beach allocates and supernests knowing
+    // only that it holds JSON — exactly as before.
+    //
+    // Grain reads gray-by-default, matching the write path. That closes a
+    // quieter fault than the dead end: the documented grain conversation IS an
+    // append at your side (ways:grain branch 5), and it was landing in the
+    // clear on a block whose every other write is private by default.
+    const isGrainAppend = target.block.startsWith('grain:');
+    const wantGrayAppend = isGrainAppend ? params.gray !== false : params.gray === true;
+    let entry: any = content;
+    if (wantGrayAppend) {
+      if (!encSecret) {
+        return { content: [{ type: 'text', text: 'Append rejected: gray encryption requires an encryption key (enc_secret, or secret as fallback). Pass gray:false to append in the open.' }] };
+      }
+      if (isGrainAppend && !secret) {
+        return { content: [{ type: 'text', text: 'Append rejected: a grain append needs `secret` to prove your side lock (plus enc_secret for privacy).' }] };
+      }
+      if (isGrainAppend && !leadingSideDigit(appendSpindle)) {
+        return { content: [{ type: 'text', text: "Append rejected: a grain append must name your side — spindle '1' or '2'. Entries land beneath it (2.1, 2.2, …); an unsided append cannot be encrypted to a party." }] };
+      }
+      try {
+        if (isGrainAppend) {
+          const grainRow: BlockRow | null = await loadBlock(agent_id, blockName);
+          entry = await encryptGrainLeaf(grainRow?.block ?? {}, appendSpindle, stringifyForGray(content), encSecret);
+        } else {
+          // A group accumulator would need its keyring rather than a self key,
+          // and none exists in the field — refuse rather than encrypt to the
+          // wrong key and call it private.
+          const row: BlockRow | null = await loadBlock(agent_id, blockName);
+          if ((row?.block as any)?.['9']?._ === GROUP_KEYRING_MARKER) {
+            return { content: [{ type: 'text', text: 'Append rejected: this is a group block — a group append is not supported yet. Write group content at a leaf spindle (1-8).' }] };
+          }
+          entry = await selfEncrypt(stringifyForGray(content), encSecret, agent_id);
+        }
+      } catch (e: any) {
+        return { content: [{ type: 'text', text: `Append rejected: ${e?.message ?? String(e)}` }] };
+      }
+    }
     try {
-      const res = await appendToBeach(agent_id, blockName, content, secret, undefined, undefined, appendSpindle || undefined);
+      // Same question the write path asks, same answer: `secret` reaches the
+      // beach as write-authority, and is withheld only while it is doing duty
+      // as the encryption key instead. A locked gray accumulator therefore
+      // wants a distinct enc_secret — the hint below says so when it bites.
+      const appendSecret = wantGrayAppend && !isGrainAppend && enc_secret === undefined ? undefined : secret;
+      const res = await appendToBeach(agent_id, blockName, entry, appendSecret, undefined, undefined, appendSpindle || undefined);
       // Say the debt out loud. A zero-slot voices the PREVIOUS completed nine
       // (+0 inductive, block-conventions:3.5) and falls due the moment the next
       // span opens — but nothing announced it, so dues accrued unseen for
@@ -567,7 +645,14 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
       return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}]${owed}` }] };
     } catch (e: any) {
-      return { content: [{ type: 'text', text: `Append rejected: ${e?.message ?? String(e)}` }] };
+      const msg = e?.message ?? String(e);
+      // The one refusal this change can newly provoke, named rather than left
+      // for the caller to decode: the entry was encrypted with `secret`, so
+      // `secret` was withheld from the beach, so a locked accumulator refused.
+      const hint = wantGrayAppend && !isGrainAppend && enc_secret === undefined && /secret/i.test(String(msg))
+        ? ' — a locked gray accumulator needs its two keys named apart: pass enc_secret for the encryption and secret for the lock.'
+        : '';
+      return { content: [{ type: 'text', text: `Append rejected: ${msg}${hint}` }] };
     }
   }
 
@@ -689,6 +774,26 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   const hasKeyring = (block as any)?.['9']?._ === GROUP_KEYRING_MARKER;
   const isGroupOp = params.members !== undefined || hasKeyring;
   const wantGray = isGrain ? params.gray !== false : params.gray === true;
+
+  // NO WRITE DESCENDS INTO CIPHERTEXT. Guarded here rather than in the walker:
+  // bsp.ts is a port of the Python reference and knows nothing of gray, which
+  // is bsp-mcp's own scheme — so the layer that encrypts is the layer that
+  // refuses. Both write paths pass through, gray and open alike; the open one
+  // is the worse of the two, since it lands readable text where ciphertext was.
+  if (content !== undefined && spindle) {
+    try {
+      const crossed = grayCrossing(block, String(spindle));
+      if (crossed !== null) {
+        return { content: [{ type: 'text', text:
+          `Write rejected: "${spindle}" descends into the gray envelope at ${crossed} — that address is inside ciphertext, not content, and writing there destroys the entry beyond recovery. To replace that entry, write AT ${crossed}. To add a new one, append (append:true), which carries gray and allocates its own slot.` }] };
+      }
+    } catch (e: any) {
+      if (e instanceof InvalidAddressError) {
+        return { content: [{ type: 'text', text: `Write rejected: ${e.message}` }] };
+      }
+      throw e;
+    }
+  }
 
   // Apply content write if provided.
   let writeResult: BspWriteResult | null = null;
