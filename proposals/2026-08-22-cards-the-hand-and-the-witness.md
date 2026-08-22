@@ -116,10 +116,16 @@ The keeper's own realisation this sitting, verified against standing law rather 
 - **The mirror holds the raw.** The intention is amended in place into what happened — the
   same address, the tense doing the semantic work, which is how these mirrors are already
   read (forward cells intention, at-now presence and commentary, behind cells record).
-- **The tree holds the consolidation**, past as much as future. `tree:3` is the social
-  aggregate at any address; `tree:6` states that the instrument is already in hand and nothing
-  is to be built; `function:now:6.2` establishes that on the clock spine the address walk *is*
-  the sequence, so yesterday's fold stands at yesterday and no history organ exists.
+- **The tree holds the consolidation**, past as much as future. The citations need their
+  notation said plainly, because it misleads: `tree:3` and `tree:6` are branches of the
+  **convention block named `tree`** — the block that describes the pattern — and NOT addresses
+  in any tree family. A tree family has no branches of its own. It stands at the spine's
+  self-same addresses, which is the whole of what a tree is, and reading `tree:3` as though a
+  tree had a third position inverts that. In the convention block, branch 3 is the social
+  aggregate at any address and branch 6 states that the instrument is already in hand and
+  nothing is to be built; and `function:now` branch 6.2 establishes that on the clock spine the
+  address walk *is* the sequence, so yesterday's fold stands at yesterday and no history organ
+  exists.
 
 So the past record needs no new home. One sharpening the wording must carry: the amendment is
 each holder's own words in their own mirror. A spine-owner **consolidates into the tree** and
