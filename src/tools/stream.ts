@@ -73,7 +73,7 @@
 import { z } from 'zod';
 import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
 import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
-import { momentToAddress } from '../temporal.js';
+import { momentToAddress, voiceAddress, TEMPORAL_FLOOR } from '../temporal.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
 //    would tie this clean surface to the one it exists to stand beside) ──
@@ -155,6 +155,18 @@ export function namedRungAddress(word: string, when: Date): string | null {
   if (!keep) return null;
   const full = momentToAddress(when);
   return full.slice(0, keep).padEnd(full.length, '0');
+}
+
+/** The human reading of an address, on a CLOCK spine only. A temporal family
+ *  stands at floor 10 (pscale://sundial) and its addresses voice themselves,
+ *  so a reader is never handed a column of ten digits to decode — the ladder
+ *  is law rather than content, which is why the voicing is done in code and
+ *  never authored into the spine. A spine that is not a clock, or an address
+ *  the clock refuses, goes unvoiced and the ladder renders exactly as before:
+ *  the attempt never breaks a read. */
+function clockVoice(addr: string, floor: number): string | null {
+  if (floor !== TEMPORAL_FLOOR) return null;
+  try { return voiceAddress(addr); } catch { return null; }
 }
 
 // ── Schema ──
@@ -399,15 +411,20 @@ export async function handleStreamEngage(params: StreamEngageParams) {
 
   // ── Render ──
   const lines: string[] = [];
-  lines.push(`stream:${field} @ ${origin} — at ${spineAddr}${namedRungAddress(params.at, new Date()) ? ` (${params.at.trim()})` : ''}`);
+  const attendedWhen = clockVoice(spineAddr, spineFloor);
+  const namedAs = namedRungAddress(params.at, new Date()) ? params.at.trim() : null;
+  const attendedLabel = [namedAs, attendedWhen].filter(Boolean).join(' — ');
+  lines.push(`stream:${field} @ ${origin} — at ${spineAddr}${attendedLabel ? ` (${attendedLabel})` : ''}`);
 
   const rungs = ladderOf(spine, digits);
   lines.push('');
   lines.push('# The ladder — this address in its own context, coarse to fine');
   for (const r of rungs) {
     const last = r.addr === spineAddr;
-    if (!r.text) { lines.push(`  p${r.pscale} [${r.addr}] (unvoiced)`); continue; }
-    lines.push(`  p${r.pscale} [${r.addr}] ${last ? r.text : clip(r.text, 180)}`);
+    const when = clockVoice(r.addr, spineFloor);
+    const head = `  p${r.pscale} [${r.addr}]${when ? ` ${when} —` : ''}`;
+    if (!r.text) { lines.push(`${head} (unvoiced)`); continue; }
+    lines.push(`${head} ${last ? r.text : clip(r.text, 180)}`);
   }
 
   if (law) {
@@ -418,7 +435,8 @@ export async function handleStreamEngage(params: StreamEngageParams) {
 
   lines.push('');
   lines.push(
-    `# Readings at ${spineAddr} — ${readings.length} ${readings.length === 1 ? 'voice' : 'voices'}` +
+    `# Readings at ${spineAddr}${attendedWhen ? ` (${attendedWhen})` : ''}` +
+    ` — ${readings.length} ${readings.length === 1 ? 'voice' : 'voices'}` +
     ` (the SNAPSHOT: every mirror concatenated, listed and never synthesised)`,
   );
   if (readings.length === 0) {
