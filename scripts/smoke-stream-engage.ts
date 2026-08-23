@@ -1,6 +1,6 @@
 /** Smoke — pscale_stream_engage. Pure helpers asserted offline; one LIVE read
  *  against the beach-venture family (read-only, writes nothing). */
-import { voiceOf, emitFor, ladderOf, isBareRef, namedRungAddress, handleStreamEngage } from '../src/tools/stream.js';
+import { voiceOf, emitFor, ladderOf, isBareRef, namedRungAddress, voicedValue, handleStreamEngage } from '../src/tools/stream.js';
 import { Block } from '../src/bsp.js';
 
 let pass = 0, fail = 0;
@@ -39,6 +39,24 @@ ok(namedRungAddress('this week', D) === namedRungAddress('week', D), '"this week
 ok(namedRungAddress('year', D)?.startsWith('2026'), 'year keeps the Gregorian digits');
 ok(namedRungAddress('2026322300', D) === null, 'a digit address falls through');
 
+/* ── voicedValue — saying again replaces the words and keeps the structure.
+ * The case that matters: a node carrying a stamp and a reader's own marker
+ * beneath it must survive being voiced again, or no family can keep anything
+ * under an address (news channel 1 keeps its declared-at at 1.91 and the
+ * reader's last-read at 1.92). The no-substructure cases must stay
+ * byte-identical, or every family that has none would move underneath us. */
+const vv: [string, unknown, unknown][] = [
+  ['absent node takes a bare string', undefined, 'hello'],
+  ['string node takes a bare string', 'old words', 'hello'],
+  ['object node keeps its children', { _: 'old', '9': { '1': 'ts', '2': 'mark' } },
+    { _: 'hello', '9': { '1': 'ts', '2': 'mark' } }],
+  ['object with no underscore gains one', { '9': { '1': 'ts' } },
+    { _: 'hello', '9': { '1': 'ts' } }],
+  ['an array is replaced, never merged into', ['a', 'b'], 'hello'],
+];
+for (const [name, existing, want] of vv)
+  ok(JSON.stringify(voicedValue(existing, 'hello')) === JSON.stringify(want), `voicedValue: ${name}`);
+
 console.log(`offline: ${pass} passed, ${fail} failed`);
 
 // ── LIVE, read-only ──
@@ -58,3 +76,4 @@ const live = [
 for (const [m, c] of live) ok(c as boolean, m);
 console.log(`\ntotal: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
+
