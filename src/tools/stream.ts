@@ -157,6 +157,24 @@ export function namedRungAddress(word: string, when: Date): string | null {
   return full.slice(0, keep).padEnd(full.length, '0');
 }
 
+/** Voicing an address REPLACES THE WORDS AND KEEPS THE STRUCTURE. writeAt ends in
+ *  a bare `node[key] = value`, so voicing a node that carries children used to
+ *  flatten it — the words landed and every sub-address beneath went with them.
+ *  That is wrong wherever a family keeps anything under an address: a stamp, a
+ *  reader's own marker, a sub-branch. Saying again replaces WHAT WAS SAID, never
+ *  the shape it was said into.
+ *
+ *  Byte-identical wherever nothing stands beneath: an absent or string node still
+ *  takes a bare string, so a family with no substructure is untouched. Only a node
+ *  that is already an object merges, and only its `_` moves. bsp.ts is not
+ *  involved — walker, parser and address invariant are exactly as they were; this
+ *  is composition at the caller. */
+export function voicedValue(existing: unknown, text: string): unknown {
+  return (existing && typeof existing === 'object' && !Array.isArray(existing))
+    ? { ...(existing as Record<string, unknown>), _: text }
+    : text;
+}
+
 /** A block born into a family is born AT THE FAMILY'S FLOOR. Floor is the depth
  *  of the underscore chain, and it is what anchors pscale 0 — so a mirror born
  *  one deep beside a spine standing ten deep is not merely untidy: the same node
@@ -301,7 +319,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
     const mblock: Block = JSON.parse(JSON.stringify(mrow!.block));
     const mAddr = emitFor(digits, mblock);
     try {
-      writeAt(mblock, mAddr, params.say);
+      writeAt(mblock, mAddr, voicedValue(readAt(mblock, mAddr), params.say));
       await saveBlock(origin, mirrorName, mblock, { spindle: mAddr, secret: params.secret });
       saidAt = `${mirrorName}:${mAddr}`;
     } catch (e: any) {
@@ -330,7 +348,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
         }
         const tblock: Block = JSON.parse(JSON.stringify(trow!.block));
         const tAddr = emitFor(digits, tblock);
-        writeAt(tblock, tAddr, text);
+        writeAt(tblock, tAddr, voicedValue(readAt(tblock, tAddr), text));
         await saveBlock(origin, treeName, tblock, { spindle: tAddr, secret: params.secret });
         keptTo = `${treeName}:${tAddr}`;
       } else {
@@ -345,7 +363,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
         }
         const fblock: Block = JSON.parse(JSON.stringify(frow!.block));
         const fAddr = emitFor(digits, fblock);
-        writeAt(fblock, fAddr, text);
+        writeAt(fblock, fAddr, voicedValue(readAt(fblock, fAddr), text));
         await saveBlock(origin, field, fblock, { spindle: fAddr, secret: params.secret });
         keptTo = `${field}:${fAddr}`;
       }
