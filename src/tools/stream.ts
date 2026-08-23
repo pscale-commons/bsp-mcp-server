@@ -157,6 +157,21 @@ export function namedRungAddress(word: string, when: Date): string | null {
   return full.slice(0, keep).padEnd(full.length, '0');
 }
 
+/** A block born into a family is born AT THE FAMILY'S FLOOR. Floor is the depth
+ *  of the underscore chain, and it is what anchors pscale 0 — so a mirror born
+ *  one deep beside a spine standing ten deep is not merely untidy: the same node
+ *  reads as pscale 2 in the spine and pscale -7 in the mirror, bsp-floor lays
+ *  them against different planes, and a page that requires the family's floor
+ *  (now.html refuses floor != 10) will not voice it at all. The walk survives
+ *  either way, because trailing zeros are stripped and a full-width address
+ *  lands at the same digit path whatever the floor — which is exactly why this
+ *  went unnoticed: nothing breaks, the coordinate just lies. */
+function bornAt(text: string, floor: number): Block {
+  let node: unknown = text;
+  for (let i = 0; i < Math.max(1, floor); i++) node = { _: node };
+  return node as Block;
+}
+
 /** The human reading of an address, on a CLOCK spine only. A temporal family
  *  stands at floor 10 (pscale://sundial) and its addresses voice themselves,
  *  so a reader is never handed a column of ten digits to decode — the ladder
@@ -277,7 +292,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
         `MIRROR — ${handle}'s readings on the ${field} field (${spineName}), at the spine's own addresses. ` +
         `Sovereign to its holder; nobody else writes here. Silence at an address is honest absence, not a gap to be filled.`;
       try {
-        await saveBlock(origin, mirrorName, { _: born } as Block, { spindle: '', secret: params.secret });
+        await saveBlock(origin, mirrorName, bornAt(born, spineFloor), { spindle: '', secret: params.secret });
         mrow = await loadBlock(origin, mirrorName).catch(() => null);
       } catch (e: any) {
         return out(`Could not create your mirror at ${mirrorName} — ${e?.message ?? String(e)}`);
@@ -310,7 +325,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
             `TREE — ${handle}'s own syntheses of ${spineName}, at the spine's own addresses: at each point, the LATEST reading this hand has folded, ` +
             `revisable forever and superseded by its next fold. A fold that matters as a moment may also leave a pointer in history:${handle}, by this hand's own choice; ` +
             `losslessness, when wanted, is the archive convention (archive:${treeName}:<date>), never automatic accumulation.`;
-          await saveBlock(origin, treeName, { _: born } as Block, { spindle: '', secret: params.secret });
+          await saveBlock(origin, treeName, bornAt(born, spineFloor), { spindle: '', secret: params.secret });
           trow = await loadBlock(origin, treeName).catch(() => null);
         }
         const tblock: Block = JSON.parse(JSON.stringify(trow!.block));
@@ -325,7 +340,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
             `${field.toUpperCase()} — the FOLD: the social product of ${spineName} and every ${field}:<handle> mirror, ` +
             `at the spine's own addresses. Computed by anyone, owned by nobody; a snapshot here is endorsed by pointer and never gates anything, ` +
             `and a better reading may always supersede it (tree:3, tree:4).`;
-          await saveBlock(origin, field, { _: born } as Block, { spindle: '', secret: params.secret });
+          await saveBlock(origin, field, bornAt(born, spineFloor), { spindle: '', secret: params.secret });
           frow = await loadBlock(origin, field).catch(() => null);
         }
         const fblock: Block = JSON.parse(JSON.stringify(frow!.block));
