@@ -35,6 +35,7 @@
     "smoke:liquid-birth": "tsx scripts/smoke-liquid-birth.ts",
     "smoke:reference-table": "tsx scripts/smoke-reference-table.ts",
     "smoke:networking": "tsx scripts/smoke-networking.ts",
+    "smoke:sand": "tsx scripts/smoke-sand.ts",
     "smoke:gray": "tsx scripts/smoke-gray.ts",
     "smoke:gray-guard": "tsx scripts/smoke-gray-guard.ts",
     "smoke:gray-append-live": "tsx scripts/smoke-gray-append-live.ts",
