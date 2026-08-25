@@ -617,6 +617,14 @@ never thinned to "payout"). The surface stays twelve — hau is a verb, not a pr
 the mint is the ticket machine's. Battery: `npm run smoke:sand` (38 fixtures, in-memory,
 the federation guarantee for trust — sand-v2:9). Slot enumerators everywhere now PRUNE
 descent through occupied entries (a probe's rider at position 9 leaked as pseudo-slots
-69/692/694 in pool_engage — `isEntryNode` in pool.ts). Open, with names on them:
-minted-discovery vs mint-as-gave (sand-v2:2.1 note pending), hop stamps + key history
-for rotation, sed: scanning, gray riders, transitive trust.
+69/692/694 in pool_engage — `isEntryNode` in pool.ts). RULED the same day at the
+block (keel landing David's word): **mint-as-gave** (sand-v2:2,1,2) — the mint is an
+ordinary GAVE from the issuer whose channel names the ticket-grain and whose audit
+field names the [ticket-verified] position; `verifyGrainMint` checks the GRAIN (net
+of the issuer's gaves against it, in giving order), never the issuer's balance, and
+the minted term is retired from computeBalance (2,1,3 (a) — it would double-count).
+Open, with names on them: the issuer-negative question (sand-v2:2,1,3 (c) — David's;
+the code runs the dedicated-mint-handle shape and either ruling stands), hop stamps +
+key history for rotation, sed: scanning, gray riders, transitive trust, and the
+hollow-write guard (a dotted spindle above the floor acks success and lands nothing —
+keel's find, pool:weft:52).
