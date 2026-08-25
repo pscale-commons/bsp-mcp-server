@@ -143,7 +143,45 @@ wholesale) and is deferred with its name on it, alongside: sed: sub-position sca
 gray riders, transitive trust. Also noted for the block holder: the sand-v2 root says
 "the driver's four verbs" while its own 4.6 rules the fifth — one word to true up.
 
-## 6. Provenance
+## 6a. Trial 1 and the conformance pass (same day, after merge)
+
+The first NHITL trial ran end-to-end against the live router within hours of the
+merge (sand-v2:9.4; David's amendment: PERSISTENT seats). Three named identities
+were founded and stay — **cowrie** (asker, sed:sand-trial:11), **turnstone**
+(relay, :12), **marram** (answerer, :13) — each played by an independent
+sub-agent mind holding only its own key. The weave: an unminted fund (UNBACKED
+as pre-registered), a backed ask (PASS), a signed carry, a true answer
+(sunstone:1.63), a DONE ruled after the asker walked the law itself, the hau
+returned along the chain (triple-PASS at the hop), thanks received whole with
+reasoning. **Conservation held: balances weft −60 / cowrie +30 / turnstone +20 /
+marram +10, SUM 0**; SQ moved only by receipts others wrote; the ledger's new
+fifth signal surfaced exactly the one standing offer. Full fold at
+`pool:sand-trial:3`; seat reports in the lane record (watch:weft 175).
+
+**Three findings, fixed in the conformance PR:**
+
+1. **Forwarded claims verified against the carrier.** The driver fed the slot
+   author as the credit party, so every relayed give read unbacked and the
+   receipt credited the wrong giver (marram's receipt named turnstone the
+   sender of cowrie's gift). Fixed: the credit party is `credits.by` (fallback:
+   slot author) in verifyRiderCore, doKeep's receipt, and the trust lookup.
+   Fixture 15.
+2. **Unbacked receipts entered the balance**, against sand-v2:5.5 — the trial's
+   own bootstrap exploited it (receiving from an unminted fund counted). Fixed:
+   `receiptTransfers` filters unbacked/fail receipts from BOTH received and
+   given (symmetric — conservation survives), and doKeep refuses
+   credit_accept > 0 on those verdicts. Closing this makes the MINT
+   load-bearing — exactly ruling 1.1. Fixtures 16a–d.
+3. **The temporal annotator spliced ages into probe-ids** that embed timestamps
+   (`…2026-08-25T12:44Z-h1` rendered with an age inside the identifier). Fixed:
+   the ISO regex requires the instant to stand free of word characters and
+   hyphens on either side. Fixture 17.
+
+Unscripted finding, turnstone's words: *"the hau carried knowledge, not just
+credit"* — the return obliged the relay to read the cited law, correcting the
+same stale training prior (supernest at 1.41 → 1.63) in two seats independently.
+
+## 6b. Provenance
 
 The audit: stash:keel:27 (four probes, five findings) · corrections accepted at 27.3
 (the input-shape trap; numeric leaves render blank — fixed on main as #306; self-attested

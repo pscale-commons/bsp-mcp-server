@@ -85,13 +85,23 @@ import { pairId } from '../locks.js';
 interface ScannedProbe {
   slot: string;        // address within the channel ("2.1" grain, "11" pool)
   ordinal: number;     // monotonic cursor value (the sub-slot integer)
-  from: string | null; // slot field 1
+  from: string | null; // slot field 1 — the slot's AUTHOR (the carrier, on a forward)
+  by: string | null;   // rider credits.by — the GIVER whose ledger backs the claim
   content: string;     // slot underscore
   ts: string | null;
   probe_id?: string;
   topic?: string;
-  offered: number;     // rider credits.n (what the sender offers), 0 if none
+  offered: number;     // rider credits.n (what the giver offers), 0 if none
   node: any;           // the raw slot object (for chain extension on forward/hau)
+}
+
+/** The party a probe's credit belongs to: the giver the rider names, falling
+ *  back to the slot's author for by-less riders (a direct send names nobody
+ *  extra — author and giver are one). Receipts record THIS party as sender,
+ *  and trust lookups read it — a forwarded gift is the originator's, never
+ *  the carrier's (trial 1's misattribution, fixed). */
+function giverOf(probe: ScannedProbe): string | null {
+  return probe.by ?? probe.from;
 }
 
 /** Resolve which grain side an agent occupies (position 9 = {1: A, 2: B}). */
@@ -167,6 +177,7 @@ function toScannedProbe(node: any, slot: string, ordinal: number): ScannedProbe 
     slot,
     ordinal,
     from: typeof node['1'] === 'string' ? node['1'] : null,
+    by: typeof ri?.credits?.by === 'string' ? ri.credits.by : null,
     content: typeof node._ === 'string' ? node._ : '',
     ts: typeof node['3'] === 'string' ? node['3'] : null,
     probe_id: ri?.probe_id,
@@ -210,7 +221,7 @@ function autoCandidate(
   const topicNode = readAt(recipientPassport, topicNodeAddress(probe.topic));
   const known = receiptsFromSender(
     (topicNode && typeof topicNode === 'object') ? (topicNode as Block) : null,
-    probe.from ?? '',
+    giverOf(probe) ?? '',
   ).length > 0;
   return known ? 'keep' : 'surface';
 }
@@ -295,24 +306,29 @@ async function doKeep(
   if (creditAccept > probe.offered) {
     return { slot: probe.slot, verb: 'keep', ok: false, detail: `credit_accept ${creditAccept} exceeds the ${probe.offered} offered — receive up to the offer (sand-v2:4.1)` };
   }
+  if (creditAccept > 0 && (verdict === 'unbacked' || verdict === 'fail')) {
+    return { slot: probe.slot, verb: 'keep', ok: false, detail: `verdict ${verdict} — an unbacked or failed probe's receipt carries no credit (sand-v2:5.5); keep at credit 0 to acknowledge, or wait until the giver's backing stands and scan again` };
+  }
+  const giver = giverOf(probe) ?? 'unknown';
   const passport = await passportForWrite(agentId);
 
   const topicNode = readAt(passport, topicNodeAddress(probe.topic));
   const tnode = (topicNode && typeof topicNode === 'object') ? (topicNode as Block) : null;
-  const { slot, existing } = findReceiptSlot(tnode, probe.from ?? '', probe.probe_id);
-  // giver_total is a cumulative RECORD of what this sender has offered at this
+  const { slot, existing } = findReceiptSlot(tnode, giver, probe.probe_id);
+  // giver_total is a cumulative RECORD of what this giver has offered at this
   // topic (sand-v2:8.1 — it leaves the SQ formula). A re-receipt of the same
-  // probe keeps its record; a fresh probe adds its offer.
+  // probe keeps its record; a fresh probe adds its offer. The party is the
+  // GIVER the rider names, never the carrier of a forwarded slot.
   const giverTotal = existing
     ? existing.giver_total
-    : (latestReceiptFromSender(tnode, probe.from ?? '')?.giver_total ?? 0) + probe.offered;
+    : (latestReceiptFromSender(tnode, giver)?.giver_total ?? 0) + probe.offered;
   const evalContent = evaluationContent({
     verdict,
     v_latest: creditAccept,
     giver_total: giverTotal,
     ts: new Date().toISOString(),
     probe_id: probe.probe_id,
-    sender: probe.from ?? 'unknown',
+    sender: giver,
   });
 
   const addr = evalSlotAddress(probe.topic, slot);

@@ -302,6 +302,43 @@ async function main() {
     t('13d. the probe still reads as a probe (isRider)', isRider(pool['6']) && riderFromSlot(pool['6'])?.credits?.n === 3);
   }
 
+  // ── 15. A forwarded claim verifies against its OWN party (credits.by) ──
+  {
+    const gwen = freshPassport('gwen');
+    freshPassport('rita');
+    minted.set('gwen', 10);
+    addGave(gwen, { probe_id: 'g-p1', n: 5, to: 'rita', topic: '0.341' });
+    // The slot was written by the CARRIER (carl); the rider names gwen.
+    const r = await verifyRiderCore({
+      rider: rider('g-p1', 5, 'gwen'),
+      sender_agent_id: 'carrier-carl',
+    }, deps);
+    t('15. forwarded claim verifies against credits.by, not the carrier', r.verdict === 'pass', `got ${r.verdict} (${JSON.stringify(r.provenance)})`);
+  }
+
+  // ── 16. Unbacked receipts transfer nothing — on either side ──
+  {
+    const uma = freshPassport('uma');
+    const vic = freshPassport('vic');
+    addGave(uma, { probe_id: 'u-p1', n: 60, to: 'vic', topic: '0.341' });
+    addReceipt(vic, '0.341', { sender: 'uma', probe_id: 'u-p1', v_latest: 60, verdict: 'unbacked' });
+    const bu = await computeBalance('uma', uma, deps.loadPassport);
+    const bv = await computeBalance('vic', vic, deps.loadPassport);
+    t('16a. an unbacked receipt enters no balance at the receiver (sand-v2:5.5)', bv.received === 0 && bv.balance === 0, `got received ${bv.received}`);
+    t('16b. nor does it debit the giver — the filter is symmetric', bu.given === 0, `got given ${bu.given}`);
+    t('16c. conservation survives the filter', bu.balance + bv.balance === 0, `sum ${bu.balance + bv.balance}`);
+    t('16d. the GAVE stands as an open offer, not a transfer', bu.openOffers === 1, `got ${bu.openOffers}`);
+  }
+
+  // ── 17. The temporal annotator leaves timestamp-bearing identifiers whole ──
+  {
+    const { annotateAges } = await import('../src/temporal.js');
+    const embedded = annotateAges('probe cowrie-hau-cowrie-supernest-2026-08-25T12:44Z-h1 landed', new Date('2026-08-25T13:00:00Z'));
+    t('17a. an id embedding a stamp is not spliced', embedded.includes('cowrie-supernest-2026-08-25T12:44Z-h1') && !embedded.includes('Z ('), embedded);
+    const standalone = annotateAges('landed at 2026-08-25T12:44Z today', new Date('2026-08-25T13:00:00Z'));
+    t('17b. a free-standing stamp is still annotated', /2026-08-25T12:44Z \(/.test(standalone), standalone);
+  }
+
   // ── 14. Skip — absence of a claim is not a verdict on one ──
   {
     const none = await verifyRiderCore({ rider: undefined, sender_agent_id: 'alice' }, deps);

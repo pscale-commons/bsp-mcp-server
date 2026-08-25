@@ -131,7 +131,13 @@ export async function verifyRiderCore(
   const probeId = input.probe_id ?? rider.probe_id;
   const chain = input.chain ?? rider.chain;
   const topic = input.topic_coordinate ?? rider.topic_coordinate;
-  const sender = input.sender_agent_id;
+  // THE CLAIM'S OWN PARTY: a credit claim is backed by the ledger of the agent
+  // it names at credits.by — never by whoever wrote the slot it rides in. On a
+  // forwarded probe the slot author is the CARRIER; verifying against the
+  // carrier's ledger reported every relayed give unbacked (witnessed live,
+  // SAND trial 1). sender_agent_id stands as the fallback for riders that
+  // name nobody (and for the SQ party when no credit is claimed).
+  const sender = rider.credits?.by ?? input.sender_agent_id;
 
   const claimedCredit = typeof rider.credits?.n === 'number' && rider.credits.n > 0 ? rider.credits.n : null;
   const claimedSq = typeof rider.sq === 'number' ? rider.sq : null;
