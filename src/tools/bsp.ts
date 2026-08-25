@@ -893,7 +893,15 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
         // A group MEMBERSHIP write touches the keyring (+ re-encrypted content on
         // rotation), so it persists whole-block. A group CONTENT co-write touches
         // one leaf — surgical, so concurrent members don't clobber each other.
-        spindle: (isGroupOp && params.members !== undefined) ? '' : (spindle ?? ''),
+        //
+        // wire_spindle overrides the user's spindle ONLY when the write landed
+        // at a different depth (an explicit pscale above the terminus truncates
+        // the walk — whetstone:2.4). Saving at the user's spindle there derived
+        // an undefined payload, the content key vanished from the POST body, and
+        // the beach no-oped it into a hollow 200 (history:keel:15, 2026-07-08).
+        spindle: (isGroupOp && params.members !== undefined)
+          ? ''
+          : (writeResult?.wire_spindle ?? spindle ?? ''),
         pscale_attention: (isGroupOp && params.members !== undefined) ? null : (pscale_attention ?? null),
         // Leak fix: a self-gray write to an ordinary block uses `secret` ONLY
         // as the encryption key — it must not reach the beach. Grain writes
@@ -911,6 +919,9 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
           : secret,
         new_lock: params.new_lock,
         gray: params.gray,
+        // The never-hollow guard (db.ts deriveSurgicalValue) fires only for
+        // content writes; lock-only saves post without content by design.
+        hasContent: writeResult !== null,
       },
     );
   } catch (e: any) {
