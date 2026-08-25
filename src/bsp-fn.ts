@@ -163,6 +163,9 @@ function walk(block: Block, digits: string[]): any {
 
 function semantic(node: any): string | null {
   if (typeof node === 'string') return node;
+  // Numeric and boolean leaves are legal wire values (e.g. evaluation scores
+  // at passport 6.2) — render their JSON form. Only null/absent stays null.
+  if (typeof node === 'number' || typeof node === 'boolean') return JSON.stringify(node);
   if (node && typeof node === 'object') return collectUnderscore(node);
   return null;
 }
