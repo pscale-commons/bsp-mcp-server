@@ -112,16 +112,47 @@ export function readSlot(block: Block | null, slot: string): any {
 }
 
 /**
+ * True when a node reads as an OCCUPIED ENTRY — a contribution/mark: voiced
+ * (string underscore) and authored/stamped (string field 1 or 3). Slot
+ * enumeration must not descend THROUGH such a node: its digit children are
+ * FIELDS (author at 1, where at 2, rider at 9 — sand-rider:3.1), never later
+ * slots. The counting line's multi-digit slots only become real through
+ * CONTAINERS (floor growth), and a container is never voiced-and-authored in
+ * the mark shape. Without this prune, an OBJECT field of an entry leaks as a
+ * pseudo-slot — a probe's rider at position 9 of slot 6 enumerated as slots
+ * 69, 692, 694 (witnessed live at pool:keel, 2026-08-25; the string-field
+ * guard below never covered object fields).
+ */
+export function isEntryNode(v: any): boolean {
+  return !!v && typeof v === 'object' && !Array.isArray(v)
+    && typeof (v as any)._ === 'string'
+    && (typeof (v as any)['1'] === 'string' || typeof (v as any)['3'] === 'string');
+}
+
+/** True when a multi-digit slot path is blocked: a proper prefix resolves (via
+ *  the given reader) to an occupied entry, so the deeper path is a field of an
+ *  entry rather than a slot. */
+function pathBlocked(read: (slot: string) => any, slot: string): boolean {
+  for (let i = 1; i < slot.length; i++) {
+    if (isEntryNode(read(slot.slice(0, i)))) return true;
+  }
+  return false;
+}
+
+/**
  * Find the next-free digit-path slot. Same discipline as findNextMarkSpindle in
  * xstream's beach-kernel: at depth 1, any non-null value counts as a claim;
  * at depth 2+, only objects count (strings at depth 2+ are tag-field
- * collisions from a shallower contribution, per block-conventions:9.3).
+ * collisions from a shallower contribution, per block-conventions:9.3) — and
+ * an object BENEATH an occupied entry is that entry's field (a rider), never
+ * a claim (pathBlocked).
  */
 export function findNextSlot(block: Block | null): string {
   const slots = [...digitPathSlots()];
   let maxIdx = -1;
   for (let i = 0; i < slots.length; i++) {
     const slot = slots[i];
+    if (slot.length > 1 && pathBlocked((s) => readSlot(block, s), slot)) continue;
     const v = readSlot(block, slot);
     if (v === null) continue;
     if (slot.length === 1) {
@@ -144,6 +175,7 @@ export function findNextSlot(block: Block | null): string {
 export function findAuthorSlot(block: Block | null, agentId: string): string | null {
   if (typeof block !== 'object' || block === null) return null;
   for (const slot of digitPathSlots()) {
+    if (slot.length > 1 && pathBlocked((s) => readAt(block, s), slot)) continue;
     const v = readAt(block, slot);
     if (v == null) continue;
     if (typeof v === 'object' && !Array.isArray(v) && (v as Record<string, any>)['1'] === agentId) {
@@ -243,6 +275,9 @@ export function collectContributions(
   const out: PoolContribution[] = [];
   let more = false;
   for (const slot of digitPathSlots()) {
+    // A path through an occupied entry is that entry's FIELD (a rider at 9),
+    // never a later slot — prune it (isEntryNode; the pool:keel 69/692/694 leak).
+    if (slot.length > 1 && pathBlocked((s) => readAt(block, s), slot)) continue;
     // readAt (floor-aware) not readSlot (raw): after a supernest the entries sit
     // one floor down and an entry's dated address absorbs (a "7" resolves via
     // "07" = [0,7]), so this same enumeration still finds every entry across any

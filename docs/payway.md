@@ -78,9 +78,9 @@ Optional fields:
 - `seats=<n>` — for collectives where one ticket admits multiple `agent_id`s (rare; useful for guild-style purchases)
 - `nonce=<id>` — for issuer's own deduplication or refund tracking
 
-Reserved fields (defined here, NOT honoured by v1 verifiers):
+Credit field (specified at sand-v2:2, 2026-08-25; adoption per verifier):
 
-- `credits=<n>` — reserved for future SAND credit integration. A grain whose envelope contains `credits=` represents a credit-bearing ticket rather than a time-bounded one. **v1 verifiers MUST reject any grain whose envelope contains a `credits=` field**, with reason `credits-not-supported`. This prevents accidentally honouring credit-bearing grants before the spend path exists. The field is reserved at the protocol level so future credit-aware verifiers can adopt it without grammar change.
+- `credits=<n>` — the SAND mint. A grain whose envelope contains `credits=` is a credit-bearing ticket: `minted(buyer)` is the sum of `credits=` over the buyer's `[ticket-verified]` grains carrying no `[ticket-revoked]` child, computed on read from public blocks (sand-v2:2.2). Money entered at the boundary, so the credits stand past the ticket's `expires=` (which governs the FACE only); revocation unmints (sand-v2:2.3). **A credit-aware (v2) verifier honours the field and records the amount in its `[ticket-verified]` audit envelope; a verifier that has not adopted the credit path MUST still reject the field with reason `credits-not-supported`** — the one forbidden behaviour is verifying the grain while silently ignoring its credits. The reference verifier (pscale-commons/ticketing-agent) adopts on its own release.
 
 Revocation is an additional envelope written **as a digit child of the issuer's side** — first revocation at `<issuer-side>.1`, subsequent at `.2`, `.3`, etc., as terminal strings. The side underscore (the immutable ticket grant) is never overwritten; revocations are sub-facts subordinate to it. This matches sunstone branch 1: digits hold sub-structure, the underscore holds meaning. It also avoids a read-modify-write race against the side underscore.
 
