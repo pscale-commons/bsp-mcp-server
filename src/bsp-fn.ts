@@ -37,6 +37,7 @@ import {
   Block,
   collectUnderscore,
   floorDepth,
+  parseAddress,
   parseSpindle as parseSpindleCanonical,
   walk as walkLegacy,
   writeAt,
@@ -99,6 +100,24 @@ export interface BspWriteResult {
   spindle?: string;
   pscale_attention?: number | null;
   warning?: string;
+  /** Canonical address of the position the write actually landed at, for
+   *  spindle-bearing point/subtree writes. The honest-ack anchor: the two
+   *  phantom-write classes (2026-07-08 history:keel:15, 2026-08-25
+   *  pool:weft:52) were both an ack naming an address the walker did not
+   *  resolve to. Absent for block/disc/star writes. */
+  landed?: string;
+  /** Set ONLY when the landing depth differs from the spindle terminus (an
+   *  explicit pscale above the terminus truncates the walk — whetstone:2.4
+   *  "places a string at the addressed depth"). The transport must then save
+   *  at THIS address, not the user's spindle: deriving the wire payload at
+   *  the full spindle reads undefined, JSON.stringify drops the content key,
+   *  and the beach no-ops a content-less POST into a hollow 200. */
+  wire_spindle?: string;
+  /** Honest-ack note for the two slip classes: pscale truncation, and floor
+   *  padding walking the root underscore chain (left-of-decimal pads to
+   *  floor width; digit 0 = "_"). Informative, never a refusal — the padded
+   *  walk is load-bearing for supernest-stable addressing (sunstone:1.41). */
+  landing_note?: string;
 }
 
 // ── Spindle parsing ──
@@ -428,7 +447,7 @@ export function bspWrite(
     };
   }
 
-  const shape = bspWriteInPlace(block, spindle ?? '', pscaleAttention, content);
+  const { shape, landedDigits } = bspWriteInPlace(block, spindle ?? '', pscaleAttention, content);
   const result: BspWriteResult = {
     shape,
     written: true,
@@ -436,6 +455,49 @@ export function bspWrite(
     spindle: String(spindle ?? ''),
     pscale_attention: pscaleAttention,
   };
+  // ── The honest ack: name where the write actually landed. ──
+  // Two witnessed classes of "phantom write" were both an ack echoing the
+  // input string while the walk resolved elsewhere (or nowhere the caller
+  // looked): an explicit pscale above the terminus lands at the addressed
+  // DEPTH, not the terminus (2026-07-08); and a spindle narrower than the
+  // floor left-pads with '0' and walks the root underscore chain
+  // (2026-08-25). Neither is refused — both are canonical — but both are
+  // now SAID, with the resolved digit walk and, for the padding case, the
+  // dot-free address of the branch walk the author likely meant.
+  if (landedDigits !== null && digits.length > 0) {
+    // FULL-WIDTH form, not formatAddress: the short canonical form does not
+    // round-trip (parseSpindle left-pads "2" at floor 2 back to 0,2 — the
+    // root chain). A label an agent may copy into its next spindle, and the
+    // address the transport saves at, must be the padded form ("20"), the
+    // same form every path-walk label already emits.
+    result.landed = fullWidthAddress(landedDigits, floor);
+    if (landedDigits.length !== digits.length) {
+      // Truncation: explicit pscale addressed an ancestor of the terminus.
+      result.wire_spindle = result.landed;
+      result.landing_note =
+        `pscale ${pscaleAttention} addresses depth ${landedDigits.length} of the spindle — ` +
+        `the write landed at "${result.landed}", not at the terminus of "${spindle}". ` +
+        `To write the terminus, omit pscale_attention or set it to ${floor - digits.length}.`;
+    } else if (landedDigits[0] === '0') {
+      // Padding: the walk entered the root underscore chain. Only note it
+      // when the zeros were ADDED by floor padding — an author who wrote
+      // them out ("041") said what they meant.
+      let addedByPad = false;
+      try {
+        const { leftDigits } = parseAddress(String(spindle).replace(/\*$/, ''));
+        addedByPad = floor > 1 && leftDigits.length < floor;
+      } catch { /* unparsable here means parseSpindle already threw upstream */ }
+      const firstNonZero = landedDigits.findIndex((d) => d !== '0');
+      if (addedByPad && firstNonZero > 0) {
+        const stripped = landedDigits.slice(firstNonZero);
+        result.landing_note =
+          `"${spindle}" walks ${landedDigits.join(',')} at floor ${floor} — left-of-decimal pads to ` +
+          `floor width, so the walk enters the root underscore chain (digit 0 = "_"). ` +
+          `If you meant the branch walk ${stripped.join(',')}, that address is ` +
+          `"${fullWidthAddress(stripped, floor)}".`;
+      }
+    }
+  }
   // Soft advisory: a string that parses as JSON object/array at a single
   // position is almost certainly an intent mismatch.
   if (
@@ -453,13 +515,15 @@ export function bspWrite(
   return result;
 }
 
-/** Apply a write in place; returns the determined shape (canonical vocabulary). */
+/** Apply a write in place; returns the determined shape (canonical vocabulary)
+ *  plus the digit walk the write actually landed at (null for the multi-target
+ *  and whole-block shapes, where no single position is "the" landing). */
 function bspWriteInPlace(
   block: Block,
   spindle: string,
   pscaleAttention: number | null | undefined,
   content: any,
-): Shape {
+): { shape: Shape; landedDigits: string[] | null } {
   const floor = floorDepth(block);
   const { digits } = parseSpindleCanonical(spindle, floor);
 
@@ -489,7 +553,7 @@ function bspWriteInPlace(
       }
       for (const k of Object.keys(block)) delete (block as any)[k];
       Object.assign(block, content);
-      return 'block';
+      return { shape: 'block', landedDigits: null };
     }
     // Disc write.
     if (Array.isArray(content)) {
@@ -505,7 +569,7 @@ function bspWriteInPlace(
     } else {
       throw new Error('Disc write requires array of {address, content} or sparse object');
     }
-    return 'disc';
+    return { shape: 'disc', landedDigits: null };
   }
 
   const pEnd = floor - digits.length;
@@ -536,7 +600,7 @@ function bspWriteInPlace(
     } else {
       parent[key] = content;
     }
-    return 'point';
+    return { shape: 'point', landedDigits: useDigits };
   }
 
   // path-walk+descent write (S + P below terminus) → replace subtree at terminus.
@@ -548,7 +612,7 @@ function bspWriteInPlace(
   const parent = walkOrCreate(block, parentDigits);
   const key = finalDigit === '0' ? '_' : finalDigit;
   parent[key] = content;
-  return 'path-walk+descent';
+  return { shape: 'path-walk+descent', landedDigits: digits };
 }
 
 /**
@@ -659,6 +723,14 @@ export function formatRead(r: BspReadResult): string {
 }
 
 export function formatWrite(r: BspWriteResult): string {
-  const head = `[wrote ${r.shape} @ "${r.spindle}"${r.pscale_attention != null ? ` pscale ${r.pscale_attention}` : ''}]`;
-  return r.warning ? `${head}\n[warning] ${r.warning}` : head;
+  // The honest ack: when the walk resolved somewhere a naive reading of the
+  // input would not predict, the landed address rides in the head and the
+  // note says why. An ack naming an address the walker did not resolve is
+  // worse than an error (keel, pool:weft:52).
+  const landedTag = r.landed !== undefined && r.landed !== r.spindle ? ` → landed at "${r.landed}"` : '';
+  const head = `[wrote ${r.shape} @ "${r.spindle}"${r.pscale_attention != null ? ` pscale ${r.pscale_attention}` : ''}${landedTag}]`;
+  const lines = [head];
+  if (r.landing_note) lines.push(`[note] ${r.landing_note}`);
+  if (r.warning) lines.push(`[warning] ${r.warning}`);
+  return lines.join('\n');
 }

@@ -24,7 +24,7 @@
  *        body: { spindle, pscale_attention?, content?, secret?, new_lock?, gray? }
  */
 
-import { Block, readAt } from './bsp.js';
+import { Block, readAt, floorDepth, parseSpindle } from './bsp.js';
 import { SENTINEL_BLOCK_MAP } from './sentinels.js';
 import { publicKeysFromSpine } from './keys.js';
 // The wire — ONE implementation of the beach HTTP contract (canonical here,
@@ -67,6 +67,13 @@ export interface WriteOptions {
   secret?: string;
   new_lock?: string | null;
   gray?: boolean;
+  /** True when this save carries a CONTENT write (bspWrite/writeAt ran). The
+   *  never-hollow guard fires only then: a surgical save whose derived value
+   *  is undefined must refuse rather than POST a content-less body the beach
+   *  no-ops into a 200 — the hollow-ack mechanism of 2026-07-08 and
+   *  2026-08-25. Lock-only saves legitimately post without content (claiming
+   *  an empty position is the roster pattern), so they pass false. */
+  hasContent?: boolean;
 }
 
 // ── URL-prefix dispatch helpers ──
@@ -426,6 +433,37 @@ export async function postActionToBeach(
   return r.body;
 }
 
+/**
+ * Derive the surgical-write payload: the value at `spindle` in the MERGED
+ * block, which the wire POSTs so the beach lands the same bytes the local
+ * merge did. THE NEVER-HOLLOW GUARD lives here: when a content write ran
+ * (`hasContent`) and the derivation reads undefined, the merge and the wire
+ * disagree about where the write landed — POSTing would send a body whose
+ * `content` key JSON.stringify silently drops, which the beach treats as a
+ * lock-only touch and 200s. That is the hollow-ack mechanism witnessed
+ * 2026-07-08 (history:keel:15 — point write truncated by an above-terminus
+ * pscale) and reported 2026-08-25 (pool:weft:52). Refuse loudly, naming the
+ * resolved digit walk. Lock-only saves (hasContent false) legitimately
+ * derive undefined at an empty position — the claim-by-lock pattern — and
+ * pass through untouched.
+ *
+ * Exported for the smoke battery (scripts/smoke-hollow-ack.ts); pure.
+ */
+export function deriveSurgicalValue(block: Block, spindle: string, hasContent: boolean): any {
+  const value = readAt(block, spindle);
+  if (hasContent && value === undefined) {
+    const fl = floorDepth(block);
+    let walkStr = spindle;
+    try { walkStr = parseSpindle(spindle, fl).digits.join(',') || '(root)'; } catch { /* keep raw */ }
+    throw new Error(
+      `surgical write at "${spindle}" resolves to digit walk ${walkStr} (floor ${fl}), where the ` +
+      `merged block holds nothing — refusing the content-less POST a hollow ack rides on. ` +
+      `The local merge landed elsewhere than this address; nothing was sent to the beach.`,
+    );
+  }
+  return value;
+}
+
 async function saveBlockToBeach(
   ownerId: string,
   blockName: string,
@@ -452,7 +490,8 @@ async function saveBlockToBeach(
     if (!r.ok) throw new Error(`Beach save rejected: ${r.error}`);
   } else {
     const cleanedSpindle = userSpindle.replace(/\*$/, '');
-    const r = await wire.writeAt(origin, blockName, cleanedSpindle, readAt(block, cleanedSpindle), {
+    const value = deriveSurgicalValue(block, cleanedSpindle, opts.hasContent === true);
+    const r = await wire.writeAt(origin, blockName, cleanedSpindle, value, {
       ...wireOpts,
       pscaleAttention: opts.pscale_attention ?? null,
     });
