@@ -19,6 +19,7 @@
     "smoke:wire": "tsx scripts/smoke-wire.ts",
     "smoke:stream": "tsx scripts/smoke-stream-engage.ts",
     "smoke:unit": "tsx scripts/smoke-bsp.ts",
+    "smoke:numeric": "tsx scripts/smoke-numeric-leaves.ts",
     "smoke:floor": "tsx scripts/smoke-floor-align.ts",
     "smoke:dots": "tsx scripts/smoke-dots.ts",
     "smoke:parser": "tsx scripts/smoke-parser.ts",

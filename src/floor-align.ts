@@ -61,9 +61,11 @@ export interface PscaleNode {
   text: string | null;
 }
 
-/** Semantic text of a node — a string leaf, or follow the underscore chain. */
+/** Semantic text of a node — a string leaf, or follow the underscore chain.
+ *  Numeric and boolean leaves render their JSON form (legal wire values). */
 function nodeText(node: any): string | null {
   if (typeof node === 'string') return node;
+  if (typeof node === 'number' || typeof node === 'boolean') return JSON.stringify(node);
   return collectUnderscore(node);
 }
 
