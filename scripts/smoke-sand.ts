@@ -31,6 +31,7 @@ import {
   findReceiptSlot,
   computeBalance,
   recomputeSQFromOthers,
+  collectReceipts,
   signHop,
   verifyChainSigned,
   isRider,
@@ -50,7 +51,7 @@ function t(name: string, cond: boolean, detail?: string) {
 
 const passports = new Map<string, Block>();
 const keyring = new Map<string, nacl.SignKeyPair>();
-const minted = new Map<string, number>();
+const namedBlocks = new Map<string, Block>(); // grains + audit collectives (the mint's backing)
 
 const deps: VerifyDeps = {
   loadPassport: async (h) => passports.get(h) ?? null,
@@ -58,7 +59,7 @@ const deps: VerifyDeps = {
     const kp = keyring.get(h);
     return kp ? Buffer.from(kp.publicKey).toString('base64') : null;
   },
-  loadMinted: async (h) => minted.get(h) ?? 0,
+  loadBlock: async (name) => namedBlocks.get(name) ?? null,
 };
 
 function freshPassport(handle: string): Block {
@@ -73,12 +74,19 @@ function nextTs(): string {
   return `2026-08-25T10:${String(tsCounter).padStart(2, '0')}:00.000Z`;
 }
 
-function addGave(p: Block, g: { probe_id: string; n: number; to: string; topic?: string }) {
+function addGave(p: Block, g: { probe_id: string; n: number; to: string; topic?: string; channel?: string; audit?: string }) {
   writeAt(p, gaveSlotAddress(nextGaveSlot(p)), gaveContent({
     voicing: `gave ${g.n} to ${g.to} (${g.probe_id})`,
     ts: nextTs(),
     ...g,
   }) as any);
+}
+
+/** Seed a handle's stock the way stock actually arrives under mint-as-gave
+ *  (sand-v2:2.1.2): a transferring receipt from an issuer. The retired minted
+ *  term never returns — received carries the mint. */
+function seedStock(p: Block, handle: string, n: number) {
+  addReceipt(p, '0.341', { sender: `mint-of-${handle}`, probe_id: `seed-${handle}`, v_latest: n });
 }
 
 function addReceipt(p: Block, topic: string, e: { sender: string; probe_id?: string; v_latest: number; verdict?: string }) {
@@ -124,14 +132,15 @@ async function main() {
   {
     const alice = freshPassport('alice');
     const bob = freshPassport('bob');
-    minted.set('alice', 6);
+    seedStock(alice, 'alice', 6);
     addGave(alice, { probe_id: 'a-p1', n: 3, to: 'bob', topic: '0.341' });
     addReceipt(bob, '0.341', { sender: 'alice', probe_id: 'a-p1', v_latest: 3 });
-    const ba = await computeBalance('alice', alice, deps.loadPassport, { minted: 6 });
+    const ba = await computeBalance('alice', alice, deps.loadPassport);
     const bb = await computeBalance('bob', bob, deps.loadPassport);
-    t('3a. giver balance = minted 6 − given 3 = 3', ba.balance === 3, `got ${ba.balance}`);
+    t('3a. giver balance = received 6 (the mint rides received) − given 3 = 3', ba.balance === 3, `got ${ba.balance}`);
     t('3b. recipient balance rises by the 3 received', bb.balance === 3, `got ${bb.balance}`);
-    t('3c. the giver passport holds no receipt written by another', readAt(alice, '6.2') == null);
+    const aliceReceipts = collectReceipts(alice);
+    t('3c. the giver passport holds only its own seed receipt — bob\'s receipt lives at bob', aliceReceipts.length === 1 && aliceReceipts[0].sender === 'mint-of-alice', JSON.stringify(aliceReceipts));
     const r = await verifyRiderCore({ rider: rider('a-p1', 3, 'alice'), sender_agent_id: 'alice' }, deps);
     t('3d. the backed claim verifies pass', r.verdict === 'pass', `got ${r.verdict} (${JSON.stringify(r.balance)})`);
   }
@@ -140,7 +149,7 @@ async function main() {
   {
     const dan = freshPassport('dan');
     const erin = freshPassport('erin');
-    minted.set('dan', 5);
+    seedStock(dan, 'dan', 5);
     addGave(dan, { probe_id: 'd-p1', n: 3, to: 'erin', topic: '0.341' });
     addReceipt(erin, '0.341', { sender: 'dan', probe_id: 'd-p1', v_latest: 3 });
     addGave(dan, { probe_id: 'd-p2', n: 3, to: 'erin', topic: '0.341' });
@@ -199,13 +208,13 @@ async function main() {
     const ben = freshPassport('ben');   // the beneficiary
     const h1 = freshPassport('hop-one');
     const h2 = freshPassport('hop-two');
-    minted.set('ben', 10);
+    seedStock(ben, 'ben', 10);
     // completion: ben shares 10 back along a two-hop chain, equal split.
     addGave(ben, { probe_id: 'ben-hau-x-h1', n: 5, to: 'hop-one', topic: '0.341' });
     addGave(ben, { probe_id: 'ben-hau-x-h2', n: 5, to: 'hop-two', topic: '0.341' });
     addReceipt(h1, '0.341', { sender: 'ben', probe_id: 'ben-hau-x-h1', v_latest: 5 });
     addReceipt(h2, '0.341', { sender: 'ben', probe_id: 'ben-hau-x-h2', v_latest: 5 });
-    const bb = await computeBalance('ben', ben, deps.loadPassport, { minted: 10 });
+    const bb = await computeBalance('ben', ben, deps.loadPassport);
     const b1 = await computeBalance('hop-one', h1, deps.loadPassport);
     const b2 = await computeBalance('hop-two', h2, deps.loadPassport);
     t('8a. every hop\'s balance rises by its share', b1.balance === 5 && b2.balance === 5, `got ${b1.balance}, ${b2.balance}`);
@@ -216,30 +225,26 @@ async function main() {
     t('8c. a chain without completion moves nothing', bi.balance === 0 && bi.received === 0);
   }
 
-  // ── 9. Ticket revoked after its credits were shared ──
+  // ── 9. The honest negative: giving beyond stock reads negative, receipts stand ──
   {
     const ivy = freshPassport('ivy');
     const jo = freshPassport('jo');
-    minted.set('ivy', 10);
     addGave(ivy, { probe_id: 'i-p1', n: 4, to: 'jo', topic: '0.341' });
     addReceipt(jo, '0.341', { sender: 'ivy', probe_id: 'i-p1', v_latest: 4 });
-    const before = await computeBalance('ivy', ivy, deps.loadPassport, { minted: 10 });
-    minted.set('ivy', 0); // [ticket-revoked] — the grain's credits leave minted (sand-v2:2.3)
-    const after = await computeBalance('ivy', ivy, deps.loadPassport, { minted: 0 });
+    const bi = await computeBalance('ivy', ivy, deps.loadPassport);
     const bj = await computeBalance('jo', jo, deps.loadPassport);
-    t('9a. before revocation: 10 − 4 = 6', before.balance === 6, `got ${before.balance}`);
-    t('9b. after revocation the giver may read negative', after.balance === -4, `got ${after.balance}`);
-    t('9c. the receiver\'s receipt stands — nothing claws back', bj.balance === 4, `got ${bj.balance}`);
+    t('9a. the unstocked giver reads honestly negative', bi.balance === -4, `got ${bi.balance}`);
+    t('9b. the receiver\'s receipt stands — nothing claws back (sand-v2:2.3)', bj.balance === 4, `got ${bj.balance}`);
     addGave(ivy, { probe_id: 'i-p2', n: 2, to: 'jo', topic: '0.341' });
     const r = await verifyRiderCore({ rider: rider('i-p2', 2, 'ivy'), sender_agent_id: 'ivy' }, deps);
-    t('9d. later offers come back unbacked until it recovers', r.verdict === 'unbacked', `got ${r.verdict}`);
+    t('9c. later offers come back unbacked until it recovers', r.verdict === 'unbacked', `got ${r.verdict}`);
   }
 
   // ── 10. SQ claim within 0.01 of the recompute → pass, else warn ──
   {
     const kim = freshPassport('kim');
     const lee = freshPassport('lee');
-    minted.set('kim', 10);
+    seedStock(kim, 'kim', 10);
     addGave(kim, { probe_id: 'k-p1', n: 4, to: 'lee', topic: '0.341' });
     addReceipt(lee, '0.341', { sender: 'kim', probe_id: 'k-p1', v_latest: 2 });
     const sq = await recomputeSQFromOthers('kim', kim, '0.341', deps.loadPassport);
@@ -261,10 +266,10 @@ async function main() {
   {
     const mia = freshPassport('mia');
     const noa = freshPassport('noa');
-    minted.set('mia', 10);
+    seedStock(mia, 'mia', 10);
     addGave(mia, { probe_id: 'm-p1', n: 5, to: 'noa', topic: '0.341' });
     addReceipt(noa, '0.341', { sender: 'mia', probe_id: 'm-p1', v_latest: 2 });
-    const b = await computeBalance('mia', mia, deps.loadPassport, { minted: 10 });
+    const b = await computeBalance('mia', mia, deps.loadPassport);
     t('11. given subtracts what was received (2), not what was offered (5)', b.given === 2 && b.balance === 8, `got given ${b.given}, balance ${b.balance}`);
   }
 
@@ -272,12 +277,12 @@ async function main() {
   {
     const oli = freshPassport('oli');
     const pat = freshPassport('pat');
-    minted.set('oli', 10);
+    seedStock(oli, 'oli', 10);
     addGave(oli, { probe_id: 'o-p1', n: 3, to: 'pat', topic: '0.341' });
     addReceipt(pat, '0.341', { sender: 'oli', probe_id: 'o-p1', v_latest: 3 });
     addGave(oli, { probe_id: 'o-p2', n: 5, to: 'pat', topic: '0.341' });
     addReceipt(pat, '0.341', { sender: 'oli', probe_id: 'o-p2', v_latest: 5 });
-    const bo = await computeBalance('oli', oli, deps.loadPassport, { minted: 10 });
+    const bo = await computeBalance('oli', oli, deps.loadPassport);
     const bp = await computeBalance('pat', pat, deps.loadPassport);
     t('12a. repeat gives each leave their receipt: given = 8, not latest-only 5', bo.given === 8, `got ${bo.given}`);
     t('12b. the recipient\'s received = 8 — conservation holds across the pair', bp.received === 8, `got ${bp.received}`);
@@ -306,7 +311,7 @@ async function main() {
   {
     const gwen = freshPassport('gwen');
     freshPassport('rita');
-    minted.set('gwen', 10);
+    seedStock(gwen, 'gwen', 10);
     addGave(gwen, { probe_id: 'g-p1', n: 5, to: 'rita', topic: '0.341' });
     // The slot was written by the CARRIER (carl); the rider names gwen.
     const r = await verifyRiderCore({
@@ -328,6 +333,61 @@ async function main() {
     t('16b. nor does it debit the giver — the filter is symmetric', bu.given === 0, `got given ${bu.given}`);
     t('16c. conservation survives the filter', bu.balance + bv.balance === 0, `sum ${bu.balance + bv.balance}`);
     t('16d. the GAVE stands as an open offer, not a transfer', bu.openOffers === 1, `got ${bu.openOffers}`);
+  }
+
+  // ── 18-21. THE MINT — grain-backed gaves (the ruling at sand-v2:2.1.2, the check at 5.1.1) ──
+  {
+    const quay = freshPassport('quay-test');
+    freshPassport('buyer-bee');
+    const pid1 = 'grain:testmint01';
+    namedBlocks.set(pid1, {
+      _: 'a ticket grain, issuer to buyer',
+      '1': { _: '[ticket face=character scope=frame:trial expires=2027-01-01T00:00:00Z credits=100]' },
+      '9': { '1': 'quay-test', '2': 'buyer-bee' },
+    } as any);
+    // Positions 11 and 12 are DIGIT WALKS (1→1, 1→2) — the spine holds only _
+    // and 1-9; a literal '11' key would be the shape-gate violation itself.
+    namedBlocks.set('sed:trial-audit', {
+      _: 'the verifier audit collective (payway:2.3)',
+      '1': {
+        '1': { _: '[ticket-verified by=agent:keeper at=2026-08-25T13:00:00Z grain=grain:testmint01:1]' },
+        '2': { _: '[ticket-verified by=agent:keeper at=2026-08-25T13:10:00Z grain=grain:testmint02:1]' },
+      },
+    } as any);
+    addGave(quay, { probe_id: 'q-m1', n: 100, to: 'buyer-bee', topic: '0.341', channel: pid1, audit: 'sed:trial-audit:11' });
+    const r18 = await verifyRiderCore({ rider: rider('q-m1', 100, 'quay-test'), sender_agent_id: 'quay-test' }, deps);
+    t('18a. a verified grain backs the mint-gave — pass despite issuer stock 0', r18.verdict === 'pass', `got ${r18.verdict} (${JSON.stringify(r18.balance)})`);
+    t('18b. the balance dimension reports the grain, not the issuer', r18.balance.grain === pid1 && r18.balance.ticket_credits === 100, JSON.stringify(r18.balance));
+
+    // 19 — a revoked ticket unmints: new mint-gaves unbacked; prior receipts stand.
+    const pid2 = 'grain:testmint02';
+    namedBlocks.set(pid2, {
+      _: 'a ticket grain, later refunded',
+      '1': {
+        _: '[ticket face=character scope=frame:trial expires=2027-01-01T00:00:00Z credits=50]',
+        '1': '[ticket-revoked at=2026-08-25T13:30:00Z reason=refund]',
+      },
+      '9': { '1': 'quay-test', '2': 'buyer-bee' },
+    } as any);
+    addGave(quay, { probe_id: 'q-m2', n: 50, to: 'buyer-bee', topic: '0.341', channel: pid2, audit: 'sed:trial-audit:12' });
+    const r19 = await verifyRiderCore({ rider: rider('q-m2', 50, 'quay-test'), sender_agent_id: 'quay-test' }, deps);
+    t('19. a revoked ticket unmints — the new mint-gave is unbacked', r19.verdict === 'unbacked' && String(r19.balance.reason).includes('revoked'), `got ${r19.verdict} (${r19.balance.reason})`);
+
+    // 20 — one ticket cannot back unlimited mint-gaves (net check, 2.1.3b).
+    addGave(quay, { probe_id: 'q-m3', n: 20, to: 'buyer-bee', topic: '0.341', channel: pid1, audit: 'sed:trial-audit:11' });
+    const r20 = await verifyRiderCore({ rider: rider('q-m3', 20, 'quay-test'), sender_agent_id: 'quay-test' }, deps);
+    t('20. gaves beyond the grain\'s credits are unbacked (100 + 20 > 100)', r20.verdict === 'unbacked' && String(r20.balance.reason).includes('exhausted'), `got ${r20.verdict} (${r20.balance.reason})`);
+
+    // 21 — no audit pointer, no verification: the gave must name where [ticket-verified] stands.
+    const pid3 = 'grain:testmint03';
+    namedBlocks.set(pid3, {
+      _: 'a ticket grain nobody verified',
+      '1': { _: '[ticket face=character scope=frame:trial expires=2027-01-01T00:00:00Z credits=10]' },
+      '9': { '1': 'quay-test', '2': 'buyer-bee' },
+    } as any);
+    addGave(quay, { probe_id: 'q-m4', n: 10, to: 'buyer-bee', topic: '0.341', channel: pid3 });
+    const r21 = await verifyRiderCore({ rider: rider('q-m4', 10, 'quay-test'), sender_agent_id: 'quay-test' }, deps);
+    t('21. a mint-gave naming no audit position is unbacked (unverified)', r21.verdict === 'unbacked' && String(r21.balance.reason).includes('audit'), `got ${r21.verdict} (${r21.balance.reason})`);
   }
 
   // ── 17. The temporal annotator leaves timestamp-bearing identifiers whole ──

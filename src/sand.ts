@@ -309,7 +309,12 @@ export function collectReceipts(passport: Block): Evaluation[] {
 
 // ── The out-ledger (passport 6.3) — GAVE entries (sand-v2:3) ──
 
-/** One GAVE — the giver's own record of the giving, written with the probe. */
+/** One GAVE — the giver's own record of the giving, written with the probe.
+ *  A MINT-GAVE (sand-v2:2.1.2, David's ruling 2026-08-25) is an ordinary GAVE
+ *  whose channel (6) names the backing ticket-grain ("grain:<pair_id>") and
+ *  whose audit (7) names the verifier's audit position carrying the
+ *  [ticket-verified] envelope ("sed:<verifier>-audit-<yyyy-mm>:<position>",
+ *  payway:2.3) — the gave points at its own verification, so no discovery. */
 export interface Gave {
   voicing: string;      // _ — what was shared, to whom, why, the giver's words
   probe_id: string;     // 1
@@ -317,7 +322,8 @@ export interface Gave {
   to: string;           // 3 — the recipient handle (or grain side / sed: position / pool addressed)
   topic?: string;       // 4 — topic_coordinate
   ts: string;           // 5
-  channel?: string;     // 6 — the channel address of the probe slot
+  channel?: string;     // 6 — the channel address of the probe slot; "grain:<pid>" marks a mint-gave
+  audit?: string;       // 7 — mint-gave only: the [ticket-verified] audit position, "sed:<name>:<position>"
 }
 
 /** The stored, spine-legal shape of a GAVE entry. */
@@ -331,6 +337,7 @@ export function gaveContent(g: Gave): Block {
   };
   if (g.topic) c['4'] = g.topic;
   if (g.channel) c['6'] = g.channel;
+  if (g.audit) c['7'] = g.audit;
   return c;
 }
 
@@ -351,6 +358,7 @@ function readGave(node: any): Gave | null {
     topic: typeof node['4'] === 'string' ? node['4'] : undefined,
     ts: typeof node['5'] === 'string' ? node['5'] : '',
     channel: typeof node['6'] === 'string' ? node['6'] : undefined,
+    audit: typeof node['7'] === 'string' ? node['7'] : undefined,
   };
 }
 
@@ -401,40 +409,40 @@ export function nextGaveSlot(passport: Block): string {
   return '999';
 }
 
-// ── Balance — computed on read, never stored (sand-v2:3.4) ──
+// ── Balance — computed on read, never stored (sand-v2:3.4, as ruled at 2.1.2) ──
 
 /** Loads a passport by bare handle (or grain/sed address). Injectable so the
  *  battery runs in-memory; the live default is db.getPassportFromAddress. */
 export type PassportLoader = (handle: string) => Promise<Block | null>;
 
 export interface BalanceBreakdown {
-  minted: number;    // Σ credits= over verified ticket-grains (sand-v2:2.2) — supplied by the caller's discovery; 0 when none named
-  received: number;  // Σ v_latest across the holder's receipts, self excluded (sand-v2:4.1)
+  received: number;  // Σ v_latest across the holder's transferring receipts, self excluded (sand-v2:4.1) — the mint rides here (a mint-gave received is an ordinary receipt)
   given: number;     // Σ over the holder's GAVEs of what each named recipient's receipt records (sand-v2:3.4)
-  balance: number;   // minted + received − given
+  balance: number;   // received − given, full stop (sand-v2:2.1.3a — a separate minted term double-counts under mint-as-gave)
   gaves: number;     // GAVE entries walked
   openOffers: number; // GAVEs with no matching receipt at the recipient — standing offers, never debts
 }
 
 /**
- * balance(X) = minted(X) + received(X) − given(X), computed on read
- * (sand-v2:3.4). received sums X's own receipts (self-receipts excluded —
- * sand-v2:4.5, 7.5). given reads, for each GAVE, the named recipient's receipt
- * for that probe_id — the recipient's receipt is authoritative for the amount
- * transferred, the giver's GAVE for the offer. A GAVE to self nets zero and is
- * skipped. `minted` is passed in: ticket-grain discovery is the caller's
- * (sand-v2:2.2 fixtures name the grains; a mint received as an ordinary give —
- * the mint-as-gave shape pending David's ruling — rides `received` and needs
- * no term here at all).
+ * balance(X) = received(X) − given(X), computed on read (sand-v2:3.4 as ruled
+ * at 2.1.2: MINT-AS-GAVE — the mint lands as an ordinary GAVE from the issuer,
+ * backed by the ticket-grain rather than by the issuer's balance, and the
+ * buyer receives it by keep; minted dissolves into received, so a separate
+ * minted term would double-count, per keel's consequence at 2.1.3a).
+ * received sums X's own TRANSFERRING receipts (self-receipts excluded —
+ * sand-v2:4.5, 7.5; unbacked/failed receipts excluded — 5.5). given reads,
+ * for each GAVE, the named recipient's receipt for that probe_id — the
+ * recipient's receipt is authoritative for the amount transferred, the
+ * giver's GAVE for the offer. A GAVE to self nets zero and is skipped. An
+ * issuer's mint-gaves debit its given like any other (a dedicated mint handle
+ * carries the circulation as its honest negative; whether ticket-backed gaves
+ * should instead leave given alone is the open ruling at sand-v2:2.1.3c).
  */
 export async function computeBalance(
   handle: string,
   passport: Block,
   loadPassport: PassportLoader,
-  opts?: { minted?: number },
 ): Promise<BalanceBreakdown> {
-  const minted = opts?.minted ?? 0;
-
   let received = 0;
   for (const r of collectReceipts(passport)) {
     if (r.sender === handle) continue; // self-receipt transfers nothing (sand-v2:4.5)
@@ -469,7 +477,136 @@ export async function computeBalance(
     given += receipts.reduce((s, r) => s + r.v_latest, 0);
   }
 
-  return { minted, received, given, balance: minted + received - given, gaves: gaves.length, openOffers };
+  return { received, given, balance: received - given, gaves: gaves.length, openOffers };
+}
+
+// ── The mint's grain check (sand-v2:2.1.2 ruling + 5.1.1 consequence) ──
+
+/** The credits=N of a [ticket ...] envelope, or null when the text is not a
+ *  credit-bearing ticket envelope (payway:2.2). */
+export function parseTicketCredits(envelope: unknown): number | null {
+  if (typeof envelope !== 'string' || !envelope.includes('[ticket')) return null;
+  const m = envelope.match(/credits=(\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Which side of a grain a handle occupies (position 9 = {1: A, 2: B}). */
+export function grainSideOfHandle(grain: Block | null, handle: string): '1' | '2' | null {
+  const nine = (grain as any)?.['9'] as Record<string, string> | undefined;
+  if (!nine) return null;
+  if (nine['1'] === handle) return '1';
+  if (nine['2'] === handle) return '2';
+  return null;
+}
+
+/** True when any digit child of a grain side carries a [ticket-revoked]
+ *  envelope (payway:2.2 — revocations are terminal-string sub-facts of the
+ *  issuer's side; verifiers MUST honour them). */
+export function sideRevoked(sideNode: any): boolean {
+  if (!sideNode || typeof sideNode !== 'object') return false;
+  for (let d = 1; d <= 9; d++) {
+    const v = sideNode[String(d)];
+    if (typeof v === 'string' && v.includes('[ticket-revoked')) return true;
+  }
+  return false;
+}
+
+/** Loads any named beach block ("grain:<pid>", "sed:<name>") — injectable so
+ *  the battery runs in-memory. */
+export type BlockLoader = (name: string) => Promise<Block | null>;
+
+export interface GrainMintResult {
+  checked: true;
+  valid?: boolean;
+  unbacked?: boolean;
+  grain: string;
+  ticket_credits?: number;
+  cited?: number;
+  reason?: string;
+}
+
+/**
+ * The grain-backed check for a MINT-GAVE (the adopted consequence at
+ * sand-v2:5.1.1): a GAVE whose channel names a [ticket-verified] grain is
+ * checked against the GRAIN, not the issuer's balance —
+ *   - the issuer's side underscore carries a [ticket ...] envelope with
+ *     credits=N (payway:2.2);
+ *   - no [ticket-revoked] child on that side (revocation unminted it —
+ *     sand-v2:2.3; a post-revocation mint-gave is unbacked, while receipts
+ *     already written stand);
+ *   - the gave's audit field names the verifier's audit position whose
+ *     declaration carries [ticket-verified] naming this grain (payway:2.3 —
+ *     verification lives in the verifier's audit collective, never on the
+ *     locked grain);
+ *   - NET of the issuer's gaves citing this grain: Σ n ≤ N, this gave
+ *     included — else one ticket backs unlimited mint-gaves and the fiat
+ *     boundary at 1.1 stops binding (keel's consequence at 2.1.3b).
+ */
+export async function verifyGrainMint(
+  giver: string,
+  giverPassport: Block,
+  gave: Gave & { slot: string },
+  loadBlock: BlockLoader,
+): Promise<GrainMintResult> {
+  const grainName = gave.channel!;
+  const out = (r: Partial<GrainMintResult>): GrainMintResult => ({ checked: true, grain: grainName, ...r });
+
+  const grain = await loadBlock(grainName);
+  if (!grain) return out({ unbacked: true, reason: `${grainName} not found — nothing backs the mint` });
+
+  const side = grainSideOfHandle(grain, giver);
+  if (!side) return out({ unbacked: true, reason: `${giver} is not a party to ${grainName} (position 9)` });
+
+  const sideNode = (grain as any)[side];
+  const envelope = sideNode && typeof sideNode === 'object' ? sideNode['_'] : sideNode;
+  const credits = parseTicketCredits(envelope);
+  if (credits === null) return out({ unbacked: true, reason: `${grainName} side ${side} carries no credit-bearing [ticket ...] envelope` });
+
+  if (sideRevoked(sideNode)) {
+    return out({ unbacked: true, ticket_credits: credits, reason: 'ticket revoked — unminted (sand-v2:2.3); receipts already written stand, new mint-gaves do not' });
+  }
+
+  // [ticket-verified] at the audit position the gave itself names.
+  if (!gave.audit || !/^sed:[^:]+:\d+$/.test(gave.audit)) {
+    return out({ unbacked: true, ticket_credits: credits, reason: 'mint-gave names no audit position (field 7, "sed:<verifier>-audit-<yyyy-mm>:<position>") — unverified' });
+  }
+  const lastColon = gave.audit.lastIndexOf(':');
+  const auditBlockName = gave.audit.slice(0, lastColon);
+  const auditPos = gave.audit.slice(lastColon + 1);
+  const auditBlock = await loadBlock(auditBlockName);
+  const decl = auditBlock ? walkDigits(auditBlock, auditPos) : null;
+  const declText = typeof decl === 'string' ? decl : (decl && typeof decl === 'object' ? decl['_'] : null);
+  if (typeof declText !== 'string' || !declText.includes('[ticket-verified') || !declText.includes(grainName)) {
+    return out({ unbacked: true, ticket_credits: credits, reason: `no [ticket-verified] naming ${grainName} at ${gave.audit}` });
+  }
+
+  // Net of the issuer's gaves against this grain, in GIVING ORDER up to and
+  // including the gave being verified — a later over-issue never poisons an
+  // earlier legitimate mint; the gave that crossed the line is the one that
+  // reads unbacked.
+  let cited = 0;
+  for (const g of collectGaves(giverPassport)) {
+    if (g.channel !== grainName) continue;
+    cited += g.n;
+    if (g.slot === gave.slot) break;
+  }
+  if (cited > credits) {
+    return out({ unbacked: true, ticket_credits: credits, cited, reason: `grain credits exhausted: gaves citing ${grainName} total ${cited} against ${credits} minted` });
+  }
+
+  return out({ valid: true, ticket_credits: credits, cited });
+}
+
+function walkDigits(block: any, digits: string): any {
+  let cur: any = block;
+  for (const ch of digits) {
+    if (typeof cur !== 'object' || cur === null) return null;
+    cur = cur[ch];
+    if (cur === undefined) return null;
+  }
+  return cur;
 }
 
 // ── SQ — computed locally, sourced from others (sand-v2:7) ──

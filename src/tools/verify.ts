@@ -43,7 +43,7 @@
 
 import { z } from 'zod';
 import { Block } from '../bsp.js';
-import { getPassportFromAddress, getPublicKeys } from '../db.js';
+import { getPassportFromAddress, getPublicKeys, loadBlock as dbLoadBlock } from '../db.js';
 import {
   RiderInput,
   translateStoredRider,
@@ -51,9 +51,11 @@ import {
   computeBalance,
   recomputeSQFromOthers,
   verifyChainSigned,
+  verifyGrainMint,
   ChainHop,
   PassportLoader,
   KeyLoader,
+  BlockLoader,
 } from '../sand.js';
 
 export const verifyRiderParamsSchema = {
@@ -69,17 +71,20 @@ export const verifyRiderParamsSchema = {
 export interface VerifyDeps {
   loadPassport: PassportLoader;
   loadKey: KeyLoader;
-  /** Σ credits= over the sender's verified ticket-grains (sand-v2:2.2). Grain
-   *  discovery is a convention still settling (mint-as-gave would ride
-   *  `received` instead — sand-v2:2.1 note pending); the live default is 0,
-   *  which UNDER-counts a minted balance and never over-counts. */
-  loadMinted?: (handle: string) => Promise<number>;
+  /** Loads named beach blocks — "grain:<pid>" for the mint's backing grain,
+   *  "sed:<name>" for the verifier's audit collective (sand-v2:2.1.2, 5.1.1). */
+  loadBlock: BlockLoader;
 }
 
 export function liveDeps(): VerifyDeps {
   return {
     loadPassport: (h) => getPassportFromAddress(h),
     loadKey: async (h) => (await getPublicKeys(h))?.ed25519 ?? null,
+    loadBlock: async (name) => {
+      if (name.startsWith('grain:')) return (await dbLoadBlock(name, 'grain'))?.block ?? null;
+      if (name.startsWith('sed:')) return (await dbLoadBlock(name, name.slice(4)))?.block ?? null;
+      return null;
+    },
   };
 }
 
@@ -170,14 +175,20 @@ export async function verifyRiderCore(
       } else {
         provenance = { checked: true, valid: true, claimed: claimedCredit, offered: gave.n, to: gave.to };
       }
-      const minted = deps.loadMinted ? await deps.loadMinted(sender) : 0;
-      const b = await computeBalance(sender, passport as Block, deps.loadPassport, { minted });
-      if (b.balance >= claimedCredit) {
-        balance = { checked: true, valid: true, claimed: claimedCredit, ...b };
+      if (gave?.channel?.startsWith('grain:')) {
+        // A MINT-GAVE is checked against the GRAIN, not the issuer's balance
+        // (the ruling at sand-v2:2.1.2; the consequence at 5.1.1): the issuer
+        // may read as negative as the credits it has circulated.
+        balance = { claimed: claimedCredit, ...(await verifyGrainMint(sender, passport as Block, gave, deps.loadBlock)) };
       } else {
-        // Exhausted-now is a lapse, not a fraud: under open offers an honest
-        // giver may hold more standing invites than balance (sand-v2:3.2).
-        balance = { checked: true, unbacked: true, claimed: claimedCredit, ...b, reason: `balance ${b.balance} does not cover ${claimedCredit} at this moment` };
+        const b = await computeBalance(sender, passport as Block, deps.loadPassport);
+        if (b.balance >= claimedCredit) {
+          balance = { checked: true, valid: true, claimed: claimedCredit, ...b };
+        } else {
+          // Exhausted-now is a lapse, not a fraud: under open offers an honest
+          // giver may hold more standing invites than balance (sand-v2:3.2).
+          balance = { checked: true, unbacked: true, claimed: claimedCredit, ...b, reason: `balance ${b.balance} does not cover ${claimedCredit} at this moment` };
+        }
       }
     }
   }
