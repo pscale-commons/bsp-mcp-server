@@ -185,6 +185,17 @@ export interface Evaluation {
   sender: string;
 }
 
+/** True when a receipt TRANSFERS — the probe was backed at receive. Receipts
+ *  of unbacked and failed probes stand as reputation signal only: they carry
+ *  no credit and enter no balance, on either side (sand-v2:5.5; l3-relay:2.3).
+ *  Without this, a pair could conjure balance from nothing — an unbacked give
+ *  received anyway credits the receiver while only the giver reads negative,
+ *  and ruling 1.1 (credits are created only at the mint) breaks. Witnessed by
+ *  trial 1's own bootstrap, which exploited exactly this before the fix. */
+export function receiptTransfers(e: Evaluation): boolean {
+  return e.verdict !== 'unbacked' && e.verdict !== 'fail';
+}
+
 /** The stored, spine-legal shape of a receipt. */
 export function evaluationContent(e: Evaluation): Block {
   const c: Block = {
@@ -427,6 +438,7 @@ export async function computeBalance(
   let received = 0;
   for (const r of collectReceipts(passport)) {
     if (r.sender === handle) continue; // self-receipt transfers nothing (sand-v2:4.5)
+    if (!receiptTransfers(r)) continue; // unbacked/failed at receive — reputation only (sand-v2:5.5)
     received += r.v_latest;
   }
 
@@ -446,11 +458,14 @@ export async function computeBalance(
     const receipts = receiptsFromSender(
       topicNode && typeof topicNode === 'object' ? (topicNode as Block) : null,
       handle,
-    ).filter((r) => r.probe_id === g.probe_id);
+    ).filter((r) => r.probe_id === g.probe_id && receiptTransfers(r));
     if (receipts.length === 0) { openOffers++; continue; }
     // The recipient's receipt is authoritative for the amount transferred;
     // partial receipt leaves the remainder as open offer under the same GAVE
     // (sand-v2:4.2) — given subtracts what was received, not what was offered.
+    // The transfer filter is SYMMETRIC with received's (receiptTransfers): a
+    // non-transferring receipt subtracts from neither side, so conservation
+    // survives the filter.
     given += receipts.reduce((s, r) => s + r.v_latest, 0);
   }
 

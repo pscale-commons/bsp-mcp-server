@@ -242,8 +242,13 @@ export function renderNow(now: Date = new Date()): string {
 /** ISO-8601 instants as they actually appear in blocks: mark field 3, presence,
  *  history entries, pool contributions, `Window opened …`. Date-only strings are
  *  deliberately NOT matched — "2026-07-15" in prose is usually a human's date,
- *  not a machine stamp, and annotating it would be noise. */
-const ISO_RE = /\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/g;
+ *  not a machine stamp, and annotating it would be noise. Nor are timestamps
+ *  EMBEDDED in a longer token — a probe_id like `cowrie-supernest-2026-08-25T12:44Z-h1`
+ *  carries its ask's stamp as part of its name, and annotating inside it splices
+ *  an age into an identifier (witnessed live, SAND trial 1): the guards require
+ *  the instant to stand free — not glued to a word character or hyphen on
+ *  either side. */
+const ISO_RE = /(?<![\w-])\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})(?![\w-])/g;
 
 /**
  * Annotate every ISO timestamp in rendered text with its age. THIS is the
