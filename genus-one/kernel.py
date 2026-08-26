@@ -1607,12 +1607,50 @@ def pulse(compose_only=False, now=None):
     # vision when one closes" lead it to draw the next purpose (or rest if nothing
     # is worth the cost). The coarse vision-level draw takes opus; a gap-close
     # takes the working tier.
+    # A RUNG wake is neither: the doorbell delivered a landed voice, and the
+    # voice is the assignment (the ruled contract, 2026-08-17 — before it, a
+    # bare ring on a healthy shell ran the opus vision-draw with the voice as
+    # ambient room data, and answered nothing, wake after funded wake). The
+    # physical layer hands the voice in GENUS_RING (waker.py sets and clears
+    # it per pulse); it enters the window as GIVEN-DATA — the dial's own law:
+    # "the ring rides the given as room data and never moves γ" — spotlighted
+    # as one key beside the room it also sits in, because a voice buried in a
+    # hundred-slot room is data, and the same voice named as the wake's
+    # occasion is an assignment. A rung wake takes the WORKING tier: answering
+    # a voice is a δ-class act, never a vision draw. Upstream-owed to
+    # pscale-biome src/agent (parked; noted per the port discipline).
+    ring = None
+    _ring_raw = os.environ.get("GENUS_RING", "")
+    if _ring_raw:
+        try:
+            ring = json.loads(_ring_raw)
+        except Exception:
+            ring = {"voice": _ring_raw}
+    if ring:
+        frame["ring"] = ring
+        try:
+            given = json.loads(message)
+            given["ring"] = {
+                "_": ("Rung awake — this wake's assignment is the landed voice below "
+                      "(ways:doorbell): answer it in its room by append, naming the "
+                      "asker, and act on what it asks where the acting is yours this "
+                      "wake; the standing work follows after. A voice that asks "
+                      "nothing is still owed its hearing — say so in the room."),
+                "ringer": ring.get("ringer", ""),
+                "room": ring.get("pool", ""),
+                "slot": ring.get("slot", ""),
+                "voice": str(ring.get("voice", ""))[:2000],
+            }
+            message = json.dumps(given, ensure_ascii=False, indent=2)
+            frame["message"] = message
+        except Exception:
+            pass  # an unparseable given composes as before; the ring still sets the tier
     # The shell's own run-parameters (invocation:<handle>); operator env,
     # when explicitly set, still overrides — the physical layer has the
     # last word over the block, the block over the built-in default.
     inv_model, inv_think, inv_max = _invocation()
     working = _ENV_MODEL or inv_model or TIERS["sonnet"]
-    model = TIERS["opus"] if not gamma else working
+    model = TIERS["opus"] if (not gamma and not ring) else working
     thinking_cfg = _think_config() if _ENV_THINK else (inv_think or _think_config())
     max_out = int(_ENV_MAX_TOKENS) if _ENV_MAX_TOKENS else (inv_max or MAX_TOKENS)
     text, usage, thinking = call_llm(system, message, model=model, thinking=thinking_cfg,
@@ -1630,7 +1668,8 @@ def pulse(compose_only=False, now=None):
                   "status": status, "applied": applied, "failed": failed})
     path = write_filmstrip(frame)
     print("pulse complete -> %s  (γ=%d, %s)"
-          % (path, len(gamma), "draw/opus" if not gamma else "δ/working"))
+          % (path, len(gamma),
+             "ring/working" if ring else ("draw/opus" if not gamma else "δ/working")))
     print("  edits=%d  failed=%d  status=%s  note=%s"
           % (applied, len(failed), status, (output.get("note") or "")[:64]))
     if pruned:
