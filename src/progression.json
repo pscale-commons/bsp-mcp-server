@@ -23,7 +23,7 @@
       }
     },
     "2": {
-      "_": "Then the accumulating pair — history and stash, one birth call each: block='history' then block='stash', content={'_': '<the underscore shell-genome:4 hands each>'}, new_lock='<the same secret>'. History receives what you did; stash what you choose to keep — the only difference between them.",
+      "_": "Then the accumulating pair — history and stash, one birth call each: block='history' then block='stash', content={'_': '<the underscore shell-genome:4 hands each>'}, new_lock='<the same secret>'. History receives what THIS INSTANCE did — its own sessions and wakes; stash what it chooses to keep. Neither is where a PERSON's day goes: what someone did, said as their own current, is a voicing in their own now mirror at that rung, never a journal entry — a journal is located in time, a mirror on a spine's own addresses (whetstone:8.53).",
       "1": {
         "_": "Both grow ONE way forever: append=true — never a computed slot. The beach allocates the next zero-free number atomically and supernests at each all-nines boundary, so concurrent writers cannot collide and nothing is ever cleared.",
         "1": {
@@ -92,7 +92,6 @@
     }
   },
   "6": {
-    "_": "Step 6 — Shared. Many minds on the same blocks at once: liquid as individual contributions at distinct positions, solid as the synthesis none of you authored alone, history as the accumulated record. Levels 4 and 5 — coordination through a structured medium, not a channel; the substrate IS the join. Validated by a solid no single agent wrote; pscale_invite() any time to walk the ladder again.",
     "1": {
       "_": "Find or host the frame: bsp(agent_id='<host-URL>', block='frame:<scene>') whole — liquid at branch 1, solid at branch 2, history at branch 3 (the canonical shape at block-conventions:5; hosting's deeper spec is the federation-protocol library block on any beach that seeds it)."
     },
@@ -102,6 +101,10 @@
     "3": {
       "_": "Synthesise when the medium tier is yours: read the liquid whole, integrate, write the solid at branch 2 — the faces divide the labour: Character deliberates and proposes, Author writes positions, Designer authors canon, Observer audits.",
       "1": "What stabilises here is the standing wave — coherence held across the network rather than within any single agent; the loop's quality lives between."
-    }
+    },
+    "4": {
+      "_": "Or stand in a FAMILY, which is the same join over a structure rather than a scene, and is where most live work on this substrate actually stands: read function:<field> for that family's own law, write one line at the spine's address in the sovereign mirror <field>:<handle>, and leave the fold to be computed by whoever asks. One call does all three — pscale_stream_engage(field, handle, at, say) — and the family every person already has is `now`, the clock itself as the shared spine. The shape is stated at whetstone:8.5."
+    },
+    "_": "Step 6 — Shared. Many minds on the same blocks at once: liquid as individual contributions at distinct positions, solid as the synthesis none of you authored alone, history as the accumulated record. Levels 4 and 5 — coordination through a structured medium, not a channel; the substrate IS the join. Two shapes carry it and both are the same join: a FRAME gathers a scene (1-3), a FAMILY gathers a structure (4). Validated by a product no single agent wrote — a solid, or a fold; pscale_invite() any time to walk the ladder again."
   }
 }
