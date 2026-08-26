@@ -1,8 +1,8 @@
 # Finding the now — the family, the operator, and the act a person actually asks for (2026-08-26)
 
-**Status: PROPOSAL. Nothing changed — no code, no beach write, no block renamed.** Six
-changes are specified below with draft text; each is small, none enforces anything, and
-they are independent enough to take in any order or to decline one at a time.
+**Status: RULED AND IMPLEMENTED, except R4's beach half which is done live.** The
+proposal below stands as written; David's rulings and what actually shipped are recorded
+at §9. Nothing enforces anything, no block was renamed, and the surface stays at twelve.
 
 Lane record: watch:weft 173 (the tidying lane, window `tidying.5`). Source: a report from
 Matthew's Claude after a hard session trying to write anything into `now:Phenomemental`,
@@ -273,3 +273,57 @@ What each of the six would have changed for that session:
 | Filed "last evening" into history | R1's boundary clause, R6 |
 | Could not tell `now` from `ahead` | R4 (`ways:now` states the seam; `function:ahead:3` already states the other side) |
 | Found the ahead lock law untrue | §7 — a ruling, not a doc fix |
+
+
+## 9. What was ruled, and what shipped (2026-08-26)
+
+David's four rulings, in his order.
+
+**`tree` as a sentinel — challenged, and the challenge was right.** He asked whether there
+is a use of *tree* that is not direct beach content and deserves bundling. There is: the
+bare `tree` block is a convention block — law, not content, the same class as
+`gatekeeper`, `soft-agent` and `payway`. But bundling it under that name would have taught
+the pattern using the one word he had just ruled we do *not* teach with, and it would have
+put a fourth sense of "tree" beside the three already live (the convention block, the
+`tree:<field>:<handle>` syntheses blocks, and the pattern noun). **So the teaching went
+into `whetstone` branch 8 instead — 8.5, "The family" — which is stronger on the fault
+that started this: whetstone is the ONE block the door tells every arriving mind to read,
+so the family is now met by construction rather than by noticing an index entry.** No new
+sentinel; `tree` stays on the beach as the fuller convention (operator library, the mount,
+proposal-by-mirror), cited from 8.5.
+
+**Teach with *family*.** Ruled, with the synonyms named once each — `whetstone:8.5`'s
+underscore carries "one object, three live words": family (what the operators themselves
+say), **semantic-molecule** (the same object at the chemistry level, `pscale://strata`
+branch 2), **semantic-assembly** or composition (whetstone's own structural term, where
+the bonds are the point).
+
+**Shipped in this PR:**
+
+- `whetstone:8.5` — the family, four blocks and no machinery, with the act (8.51), the
+  operator read first (8.52), journals-are-not-mirrors (8.53), and the family every person
+  already has (8.54, with the two poles beneath it). Read back through the walker: the
+  ladder delivers 8 → 8.5 → 8.54 self-contextualised.
+- `src/server.ts` INSTRUCTIONS — **WHERE A PERSON'S WORDS LAND**, the two kinds, placed
+  before the locate walk so that walk reads as the second case. Carries the one act, the
+  clock-computed address, *writing the intention is the whole act*, **a card is an exit
+  from the hand and never the entrance to the now**, and the journal boundary.
+- `pscale_stream_engage`'s description — names `field="now"` as the instance every handle
+  has, and **corrects its stale claim** that `keep='personal'` lands in `history:<handle>`
+  (it lands at `tree:<field>:<handle>`; the same sentence fixed in `CLAUDE.md`).
+- `progression` — step 2.2's "History receives what you did" now says what it means (the
+  instance's own sessions), with the boundary; step 6 gains the family beside the frame
+  (6.4) and its underscore names both as one join.
+- `shell-genome:4` — history's own definition carries the boundary at the place it is
+  defined.
+
+**Beach, done live:** `lighthouse` 5.6 now names `now` as the organ anyone here keeps,
+with 7.1 amended to read as the operator's *instance* of it rather than as the thing
+itself. Written with the beach operator's key at David's explicit word.
+
+**The ahead latch — ruled protected.** David: *"people do have to protect the info in their
+cards because otherwise they will be spammed by others… I create a card and find them all
+changed, is NOT good. It should be done like now is done, mirrors are done — protected."*
+So the block's law stands as written and the SITE is what changes: the hand is born locked
+like the now mirror is, and a hand already standing open is offered its latch rather than
+having one imposed. Record in the happyseaurchin-home PR.
