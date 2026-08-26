@@ -436,6 +436,7 @@ Fallback chain (used by xstream and any admission-aware client):
 | Anthropic Directory submission copy | `specs/anthropic-directory-submission.md` | David, at Stage 3 of `pscale://directory` — form-ready copy with TODOs for at-submission refresh |
 | This file | `CLAUDE.md` | Next Claude instance |
 | Dashboard HTML | `site/index.html`, `site/tools.html`, `site/paths/` | Humans visiting evolution.hermitcrab.me |
+| The shore (generative beach view) | `site/shore/index.html` (page + data adapter in one file), `docs/shore-philosophy.md` (the Wrack Line movement note), `scripts/shore-snapshot.mjs` (bakes a `window.SHORE_SNAPSHOT` for contexts that cannot fetch) | Humans visiting evolution.hermitcrab.me/shore; anyone pointing the lens at a federated beach via `?beach=<origin>` |
 
 The `state.json` schema preserves field names from the pscale-mcp dashboard (`evos` array with `nodes`) so the existing dashboard renderer continues to work; field SEMANTICS reflect the new five-level framing.
 
@@ -628,3 +629,63 @@ the code runs the dedicated-mint-handle shape and either ruling stands), hop sta
 key history for rotation, sed: scanning, gray riders, transitive trust, and the
 hollow-write guard (a dotted spindle above the floor acks success and lands nothing —
 keel's find, pool:weft:52).
+
+## The shore — the beach drawn as a beach (26 August 2026)
+
+David sent a remote session (keyless weft — the identity file and every latch live on
+his machine, so this hand could read everything and sign nothing but text) to Frank
+Force's *Gateless Gate 3D* to ask what the beach could use of it. The licence answer
+came first and shaped everything: CC BY-NC-ND — the NOTICE explicitly invites asking
+but forbids shared adaptations — so the code, kit and dioramas are untouchable, and
+what transfers is GRAMMAR: procedural everything, seeded determinism ("no
+Math.random outside audio" is his rule; ours exempts only animation phase — motion
+that places nothing may be free, anything that PLACES must testify), paper and ink
+with ONE accent on whatever the picture turns on, no build step, scenes as thin
+staging over a kit. The philosophy is written as its own movement note,
+[docs/shore-philosophy.md](docs/shore-philosophy.md) ("Wrack Line"), and the
+deliberate divergence is the subject: his Zen garden stays his; this vocabulary was
+already coastal, so the beach is drawn AS a beach.
+
+**What shipped**: [site/shore/index.html](site/shore/index.html) — one file, no
+dependencies, live at /shore once deployed. It is a LENS: `?beach=<origin>` points it
+at any federated beach; it reads only the public surface (the bare index, then
+`?block=` marks, lighthouse, presence — four GETs, CORS `*` per the protocol; the
+index's self-declared `origin` outranks the lens parameter for the picture's name).
+The mapping: every marks-board voice a stone on the strand (newest against the foam,
+in red, the crab beside it with a dotted track from the voice before; closed-batch
+summaries lie as faint tide-lines), spiral shells for settled identities
+(passport-or-shell handles, sized by blocks kept, greedy two-row labels), cord-bound
+stone pairs along a lane for grain: blocks, driftwood on the wrack for sed:, a
+tidepool per pool: wearing its own name, huts tallying the working families, one
+half-buried plank for the archives, and the lighthouse drawn only because the beach
+actually keeps one. Determinism is strict: same index + same marks → same shore,
+stone for stone. `scripts/shore-snapshot.mjs` bakes a `window.SHORE_SNAPSHOT` so a
+claude.ai artifact (which cannot fetch) carries a still of the water, stamped "still
+water — baked …" against the live page's "drawn from live water".
+
+**Paid-for lessons**: (1) the session STARTED against pscale-mcp-server + Supabase —
+a full working v1 against retired water — because that repo's CLAUDE.md was the
+session's opening context; David's mid-flight "we are on bsp-mcp-server!!" cost one
+adapter rewrite and no visual work (the renderer never knew where its model came
+from). Check which repo is alive before building on the one the harness happened to
+open. (2) The marks walker double-counted every structured entry: `{_, 1: agent, 2:
+address, 3: ts}` nodes must be recognised BEFORE the underscore is read, or each
+entry's own text lands again as a phantom batch summary. (3) Slot order is nearly
+chronology but not quite — four backfilled slots lied by up to a month; a stable sort
+on carried timestamps (clock where it speaks, slot where it doesn't) settles it. (4)
+The board's decorated timestamps ("…Z (+2 — 6 days ago)") parse by taking the leading
+ISO token.
+
+**The gesture**: marks slot 142 — weft, keyless, recording the shore and pointing at
+the gate — stands as the red stone until the next voice arrives. David writes to
+Frank next; the letter follows the gesture.
+
+**Open, with names on them**: the index's `touched` and `bytes` (the lighthouse says
+GET-bare carries "what changed lately"; the wire types only `blocks`+`bytes?` and the
+page already prefers them defensively when present — enrich placement/recency when
+the live shapes are confirmed); presence footprints (coded, unexercised — the block
+held no live slots to draw); per-pool and per-grain depth (the shore names them but
+does not open them — a tap-through to /tree or mirror is the natural next door);
+a sister-beach gallery (beach.idiothuman.com and earth.beach.happyseaurchin.com
+already answer the lens); and pointing the lighthouse's live-glances branch at
+/shore, which is the operator's latch, not this session's.
