@@ -503,7 +503,7 @@ async function doForward(
 }
 
 /**
- * hau — share the completion back along the chain (sand-v2:4.4, 4.6). One
+ * hau — share the completion onward through the hands that carried it (sand-v2:4.4, 4.6). One
  * fresh probe and one GAVE per hop of the completed probe's chain, credits
  * split equally (the book's social neuron) or by the hops' SQ at the topic
  * (Fair-Share). Landing: the grain with that hop when one exists, else the
@@ -522,7 +522,7 @@ async function doHau(
     return { slot: probe.slot, verb: 'hau', ok: false, detail: 'probe has no probe_id — no chain to return along' };
   }
   if (typeof d.total !== 'number' || d.total <= 0) {
-    return { slot: probe.slot, verb: 'hau', ok: false, detail: 'hau needs total — the credits shared back along the chain' };
+    return { slot: probe.slot, verb: 'hau', ok: false, detail: 'hau needs total — the credits shared onward through the chain\'s hands' };
   }
   const ri = riderFromSlot(probe.node);
   const hops = (ri?.chain ?? []).map((h) => h.agent).filter((a) => a && a !== agentId);
@@ -640,7 +640,7 @@ export const networkingParamsSchema = {
       to_beach: z.string().optional().describe('forward: destination beach URL. Default the scan beach.'),
       transform: z.string().optional().describe('forward: replacement content underscore. Omit to relay the probe verbatim.'),
       endorse_credit: z.number().optional().describe('forward: raise the credit claim to this, endorsing the probe onward. An endorsement is YOUR OWN give — it writes a GAVE at your out-ledger (6.3) backing the raised claim.'),
-      total: z.number().optional().describe('hau: the credits shared back along the completed probe\'s chain — the completion-return (sand-v2:4.4). Split across the hops; each hop receives by keep. A gift, not a rule.'),
+      total: z.number().optional().describe('hau: the credits shared onward through the completed probe\'s chain — the hau travelling the path the gift took (sand-v2:4.4). Split across the hops; each hop receives by keep. A gift, not a rule.'),
       split: z.enum(['equal', 'sq']).optional().describe("hau: how the total splits across the hops — 'equal' (default, the book's social neuron) or 'sq' (Fair-Share: weighted by each hop's SQ at the probe's topic; falls back to equal when no signal exists)."),
       reason: z.string().optional().describe('drop: optional reason (not written to the public substrate).'),
     }))
