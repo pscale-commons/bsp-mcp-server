@@ -273,6 +273,29 @@ def beach_get(block):
     return d.get("block", d) if isinstance(d, dict) else None
 
 
+def landed_voice(pool, slot):
+    """The landed voice's own text — one spindle read of the slot that rang
+    (the wire returns the raw node; its underscore is the voice). Best-effort:
+    a room that will not answer, or a slot with no prose, returns '' and the
+    ring proceeds as before — the fetch feeds GENUS_RING (the ruled contract:
+    the voice is the assignment), never gates the wake."""
+    if not pool or not slot:
+        return ""
+    try:
+        url = "%s/.well-known/pscale-beach?block=%s&spindle=%s" % (
+            WAKER_BEACH, quote(pool), quote(str(slot)))
+        with urllib.request.urlopen(urllib.request.Request(url), timeout=15) as r:
+            node = json.loads(r.read().decode())
+        if isinstance(node, dict):
+            node = node.get("block", node)
+        if isinstance(node, dict):
+            u = node.get("_", "")
+            return u if isinstance(u, str) else ""
+        return node if isinstance(node, str) else ""
+    except Exception:
+        return ""
+
+
 def beach_append(block, entry, secret):
     body = {"block": block, "append": True, "content": entry}
     if secret:
@@ -435,11 +458,16 @@ def pick_fuel(handle, asker_key):
     return None, None
 
 
-def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=None):
+def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=None,
+              voice=None):
     """One standard pulse as this handle on the given fuel, then the daily log
     append (funder recorded at field 6). Runs with _pulse_lock held; env is
     re-bound and kernel reloaded under the lock (module constants bind at
-    import), the fuel restored to the standing key afterwards."""
+    import), the fuel restored to the standing key afterwards. `voice` is the
+    landed text that rang (fetched from the slot, or carried by a poke): it
+    rides to the kernel as GENUS_RING — the ruled contract (2026-08-17), the
+    voice as the wake's assignment — and is cleared with the fuel, so a
+    scheduled pulse never inherits a stale ring."""
     global _last_pulse_end
     started = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     status, note = "failed", ""
@@ -449,6 +477,14 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=Non
         os.environ["GENUS_SECRET"] = pen or egg_secret(handle)
         os.environ["GENUS_AGENT"] = ensure_nest(handle)
         os.environ["GENUS_THINK"] = os.environ.get("WAKER_THINK", "off")
+        if voice is None:
+            voice = landed_voice(pool, slot)
+        if voice:
+            os.environ["GENUS_RING"] = json.dumps(
+                {"ringer": ringer or "", "pool": pool, "slot": str(slot),
+                 "voice": voice[:2000]}, ensure_ascii=False)
+        else:
+            os.environ.pop("GENUS_RING", None)
         os.environ["ANTHROPIC_API_KEY"] = fuel_key or _STANDING_KEY
         if "kernel" in sys.modules:  # module constants bind at import — rebind per handle
             kernel = importlib.reload(sys.modules["kernel"])
@@ -463,6 +499,7 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=Non
         log("pulse FAILED for %s (funder %s): %s" % (handle, funder, note))
     finally:
         os.environ["ANTHROPIC_API_KEY"] = _STANDING_KEY  # the carried fuel is never kept
+        os.environ.pop("GENUS_RING", None)               # nor is the ring — one wake's occasion only
         _last_pulse_end = time.monotonic()
         _pulse_lock.release()
     try:
@@ -714,7 +751,8 @@ class Handler(BaseHTTPRequestHandler):
         _last_ring_by[(handle, asker)] = now
         log("poke GRANTED: %s pokes %s (%s fuel%s)" % (asker, handle, funder, ", as holder" if as_holder else ""))
         status, note = run_pulse(handle, asker, "poke", slot, fuel_key, funder,
-                                 pen=passphrase if as_holder else None)
+                                 pen=passphrase if as_holder else None,
+                                 voice=text or "")
         return self._send(200, {"ok": True, "woke": status not in ("failed",), "funder": funder,
                                 "status": status, "detail": (note or status)[:300]})
 
