@@ -877,9 +877,23 @@ class Handler(BaseHTTPRequestHandler):
                          "mode": mode, "dial": dial,
                          "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
         _store_save(store)
-        return self._send(200, {"ok": True, "detail": "%s enrolled — a landed voice in pool:%s now rings it, within its own dial (wake:%s)%s"
-                                % (handle, handle, handle,
-                                   ("; wake notes go to " + notify) if notify else "")})
+        # SAY BACK WHAT WAS RECORDED. The holder's only feedback is this line, and
+        # the two fields that decide everything — which body wakes, and where its
+        # consent lives — are invisible in every client that does not carry them
+        # yet. A holder who cannot see that mode='lite' took has no way to tell a
+        # doorman from a pulse until one answers.
+        d = Dial(handle)
+        where = dial or ("wake:%s" % handle)
+        body_kind = ("a DOORMAN — it answers from this handle's own shell manifest and writes "
+                     "nothing but its reply" if mode == "lite" else
+                     "the genus PULSE — it composes from this handle's genome")
+        return self._send(200, {"ok": True, "mode": mode or "genus", "dial": where,
+                                "consent": "on" if d.on else "off",
+                                "detail": "%s enrolled as %s. Consent and pacing live at %s and read %s right now%s — a landed voice in pool:%s rings it only while that says on.%s"
+                                % (handle, body_kind, where, "ON" if d.on else "OFF",
+                                   (", cap %d/day" % d.cap) if d.on else "",
+                                   handle,
+                                   (" Wake notes go to " + notify) if notify else "")})
 
     def do_GET(self):
         path = self.path.split("?")[0].rstrip("/")
