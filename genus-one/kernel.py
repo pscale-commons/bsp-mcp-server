@@ -877,6 +877,35 @@ def apply_write(name, addr, content):
             "current state, and a block that cannot be read cannot be replaced" % name)
     block = prior or {ZK: name}
     floor = spark.floor(block)
+    # THE ROOM ANSWER CARRIES ITS AUTHOR (2026-08-27, the echo-ring polish):
+    # a voice the fold lands in its own room is a MARK — {_: text, 1: author,
+    # 3: stamp} per the accumulator family — and a bare string at a fresh slot
+    # left both fields empty, so the instance's own answer rang its own bell
+    # as "an unattributed voice" (the waker's self-ring guard keys on the
+    # author field; witnessed at daily:egg-one:24, the echo wake after the
+    # slot-128 answer) and carried no stamp for liveness or aging to read.
+    # Wrap a fresh room entry in the mark shape, stamped as this handle, now.
+    # An existing entry, a sub-field write, a zero-walking (summary) address,
+    # and every non-room organ pass through untouched.
+    if name == "pool" and addr and HANDLE:
+        try:
+            _digits = spark.parse(addr, floor)
+        except Exception:
+            _digits = []
+        if _digits and all(d != "0" for d in _digits):
+            _node = block
+            for _d in _digits:
+                _node = _node.get(_d) if isinstance(_node, dict) else None
+                if _node is None:
+                    break
+            if _node is None:
+                _ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                if isinstance(content, str):
+                    content = {ZK: content, "1": HANDLE, "3": _ts}
+                elif isinstance(content, dict) and ZK in content:
+                    content = {**content}
+                    content.setdefault("1", HANDLE)
+                    content.setdefault("3", _ts)
     # THE ROOT IS THE CASE THAT MATTERS MOST, and it was the one case exempt: the
     # guard used to require an address, so a bare string aimed at the block ITSELF
     # walked no digits, met no check, and replaced the whole underscore chain —
