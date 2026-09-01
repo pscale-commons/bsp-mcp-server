@@ -227,3 +227,84 @@ Each stage is stoppable, and nothing before Stage 3 touches anyone else's key.
 No new primitive, no new block type, no change to bsp-mcp's twelve entry points, no change
 to mirror.onen.ai, and no credential anywhere near an LLM tool call. The build is one
 branch in a service that already exists.
+
+## 10. Amendment — the proof block, and the universal orientation that already exists (same day)
+
+David, on reading §5b: *"You are suggesting using passport, and I'm not convinced. I'd
+rather we implemented the reflective-compass or orientation or whatever we are using
+whenever ANY llm instance calls the beach with a handle and passphrase and gets
+'orientated' as to what it is looking at… I keep thinking I have created a generic
+universal method — and each time I am surprised to find that there ISN'T one."*
+
+**He built it. It exists, it is operational, and it is `shell:<handle>` position 3.**
+
+The evidence, gathered rather than recalled:
+
+- **Every shell is BORN with the slot.** `shell:JulieJ:3` and `shell:egg-one:3` carry the
+  genome's own birth underscore — *"Block manifest — pointers to the agent's other named
+  blocks"* — with zero entries. The slot is universal by construction (shell-genome), not
+  by anyone remembering to add it.
+- **`pscale_play` is the mechanism that compiles it.** Its own words: *shell-as-context-
+  compiler — the shell's manifest (position 3) is a bundle of refs, each a full
+  (spindle, aperture) reference*; when a shell nominates, nomination is the law, and a
+  shell with no manifest *"keeps the legacy six exactly: thin handles, characters, and
+  pre-manifest shells are byte-identical."* A handle → a compiled orientation window, for
+  ANY handle, with the shell declaring what it is.
+- **The filled ones prove the shape.** `shell:weft:3` holds eight refs in
+  `name:addr:attention` form (`daily:weft:0:0`, `purpose:weft:0:0`, `pool:weft:0:0`,
+  `shell:weft:5:-1`, …) with the compile law in its own underscore.
+  happyseaurchin 9 refs, keel 3.
+
+**So why does it keep looking absent?** Because the mechanism is universal and the CONTENT
+is not, and because the naming drifted across three candidates:
+
+| block | handles that have one | what it is |
+|---|---|---|
+| `shell:<handle>` position 3 | **27 — every shell, by birth** | the manifest `pscale_play` compiles |
+| `passport:<handle>` | 21 | the public card |
+| `reflexive:<handle>` | 7 | a genus instance's current |
+| `orientation:<handle>` | 3 | a shell-specific elaboration |
+
+Test the universal method with a handle whose manifest is empty (JulieJ, egg-one) or prose
+rather than refs (Phenomemental, Ada) and it runs correctly with nothing to compile — which
+reads exactly like "there isn't one". **That is the drift: not a missing mechanism, a
+missing statement and an unfilled slot.**
+
+### What changes in this proposal
+
+**(a) The proof block becomes `shell:<handle>`, not `passport:<handle>` (§5b superseded).**
+David's objection is right and passport was the lazy generalisation — the block everyone
+has, rather than the block that means something. Proving against the shell makes enrolment
+and orientation touch the SAME address: to enrol you prove you hold the shell, and the
+shell is what the doorman then wakes into. It is universal (27), locked under the handle's
+own key by the genome's own discipline, and already the orientation surface.
+`reflexive:<handle>` stays accepted for the eggs.
+
+**(b) The doorman's brief is the MANIFEST COMPILE, not a bespoke list (§3 superseded).**
+Not "passport + room + parlour law" chosen by whoever writes the service, but
+`compile(shell:<handle>:3)` — the same act every other door on this substrate already
+performs — plus the room. Consequences, all good: a handle deepens its own doorman by
+filling its own manifest, with no code change ever; a thin shell degrades to the legacy six
+instead of failing; and the service holds no opinion about what any handle is. **The build
+gets smaller, not larger.**
+
+**(c) One canon line, which is the fix for the drift itself.** State once, where the slot
+is defined (`shell-genome`, and echoed at the doorman's own door): *a handle's orientation
+is its shell's manifest at position 3; `orientation:<handle>` and `reflexive:<handle>` are
+shell-specific elaborations that the manifest POINTS AT, never rivals to it.* Then the next
+mind — or the next David — asks once and reads once. This is a sentinel edit, so it is
+proposed here rather than done.
+
+### What does not change
+
+Stages, gates, custody analysis, the LLM-never-carries-the-key rule, and the finding that
+everything but one branch is already built. The amendment makes stage 1 cheaper: the lite
+pulse is now *compile the manifest, read the room, answer once*.
+
+### Still David's to rule
+
+Whether an unfilled manifest should be **filled at enrolment** — the door offering "your
+shell has no manifest; shall I write one naming the blocks you already have?" — or left
+alone, so a thin shell answers thinly until its holder deepens it. Recommend: offer, never
+write unasked; the manifest is the holder's declaration of themselves, and a service that
+writes it for them has taken exactly the authorship this substrate keeps giving back.
