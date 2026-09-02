@@ -103,7 +103,11 @@ let mark = posted.length;
 let r = await handleBsp({ agent_id: BEACH, block: 'grain:cafe', append: true, spindle: '2', content: 'first message', secret: 'key-two', gray: false });
 let b = postedSince(mark);
 assert(b?.append === true && b?.spindle === '2', 'wire body carries append:true AND spindle:"2"', JSON.stringify(b));
-assert(b?.content === 'first message' && b?.secret === 'key-two', 'content and secret ride the same body');
+assert(
+  b?.content?._ === 'first message' && typeof b?.content?.['3'] === 'string' && b?.secret === 'key-two',
+  'plain entry rides stamped ({_, 3: iso}) with secret in the same body',
+  JSON.stringify(b?.content),
+);
 assert(b?.resolve_window === undefined && b?.resolve_seen === undefined, 'no resolver fields on a plain side append');
 assert(getText(r).includes('2.1') && getText(r).includes('beneath node 2'), 'ack renders the full landed address', getText(r));
 

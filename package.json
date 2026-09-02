@@ -57,6 +57,7 @@
     "smoke:grit-tree": "tsx scripts/smoke-grit-tree.ts",
     "smoke:temporal": "tsx scripts/smoke-temporal.ts",
     "smoke:temporal-envelope": "tsx scripts/smoke-temporal-envelope.ts",
+    "smoke:temporal-address": "tsx scripts/smoke-temporal-address.ts",
     "smoke:wellformed": "tsx scripts/smoke-wellformed.ts",
     "smoke:compile": "tsx scripts/smoke-compile.ts",
     "smoke:play-hands": "tsx scripts/smoke-play-hands.ts",

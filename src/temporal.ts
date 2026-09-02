@@ -157,7 +157,13 @@ export function addressToSpan(addr: string): { start: Date; end: Date; pscale: n
   }
   const bandStart = (d[6] - 1) * 7 + 1;                      // day-of-month
   if (depth === 7) {
-    return { start: new Date(Date.UTC(y, month, bandStart)), end: new Date(Date.UTC(y, month, bandStart + 7)), pscale: 3 };
+    // Band 5 is short (1-3 days): clamp to the month boundary — "seven-day
+    // bands nest strictly inside a month" (sundial 3.1). Unclamped, a dead
+    // prior-month band-5 address kept reading as the current week for the
+    // first days of the next month (the 2026-09-02 panel's blocker).
+    const rawEnd = Date.UTC(y, month, bandStart + 7);
+    const monthEnd = Date.UTC(y, month + 1, 1);
+    return { start: new Date(Date.UTC(y, month, bandStart)), end: new Date(Math.min(rawEnd, monthEnd)), pscale: 3 };
   }
   const dom = bandStart + (d[7] - 1);
   const dayStart = Date.UTC(y, month, dom);
@@ -228,6 +234,185 @@ export function renderAge(iso: string, now: Date = new Date()): string {
   return deltaS >= 0 ? `(${sign} — ${phrase} ago)` : `(${sign} — in ${phrase})`;
 }
 
+// ── Layer C — a temporal ADDRESS rendered with its relation to now ─────────
+
+/** Rung lookup by pscale (standard spine + fine rungs). */
+function rungAt(pscale: number): Rung | null {
+  return ALL_RUNGS.find((r) => r.pscale === pscale) ?? null;
+}
+
+/** Parse a rendered temporal-address token into its period, validating the
+ *  analogue rungs' ranges. Accepts 4-10 digits — the canonical full-width
+ *  form, or a label whose trailing zeros a renderer stripped — and right-pads
+ *  to full width. Returns null for anything that is not a well-formed
+ *  temporal address: a leading zero (year 0xxx is outside the floor-10 form,
+ *  and Date.UTC would silently remap it), an analogue digit out of its rung's
+ *  range (season 7, day 9), or a value after zero-padding began (padding is a
+ *  tail, never interior). The four base-ten digits are otherwise free — any
+ *  year is a year; callers wanting a narrower window (prose annotation) gate
+ *  with their own pattern before calling. */
+export function parseTemporalLabel(
+  token: string,
+): { addr: string; start: Date; end: Date; pscale: number } | null {
+  if (!/^\d{4,10}$/.test(token)) return null;
+  const addr = token.padEnd(10, '0');
+  if (addr[0] === '0') return null;
+  const fans = [4, 3, 5, 7, 9, 9]; // season, month, week-band, day, gathering, beat
+  let padding = false;
+  for (let i = 4; i < 10; i++) {
+    const v = Number(addr[i]);
+    if (v === 0) { padding = true; continue; }
+    if (padding || v > fans[i - 4]) return null;
+  }
+  // Calendar existence — the fans admit the digit range, the month admits the
+  // date: band 5 exists only where the month runs past day 28, and a band-5
+  // day must not walk past the month's last day ("Jan 32" otherwise parsed to
+  // a validated span inside February — the 2026-09-02 panel's blocker).
+  const wBand = Number(addr[6]);
+  if (wBand >= 1) {
+    const yCal = Number(addr.slice(0, 4));
+    const monthCal = (Number(addr[4]) - 1) * 3 + (Number(addr[5]) - 1);
+    const daysInMonth = new Date(Date.UTC(yCal, monthCal + 1, 0)).getUTCDate();
+    const bandFirstDom = (wBand - 1) * 7 + 1;
+    if (bandFirstDom > daysInMonth) return null;
+    const dDay = Number(addr[7]);
+    if (dDay >= 1 && bandFirstDom + dDay - 1 > daysInMonth) return null;
+  }
+  try {
+    const { start, end, pscale } = addressToSpan(addr);
+    return { addr, start, end, pscale };
+  } catch {
+    return null;
+  }
+}
+
+/** Bands in a month: 4 for a 28-day February, else 5. */
+function bandsInMonth(y: number, m0: number): number {
+  const days = new Date(Date.UTC(y, m0 + 1, 0)).getUTCDate();
+  return Math.ceil(days / 7);
+}
+
+/** Whole periods between an address's period and now's period, at the
+ *  address's own rung. The irregular rungs (week, month, season, year and
+ *  coarser) count CALENDAR ORDINALS — exact, monotone, never a duplicated or
+ *  skipped step at a boundary (mean-length division read two different months
+ *  as 'next month' beside a short February; 2026-09-02 panel). The uniform
+ *  rungs (day and finer) divide by their exact span. This makes two
+ *  vocabularies precise, each true under its own definition: an ADDRESS
+ *  relation counts periods (a band two bands back reads '2 weeks behind' even
+ *  when a short band-5 makes it ten days), while an INSTANT age (renderAge)
+ *  counts duration in the containing rung. */
+function periodsBetween(
+  addrA: string,
+  addrNow: string,
+  pscale: number,
+  behind: boolean,
+  nowMs: number,
+  start: Date,
+  end: Date,
+  rung: Rung,
+): number {
+  const yA = Number(addrA.slice(0, 4));
+  const yN = Number(addrNow.slice(0, 4));
+  if (pscale >= 7) {
+    const step = Math.pow(10, pscale - 6);
+    return Math.abs(Math.floor(yN / step) - Math.floor(yA / step));
+  }
+  if (pscale === 6) return Math.abs(yN - yA);
+  if (pscale === 5) {
+    return Math.abs((yN * 4 + Number(addrNow[4])) - (yA * 4 + Number(addrA[4])));
+  }
+  if (pscale === 4) {
+    const mA = (Number(addrA[4]) - 1) * 3 + (Number(addrA[5]) - 1);
+    const mN = (Number(addrNow[4]) - 1) * 3 + (Number(addrNow[5]) - 1);
+    return Math.abs((yN * 12 + mN) - (yA * 12 + mA));
+  }
+  if (pscale === 3) {
+    const a = { y: yA, m0: (Number(addrA[4]) - 1) * 3 + (Number(addrA[5]) - 1), w: Number(addrA[6]) };
+    const b = { y: yN, m0: (Number(addrNow[4]) - 1) * 3 + (Number(addrNow[5]) - 1), w: Number(addrNow[6]) };
+    const [lo, hi] = behind ? [a, b] : [b, a];
+    if (lo.y === hi.y && lo.m0 === hi.m0) return Math.abs(hi.w - lo.w);
+    let n = bandsInMonth(lo.y, lo.m0) - lo.w;
+    let y = lo.y;
+    let m = lo.m0 + 1;
+    if (m > 11) { m = 0; y++; }
+    let guard = 0;
+    while ((y < hi.y || (y === hi.y && m < hi.m0)) && guard++ < 2400) {
+      n += bandsInMonth(y, m);
+      m++;
+      if (m > 11) { m = 0; y++; }
+    }
+    return n + hi.w;
+  }
+  // Uniform rungs — exact by their own span.
+  const gapS = (behind ? nowMs - end.getTime() : start.getTime() - nowMs) / 1000;
+  return Math.floor(gapS / rung.seconds) + 1;
+}
+
+/** What a period containing now is called, at its own grain. */
+function presentLabel(pscale: number, addr: string): string {
+  if (pscale >= 3) {
+    const name = rungAt(pscale)?.name ?? 'period';
+    return `this ${name}`;
+  }
+  if (pscale === 2) return 'today';
+  if (pscale === 1) return `this ${DAY_PARTS[Number(addr[8]) - 1] ?? 'gathering'}`;
+  return 'this beat';
+}
+
+/** A temporal address rendered WITH its relation to now — branch 6.1 of the
+ *  sundial made mechanical for addresses, as renderAge is for instants: the
+ *  reader partitions past from future by reading, never by digit arithmetic
+ *  (shared prefix is orientation, not distance — a boundary flips high digits
+ *  while lying minutes apart). A period containing now is present AT ITS OWN
+ *  GRAIN; wholly behind is record; wholly ahead is intention, flagged AHEAD so
+ *  a stale intention can never read as current. Counting is span-based in the
+ *  address's own rung; the fine rungs (gathering, beat) voice through the day
+ *  when they cross one, because '9 gatherings ahead' orients worse than
+ *  'tomorrow, morning'. Returns '' for anything that does not parse as a
+ *  temporal address. */
+export function renderAddressRelation(token: string, now: Date = new Date()): string {
+  const parsed = parseTemporalLabel(token);
+  if (!parsed) return '';
+  const { addr, start, end, pscale } = parsed;
+  const t = now.getTime();
+  if (t >= start.getTime() && t < end.getTime()) {
+    return `(now — ${presentLabel(pscale, addr)})`;
+  }
+  const behind = t >= end.getTime();
+  if (pscale <= 1) {
+    const dayAddr = addr.slice(0, 8).padEnd(10, '0');
+    const nowDayAddr = momentToAddress(now).slice(0, 8).padEnd(10, '0');
+    if (dayAddr !== nowDayAddr) {
+      const dayRel = renderAddressRelation(dayAddr, now);
+      const dayGap = Math.round(
+        Math.abs(addressToSpan(dayAddr).start.getTime() - addressToSpan(nowDayAddr).start.getTime()) / 86400_000,
+      );
+      const part = DAY_PARTS[Number(addr[8]) - 1];
+      // The part suffix orients within a week; at a distance it is noise
+      // riding a large count ('in 27325 days, afternoon' — panel).
+      return dayGap <= 7 && part && dayRel ? dayRel.replace(/\)$/, `, ${part})`) : dayRel;
+    }
+  }
+  const rung = rungAt(pscale);
+  if (!rung) return '';
+  const n = periodsBetween(addr, momentToAddress(now), pscale, behind, t, start, end, rung);
+  if (n === 1) {
+    const one: Record<string, [string, string]> = {
+      day: ['yesterday', 'tomorrow'],
+      week: ['last week', 'next week'],
+      month: ['last month', 'next month'],
+      season: ['last season', 'next season'],
+      year: ['last year', 'next year'],
+    };
+    const special = one[rung.name];
+    if (special) return behind ? `(${special[0]})` : `(AHEAD — ${special[1]})`;
+  }
+  const noun = n === 1 ? rung.name : (RUNG_PLURALS[rung.name] ?? `${rung.name}s`);
+  const phrase = `${n} ${noun}`;
+  return behind ? `(${phrase} behind)` : `(AHEAD — in ${phrase})`;
+}
+
 /** The now-stamp: the prerequisite the rendering hangs on. One line, every
  *  envelope. Carries the ISO (canonical), the address (pointable), and the
  *  human voicing (what the digits mean). */
@@ -261,10 +446,35 @@ const ISO_RE = /(?<![\w-])\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z
  * and anything authored later. Stored data is untouched: ISO stays canonical
  * in the block; pscale is how time is VOICED.
  */
+/** Ten-digit sundial addresses as they appear in prose — the year window
+ *  1900-2199 keeps arbitrary numerics out, rung validity does the rest
+ *  (parseTemporalLabel), and the guards mirror ISO_RE's discipline: the token
+ *  stands free — not glued to word characters or hyphens, not carrying a
+ *  decimal tail (2026331248.5 is finer-than-the-floor, one token), not
+ *  already annotated (a following parenthesis is a tag that already stands),
+ *  and not a renderer's own bracketed label (a following "]" — the label's
+ *  renderer decides its own tagging via addrLabel; a sentence-final full stop
+ *  is fine). */
+const TEMPORAL_ADDR_RE = /(?<![\w.\-])(?:19|20|21)\d{8}(?!\.\d)(?!\s*\()(?!\])(?![\w\-])/g;
+
 export function annotateAges(text: string, now: Date = new Date()): string {
-  return text.replace(ISO_RE, (m) => {
+  const withInstants = text.replace(ISO_RE, (m) => {
     const age = renderAge(m, now);
     return age ? `${m} ${age}` : m;
+  });
+  return withInstants.replace(TEMPORAL_ADDR_RE, (m) => {
+    // Prose is the loose gate, so it narrows twice beyond a label: an address
+    // coarser than a year is round-number territory (a credit amount
+    // 2000000000 is rung-valid by the zero-tail rule), and a year a lifetime
+    // out is id territory (phone numbers, serials) — both classes
+    // demonstrated by the 2026-09-02 panel. The residual stands, named: a
+    // rung-valid in-window token (2026331234, a DC phone number) still
+    // annotates, visibly.
+    const parsed = parseTemporalLabel(m);
+    if (!parsed || parsed.pscale > 6) return m;
+    if (Math.abs(Number(m.slice(0, 4)) - now.getUTCFullYear()) > 50) return m;
+    const rel = renderAddressRelation(m, now);
+    return rel ? `${m} ${rel}` : m;
   });
 }
 

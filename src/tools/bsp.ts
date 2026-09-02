@@ -415,6 +415,24 @@ function normaliseContent(value: any): any {
   return value;
 }
 
+/** G2 — the arrival stamp for a plain-string append. An unstamped entry's
+ *  indexicals ("this week", "today", "Thursday") rebind at every future read,
+ *  invisibly, and no render can save it after the fact (pool:dovetail 89,
+ *  ahead:happyseaurchin 1.1 — the 2026-09-02 temporal-comparison lane).
+ *  Wrapped as the mark shape's minimal form {_: text, 3: iso} — spine-legal,
+ *  the underscore carrying the author's words verbatim — so walks render the
+ *  stamp and the grounding boundary ages it. Structured entries keep their
+ *  author's shape untouched; a gray entry is private and stamps inside its
+ *  plaintext only by its author's own hand. */
+export function stampPlainAppend(
+  entry: any,
+  now: Date = new Date(),
+): { entry: any; stamped: string | null } {
+  if (typeof entry !== 'string') return { entry, stamped: null };
+  const iso = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  return { entry: { _: entry, '3': iso }, stamped: iso };
+}
+
 // ── Beach / sentinel index formatters ──
 
 /**
@@ -568,6 +586,9 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     if (content === undefined) {
       return { content: [{ type: 'text', text: 'Append rejected: append needs `content` (the entry to append).' }] };
     }
+    if (typeof content === 'string' && content.trim() === '') {
+      return { content: [{ type: 'text', text: 'Append rejected: an empty entry is nothing to keep — the slot would be consumed and pool reads skip it as a tombstone.' }] };
+    }
     if (params.members !== undefined) {
       return { content: [{ type: 'text', text: 'Append rejected: a membership change is not an entry — set `members` with an ordinary write, then append content.' }] };
     }
@@ -618,6 +639,14 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
         return { content: [{ type: 'text', text: `Append rejected: ${e?.message ?? String(e)}` }] };
       }
     }
+    // A plain-string entry in the open is wrapped with its arrival stamp
+    // ({_: text, 3: iso}) so its indexicals stay anchored — see stampPlainAppend.
+    let stampedNote = '';
+    if (!wantGrayAppend && typeof entry === 'string') {
+      const wrapped = stampPlainAppend(entry);
+      entry = wrapped.entry;
+      if (wrapped.stamped) stampedNote = ` · stamped ${wrapped.stamped}`;
+    }
     try {
       // Same question the write path asks, same answer: `secret` reaches the
       // beach as write-authority, and is withheld only while it is doing duty
@@ -640,10 +669,10 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
         : '';
       if (res.address !== undefined) {
         const grew = res.supernested ? `  ⤴ node supernested — the ladder continues within` : '';
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}]${owed}` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}${stampedNote}]${owed}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}]${owed}` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${owed}` }] };
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       // The one refusal this change can newly provoke, named rather than left

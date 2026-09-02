@@ -46,6 +46,8 @@ import {
 
 export { InvalidAddressError } from './bsp.js';
 
+import { renderAddressRelation, parseTemporalLabel } from './temporal.js';
+
 // ── Shape vocabulary (canonical) ──
 
 export type Shape =
@@ -62,11 +64,15 @@ export interface PathWalkEntry {
   depth: number;
   pscale: number | null;
   content: string | null;
+  /** Arrival stamp the entry carries at field 3 (the mark shape's ts),
+   *  surfaced so the line renders it and the grounding boundary ages it. */
+  stamp?: string;
 }
 
 export interface DiscEntry {
   address: string;
   content: string | null;
+  stamp?: string;
 }
 
 export interface BspReadResult {
@@ -83,6 +89,7 @@ export interface BspReadResult {
   depth?: number;
   address?: string;
   content?: string | null;
+  stamp?: string;
   note?: string;
   // disc shape:
   target_depth?: number;
@@ -278,6 +285,7 @@ export function bspRead(
       depth: target,
       address: fullWidthAddress(prefix, floor),
       content: semantic(node),
+      stamp: entryStamp(node),
     };
   }
 
@@ -314,6 +322,26 @@ function fullWidthAddress(digits: string[], floor: number): string {
   return `${digits.slice(0, floor).join('')}.${digits.slice(floor).join('')}`;
 }
 
+/** The arrival stamp an entry carries at field 3 — the mark/contribution ts
+ *  (block-conventions 4.22). Surfaced because underscore-only rendering hid
+ *  the stamp exactly where staleness needed reading: an entry's walked line
+ *  showed its text while its own ts sat invisible one digit away
+ *  (ahead:happyseaurchin, 2026-09-02). Only a string that looks like an ISO
+ *  instant qualifies — a container whose digit 3 holds a child subtree
+ *  returns undefined and renders as before. */
+const LEADING_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?/;
+
+function entryStamp(node: any): string | undefined {
+  const v = node && typeof node === 'object' ? (node as any)['3'] : undefined;
+  if (typeof v !== 'string') return undefined;
+  // The LEADING token only: the live board carries decorated stamps
+  // ('…Z (+2 — 6 days ago)'), and surfacing the whole string re-renders a
+  // stale age beside the fresh one — the shore already paid for this lesson
+  // ('decorated timestamps parse by taking the leading ISO token').
+  const m = LEADING_ISO.exec(v);
+  return m ? m[0] : undefined;
+}
+
 function buildPathWalk(block: Block, digits: string[], floor: number): PathWalkEntry[] {
   const entries: PathWalkEntry[] = [];
   for (let i = 1; i <= digits.length; i++) {
@@ -324,6 +352,7 @@ function buildPathWalk(block: Block, digits: string[], floor: number): PathWalkE
       depth: i,
       pscale: pscaleAt(i, floor),
       content: semantic(node),
+      stamp: entryStamp(node),
     });
   }
   return entries;
@@ -341,7 +370,11 @@ function collectDisc(block: Block, targetDepth: number, floor: number): DiscEntr
         node !== null &&
         typeof node === 'object';
       if (!onChainIntermediate) {
-        results.push({ address: fullWidthAddress(walked, floor), content: semantic(node) });
+        results.push({
+          address: fullWidthAddress(walked, floor),
+          content: semantic(node),
+          stamp: entryStamp(node),
+        });
       }
       return;
     }
@@ -390,6 +423,7 @@ function collectDescent(
             depth: childDepth,
             pscale: pscaleAt(childDepth, floor),
             content: semantic(child),
+            stamp: entryStamp(child),
           });
           if (child && typeof child === 'object') {
             nextFrontier.push([child, walkedPath.concat([d])]);
@@ -659,6 +693,53 @@ function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max) + '...' : s;
 }
 
+/** Floor of a read result, for the temporal label gate. Wire results from a
+ *  beach may omit `floor`; every entry carrying depth+pscale supplies it
+ *  (floor = depth + pscale, the canonical formula inverted), as does a point's
+ *  depth and a disc's target_depth. */
+function floorOf(r: BspReadResult): number | null {
+  if (typeof r.floor === 'number') return r.floor;
+  const lists: any[] = [
+    ...(Array.isArray(r.path_walk) ? r.path_walk : []),
+    ...(Array.isArray(r.entries) ? (r.entries as any[]) : []),
+    ...(Array.isArray(r.descent) ? r.descent : []),
+  ];
+  for (const e of lists) {
+    if (typeof e?.depth === 'number' && typeof e?.pscale === 'number') return e.depth + e.pscale;
+  }
+  if (typeof r.depth === 'number' && typeof r.pscale === 'number') return r.depth + r.pscale;
+  if (typeof r.target_depth === 'number' && typeof r.pscale === 'number') return r.target_depth + r.pscale;
+  return null;
+}
+
+/** An emitted address label, tagged with its relation to now when the block
+ *  is on the sundial (floor 10 and the digits rung-valid — any other floor-10
+ *  address fails the rung ranges and rides through bare). The tag gives
+ *  addresses the same partition the grounding boundary gives instants:
+ *  behind is record, AHEAD is intention, (now — …) is present at the
+ *  address's own grain. Wire labels arrive with trailing zeros stripped;
+ *  renderAddressRelation right-pads them itself. */
+function addrLabel(address: string, floor: number | null, entryPscale?: number | null): string {
+  if (floor === 10) {
+    // A walked interior-zero ancestor's label strips to a coarser address
+    // than the rung it stands at (d2 p8 prints the millennium's own label),
+    // so the relation anchors to the entry's OWN pscale where one rides —
+    // a mismatch renders bare rather than voicing the wrong grain.
+    const parsed = parseTemporalLabel(address);
+    if (parsed && (entryPscale == null || parsed.pscale === entryPscale)) {
+      const rel = renderAddressRelation(address);
+      if (rel) return `[${address}] ${rel}`;
+    }
+  }
+  return `[${address}]`;
+}
+
+/** An entry's arrival stamp rendered after its content — the grounding
+ *  boundary then ages it exactly as it ages any instant in a response. */
+function stampSuffix(stamp: string | undefined): string {
+  return stamp ? ` · ${stamp}` : '';
+}
+
 export function formatRead(r: BspReadResult): string {
   switch (r.shape) {
     case 'block':
@@ -669,37 +750,40 @@ export function formatRead(r: BspReadResult): string {
       // folds" would be, and pulling one leaf in full took a third call.)
       const lines = [`[path-walk @ "${r.spindle}"]`];
       const entries = (r.entries as PathWalkEntry[]) ?? [];
+      const fl = floorOf(r);
       for (const [i, e] of entries.entries()) {
         const content = String(e.content ?? '(no content)');
         const text = i === entries.length - 1 ? content : truncate(content, 150);
-        lines.push(`  d${e.depth} p${e.pscale} [${e.address}]: ${text}`);
+        lines.push(`  d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale)}: ${text}${stampSuffix(e.stamp)}`);
       }
       return lines.join('\n');
     }
     case 'disc': {
       const lines = [`[disc @ pscale ${r.pscale} (depth ${r.target_depth})]`];
+      const fl = floorOf(r);
       for (const e of (r.entries as DiscEntry[]) ?? []) {
-        lines.push(`  [${e.address}]: ${truncate(String(e.content ?? '(no content)'), 150)}`);
+        lines.push(`  ${addrLabel(e.address, fl, r.pscale)}: ${truncate(String(e.content ?? '(no content)'), 150)}${stampSuffix(e.stamp)}`);
       }
       return lines.join('\n');
     }
     case 'point':
       if (r.note) return `[point @ pscale ${r.pscale}] ${r.note}`;
-      return `[point @ pscale ${r.pscale} depth ${r.depth} [${r.address}]]\n  ${r.content ?? '(no content)'}`;
+      return `[point @ pscale ${r.pscale} depth ${r.depth} ${addrLabel(String(r.address), floorOf(r), r.pscale)}]\n  ${r.content ?? '(no content)'}${stampSuffix(r.stamp)}`;
     case 'path-walk+descent': {
       const lines = [`[path-walk+descent @ "${r.spindle}" pscale ${r.pscale}]`];
       lines.push('  path-walk:');
       // The walk's own terminus renders whole (the descent beneath stays the
       // truncated breadth view — point-read a child for its full text).
       const pw = r.path_walk ?? [];
+      const fl = floorOf(r);
       for (const [i, e] of pw.entries()) {
         const c = String(e.content ?? '(no content)');
         const text = i === pw.length - 1 ? c : truncate(c, 150);
-        lines.push(`    d${e.depth} p${e.pscale} [${e.address}]: ${text}`);
+        lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale)}: ${text}${stampSuffix(e.stamp)}`);
       }
       lines.push('  descent:');
       for (const e of r.descent ?? []) {
-        lines.push(`    d${e.depth} p${e.pscale} [${e.address}]: ${truncate(String(e.content ?? ''), 150)}`);
+        lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale)}: ${truncate(String(e.content ?? ''), 150)}${stampSuffix(e.stamp)}`);
       }
       return lines.join('\n');
     }

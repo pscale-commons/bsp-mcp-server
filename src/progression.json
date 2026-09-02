@@ -10,7 +10,10 @@
       }
     },
     "2": {
-      "_": "Validated: an addressing question sends you to whetstone 1.1 or agent-id 2 rather than to invention. The reference reached-for is the wake made real."
+      "_": "Wake includes the clock. The response that woke you ended with a now-stamp — ISO instant, ten-digit sundial address, human voicing — and every ISO instant and sundial address in every response carries its relation to that now beside it. The partition is delivered from the first read, and honouring it is the discipline: behind is record, AHEAD is intention, and nothing is dated from memory while a stamp stands beside it. The ladder and its law: bsp(agent_id='pscale', block='sundial')."
+    },
+    "3": {
+      "_": "Validated: an addressing question sends you to whetstone 1.1 or agent-id 2 rather than to invention, and a dated thing is placed against the stamp rather than assumed current. The reference reached-for is the wake made real."
     }
   },
   "2": {
