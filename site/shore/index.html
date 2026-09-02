@@ -231,6 +231,15 @@ function flattenMarks(block) {
       });
       return;
     }
+    // the minimal stamped form {_: text, 3: iso} — a plain-string append
+    // wrapped with its arrival stamp at the bsp door (2026-09-02): same rule,
+    // recognised before the underscore, or the text lands as a phantom batch
+    // summary and the timestamp as its own stone
+    if (typeof u === 'string' && typeof node['3'] === 'string'
+        && /^\d{4}-\d{2}-\d{2}T/.test(node['3']) && node['1'] === undefined) {
+      entries.push({ addr, text: u, agent: null, about: null, t: parseTs(node['3']) });
+      return;
+    }
     if (typeof u === 'object' && u) walk(u, addr + '0');
     else if (typeof u === 'string' && u.trim() && addr !== '') {
       entries.push({ addr: addr + '0', text: u, summary: true });
