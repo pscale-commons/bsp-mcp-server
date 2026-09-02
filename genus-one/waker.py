@@ -77,10 +77,24 @@ MAX_DAILY = int(os.environ.get("WAKER_MAX_DAILY", "6"))
 NESTS_DIR = os.path.join(BASE, "nests")
 TEACHING_RAW = "https://raw.githubusercontent.com/pscale-commons/bsp-mcp-server/main/src/%s.json"
 TEACHING_LIST = "https://api.github.com/repos/pscale-commons/bsp-mcp-server/contents/src"
-# The minimum teaching a pulse composes from (kernel CONCENTRATE defaults) —
-# the boot fetch tries the full src listing first so any sentinel a current
-# dials is present, and falls back to these two when the listing is refused.
-TEACHING_NAMES = ["sunstone", "whetstone"]
+# The teaching a pulse composes from. The boot fetch tries the live src
+# listing first (self-updating — any sentinel a current dials is present),
+# and falls back to this standing list when the listing is refused — which
+# is chronic, not rare: the listing is a GitHub API call and Railway's
+# shared egress IP exhausts the unauthenticated limit (three boots hit it
+# on 2026-09-02 alone), while the per-file raw fetches below succeed under
+# their own limits. So the fallback carries the FULL sentinel set as it
+# stood on 2026-09-02, not a two-block floor: a name removed upstream 404s
+# harmlessly (logged, skipped); a new sentinel arrives via the listing on
+# the boots where it answers, or by one line here.
+TEACHING_NAMES = [
+    "sunstone", "whetstone", "agent-id", "block-conventions", "bsp-test",
+    "char-creation", "directory", "ecology-router", "evolution",
+    "gatekeeper", "grit", "l3-relay", "lodestone", "manifest",
+    "open-commons", "parlour", "payway", "progression", "sand-rider",
+    "sextant", "shell-genome", "soft-agent", "strata", "sundial",
+    "welcome", "well-formed", "world-genome",
+]
 
 _pulse_lock = threading.Lock()
 _last_pulse_end = 0.0
@@ -683,7 +697,7 @@ def ensure_teaching():
         names = [e["name"][:-5] for e in listing
                  if isinstance(e, dict) and str(e.get("name", "")).endswith(".json")] or names
     except Exception as e:
-        log("src listing refused (%s) — fetching the minimum teaching" % str(e)[:60])
+        log("src listing refused (%s) — fetching the standing teaching list" % str(e)[:60])
     for name in names:
         p = os.path.join(dst, name + ".json")
         if os.path.exists(p):
