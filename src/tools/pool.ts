@@ -174,8 +174,15 @@ export function findNextSlot(block: Block | null): string {
  */
 export function findAuthorSlot(block: Block | null, agentId: string): string | null {
   if (typeof block !== 'object' || block === null) return null;
+  // Same geometry as collectContributions: real entries live at slot length
+  // <= floor; a longer slot is an entry's own field. Floor-aware so an absorbed
+  // author is still found after growth. (Liquid does not supernest today — the
+  // submit path allocates raw slots at floor 1 — so this is behaviour-identical
+  // to the old prefix prune for every shape liquid actually reaches, and simply
+  // stays correct if it ever grows a floor.)
+  const floor = Math.max(floorDepth(block), 1);
   for (const slot of digitPathSlots()) {
-    if (slot.length > 1 && pathBlocked((s) => readAt(block, s), slot)) continue;
+    if (slot.length > floor) continue;
     const v = readAt(block, slot);
     if (v == null) continue;
     if (typeof v === 'object' && !Array.isArray(v) && (v as Record<string, any>)['1'] === agentId) {
@@ -274,14 +281,22 @@ export function collectContributions(
 ): { contributions: PoolContribution[]; more_available: boolean } {
   const out: PoolContribution[] = [];
   let more = false;
+  // The entry tier lives AT the block's floor. A supernest pushes older entries
+  // under `_`, so a floor-1 "7" reads at floor 2 as "07"; current-tier entries
+  // sit at exactly floor-many digits. Therefore every real entry has a slot of
+  // length <= floor, and a slot of length > floor is descending THROUGH an entry
+  // into its own fields (a rider at 9, credits, a chain hop) — never a later
+  // slot. Pruning by that one geometric fact closes the rider leak (pool:keel
+  // 69/692/694) AND survives supernest. The prior test — isEntryNode on the
+  // slot's floor-PADDED prefix — read a multi-digit slot's prefix as a first-
+  // tier entry after any growth and dropped every entry past the first nine
+  // (pool:JulieJ stalled at slot 9 with a dozen unread messages, 2026-09-02).
+  const floor = Math.max(floorDepth(block), 1);
   for (const slot of digitPathSlots()) {
-    // A path through an occupied entry is that entry's FIELD (a rider at 9),
-    // never a later slot — prune it (isEntryNode; the pool:keel 69/692/694 leak).
-    if (slot.length > 1 && pathBlocked((s) => readAt(block, s), slot)) continue;
-    // readAt (floor-aware) not readSlot (raw): after a supernest the entries sit
-    // one floor down and an entry's dated address absorbs (a "7" resolves via
-    // "07" = [0,7]), so this same enumeration still finds every entry across any
-    // amount of floor growth.
+    if (slot.length > floor) continue;
+    // readAt (floor-aware) not readSlot (raw): absorbed entries sit one floor
+    // down per supernest and their address auto-pads ("7" resolves via "07"),
+    // so this enumeration still finds every entry across any amount of growth.
     const v = readAt(block, slot);
     if (v == null) continue;
     const position = parseInt(slot, 10);
