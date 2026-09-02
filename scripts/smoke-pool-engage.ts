@@ -18,6 +18,8 @@ import {
   windowSeed,
   DEFAULT_SYNTHESIS_HINT,
 } from '../src/tools/pool.js';
+import { appendWithSupernest } from '../src/accumulator.js';
+import { floorDepth } from '../src/bsp.js';
 import type { Block } from '../src/bsp.js';
 
 let pass = 0;
@@ -132,6 +134,54 @@ const withTombstone: Block = {
 const noTomb = collectContributions(withTombstone, 0);
 assert(noTomb.contributions.length === 1, 'tombstone at slot 1 skipped');
 assert(noTomb.contributions[0].position === 2, 'only real contribution at slot 2 returned');
+
+console.log('\n=== collectContributions — reads EVERY entry across supernests (pool:JulieJ, 2026-09-02) ===');
+// A pool that has grown its floor must still return everything. The regression:
+// the prune tested isEntryNode on a multi-digit slot's floor-PADDED prefix, so
+// after one supernest "11" (the tenth entry, at block[1][1]) was read as a field
+// of the first entry (block._[1]) and dropped — the read stalled at slot 9 and a
+// caught-up marker never advanced. Julie's now/pool sat with a dozen unread
+// messages behind an invisible wall. Build the exact shape by appending.
+let grown: Block = { _: 'pool:JulieJ at beach.happyseaurchin.com.' } as Block;
+for (let i = 1; i <= 21; i++) {
+  grown = appendWithSupernest(grown, { _: `entry ${i}`, '1': `author${i}`, '3': '2026-08-20T00:00:00.000Z' }).block;
+}
+assert(floorDepth(grown) === 2, '21 appends grew the floor to 2');
+const grownAll = collectContributions(grown, 0);
+assert(grownAll.contributions.length === 21, 'all 21 entries returned across two supernest tiers');
+assert(grownAll.contributions.at(-1)?.text === 'entry 21', 'the newest entry is the last one read');
+assert(grownAll.contributions.map((c) => c.position).join(',') === '1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,21,22,23', 'positions span both tiers in order');
+// A caught-up reader must keep advancing past the first tier — the stall's core.
+const grownSince9 = collectContributions(grown, 9);
+assert(grownSince9.contributions.length === 12, 'since_position=9 returns the 12 entries a stalled reader was missing');
+assert(grownSince9.contributions[0].position === 11, 'and the first of them is position 11, not silence');
+// Three floors: 91 entries. Absorbed tiers read via shorter floor-padded addresses.
+let deep: Block = { _: 'deep' } as Block;
+for (let i = 1; i <= 91; i++) deep = appendWithSupernest(deep, { _: `e${i}`, '1': 'a', '3': '2026-01-01T00:00:00.000Z' }).block;
+assert(floorDepth(deep) === 3, '91 appends grew the floor to 3');
+assert(collectContributions(deep, 0).contributions.length === 91, 'all 91 entries returned across three tiers');
+
+console.log('\n=== collectContributions — rider leak stays closed under the new prune (pool:keel 69/692/694) ===');
+// The prune the supernest fix replaced existed to stop an entry's object FIELD
+// (a probe rider at position 9) enumerating as a pseudo-slot. That must remain
+// true: a length-2 slot beneath a length-1 (floor-1) entry is a field, not a
+// slot, and the geometric length>floor rule prunes it exactly as before.
+const withRider: Block = {
+  _: 'a pool with a riding probe',
+  '1': { _: 'plain voice', '1': 'alice', '3': '2026-08-25T00:00:00Z' },
+  '2': { _: 'a probe', '1': 'bob', '3': '2026-08-25T00:00:00Z', '9': { _: 'rider envelope', '1': 'sig', '2': 'more' } },
+};
+const riderRead = collectContributions(withRider, 0);
+assert(riderRead.contributions.length === 2, 'two entries — the rider at 2.9 is not a third');
+assert(riderRead.contributions.map((c) => c.position).join(',') === '1,2', 'no phantom slot 29 leaks from the rider');
+
+console.log('\n=== findAuthorSlot — floor-aware: an absorbed author is still found after growth ===');
+let liq: Block = { _: 'liquid' } as Block;
+for (let i = 1; i <= 12; i++) liq = appendWithSupernest(liq, { _: `staged ${i}`, '1': `auth${i}`, '6': '2026-08-01T00:00:00Z' }).block;
+assert(findAuthorSlot(liq, 'auth1') === '1', 'absorbed author1 found at slot 1');
+assert(findAuthorSlot(liq, 'auth10') === '11', 'current-tier author10 found at slot 11 (not lost to null)');
+assert(findAuthorSlot(liq, 'auth12') === '13', 'author12 found at slot 13');
+assert(findAuthorSlot(liq, 'nobody') === null, 'an author with no slot returns null');
 
 console.log('\n=== extractSynthesisHint — underscore source (9.1 retired: it is an entry slot) ===');
 // The hint is the pool's underscore — never a digit position. 9.1 would be claimed
