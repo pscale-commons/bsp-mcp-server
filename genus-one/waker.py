@@ -851,7 +851,15 @@ def thin_brief(handle):
 
 
 def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
-    """One doorman turn. Returns (status, note) in run_pulse's own shape."""
+    """One doorman turn. Returns (status, note) in run_pulse's own shape.
+
+    THE ROOM IS DERIVED, NEVER TAKEN ON TRUST. `pool` is a LABEL for the daily
+    log — the webhook path passes the block name, the poke path passes the
+    literal "poke" — and the genus pulse never read it, so nothing caught that
+    until a doorman did and reported "room unreadable: 404" to a holder who then
+    went looking at their own passphrase. A handle's room is pool:<handle> by
+    convention; that is what gets read."""
+    room_name = pool if str(pool).startswith("pool:") else "pool:%s" % handle
     model, max_tokens = Dial(handle).answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS)
     window, degraded = orientation_window(handle)
     if degraded:
@@ -859,9 +867,9 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
     if not window.strip():
         return "failed", "nothing to orient from — %s has no readable shell" % handle
     try:
-        room = beach_get(pool)
+        room = beach_get(room_name)
     except Exception as e:
-        return "failed", "room unreadable: %s" % str(e)[:80]
+        return "failed", "room %s unreadable: %s" % (room_name, str(e)[:70])
     entries = _room_entries(room)[-DOORMAN_ROOM_ENTRIES:]
     if not entries:
         return "declined", "the room is empty — nothing was said to answer"
@@ -874,7 +882,7 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
          else "(compiled from its own manifest)"),
         window)
     message = ("The room %s, most recent last. A voice from %s has just landed at slot %s "
-               "— answer it.\n\n%s" % (pool, ringer or "someone unattributed", slot, said))
+               "— answer it.\n\n%s" % (room_name, ringer or "someone unattributed", slot, said))
     # The budget is a SAFETY VALVE, not a target — the stance asks for one reply
     # the length the question deserves. It sits well above that because a model
     # that reasons before answering spends the budget first and returns NO text
@@ -912,7 +920,7 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
         return "failed", "the model returned nothing (%s)" % why[:110]
     ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     try:
-        beach_append(pool, {"_": text, "1": handle, "3": ts}, secret)
+        beach_append(room_name, {"_": text, "1": handle, "3": ts}, secret)
     except Exception as e:
         return "failed", "the answer could not land: %s" % str(e)[:90]
     return "done", "answered by %s%s" % (model, " (degraded orientation)" if degraded else "")
