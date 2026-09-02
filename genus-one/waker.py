@@ -889,6 +889,16 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
     try:
         with urllib.request.urlopen(req, timeout=120) as r:
             d = json.loads(r.read().decode())
+    except urllib.error.HTTPError as e:
+        # The API says WHY in its body — a bad model, an exhausted balance, a
+        # key that may not use this model. "HTTP 400" alone sends the holder
+        # hunting through their own config for a fault that is stated plainly
+        # one layer down, so the body rides the note and the daily line.
+        try:
+            said = json.loads(e.read().decode()).get("error", {}).get("message", "")
+        except Exception:
+            said = ""
+        return "failed", "the call was refused (HTTP %d): %s" % (e.code, (said or "no reason given")[:150])
     except Exception as e:
         return "failed", "the call failed: %s" % str(e)[:90]
     text = "".join(c.get("text", "") for c in d.get("content", [])
