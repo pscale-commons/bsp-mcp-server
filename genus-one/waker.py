@@ -810,6 +810,23 @@ def _room_entries(node, path="", out=None):
     return out
 
 
+def _newest_entry(node, path="", best=None):
+    """The single newest entry of an accumulator, as [(path, author, text)] or
+    []. Newest is the greatest digit-path: slots are allocated in order, so the
+    last one written sorts last by length then value."""
+    found = []
+    if not isinstance(node, dict):
+        return found
+    if path and isinstance(node.get("_"), str) and isinstance(node.get("1"), str):
+        return [(path, str(node.get("1", "")), node["_"])]
+    for d in "123456789":
+        if d in node and isinstance(node[d], dict):
+            found += _newest_entry(node[d], path + d)
+    if not found:
+        return []
+    return [max(found, key=lambda e: (len(e[0]), e[0]))]
+
+
 def orientation_window(handle):
     """The handle's own orientation, compiled the way every other door compiles
     it — pscale_play over the router, which reads shell:<handle> position 3 and
@@ -892,7 +909,11 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
          else "(compiled from its own manifest)"),
         window)
     message = ("The room %s, most recent last. A voice from %s has just landed at slot %s "
-               "— answer it.\n\n%s" % (room_name, ringer or "someone unattributed", slot, said))
+               "— answer it.\n\n%s\n\n— You are answering as a DOORBELL WAKE of %s, rung just now "
+               "by %s. Not a Claude Code session, not %s's scheduled sweep, and holding no hands "
+               "beyond this reply: say so in those terms if you are asked what you are." %
+               (room_name, ringer or "someone unattributed", slot, said, handle,
+                ringer or "an unattributed voice", handle))
     # The budget is a SAFETY VALVE, not a target — the stance asks for one reply
     # the length the question deserves. It sits well above that because a model
     # that reasons before answering spends the budget first and returns NO text
@@ -1304,9 +1325,28 @@ class Handler(BaseHTTPRequestHandler):
             slot = ""
             if text:
                 target = ("task:%s" if as_holder else "pool:%s") % handle
-                r = beach_append(target, {"_": text, "1": asker},
-                                 passphrase if as_holder else None)
-                slot = str(r.get("slot", ""))
+                # SAY IT ONCE, HOWEVER OFTEN THE WAKE FAILS. The voice lands
+                # BEFORE the wake runs, so every retry after a busy wire — and a
+                # wire can be busy for minutes — left another identical copy in a
+                # room that is append-only and cannot be edited. David's seventh
+                # ring during one overload put his question in weft's parlour
+                # seven times, and the doorman had to spend its answer noticing.
+                # An identical voice from the same asker already standing as the
+                # newest entry IS that voice; it is reused, never repeated.
+                standing = ""
+                try:
+                    for p_, who_, txt_ in _newest_entry(beach_get(target)):
+                        if who_ == asker and txt_.strip() == text.strip():
+                            standing = p_
+                except Exception:
+                    standing = ""
+                if standing:
+                    slot = standing
+                    log("poke: %s already stands at %s:%s — not repeated" % (asker, target, standing))
+                else:
+                    r = beach_append(target, {"_": text, "1": asker},
+                                     passphrase if as_holder else None)
+                    slot = str(r.get("slot", ""))
         except Exception as e:
             _pulse_lock.release()
             return self._send(502, {"ok": False, "detail": "the voice would not land: %s" % str(e)[:80]})
