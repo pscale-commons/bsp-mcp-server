@@ -413,6 +413,24 @@ export async function probeFederation(ownerId: string): Promise<'federated' | 'a
 }
 
 /**
+ * A beach refusal, worded for the moment of need. A 403 — or a message naming
+ * the lock or secret — is almost always a drifted key spelling (one silently
+ * capitalised first letter, the 2026-09-02 case), so the refusal itself
+ * carries the pointer to the recovery law: teaching is found at the refusal,
+ * never in a block waiting to be guessed at.
+ */
+function beachRejection(kind: string, r: { status?: number; error?: string }): Error {
+  const base = `Beach ${kind} rejected: ${r.error}`;
+  const keyish = r.status === 403 || /lock|secret|latch/i.test(String(r.error ?? ''));
+  if (!keyish) return new Error(base);
+  return new Error(
+    `${base} — a refused key is usually a drifted spelling (often one capitalised first letter). ` +
+      `The recovery law: bsp(agent_id="https://beach.happyseaurchin.com", block="ways:key") — ` +
+      `the three-try rotation probe, then stop.`,
+  );
+}
+
+/**
  * POST an action-shaped body to a federated beach endpoint. Used by
  * substrate-stateful primitives (pscale_settle, pscale_grain_reach) to
  * dispatch atomic state transitions to a site-hosted sed:/grain: substrate.
@@ -429,7 +447,7 @@ export async function postActionToBeach(
     throw new Error(`No beach at ${origin} (also tried beach.<host>). Site is not federated.`);
   }
   const r = await wire.postAction(resolved, blockName, body, { timeoutMs: BEACH_TIMEOUT_MS });
-  if (!r.ok) throw new Error(`Beach action rejected: ${r.error}`);
+  if (!r.ok) throw beachRejection('action', r);
   return r.body;
 }
 
@@ -487,7 +505,7 @@ async function saveBlockToBeach(
     // the seat has carried since wake-1 ("a lost write is a lost wake") now
     // holds at this door too; this path previously fired and trusted.
     const r = await wire.saveWhole(origin, blockName, block, wireOpts);
-    if (!r.ok) throw new Error(`Beach save rejected: ${r.error}`);
+    if (!r.ok) throw beachRejection('save', r);
   } else {
     const cleanedSpindle = userSpindle.replace(/\*$/, '');
     const value = deriveSurgicalValue(block, cleanedSpindle, opts.hasContent === true);
@@ -495,7 +513,7 @@ async function saveBlockToBeach(
       ...wireOpts,
       pscaleAttention: opts.pscale_attention ?? null,
     });
-    if (!r.ok) throw new Error(`Beach save rejected: ${r.error}`);
+    if (!r.ok) throw beachRejection('save', r);
   }
   const now = new Date().toISOString();
   return {
@@ -606,7 +624,7 @@ export async function appendToBeach(
   if (r.windowMoved) {
     return { windowMoved: true, window: r.window, buffer: r.buffer ?? null };
   }
-  if (!r.ok) throw new Error(`Beach append rejected: ${r.error}`);
+  if (!r.ok) throw beachRejection('append', r);
   return { slot: r.slot, supernested: r.supernested, floor: r.floor, address: r.address, node: r.node, cleared: r.cleared ?? null, owed: r.owed };
 }
 
