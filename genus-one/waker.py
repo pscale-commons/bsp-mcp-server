@@ -242,6 +242,20 @@ own dial bounds how many times a day it wakes at all.</p>
   with a genome to compose from. Choose this only if you know you have one.</label></div>
 </fieldset>
 
+<fieldset><legend>which mind answers</legend>
+ <div class="row"><input type="radio" name="ans" id="a-haiku" value="haiku">
+  <label for="a-haiku" style="margin:0"><strong>Quick</strong> — cheap enough to stand open all day.
+  Good for a door that mostly points people at things.</label></div>
+ <div class="row"><input type="radio" name="ans" id="a-sonnet" value="sonnet" checked>
+  <label for="a-sonnet" style="margin:0"><strong>Considered</strong> — the default. Reads your shell
+  properly before it answers.</label></div>
+ <div class="row"><input type="radio" name="ans" id="a-opus" value="opus">
+  <label for="a-opus" style="margin:0"><strong>Deep</strong> — for a door that must think. Costs most,
+  so keep its daily count low.</label></div>
+ <p class="hint">Written into your dial, so you can change it there later without coming back —
+ alongside how many times a day it may wake at all.</p>
+</fieldset>
+
 <div class="row" style="margin-top:1.2rem"><input type="checkbox" id="c" checked>
  <label for="c" style="margin:0">Start answering straight away
  <span class="hint" style="display:block">Otherwise it stands enrolled and silent until you turn it on.</span></label></div>
@@ -279,6 +293,7 @@ and rotating your passphrase on the beach ends it by itself.</p>
      body.fuel = $('k').value.trim();
      body.mode = document.querySelector('input[name=mode]:checked').value;
      body.dial = $('d').value.trim();
+     body.answer = document.querySelector('input[name=ans]:checked').value;
      body.consent = $('c').checked;
    }
    say(method === 'POST' ? 'Proving your passphrase against your own locks…' : 'Removing…', true);
@@ -304,6 +319,23 @@ def dial_address(handle, dial):
     return (head, tail) if sep and tail.isdigit() else (where, "")
 
 
+def set_answer(handle, dial, answer, secret):
+    """Position 7 of the holder's own dial — which mind answers. Written only
+    when the holder said so, surgically, so a dial that already stands keeps
+    every other position."""
+    if not answer:
+        return ""
+    block, spindle = dial_address(handle, dial)
+    line = ("%s — the mind that answers here; a nickname (haiku, sonnet, opus) or a model id, "
+            "optionally followed by a token ceiling. Holder-set; mine to change." % answer)
+    try:
+        beach_post(block, {"spindle": (spindle + "7") if spindle else "7",
+                           "content": line, "secret": secret})
+        return ""
+    except Exception as e:
+        return " Its mind could NOT be set (%s)." % str(e)[:60]
+
+
 def set_consent(handle, dial, on, secret):
     """Flip the dial's switch on the holder's behalf, at their explicit ask —
     the same act the mirror's pane makes, for a holder who has no pane. Writes
@@ -319,7 +351,9 @@ def set_consent(handle, dial, on, secret):
                  "enrolment by my holder; every word mine to re-voice in my own wake." % (handle, handle),
             "1": line,
             "2": "2 — daily cap: at most this many rung wakes a day; a conservative seed, mine to adjust",
-            "3": "notes to my waking self about who rings and how often — to be authored in my own wake"}
+            "3": "notes to my waking self about who rings and how often — to be authored in my own wake",
+            "7": "the mind that answers here — a nickname (haiku, sonnet, opus) or a model id, "
+                 "optionally followed by a token ceiling; empty falls to the service default"}
     try:
         standing = beach_get(block)
     except Exception:
@@ -529,6 +563,7 @@ class Dial:
         self.on, self.cap = False, 0
         self.cooldown, self.refractory = COOLDOWN_S, REFRACTORY_S
         self.per_ringer = {}
+        self.answer = ""
         # THE DIAL'S ADDRESS IS wake:<handle> UNLESS THE ENROLMENT NAMES ANOTHER.
         # A handle that used wake: for something else before the doorbell existed
         # (weft's wake PROCEDURE is seven prose branches) cannot have its meaning
@@ -552,6 +587,9 @@ class Dial:
         self.cap = _leading_int(dial.get("2", ""), 2)
         self.cooldown = _leading_int(dial.get("4", ""), COOLDOWN_S)
         self.refractory = _leading_int(dial.get("5", ""), REFRACTORY_S)
+        seven = dial.get("7")
+        self.answer = seven if isinstance(seven, str) else (
+            seven.get("_", "") if isinstance(seven, dict) else "")
         node4 = dial.get("4")
         if isinstance(node4, dict):
             for k, v in node4.items():
@@ -560,6 +598,30 @@ class Dial:
                 parts = v.strip().split()
                 if len(parts) >= 2 and parts[1].isdigit():
                     self.per_ringer[parts[0]] = int(parts[1])
+
+    #: nicknames a holder can write instead of a model id, matching the kernel's
+    MODELS = {"haiku": "claude-haiku-4-5-20251001", "sonnet": "claude-sonnet-5",
+              "opus": "claude-opus-4-8"}
+
+    def answer_with(self, default_model, default_tokens):
+        """Position 7 — WHICH MIND ANSWERS, and how long it may be. A holder
+        writes a nickname or a model id, optionally followed by a token ceiling:
+        'haiku', 'haiku 900', 'claude-sonnet-5 2000'. Absent falls to the
+        service default. This is dial-absorbs-policy again: the cost of a wake
+        is the holder's business, so the choice that decides it lives in their
+        own block beside the cap — a cheap mind can stand open all day where an
+        expensive one answers three times."""
+        raw = str(self.answer or "").strip()
+        if not raw:
+            return default_model, default_tokens
+        parts = raw.replace(",", " ").split()
+        model = Dial.MODELS.get(parts[0].lower(), parts[0]) if parts else default_model
+        tokens = default_tokens
+        for tok in parts[1:]:
+            if tok.isdigit():
+                tokens = max(200, min(int(tok), 8000))
+                break
+        return model, tokens
 
     def cooldown_for(self, ringer):
         return self.per_ringer.get(ringer, self.cooldown)
@@ -782,6 +844,7 @@ def thin_brief(handle):
 
 def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
     """One doorman turn. Returns (status, note) in run_pulse's own shape."""
+    model, max_tokens = Dial(handle).answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS)
     window, degraded = orientation_window(handle)
     if degraded:
         window = thin_brief(handle)
@@ -809,7 +872,7 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
     # that reasons before answering spends the budget first and returns NO text
     # at all when it runs out (stop_reason max_tokens, proven on the second live
     # probe), which reads as a service fault rather than a truncation.
-    body = json.dumps({"model": DOORMAN_MODEL, "max_tokens": DOORMAN_MAX_TOKENS, "system": system,
+    body = json.dumps({"model": model, "max_tokens": max_tokens, "system": system,
                        "messages": [{"role": "user", "content": message}]}).encode()
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body,
                                  headers={"content-type": "application/json",
@@ -834,7 +897,7 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
         beach_append(pool, {"_": text, "1": handle, "3": ts}, secret)
     except Exception as e:
         return "failed", "the answer could not land: %s" % str(e)[:90]
-    return "done", "answered%s" % (" (degraded orientation)" if degraded else "")
+    return "done", "answered by %s%s" % (model, " (degraded orientation)" if degraded else "")
 
 
 def wake_mode(handle):
@@ -1014,9 +1077,16 @@ class Handler(BaseHTTPRequestHandler):
         # the default so no standing instance changes behaviour on deploy.
         # dial: where this handle's doorbell settings live, when wake:<handle>
         # already means something else ("<block>" or "<block>:<spindle>").
-        mode = str(b.get("mode", "")).strip().lower()
-        dial = str(b.get("dial", "")).strip()
+        # A FIELD THE CALLER DID NOT MENTION IS KEPT. The mirror's card posts
+        # handle/passphrase/notify/fuel and knows nothing of mode or dial, so a
+        # holder pressing keep there would otherwise silently turn their doorman
+        # back into a full pulse and lose its dial address. Absent means unchanged;
+        # present-and-empty still clears, so nothing becomes unsettable.
+        prior = _store_load().get(handle) or {}
+        mode = (str(b["mode"]).strip().lower() if "mode" in b else str(prior.get("mode", "")))
+        dial = (str(b["dial"]).strip() if "dial" in b else str(prior.get("dial", "")))
         consent = bool(b.get("consent"))
+        answer = str(b.get("answer", "")).strip().lower()
         if not handle or not passphrase:
             return self._send(400, {"ok": False, "detail": "handle and passphrase are both needed"})
         if _throttled(handle):
@@ -1049,6 +1119,7 @@ class Handler(BaseHTTPRequestHandler):
         # yet. A holder who cannot see that mode='lite' took has no way to tell a
         # doorman from a pulse until one answers.
         switched = set_consent(handle, dial, True, passphrase) if consent else ""
+        switched += set_answer(handle, dial, answer, passphrase)
         d = Dial(handle)
         where = dial or ("wake:%s" % handle)
         body_kind = ("a DOORMAN — it answers from this handle's own shell manifest and writes "
