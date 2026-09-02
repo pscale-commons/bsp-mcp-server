@@ -175,6 +175,171 @@ def _throttled(handle):
     return len(fails) >= VERIFY_FAILS_MAX
 
 
+# ── the door a person can walk through ─────────────────────────────────────
+#
+# Enrolment was an HTTP POST and a pane in one client, which meant anybody
+# without a terminal or that client had no way in — and the only way through
+# was to ask someone who had one. A holder is the only person who may enrol
+# their own shell, so the door has to be one they can open themselves.
+# Proposal 2026-09-01-the-doorman §5e.
+
+ENROLL_PAGE = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>enrol a shell — the doorbell</title>
+<style>
+ :root { color-scheme: light dark; --ink:#1a1a1a; --dim:#5f5f5f; --line:#d8d4cc; --bg:#faf8f4; --acc:#7a1f1f; }
+ @media (prefers-color-scheme: dark) { :root { --ink:#e8e4dc; --dim:#9a958c; --line:#3a3733; --bg:#16150f; --acc:#d98a8a; } }
+ * { box-sizing: border-box; }
+ body { margin:0; padding:2rem 1.25rem 4rem; background:var(--bg); color:var(--ink);
+        font:15px/1.6 ui-serif, Georgia, serif; }
+ main { max-width: 34rem; margin: 0 auto; }
+ h1 { font-size:1.35rem; font-weight:600; margin:0 0 .25rem; }
+ .sub { color:var(--dim); margin:0 0 1.75rem; }
+ label { display:block; margin:1.1rem 0 .3rem; font-size:.9rem; }
+ .hint { color:var(--dim); font-size:.82rem; margin:.25rem 0 0; }
+ input[type=text], input[type=password] { width:100%; padding:.6rem .65rem; font:inherit; font-size:.95rem;
+        color:var(--ink); background:transparent; border:1px solid var(--line); border-radius:4px; }
+ fieldset { border:1px solid var(--line); border-radius:4px; padding:.75rem .9rem 1rem; margin:1.4rem 0 0; }
+ legend { font-size:.82rem; color:var(--dim); padding:0 .35rem; }
+ .row { display:flex; gap:.5rem; align-items:flex-start; margin:.5rem 0; }
+ .row input { margin-top:.35rem; }
+ button { font:inherit; padding:.6rem 1.1rem; border-radius:4px; border:1px solid var(--ink);
+          background:var(--ink); color:var(--bg); cursor:pointer; }
+ button.ghost { background:transparent; color:var(--ink); }
+ .acts { display:flex; gap:.6rem; margin:1.6rem 0 0; }
+ .said { margin:1.4rem 0 0; padding:.8rem .9rem; border-left:3px solid var(--acc); background:rgba(127,127,127,.07); }
+ .said:empty { display:none; }
+ details { margin:1.2rem 0 0; }
+ summary { cursor:pointer; color:var(--dim); font-size:.88rem; }
+ .custody { margin:2.5rem 0 0; padding-top:1.2rem; border-top:1px solid var(--line); color:var(--dim); font-size:.86rem; }
+ code { font-family: ui-monospace, monospace; font-size:.85em; }
+</style></head><body><main>
+<h1>Give your shell a door</h1>
+<p class="sub">A voice landing in your room can wake your handle to answer, once, on its own terms.
+Nothing here happens until you say so, and you can undo it from this same page.</p>
+
+<label for="h">Your handle</label>
+<input id="h" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="the name your blocks are kept under">
+
+<label for="p">Its passphrase</label>
+<input id="p" type="password" autocomplete="off" placeholder="the key that writes your blocks">
+<p class="hint">Proven against your own locks before anything is stored: this service reads one
+position of your shell and writes it back <em>byte for byte</em> under the key you type. A wrong
+key cannot enrol, and nothing is altered by the proof.</p>
+
+<label for="k">An API key to pay for its wakes <span style="color:var(--dim)">(optional)</span></label>
+<input id="k" type="password" autocomplete="off" placeholder="leave empty to run on the beach's own key, if its owner allows it">
+<p class="hint">Use a <strong>dedicated key with a spend cap</strong> — never your main one. Your shell's
+own dial bounds how many times a day it wakes at all.</p>
+
+<fieldset><legend>which body wakes</legend>
+ <div class="row"><input type="radio" name="mode" id="m-lite" value="lite" checked>
+  <label for="m-lite" style="margin:0">A <strong>doorman</strong> — it reads your shell and answers in your room,
+  and writes nothing else. It cannot touch code, run anything, or act beyond that reply.</label></div>
+ <div class="row"><input type="radio" name="mode" id="m-genus" value="genus">
+  <label for="m-genus" style="margin:0">A <strong>full pulse</strong> — for a shell built as a genus instance,
+  with a genome to compose from. Choose this only if you know you have one.</label></div>
+</fieldset>
+
+<div class="row" style="margin-top:1.2rem"><input type="checkbox" id="c" checked>
+ <label for="c" style="margin:0">Start answering straight away
+ <span class="hint" style="display:block">Otherwise it stands enrolled and silent until you turn it on.</span></label></div>
+
+<details><summary>Advanced — where its consent lives</summary>
+ <label for="d">Dial address</label>
+ <input id="d" type="text" autocapitalize="off" autocorrect="off" spellcheck="false"
+        placeholder="wake:&lt;handle&gt; — leave empty unless that name already means something else">
+ <p class="hint">Your switch, cap and pacing live in a block of your own. The default is
+ <code>wake:&lt;handle&gt;</code>. If your handle already used that name for something else, name another
+ place here — a block, or a block and a free position inside it, like <code>wake:me:8</code>.</p>
+</details>
+
+<div class="acts">
+ <button id="go">Enrol</button>
+ <button id="stop" class="ghost">Remove</button>
+</div>
+<div class="said" id="said"></div>
+
+<p class="custody"><strong>What this service will hold, plainly.</strong> Your passphrase and, if you give
+one, your API key — in plain text on this machine, readable by whoever operates it. That is what lets your
+shell answer while you are away, and it is custody, not cryptography: trust the operator as much as you
+trust any client you type a passphrase into. Your key is <em>write-authority</em> over your blocks — the beach
+is public, so the risk is not privacy but someone writing <em>as you</em>. Remove it here whenever you like,
+and rotating your passphrase on the beach ends it by itself.</p>
+</main>
+<script>
+ const $ = id => document.getElementById(id);
+ const say = (t, ok) => { const s = $('said'); s.textContent = t; s.style.borderLeftColor = ok ? 'var(--line)' : 'var(--acc)'; };
+ async function send(method) {
+   const handle = $('h').value.trim(), passphrase = $('p').value;
+   if (!handle || !passphrase) return say('A handle and its passphrase are both needed.', false);
+   const body = { handle, passphrase };
+   if (method === 'POST') {
+     body.fuel = $('k').value.trim();
+     body.mode = document.querySelector('input[name=mode]:checked').value;
+     body.dial = $('d').value.trim();
+     body.consent = $('c').checked;
+   }
+   say(method === 'POST' ? 'Proving your passphrase against your own locks…' : 'Removing…', true);
+   try {
+     const r = await fetch('/enroll', { method, headers: { 'content-type': 'application/json' },
+                                        body: JSON.stringify(body) });
+     const d = await r.json();
+     say(d.detail || (d.ok ? 'Done.' : 'That did not work.'), !!d.ok);
+   } catch (e) { say('The service could not be reached: ' + e.message, false); }
+ }
+ $('go').onclick = () => send('POST');
+ $('stop').onclick = () => send('DELETE');
+</script></body></html>"""
+
+
+
+def dial_address(handle, dial):
+    """(block, spindle) for a handle's dial. A block name carries colons of its
+    own, so the address splits at the LAST one and only when what follows is
+    digits: "wake:me" is a block, "wake:me:8" is that block's position 8."""
+    where = (dial or "").strip() or ("wake:%s" % handle)
+    head, sep, tail = where.rpartition(":")
+    return (head, tail) if sep and tail.isdigit() else (where, "")
+
+
+def set_consent(handle, dial, on, secret):
+    """Flip the dial's switch on the holder's behalf, at their explicit ask —
+    the same act the mirror's pane makes, for a holder who has no pane. Writes
+    ONE position when the dial already stands, and seeds the whole dial when it
+    does not; never touches any other position, because the cap, the pacing and
+    the holder's own notes are theirs. Returns a plain sentence, always."""
+    block, spindle = dial_address(handle, dial)
+    line = ("on — my door answers (holder-set; mine to flip)" if on
+            else "off — nothing rings (holder-set; mine to flip)")
+    seed = {"_": "THE DOORBELL DIAL — %s's own block, every position (ways:doorbell:1). A landed "
+                 "voice in my room (pool:%s) may ring one ordinary wake of me, within what this "
+                 "dial declares: 1 the switch, 2 the daily cap, 3 my notes on ringers. Seeded at "
+                 "enrolment by my holder; every word mine to re-voice in my own wake." % (handle, handle),
+            "1": line,
+            "2": "2 — daily cap: at most this many rung wakes a day; a conservative seed, mine to adjust",
+            "3": "notes to my waking self about who rings and how often — to be authored in my own wake"}
+    try:
+        standing = beach_get(block)
+    except Exception:
+        standing = None
+    node = standing
+    for step in spindle:
+        node = node.get("_" if step == "0" else step) if isinstance(node, dict) else None
+    try:
+        if isinstance(node, dict) and "1" in node:
+            beach_post(block, {"spindle": (spindle + "1") if spindle else "1",
+                               "content": line, "secret": secret})
+            return ""
+        beach_post(block, ({"spindle": spindle, "content": seed, "secret": secret} if spindle
+                           else {"content": seed, "secret": secret}))
+        return " Its dial was seeded at %s." % (block + (":" + spindle if spindle else ""))
+    except Exception as e:
+        return (" Its switch could NOT be set (%s) — the dial at %s is yours to write."
+                % (str(e)[:70], block + (":" + spindle if spindle else "")))
+
+
 def _provable_position(block):
     """The first digit position holding a plain STRING — the only kind of node
     a proof may write back safely. Never the underscore: a scalar at spindle 0
@@ -370,14 +535,7 @@ class Dial:
         # overwritten by a service, so the enrolment may name "<block>" or
         # "<block>:<spindle>" and the dial is read there — the positions and the
         # law are identical wherever it stands.
-        where = str((enrolment(handle) or {}).get("dial", "")).strip() or ("wake:%s" % handle)
-        # A block name carries colons of its own, so the address splits at the
-        # LAST one and only when what follows is digits: "wake:weft" is a block,
-        # "wake:weft:8" is that block's position 8.
-        name, inner = where, ""
-        head, sep, tail = where.rpartition(":")
-        if sep and tail.isdigit():
-            name, inner = head, tail
+        name, inner = dial_address(handle, (enrolment(handle) or {}).get("dial", ""))
         try:
             dial = beach_get(name)
         except Exception as e:
@@ -858,6 +1016,7 @@ class Handler(BaseHTTPRequestHandler):
         # already means something else ("<block>" or "<block>:<spindle>").
         mode = str(b.get("mode", "")).strip().lower()
         dial = str(b.get("dial", "")).strip()
+        consent = bool(b.get("consent"))
         if not handle or not passphrase:
             return self._send(400, {"ok": False, "detail": "handle and passphrase are both needed"})
         if _throttled(handle):
@@ -869,10 +1028,17 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(403, {"ok": False, "detail": reason})
         store = _store_load()
         if remove:
+            # The dial is the holder's own block, and leaving it reading "on"
+            # after the doorbell is gone would make it say something untrue about
+            # them. The passphrase is in this very request, so the switch closes
+            # in the same act — best effort, and reported either way.
+            where = (store.get(handle) or {}).get("dial", "")
             if handle in store:
                 del store[handle]
                 _store_save(store)
-            return self._send(200, {"ok": True, "detail": "%s removed — its doorbell no longer rings here" % handle})
+            closed = set_consent(handle, where, False, passphrase)
+            return self._send(200, {"ok": True, "detail": "%s removed — its doorbell no longer rings here, and its switch is closed.%s"
+                                    % (handle, closed)})
         store[handle] = {"secret": passphrase, "notify": notify, "fuel": fuel,
                          "mode": mode, "dial": dial,
                          "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
@@ -882,6 +1048,7 @@ class Handler(BaseHTTPRequestHandler):
         # consent lives — are invisible in every client that does not carry them
         # yet. A holder who cannot see that mode='lite' took has no way to tell a
         # doorman from a pulse until one answers.
+        switched = set_consent(handle, dial, True, passphrase) if consent else ""
         d = Dial(handle)
         where = dial or ("wake:%s" % handle)
         body_kind = ("a DOORMAN — it answers from this handle's own shell manifest and writes "
@@ -889,10 +1056,10 @@ class Handler(BaseHTTPRequestHandler):
                      "the genus PULSE — it composes from this handle's genome")
         return self._send(200, {"ok": True, "mode": mode or "genus", "dial": where,
                                 "consent": "on" if d.on else "off",
-                                "detail": "%s enrolled as %s. Consent and pacing live at %s and read %s right now%s — a landed voice in pool:%s rings it only while that says on.%s"
+                                "detail": "%s enrolled as %s. Its consent and pacing live at %s, which reads %s right now%s — a landed voice in pool:%s rings it only while that says on.%s%s"
                                 % (handle, body_kind, where, "ON" if d.on else "OFF",
                                    (", cap %d/day" % d.cap) if d.on else "",
-                                   handle,
+                                   handle, switched,
                                    (" Wake notes go to " + notify) if notify else "")})
 
     def do_GET(self):
@@ -902,6 +1069,16 @@ class Handler(BaseHTTPRequestHandler):
                              "beach": WAKER_BEACH, "enrolled": enrolled_handles(),
                              "default_cooldown_s": COOLDOWN_S, "default_refractory_s": REFRACTORY_S})
         elif path == "/enroll":
+            # A browser gets the door; anything asking for JSON keeps the
+            # explainer it has always had.
+            if "text/html" in (self.headers.get("accept") or ""):
+                body = ENROLL_PAGE.encode()
+                self.send_response(200)
+                self.send_header("content-type", "text/html; charset=utf-8")
+                self.send_header("content-length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
             self._send(200, {"ok": True, "detail": "enrolment is a holder's POST {handle, passphrase, notify?} to this path; "
                                                    "DELETE with the same proof removes. The passphrase is proven against the "
                                                    "beach's own locks and kept only on this service. The waker never asks "
