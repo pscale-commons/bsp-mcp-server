@@ -41,7 +41,9 @@ key-holder's wallet floor, honored alongside the holder's budget:<handle>
 block when that exists); WAKER_THINK (default off — sent as an explicit
 disabled, since current models think by default when the parameter is
 absent); WAKER_PEERS (JSON name→origin, seeds each nest's peers.json so the
-between matches the home nest); PORT.
+between matches the home nest); PUSH_ENGINE_URL (the push engine's /event —
+where a completed wake is announced as a {kind:"wake"} event so holders hear
+it through their own ear, ways:push; unset = no announcement); PORT.
 
 Teaching: kernel.py loads the constant teaching from ../src (repo layout).
 Deployed alone, this service fetches src/*.json from the canonical GitHub
@@ -110,11 +112,14 @@ VERIFY_FAILS_MAX = 5          # failed proofs per handle per hour → 429
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 MIRROR_URL = os.environ.get("WAKER_MIRROR", "https://mirror.onen.ai/mirror")
-# The factoring's first step (proposals/2026-08-14-push-engine.md): every beach
-# event this service receives is forwarded, fire-and-forget, to the push
-# engine when one is declared — so the engine gets a live feed from minute one
-# and the bus topology can settle later with a one-line settings change.
-# Unset = no-op. The waker's own decisions are untouched by the forward.
+# The push engine's /event. The pre-cutover meaning (forward every beach
+# event) retired 2026-08-17 when engine-as-bus landed — the beach declares
+# the engine directly and the waker receives via its fanout, so forwarding
+# back would only feed the dedup. What remains is the waker's own voice on
+# the same wire (proposals/2026-09-02-wake-watch.md): a completed wake is
+# announced as a {kind:"wake"} service event, and holders hear it through
+# their own ear (a wake watch, ways:push) on their own channels. Unset =
+# no announcement; the waker's decisions are untouched either way.
 PUSH_ENGINE_URL = os.environ.get("PUSH_ENGINE_URL", "")
 
 
@@ -1047,6 +1052,13 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=Non
     except Exception as e:
         log("daily log append failed for %s: %s" % (handle, str(e)[:80]))
     notify_holder(handle, ringer, pool, slot, status, note)
+    # The same completion, announced on the ear's wire: one {kind:"wake"}
+    # service event to the push engine, matched there against wake watches
+    # (ways:push) and delivered on whatever channels each hearer chose. The
+    # legacy notify email above retires once enrolments migrate to this path.
+    forward_event({"origin": WAKER_BEACH, "kind": "wake", "agent": handle,
+                   "ringer": ringer or "", "status": status,
+                   "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
     return status, note
 
 
@@ -1377,7 +1389,6 @@ class Handler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length).decode() or "{}")
         except Exception:
             return self._send(400, {"error": "unparseable body"})
-        forward_event(payload)
         granted, reason = ring(payload)
         log("ring %s: %s (payload %s)" % ("GRANTED" if granted else "declined", reason,
                                           json.dumps(payload)[:200]))
