@@ -900,23 +900,43 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
     # probe), which reads as a service fault rather than a truncation.
     body = json.dumps({"model": model, "max_tokens": max_tokens, "system": system,
                        "messages": [{"role": "user", "content": message}]}).encode()
-    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body,
-                                 headers={"content-type": "application/json",
-                                          "x-api-key": fuel_key,
-                                          "anthropic-version": "2023-06-01"}, method="POST")
+    # A TRANSIENT REFUSAL IS NOT AN ANSWER LOST. Overload (529), rate limit (429)
+    # and the 5xx family are the wire being busy rather than the request being
+    # wrong, so the call is made TWICE, five seconds apart, before anyone is told
+    # it failed — a visitor should not lose their answer to a busy minute. Every
+    # other 4xx is this service's fault or the key's, repeats identically, and is
+    # never retried: a second refusal would only delay the holder learning what
+    # is actually wrong.
+    def send():
+        with urllib.request.urlopen(
+                urllib.request.Request("https://api.anthropic.com/v1/messages", data=body,
+                                       headers={"content-type": "application/json",
+                                                "x-api-key": fuel_key,
+                                                "anthropic-version": "2023-06-01"},
+                                       method="POST"), timeout=120) as r:
+            return json.loads(r.read().decode())
+
     try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            d = json.loads(r.read().decode())
+        try:
+            d = send()
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 529) or 500 <= e.code < 600:
+                log("%s refused the call (HTTP %d) — one retry in 5s" % (handle, e.code))
+                time.sleep(5)
+                d = send()
+            else:
+                raise
     except urllib.error.HTTPError as e:
-        # The API says WHY in its body — a bad model, an exhausted balance, a
-        # key that may not use this model. "HTTP 400" alone sends the holder
-        # hunting through their own config for a fault that is stated plainly
-        # one layer down, so the body rides the note and the daily line.
+        # The API says WHY in its body — an overloaded wire, a bad model, an
+        # exhausted balance, a key that may not use this model. "HTTP 400" alone
+        # sends the holder hunting through their own config for a fault stated
+        # plainly one layer down, so the body rides the note and the daily line.
         try:
             said = json.loads(e.read().decode()).get("error", {}).get("message", "")
         except Exception:
             said = ""
-        return "failed", "the call was refused (HTTP %d): %s" % (e.code, (said or "no reason given")[:150])
+        return "failed", "the call was refused twice (HTTP %d): %s" % (
+            e.code, (said or "no reason given")[:150])
     except Exception as e:
         return "failed", "the call failed: %s" % str(e)[:90]
     text = "".join(c.get("text", "") for c in d.get("content", [])
