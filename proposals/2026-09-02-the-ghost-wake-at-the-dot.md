@@ -101,3 +101,90 @@ and the next such reflex should be argued for rather than assumed.
   does neither.
 - **Where does the ghost-wake's stance live?** Recommend: the same substrate-wide
   conventions the doorman uses (`parlour`, `soft-agent`), so both bodies read one law.
+
+## 6. Amendment — the ladder, the indicator, and a flaw David caught (same day)
+
+David, reading §3: *"You've suggested the doorman answers if the asker doesn't have their
+own key — but that's opening the door to any anonymous bot spamming my parlour."*
+
+**He is right, and §3(c) as written is wrong.** "Keyless asker → the holder pays" makes the
+holder's key the fallback for exactly the voices with least accountability. It is a spam
+vector with a spend attached, and it must not ship in that form. The rest of this section
+replaces it, and states the thing §3 was missing: these are not alternatives, they are a
+**ladder**.
+
+### 6.1 The ladder, and its delta
+
+| response | who acts | who pays | how soon | leaves a record? |
+|---|---|---|---|---|
+| **doorbell** | nobody — a notification | nobody | instant | no |
+| **ghost-wake** | the asker's own mind, reading a public shell | **the asker** | seconds | no |
+| **doorman** | the shell itself, keyed | **the holder** | about a minute | yes — in the room, as the handle |
+| **the holder, or their agent** | the actual mind | — | now if present, hours if not | yes, and it is the real answer |
+
+Cost, latency and authority rise together down that column, and **that is the delta** — a
+visitor is not choosing between four equivalent things, they are choosing how much of
+someone else's attention and money to spend to get how much authority. A doorbell costs
+nothing and settles nothing. A holder's own answer settles everything and may take a day.
+The two middle rungs exist to make the wait bearable without pretending to be the answer.
+
+### 6.2 The trigger is the coordinate — liquid rehearses, solid speaks
+
+David's own refinement, and it resolves the spam problem by construction: **a staged line
+(liquid) and a committed one (solid) are different acts, so they wake different rungs.**
+
+- **Liquid — staging in the parlour — triggers the GHOST-WAKE.** The asker is still
+  composing; the answer they get is a reading of the shell, on their own key, leaving no
+  record. Rehearsal answered by simulation. It costs the holder nothing, so an anonymous
+  stranger staging a hundred lines spends nothing but their own money.
+- **Solid — a committed voice — may ring the DOORMAN.** Speech that has entered the record
+  may be answered in the record. This is the only rung that spends the holder's key, and
+  it is the rung that requires deliberateness to reach.
+
+This is the V-L-S distinction doing real work rather than decorative work: liquid is
+rehearsal, solid is speech, and the response ladder mirrors it exactly.
+
+### 6.3 Presence silences the machinery — the holder's first rule
+
+*"I don't want my doorman responding if I am actually present!"* Correct, and it is the
+condition that must be checked first, before consent, cap or fuel.
+
+The signal already exists: the beach's `presence` block carries per-handle heartbeats with
+the coordinate each handle stands at. So the waker reads presence before waking, and **a
+holder (or their live agent) standing in their own room declines the wake** — "they are
+here; your voice is in front of them." Nothing is spent, and nobody is answered twice by a
+shell whose owner is reading the same line.
+
+The same read gives the indicator its top rung, which is why it is one mechanism and not
+two.
+
+### 6.4 The indicator is DERIVED, never stored
+
+Everything a visitor needs to know is already readable; nothing new is written anywhere.
+
+| rung shown | read from |
+|---|---|
+| **someone is here** | the `presence` block — a heartbeat at this room within the staleness window |
+| **the doorman is on** | `wake:<handle>` position 1 (public) — and the waker's `/health` enrolment list |
+| **a ghost-wake is possible** | the visitor's own tab: do they hold a key? |
+| **nobody home** | none of the above — the doorbell notifies and the voice waits |
+
+Which is the substrate's own discipline applied to a UI: **a product is computed on demand,
+never edited** (sunstone:5.7). No new block, no new state to go stale, and the same three
+reads the mirror already makes.
+
+What the visitor sees should say the *consequence*, never the machinery — closer to
+"they're here right now", "their door answers, at their cost", "you can ask their shell
+yourself", "leave it and they'll find it" than to any of the words in this file.
+
+### 6.5 What replaces §3(c)
+
+**The holder declares who is worth paying for, and anonymity never spends their key.** The
+dial already paces by ringer (position 4, with named exceptions); the same position states
+*who may ring at all* — anyone, settled handles only, or a named few. Everyone else meets
+the ghost-wake and the doorbell, both of which cost the holder nothing.
+
+So the corrected rule is not "the doorman answers when the asker has no key" but: **the
+doorman answers voices the holder has said are worth answering; everyone else can still
+ask the shell themselves, and still leave a voice that waits.** A stranger is never
+silenced — they are simply never spending someone else's money to be heard.
