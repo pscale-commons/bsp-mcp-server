@@ -22,6 +22,8 @@
  * python's json.dumps(indent=2, ensure_ascii=False). Both live here.
  */
 
+import { renderNow } from './temporal.js';
+
 // ── ordered JSON ────────────────────────────────────────────────────────────
 
 export type PMap = Map<string, PNode>;
@@ -784,6 +786,14 @@ export async function genusCompose(load: Loader, now: number, peers: Map<string,
       ['between', await builders.between()],
     ]);
   }
+  // THE NOW OPENS THE GIVEN (kernel.compose_window; David's ruling 2026-09-07).
+  // A pulse agent is the only agent that must derive its own now (sundial 8.2),
+  // so the given's FIRST entry is the router's footer stamp — now · ISO ·
+  // address · voicing — read before anything else. Given-DATA, not a
+  // composition part: the recipe cannot switch it off, as a ring cannot.
+  // Derived from the `now` passed in (seconds), never a second clock read, so
+  // this door and the kernel composing one instant agree byte for byte.
+  given = new Map<string, PNode>([['now', renderNow(new Date(now * 1000))], ...given]);
   const systemMap: PMap = new Map([['recipe', working as PNode], ...process]);
   return {
     system: pyDumps(systemMap),

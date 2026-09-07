@@ -38,6 +38,9 @@ with that weight.
                          disputes about walk semantics resolve to bsp2-star.py / src/bsp.ts)
     wire.py              beach client: GET/POST /.well-known/pscale-beach, retry-once,
                          confirm-after-write
+    temporal.py          the sundial's arithmetic, ported from src/temporal.ts (re-port, never
+                         fork): a pulse derives its OWN now (sundial 8.2) — the given opens with it
+    test_temporal.py     the port's cases — python3 genus-one/test_temporal.py
     heartbeat.py         the external clock (verbatim from v009): research mode stops when
                          the agent settles (γ=∅); --paced honours the agent's self-set rate
     hatch.py             hatch an instance from the genome (+ chosen purpose)
