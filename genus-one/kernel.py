@@ -63,6 +63,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
 import spark  # noqa: E402
 import wire   # noqa: E402
+import temporal  # noqa: E402 — the sundial's arithmetic, ported from src/temporal.ts
 
 AGENT = os.path.abspath(os.environ.get("GENUS_AGENT", os.getcwd()))
 SHELL_DIR = os.path.join(AGENT, "shell")
@@ -815,7 +816,7 @@ def _reaching(block, handle, limit=5):
     return out
 
 
-def compose_window(gamma):
+def compose_window(gamma, now=None):
     """Compose the window per the active recipe (reflexive:8.1) — the composition
     is the agent's own block, not kernel-hardcoded. The recipe names the window's
     parts on two sides: the process the agent is (-> system) and the given it acts
@@ -823,7 +824,22 @@ def compose_window(gamma):
     serializes; re-authoring the recipe reshapes the window itself. The turn
     (koan, clouds, active fallback) is not a kernel part: it enters the window
     by being DIALED in the bundle (reflexive:1 at a dilation) — the window is a
-    bsp read of a bundle of addresses, nothing more."""
+    bsp read of a bundle of addresses, nothing more.
+
+    THE NOW OPENS THE GIVEN (David's ruling, 2026-09-07: every genus-one agent
+    operates with the temporal backbone). A pulse agent is the only agent that
+    must derive its own now — every other shell borrows its holder's wall-clock,
+    a pulse with no holder present takes the substrate's origin and its own
+    moment (pscale://sundial 8.2) — so the given's FIRST entry is the stamp the
+    router puts at the foot of every envelope: now · <ISO> · <address> ·
+    <voicing>, read before anything else in the message. It is given-DATA, not
+    a composition part: the recipe cannot switch it off, exactly as a ring
+    cannot, and the window stays a bsp read of the bundle plus what arrived.
+    Derived from the pulse's own instant (`now`), never a second clock read, so
+    a kernel and a door composing the same instant agree byte for byte
+    (scripts/smoke-genus-parity.ts)."""
+    if now is None:
+        now = time.time()
     bundle = read_reflexive_current()
     builders = {
         "index":   lambda: bundle,                                         # the dehydrated map
@@ -847,6 +863,8 @@ def compose_window(gamma):
     if not process and not given:                          # recipe absent -> safe default
         process = {"index": builders["index"](), "self": builders["self"]()}
         given = {"gap": builders["gap"](), "between": builders["between"]()}
+    # the pulse's own now, first — the temporal backbone every wake wakes inside
+    given = {"now": temporal.render_now(temporal.from_epoch(now)), **given}
     # surface the recipe in the window so it documents its own structure (the
     # aha-lever): the instance sees what index/self/gap/between mean, and that
     # the composition is its own to re-author.
@@ -1604,7 +1622,7 @@ def pulse(compose_only=False, now=None):
     # Stage 1 (frontier + phase prune)
     if not compose_only:                                        # the hands, before the window reads them
         declare_hands(BARE_DOOR, BARE_TOOLS, BARE_MISSING)
-    system, message, bundle = compose_window(gamma)
+    system, message, bundle = compose_window(gamma, now)
     frame = {"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
              "gamma": gamma,                                    # reflexive_current echo dropped — it duplicated system.index
              "phase_pruned": [c["address"] for c in pruned],   # A3 — the rhythm log (dormant this wake)
