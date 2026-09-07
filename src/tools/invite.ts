@@ -18,7 +18,7 @@
  */
 import { z } from 'zod';
 import type { Block } from '../bsp.js';
-import { loadBlock } from '../db.js';
+import { loadBlock, DEFAULT_BEACH } from '../db.js';
 import { bspRead, formatRead } from '../bsp-fn.js';
 
 /**
@@ -50,6 +50,30 @@ function renderWelcome(block: Block): string {
   return out.join('\n');
 }
 
+/**
+ * The welcome names a LIVE world, read from the `worlds` register at the default
+ * beach at call time — never a literal in tool text (proposal:three-portals 5.1:
+ * a world named in a docstring is the pointer nobody re-reads as a block, and it
+ * rots the day the world is retired — thornwood did). First row of the register;
+ * when the register is unreachable the welcome points at the register itself.
+ */
+async function firstWorldName(): Promise<string> {
+  try {
+    const row = await loadBlock(DEFAULT_BEACH, 'worlds');
+    const w = row?.block as Record<string, unknown> | undefined;
+    if (w && typeof w === 'object') {
+      for (const k of Object.keys(w).filter((k) => /^[1-9]$/.test(k)).sort()) {
+        const e = w[k];
+        if (typeof e === 'string' && e.includes('→')) {
+          const name = e.split('→')[0].trim();
+          if (name) return name;
+        }
+      }
+    }
+  } catch { /* the register is orientation, never a gate — absence points at it */ }
+  return '<a name from the worlds block at the beach>';
+}
+
 export const inviteParamsSchema = {
   step: z
     .number()
@@ -76,12 +100,13 @@ export async function handleInvite(
   if (step === undefined) {
     const welcomeRow = await loadBlock('pscale', 'welcome');
     if (welcomeRow) {
+      const world = await firstWorldName();
       return {
         content: [
           {
             type: 'text',
             text:
-              renderWelcome(welcomeRow.block) +
+              renderWelcome(welcomeRow.block).replace("world='<world>'", `world='${world}'`) +
               '\n\n———\nMaking substrate capacity for yourself as an AGENT (not welcoming a human)? The six-step build ladder — wake, build, mark, grain, SAND, shared — is at pscale_invite(step=1).',
           },
         ],

@@ -485,7 +485,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
   lines.push('');
   lines.push(
     `# The fold — yours to make, not the primitive's` +
-    `\nSynthesise the snapshot above under the law${law ? '' : ' (no function:${field} at this beach, so integrate plainly)'}. ` +
+    `\nSynthesise the snapshot above under the law${law ? '' : ` (no function:${field} at this beach, so integrate plainly)`}. ` +
     `Keep it only if it should outlast this turn: keep='personal' lands it at tree:${field}:${handle}:${spineAddr}, your own latest reading of this point; keep='collective' lands it at ${field}:${spineAddr}, ` +
     `where anyone may supersede it with a better reading.`,
   );
