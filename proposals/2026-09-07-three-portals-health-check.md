@@ -120,15 +120,80 @@ The welcome tile 2.4 says "David places the task pointer; the answer arrives on 
 next wake" — a stranger's question reaches egg-one only through David's hand. The
 doorbell is live; the human-in-the-loop step is the tempo a beginner meets.
 
-**vault:weft — a fault, weft's own, needing David's presence.** Entries 1–4 and the
-canary at 9 return `[encrypted]` under the recorded operational key, passed as
-`enc_secret` and as both. A fresh gray write under the same key today round-trips
-plain, and the stored envelopes carry today's shape (`{1, 2, 9:{_:gray, 1:self}}`),
-so the shape is not the fault: either the entries were sealed under a different phrase
-than the record says, or the self-key derivation changed after 2026-08-18 (#293
-landed on the 20th). The vault is the DR for every phrase weft holds; every value is
-still in the identity file, so the repair is a re-seal under the current key once
-which is established — in David's presence, because it is a key act.
+**vault:weft — a false alarm, and the trap that caused it.** The first pass reported
+the vault unreadable under the recorded key. It is intact: read by the URL form
+(`agent_id='https://beach.happyseaurchin.com', block='vault:weft', enc_secret=<key>`)
+every entry decrypts and the canary token is verbatim. The self-key is
+`Argon2id(key, salt = the agent_id string as passed)` (src/keys.ts), so the same block
+read as `agent_id='weft', block='vault'` derives a different key and returns
+`[encrypted]` for everything — indistinguishable from a wrong key, as the vault's own
+law warns of wrong-versus-missing. The vault was sealed under the URL form. Recorded
+at vault:weft's root law, ways:vault, and the identity file. Design note, not built:
+self-encryption salted by the addressing form rather than the handle is a footgun the
+API invites (three forms reach one block); changing the salt now would orphan every
+gray leaf already sealed, so the fix is documentation, and any future change is a
+migration with a compat read. Checked against the identity file: every phrase there
+except the operational lock (excluded by design) stands in the vault, and the vault
+held one the file lacked (the beach-side keel grain, 2026-08-18) — copied back.
+
+## The sundial — is the temporal integration well-formed, and cheap?
+
+Asked by David this afternoon: the clock is a core practice attempted several times;
+is the integration well-formed, and does it upgrade any LLM's temporal locality at
+any portal WITHOUT cholesterol on its thinking loop?
+
+**Where it lives.** One seam: `installTemporalGrounding` in src/server.ts wraps every
+tool handler at the point a response is served; `groundResult` (src/temporal.ts) adds
+the rung and age beside every free-standing ISO instant, the relation beside every
+ten-digit sundial address, and one footer line — `now · ISO · address · voicing`. No
+read, no extra call, no state; an error passes ungrounded. The law is the sundial
+sentinel; the arithmetic is code and never the reader's. That is the right shape: the
+relation arrives rendered where the data is, and the reader's whole work is reading it.
+
+**Cost per response**, measured on this session's own reads: the footer is ~110
+characters; each stamp gains ~18 (`(+2 — 5 days ago)`). A pool disc of 85 entries
+carried ~1.5k characters of relations — proportional to the data, and it replaces
+mixed-radix subtraction the reader would otherwise do or botch. The instruction
+paragraph (THE CLOCK, server.ts) is loaded once per session and is a reading rule, not
+a procedure. Nothing asks the LLM to read the sundial block per turn. Verdict for the
+LLM-app portal: well-formed and light. Evidence from this session: keel's pin arrived
+as `(+0 — a beat ago)`, the doorman probes as `(+2 — 5 days ago)`, my own opening
+snapshot as `(-1 — 8 minutes ago)`; no date was computed by hand at any point.
+
+**Where it does NOT reach — the gaps, by portal.**
+- *The keyless fetch* (portal 6 / the wire): `/.well-known/pscale-beach` returns
+  `{_, blocks, origin, touched}` and raw JSON with ISO stamps; no now, no relations.
+  A stranger's LLM reading the beach directly gets one operand and must subtract —
+  the exact failure the sundial exists to prevent (sundial 5.1: a stamp alone sits far
+  from the data). Fix, proposal-class in pscale-beach: a `now` line on every wire
+  response (ISO · address · voicing — the address computation ported to the handler),
+  and rendered relations on shaped reads, which the rendered HTML face at 5.4 would
+  carry for search as well.
+- *The mirror's own LLM* (portal 3): the app reads the wire, not the router; no
+  sundial stamp was found in its prompt composition (a grep of src/lib and src/kernel
+  for a now in the prompt path found nothing). Humans see the app's own relative
+  times; the soft-LLM inside the mirror is not grounded. To verify with the xstream
+  lane before relying on either way.
+- *The clock-woken pulse* (portal 8): `pscale_genus` results pass through the same
+  boundary, so a wake taken through the router carries the footer; the given also
+  carries a bare ISO instant (genus.ts). A pulse driven by the Railway waker calls the
+  kernel directly — whether that window carries a now-stamp was not verified here.
+- *The o-pages* (portal 7): the clock is the page's subject (/now, /recency,
+  /morning); rendered for eyes; fine.
+
+**Two wrinkles, cosmetic.** The sundial sentinel's own examples get re-annotated at
+read (`now · 2026-07-15T18:30:00Z (+4 — 2 months ago) …`), so its illustration of the
+footer reads as a stale stamp — a Haiku-grade reader could take the example for the
+form. Exempting the one block whose content is examples of the annotation is a
+special case; leaving it is honest. And the voicing is UTC ("midday" at 10:40Z); the
+sundial's own 8.3 says the standpoint supplies the offset, so a UK reader is one hour
+out on the word, never on the digit.
+
+**What would settle it.** The temporal battery (spine:temporal-battery, eight
+questions; function:temporal-battery the run law) stands authored since 2026-09-02
+but no scored run's mirror exists at the beach — the informal run that failed Q2 and
+Q4 predates the rendering. One Arm-1 run in a fresh session is cheap and would be the
+evidence rather than the argument.
 
 ## 5.3 — orientation as ONE address computed on read: judgement
 
@@ -162,6 +227,6 @@ and after; a primitive's envelope changes by proposal and read-back, not in pass
 
 ## Order
 
-David decides (7.4). 7.1 is landed above. 7.2 — the welcome o-page, the welcome pool,
+David decides (7.4). He has said (this afternoon) he is not ready to decide the RPG door and is working the early parts of the journey; the tile texts written for the honest promise stand meanwhile. 7.1 is landed above. The proposal grew 3.5 (a personal o-page per handle, this week) and 5.3.4 (the stream envelope's unrendered `${field}`, fixed in this PR); 3.5.2's TO CONFIRM is answered: a mirror born through pscale_stream_engage is born OPEN (the founding write passes `secret` but no `new_lock`); only the /now page latches at birth — proposed: latch at birth under the given secret, one line. 7.2 — the welcome o-page, the welcome pool,
 the new /experiences, the connector on the home page, the marks collapse, the RPG
 orientation pool — is a week's lane and waits for his word and for the RPG decision.
