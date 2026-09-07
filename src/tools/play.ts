@@ -272,10 +272,10 @@ async function unauthoredWorld(origin: string, world: string, handle: string): P
 export const playParamsSchema = {
   world: z
     .string()
-    .describe("The world to inhabit — a bare world-name (resolved via the `worlds` directory block at the default beach: name → route, e.g. 'brackenfoot' → /w/brackenfoot; falling back to the sub-beach convention <world>.beach.<host> for legacy worlds), or a full beach URL. A scenario surface that declares itself canon (lighthouse:9.3) routes you to fork a private table rather than playing in place. The apex commons is itself a world for users/agents."),
+    .describe("The world to inhabit — a bare world-name (resolved via the `worlds` directory block at the default beach: each row '<name> → <route>', the route a /w/<name> path on that beach or a host; falling back to the sub-beach convention <world>.beach.<host> for legacy worlds), or a full beach URL. A scenario surface that declares itself canon (lighthouse:9.3) routes you to fork a private table rather than playing in place. The apex commons is itself a world for users/agents."),
   handle: z
     .string()
-    .describe("The handle you inhabit — a character ('anya'), a user ('happyseaurchin'), or an agent ('weft'). The substrate makes no distinction: a handle with its blocks. Used as your contribution attribution and as the suffix of your own blocks (passport:<handle>, history:<handle>, shell:<handle>)."),
+    .describe("The handle you inhabit — a character, a user, or an agent, under whatever name its blocks stand. The substrate makes no distinction: a handle with its blocks. Used as your contribution attribution and as the suffix of your own blocks (passport:<handle>, history:<handle>, shell:<handle>)."),
   secret: z
     .string()
     .optional()
