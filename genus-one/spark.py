@@ -148,7 +148,13 @@ def parse_reference(leaf):
     address = attention = None
     if i < len(parts):
         if _ADDR.match(parts[i]):
-            address = parts[i]
+            # Address 0 is the ROOT with the spindle omitted, never the underscore
+            # step: `name:0:att` dials the block's dashboard at that pscale, where a
+            # literal '0' left-pads to floor width and walks the underscore chain to
+            # the root voicing — the label. bsp(spindle='0') keeps the other reading,
+            # the surgical underscore write, because that is a hand-call and this is
+            # a reference. (ways:orientation 1.3)
+            address = None if parts[i] == "0" else parts[i]
             i += 1
         else:
             return None

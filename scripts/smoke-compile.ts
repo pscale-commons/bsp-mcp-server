@@ -143,7 +143,7 @@ console.log('\nSTANCE — the grips reservoir, beach-native (admitted 2026-08-04
   const bare = { _: 'no stance carrier', 1: 'passport', 2: 'conditions', 3: 'relationships' };
   const r1 = await compile(toPNode(bare), stanceLoad);
   const st = r1.completions.find((c) => c.dimension === 'stance');
-  ok('uncarried stance completes from the surface-hosted block', st?.address === 'grips:0:0');
+  ok('uncarried stance completes from the surface-hosted block', st?.address === 'grips:0:1');
   ok('stance: line scooped live — the reservoir, never hardcoded', typeof st?.line === 'string' && st.line === gripsLine);
   ok('stance: reason names the failure class', /read off the hands/.test(st?.reason ?? ''));
   const r2 = await compile(toPNode({ ...bare, 4: 'grips:5' }), stanceLoad);
@@ -255,6 +255,32 @@ console.log('\nFRAMED APERTURE — the delivery form (gap 2)');
   const law = await compile(toPNode({ _: 'law-class', 1: 'relationships', 2: 'purpose' }), load);
   ok('a whole block still hydrates whole (law-class delivery)', renderFramedValue((law.window as PMap).get('2') as PNode).startsWith('{'));
   ok('absent renders as absent', renderFramedValue(null) === '(absent)');
+}
+
+console.log('\nADDRESS 0 IN A REFERENCE — the root, spindle omitted (ways:orientation 1.3)');
+{
+  // The fault this closes, measured 2026-09-08: six of weft's seven manifest
+  // slots arrived as the block's opening LABEL, because a literal '0' left-pads
+  // to floor width and walks the underscore chain to the root voicing.
+  const board = toPNode({ _: 'THE BOARD — its own voicing', 1: 'first entry', 2: 'second entry', 5: { _: 'fifth' } });
+  const bLoad: Loader = async (n) => (n === 'board' ? (board as PNode) : load(n));
+  const dash = await compile(toPNode({ _: 'a bundle dialing a dashboard', 1: 'board:0:0' }), bLoad, { complete: false });
+  const cell = (dash.window as PMap).get('1') as PNode;
+  ok('name:0:0 is the DISC at pscale 0, not the label', cell instanceof Map && (cell as PMap).size === 4);
+  ok('the disc carries the positions, not just the voicing', renderFramedValue(cell).includes('first entry'));
+
+  const root = await compile(toPNode({ _: 'a bundle dialing the root line', 1: 'board:0:1' }), bLoad, { complete: false });
+  const line = (root.window as PMap).get('1') as PNode;
+  ok('name:0:<floor> is the ROOT ALONE — one node', line instanceof Map && (line as PMap).size === 1);
+
+  // The footgun the law creates, named rather than hidden: with the address gone
+  // and no attention left to narrow it, `name:0` is the whole-block read — the
+  // most expensive call on the surface. A bundle should never carry it.
+  const whole = await compile(toPNode({ _: 'a bundle dialing bare zero', 1: 'board:0' }), bLoad, { complete: false });
+  ok('name:0 bare is the WHOLE block (the footgun, named)', (whole.window as PMap).get('1') instanceof Map
+    && ((whole.window as PMap).get('1') as PMap).has('_'));
+
+  ok('a non-zero address is untouched', (await compile(toPNode({ _: 'x', 1: 'board:5:0' }), bLoad, { complete: false })).dialed[0].address === '5');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
