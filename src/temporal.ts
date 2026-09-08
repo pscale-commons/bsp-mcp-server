@@ -480,15 +480,16 @@ export function annotateAges(text: string, now: Date = new Date()): string {
 
 /** Body annotated, then stamped. The stamp is appended AFTER annotation so it
  *  never annotates itself. */
-export function ground(text: string, now: Date = new Date()): string {
-  return `${annotateAges(text, now)}\n\n${renderNow(now)}`;
+export function ground(text: string, now: Date = new Date(), here: string | null = null): string {
+  return `${annotateAges(text, now)}\n\n${renderNow(now)}${here ? `\n${here}` : ''}`;
 }
 
 /** Ground an MCP tool result in place: every text part gets its ages, and the
  *  LAST text part carries the stamp (one per response, at the end, adjacent to
- *  whatever the reader just read). Non-text parts and error results pass
+ *  whatever the reader just read) — and beneath it the here-stamp when the caller
+ *  has one (src/here.ts; sundial 5.5). Non-text parts and error results pass
  *  through untouched — an error needs no clock. */
-export function groundResult<T>(res: T, now: Date = new Date()): T {
+export function groundResult<T>(res: T, now: Date = new Date(), here: string | null = null): T {
   const r = res as any;
   if (!r || r.isError || !Array.isArray(r.content)) return res;
   const textIdx = r.content
@@ -501,7 +502,7 @@ export function groundResult<T>(res: T, now: Date = new Date()): T {
     content: r.content.map((c: any, i: number) => {
       if (!textIdx.includes(i)) return c;
       const body = annotateAges(c.text, now);
-      return { ...c, text: i === last ? `${body}\n\n${renderNow(now)}` : body };
+      return { ...c, text: i === last ? `${body}\n\n${renderNow(now)}${here ? `\n${here}` : ''}` : body };
     }),
   } as T;
 }
