@@ -274,6 +274,86 @@ export function digitsOfAddress(v: unknown): string | null {
   return s.replace(/[.,]/g, '');
 }
 
+/** One closed container in a folded read: the span it covers and the summary
+ *  line that stands for it — or null where that summary has not been paid. */
+export interface FoldedContainer {
+  container: string;
+  span: string;
+  summary: string | null;
+  entries: number;
+}
+
+/** Walk to a node by its PADDED digit path, digit 0 being the underscore. Used
+ *  instead of readAt because a container path ends in zeros and the address
+ *  parser strips trailing zeros — "00" would canonicalise to the root. Walking
+ *  the tree directly sidesteps the whole question. */
+function nodeAtPadded(block: Block, digits: string): any {
+  let cur: any = block;
+  for (const d of digits) {
+    if (cur === null || typeof cur !== 'object') return undefined;
+    cur = cur[d === '0' ? '_' : d];
+  }
+  return cur;
+}
+
+/**
+ * THE FOLD — a pool delivered the way the mirror folds it: closed containers as
+ * their summary lines, the open container whole.
+ *
+ * An accumulator's entries sit at floor-width zero-free addresses, older ones
+ * absorbed under wrapped underscores and read by left-padding ("7" at floor 3
+ * reads as "007"). So an entry's CONTAINER is its padded address minus the last
+ * digit, and the containers in order are the eras of the room. Everything before
+ * the last one is closed and stands for itself through its voicing — which is
+ * exactly what block-conventions:3.5 makes the zero-slot summary FOR ("a summary
+ * is NAVIGATION, not decoration"). The last container is still filling, so it
+ * rides whole.
+ *
+ * Where a closed container's summary has not been paid the fold says so and names
+ * the span, rather than emitting a blank or quietly dumping the entries: an owed
+ * summary is a debt the room should show at every door, not hide. (pool:weft
+ * stood with containers 2-9 unvoiced when this landed — orientation:weft 9.2.6.)
+ *
+ * A floor-1 pool has no containers and folds to nothing; the caller renders it
+ * as before.
+ */
+export function foldContributions(
+  block: Block,
+  sincePosition: number,
+): { closed: FoldedContainer[]; open: PoolContribution[]; folded: boolean } {
+  const floor = Math.max(floorDepth(block), 1);
+  const { contributions } = collectContributions(block, sincePosition);
+  if (floor < 2 || contributions.length === 0) return { closed: [], open: contributions, folded: false };
+
+  const byContainer = new Map<string, PoolContribution[]>();
+  for (const c of contributions) {
+    const padded = String(c.position).padStart(floor, '0');
+    const key = padded.slice(0, floor - 1);
+    const bucket = byContainer.get(key);
+    if (bucket) bucket.push(c); else byContainer.set(key, [c]);
+  }
+  const keys = [...byContainer.keys()].sort();
+  if (keys.length < 2) return { closed: [], open: contributions, folded: false };
+
+  const openKey = keys[keys.length - 1];
+  const closed: FoldedContainer[] = [];
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    const entries = byContainer.get(key)!;
+    // The summary of a span lives at the NEXT container's underscore, not its
+    // own: zero-slots are +0 inductive, each over the PREVIOUS completed nine
+    // ("10 summarises entries 1-9", and address 10 is node 1's underscore —
+    // block-conventions:3.5). pool:weft is the live proof: container 01, which
+    // holds entries 011-019, carries "Summary of 01-09".
+    const node = nodeAtPadded(block, keys[i + 1]);
+    const voicing = node && typeof node === 'object' && typeof node._ === 'string' && node._ !== '' ? node._ : null;
+    const first = String(entries[0].position).padStart(floor, '0');
+    const last = String(entries[entries.length - 1].position).padStart(floor, '0');
+    closed.push({ container: key, span: first === last ? first : `${first}-${last}`, summary: voicing, entries: entries.length });
+  }
+  return { closed, open: byContainer.get(openKey)!, folded: true };
+}
+
 export function collectContributions(
   block: Block,
   sincePosition: number,
@@ -1892,6 +1972,17 @@ export async function handlePoolEngage(
   const { hint: synthesisHint, source: hintSource } = extractSynthesisHint(row.block);
   const { contributions, more_available } = collectContributions(row.block, sincePosition, atDigits);
 
+  // THE FOLD (2026-09-08). A door that inlines a grown room replays it from its
+  // first slot at every arrival — 108,665 of weft's 132,836 characters, 82%,
+  // back to July. Folding delivers what the accumulation law already stores:
+  // closed containers as their summary lines, the open container whole. Only
+  // when the caller has NO marker — a holder who carries one is already reading
+  // the delta, and their marker is honoured untouched. A located view is left
+  // alone too: its slice is narrow by construction and its containers are not
+  // the fold's.
+  const wantsFold = (params as any).fold === true && sincePosition === 0 && atDigits === undefined;
+  const fold = wantsFold ? foldContributions(row.block, sincePosition) : null;
+
   const markerNew = contributions.length > 0
     ? contributions[contributions.length - 1].position
     : sincePosition;
@@ -2159,7 +2250,8 @@ export async function handlePoolEngage(
     ? `; ${outsideView} ${outsideView === 1 ? 'entry stands' : 'entries stand'} outside this view since your marker — drop at= to see the whole pool`
     : '';
   const atView = params.at !== undefined ? ` at ${params.at} (located view — unlocated entries excluded; keep a marker per view${outsideNote})` : '';
-  lines.push(`# Contributions since position ${sincePosition}${atView} (count: ${contributions.length}${more_available ? ', more available' : ''})`);
+  const foldNote = fold?.folded ? `, folded to ${fold.closed.length} + ${fold.open.length}` : '';
+  lines.push(`# Contributions since position ${sincePosition}${atView} (count: ${contributions.length}${foldNote}${more_available ? ', more available' : ''})`);
   // Verbatim-voices discipline (portal invariant, proposal 2026-07-12 §3): on a
   // plain pool the mediating LLM tends to compress the stream into a summary,
   // which hides what people actually said. Directive pools skip this — their
@@ -2168,10 +2260,28 @@ export async function handlePoolEngage(
   if (!directiveText && contributions.length > 0) {
     lines.push('(voices are verbatim — quote or preserve them in any synthesis; never let a summary replace what was said)');
   }
-  if (contributions.length === 0) {
+  const shown = fold?.folded ? fold.open : contributions;
+  if (fold?.folded) {
+    lines.push('');
+    lines.push(`# Before this — ${fold.closed.length} closed ${fold.closed.length === 1 ? 'container' : 'containers'}, each standing for its span`);
+    for (const c of fold.closed) {
+      if (c.summary) {
+        lines.push(`## ${c.span} (${c.entries})`);
+        lines.push(c.summary);
+      } else {
+        lines.push(`## ${c.span} (${c.entries}) — SUMMARY OWED`);
+        lines.push(`no voicing stands at this container, so its span cannot be read here; pay it by writing the container whole (block-conventions:3.5)`);
+      }
+      lines.push('');
+    }
+    lines.push(`(the room is folded: closed spans stand as their summaries, the open one is whole below — pass since_position to read forward from your own marker instead)`);
+    lines.push('');
+    lines.push(`# The open container (count: ${shown.length})`);
+  }
+  if (shown.length === 0) {
     lines.push('(nothing new)');
   } else {
-    for (const c of contributions) {
+    for (const c of shown) {
       const who = c.agent_id ?? '(anon)';
       const when = c.ts ?? '';
       const faceTag = c.face ? ` [${c.face}]` : '';
