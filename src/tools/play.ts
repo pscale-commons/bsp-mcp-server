@@ -461,7 +461,7 @@ export async function handlePlay(
   // 3. Engage the room — the operating directive and the live scene arrive inlined.
   let env: string;
   try {
-    env = (await handlePoolEngage({ pool_url: resolved, pool_name: roomName, agent_id: handle, since_position: 0, with_liquid: true } as any)).content[0].text;
+    env = (await handlePoolEngage({ pool_url: resolved, pool_name: roomName, agent_id: handle, since_position: 0, with_liquid: true, fold: true } as any)).content[0].text;
   } catch (e: any) {
     return { content: [{ type: 'text', text: `Could not engage room "${roomName}" at ${resolved}: ${e?.message ?? String(e)}` }] };
   }

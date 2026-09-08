@@ -1,7 +1,7 @@
 {
   "name": "bsp-mcp-server",
   "version": "0.4.0",
-  "description": "MCP server for the unified bsp() function over pscale JSON blocks \u2014 Block-Spindle-Pscale as polar coordinates",
+  "description": "MCP server for the unified bsp() function over pscale JSON blocks — Block-Spindle-Pscale as polar coordinates",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -62,7 +62,8 @@
     "smoke:wellformed": "tsx scripts/smoke-wellformed.ts",
     "smoke:compile": "tsx scripts/smoke-compile.ts",
     "smoke:play-hands": "tsx scripts/smoke-play-hands.ts",
-    "lint:block": "tsx scripts/lint-block.ts"
+    "lint:block": "tsx scripts/lint-block.ts",
+    "smoke:room-fold": "tsx scripts/smoke-room-fold.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
