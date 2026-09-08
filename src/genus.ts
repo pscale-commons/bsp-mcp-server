@@ -284,7 +284,13 @@ export function parseReference(leaf: PNode | undefined): { name: string; address
   let attention: number | null = null;
   if (i < parts.length) {
     if (ADDR_RE.test(parts[i])) {
-      address = parts[i];
+      // Address 0 is the ROOT with the spindle omitted, never the underscore
+      // step: `name:0:att` dials the block's dashboard at that pscale, where a
+      // literal '0' left-pads to floor width and walks the underscore chain to
+      // the root voicing — the label. bsp(spindle='0') keeps the other reading,
+      // the surgical underscore write, because that is a hand-call and this is
+      // a reference. (ways:orientation 1.3; spark.py parity)
+      address = parts[i] === '0' ? null : parts[i];
       i++;
     } else return null;
   }

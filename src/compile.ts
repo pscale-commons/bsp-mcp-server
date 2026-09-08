@@ -181,7 +181,14 @@ export const COMPLETION_REGISTRY: CompletionRule[] = [
     },
     // Address 0 at attention 0 — the block's root voicing as a string point,
     // the same form as the lodestone entries ('0' left-pads across supernest).
-    shallowPoint: 'grips:0:0',
+    // grips is floor 1, so the disc at pscale 1 is the ROOT ALONE — one line,
+    // which is what a shallow point is for. Was 'grips:0:0' until 2026-09-08,
+    // when address 0 in a reference became the root with the spindle omitted
+    // (ways:orientation 1.3): under that law ':0:0' is the whole dashboard, not
+    // the voicing. NOTE the trade the law makes here — the old form padded to
+    // floor width and so found the root at ANY floor, where this one is pinned
+    // to grips staying floor 1. If grips ever supernests, re-dial this.
+    shallowPoint: 'grips:0:1',
     admittedBy:
       'a month of block-side face machinery that fought its own users — face params, gates, panels, the liquid ' +
       'collision (xstream-bsp#182), two face models wired into one client with neither driving — named ' +
@@ -270,6 +277,21 @@ async function hydrateFrame(node: PNode, load: Loader, fetchOrigin?: FetchOrigin
  * and never appear in the window. Pass `fetchOrigin` to resolve star-refs
  * cross-beach; without it they ride through unresolved, visibly.
  */
+/** A shallow point must deliver ONE LINE. A scoop yields a string for a point,
+ *  and a single-entry map for a disc that found exactly one node — which is how
+ *  the ROOT is now named, since address 0 in a reference became the root with
+ *  the spindle omitted (ways:orientation 1.3) and no longer walks the underscore
+ *  step. Unwrapping here keeps the registry's constants expressible as ordinary
+ *  addresses, which is the whole point of holding the address and never the text. */
+function shallowLine(scooped: PNode): string | null {
+  if (typeof scooped === 'string') return scooped;
+  if (scooped instanceof Map && scooped.size === 1) {
+    const only = [...scooped.values()][0];
+    if (typeof only === 'string') return only;
+  }
+  return null;
+}
+
 export async function compile(
   bundle: PNode | string,
   load: Loader,
@@ -296,7 +318,7 @@ export async function compile(
   if (opts.complete !== false) {
     for (const rule of COMPLETION_REGISTRY) {
       if (carried.some((d) => rule.carries(d.name, d.address))) continue;
-      const line = await scoop(rule.shallowPoint, load);
+      const line = shallowLine(await scoop(rule.shallowPoint, load));
       if (line === null) continue; // the surface must carry it — no fallback text lives here
       completions.push({ dimension: rule.dimension, address: rule.shallowPoint, line, reason: rule.admittedBy });
     }
