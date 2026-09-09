@@ -72,6 +72,15 @@ export function renderHere(addr: string, origin: string = REAL_BEACH): string {
   return `here · ${addr} · ${word} (+${pscale}) · spatial:earth at ${host(origin)}`;
 }
 
+/** Does position 3 talk about a place at all? Deliberately crude: any mention of a
+ *  location, or a long digit run that looks like an address someone meant. It decides
+ *  only whether to NUDGE, never where anybody is — so a false positive costs one line
+ *  of advice and a false negative costs the silence this exists to end. */
+export function namesAPlace(p3: unknown): boolean {
+  if (typeof p3 !== 'string') return false;
+  return /\blocation\b/i.test(p3) || /\b\d{8,}\b/.test(p3);
+}
+
 const TTL_MS = 10 * 60 * 1000;
 const memo = new Map<string, { line: string | null; at: number }>();
 
@@ -90,6 +99,18 @@ export async function resolveHere(args: unknown): Promise<string | null> {
     const row = await loadBlock(REAL_BEACH, `passport:${handle}`);
     const ref = row ? passportLocationRef(row.block) : null;
     if (ref) line = renderHere(ref.addr, ref.origin || REAL_BEACH);
+    else if (row && namesAPlace((row.block as Record<string, unknown>)?.['3'])) {
+      // A passport that SAYS where someone lives but carries no address the map can
+      // read. Silence here is the one failure nothing else catches: an assistant
+      // writes a perfectly good human sentence, reports success, and the person is
+      // simply absent from every map and every proximity read with nobody the wiser.
+      // It happened to this substrate's own keeper — his assistant told him "nothing
+      // further to write" while he was unplaced. So say it, in the one place an
+      // assistant cannot miss: the stamp it already receives on every call.
+      line =
+        `here · NOT PLACED — passport position 3 names a place but carries no address the map reads; ` +
+        `the form and the walk are at char-creation on ${host(REAL_BEACH)}`;
+    }
   } catch {
     line = null;
   }
