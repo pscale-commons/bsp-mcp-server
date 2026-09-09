@@ -2,7 +2,8 @@
  * smoke-here.ts — the here-stamp: the standpoint on space as digits beside the clock.
  * Run: npm run smoke:here   (LIVE=1 adds one real passport read at the real)
  */
-import { isBareHandle, spatialRung, renderHere, resolveHere, forgetHere } from '../src/here.js';
+import { isBareHandle, spatialRung, renderHere, resolveHere, forgetHere, namesAPlace } from '../src/here.js';
+import { passportLocationRef } from '../src/tools/pool.js';
 import { groundResult, renderNow } from '../src/temporal.js';
 
 let pass = 0, fail = 0;
@@ -42,6 +43,20 @@ const without = groundResult(res, NOW, null) as any;
 ok('no here, no line', without.content[0].text.endsWith(renderNow(NOW)));
 const err = groundResult({ isError: true, content: [{ type: 'text', text: 'boom' }] }, NOW, line) as any;
 ok('an error stays ungrounded', err.content[0].text === 'boom');
+
+console.log('\nUNREADABLE — a passport that names a place but cites no address');
+{
+  // The exact line David's assistant wrote, and reported as done: a good human
+  // sentence, three different digit runs, and no reference the map can read.
+  const real =
+    'LOCATION — David\'s coordinate on the ground. 33 Firbarn Close, Sutton Coldfield, ' +
+    'Birmingham, UK. pscale address: 31121111110 (house), 31121111111 (kitchen) — set ' +
+    '2026-09-09, replacing the prior 31121100110/111.';
+  ok('the real unreadable line is seen as naming a place', namesAPlace(real));
+  ok('a proper star-ref is not nudged', !!passportLocationRef({ 3: 'Location: *:https://earth.beach.happyseaurchin.com:spatial:earth:31121111110 — home' }));
+  ok('a passport with no position 3 is silent', !namesAPlace(undefined));
+  ok('a posture with no place is silent', !namesAPlace('Met directly, with the work in view.'));
+}
 
 (async () => {
   console.log('\nRESOLVE — no standpoint for a non-handle, no network touched');
