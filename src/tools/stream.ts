@@ -207,7 +207,7 @@ function clockVoice(addr: string, floor: number): string | null {
 export const streamEngageParamsSchema = {
   field: z
     .string()
-    .describe("The family name — the BARE name, no prefix. 'beach-venture' addresses spine:beach-venture, every beach-venture:<handle> mirror, and the fold at 'beach-venture'. Never pass 'spine:beach-venture' or 'pool:beach-venture'."),
+    .describe("'now' unless the person names a specific project — any ask about today, this week, someone’s day or what people are doing is the now family, the one every handle has. The family name — the BARE name, no prefix. 'beach-venture' addresses spine:beach-venture, every beach-venture:<handle> mirror, and the fold at 'beach-venture'. Never pass 'spine:beach-venture' or 'pool:beach-venture'."),
   handle: z
     .string()
     .describe("Your handle. Names your mirror (<field>:<handle>) for `say`, and your own tree of syntheses (tree:<field>:<handle>) for keep='personal'. Mirror and tree are born on first use — you never create them by hand."),
