@@ -21,9 +21,14 @@
  */
 import { loadBlock } from './db.js';
 import { passportLocationRef } from './tools/pool.js';
+import { DEFAULT_BEACH } from './db.js';
 
 /** The real — the world every handle shares. Overridable per deployment. */
 export const REAL_BEACH = process.env.REAL_BEACH || 'https://earth.beach.happyseaurchin.com';
+
+/** Where a person keeps their own passport — the commons, unless a deployment moves it.
+ *  Distinct from REAL_BEACH: the map is the world's, the location line is the person's. */
+export const HOME_BEACH = process.env.HOME_BEACH || DEFAULT_BEACH;
 
 /** spatial:earth's floor: +11 the solar system, 0 the room (its own root voicing). */
 export const SPATIAL_FLOOR = 11;
@@ -96,7 +101,14 @@ export async function resolveHere(args: unknown): Promise<string | null> {
   if (hit && Date.now() - hit.at < TTL_MS) return hit.line;
   let line: string | null = null;
   try {
-    const row = await loadBlock(REAL_BEACH, `passport:${handle}`);
+    // The passport is read where the PERSON keeps it, not where the world does.
+    // A location is one line in their own passport at their own beach and nowhere
+    // else (char-creation 0), and this reader was the last one still looking at the
+    // world's copy — so the stamp and the census disagreed about the same person on
+    // the same afternoon, which is the whole duplicate all over again one layer up.
+    // REAL_BEACH stays what it always was: where spatial:earth lives, and the origin
+    // a bare ref is read against.
+    const row = await loadBlock(HOME_BEACH, `passport:${handle}`);
     const ref = row ? passportLocationRef(row.block) : null;
     if (ref) line = renderHere(ref.addr, ref.origin || REAL_BEACH);
     else if (row && namesAPlace((row.block as Record<string, unknown>)?.['3'])) {
