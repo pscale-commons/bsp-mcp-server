@@ -48,9 +48,12 @@ the house; today at 16:09 BST bsp-mcp #351 landed, reading the passport where th
 — whose line still stopped at the town. The two lines disagreed for the whole afternoon and the router's
 here-stamp placed David at the town. Ruled:
 
-- the apex line carries the digits, in David's approved words, moved here in this lane:
-  `*:https://earth.beach.happyseaurchin.com:spatial:earth:31121111110` — the family house, the kitchen at
-  31121111111, and the year's hold at Awel Y Mor (31110111010, its room 31110111011);
+- the apex line carries the digits, in David's words:
+  `*:https://earth.beach.happyseaurchin.com:spatial:earth:31121111110` — 33 Firbarn Close, Sutton Coldfield,
+  Birmingham, the family house, the kitchen at 31121111111. The first draft of this line carried the earth
+  copy's "for the year also at Awel Y Mor" clause; David's word the next morning — "I AM IN BIRMINGHAM" —
+  removed it. Where a person stands is one line, written at their word, and a clause carried over from a copy
+  is exactly the kind of stale fact this section exists to end;
 - the earth copy of the passport is deleted (HTTP DELETE, his key). `knows:`, `purpose:` and `witnessed:` at
   earth are not copies — they are the genesis mirror-room's own record (function:earth 4) — and stand untouched
   until he says otherwise; JulieJ's and Ayush's blocks are theirs to sort;
