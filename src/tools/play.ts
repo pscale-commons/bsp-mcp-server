@@ -102,22 +102,46 @@ function subdomainOrigin(world: string): string {
  *  fallback and landed the player on the apex commons, where an invited friend was
  *  offered the commons gate and a character on it. Taking field two leaves the row
  *  free to carry whatever else the operator wants to say about a world. */
+/** Every row of the register, in its own order — the wrapped eras first. The
+ *  register grows by APPEND and supernests when its ladder fills (its own growth
+ *  law, worlds:_), so past the ninth world the older rows stand under the root
+ *  underscore and the newer ones at 11, 12, …; a reader that walks only the top
+ *  level goes blind to all of them the day the tenth world is listed — which is
+ *  what happened on 2026-09-14, when the open tables were added. */
+export function registerRows(w: unknown): string[] {
+  const rows: string[] = [];
+  const walk = (n: Record<string, unknown>) => {
+    const u = n['_'];
+    if (u && typeof u === 'object' && !Array.isArray(u)) walk(u as Record<string, unknown>);
+    for (const k of Object.keys(n).filter((k) => /^[1-9]$/.test(k)).sort()) {
+      const e = n[k];
+      if (typeof e === 'string') { if (e.includes('→')) rows.push(e); }
+      else if (e && typeof e === 'object' && !Array.isArray(e)) walk(e as Record<string, unknown>);
+    }
+  };
+  if (w && typeof w === 'object' && !Array.isArray(w)) walk(w as Record<string, unknown>);
+  return rows;
+}
+
+/** A register row's route, resolved to an origin at the default beach's family:
+ *  a '/'-route is a path at the apex, a host or URL stands as given. */
+export function routeToOrigin(route: string, base: string): string | null {
+  const r = (route ?? '').trim().replace(/\/+$/, '');
+  if (!r) return null;
+  if (/^https?:\/\//i.test(r)) return r;
+  if (r.startsWith('/')) return base + r;
+  return `https://${r}`;
+}
+
 async function lookupWorldRoute(name: string): Promise<string | null> {
   const base = DEFAULT_BEACH.replace(/\/+$/, '');
   const row = await loadBlock(base, 'worlds').catch(() => null);
-  const w: any = row?.block;
-  if (!w || typeof w !== 'object') return null;
   const want = name.trim().toLowerCase();
-  for (const k of Object.keys(w)) {
-    if (k === '_') continue;
-    const entry = w[k];
-    if (typeof entry !== 'string' || !entry.includes('→')) continue;
+  for (const entry of registerRows(row?.block)) {
     const [n, field2] = entry.split('→');
-    const route = (field2 ?? '').trim();
-    if (n.trim().toLowerCase() !== want || !route) continue;
-    if (/^https?:\/\//i.test(route)) return route.replace(/\/+$/, '');
-    if (route.startsWith('/')) return base + route.replace(/\/+$/, '');
-    return `https://${route.replace(/\/+$/, '')}`;
+    if (n.trim().toLowerCase() !== want) continue;
+    const origin = routeToOrigin(field2 ?? '', base);
+    if (origin) return origin;
   }
   return null;
 }

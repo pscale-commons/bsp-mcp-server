@@ -17,6 +17,7 @@
     "build": "tsc",
     "start": "tsx src/index.ts",
     "smoke:wire": "tsx scripts/smoke-wire.ts",
+    "smoke:register": "tsx scripts/smoke-register-rows.ts",
     "smoke:stream": "tsx scripts/smoke-stream-engage.ts",
     "smoke:unit": "tsx scripts/smoke-bsp.ts",
     "smoke:numeric": "tsx scripts/smoke-numeric-leaves.ts",
