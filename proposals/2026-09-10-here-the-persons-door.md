@@ -111,3 +111,42 @@ write shape.
 - at the apex: `passport:happyseaurchin` position 3;
 - happyseaurchin-home: `here.html`, vercel.json, theme.js, the links (`claude/here-page`);
 - the intakes at `watch:weft` 311 and 313 re-seeded on this file; weft's identity file and the lock map updated.
+
+## 6. Addendum, 2026-09-14 — one voice, and the spread
+
+David reviewed the merged page (happyseaurchin-home #219) and found the two boxes, "your words" and "your
+perspectives", unparseable: a person speaks with one voice at a place. The review that followed (this lane,
+2026-09-14) found the substrate consistent — a register block per coordinate and a mirror per person at the
+register's own addresses, `spatial:earth` / `spatial:<handle>` and `identity:earth` / `identity:<handle>` — and
+the untidiness in two places: the perspective register had been defined four ways between July and Thursday
+afternoon, and the page showed a person two boxes. Ruled, all three:
+
+1. **One voice per person per place on the real.** `/here` shows the map's words, how the place is held
+   (`identity:earth`, the compiled ring, read-only) and ONE editable line, yours, at the place's own address —
+   the node's underscore in `identity:<handle>`. The words "your words" and "your perspectives" leave the
+   page, and so does "perspective". `spatial:<handle>` is never shown as a mirror: it is reached only through
+   **"add a place to the earth-map"** (David's wording) — a house, a road, a room the map lacks, landing beneath
+   the deepest rung for the pass to adopt — and a pane of the places you have added. The substrate keeps both
+   registers; the RPG needs both (authored canon and authored kinds at urb, the compile per face deciding what
+   a Character sees); the human sees one voice. David's own Firbarn Close line moved from a fan digit to the
+   close's own address under his key. happyseaurchin-home #225.
+2. **The word on the page for the ring is "how this place is held".**
+3. **The stats tree waits**; the census counts (and began counting over the weekend).
+
+**`/walk/here` is built after all**, not by forcing the map into the clock's shape but as a third dialect in
+walk.html beside the clock and the branches — *ground*: the family `here` resolves to the real; the rows are
+the siblings at each rung along the chosen path (the planets, the continents, the countries, down to the
+room), undecided ground as a card the walk steps through, the cards on the standpoint's ladder marked *you*;
+a tap stands there and the rows beneath follow; a second tap or a count opens the popup — the map's words
+with the ring and the tally, or everyone's voice with your own box. Writes are whole-block merges under the
+key you type (the same device key `/here` keeps), founding born-locked behind the passport gate; a place the
+map lacks is added beneath the one you stand on. Two dials of its own: the description on each card, and
+the ring under the row you stand in. Links to `/here`, `/globe` and the mirror at the address, spelt as
+happyseaurchin-home #220 ruled (world, block, address). `/here` links to the spread. §4 of this record is
+thereby amended: the reason `/walk/here` was declined (walk's bare-string write, its apex wiring, its clock
+padding) is answered by the dialect, whose writes never send a bare string.
+
+Two lessons paid in the lane: a hand-typed whole-block payload with an eleven-deep underscore chain
+miscounted its braces, so it was not JSON and the router refused it as "not an object" — no guard was
+involved; build deep payloads by program, or write the node as a point. And `bsp()` has no delete: a test
+block is removed at the beach's own door, and the lane says so.
