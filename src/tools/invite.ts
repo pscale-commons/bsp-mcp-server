@@ -54,22 +54,41 @@ function renderWelcome(block: Block): string {
  * The welcome names a LIVE world, read from the `worlds` register at the default
  * beach at call time — never a literal in tool text (proposal:three-portals 5.1:
  * a world named in a docstring is the pointer nobody re-reads as a block, and it
- * rots the day the world is retired — thornwood did). First row of the register;
- * when the register is unreachable the welcome points at the register itself.
+ * rots the day the world is retired — thornwood did). THE FIRST WORLD WITH A DOOR:
+ * the welcome promises one call, look around, act once, and that is true only of a
+ * register line whose third field names the room a newcomer lands in (an open
+ * table's gate — worlds:_ from 2026-09-14); a canon scenario, whose third field
+ * says 'surface', answers a stranger with the Author walk instead. Rows are read
+ * in order, the wrapped era first, so the register's own growth law holds; with no
+ * doored row the first row stands as before, and when the register is unreachable
+ * the welcome points at the register itself.
  */
+export function pickWelcomeWorld(w: unknown): string | null {
+  if (!w || typeof w !== 'object') return null;
+  const rows: string[] = [];
+  const walk = (n: Record<string, unknown>) => {
+    const u = n['_'];
+    if (u && typeof u === 'object') walk(u as Record<string, unknown>);
+    for (const k of Object.keys(n).filter((k) => /^[1-9]$/.test(k)).sort()) {
+      const e = n[k];
+      if (typeof e === 'string' && e.includes('→')) rows.push(e);
+      else if (e && typeof e === 'object') walk(e as Record<string, unknown>);
+    }
+  };
+  walk(w as Record<string, unknown>);
+  const parsed = rows.map((e) => {
+    const f = e.split('→').map((t) => t.trim());
+    return { name: f[0] ?? '', room: (f[2] ?? '').toLowerCase() };
+  }).filter((r) => r.name);
+  const doored = parsed.find((r) => r.room && r.room !== 'surface');
+  return (doored ?? parsed[0])?.name ?? null;
+}
+
 async function firstWorldName(): Promise<string> {
   try {
     const row = await loadBlock(DEFAULT_BEACH, 'worlds');
-    const w = row?.block as Record<string, unknown> | undefined;
-    if (w && typeof w === 'object') {
-      for (const k of Object.keys(w).filter((k) => /^[1-9]$/.test(k)).sort()) {
-        const e = w[k];
-        if (typeof e === 'string' && e.includes('→')) {
-          const name = e.split('→')[0].trim();
-          if (name) return name;
-        }
-      }
-    }
+    const name = pickWelcomeWorld(row?.block);
+    if (name) return name;
   } catch { /* the register is orientation, never a gate — absence points at it */ }
   return '<a name from the worlds block at the beach>';
 }
