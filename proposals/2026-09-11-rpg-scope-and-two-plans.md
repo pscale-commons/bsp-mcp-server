@@ -310,3 +310,46 @@ No block of law was written or re-voiced; no code was changed; no table was foun
 door probes were keyless reads. One lane entry at `watch:weft` and one intake entry at
 `project:nomad-rpg` branch 2 carry the pointer to this file. The next act is David's
 three sentences (§7).
+
+## Amendment, 2026-09-14 — the mirror route DOES take a world link, and the browser door is the mirror
+
+**Correction to §1 and §3 (portal 2).** `Mirror.tsx` reads `?world=`, `?pool=`,
+`?block=` and `?at=` at arrival. A link naming a table AND its room —
+`mirror.onen.ai/?world=<table URL>&pool=211` — lands in that room at that table
+(verified 2026-09-14: the chip named the room, the record was the room's, staged lines,
+presence and vapour are the room's). A roomless world link lands on the table's SURFACE,
+because the mirror reads the resolved beach but not the resolved entry room. The earlier
+claim that the mirror "drops the world parameter" came from a text search that silently
+skipped the file; the live test had read the table's surface as the welcome room.
+
+**David's ruling, 2026-09-14.** mirror.onen.ai is the browser door from now on;
+xstream.onen.ai's column surface is legacy, to learn from. Decision D2 is settled this way,
+and Plan A step 4 becomes the mirror build below. The column's room renderer, envelope
+parse, deterministic move and lent turn are the pieces to port, not to point at.
+
+**What the mirror lacks to play a table, verified in code.**
+1. Its soft-LLM's `pscale_pool_engage` tool declares only read, post and create: no
+   `submit` (stage into the window), no `resolves_window` and `resolves_seen` (the fold
+   claim), no `at`. So from the mirror the LLM can neither stage nor fold a check. The
+   human's own say already stages into `liquid:pool:<room>` — per-location liquid IS the
+   pool window — so staging by hand is fine; only the LLM's half is missing.
+2. `pscale_play` is not among the routed tools, so a fresh handle cannot walk the gate and
+   genesis from the mirror.
+3. The room's situation — the place, the ways, the cast, the dice — is not rendered; the
+   record, liquid, presence and vapour are.
+4. No move by tap; the column's `kernel/play/move.ts` is the deterministic form the F10
+   finding required.
+5. A directive room's underscore (`pscale:grit/1`) would render as the welcome card's text.
+
+**The smallest build, in the mirror's own idiom** (the mirror's voice does the addressing):
+pass the primitives' full schemas through the client tool loop (the rig's
+zod-to-json-schema pattern) and route `pscale_play`; a situation strip above the record
+read from the room's engage envelope (reuse `kernel/envelope.ts`); a way tap that runs the
+kernel move; the welcome-text fix. Then the charter line at `mirror` 4.2, which places
+directive rooms at the full surface, is re-voiced by the keeper's ruling.
+
+**Also confirmed 2026-09-14.** `egg-two` has never woken: no `trace:`, `daily:`, `pool:`
+or `shell:` block exists for it, and its conditions say "newly hatched: no instance". A
+page has no LLM; action fires only at the two live doors, or through a doorman standing in
+for an absent player, or a woken agent. The character page is for eyes, and for a graphics
+service reading a scene.
