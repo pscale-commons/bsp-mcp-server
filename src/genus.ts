@@ -814,7 +814,10 @@ export async function genusCompose(load: Loader, now: number, peers: Map<string,
 
 export interface BlockStore {
   load: Loader;
-  save: (name: string, block: PMap) => Promise<void>;
+  /** Whole-block replace. `newLock` is sent ONLY when the caller knows the
+   *  block is absent (create locked — R1 of the lock rules); otherwise the
+   *  store's own secret proves authority as ever. */
+  save: (name: string, block: PMap, opts?: { newLock?: string }) => Promise<void>;
   /** Accumulator append — the beach allocates the next free slot atomically
    *  and supernests on rollover. Required for room writes (the room is an
    *  accumulator; a fold never addresses or replaces it) and used for the
@@ -1314,12 +1317,13 @@ export function wireStore(beach: string, handle: string, secret?: string, teachi
     cache.set(name, parsed);
     return parsed;
   };
-  const save = async (name: string, block: PMap) => {
+  const save = async (name: string, block: PMap, opts?: { newLock?: string }) => {
     const body: PMap = new Map([
       ['content', block as PNode],
       ['confirm', true],
     ]);
     if (secret) body.set('secret', secret);
+    if (opts?.newLock) body.set('new_lock', opts.newLock);
     const { status, text } = await fetchText(endpoint(name), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
