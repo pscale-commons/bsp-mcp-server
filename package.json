@@ -16,6 +16,7 @@
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "tsx src/index.ts",
+    "smoke:flow": "tsx scripts/smoke-flow.ts",
     "smoke:wire": "tsx scripts/smoke-wire.ts",
     "smoke:register": "tsx scripts/smoke-register-rows.ts",
     "smoke:stream": "tsx scripts/smoke-stream-engage.ts",

@@ -30,6 +30,15 @@ tool through this connector, one of two things happens:
    caller provided (address, content, passphrase). bsp-mcp does not log, cache,
    or persist the request body or the response body.
 
+3. **The flow producer (opt-in).** A genus-one shell's holder may switch on
+   position 7 of that shell's `wake:<handle>` block. While it reads `on`, the
+   `pscale_genus` tool also writes `flow:<handle>` at the shell's own beach —
+   the LABELS, ADDRESSES and SIZES of what the composed window held (which
+   blocks, at which apertures, how many characters), never the text, never
+   a passphrase — under the shell's own key. Off or absent, nothing is
+   written. bsp-mcp retains none of it; the block lives at the beach like
+   any other and its underscore says what it is.
+
 The default beach is `https://beach.happyseaurchin.com` (a federated beach
 operated by the same maintainer; subject to its own retention model).
 

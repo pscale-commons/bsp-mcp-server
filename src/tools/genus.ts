@@ -32,6 +32,7 @@ import { z } from 'zod';
 
 import { genusCompose, genusFold, wireStore, toPNode, ZK, descend, deepEq, sparkWrite, type PMap, type PNode } from '../genus.js';
 import { SENTINELS } from '../sentinels.js';
+import { publishCompose, publishFold } from '../flow.js';
 
 const DEFAULT_BEACH = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
@@ -244,6 +245,11 @@ export async function handleGenus(params: {
         ? `trace appended at trace:${handle}${ack.slot ? ` slot ${ack.slot}` : ''} (door: mcp) — every tab sees this wake`
         : `trace append did not land (${String(ack.error ?? 'unknown').slice(0, 80)}) — the fold itself stands`;
     }
+    // The flow producer (src/flow.ts) — the reply lands beneath the window it
+    // answers, at flow:<handle>, only while the holder's switch (wake:<handle>:7)
+    // reads on. Silent to the instance; a failure is the server's to log.
+    const flowFold = await publishFold(store, handle, beach, fold, r, Date.now() / 1000);
+    if (flowFold.startsWith('failed')) console.error(`[flow] ${handle} fold: ${flowFold}`);
     const lines = [
       `pscale_genus — fold applied for ${handle} at ${beach}`,
       `status: ${r.status} · writes applied: ${r.applied} · refused: ${r.failed.length}`,
@@ -306,6 +312,14 @@ export async function handleGenus(params: {
   // ── compose — the window, byte-parity with kernel.py --compose-only ──
   const now = Date.now() / 1000;
   const w = await genusCompose(store.load, now, new Map(), handle);
+  // The flow producer — a side-effect BESIDE compose, never a change to it:
+  // the composed window, as labels, addresses and sizes, lands at flow:<handle>
+  // while the holder's switch (wake:<handle>:7) reads on. Only a keyed wake can
+  // write the shell, so a ghost-wake never publishes. Silent to the instance.
+  if (passphrase) {
+    const flowLine = await publishCompose(store, handle, beach, w, now, passphrase);
+    if (flowLine.startsWith('failed')) console.error(`[flow] ${handle} compose: ${flowLine}`);
+  }
   const mode = passphrase
     ? 'HOLDER — the special relationship: you may return this wake’s fold via the fold parameter (writes / index / heartbeat / note, per capabilities:3 in the window), or edit the shell as designer via bsp().'
     : `GHOST-WAKE — no passphrase: you are borrowing this mind, not changing it (the locks enforce it). Perceive, think, enact the wake in words; report what the fold WOULD write. Respond outwardly at task:${handle} (via bsp) or marks.`;
