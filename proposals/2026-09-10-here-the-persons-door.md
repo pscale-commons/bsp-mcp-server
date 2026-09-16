@@ -224,3 +224,43 @@ The doors say the same words everywhere: the globe's stranger link reads *get a 
 `/passport`; the gate notes on /now, /here and /page point at `/passport/<handle>`. Proven on the preview
 against the live apex with a throwaway name: door → founding (born locked) → tap-edit under the kept key →
 read back → wrong key refused → deleted.
+
+## 9. Addendum, 2026-09-16 night — come in: one portal, one name per page, a neutral menu
+
+David walked the site as a stranger after §8 shipped and named the tangle in one message: the globe's card
+offered a passport link sometimes and not others; a placed person could not be released from the view; "rung
++1" meant nothing; "your now" in the go menu on happyhedgehog's page was her now, not his; `/self` said
+passport and landed on shell; and the openings — /now, /here, /self, /welcome, /experiences — each asked in
+their own words. *"Please, no more tangle of urls and text confusion … I think we need to consolidate this so
+that a non-user who is visiting someone's o-page can navigate it and then, at some point DECIDE to create
+their own, and they get a single page/portal."* The consolidation was proposed as a table and agreed
+("Great!"); built in happyseaurchin-home (branch `claude/come-in`).
+
+- **One portal.** Every "add yourself" link on the site reads *come in →* and goes to `/welcome`, titled
+  "Come in." The founding form lives there and nowhere else: the name you will go by, one line, a key. A
+  standing name is refused with *open it →*; a near spelling is named once. Today's line is the second card
+  and is named by the passport — a now is a mirror of a name, never the founding act. Bare `/passport` and
+  `/self` redirect to `/welcome`. The rule under it: **the link text matches the title it lands on**, so there
+  is nothing to learn twice.
+- **One name for the person's page.** `/passport/<handle>` — bar *passport · handle*; the passport shows;
+  *display* reads "the rest of the shell" and opens the other sections. `/shell/<handle>` and `/self/<handle>`
+  redirect there. The page never founds: a name with no passport is sent to `/welcome?h=<name>`. Bare
+  `/shell` stays the agents' five-call document. This reverses §7's naming (the page was /shell, /passport a
+  redirect into it): the human term is the passport, and the shell is what display opens behind it.
+- **A neutral menu.** The go menu lists the pages OF THE HANDLE IN THE URL, so its names carry no "your":
+  now, here, page, passport, hands, projects | recency, relational field, globe, social brain — and the
+  handle stands as the menu's first line, so on happyhedgehog's now the names read as hers whoever is
+  looking. Ten on by default; the rest wait under *choose what shows*. A stated list that named "shell" still
+  opens the passport (an alias — a page renamed keeps the lists that named it).
+- **The footer, every page** — the site's one unconditional surface, by its own law: *come in →*, *every
+  field →*, and on a field page *found a field →*. Withheld on the page it would name.
+- **The globe.** The card navigates for the handle in view only (*here at this address →* when a handle is
+  in the URL) and never carries a creation link. Tap a placed name and the view takes that handle — the URL
+  carries it and the doors follow; tap it again, marked ×, and it is released. The rung tag is gone from the
+  row: a person reads a place, not a pscale.
+
+The lesson, for any door built after this: a creation link that moves from page to page is a tangle even
+when every link is correct. The decision needs one door, with one name, that matches the title it lands on.
+Proven against the live apex with a throwaway name: the today gate refused a name with no passport; founding
+on /welcome stood the passport born locked; today then landed under the same key, asked once; both blocks
+deleted after.
