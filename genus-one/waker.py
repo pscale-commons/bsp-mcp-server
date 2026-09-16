@@ -401,7 +401,8 @@ def set_consent(handle, dial, on, secret, beach=None):
                                "content": line, "secret": secret}, beach=beach)
             return ""
         beach_post(block, ({"spindle": spindle, "content": seed, "secret": secret} if spindle
-                           else {"content": seed, "secret": secret}), beach=beach)
+                           else ({"content": seed, "secret": secret} if isinstance(standing, dict)
+                                 else {"content": seed, "new_lock": secret})), beach=beach)
         return " Its dial was seeded at %s." % (block + (":" + spindle if spindle else ""))
     except Exception as e:
         return (" Its switch could NOT be set (%s) — the dial at %s is yours to write."
@@ -443,6 +444,14 @@ def verify_shell_key(handle, passphrase, beach=None):
     for name in ("shell:%s" % handle, "reflexive:%s" % handle, "passport:%s" % handle):
         try:
             block = beach_get(name, beach=beach)
+        except urllib.error.HTTPError as e:
+            # A block that does not stand is not a beach that cannot be reached:
+            # the beach answers 404 for it, and the proof moves to the next name
+            # (a character has no shell and no reflexive current — its passport
+            # is the third try; found live 2026-09-16, the doorman's first proof).
+            if e.code == 404:
+                continue
+            return False, "beach unreachable: HTTP %d" % e.code
         except Exception as e:
             return False, "beach unreachable: %s" % str(e)[:60]
         pos = _provable_position(block)
@@ -1093,6 +1102,9 @@ def ensure_daily(handle, beach, secret):
     try:
         if beach_get("daily:%s" % handle, beach=beach) is not None:
             return
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            return  # unreachable: the append below founds it open rather than not at all
     except Exception:
         return
     try:
