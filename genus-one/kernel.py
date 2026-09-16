@@ -1477,7 +1477,19 @@ def route(output, gamma=None):
                        "error": "unrecognised writes shape: %s" % type(raw).__name__})
 
     nc = output.get("index")                           # re-dial the next instance's bundle
-    redialed = isinstance(nc, dict) and bool(nc)
+    nc_digits = [k for k in nc if str(k).isdigit()] if isinstance(nc, dict) else []
+    redialed = bool(nc_digits)
+    if isinstance(nc, dict) and nc and not redialed:
+        # THE ZERO-SLOT GUARD (2026-09-16). An index that names no slot 1-9 would
+        # leave the bundle as {_} alone — a mind that wakes with no self. A bare
+        # pulse did exactly that to egg-one on 2026-08-26 (its re-dial carried
+        # word keys and no digits) and twenty days of self-less wakes followed
+        # before the flow page showed it. Refuse it, carry the current bundle
+        # forward, and report it where the next wake perceives it, like every
+        # refusal. (genus.ts and the xstream animator carry the same guard.)
+        failed.append({"address": "index",
+                       "error": "index re-dial refused: it names no slot 1-9 and would empty the bundle "
+                                "— a mind with no self; the current bundle is carried forward"})
     if redialed:
         refl = load_block("reflexive")
         nine = refl.get("9") if isinstance(refl.get("9"), dict) else {}
