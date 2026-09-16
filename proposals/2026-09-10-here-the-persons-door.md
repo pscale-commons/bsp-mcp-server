@@ -150,3 +150,34 @@ Two lessons paid in the lane: a hand-typed whole-block payload with an eleven-de
 miscounted its braces, so it was not JSON and the router refused it as "not an object" — no guard was
 involved; build deep payloads by program, or write the node as a point. And `bsp()` has no delete: a test
 block is removed at the beach's own door, and the lane says so.
+
+## 7. Addendum, 2026-09-16 — placement by the person's own hand, and the inside
+
+David asked how a stranger adds themselves from the globe. The review found that only the LLM door placed
+anyone: no page founded a passport, none wrote the Location line, and the `/now` and `/here` gates pointed at
+`/found`, which founds a field, not a passport. The law never required an LLM — it requires the person's own
+hand, and a button on a page is their hand. Ruled and built (happyseaurchin-home #257, then the inside):
+
+- **Stand here**, on `/here` and `/walk/here`: standing at a named rung, at the grain the person wants known,
+  writes the Location line into their own passport where it is kept — the words before `Location:` preserved,
+  their own words after the dash — under the passport's key. For the keeper this is the move (function:earth
+  6); for a newcomer it is placement; the daily pass is unchanged, it counts, mints finer ground from what
+  they add, and replies.
+- **Two pages per person, not three.** `/page/<handle>` is the FACE: how others meet you, built from the
+  passport, the place line hidden at the apex on purpose. `/shell/<handle>` is the SELF: the passport as the
+  first organ (founded there when none stands, born locked to a key you invent, a twin spelling refused;
+  where you stand read from the line and never typed), then the shell block and every organ the beach holds
+  for the handle — history, stash, orientation, purpose, what it knows and witnessed, the parlour — each with
+  its root line and positions, openable raw, editable one line at a time under the block's own key (a grown
+  accumulator's root is never retyped as a line), and the mirrors as chips into their walks. `/passport`,
+  shipped the same morning, folds into it and redirects. The `/shell` document for agents stays where the
+  world links it.
+- **The world form.** `/shell/<handle>?world=<name>` resolves the world as `/page` does (the register, the
+  `/w/` probe, the sub-domain), and shows the character's inside at that surface: the passport where it is
+  kept (the table first, the apex as the fallback), the organs there, the map mirrors as chips, and the frame
+  the character is dealt — `frame-spec:<world>`'s Character face, its law and its aperture, listed and never
+  compiled: the compile per face and tier stays the door's. At earth this is where the July mirror-room's
+  `knows`, `witnessed` and `purpose` are finally read together.
+
+The open beach makes the inside public too; the page organises rather than hides, and the key governs the
+editing only.
