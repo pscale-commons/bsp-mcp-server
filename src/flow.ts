@@ -332,6 +332,8 @@ function toPNodeSafe(v: any): PNode {
   return m;
 }
 
+const NO_REPLY = ' — no reply followed: composed and not woken (a due-gate probe), or a wake that never folded';
+
 function wakeLine(win: PMap, reply: PMap | null): string {
   const head = `wake ${windowStamp(win)} through the mcp door — window ≈ ${windowTokens(win)} tokens`;
   if (!reply) return `${head} — reply not yet recorded`;
@@ -388,6 +390,11 @@ export async function publishCompose(store: BlockStore, handle: string, beach: s
     if (!flowSwitch(await store.load('wake'))) return 'off';
     const existing = await store.load('flow');
     const wakes = wakesOf(existing);
+    // A wake whose reply never came is not 'pending' once a later window has
+    // composed: the door composed and did not wake (the clock's due-gate probes
+    // twice a day and spends only when something is due), or the wake never
+    // folded. Say so, rather than leave a promise standing in the record.
+    for (const earlier of wakes) if (!earlier.has('2')) earlier.set(ZK, String(earlier.get(ZK) ?? '').replace(/ — reply not yet recorded$/, NO_REPLY));
     const prev = wakes.length ? windowOf(wakes[wakes.length - 1]) : null;
     const win = windowNode(w, handle, prev, at);
     const wake: PMap = new Map<string, PNode>([[ZK, wakeLine(win, null)]]);

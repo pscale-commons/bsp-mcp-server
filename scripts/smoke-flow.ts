@@ -188,6 +188,8 @@ async function main() {
   check('a later save carries no new_lock', store.saves.length === 2 && store.saves[1].opts === undefined);
   let wk = wakesOf(store.blocks.get('flow'));
   check('two wakes, oldest first', wk.length === 2 && String(windowOf(wk[0])!.get(ZK)).includes(new Date(NOW * 1000).toISOString().slice(0, 16)));
+  check('an earlier wake with no reply is re-voiced as composed-and-not-woken, not left pending', /no reply followed/.test(String(wk[0].get(ZK))) && !/reply not yet recorded/.test(String(wk[0].get(ZK))));
+  check('the newest wake still awaits its reply', /reply not yet recorded/.test(String(wk[1].get(ZK))));
   const s2 = spans(windowOf(wk[1])!);
   check('now changed (the clock moved)', s2.some(([r, f]) => r === 'now' && f === 'changed'));
   check(
