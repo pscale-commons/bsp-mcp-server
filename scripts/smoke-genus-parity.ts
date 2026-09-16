@@ -266,6 +266,21 @@ async function foldUnits() {
     check('index re-dialed with underscore preserved', nine.get('_') === 'The current.' && nine.get('3') === 'located' && nine.size === 4);
   }
 
+  // THE ZERO-SLOT GUARD — an index naming no slot 1-9 is refused and the bundle carried forward
+  {
+    const store = memStore({
+      reflexive: toPNode({ _: 'reflexive', 9: { _: 'The current.', 1: 'sunstone', 2: 'purpose' } }),
+    });
+    const r = await genusFold(store, { index: { purpose: 'purpose:6', daily: 'daily' } });
+    const nine = ((await store.load('reflexive')) as PMap).get('9') as PMap;
+    check('an index naming no slot 1-9 is refused, reported at its own address', r.failed.some((f) => f.address === 'index' && /empty the bundle/.test(f.error)));
+    check('the bundle is carried forward untouched', nine.get('_') === 'The current.' && nine.get('1') === 'sunstone' && nine.get('2') === 'purpose' && nine.size === 3);
+    const r2 = await genusFold(store, { index: {} });
+    check('an empty index carries silently, as before', !r2.failed.some((f) => f.address === 'index') && (((await store.load('reflexive')) as PMap).get('9') as PMap).size === 3);
+    const r3 = await genusFold(store, { index: { 1: 'sunstone', 2: 'purpose', 3: 'located', extra: 'ignored' } });
+    check('digits beside word keys still re-dial', !r3.failed.some((f) => f.address === 'index') && (((await store.load('reflexive')) as PMap).get('9') as PMap).get('3') === 'located');
+  }
+
   // ordered-JSON round trip sanity: "_" before digits survives (the JS-object trap)
   {
     const text = '{\n  "_": "root",\n  "1": "one"\n}';

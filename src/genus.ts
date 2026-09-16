@@ -1165,7 +1165,18 @@ export async function genusFold(store: BlockStore, output: any): Promise<FoldRes
 
   // re-dial the next instance's bundle
   const nc = output?.index;
-  const redialed = Boolean(nc && typeof nc === 'object' && !Array.isArray(nc) && Object.keys(nc).length > 0);
+  const ncNode = nc && typeof nc === 'object' && !Array.isArray(nc) ? (nc as Record<string, unknown>) : null;
+  const ncDigits = ncNode ? Object.keys(ncNode).filter((k) => /^\d+$/.test(k)) : [];
+  const redialed = ncDigits.length > 0;
+  if (ncNode && Object.keys(ncNode).length > 0 && !redialed) {
+    // THE ZERO-SLOT GUARD (2026-09-16). An index that names no slot 1-9 would
+    // leave the bundle as {_} alone — a mind that wakes with no self. A bare
+    // pulse did exactly that to egg-one on 2026-08-26 (its re-dial carried word
+    // keys and no digits) and twenty days of self-less wakes followed before
+    // the flow page showed it. Refuse it, carry the current bundle forward,
+    // and report it where the next wake perceives it, like every refusal.
+    failed.push({ address: 'index', error: 'index re-dial refused: it names no slot 1-9 and would empty the bundle — a mind with no self; the current bundle is carried forward' });
+  }
   if (redialed) {
     const refl = ((await store.load('reflexive')) ?? new Map()) as PMap;
     const nine = refl.get(REFLEXIVE_CURRENT);
