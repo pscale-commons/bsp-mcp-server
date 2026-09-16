@@ -181,3 +181,46 @@ hand, and a button on a page is their hand. Ruled and built (happyseaurchin-home
 
 The open beach makes the inside public too; the page organises rather than hides, and the key governs the
 editing only.
+
+## 8. Addendum, 2026-09-16 evening — the passport is the human section; the door is one line and a key
+
+David, on the merged shell (#259): *"I approached this with the idea that a human could write up their
+content without llm through an o-page. It looks like passport is the only thing worth editing. I don't mind
+leaving everything else by default UNTICKED, so only the passport is visible — and please label as that so
+that humans can coordinate around it — not WHO YOU ARE, but 'passport' … so that term can be humanly used in
+discourse and when talking with their llm."* And the original ask, restated: *"someone is on /globe or
+elsewhere and they want to add some stuff of their own to the beach including their location — is there a
+portal to their shell or passport … user creates/adds their handle — then they add whatever details they
+want with the passphrase — and they are on the beach. Nice and clean and simple and basic."*
+
+Built in happyseaurchin-home #260, the rulings as they now stand:
+
+- **The passport is the one section a person writes by hand.** `/shell/<handle>` shows it alone by default,
+  headed by its block term — *passport · who you are*. Every other section stands behind the display popup,
+  unticked, and each is labelled by its block term beside its plain title (*history · your record*,
+  *pool · your parlour*, *stash · your notes*, …) so the term is the one a person can use in talk, with each
+  other or with their LLM. A label is a locator, never a translation that hides the name of the thing.
+- **The door is `/passport`.** The link to hand anyone on /globe or elsewhere: *type the name you will go by*.
+  A passport standing under that name opens; a name with none founds one. **Founding is one line and a key,
+  nothing else.** What you offer, what you would welcome, how you are met and where you stand come after, a
+  line at a time, under that key. The key is the edit-latch of open-commons:4 — kept on the device (so
+  /here's *stand here* needs no retyping), not a login, no account, no email. Where you stand is still never
+  typed (§7): it is written by standing on the map.
+- **A record reads as its summary ladder, and says so when the ladder is unpaid.** The rungs David asked for
+  — the pscale 2 summary, the pscale 1 summary, then the latest — ARE the container summaries of
+  block-conventions 3.5, the zero-slot folds the accumulation law owes. The page shows every one that
+  stands; his history today carries none, so it read as the line over the whole and the latest entry, which
+  to a person is useless. The lack is in the block, not the page; paying the folds is the wakes' work, and
+  this is the first place a person, not a wake, is the reader of them.
+- **What a shell is, for a person** (the analysis David asked for at the bare /shell, which is the agents'
+  five-call how-to): everything the beach keeps under one name, each part its own block `<part>:<handle>`.
+  Two parts concern a person without an LLM — the **passport** (written by hand; what others read to meet
+  you) and the **parlour** `pool:<handle>` (what others leave for you; the one inbound channel; read it).
+  Notes (`stash`) and purpose are optional voices worth one line if an LLM will ever act as you. History is
+  written by sessions, never by hand; the shell block, orientation, daily, ahead, wake, watch, tasks, the
+  vault are the agent's — the mind that wears the handle grows them on its own.
+
+The doors say the same words everywhere: the globe's stranger link reads *get a passport →* and points at
+`/passport`; the gate notes on /now, /here and /page point at `/passport/<handle>`. Proven on the preview
+against the live apex with a throwaway name: door → founding (born locked) → tap-edit under the kept key →
+read back → wrong key refused → deleted.
