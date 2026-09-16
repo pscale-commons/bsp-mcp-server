@@ -63,6 +63,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
+import doorman_table as dt  # noqa: E402 — the character's doorman, pure
 
 DOORBELL_SECRET = os.environ.get("DOORBELL_SECRET", "")
 WAKER_BEACH = os.environ.get("WAKER_BEACH", "https://beach.happyseaurchin.com").rstrip("/")
@@ -73,6 +74,10 @@ WAKER_EGGS = [h.strip() for h in os.environ.get("WAKER_EGGS", "").split(",") if 
 # (never instead of) the holder's budget:<handle> block when that exists.
 COOLDOWN_S = int(os.environ.get("WAKER_COOLDOWN_S", "1800"))
 REFRACTORY_S = int(os.environ.get("WAKER_REFRACTORY_S", "120"))
+# The SPAN a character's doorman waits before folding a ripe window (dial
+# position 8 overrides): the slow hand by design — a keyed player who makes it
+# happen first always wins (proposals/2026-09-16-the-characters-doorman.md §2).
+SPAN_S = int(os.environ.get("WAKER_SPAN_S", "120"))
 MAX_DAILY = int(os.environ.get("WAKER_MAX_DAILY", "6"))
 NESTS_DIR = os.path.join(BASE, "nests")
 TEACHING_RAW = "https://raw.githubusercontent.com/pscale-commons/bsp-mcp-server/main/src/%s.json"
@@ -178,9 +183,9 @@ def _store_save(store):
         pass
 
 
-def beach_post(block, body):
+def beach_post(block, body, beach=None):
     req = urllib.request.Request(
-        "%s/.well-known/pscale-beach?block=%s" % (WAKER_BEACH, quote(block)),
+        "%s/.well-known/pscale-beach?block=%s" % ((beach or WAKER_BEACH).rstrip("/"), quote(block)),
         data=json.dumps(body).encode(),
         headers={"content-type": "application/json"})
     with urllib.request.urlopen(req, timeout=15) as r:
@@ -247,6 +252,11 @@ Nothing here happens until you say so, and you can undo it from this same page.<
 position of your shell and writes it back <em>byte for byte</em> under the key you type. A wrong
 key cannot enrol, and nothing is altered by the proof.</p>
 
+<label for="b">Where it lives <span style="color:var(--dim)">(optional)</span></label>
+<input id="b" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="empty for this beach — or a table, like https://beach.happyseaurchin.com/w/brackenfoot-open">
+<p class="hint">A character at a table lives AT the table: its passport, its room and its dial stand there,
+and the proof is made against its passport under the passphrase its player chose at birth.</p>
+
 <label for="k">An API key to pay for its wakes <span style="color:var(--dim)">(optional)</span></label>
 <input id="k" type="password" autocomplete="off" placeholder="leave empty to run on the beach's own key, if its owner allows it">
 <p class="hint">Use a <strong>dedicated key with a spend cap</strong> — never your main one. Your shell's
@@ -256,6 +266,10 @@ own dial bounds how many times a day it wakes at all.</p>
  <div class="row"><input type="radio" name="mode" id="m-lite" value="lite" checked>
   <label for="m-lite" style="margin:0">A <strong>doorman</strong> — it reads your shell and answers in your room,
   and writes nothing else. It cannot touch code, run anything, or act beyond that reply.</label></div>
+ <div class="row"><input type="radio" name="mode" id="m-char" value="character">
+  <label for="m-char" style="margin:0">A <strong>character's doorman</strong> — for a character at a table.
+  While its player is away it acts as the character in the room it stands in, stages its half, and makes
+  the moment happen after a span (two minutes unless its dial says otherwise) if nobody keyed has.</label></div>
  <div class="row"><input type="radio" name="mode" id="m-genus" value="genus">
   <label for="m-genus" style="margin:0">A <strong>full pulse</strong> — for a shell built as a genus instance,
   with a genome to compose from. Choose this only if you know you have one.</label></div>
@@ -310,6 +324,7 @@ and rotating your passphrase on the beach ends it by itself.</p>
    const body = { handle, passphrase };
    if (method === 'POST') {
      body.fuel = $('k').value.trim();
+     body.beach = $('b').value.trim();
      body.mode = document.querySelector('input[name=mode]:checked').value;
      body.dial = $('d').value.trim();
      body.answer = document.querySelector('input[name=ans]:checked').value;
@@ -338,7 +353,7 @@ def dial_address(handle, dial):
     return (head, tail) if sep and tail.isdigit() else (where, "")
 
 
-def set_answer(handle, dial, answer, secret):
+def set_answer(handle, dial, answer, secret, beach=None):
     """Position 7 of the holder's own dial — which mind answers. Written only
     when the holder said so, surgically, so a dial that already stands keeps
     every other position."""
@@ -349,13 +364,13 @@ def set_answer(handle, dial, answer, secret):
             "optionally followed by a token ceiling. Holder-set; mine to change." % answer)
     try:
         beach_post(block, {"spindle": (spindle + "7") if spindle else "7",
-                           "content": line, "secret": secret})
+                           "content": line, "secret": secret}, beach=beach)
         return ""
     except Exception as e:
         return " Its mind could NOT be set (%s)." % str(e)[:60]
 
 
-def set_consent(handle, dial, on, secret):
+def set_consent(handle, dial, on, secret, beach=None):
     """Flip the dial's switch on the holder's behalf, at their explicit ask —
     the same act the mirror's pane makes, for a holder who has no pane. Writes
     ONE position when the dial already stands, and seeds the whole dial when it
@@ -374,7 +389,7 @@ def set_consent(handle, dial, on, secret):
             "7": "the mind that answers here — a nickname (haiku, sonnet, opus) or a model id, "
                  "optionally followed by a token ceiling; empty falls to the service default"}
     try:
-        standing = beach_get(block)
+        standing = beach_get(block, beach=beach)
     except Exception:
         standing = None
     node = standing
@@ -383,10 +398,10 @@ def set_consent(handle, dial, on, secret):
     try:
         if isinstance(node, dict) and "1" in node:
             beach_post(block, {"spindle": (spindle + "1") if spindle else "1",
-                               "content": line, "secret": secret})
+                               "content": line, "secret": secret}, beach=beach)
             return ""
         beach_post(block, ({"spindle": spindle, "content": seed, "secret": secret} if spindle
-                           else {"content": seed, "secret": secret}))
+                           else {"content": seed, "secret": secret}), beach=beach)
         return " Its dial was seeded at %s." % (block + (":" + spindle if spindle else ""))
     except Exception as e:
         return (" Its switch could NOT be set (%s) — the dial at %s is yours to write."
@@ -407,7 +422,7 @@ def _provable_position(block):
     return None
 
 
-def verify_shell_key(handle, passphrase):
+def verify_shell_key(handle, passphrase, beach=None):
     """Prove the passphrase against the beach's own locks: read a sealed organ
     position and write it back BYTE-IDENTICAL under the supplied secret. True
     shell key → 200; wrong key on a sealed shell → 403. Returns (ok, reason).
@@ -421,16 +436,20 @@ def verify_shell_key(handle, passphrase):
 
     An UNSEALED shell makes the proof vacuous — but so are the locks, so
     nothing is claimed that the substrate would not already allow."""
-    for name in ("shell:%s" % handle, "reflexive:%s" % handle):
+    # A CHARACTER at a table has neither shell nor reflexive current — it is
+    # born with a passport, locked under its player's passphrase (the table's
+    # char-creation 2), so the passport is the third block the proof may use,
+    # at the beach the enrolment names (the character's doorman, 2026-09-16).
+    for name in ("shell:%s" % handle, "reflexive:%s" % handle, "passport:%s" % handle):
         try:
-            block = beach_get(name)
+            block = beach_get(name, beach=beach)
         except Exception as e:
             return False, "beach unreachable: %s" % str(e)[:60]
         pos = _provable_position(block)
         if not pos:
             continue
         try:
-            beach_post(name, {"spindle": pos, "content": block[pos], "secret": passphrase})
+            beach_post(name, {"spindle": pos, "content": block[pos], "secret": passphrase}, beach=beach)
             return True, "proven against %s, the block this handle is oriented from" % name
         except urllib.error.HTTPError as e:
             if e.code == 403:
@@ -439,12 +458,19 @@ def verify_shell_key(handle, passphrase):
             return False, "beach refused the proof: HTTP %d" % e.code
         except Exception as e:
             return False, "proof failed: %s" % str(e)[:60]
-    return False, ("no provable block for %s — neither shell:%s nor reflexive:%s carries a "
-                   "string position to write back" % (handle, handle, handle))
+    return False, ("no provable block for %s — none of shell:%s, reflexive:%s or passport:%s carries a "
+                   "string position to write back" % (handle, handle, handle, handle))
 
 
 def enrolment(handle):
     return _store_load().get(handle)
+
+
+def enrolment_beach(handle):
+    """The beach an enrolment lives at — a table, a world, or the pinned apex.
+    Every read and write for the handle goes there: its dial, its passport,
+    its room, its daily log."""
+    return ((enrolment(handle) or {}).get("beach") or WAKER_BEACH).rstrip("/")
 
 
 def enrolled_handles():
@@ -510,15 +536,15 @@ def host_of(origin):
 
 # ── beach I/O (stdlib; the beach is the only state store) ──────────────────
 
-def beach_get(block):
-    url = "%s/.well-known/pscale-beach?block=%s" % (WAKER_BEACH, quote(block))
+def beach_get(block, beach=None):
+    url = "%s/.well-known/pscale-beach?block=%s" % ((beach or WAKER_BEACH).rstrip("/"), quote(block))
     req = urllib.request.Request(url)
     with urllib.request.urlopen(req, timeout=15) as r:
         d = json.loads(r.read().decode())
     return d.get("block", d) if isinstance(d, dict) else None
 
 
-def landed_voice(pool, slot):
+def landed_voice(pool, slot, beach=None):
     """The landed voice's own text — one spindle read of the slot that rang
     (the wire returns the raw node; its underscore is the voice). Best-effort:
     a room that will not answer, or a slot with no prose, returns '' and the
@@ -528,7 +554,7 @@ def landed_voice(pool, slot):
         return ""
     try:
         url = "%s/.well-known/pscale-beach?block=%s&spindle=%s" % (
-            WAKER_BEACH, quote(pool), quote(str(slot)))
+            (beach or WAKER_BEACH).rstrip("/"), quote(pool), quote(str(slot)))
         with urllib.request.urlopen(urllib.request.Request(url), timeout=15) as r:
             node = json.loads(r.read().decode())
         if isinstance(node, dict):
@@ -541,12 +567,12 @@ def landed_voice(pool, slot):
         return ""
 
 
-def beach_append(block, entry, secret):
+def beach_append(block, entry, secret, beach=None):
     body = {"block": block, "append": True, "content": entry}
     if secret:
         body["secret"] = secret
     req = urllib.request.Request(
-        "%s/.well-known/pscale-beach?block=%s" % (WAKER_BEACH, quote(block)),
+        "%s/.well-known/pscale-beach?block=%s" % ((beach or WAKER_BEACH).rstrip("/"), quote(block)),
         data=json.dumps(body).encode(),
         headers={"content-type": "application/json"})
     with urllib.request.urlopen(req, timeout=15) as r:
@@ -583,6 +609,10 @@ class Dial:
         self.cooldown, self.refractory = COOLDOWN_S, REFRACTORY_S
         self.per_ringer = {}
         self.answer = ""
+        # A character's doorman: 8 the span it waits before folding a ripe
+        # window; 9 'every' to act on every landed beat, else only when
+        # addressed or owed (the character's doorman, §3a).
+        self.span, self.answer_every = SPAN_S, False
         # THE DIAL'S ADDRESS IS wake:<handle> UNLESS THE ENROLMENT NAMES ANOTHER.
         # A handle that used wake: for something else before the doorbell existed
         # (weft's wake PROCEDURE is seven prose branches) cannot have its meaning
@@ -591,7 +621,7 @@ class Dial:
         # law are identical wherever it stands.
         name, inner = dial_address(handle, (enrolment(handle) or {}).get("dial", ""))
         try:
-            dial = beach_get(name)
+            dial = beach_get(name, beach=enrolment_beach(handle))
         except Exception as e:
             log("dial unreadable for %s: %s" % (handle, str(e)[:80]))
             return
@@ -606,6 +636,9 @@ class Dial:
         self.cap = _leading_int(dial.get("2", ""), 2)
         self.cooldown = _leading_int(dial.get("4", ""), COOLDOWN_S)
         self.refractory = _leading_int(dial.get("5", ""), REFRACTORY_S)
+        self.span = _leading_int(dial.get("8", ""), SPAN_S)
+        nine = dial.get("9")
+        self.answer_every = str(nine if not isinstance(nine, dict) else nine.get("_", "")).strip().lower().startswith("every")
         seven = dial.get("7")
         self.answer = seven if isinstance(seven, str) else (
             seven.get("_", "") if isinstance(seven, dict) else "")
@@ -651,7 +684,7 @@ def holder_ceiling(handle):
     holder's own locked block. Absent block = no block ceiling (the env
     ceiling WAKER_MAX_DAILY still floors the wallet)."""
     try:
-        b = beach_get("budget:%s" % handle)
+        b = beach_get("budget:%s" % handle, beach=enrolment_beach(handle))
     except Exception:
         return None
     if not isinstance(b, dict) or "1" not in b:
@@ -663,7 +696,7 @@ def pulses_today(handle):
     """Count today's waker entries in daily:<handle>, recursively — the block
     supernests as it grows, so the scan walks the whole tree."""
     try:
-        block = beach_get("daily:%s" % handle)
+        block = beach_get("daily:%s" % handle, beach=enrolment_beach(handle))
     except Exception:
         return 0  # unreadable counter never blocks a consented ring outright
     today = time.strftime("%Y-%m-%d", time.gmtime())
@@ -846,38 +879,75 @@ def _newest_entry(node, path="", best=None):
     return [max(found, key=lambda e: (len(e[0]), e[0]))]
 
 
+def router_call(tool, arguments, timeout=45):
+    """One tool call over the router (bsp.hermitcrab.me) — initialise, call,
+    and hand back the text the tool answered with. Raises on any failure;
+    callers decide what a failure means to them."""
+    def rpc(payload, sid=None):
+        headers = {"content-type": "application/json",
+                   "accept": "application/json, text/event-stream"}
+        if sid:
+            headers["mcp-session-id"] = sid
+        req = urllib.request.Request(ROUTER_URL, data=json.dumps(payload).encode(),
+                                     headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.headers.get("mcp-session-id"), r.read().decode()
+
+    sid, _ = rpc({"jsonrpc": "2.0", "id": 1, "method": "initialize",
+                  "params": {"protocolVersion": "2024-11-05", "capabilities": {},
+                             "clientInfo": {"name": "waker-doorman", "version": "1"}}})
+    rpc({"jsonrpc": "2.0", "method": "notifications/initialized"}, sid)
+    _, body = rpc({"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+                   "params": {"name": tool, "arguments": arguments}}, sid)
+    m = re.search(r"^data: (.*)$", body, re.M)
+    d = json.loads(m.group(1) if m else body)
+    parts = d.get("result", {}).get("content", [])
+    return "\n".join(p.get("text", "") for p in parts if isinstance(p, dict))
+
+
 def orientation_window(handle):
     """The handle's own orientation, compiled the way every other door compiles
     it — pscale_play over the router, which reads shell:<handle> position 3 and
     delivers what the manifest nominates (a shell with no manifest degrades to
     the legacy six rather than failing). Returns (text, degraded)."""
     try:
-        def rpc(payload, sid=None):
-            headers = {"content-type": "application/json",
-                       "accept": "application/json, text/event-stream"}
-            if sid:
-                headers["mcp-session-id"] = sid
-            req = urllib.request.Request(ROUTER_URL, data=json.dumps(payload).encode(),
-                                         headers=headers, method="POST")
-            with urllib.request.urlopen(req, timeout=45) as r:
-                return r.headers.get("mcp-session-id"), r.read().decode()
-
-        sid, _ = rpc({"jsonrpc": "2.0", "id": 1, "method": "initialize",
-                      "params": {"protocolVersion": "2024-11-05", "capabilities": {},
-                                 "clientInfo": {"name": "waker-doorman", "version": "1"}}})
-        rpc({"jsonrpc": "2.0", "method": "notifications/initialized"}, sid)
-        _, body = rpc({"jsonrpc": "2.0", "id": 2, "method": "tools/call",
-                       "params": {"name": "pscale_play",
-                                  "arguments": {"world": WAKER_BEACH, "handle": handle,
-                                                "room": handle}}}, sid)
-        m = re.search(r"^data: (.*)$", body, re.M)
-        d = json.loads(m.group(1) if m else body)
-        parts = d.get("result", {}).get("content", [])
-        text = "\n".join(p.get("text", "") for p in parts if isinstance(p, dict))
+        text = router_call("pscale_play", {"world": WAKER_BEACH, "handle": handle, "room": handle})
         return (text, False) if text.strip() else ("", True)
     except Exception as e:
         log("orientation compile failed for %s: %s" % (handle, str(e)[:90]))
         return "", True
+
+
+def model_call(fuel_key, model, max_tokens, system, message):
+    """One model call, the doorman's way: a transient refusal (429, 529, 5xx)
+    is retried once after five seconds; every other refusal raises with the
+    API's own reason. Returns the text, '' when the model returned none."""
+    body = json.dumps({"model": model, "max_tokens": max_tokens, "system": system,
+                       "messages": [{"role": "user", "content": message}]}).encode()
+
+    def send():
+        with urllib.request.urlopen(
+                urllib.request.Request("https://api.anthropic.com/v1/messages", data=body,
+                                       headers={"content-type": "application/json",
+                                                "x-api-key": fuel_key,
+                                                "anthropic-version": "2023-06-01"},
+                                       method="POST"), timeout=120) as r:
+            return json.loads(r.read().decode())
+
+    try:
+        d = send()
+    except urllib.error.HTTPError as e:
+        if e.code in (429, 529) or 500 <= e.code < 600:
+            time.sleep(5)
+            d = send()
+        else:
+            try:
+                said = json.loads(e.read().decode()).get("error", {}).get("message", "")
+            except Exception:
+                said = ""
+            raise RuntimeError("the call was refused (HTTP %d): %s" % (e.code, (said or "no reason given")[:150]))
+    return "".join(c.get("text", "") for c in d.get("content", [])
+                   if isinstance(c, dict) and c.get("type") == "text").strip()
 
 
 def thin_brief(handle):
@@ -996,13 +1066,245 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
     return "done", "answered by %s%s" % (model, " (degraded orientation)" if degraded else "")
 
 
+# ── the character's doorman — a character at a table, its player away ───────
+#
+# Design: proposals/2026-09-16-the-characters-doorman.md. The pure law lives in
+# doorman_table.py; this is the I/O around it. A landed voice at a table's room
+# rings the characters enrolled AT that table whose passport places them in
+# that room; the doorman acts only while its player is away (no live presence
+# heartbeat), and only when addressed or owed a turn (dial 9 'every' widens
+# it). Its turn is the character's turn the mirror makes for a keyed player:
+# compile the room, ACT (its own half), STAGE it; then MAKE IT HAPPEN after the
+# span (dial 8, default two minutes) if the window still stands — the beach's
+# atomic claim the arbiter, so a keyed hand that folds first always wins.
+# Public-only: it writes the stage and the beat and nothing else.
+
+def pool_engage_rpc(beach, room, handle, secret=None, **extra):
+    args = {"agent_id": handle, "pool_url": beach, "pool_name": room, "since_position": 0}
+    if secret:
+        args["secret"] = secret
+    args.update(extra)
+    return router_call("pscale_pool_engage", args, timeout=60)
+
+
+def ensure_daily(handle, beach, secret):
+    """A character's pulse journal at its table, born LOCKED to its key so the
+    cap it feeds cannot be filled by a stranger's appends."""
+    try:
+        if beach_get("daily:%s" % handle, beach=beach) is not None:
+            return
+    except Exception:
+        return
+    try:
+        beach_post("daily:%s" % handle, {"content": {"_": "The doorbell journal of %s at this table — one entry per rung wake, "
+                                                   "appended by the waker; the dial's daily cap counts these." % handle},
+                                          "new_lock": secret}, beach=beach)
+    except Exception as e:
+        log("daily journal for %s could not be founded: %s" % (handle, str(e)[:70]))
+
+
+def character_candidates(origin, room):
+    """The characters enrolled at this origin whose passport places them in
+    this room — read fresh, one passport per candidate."""
+    out = []
+    for h, e in _store_load().items():
+        if str(e.get("mode", "")).strip().lower() != "character":
+            continue
+        eb = (e.get("beach") or WAKER_BEACH).rstrip("/")
+        if not dt.origin_matches(origin or WAKER_BEACH, eb):
+            continue
+        try:
+            pp = beach_get("passport:%s" % h, beach=eb)
+        except Exception:
+            continue
+        if dt.standpoint_room(pp) == room:
+            out.append((h, eb))
+    return out
+
+
+def ring_character(cands, payload):
+    """Decide a ring for the characters standing in the room. The first that
+    passes every gate takes the turn; the others meet the next ring (the beat
+    the doorman lands rings the room again). Returns (granted, reason)."""
+    pool = str(payload.get("pool", ""))
+    ringer = str(payload.get("agent_id", "") or "")
+    slot = str(payload.get("slot", ""))
+    room = pool[len("pool:"):]
+    reasons = []
+    for handle, beach in cands:
+        if ringer.lower() == handle.lower():
+            reasons.append("%s rang itself" % handle)
+            continue
+        secret = egg_secret(handle)
+        if not secret:
+            reasons.append("no key held for %s" % handle)
+            continue
+        dial = Dial(handle)
+        if not dial.on:
+            reasons.append("dial off — %s has not consented" % handle)
+            continue
+        try:
+            presence = beach_get("presence", beach=beach)
+        except Exception:
+            presence = None
+        if dt.player_present(presence, handle, time.time()):
+            reasons.append("%s's player is here — the doorman never speaks for a present player" % handle)
+            continue
+        voice = landed_voice(pool, slot, beach=beach)
+        addressed = dt.mentions(voice, handle)
+        owed = False
+        if not addressed and not dial.answer_every:
+            try:
+                liquid = beach_get("liquid:%s" % pool, beach=beach)
+                slips = [{"author": str(v.get("1", "")), "text": str(v.get("_", ""))}
+                         for k, v in (liquid or {}).items() if k != "_" and isinstance(v, dict)]
+            except Exception:
+                slips = []
+            owed = dt.owed(slips, handle)
+        if not (addressed or owed or dial.answer_every):
+            reasons.append("%s was neither addressed nor owed a turn" % handle)
+            continue
+        now = time.monotonic()
+        if _last_pulse_end and now - _last_pulse_end < dial.refractory:
+            reasons.append("refractory for %s" % handle)
+            continue
+        cd = dial.cooldown_for(ringer or "anon")
+        last = _last_ring_by.get((handle, ringer or "anon"))
+        if last and cd > 0 and now - last < cd:
+            reasons.append("cooldown for %s by %s" % (handle, ringer or "anon"))
+            continue
+        fuel_key, funder = pick_fuel(handle, None)
+        if not fuel_key:
+            reasons.append("no fuel for %s" % handle)
+            continue
+        caps = [dial.cap]
+        if funder == "holder":
+            caps += [c for c in (holder_ceiling(handle),) if c is not None]
+        elif funder == "beach":
+            caps += [c for c in (holder_ceiling(handle), MAX_DAILY) if c is not None]
+        cap = min(caps)
+        spent = pulses_today(handle)
+        if spent >= cap:
+            reasons.append("daily cap reached for %s (%d/%d)" % (handle, spent, cap))
+            continue
+        if not _pulse_lock.acquire(blocking=False):
+            return False, "a pulse is already running — %s meets the next ring" % handle
+        _last_ring_by[(handle, ringer or "anon")] = now
+        threading.Thread(target=run_character,
+                         args=(handle, beach, room, ringer, slot, fuel_key, funder, voice, secret),
+                         daemon=True).start()
+        return True, "character turn %d/%d for %s at %s, rung by %s (%s), %s fuel" % (
+            spent + 1, cap, handle, room, ringer or "anon", "addressed" if addressed else ("owed" if owed else "every beat"), funder)
+    return False, "; ".join(reasons) or "no character stands in %s" % pool
+
+
+def character_turn(handle, beach, room, ringer, slot, fuel_key, secret, voice):
+    """Compile the room as the character, ACT, STAGE; schedule the fold.
+    Returns (status, note) in run_pulse's own shape."""
+    dial = Dial(handle)
+    model, max_tokens = dial.answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS)
+    env = dt.parse_envelope(pool_engage_rpc(beach, room, handle, secret))
+    try:
+        passport = beach_get("passport:%s" % handle, beach=beach)
+    except Exception:
+        passport = None
+    drive = passport.get("2", "") if isinstance(passport, dict) else ""
+    drive = drive if isinstance(drive, str) else (str(drive.get("_", "")) if isinstance(drive, dict) else "")
+    system = dt.DOORMAN_CHARACTER_STANCE + "\n\n" + dt.ACT_DIRECTIVE
+    beat = model_call(fuel_key, model, max_tokens, system, dt.act_input(env, voice, ringer, drive, handle))
+    if not beat:
+        return "failed", "the model returned no beat"
+    pool_engage_rpc(beach, room, handle, secret, submit=beat, face="character")
+    threading.Timer(dial.span, fold_after_span,
+                    args=(handle, beach, room, fuel_key, secret, model, max_tokens)).start()
+    return "done", "staged as %s at %s; the fold follows in %ds unless a keyed hand makes it happen first" % (handle, room, dial.span)
+
+
+def fold_after_span(handle, beach, room, fuel_key, secret, model, max_tokens):
+    """The slow hand: after the span, if the window still stands with this
+    character's line in it, weave and claim — a WINDOW MOVED re-weaves once,
+    an already-resolved window stands down."""
+    if not _pulse_lock.acquire(timeout=90):
+        log("fold for %s at %s skipped — the service stayed busy past the span" % (handle, room))
+        return
+    status, note = "declined", ""
+    try:
+        for attempt in (1, 2):
+            env = dt.parse_envelope(pool_engage_rpc(beach, room, handle, secret))
+            stamps = dt.window_stamps(env)
+            if not stamps or not any((s.get("author") or "").lower() == handle.lower() for s in env["slips"]):
+                note = "nothing left to fold — a keyed hand made it happen, or the window emptied"
+                break
+            try:
+                rules = dt.rules_text(beach_get("rules:nomad", beach=beach))
+            except Exception:
+                rules = ""
+            beat = model_call(fuel_key, model, max(max_tokens, 1600), dt.FOLD_DIRECTIVE,
+                              dt.fold_input(env["scene"], env["slips"], env["dice"], rules))
+            if not beat:
+                note = "the moment would not weave"
+                status = "failed"
+                break
+            answer = pool_engage_rpc(beach, room, handle, secret, contribution=beat, face="character",
+                                     resolves_window=stamps[0], resolves_seen=stamps[1], with_liquid=False)
+            outcome = dt.claim_outcome(answer)
+            if outcome == "moved" and attempt == 1:
+                continue
+            status = "done" if outcome == "landed" else ("declined" if outcome == "resolved" else "failed")
+            note = {"landed": "the moment happened — woven by %s's doorman" % handle,
+                    "resolved": "the moment already happened — a keyed hand folded first",
+                    "moved": "the window kept moving — stood down after one re-weave"}.get(outcome, answer[:160])
+            break
+    except Exception as e:
+        status, note = "failed", str(e)[:160]
+    finally:
+        _pulse_lock.release()
+    log("fold for %s at %s: %s — %s" % (handle, room, status, note))
+    try:
+        beach_append("daily:%s" % handle, {
+            "_": "doorbell fold at %s — %s%s" % (room, status, (": " + note[:160]) if note else ""),
+            "1": "waker", "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "5": status}, secret, beach=beach)
+    except Exception as e:
+        log("daily log append failed for %s: %s" % (handle, str(e)[:80]))
+
+
+def run_character(handle, beach, room, ringer, slot, fuel_key, funder, voice, secret):
+    """One character turn, serialised like a pulse; the daily log at the
+    character's own table, the wake announced on the ear's wire with the
+    table as its origin."""
+    global _last_pulse_end
+    started = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    status, note = "failed", ""
+    try:
+        status, note = character_turn(handle, beach, room, ringer, slot, fuel_key, secret, voice)
+        log("character turn for %s at %s: status=%s funder=%s — %s" % (handle, room, status, funder, note[:120]))
+    except Exception as e:
+        note = str(e)[:160]
+        log("character turn FAILED for %s at %s (funder %s): %s" % (handle, room, funder, note))
+    finally:
+        _last_pulse_end = time.monotonic()
+        _pulse_lock.release()
+    try:
+        ensure_daily(handle, beach, secret)
+        beach_append("daily:%s" % handle, {
+            "_": "doorbell turn at %s — rung by %s (a landed voice at pool:%s slot %s); %s%s"
+                 % (room, ringer or "an unattributed voice", room, slot, status, (": " + note[:160]) if note else ""),
+            "1": "waker", "3": started, "4": ringer or "", "5": status, "6": funder}, secret, beach=beach)
+    except Exception as e:
+        log("daily log append failed for %s: %s" % (handle, str(e)[:80]))
+    forward_event({"origin": beach, "kind": "wake", "agent": handle, "ringer": ringer or "",
+                   "status": status, "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+    return status, note
+
+
 def wake_mode(handle):
     """Which body wakes. GENUS is the default, so no standing instance changes
     behaviour on deploy; a holder asks for the doorman explicitly by enrolling
     with mode='lite'. The shell decides what it says; this decides only which
     composer reads it."""
     e = enrolment(handle) or {}
-    return "lite" if str(e.get("mode", "")).strip().lower() == "lite" else "genus"
+    mode = str(e.get("mode", "")).strip().lower()
+    return mode if mode in ("lite", "character") else "genus"
 
 
 def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=None,
@@ -1037,7 +1339,12 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=Non
             kernel = importlib.reload(sys.modules["kernel"])
         else:
             import kernel
-        if wake_mode(handle) == "lite":
+        if wake_mode(handle) == "character":
+            # A character's doorman answers in the room it stands in, rung by
+            # the beach — never as a parlour pulse or a poke at the apex.
+            status, note = "declined", "%s is a character's doorman: it answers in the room it stands in at its table, not here" % handle
+            log("character %s poked at the apex: declined" % handle)
+        elif wake_mode(handle) == "lite":
             status, note = lite_answer(handle, ringer, pool, slot,
                                        os.environ["ANTHROPIC_API_KEY"],
                                        pen or egg_secret(handle))
@@ -1084,13 +1391,24 @@ def ring(payload):
     ringer = str(payload.get("agent_id", "") or "")
     slot = str(payload.get("slot", ""))
     origin = str(payload.get("origin", ""))
-    if origin and host_of(origin) != host_of(WAKER_BEACH):
-        return False, "origin %s is not the pinned beach" % origin
     if not pool.startswith("pool:"):
         return False, "not a pool"
-    handle = pool[len("pool:"):]
+    room = pool[len("pool:"):]
+    if origin and host_of(origin) != host_of(WAKER_BEACH):
+        # Not the pinned beach: a table or a world. Only a character enrolled
+        # AT that origin and standing in this room can answer.
+        cands = character_candidates(origin, room)
+        if not cands:
+            return False, "origin %s is not the pinned beach, and no character enrolled there stands in %s" % (origin, pool)
+        return ring_character(cands, payload)
+    handle = room
     if handle not in enrolled_handles():
+        cands = character_candidates(origin or WAKER_BEACH, room)
+        if cands:
+            return ring_character(cands, payload)
         return False, "%s is not a genus room here (no holder has enrolled it)" % pool
+    if wake_mode(handle) == "character":
+        return False, "%s is a character's doorman — it answers in the room it stands in, never a parlour" % handle
     if ringer == handle:
         return False, "self-ring (the instance's own room answer)"
     if not egg_secret(handle):
@@ -1188,15 +1506,22 @@ class Handler(BaseHTTPRequestHandler):
         prior = _store_load().get(handle) or {}
         mode = (str(b["mode"]).strip().lower() if "mode" in b else str(prior.get("mode", "")))
         dial = (str(b["dial"]).strip() if "dial" in b else str(prior.get("dial", "")))
+        # beach: where this handle lives — a table (<beach>/w/<name>), a world,
+        # or empty for the pinned beach. A character's proof, dial, room and
+        # journal all stand there. Kept when the caller did not mention it.
+        beach = (str(b["beach"]).strip().rstrip("/") if "beach" in b else str(prior.get("beach", "")))
+        if beach and not (beach.startswith("https://") or beach.startswith("http://")):
+            beach = "https://" + beach
         consent = bool(b.get("consent"))
         answer = str(b.get("answer", "")).strip().lower()
         if not handle or not passphrase:
             return self._send(400, {"ok": False, "detail": "handle and passphrase are both needed"})
         if _throttled(handle):
             return self._send(429, {"ok": False, "detail": "too many failed proofs for this handle — wait an hour"})
-        ok, reason = verify_shell_key(handle, passphrase)
-        log("enrolment %s for %s: %s (%s)" % ("remove" if remove else "add", handle,
-                                              "proven" if ok else "REFUSED", reason))
+        ok, reason = verify_shell_key(handle, passphrase, beach=beach or None)
+        log("enrolment %s for %s%s: %s (%s)" % ("remove" if remove else "add", handle,
+                                                (" at " + beach) if beach else "",
+                                                "proven" if ok else "REFUSED", reason))
         if not ok:
             return self._send(403, {"ok": False, "detail": reason})
         store = _store_load()
@@ -1209,11 +1534,11 @@ class Handler(BaseHTTPRequestHandler):
             if handle in store:
                 del store[handle]
                 _store_save(store)
-            closed = set_consent(handle, where, False, passphrase)
+            closed = set_consent(handle, where, False, passphrase, beach=beach or None)
             return self._send(200, {"ok": True, "detail": "%s removed — its doorbell no longer rings here, and its switch is closed.%s"
                                     % (handle, closed)})
         store[handle] = {"secret": passphrase, "notify": notify, "fuel": fuel,
-                         "mode": mode, "dial": dial,
+                         "mode": mode, "dial": dial, "beach": beach,
                          "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
         _store_save(store)
         # SAY BACK WHAT WAS RECORDED. The holder's only feedback is this line, and
@@ -1221,12 +1546,15 @@ class Handler(BaseHTTPRequestHandler):
         # consent lives — are invisible in every client that does not carry them
         # yet. A holder who cannot see that mode='lite' took has no way to tell a
         # doorman from a pulse until one answers.
-        switched = set_consent(handle, dial, True, passphrase) if consent else ""
-        switched += set_answer(handle, dial, answer, passphrase)
+        switched = set_consent(handle, dial, True, passphrase, beach=beach or None) if consent else ""
+        switched += set_answer(handle, dial, answer, passphrase, beach=beach or None)
         d = Dial(handle)
         where = dial or ("wake:%s" % handle)
         body_kind = ("a DOORMAN — it answers from this handle's own shell manifest and writes "
                      "nothing but its reply" if mode == "lite" else
+                     "a CHARACTER'S DOORMAN at %s — while its player is away it acts as the character in the "
+                     "room it stands in, stages its half, and makes the moment happen after the span" % (beach or WAKER_BEACH)
+                     if mode == "character" else
                      "the genus PULSE — it composes from this handle's genome")
         return self._send(200, {"ok": True, "mode": mode or "genus", "dial": where,
                                 "consent": "on" if d.on else "off",
@@ -1239,9 +1567,19 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split("?")[0].rstrip("/")
         if path in ("", "/health"):
+            store = _store_load()
             self._send(200, {"ok": True, "service": "genus-one waker (the doorbell)",
                              "beach": WAKER_BEACH, "enrolled": enrolled_handles(),
-                             "default_cooldown_s": COOLDOWN_S, "default_refractory_s": REFRACTORY_S})
+                             # Where each enrolment lives and which body wakes — no
+                             # secret, no fuel — so a client can read a dial where it
+                             # stands instead of guessing wake:<handle> at the apex.
+                             "enrolments": [{"handle": h, "beach": ((e.get("beach") or WAKER_BEACH).rstrip("/")),
+                                             "mode": (e.get("mode") or "genus"), "dial": (e.get("dial") or ("wake:%s" % h))}
+                                            for h, e in sorted(store.items())]
+                                           + [{"handle": h, "beach": WAKER_BEACH, "mode": "genus", "dial": "wake:%s" % h}
+                                              for h in WAKER_EGGS if h not in store],
+                             "default_cooldown_s": COOLDOWN_S, "default_refractory_s": REFRACTORY_S,
+                             "default_span_s": SPAN_S})
         elif path == "/enroll":
             # A browser gets the door; anything asking for JSON keeps the
             # explainer it has always had.
