@@ -134,5 +134,27 @@ check(dt.player_present(presence, "Astrel", now) is True, "a heartbeat twenty se
 check(dt.player_present(presence, "Ugarth", now) is False, "a heartbeat half an hour old: the player is away")
 check(dt.player_present(presence, "ugarth", now + 3600) is False and dt.player_present(None, "Ugarth", now) is False, "case-blind; no presence block, nobody is here")
 
+# ── behaviours, the rendering's place, the beats since ──────────────────────
+check(dt.parse_behaviours("commit render") == frozenset({"commit", "render"}), "the words parse")
+check(dt.parse_behaviours("") == dt.DEFAULT_BEHAVIOURS and dt.parse_behaviours(None) == dt.DEFAULT_BEHAVIOURS and dt.parse_behaviours("nothing known here") == dt.DEFAULT_BEHAVIOURS, "absent or unknown: the page player's default, commit and render")
+check(dt.parse_behaviours("act") == frozenset({"act"}), "act alone means act alone")
+check(dt.parse_behaviours("every commit") == frozenset({"act", "every", "commit"}), "every implies act")
+check(dt.parse_behaviours({"_": "render, commit — the holder's words"}) == frozenset({"commit", "render"}), "a position with children reads at its underscore; punctuation shed")
+account = {"_": "Ugarth's account",
+           "1": {"_": "first", "1": "Ugarth", "2": "pool:211:3", "3": "2026-09-16T10:00:00Z"},
+           "2": {"_": "second", "1": "Ugarth", "2": "pool:211:7", "3": "2026-09-16T11:00:00Z"},
+           "3": {"_": "elsewhere", "1": "Ugarth", "2": "pool:212:9", "3": "2026-09-16T12:00:00Z"},
+           "4": {"_": "legacy", "1": "Ugarth", "2": "pool:211", "3": "2026-09-16T13:00:00Z"}}
+nr = dt.newest_account_render(account, "211")
+check(nr is not None and nr["slot"] == "7" and nr["text"] == "second", "the newest placed rendering for the room; another room and a legacy entry passed over")
+check(dt.newest_account_render({"_": account, "1": {"_": "after the wrap", "2": "pool:211:12", "3": "2026-09-16T14:00:00Z"}}, "211")["slot"] == "12", "a wrapped era is walked")
+check(dt.newest_account_render(None, "211") is None and dt.newest_account_render(account, "999") is None, "no account, or none for the room: None")
+beats = [{"slot": s_, "author": "x", "text": "t" + s_} for s_ in ("1", "2", "9", "11", "12")]
+check([b["slot"] for b in dt.beats_after(beats, "9")] == ["11", "12"], "beats after slot 9 are 11 and 12 — digit-path order, not string order")
+check([b["slot"] for b in dt.beats_after(beats, None, limit=3)] == ["9", "11", "12"], "no slot known: the newest few")
+check(dt.beats_after(beats, "12") == [], "nothing after the newest")
+ri = dt.render_input({"scene": "the crossing"}, beats[-2:], "Ugarth")
+check("[NEW PUBLIC BEATS — since you last looked]\n- x: t11\n- x: t12" in ri and ri.endswith("You are Ugarth. Output only the rendered paragraph."), "the render input carries the scene and the beats since")
+
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
