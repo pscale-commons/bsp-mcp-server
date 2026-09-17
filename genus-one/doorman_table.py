@@ -348,9 +348,20 @@ def parse_behaviours(text, default=DEFAULT_BEHAVIOURS):
     """The dial's position 9 — words among act / every / commit / render, the
     holder's to write. Absent or empty of known words: the default, which is
     the page player's case (someone nearby commits and renders; nobody acts
-    for them)."""
+    for them).
+
+    THE HOLDER'S WORDS STAND BEFORE THE DASH. The line the mirror writes is
+    '<words> — <what they mean>', and the gloss names all four behaviours in
+    order to explain them; read whole, 'render commit — … act (take my turn
+    while I am away; 'every' for every beat)' turned every behaviour on — found
+    live at wake:Ugarth on 2026-09-17, a doorman set to render and commit that
+    would have acted on every beat, on its holder's fuel. Only what stands
+    before the first spaced dash is the dial; 'none' there means none."""
     s = text if isinstance(text, str) else (text.get("_", "") if isinstance(text, dict) else "")
-    words = {w.strip(".,;").lower() for w in (s or "").split()}
+    s = re.split(r"\s[\u2014\u2013-]\s", s or "", maxsplit=1)[0]
+    words = {w.strip(".,;").lower() for w in s.split()}
+    if "none" in words:
+        return frozenset()
     found = {w for w in words if w in BEHAVIOUR_WORDS}
     if "every" in found and "act" not in found:
         found.add("act")
