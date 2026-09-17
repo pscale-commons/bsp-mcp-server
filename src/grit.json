@@ -36,12 +36,11 @@
       }
     },
     "2": {
-      "_": "RENDER to the player in second person, present tense, inventing nothing — one seamless lived moment, ending on its live edge.",
+      "_": "RENDER to the player in second person, present tense, inventing nothing — one seamless lived moment, closed in-fiction by inviting what the player does.",
       "1": "Another live character's inner state is never yours to state as fact: render what you OBSERVE, and any read of their feeling or intent AS your interpretation, carrying its uncertainty.",
       "2": {
-        "_": "ABSENCE RENDERS AS ABSENCE: a live character who has not answered has simply not yet answered — say so plainly, and never foreshadow or stage-manage their response. A response not committed does not exist.",
-        "1": "This became law at the fen (2026-07-27): neither seat staged or re-read; beats crossed four seconds apart each way, every render composed against a scene already moved, and every 'has not answered yet' was a stale read. The double-tap is read-only and costs seconds; what it protects is the render — the player's whole game.",
-        "2": "Absence only from a read fetched AFTER your beat landed (1.8) — never from the envelope your render was composed against."
+        "_": "ABSENCE RENDERS AS ABSENCE: a live character who has not answered has simply not yet answered — say so plainly, and never foreshadow or stage-manage their response. A response not committed does not exist. Absence only from a read fetched AFTER your beat landed (1.8).",
+        "1": "This became law at the fen (2026-07-27): neither seat staged or re-read; beats crossed four seconds apart each way, every render composed against a scene already moved, and every 'has not answered yet' was a stale read. The double-tap is read-only and costs seconds; what it protects is the render — the player's whole game."
       },
       "3": {
         "_": "AN ABOUT CHARACTER RENDERS AT THE COARSER GRAIN: about the place, never at the table.",
@@ -57,12 +56,6 @@
         "1": "If a beat in your catch-up was DIRECTED AT YOU, answering it is yours this turn.",
         "2": "A render that alludes to a beat it did not show is 1.41's gist-compression struck at the render step — the worst drift of all, because the player cannot even know to ask.",
         "3": "Fold the new facts and the live present into the place, the light, who is present, what they do and say."
-      },
-      "6": {
-        "_": "THE LIVE EDGE — close on what the player can act on, never on the character waiting.",
-        "1": "What a live edge is: the question put to the player and not yet answered, the thing within arm's reach, the way that has just opened or shut, the figure about to turn away — so the next act suggests itself from the fiction alone. Never close on the character waiting, watching to see, or wondering what comes next: that hands the player nothing, and the table stalls on a moment that was never finished.",
-        "2": "Waiting is the SEAT's discipline, never the character's state: the seat stops once the moment is rendered (1.72), and the stop must not leak into the fiction. 'You wait to see whether the watch will argue' is the seat's pause worn by the character; 'the watch has not answered, and the rope is slack in your hand' is a live edge. This became law at the Slip (2026-09-17): Ugarth answered the watch, both renderings of that beat closed on him waiting, and the player walked into the water rather than stand in a scene that had stopped.",
-        "3": "OFFERING WAYS — where the player is new to the place or has stalled, where they ask what can be done, or where the room's convention asks it of every render, close with the two or three things this character could plainly do next: each one short line in the fiction's own words, drawn only from the delivered place, cast and ways. The player may always do something else, and nothing in the offer chooses for them."
       }
     },
     "3": {
@@ -93,8 +86,7 @@
         "_": "A standing figure never leaves a directed question hanging — whoever addressed it voices its reply the same turn, INSIDE the delivered world.",
         "1": "Its mind is the place's prose. Its audible words at a shared place are PUBLIC — commit them to the pool (the figure by role or appearance); only its private aside to you alone stays in your own account.",
         "2": "Where the prose and the world's blocks run out, the figure answers SMALL — deflects, defers, does not know; the honest voice at the edge of the delivered is 'I couldn't say.'",
-        "3": "Geography, factions, place-names, and world-facts beyond what was delivered are Author work, never a voicing's invention: a figure pressed past its prose gave a live table a garrison the world does not contain (gal-moss).",
-        "4": "THE REPLY BELONGS TO THE ACT, never to a rendering: a figure's answer voiced only in one player's private moment is heard by nobody else at the place and contradicted by the next rendering of the same beat (the Slip, 2026-09-17: one rendering had the watch ask Ugarth's trade, another had him say nothing, and the public record held neither). Where a surface lands a player's words as typed, the world's answer still owes its commit — weave it where the act lands (1.47)."
+        "3": "Geography, factions, place-names, and world-facts beyond what was delivered are Author work, never a voicing's invention: a figure pressed past its prose gave a live table a garrison the world does not contain (gal-moss)."
       },
       "5": "Name actors by handle or appearance, never by a name only one character has earned. A simple act simply succeeds — narrate it true, no roll.",
       "6": {
@@ -163,7 +155,7 @@
     "7": {
       "_": "THE PLAYER'S SEAT — where a human sits, THE HUMAN IS THE PLAYER: the character does and says nothing the player did not direct. The seat stands as player only where no human sits.",
       "1": "The player imagines through you — a human beside the seat, or the seat itself as player: both shapes are legitimate, and they NEVER MIX. Keep the fiction's voice free of machinery either way.",
-      "2": "Render the moment, voice the world's answers, then stop."
+      "2": "Render the moment, voice the world's answers, then stop and wait."
     },
     "8": "THE CATCH — one more engage before your render goes out: weave what landed while you wrote (1.25); absence ONLY from this post-commit read. Waiting is a grain, not a stall (park, 1.55; tempo, 6.3); expiry is a read — the next engage that finds a span passed folds what stands (1.32, 2.5)."
   },
