@@ -398,7 +398,11 @@ def newest_account_render(account, room):
     names the room and the slot it covers (pool:<room>:<slot>, the mirror's
     grammar, xstream-bsp #310) — as {'slot', 'text', 'ts'}; None when the
     account holds none it can place. Walks wrapped eras through the root
-    underscore, newest by stamp."""
+    underscore, newest by stamp. A LIST is one account standing in several
+    organs — the legacy witnessed block and a history founded after it (the
+    page's first journal entry founds history), each holding renderings;
+    reading only the preferred organ forgot every rendering kept in the other
+    and re-told the room from the start."""
     best = [None]
 
     def visit(node):
@@ -414,7 +418,8 @@ def newest_account_render(account, room):
             if k == "_" or (k.isdigit() and k != "0"):
                 visit(v)
 
-    visit(account)
+    for block in (account if isinstance(account, list) else [account]):
+        visit(block)
     return best[0]
 
 
@@ -422,6 +427,14 @@ def slot_key(slot):
     """Slots sort as digit paths: shorter first, then by value — 9 before 11."""
     s = str(slot or "")
     return (len(s), s)
+
+
+def covers(render, slot):
+    """Whether a kept rendering already reaches a beat — its slot at or past
+    it, in digit-path order. Asked again just before journaling, so a beat two
+    hands rendered at once is kept once (witnessed:Ugarth 5 and 6, both at
+    pool:211:4, the mirror's and the doorman's, 2026-09-17)."""
+    return bool(render) and slot_key(render.get("slot")) >= slot_key(slot)
 
 
 def beats_after(beats, slot, limit=8):
