@@ -59,7 +59,7 @@ import sys
 import threading
 import time
 import urllib.request
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -1759,6 +1759,30 @@ class Handler(BaseHTTPRequestHandler):
                                               for h in WAKER_EGGS if h not in store],
                              "default_cooldown_s": COOLDOWN_S, "default_refractory_s": REFRACTORY_S,
                              "default_span_s": SPAN_S})
+        elif path == "/doormen":
+            # ASK ABOUT THE HANDLES YOU CARE ABOUT, never the whole house. A
+            # client names the handles whose doormen matter to it — the ones
+            # whose key it holds, the voices of the room it stands in — and
+            # gets back where each enrolled one lives, which body wakes and
+            # where its dial stands. No secret, no fuel, and no listing of
+            # everyone: at a thousand doormen a full list is a cost and a
+            # census nobody asked for (David, 2026-09-17).
+            q = self.path.partition("?")[2]
+            asked = []
+            for part in q.split("&"):
+                k, _, v = part.partition("=")
+                if k == "handles":
+                    asked = [h.strip() for h in unquote(v).split(",") if h.strip()][:40]
+            store = _store_load()
+            out = []
+            for h in asked:
+                e = store.get(h)
+                if e:
+                    out.append({"handle": h, "beach": ((e.get("beach") or WAKER_BEACH).rstrip("/")),
+                                "mode": (e.get("mode") or "genus"), "dial": (e.get("dial") or ("wake:%s" % h))})
+                elif h in WAKER_EGGS:
+                    out.append({"handle": h, "beach": WAKER_BEACH, "mode": "genus", "dial": "wake:%s" % h})
+            self._send(200, {"ok": True, "asked": len(asked), "doormen": out})
         elif path == "/enroll":
             # A browser gets the door; anything asking for JSON keeps the
             # explainer it has always had.
