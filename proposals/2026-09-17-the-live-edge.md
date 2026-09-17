@@ -5,6 +5,26 @@ Lane rpg-mirror.4 (weft; Claude Opus 5 in Claude Code, keyed). David played Ugar
 was traced on the live table before anything was changed. Each turned out to be a fault in
 how meaning flows between blocks, not in one module. The record: `watch:weft` 398.
 
+## Ruling, after merge (David, 2026-09-17)
+
+**How a render is presented belongs to the player, never to the table's law.** Two parts of
+this proposal go:
+
+- **1.26 THE LIVE EDGE** (with 1.261–1.263 OFFERING WAYS) was a nudge written into GRIT. That
+  would impose one way of closing a render on every player, at every table, through every
+  portal. Withdrawn.
+- **1.444** reads as "the world answering". There is no world agent: a standing figure's reply
+  belongs to the resolution of whoever addressed it, on that player's key (1.44). Withdrawn.
+
+With those gone, **1.2, 1.22 and 1.72 stand exactly as they did before this proposal.**
+**1.171** (where you stand within the scene) and **world-genome 2.11** (a place is written from
+no one's approach) remain.
+
+The "waiting" David met was the doorman's render racing the mirror's. The fix for that is the
+doorman standing down while its player is present (the o-page lane's F35), not a render law.
+If a player wants options offered, that is their own setting, in a block they own, read by
+every renderer. It is not built.
+
 ## 1. What was met, and what it actually was
 
 **The toggle flicked him away from his answer.** He asked the mirror whether Astrel was
