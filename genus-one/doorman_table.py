@@ -338,6 +338,17 @@ def player_present(presence, handle, now_epoch, staleness_s=45):
     return found[0]
 
 
+def render_due(behaviours, present):
+    """Does the doorman render this beat? Only when its dial says render AND
+    its player is not at the table. A player sitting at the mirror renders
+    their own moment on their own key; the doorman rendering it again spent a
+    second model call per beat on the holder's fuel and raced the mirror for
+    which rendering the account kept (David at the Slip, 2026-09-17: 'the
+    doorman shouldn't be triggered if I am playing'; F35). A page player
+    heartbeats no presence, so the page keeps its renders."""
+    return "render" in behaviours and not present
+
+
 # ── the doorman's behaviours (re-pointed 2026-09-16, David's ruling) ─────────
 
 BEHAVIOUR_WORDS = ("act", "every", "commit", "render")

@@ -166,5 +166,10 @@ check(dt.beats_after(beats, "12") == [], "nothing after the newest")
 ri = dt.render_input({"scene": "the crossing"}, beats[-2:], "Ugarth")
 check("[NEW PUBLIC BEATS — since you last looked]\n- x: t11\n- x: t12" in ri and ri.endswith("You are Ugarth. Output only the rendered paragraph."), "the render input carries the scene and the beats since")
 
+# ── F35: a player at the table renders their own moment ─────────────────────
+check(dt.render_due(frozenset({"render", "commit"}), False) is True, "render on, player away: the doorman renders")
+check(dt.render_due(frozenset({"render", "commit"}), True) is False, "render on, player at the mirror: the doorman stands down")
+check(dt.render_due(frozenset({"commit"}), False) is False, "render off: nothing to render, present or not")
+
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
