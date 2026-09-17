@@ -1624,9 +1624,15 @@ def ring(payload):
     return True, "pulse %d/%d for %s, rung by %s, %s fuel" % (spent + 1, cap, handle, ringer or "anon", funder)
 
 
-CORS_ORIGINS = [o.strip() for o in os.environ.get(
-    "WAKER_CORS_ORIGINS",
-    "https://mirror.onen.ai,https://xstream.onen.ai,http://localhost:5173").split(",") if o.strip()]
+# The pages that may call this service from a browser: the mirror and the
+# column, and — since 2026-09-17 — the site, because a character's o-page makes
+# it happen by POST /fold (log:urb-hitl 16) and a browser refuses a cross-origin
+# POST the service does not name. WAKER_CORS_ORIGINS ADDS to this list and never
+# replaces it, so an operator's extra origin cannot lock the house's own pages out.
+CORS_BASE = ["https://mirror.onen.ai", "https://xstream.onen.ai",
+             "https://happyseaurchin.com", "http://localhost:5173"]
+CORS_ORIGINS = CORS_BASE + [o.strip() for o in os.environ.get("WAKER_CORS_ORIGINS", "").split(",")
+                            if o.strip() and o.strip() not in CORS_BASE]
 
 
 class Handler(BaseHTTPRequestHandler):
