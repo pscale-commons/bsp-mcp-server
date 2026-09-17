@@ -1233,20 +1233,26 @@ def ring_character(cands, payload):
             reasons.append("dial off — %s has not consented" % handle)
             continue
         own_beat = ringer.lower() == handle.lower()
-        # RENDER: every commit in the room, the character's own included — the
-        # moment reaches its player through its own account.
-        do_render = "render" in dial.behaviours
-        # ACT: only while the player is away, only when addressed or owed (or
-        # 'every'), and never when the character's own line already stands.
-        do_act = False
-        act_why = ""
-        if "act" in dial.behaviours and not own_beat:
+        # WHO IS AT THE TABLE decides both behaviours: a player sitting at the
+        # mirror renders and acts for themselves, so the doorman does neither.
+        present = False
+        if "render" in dial.behaviours or "act" in dial.behaviours:
             try:
                 presence = beach_get_or_none("presence", beach=beach)
             except Exception:
                 presence = None
+            present = dt.player_present(presence, handle, time.time())
+        # RENDER: every commit in the room, the character's own included — the
+        # moment reaches its player through its own account — unless the
+        # player is here rendering it themselves (dt.render_due).
+        do_render = dt.render_due(dial.behaviours, present)
+        # ACT: only while the player is away, only when addressed or owed (or
+        # 'every'), and never when the character's own line already stands.
+        do_act = False
+        act_why = "its player is here" if present else ""
+        if "act" in dial.behaviours and not own_beat:
             slips = room_slips(pool, beach)
-            if dt.player_present(presence, handle, time.time()):
+            if present:
                 act_why = "its player is here"
             elif any((s.get("author") or "").lower() == handle.lower() for s in slips):
                 act_why = "its own line already stands"
