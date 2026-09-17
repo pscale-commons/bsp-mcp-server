@@ -140,6 +140,10 @@ check(dt.parse_behaviours("") == dt.DEFAULT_BEHAVIOURS and dt.parse_behaviours(N
 check(dt.parse_behaviours("act") == frozenset({"act"}), "act alone means act alone")
 check(dt.parse_behaviours("every commit") == frozenset({"act", "every", "commit"}), "every implies act")
 check(dt.parse_behaviours({"_": "render, commit — the holder's words"}) == frozenset({"commit", "render"}), "a position with children reads at its underscore; punctuation shed")
+GLOSS = " — this doorman's behaviours: render (the moment to my account after every commit), commit (make it happen when I instruct it, and after the span when it staged), act (take my turn while I am away; 'every' for every beat). Holder-set; mine to change."
+check(dt.parse_behaviours("render commit" + GLOSS) == frozenset({"commit", "render"}), "the gloss after the dash is not the holder's words — the mirror's own seed line reads as render and commit, never act or every (wake:Ugarth, 2026-09-17)")
+check(dt.parse_behaviours("render commit act every" + GLOSS) == frozenset({"act", "every", "commit", "render"}), "words before the dash all count")
+check(dt.parse_behaviours("none" + GLOSS) == frozenset(), "none before the dash means none, never the default")
 account = {"_": "Ugarth's account",
            "1": {"_": "first", "1": "Ugarth", "2": "pool:211:3", "3": "2026-09-16T10:00:00Z"},
            "2": {"_": "second", "1": "Ugarth", "2": "pool:211:7", "3": "2026-09-16T11:00:00Z"},
