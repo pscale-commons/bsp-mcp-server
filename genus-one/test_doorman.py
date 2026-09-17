@@ -153,6 +153,12 @@ nr = dt.newest_account_render(account, "211")
 check(nr is not None and nr["slot"] == "7" and nr["text"] == "second", "the newest placed rendering for the room; another room and a legacy entry passed over")
 check(dt.newest_account_render({"_": account, "1": {"_": "after the wrap", "2": "pool:211:12", "3": "2026-09-16T14:00:00Z"}}, "211")["slot"] == "12", "a wrapped era is walked")
 check(dt.newest_account_render(None, "211") is None and dt.newest_account_render(account, "999") is None, "no account, or none for the room: None")
+founded = {"_": "Ugarth's own account", "1": {"_": "I crossed and kept my counsel.", "1": "Ugarth", "2": "211", "3": "2026-09-17T12:00:00Z"}}
+check(dt.newest_account_render([founded, account], "211")["slot"] == "7", "one account in two organs: a history founded by a journal entry (location 211, no beat) does not forget the renderings kept in witnessed")
+later = {"_": "history", "1": {"_": "after", "1": "Ugarth", "2": "pool:211:9", "3": "2026-09-17T12:30:00Z"}}
+check(dt.newest_account_render([later, account], "211")["slot"] == "9" and dt.newest_account_render([None, account], "211")["slot"] == "7", "the newest across the organs by stamp; an organ that does not stand is passed over")
+check(dt.covers({"slot": "12"}, "9") and dt.covers({"slot": "4"}, "4") and not dt.covers({"slot": "9"}, "11") and not dt.covers(None, "4"),
+      "a kept rendering covers a beat at or before its slot, in digit-path order; nothing kept covers nothing")
 beats = [{"slot": s_, "author": "x", "text": "t" + s_} for s_ in ("1", "2", "9", "11", "12")]
 check([b["slot"] for b in dt.beats_after(beats, "9")] == ["11", "12"], "beats after slot 9 are 11 and 12 — digit-path order, not string order")
 check([b["slot"] for b in dt.beats_after(beats, None, limit=3)] == ["9", "11", "12"], "no slot known: the newest few")

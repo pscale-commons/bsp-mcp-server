@@ -103,6 +103,8 @@ TEACHING_NAMES = [
 ]
 
 _pulse_lock = threading.Lock()
+_render_waiting = set()  # characters whose rendering waits for the pen (ring_character)
+_render_waiting_lock = threading.Lock()
 _last_pulse_end = 0.0
 _last_ring_by = {}  # (handle, ringer) -> monotonic ts of last GRANTED ring
 _verify_fails = {}  # handle -> [monotonic ts of failed passphrase proofs]
@@ -1115,7 +1117,9 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
 #            to the character's OWN account, where the o-page shows it to its
 #            holder; the location names the beat it covers, pool:<room>:<slot>
 #            — the mirror's own grammar (xstream-bsp #310), so the mirror and
-#            the page read one account and neither renders twice.
+#            the page read one account and neither renders twice. A rendering
+#            never meets the next ring: rung while the pen is busy (the page's
+#            own fold holds it as its beat lands), it waits its turn.
 #   commit — make the moment happen when INSTRUCTED (POST /fold by the holder,
 #            proven by the character's passphrase — the page's own button),
 #            and after the span when the doorman itself has staged.
@@ -1163,17 +1167,20 @@ def ensure_daily(handle, beach, secret):
         log("daily journal for %s could not be founded: %s" % (handle, str(e)[:70]))
 
 
-def account_organ(handle, beach):
-    """The character's own account at its beach — history:<handle> (the
-    shell-genome's name) or the legacy witnessed:<handle> — or None when
-    neither stands: an account is born at genesis, never by a rendering."""
+def account_organs(handle, beach):
+    """The character's own account at its beach, as the organs that stand —
+    [(organ, block)] for history:<handle> (the shell-genome's name), then the
+    legacy witnessed:<handle>; empty when neither stands: an account is born at
+    genesis, never by a rendering. Both can stand at once (the page's first
+    journal entry founds history beside a legacy witnessed) and are then ONE
+    account: a rendering is journaled to the first and remembered from both.
+    A read that fails raises — an unreachable account is not an absent one."""
+    out = []
     for organ in ("history", "witnessed"):
-        try:
-            if beach_get_or_none("%s:%s" % (organ, handle), beach=beach) is not None:
-                return organ
-        except Exception:
-            return None
-    return None
+        block = beach_get_or_none("%s:%s" % (organ, handle), beach=beach)
+        if block is not None:
+            out.append((organ, block))
+    return out
 
 
 def character_candidates(origin, room):
@@ -1280,7 +1287,24 @@ def ring_character(cands, payload):
             reasons.append("daily cap reached for %s (%d/%d)" % (handle, spent, cap))
             continue
         if not _pulse_lock.acquire(blocking=False):
-            return False, "a pulse is already running — %s meets the next ring" % handle
+            if not do_render:
+                return False, "a pulse is already running — %s meets the next ring" % handle
+            # A RENDERING NEVER MEETS THE NEXT RING. The moment is owed to the
+            # account whoever holds the pen — and the page's own fold always
+            # does: POST /fold holds it while its beat lands, and that beat
+            # rings this bell before the fold returns, so declining here meant
+            # a page player's renderings always missed. It waits its turn on
+            # its own thread; act still meets the next ring (the moment it
+            # would answer will have moved on).
+            with _render_waiting_lock:
+                if handle in _render_waiting:
+                    return False, "a rendering for %s already waits its turn — it covers this beat" % handle
+                _render_waiting.add(handle)
+            threading.Thread(target=render_in_turn,
+                             args=(handle, beach, room, ringer, slot, fuel_key, funder, secret),
+                             daemon=True).start()
+            return True, "doorman %d/%d for %s at %s, rung by %s: render, waiting its turn behind the running pulse%s, %s fuel" % (
+                spent + 1, cap, handle, room, ringer or "anon", " (act meets the next ring)" if do_act else "", funder)
         _last_ring_by[(handle, ringer or "anon")] = now
         threading.Thread(target=run_character,
                          args=(handle, beach, room, ringer, slot, fuel_key, funder, secret, do_render, do_act),
@@ -1291,17 +1315,35 @@ def ring_character(cands, payload):
     return False, "; ".join(reasons) or "no character stands in %s" % pool
 
 
+RENDER_WAIT_S = 240  # how long a rendering waits for the pen: an instructed fold is well inside it
+
+
+def render_in_turn(handle, beach, room, ringer, slot, fuel_key, funder, secret):
+    """The rendering that waited: take the pen when it is free, then render
+    everything since the account's newest rendering — so one waiting rendering
+    covers every beat that rang while it waited."""
+    got = _pulse_lock.acquire(timeout=RENDER_WAIT_S)
+    with _render_waiting_lock:
+        _render_waiting.discard(handle)
+    if not got:
+        log("rendering for %s at %s stood down — the pen stayed busy %ds; the next ring renders" % (handle, room, RENDER_WAIT_S))
+        return
+    run_character(handle, beach, room, ringer, slot, fuel_key, funder, secret, True, False)
+
+
 def render_for(handle, beach, room, fuel_key, secret, model, max_tokens):
     """RENDER the moment for the character's player, into the character's own
     account: the beats since the account's newest rendering for this room,
     through the PERCEIVE lens the mirror renders with, journaled at a location
-    naming the last beat covered. Returns (status, note)."""
-    organ = account_organ(handle, beach)
-    if not organ:
+    naming the last beat covered. The account is read again just before the
+    journal: the mirror renders too, and a rendering another hand kept while
+    this one was written is adopted, never doubled. Returns (status, note)."""
+    organs = account_organs(handle, beach)
+    if not organs:
         return "declined", "no account to render into — genesis writes history:%s (or witnessed:%s) first" % (handle, handle)
-    account = beach_get_or_none("%s:%s" % (organ, handle), beach=beach)
+    organ = organs[0][0]
     env = dt.parse_envelope(pool_engage_rpc(beach, room, handle, secret))
-    last = dt.newest_account_render(account, room)
+    last = dt.newest_account_render([block for _organ, block in organs], room)
     fresh = dt.beats_after(env.get("beats", []), last["slot"] if last else None)
     if not fresh:
         return "declined", "nothing new to render since slot %s" % (last["slot"] if last else "none")
@@ -1309,6 +1351,9 @@ def render_for(handle, beach, room, fuel_key, secret, model, max_tokens):
                       dt.render_input(env, fresh, handle))
     if not text:
         return "failed", "the model returned no rendering"
+    kept = dt.newest_account_render([block for _organ, block in account_organs(handle, beach)], room)
+    if dt.covers(kept, fresh[-1]["slot"]):
+        return "declined", "a rendering to slot %s was kept by another hand while this one was written — adopted, not doubled" % kept["slot"]
     beach_append("%s:%s" % (organ, handle), {"_": text, "1": handle, "2": "pool:%s:%s" % (room, fresh[-1]["slot"]),
                                              "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
                  secret, beach=beach)
