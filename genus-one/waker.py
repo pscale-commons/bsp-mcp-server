@@ -103,7 +103,7 @@ TEACHING_NAMES = [
 ]
 
 _pulse_lock = threading.Lock()
-_render_waiting = set()  # characters whose rendering waits for the pen (ring_character)
+_render_waiting = set()  # (character, room) renderings waiting for the pen (ring_character)
 _render_waiting_lock = threading.Lock()
 _last_pulse_end = 0.0
 _last_ring_by = {}  # (handle, ringer) -> monotonic ts of last GRANTED ring
@@ -1167,6 +1167,28 @@ def ensure_daily(handle, beach, secret):
         log("daily journal for %s could not be founded: %s" % (handle, str(e)[:70]))
 
 
+def room_law(beach, room, addresses):
+    """The room's law at the act's addresses (doorman_table.law_at): the mount
+    read off the room's own underscore (pscale:grit/1 at a table), the block
+    read where it stands — a sentinel through the router, an operator block at
+    the room's beach. Read fresh at every act, so an amendment reaches the
+    doorman the moment it stands; '' when any read fails."""
+    try:
+        url = "%s/.well-known/pscale-beach?block=%s&spindle=0" % (beach.rstrip("/"), quote("pool:%s" % room))
+        with urllib.request.urlopen(urllib.request.Request(url), timeout=15) as r:
+            under = json.loads(r.read().decode())
+        mount = dt.law_mount(under if isinstance(under, str) else dt.collect_underscore(under))
+        if not mount:
+            return ""
+        source, name = mount
+        block = (dt.parse_whole_block(router_call("bsp", {"agent_id": "pscale", "block": name}))
+                 if source == "pscale" else beach_get_or_none(name, beach=beach))
+        return dt.law_at(block, addresses)
+    except Exception as e:
+        log("the law at pool:%s could not be read: %s" % (room, str(e)[:100]))
+        return ""
+
+
 def account_organs(handle, beach):
     """The character's own account at its beach, as the organs that stand —
     [(organ, block)] for history:<handle> (the shell-genome's name), then the
@@ -1303,9 +1325,9 @@ def ring_character(cands, payload):
             # its own thread; act still meets the next ring (the moment it
             # would answer will have moved on).
             with _render_waiting_lock:
-                if handle in _render_waiting:
-                    return False, "a rendering for %s already waits its turn — it covers this beat" % handle
-                _render_waiting.add(handle)
+                if (handle, room) in _render_waiting:
+                    return False, "a rendering for %s at %s already waits its turn — it covers this beat" % (handle, room)
+                _render_waiting.add((handle, room))
             threading.Thread(target=render_in_turn,
                              args=(handle, beach, room, ringer, slot, fuel_key, funder, secret),
                              daemon=True).start()
@@ -1330,7 +1352,7 @@ def render_in_turn(handle, beach, room, ringer, slot, fuel_key, funder, secret):
     covers every beat that rang while it waited."""
     got = _pulse_lock.acquire(timeout=RENDER_WAIT_S)
     with _render_waiting_lock:
-        _render_waiting.discard(handle)
+        _render_waiting.discard((handle, room))
     if not got:
         log("rendering for %s at %s stood down — the pen stayed busy %ds; the next ring renders" % (handle, room, RENDER_WAIT_S))
         return
@@ -1350,11 +1372,17 @@ def render_for(handle, beach, room, fuel_key, secret, model, max_tokens):
     organ = organs[0][0]
     env = dt.parse_envelope(pool_engage_rpc(beach, room, handle, secret))
     last = dt.newest_account_render([block for _organ, block in organs], room)
-    fresh = dt.beats_after(env.get("beats", []), last["slot"] if last else None)
+    fresh = dt.beats_after(env.get("beats", []), last["slot"] if last else None, handle=handle)
     if not fresh:
         return "declined", "nothing new to render since slot %s" % (last["slot"] if last else "none")
-    text = model_call(fuel_key, model, max_tokens, dt.DOORMAN_RENDER_STANCE + "\n\n" + dt.PERCEIVE_DIRECTIVE,
-                      dt.render_input(env, fresh, handle))
+    law = room_law(beach, room, dt.RENDER_AT)
+    if not law:
+        return "declined", "the room's law could not be read — the moment is not rendered; the beats stand as they are"
+    # THE SCENE is the room as the substrate composes it for this character with
+    # the record already seen — the mirror's own scene (composeRoomCurrent).
+    seen = env.get("marker_new")
+    scene = pool_engage_rpc(beach, room, handle, secret, since_position=seen) if seen else env.get("raw", "")
+    text = model_call(fuel_key, model, max_tokens, dt.render_directive(law), dt.render_input(scene, fresh, handle))
     if not text:
         return "failed", "the model returned no rendering"
     kept = dt.newest_account_render([block for _organ, block in account_organs(handle, beach)], room)
@@ -1399,12 +1427,18 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
             return "declined", "nothing stands staged — no window to make happen"
         if require_own and not any((s.get("author") or "").lower() == handle.lower() for s in env["slips"]):
             return "declined", "nothing left to fold — a keyed hand made it happen, or the window emptied"
+        law = room_law(beach, room, dt.HAPPEN_AT)
+        if not law:
+            return "declined", "the room's law could not be read just now — nothing happened, and what was said still stands"
         try:
             rules = dt.rules_text(beach_get_or_none("rules:nomad", beach=beach))
         except Exception:
             rules = ""
-        beat = model_call(fuel_key, model, max(max_tokens, 1600), dt.FOLD_DIRECTIVE,
-                          dt.fold_input(env["scene"], env["slips"], env["dice"], rules))
+        woven = model_call(fuel_key, model, max(max_tokens, 1600), dt.happen_directive(law, handle),
+                           dt.fold_input(dt.fold_scene(env), env["slips"], env["dice"], rules, env["ways"]))
+        # The WAY line is the surface's, never the record's: stripped before
+        # the claim, walked only once the claim has landed (the clean mirror §2).
+        beat, way, named = dt.way_of(woven, env["ways"])
         if not beat:
             return "failed", "the moment would not weave"
         answer = pool_engage_rpc(beach, room, handle, secret, contribution=beat, face="character",
@@ -1412,11 +1446,60 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
         outcome = dt.claim_outcome(answer)
         if outcome == "moved" and attempt == 1:
             continue
-        status = "done" if outcome == "landed" else ("declined" if outcome == "resolved" else "failed")
-        return status, {"landed": "the moment happened — woven by %s's doorman" % handle,
-                        "resolved": "the moment already happened — a keyed hand folded first",
+        if outcome == "landed":
+            note = "the moment happened — woven by %s's doorman" % handle
+            if way:
+                note += "; " + walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens)
+            elif named:
+                note += "; it named a way this place does not have, so %s stays where they are" % handle
+            return "done", note
+        status = "declined" if outcome == "resolved" else "failed"
+        return status, {"resolved": "the moment already happened — a keyed hand folded first",
                         "moved": "the window kept moving — stood down after one re-weave"}.get(outcome, answer[:160])
     return "failed", "unreachable"
+
+
+def walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens):
+    """A MOVE FROM WORDS, walked (grit 1.5; the mirror's executeMove, no leaving
+    beat — the resolved beat was the leaving). First the moment just resolved is
+    rendered into the account while the character still stands in the room it
+    happened in, when the doorman renders for them, so the narration keeps its
+    order across the move; then the position written, read back, the room ahead
+    founded if absent, the arriving beat — whose bell renders the arrival there.
+    The caller holds the pen. Returns a note for the page."""
+    to_addr = way["addr"]
+    label = re.sub(r"\s*\.\s*$", "", way.get("label") or "")
+    try:
+        dial = Dial(handle)
+        present = dt.player_present(beach_get_or_none("presence", beach=beach), handle, time.time())
+        if dt.render_due(dial.behaviours, present):
+            st, rn = render_for(handle, beach, room, fuel_key, secret, model, max_tokens)
+            log("render before the move for %s at %s: %s — %s" % (handle, room, st, rn))
+    except Exception as e:
+        log("render before the move for %s failed: %s" % (handle, str(e)[:100]))
+    try:
+        passport = beach_get_or_none("passport:%s" % handle, beach=beach)
+        before = passport.get("3") if isinstance(passport, dict) else None
+        after = dt.swap_location(before, to_addr)
+        if after is None:
+            return "%s carries no written location, so the move has nothing to rewrite — they stay" % handle
+        beach_post("passport:%s" % handle, {"block": "passport:%s" % handle, "spindle": "3", "content": after, "secret": secret}, beach=beach)
+        back = beach_get_or_none("passport:%s" % handle, beach=beach)
+        if not dt.location_stands_at(back.get("3") if isinstance(back, dict) else None, to_addr):
+            return "the move did not read back — treat %s as not moved" % handle
+    except Exception as e:
+        return "the world would not accept the move (%s) — %s's position is unchanged" % (str(e)[:80], handle)
+    try:
+        pool_engage_rpc(beach, to_addr, handle, secret, purpose="pscale:grit/1")
+    except Exception as e:
+        log("founding pool:%s for %s's move: %s — arriving will tell" % (to_addr, handle, str(e)[:80]))
+    try:
+        beach_append("pool:%s" % to_addr, {"_": dt.arriving_text(label), "1": handle, "2": "",
+                                          "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
+                     secret, beach=beach)
+    except Exception as e:
+        return "%s moved to %s, but the arrival has not landed yet (%s)" % (handle, label or to_addr, str(e)[:60])
+    return "%s went on to %s" % (handle, label or to_addr)
 
 
 def fold_after_span(handle, beach, room, fuel_key, secret, model, max_tokens):

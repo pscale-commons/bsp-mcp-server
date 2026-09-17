@@ -91,6 +91,12 @@ now · 2026-09-16T18:48:02Z · 2026333281 · Wednesday 16 September 2026, evenin
 
 env = dt.parse_envelope(ENVELOPE)
 check(env["directive"].startswith("GRIT"), "the directive section is kept")
+check(env["place"].startswith("[211] The crossing") and env["ways"] == [{"addr": "210", "label": "The Slip — the ford where the good road ends.", "depth": 0}], "the place and the ways parse as the mirror parses them")
+check(env["marker_new"] == 3 and env["raw"] == ENVELOPE, "the marker and the raw text ride along")
+CAST = "# Co-present at your place (by appearance)\nHERE NOW:\n— Quick-eyed and easy, a pedlar's pack.\nABOUT (present today, not at the table):\n— A tall woman in a travel-stained cloak.\n"
+cast = dt.parse_envelope(CAST)
+check(cast["cast_here"] == ["Quick-eyed and easy, a pedlar's pack."] and cast["cast_about"] == ["A tall woman in a travel-stained cloak."], "the cast parses by grain, dash stripped")
+check(dt.fold_scene(dict(cast, place="[211] The crossing.")) == "[211] The crossing.\nHere now, by appearance: Quick-eyed and easy, a pedlar's pack.\nAbout the place, not at the table: A tall woman in a travel-stained cloak.", "the fold's scene is the mirror's: the place, then who is here and who is about")
 check("[211] The crossing" in env["scene"] and "pedlar" in env["scene"] and "[210] The Slip" in env["scene"], "the scene is the place, the ways and the cast")
 check(len(env["slips"]) == 2, "two slips parse")
 check(env["slips"][0]["author"] == "Astrel" and env["slips"][0]["arrived"] == "2026-09-16T18:40:00.000Z" and env["slips"][0]["text"].startswith("I step between"), "a slip with an address and a nested age parses")
@@ -118,6 +124,30 @@ check(dt.fold_due("not a stamp", t0 + 999, 120) is False, "no stamp, no fold")
 fi = dt.fold_input(env["scene"], env["slips"], env["dice"], "1. Luck is ±d10, exploding.")
 check("[THE WINDOW — what stands staged, verbatim]\n- Astrel: I step between" in fi and "- Ugarth: luck -6 (positive 1, negative 7)" in fi and fi.endswith("1. Luck is ±d10, exploding."), "the fold input is the mirror's, line for line")
 check("(no dice dealt — every act here is simple)" in dt.fold_input("", [], [], ""), "no dice: said plainly")
+fw = dt.fold_input("the crossing", env["slips"], env["dice"], "", env["ways"])
+check(fw.endswith("[THE WAYS — where this place leads, each with its address]\n- [210] The Slip — the ford where the good road ends.") and "[THE WAYS" not in dt.fold_input("x", [], [], ""), "the ways ride last, and only when the envelope has them")
+
+# ── a move from words ────────────────────────────────────────────────────────
+WAYS = [{"addr": "212", "label": "The village track.", "depth": 0}, {"addr": "2110", "label": "The far bank.", "depth": 1}]
+check(dt.way_of("Ugarth takes the track up to the village.\nWAY 212", WAYS) == ("Ugarth takes the track up to the village.", WAYS[0], "212"), "the last line WAY <address> is stripped and names its way")
+check(dt.way_of("He goes.\nway [2110].", WAYS)[1] == WAYS[1] and dt.way_of("He goes.\nWAY 21.10", WAYS)[1] == WAYS[1], "brackets, a stop, case and a decimal all read as the same address")
+check(dt.way_of("He tries.\nWAY 999", WAYS) == ("He tries.", None, "999"), "an address the ways do not hold moves no one, and is said")
+check(dt.way_of("The watch says no. He stays.", WAYS) == ("The watch says no. He stays.", None, None) and dt.way_of("", WAYS) == ("", None, None), "no WAY line, no move")
+P3 = "Broad and scarred. Location: *:https://beach.happyseaurchin.com/w/brackenfoot-open:spatial:brackenfoot:211"
+moved = dt.swap_location(P3, "212")
+check(moved == P3[:-3] + "212" and dt.location_stands_at(moved, "212") and not dt.location_stands_at(P3, "212"), "the location's address swaps, the rest untouched, and reads back")
+check(dt.swap_location("an appearance with no location", "212") is None and dt.swap_location(None, "212") is None, "no located star-ref, nothing a move can rewrite")
+check(dt.arriving_text("The village track.") == "Arrives — The village track." and dt.arriving_text("") == "Arrives.", "the arriving beat is the mirror's default")
+
+# ── the room's law, read at the act's addresses ─────────────────────────────
+check(dt.law_mount("pscale:grit/1") == ("pscale", "grit") and dt.law_mount("function:night") == ("beach", "function:night") and dt.law_mount("Weft's room") is None and dt.law_mount(None) is None, "the mount reads off the room's underscore")
+LAW = {"_": "THE LAW.", "1": {"_": "THE TURN.", "1": "PERCEIVE.", "2": {"_": "RENDER.", "1": "close on what the player can do."}, "4": "COMMIT."}, "2": {"_": "RESOLVE.", "1": "luck."}}
+check(dt.law_at(LAW, ("1.1", "1.2")) == "THE LAW.\n[1] THE TURN.\n[1.1] PERCEIVE.\n[1.2] RENDER.\n  [1.21] close on what the player can do.", "ancestors frame once, each addressed node carries its subtree, every line its address")
+check(dt.law_at(LAW, ("1.4", "1.6", "2")) == "THE LAW.\n[1] THE TURN.\n[1.4] COMMIT.\n[2] RESOLVE.\n  [2.1] luck." and dt.law_at(LAW, ("7",)) == "" and dt.law_at(None, ("1",)) == "", "an address the block lacks is passed over; none held, nothing")
+check(dt.parse_whole_block('[whole block]\n{"_": "x", "1": "y"}\n\nnow · 2026') == {"_": "x", "1": "y"} and dt.parse_whole_block("[point] x") is None, "the router's whole-block reply parses")
+hd = dt.happen_directive("[1.4] COMMIT.", "Ugarth")
+check(hd.startswith("[THE LAW — the room's own, at the addresses of this act]\n[1.4] COMMIT.") and "when the act takes Ugarth away along one of THE WAYS" in hd and "@@" not in hd, "make it happen: the law, then the call, the WAY line for this character only")
+check(dt.render_directive(" [1.2] RENDER. ").startswith("[THE LAW — the room's own, at the addresses of this act]\n[1.2] RENDER.\n\n[THIS CALL] You are the voice that renders") and "this player's character" in dt.happen_directive("x"), "the rendering: the law, then the call; an unnamed character reads as the player's")
 check(dt.claim_outcome("window MOVED — an intention staged after the mirror you read.") == "moved", "moved")
 check(dt.claim_outcome("Window already resolved by Astrel — stand down.") == "resolved", "already resolved")
 check(dt.claim_outcome("committed: slot 4 (your claim was first)") == "landed", "landed")
@@ -163,8 +193,11 @@ beats = [{"slot": s_, "author": "x", "text": "t" + s_} for s_ in ("1", "2", "9",
 check([b["slot"] for b in dt.beats_after(beats, "9")] == ["11", "12"], "beats after slot 9 are 11 and 12 — digit-path order, not string order")
 check([b["slot"] for b in dt.beats_after(beats, None, limit=3)] == ["9", "11", "12"], "no slot known: the newest few")
 check(dt.beats_after(beats, "12") == [], "nothing after the newest")
-ri = dt.render_input({"scene": "the crossing"}, beats[-2:], "Ugarth")
-check("[NEW PUBLIC BEATS — since you last looked]\n- x: t11\n- x: t12" in ri and ri.endswith("You are Ugarth. Output only the rendered paragraph."), "the render input carries the scene and the beats since")
+ri = dt.render_input("pool:211 @ the crossing", beats[-2:], "Ugarth")
+check(ri.startswith("[THE SCENE — where you are, and who is here]\npool:211 @ the crossing") and "[NEW PUBLIC BEATS — since you last looked]\n- x: t11\n- x: t12" in ri and ri.endswith("You are Ugarth."), "the render input is the mirror's: the room as composed, the beats since, and whose moment it is")
+mixed = [{"slot": "1", "author": "Astrel", "text": "before"}, {"slot": "2", "author": "Ugarth", "text": "Arrives — The crossing."}, {"slot": "3", "author": "Astrel", "text": "after"}]
+check([b["slot"] for b in dt.beats_after(mixed, None, handle="Ugarth")] == ["2", "3"], "a room never rendered for this character starts at their own first beat there — nothing from before they came")
+check([b["slot"] for b in dt.beats_after(mixed, None, handle="Senna")] == ["1", "2", "3"] and [b["slot"] for b in dt.beats_after(mixed, "2", handle="Ugarth")] == ["3"], "no beat of their own: the newest few; a rendering known: the beats after it")
 
 # ── F35: a player at the table renders their own moment ─────────────────────
 check(dt.render_due(frozenset({"render", "commit"}), False) is True, "render on, player away: the doorman renders")
