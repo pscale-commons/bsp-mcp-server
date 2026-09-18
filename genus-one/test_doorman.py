@@ -2,7 +2,10 @@
 """test_doorman.py — the character's doorman, proved without a network: the
 origin match, the standpoint read off a real passport, the envelope grammar
 (a fixture cut from the live Slip on 2026-09-16 with a staged window added),
-the debt, the span, the fold's input, and the claim's outcome words.
+the debt, the span, the fold's input, and the claim's outcome words — and a
+party's fold (the group page): the party said as a person says it, judged as
+one, each traveller known by name and look, one arrival by name, the landed
+slot read off the commit.
 
 Run: python3 genus-one/test_doorman.py
 """
