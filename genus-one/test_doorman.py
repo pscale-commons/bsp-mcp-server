@@ -216,5 +216,21 @@ check(dt.render_due(frozenset({"render", "commit"}), False) is True, "render on,
 check(dt.render_due(frozenset({"render", "commit"}), True) is False, "render on, player at the mirror: the doorman stands down")
 check(dt.render_due(frozenset({"commit"}), False) is False, "render off: nothing to render, present or not")
 
+# ── the summary an account owes (block-conventions 3.5) ─────────────────────
+E = lambda i, loc: {"_": "telling %s" % i, "1": "Ugarth", "2": loc, "3": "2026-09-18T10:%02d:00Z" % int(str(i)[-1])}
+UGARTH_ACCOUNT = {"_": {"_": "witnessed:Ugarth at the table.", "1": "Came down to the Slip.", **{str(i): E(i, "pool:211:%d" % i) for i in range(2, 9)}, "9": "lock"},
+                  "1": {str(i): E("1%d" % i, "pool:100:%d" % i) for i in range(1, 8)}}
+dues = dt.owed_summaries(UGARTH_ACCOUNT)
+check([a for a, _e in dues] == ["10"] and [r for r, _e in dues[0][1]] == [str(i) for i in range(1, 10)], "a wrapped account with an unvoiced 1 owes 10, over the nine before the wrap at read-addresses 1-9 (witnessed:Ugarth, 2026-09-18)")
+voiced = dict(UGARTH_ACCOUNT, **{"1": dict(UGARTH_ACCOUNT["1"], _="the span 1-9, paid")})
+check(dt.owed_summaries(voiced) == [], "a voiced container owes nothing")
+two = dict(UGARTH_ACCOUNT, **{"2": {"1": E("21", "pool:100:9")}})
+check([a for a, _e in dt.owed_summaries(two)] == ["10", "20"] and [r for r, _e in dt.owed_summaries(two)[1][1]][:2] == ["11", "12"], "two unvoiced spans are owed oldest first; 20 stands over 11-19")
+check(dt.owed_summaries({"_": "flat", "1": "a"}) == [] and dt.owed_summaries(None) == [] and dt.owed_summaries({"_": {"_": {"_": "floor three"}}, "1": {"1": "x"}}) == [], "an account that never wrapped owes nothing; floor three is not this reader's")
+si = dt.summary_input("10", dues[0][1], "Ugarth")
+check(si.startswith("[THE NINE — the span the voicing at 10 stands for, in Ugarth's account]") and "[1]\nCame down to the Slip." in si and "[2] pool:211:2 · 2026-09-18T10:02:00Z\ntelling 2" in si and "lock" not in si and si.endswith("You are writing the voicing at 10."), "the nine arrive at their read-addresses with the beat each tells; the latch mark is no entry")
+sd = dt.summary_directive("[3.5] Zero-slots are the summaries.")
+check(sd.startswith("[THE LAW — the account's own, at the address of this act]\n[3.5] Zero-slots are the summaries.") and "ONE substantive paragraph in the zeroth person" in sd and "read-addresses" in sd, "the summary is written under the law at 3.5, then the call")
+
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
