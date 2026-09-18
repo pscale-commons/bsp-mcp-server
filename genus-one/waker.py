@@ -1189,6 +1189,43 @@ def room_law(beach, room, addresses):
         return ""
 
 
+def sentinel_block(name):
+    """A bundled sentinel, read where this service already holds it — the repo's
+    src/ or the teaching fetched at boot — else through the router."""
+    for path in (os.path.join(BASE, "..", "src", name + ".json"), os.path.join(BASE, "teaching", name + ".json")):
+        try:
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            continue
+    return dt.parse_whole_block(router_call("bsp", {"agent_id": "pscale", "block": name}))
+
+
+def pay_summaries(handle, beach, organ, secret, fuel_key, model, max_tokens):
+    """SERVICE-PAYMENT (block-conventions 3.5): an append that opens a span owes
+    the summary of the span before it, paid by its writer in the same act. After
+    its telling lands, the doorman pays every zero-slot the account owes, oldest
+    first — a debt another writer left is settled here too — as a scalar at N0,
+    which sets the container's voicing and leaves its entries untouched. Returns
+    a note, '' when nothing was owed."""
+    dues = dt.owed_summaries(beach_get_or_none("%s:%s" % (organ, handle), beach=beach))
+    if not dues:
+        return ""
+    law = dt.law_at(sentinel_block("block-conventions"), dt.SUMMARY_AT)
+    if not law:
+        return "the summary law could not be read — %s left owed" % ", ".join(a for a, _e in dues)
+    paid = []
+    for address, entries in dues:
+        text = model_call(fuel_key, model, max(max_tokens, 900), dt.summary_directive(law),
+                          dt.summary_input(address, entries, handle))
+        if not text or not text.strip():
+            return "the summary at %s would not compose — left owed%s" % (address, ("; paid " + ", ".join(paid)) if paid else "")
+        beach_post("%s:%s" % (organ, handle), {"block": "%s:%s" % (organ, handle), "spindle": address,
+                                               "content": text.strip(), "secret": secret}, beach=beach)
+        paid.append(address)
+    return "paid the summary at %s" % ", ".join(paid)
+
+
 def account_organs(handle, beach):
     """The character's own account at its beach, as the organs that stand —
     [(organ, block)] for history:<handle> (the shell-genome's name), then the
@@ -1391,7 +1428,12 @@ def render_for(handle, beach, room, fuel_key, secret, model, max_tokens):
     beach_append("%s:%s" % (organ, handle), {"_": text, "1": handle, "2": "pool:%s:%s" % (room, fresh[-1]["slot"]),
                                              "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
                  secret, beach=beach)
-    return "done", "rendered %d beat%s (to slot %s) into %s:%s" % (len(fresh), "" if len(fresh) == 1 else "s", fresh[-1]["slot"], organ, handle)
+    note = "rendered %d beat%s (to slot %s) into %s:%s" % (len(fresh), "" if len(fresh) == 1 else "s", fresh[-1]["slot"], organ, handle)
+    try:
+        paid = pay_summaries(handle, beach, organ, secret, fuel_key, model, max_tokens)
+    except Exception as e:
+        paid = "the summary could not be paid (%s)" % str(e)[:80]
+    return "done", note + ("; " + paid if paid else "")
 
 
 def act_for(handle, beach, room, ringer, slot, fuel_key, secret, dial, model, max_tokens):
