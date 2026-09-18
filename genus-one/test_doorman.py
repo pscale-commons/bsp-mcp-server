@@ -145,6 +145,17 @@ check(moved == P3[:-3] + "212" and dt.location_stands_at(moved, "212") and not d
 check(dt.swap_location("an appearance with no location", "212") is None and dt.swap_location(None, "212") is None, "no located star-ref, nothing a move can rewrite")
 check(dt.arriving_text("The village track.") == "Arrives — The village track." and dt.arriving_text("") == "Arrives.", "the arriving beat is the mirror's default")
 
+# ── a party — the group page's characters, round one table ───────────────────
+check(dt.names_said(["Ugarth"]) == "Ugarth" and dt.names_said(["Ugarth", "Astrel"]) == "Ugarth and Astrel" and dt.names_said(["Ugarth", "Astrel", "Reed"]) == "Ugarth, Astrel and Reed" and dt.names_said([]) == "", "a party is said the way a person says it")
+check(dt.party_phrase(["Ugarth"]) == "Ugarth" and dt.party_phrase(["Ugarth", "Astrel"]) == "Ugarth and Astrel (who travel together)", "one character is judged alone; a party is named, and travels together")
+check(dt.party_arriving_text(["Ugarth"], "The Sow.") == "Ugarth arrives — The Sow." and dt.party_arriving_text([], "The Sow.") == "Arrives — The Sow." and dt.party_arriving_text(["Ugarth", "Astrel"], "The Sow.") == "Ugarth and Astrel arrive — The Sow." and dt.party_arriving_text(["Ugarth", "Astrel"], "") == "Ugarth and Astrel arrive.", "a party lands one arriving beat, by name — alone too, since a listener hears no author")
+check(dt.committed_slot("committed: slot 12 → pool:211 — window 2026 RESOLVED, your claim was first") == "12" and dt.committed_slot("[pool]\ncommitted: slot 4 → pool:100") == "4" and dt.committed_slot("window MOVED") is None, "the landed slot reads off the commit's own words")
+check(dt.look_of(UGARTH) == "Broad and scarred and unhurried, moving like someone who has stood in a line and held it; a worn blade set aside by custom, not by weakness." and dt.look_of({"3": "no location here"}) == "no location here" and dt.look_of(None) == "", "a look is position 3 before its Location line")
+pin = dt.party_input([("Tamsin", "Wiry and weathered, a coiled whip at her belt."), ("Corrin", "")])
+check(pin.startswith("[THE PARTY — the characters played round this table, each by name and look;") and "never a standing figure of the place" in pin and "\n- Tamsin — Wiry and weathered, a coiled whip at her belt.\n- Corrin" in pin and dt.party_input([]) == "", "the fold knows each traveller by name and look, so no look is taken for a figure of the place")
+phd = dt.happen_directive("[1.4] COMMIT.", dt.party_phrase(["Ugarth", "Astrel"]))
+check("when the act takes Ugarth and Astrel (who travel together) away along one of THE WAYS" in phd and "never for anyone else" in phd and "@@" not in phd, "a party's fold: the call text unchanged, the move judged for the party as one")
+
 # ── the room's law, read at the act's addresses ─────────────────────────────
 check(dt.law_mount("pscale:grit/1") == ("pscale", "grit") and dt.law_mount("function:night") == ("beach", "function:night") and dt.law_mount("Weft's room") is None and dt.law_mount(None) is None, "the mount reads off the room's underscore")
 LAW = {"_": "THE LAW.", "1": {"_": "THE TURN.", "1": "PERCEIVE.", "2": {"_": "RENDER.", "1": "close on what the player can do."}, "4": "COMMIT."}, "2": {"_": "RESOLVE.", "1": "luck."}}
