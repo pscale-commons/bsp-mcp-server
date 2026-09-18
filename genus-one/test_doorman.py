@@ -156,6 +156,10 @@ check(dt.committed_slot("committed: slot 12 → pool:211 — window 2026 RESOLVE
 check(dt.look_of(UGARTH) == "Broad and scarred and unhurried, moving like someone who has stood in a line and held it; a worn blade set aside by custom, not by weakness." and dt.look_of({"3": "no location here"}) == "no location here" and dt.look_of(None) == "", "a look is position 3 before its Location line")
 pin = dt.party_input([("Tamsin", "Wiry and weathered, a coiled whip at her belt."), ("Corrin", "")])
 check(pin.startswith("[THE PARTY — the characters played round this table, each by name and look;") and "never a standing figure of the place" in pin and "\n- Tamsin — Wiry and weathered, a coiled whip at her belt.\n- Corrin" in pin and dt.party_input([]) == "", "the fold knows each traveller by name and look, so no look is taken for a figure of the place")
+PARTY_ENV = {"place": "[220] Holloway Wood.", "cast_here": ["Thin and grey-cloaked, a string of wooden beads at his wrist.", "Quick-eyed and easy, a pedlar's pack."], "cast_about": ["Thin and grey-cloaked, a string of wooden beads at his wrist"]}
+kept = dt.cast_without(PARTY_ENV, ["Thin and  grey-cloaked, a string of wooden beads at his wrist", ""])
+check(kept["cast_here"] == ["Quick-eyed and easy, a pedlar's pack."] and kept["cast_about"] == [] and kept["place"] == "[220] Holloway Wood." and len(PARTY_ENV["cast_here"]) == 2, "a party's own looks leave the scene's cast — spacing and a closing stop no matter — and the rest stands, the envelope untouched")
+check("grey-cloaked" not in dt.fold_scene(kept) and "pedlar" in dt.fold_scene(kept), "the fold's scene then names only who else is here")
 phd = dt.happen_directive("[1.4] COMMIT.", dt.party_phrase(["Ugarth", "Astrel"]))
 check("when the act takes Ugarth and Astrel (who travel together) away along one of THE WAYS" in phd and "never for anyone else" in phd and "@@" not in phd, "a party's fold: the call text unchanged, the move judged for the party as one")
 

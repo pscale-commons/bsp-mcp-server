@@ -401,6 +401,20 @@ def look_of(passport):
     return re.split(r"\s*\bLocation:", text or "", maxsplit=1)[0].strip()
 
 
+def cast_without(env, looks):
+    """The envelope with the party's own looks taken out of its cast. The scene
+    names who is here by appearance — for a party's fold, that list holds the
+    travellers themselves, and the fold made strangers of them: handed the
+    priest's look among the anonymous cast, it had 'the grey-cloaked,
+    bead-wristed figure' watch the party go while the priest spoke in the same
+    beat (the live proof, 2026-09-18). Travellers are named in THE PARTY; the
+    scene keeps only who else is here."""
+    norm = lambda s: re.sub(r"[\s.]+$", "", re.sub(r"\s+", " ", (s or "").strip().lower()))
+    drop = {norm(look) for look in (looks or []) if look}
+    keep = lambda cast: [c for c in (cast or []) if norm(c) not in drop]
+    return dict(env, cast_here=keep(env.get("cast_here")), cast_about=keep(env.get("cast_about")))
+
+
 def party_input(looks):
     """The party, for the fold: each traveller by name AND look. The scene
     names the cast by appearance only — right for a character's eyes, wrong
