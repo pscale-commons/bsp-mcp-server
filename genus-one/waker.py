@@ -1371,7 +1371,7 @@ def render_for(handle, beach, room, fuel_key, secret, model, max_tokens):
         return "declined", "no account to render into — genesis writes history:%s (or witnessed:%s) first" % (handle, handle)
     organ = organs[0][0]
     env = dt.parse_envelope(pool_engage_rpc(beach, room, handle, secret))
-    last = dt.newest_account_render([block for _organ, block in organs], room)
+    last = dt.newest_account_render([block for _organ, block in organs], room, env.get("beats"))
     fresh = dt.beats_after(env.get("beats", []), last["slot"] if last else None, handle=handle)
     if not fresh:
         return "declined", "nothing new to render since slot %s" % (last["slot"] if last else "none")
@@ -1385,7 +1385,7 @@ def render_for(handle, beach, room, fuel_key, secret, model, max_tokens):
     text = model_call(fuel_key, model, max_tokens, dt.render_directive(law), dt.render_input(scene, fresh, handle))
     if not text:
         return "failed", "the model returned no rendering"
-    kept = dt.newest_account_render([block for _organ, block in account_organs(handle, beach)], room)
+    kept = dt.newest_account_render([block for _organ, block in account_organs(handle, beach)], room, env.get("beats"))
     if dt.covers(kept, fresh[-1]["slot"]):
         return "declined", "a rendering to slot %s was kept by another hand while this one was written — adopted, not doubled" % kept["slot"]
     beach_append("%s:%s" % (organ, handle), {"_": text, "1": handle, "2": "pool:%s:%s" % (room, fresh[-1]["slot"]),

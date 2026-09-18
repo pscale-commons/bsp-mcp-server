@@ -133,6 +133,12 @@ check(dt.way_of("Ugarth takes the track up to the village.\nWAY 212", WAYS) == (
 check(dt.way_of("He goes.\nway [2110].", WAYS)[1] == WAYS[1] and dt.way_of("He goes.\nWAY 21.10", WAYS)[1] == WAYS[1], "brackets, a stop, case and a decimal all read as the same address")
 check(dt.way_of("He tries.\nWAY 999", WAYS) == ("He tries.", None, "999"), "an address the ways do not hold moves no one, and is said")
 check(dt.way_of("The watch says no. He stays.", WAYS) == ("The watch says no. He stays.", None, None) and dt.way_of("", WAYS) == ("", None, None), "no WAY line, no move")
+V = [{"addr": "100", "label": "The Village.", "depth": 0}]
+check(dt.way_of("The track climbs away from the water into the dark.\n\nWAY pool:100", V) == ("The track climbs away from the water into the dark.", V[0], "100"), "'WAY pool:100' is read and leaves the record (the mirror's case, the Slip 2026-09-18)")
+mid = dt.way_of("He crosses.\nWAY 100\nThe watch watches him go.", V)
+check(mid[1] == V[0] and "WAY" not in mid[0] and "watches him go" in mid[0], "a WAY line anywhere is stripped; the prose around it stays")
+check(dt.way_of("He goes.\nWAY the village", V) == ("He goes.", None, "WAY the village"), "a WAY line with no address moves no one, and still never reaches the record")
+check(dt.way_of("Way up the slope a dog barks once and stops.", V) == ("Way up the slope a dog barks once and stops.", None, None), "prose that merely starts with the word is left alone")
 P3 = "Broad and scarred. Location: *:https://beach.happyseaurchin.com/w/brackenfoot-open:spatial:brackenfoot:211"
 moved = dt.swap_location(P3, "212")
 check(moved == P3[:-3] + "212" and dt.location_stands_at(moved, "212") and not dt.location_stands_at(P3, "212"), "the location's address swaps, the rest untouched, and reads back")
@@ -147,6 +153,7 @@ check(dt.law_at(LAW, ("1.4", "1.6", "2")) == "THE LAW.\n[1] THE TURN.\n[1.4] COM
 check(dt.parse_whole_block('[whole block]\n{"_": "x", "1": "y"}\n\nnow · 2026') == {"_": "x", "1": "y"} and dt.parse_whole_block("[point] x") is None, "the router's whole-block reply parses")
 hd = dt.happen_directive("[1.4] COMMIT.", "Ugarth")
 check(hd.startswith("[THE LAW — the room's own, at the addresses of this act]\n[1.4] COMMIT.") and "when the act takes Ugarth away along one of THE WAYS" in hd and "@@" not in hd, "make it happen: the law, then the call, the WAY line for this character only")
+check("no 'pool:'" in hd and "REPLACES THOSE BEATS" in dt.render_directive("LAW") and "whole and in order" in dt.render_directive("LAW"), "the call texts are the mirror's as #321 left them: the exact WAY form, and a telling that shows every beat whole")
 check(dt.render_directive(" [1.2] RENDER. ").startswith("[THE LAW — the room's own, at the addresses of this act]\n[1.2] RENDER.\n\n[THIS CALL] You are the voice that renders") and "this player's character" in dt.happen_directive("x"), "the rendering: the law, then the call; an unnamed character reads as the player's")
 check(dt.claim_outcome("window MOVED — an intention staged after the mirror you read.") == "moved", "moved")
 check(dt.claim_outcome("Window already resolved by Astrel — stand down.") == "resolved", "already resolved")
@@ -183,6 +190,11 @@ nr = dt.newest_account_render(account, "211")
 check(nr is not None and nr["slot"] == "7" and nr["text"] == "second", "the newest placed rendering for the room; another room and a legacy entry passed over")
 check(dt.newest_account_render({"_": account, "1": {"_": "after the wrap", "2": "pool:211:12", "3": "2026-09-16T14:00:00Z"}}, "211")["slot"] == "12", "a wrapped era is walked")
 check(dt.newest_account_render(None, "211") is None and dt.newest_account_render(account, "999") is None, "no account, or none for the room: None")
+VILLAGE_BEATS = [{"slot": "1", "author": "Ugarth", "ts": "2026-09-18T11:22:16.157Z", "text": "Arrives — The Village."}]
+stray = {"_": "acct", "1": {"_": "The lane holds you like a throat.", "1": "Ugarth", "2": "pool:100:1", "3": "2026-09-18T10:20:26.545Z"}}
+check(dt.newest_account_render(stray, "100", VILLAGE_BEATS) is None, "a telling older than the beat at its slot tells another moment: it covers nothing (the mirror's case, the village 2026-09-18)")
+check(dt.newest_account_render({"1": dict(stray["1"], **{"3": "2026-09-18T11:23:02Z"})}, "100", VILLAGE_BEATS)["slot"] == "1", "a telling made after the beat covers it")
+check(dt.newest_account_render({"1": dict(stray["1"], **{"3": "2026-09-18T11:21:40Z"})}, "100", VILLAGE_BEATS)["slot"] == "1" and dt.newest_account_render(stray, "100")["slot"] == "1", "a minute of clock disagreement is allowed; no beats given, the slot alone decides as before")
 founded = {"_": "Ugarth's own account", "1": {"_": "I crossed and kept my counsel.", "1": "Ugarth", "2": "211", "3": "2026-09-17T12:00:00Z"}}
 check(dt.newest_account_render([founded, account], "211")["slot"] == "7", "one account in two organs: a history founded by a journal entry (location 211, no beat) does not forget the renderings kept in witnessed")
 later = {"_": "history", "1": {"_": "after", "1": "Ugarth", "2": "pool:211:9", "3": "2026-09-17T12:30:00Z"}}
