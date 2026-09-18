@@ -358,6 +358,70 @@ def arriving_text(label):
     return "Arrives%s." % ((" — " + label) if label else "")
 
 
+# ── a party — several characters played round one table, who travel together ──
+#
+# The group page (happyseaurchin.com/group) plays several characters at one
+# phone; its make-it-happen names them, and the fold judges the moment for all
+# of them at once. The call text stays the mirror's verbatim: only the name it
+# is handed changes, from one character to the party.
+
+def names_said(names):
+    """'Ugarth', 'Ugarth and Astrel', 'Ugarth, Astrel and Reed'."""
+    names = [n for n in (names or []) if n]
+    if len(names) < 2:
+        return names[0] if names else ""
+    return ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def party_phrase(names):
+    """Who the fold's move is judged for: one character by name, or the party
+    — named, and said to travel together, so a moment that lets one go lets
+    all of them go."""
+    said = names_said(names)
+    return said if len([n for n in (names or []) if n]) < 2 else said + " (who travel together)"
+
+
+def party_arriving_text(names, label):
+    """The one arriving beat a party's move lands, said by name — the group
+    page reads it aloud to the table, and a line that names nobody tells a
+    listener nothing: 'Tamsin and Corrin arrive — Holloway Wood.', or
+    'Corrin arrives — …' when one goes alone."""
+    names = [n for n in (names or []) if n]
+    label = re.sub(r"\s*\.\s*$", "", label or "")
+    if not names:
+        return arriving_text(label)
+    return "%s arrive%s%s." % (names_said(names), "" if len(names) > 1 else "s", (" — " + label) if label else "")
+
+
+def look_of(passport):
+    """How a character looks to a stranger — its passport's position 3 before
+    the Location line, the words the room's cast is drawn from."""
+    three = passport.get("3") if isinstance(passport, dict) else None
+    text = three if isinstance(three, str) else (three.get("_", "") if isinstance(three, dict) else "")
+    return re.split(r"\s*\bLocation:", text or "", maxsplit=1)[0].strip()
+
+
+def party_input(looks):
+    """The party, for the fold: each traveller by name AND look. The scene
+    names the cast by appearance only — right for a character's eyes, wrong
+    for the voice that resolves them: handed 'wiry and weathered, a coiled
+    whip at her belt' beside a window of names, the fold took the carter for
+    the ford's watch (the group page's first proof, 2026-09-18). The resolver
+    may know who is who; the beat still names them as the law says."""
+    rows = ["- %s — %s" % (h, look) if look else "- %s" % h for h, look in (looks or []) if h]
+    if not rows:
+        return ""
+    return ("[THE PARTY — the characters played round this table, each by name and look; where the scene "
+            "names one of these looks, it is that character, never a standing figure of the place]\n" + "\n".join(rows))
+
+
+def committed_slot(message):
+    """The slot a commit landed at, read off the router's own acknowledgement
+    ('committed: slot 12 → pool:211 …'); None when it says no such thing."""
+    m = re.search(r"^committed: slot (\S+)", message or "", re.M)
+    return m.group(1) if m else None
+
+
 def claim_outcome(message):
     """What the router answered the claim with, read off its own words —
     the mirror's claimOutcome."""

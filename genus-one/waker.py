@@ -827,6 +827,7 @@ ROUTER_URL = os.environ.get("WAKER_ROUTER", "https://bsp.hermitcrab.me/mcp/v1")
 DOORMAN_MODEL = os.environ.get("WAKER_DOORMAN_MODEL", "claude-sonnet-5")
 DOORMAN_ROOM_ENTRIES = 12
 DOORMAN_MAX_TOKENS = int(os.environ.get("WAKER_DOORMAN_MAX_TOKENS", "4000"))
+PARTY_MAX = 8  # the other characters one party's fold may carry — a window holds nine voices
 
 DOORMAN_STANCE = """You are the doorman of a handle on a public federated beach: the
 same shell its holder keeps, with thinner hands. Everything below the line is that
@@ -1456,12 +1457,24 @@ def act_for(handle, beach, room, ringer, slot, fuel_key, secret, dial, model, ma
     return "done", "staged as %s at %s; another hand makes it happen (commit is off)" % (handle, room)
 
 
-def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, require_own):
+def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, require_own, party=None, report=None):
     """MAKE IT HAPPEN: weave what stands staged and claim the window with the
     envelope's own stamps. With require_own, the doorman folds only a window
     its own line still stands in (after its act); without, whatever stands
     (instructed by the holder). WINDOW MOVED re-weaves once. Returns (status,
-    note); the caller holds the lock."""
+    note); the caller holds the lock.
+
+    A PARTY (the group page — several characters played round one table):
+    `party` is the other travellers, [(handle, key)], each already proven
+    against its own enrolment and standing in this room. The fold judges the
+    moment's move for all of them at once (they travel together), the landed
+    beat is kept in every traveller's account — the shared narration, one
+    beat and no extra call, where a rendering would cost one per character —
+    and a move walks every traveller, with one arriving beat for the party.
+    `report`, when given, is filled with what the page needs to follow:
+    the landed slot, who moved, and where."""
+    travellers = [(handle, secret)] + list(party or [])
+    names = [h for h, _k in travellers]
     for attempt in (1, 2):
         env = dt.parse_envelope(pool_engage_rpc(beach, room, handle, secret))
         stamps = dt.window_stamps(env)
@@ -1476,8 +1489,17 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
             rules = dt.rules_text(beach_get_or_none("rules:nomad", beach=beach))
         except Exception:
             rules = ""
-        woven = model_call(fuel_key, model, max(max_tokens, 1600), dt.happen_directive(law, handle),
-                           dt.fold_input(dt.fold_scene(env), env["slips"], env["dice"], rules, env["ways"]))
+        who = dt.party_phrase(names) if party is not None else handle
+        given = dt.fold_input(dt.fold_scene(env), env["slips"], env["dice"], rules, env["ways"])
+        if party is not None:
+            looks = []
+            for h in names:
+                try:
+                    looks.append((h, dt.look_of(beach_get_or_none("passport:%s" % h, beach=beach))))
+                except Exception:
+                    looks.append((h, ""))
+            given += "\n\n" + dt.party_input(looks)
+        woven = model_call(fuel_key, model, max(max_tokens, 1600), dt.happen_directive(law, who), given)
         # The WAY line is the surface's, never the record's: stripped before
         # the claim, walked only once the claim has landed (the clean mirror §2).
         beat, way, named = dt.way_of(woven, env["ways"])
@@ -1490,10 +1512,21 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
             continue
         if outcome == "landed":
             note = "the moment happened — woven by %s's doorman" % handle
+            if party is None:
+                if way:
+                    note += "; " + walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens)
+                elif named:
+                    note += "; it named a way this place does not have, so %s stays where they are" % handle
+                return "done", note
+            slot = dt.committed_slot(answer)
+            if report is not None:
+                report["slot"] = slot
+            for h, key in travellers:
+                note += "; " + keep_shared(h, beach, room, slot, beat, key, fuel_key, model, max_tokens)
             if way:
-                note += "; " + walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens)
+                note += "; " + walk_party(travellers, beach, room, way, fuel_key, model, max_tokens, report)
             elif named:
-                note += "; it named a way this place does not have, so %s stays where they are" % handle
+                note += "; it named a way this place does not have, so %s stay where they are" % dt.names_said(names)
             return "done", note
         status = "declined" if outcome == "resolved" else "failed"
         return status, {"resolved": "the moment already happened — a keyed hand folded first",
@@ -1501,20 +1534,22 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
     return "failed", "unreachable"
 
 
-def walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens):
+def walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens, render_first=True, arrive=True):
     """A MOVE FROM WORDS, walked (grit 1.5; the mirror's executeMove, no leaving
     beat — the resolved beat was the leaving). First the moment just resolved is
     rendered into the account while the character still stands in the room it
     happened in, when the doorman renders for them, so the narration keeps its
     order across the move; then the position written, read back, the room ahead
     founded if absent, the arriving beat — whose bell renders the arrival there.
-    The caller holds the pen. Returns a note for the page."""
+    The caller holds the pen. Returns a note for the page. A party's walk passes
+    render_first=False (the shared beat is already kept in every account) and
+    arrive=False (the party lands one arriving beat, not one each)."""
     to_addr = way["addr"]
     label = re.sub(r"\s*\.\s*$", "", way.get("label") or "")
     try:
         dial = Dial(handle)
         present = dt.player_present(beach_get_or_none("presence", beach=beach), handle, time.time())
-        if dt.render_due(dial.behaviours, present):
+        if render_first and dt.render_due(dial.behaviours, present):
             st, rn = render_for(handle, beach, room, fuel_key, secret, model, max_tokens)
             log("render before the move for %s at %s: %s — %s" % (handle, room, st, rn))
     except Exception as e:
@@ -1535,6 +1570,8 @@ def walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens):
         pool_engage_rpc(beach, to_addr, handle, secret, purpose="pscale:grit/1")
     except Exception as e:
         log("founding pool:%s for %s's move: %s — arriving will tell" % (to_addr, handle, str(e)[:80]))
+    if not arrive:
+        return "%s went on to %s" % (handle, label or to_addr)
     try:
         beach_append("pool:%s" % to_addr, {"_": dt.arriving_text(label), "1": handle, "2": "",
                                           "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
@@ -1542,6 +1579,61 @@ def walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens):
     except Exception as e:
         return "%s moved to %s, but the arrival has not landed yet (%s)" % (handle, label or to_addr, str(e)[:60])
     return "%s went on to %s" % (handle, label or to_addr)
+
+
+def keep_shared(handle, beach, room, slot, text, secret, fuel_key, model, max_tokens):
+    """A party's beat, kept in one traveller's own account — the shared
+    narration (history is the narration; played round one table, the moment
+    everyone heard is the one each character lived). Journaled as a rendering
+    is, at a location naming the beat it covers, so every door reads it as
+    this character's telling; never doubled when the account already covers
+    the slot; the summary the append owes paid in the same act. Returns a note."""
+    if not slot:
+        return "the landed slot went unreported, so the beat was not kept in %s's account" % handle
+    try:
+        organs = account_organs(handle, beach)
+        if not organs:
+            return "%s has no account to keep it in" % handle
+        kept = dt.newest_account_render([block for _organ, block in organs], room)
+        if dt.covers(kept, slot):
+            return "%s's account already holds the moment" % handle
+        organ = organs[0][0]
+        beach_append("%s:%s" % (organ, handle), {"_": text, "1": handle, "2": "pool:%s:%s" % (room, slot),
+                                                 "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
+                     secret, beach=beach)
+    except Exception as e:
+        return "the beat could not be kept in %s's account (%s)" % (handle, str(e)[:60])
+    try:
+        paid = pay_summaries(handle, beach, organ, secret, fuel_key, model, max_tokens)
+    except Exception as e:
+        paid = "the summary could not be paid (%s)" % str(e)[:60]
+    return "kept in %s:%s%s" % (organ, handle, ("; " + paid) if paid else "")
+
+
+def walk_party(travellers, beach, room, way, fuel_key, model, max_tokens, report=None):
+    """A PARTY'S MOVE — every traveller walked along the one way, each under
+    its own proven key, then ONE arriving beat for those who went, in the
+    first mover's name. A traveller the world would not move is said as it
+    stands, never papered over. Returns a note for the page."""
+    label = re.sub(r"\s*\.\s*$", "", way.get("label") or "")
+    notes, moved = [], []
+    for h, key in travellers:
+        n = walk_on(h, beach, room, way, fuel_key, key, model, max_tokens, render_first=False, arrive=False)
+        notes.append(n)
+        if n.endswith(" went on to %s" % (label or way["addr"])):
+            moved.append((h, key))
+    if report is not None:
+        report["moved"] = [h for h, _k in moved]
+        report["to"] = way["addr"]
+    if moved:
+        first, key = moved[0]
+        try:
+            beach_append("pool:%s" % way["addr"], {"_": dt.party_arriving_text([h for h, _k in moved], label), "1": first, "2": "",
+                                                   "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
+                         key, beach=beach)
+        except Exception as e:
+            notes.append("the arrival has not landed yet (%s)" % str(e)[:60])
+    return "; ".join(notes)
 
 
 def fold_after_span(handle, beach, room, fuel_key, secret, model, max_tokens):
@@ -1606,33 +1698,81 @@ def run_character(handle, beach, room, ringer, slot, fuel_key, funder, secret, d
     return status, " | ".join(notes)
 
 
-def instructed_fold(handle, passphrase, room):
+def prove_party(party, handle, beach, room):
+    """The other travellers of a group page's fold, each PROVEN before the fold
+    may touch them: a character's doorman enrolled at this same table, the key
+    matching that enrolment (a wrong key counts toward the same hourly throttle
+    as any failed proof), and a passport standing in this room. A page can only
+    ever move and journal characters whose keys it holds. Returns ([(handle,
+    key)], [what was left out, and why])."""
+    proven, left = [], []
+    seen = {handle.lower()}
+    for m in party:
+        h, key = m.get("handle", ""), m.get("passphrase", "")
+        if not h or h.lower() in seen:
+            continue
+        seen.add(h.lower())
+        e = enrolment(h)
+        if not e or str(e.get("mode", "")).strip().lower() != "character":
+            left.append("%s has no character's doorman enrolled, so it sat this one out" % h)
+            continue
+        if dt.norm_origin(enrolment_beach(h)) != dt.norm_origin(beach):
+            left.append("%s is enrolled at another table" % h)
+            continue
+        if _throttled(h):
+            left.append("too many wrong keys were tried for %s — it waits an hour" % h)
+            continue
+        if not key or not hmac.compare_digest(str(e.get("secret", "")), key):
+            _verify_fails.setdefault(h, []).append(time.monotonic())
+            left.append("the key does not match %s's enrolment" % h)
+            continue
+        try:
+            there = dt.standpoint_room(beach_get_or_none("passport:%s" % h, beach=beach))
+        except Exception:
+            there = None
+        if there != room:
+            left.append("%s stands elsewhere, so it is not in this moment" % h)
+            continue
+        proven.append((h, key))
+    return proven, left
+
+
+def instructed_fold(handle, passphrase, room, party=None):
     """COMMIT WHEN INSTRUCTED — the holder's own hand from a page: prove the
     passphrase against the enrolment, fold whatever stands in the room the
     character stands in (or the room named), on the character's fuel. Runs
-    synchronously and returns (ok, status, note) for the page to show."""
+    synchronously and returns (ok, status, note, report) for the page to show.
+    With `party` ([{handle, passphrase}] — the group page's other characters),
+    the fold is a party's (fold_window): each member proven first, the move
+    judged and walked for all, the beat kept in every traveller's account;
+    `report` then names the landed slot and who went where."""
+    report = {}
     e = enrolment(handle)
     if not e or str(e.get("mode", "")).strip().lower() != "character":
-        return False, "declined", "no character's doorman is enrolled for %s — enrol it first" % handle
+        return False, "declined", "no character's doorman is enrolled for %s — enrol it first" % handle, report
     if not passphrase or not hmac.compare_digest(str(e.get("secret", "")), passphrase):
-        return False, "declined", "the passphrase does not match %s's enrolment" % handle
+        return False, "declined", "the passphrase does not match %s's enrolment" % handle, report
     beach = enrolment_beach(handle)
     dial = Dial(handle)
     if "commit" not in dial.behaviours:
-        return False, "declined", "%s's doorman is not set to commit — its dial's position 9 names its behaviours" % handle
+        return False, "declined", "%s's doorman is not set to commit — its dial's position 9 names its behaviours" % handle, report
     if not room:
         room = dt.standpoint_room(beach_get_or_none("passport:%s" % handle, beach=beach)) or ""
     if not room:
-        return False, "declined", "%s stands nowhere the passport names — no room to make happen" % handle
+        return False, "declined", "%s stands nowhere the passport names — no room to make happen" % handle, report
     fuel_key, funder = pick_fuel(handle, None)
     if not fuel_key:
-        return False, "declined", "no fuel for %s — deposit a key at enrolment" % handle
+        return False, "declined", "no fuel for %s — deposit a key at enrolment" % handle, report
+    members, left = prove_party(party, handle, beach, room) if party is not None else (None, [])
+    if left:
+        report["left"] = left
     if not _pulse_lock.acquire(timeout=20):
-        return False, "declined", "the doorbell is busy — try again in a moment"
+        return False, "declined", "the doorbell is busy — try again in a moment", report
     started = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     try:
         model, max_tokens = dial.answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS)
-        status, note = fold_window(handle, beach, room, fuel_key, passphrase, model, max_tokens, require_own=False)
+        status, note = fold_window(handle, beach, room, fuel_key, passphrase, model, max_tokens, require_own=False,
+                                   party=members, report=report)
     except Exception as ex:
         status, note = "failed", str(ex)[:160]
     finally:
@@ -1645,7 +1785,9 @@ def instructed_fold(handle, passphrase, room):
             "1": "waker", "3": started, "5": status, "6": funder}, passphrase, beach=beach)
     except Exception as ex:
         log("daily log append failed for %s: %s" % (handle, str(ex)[:80]))
-    return status == "done", status, note
+    if left:
+        note += "; " + "; ".join(left)
+    return status == "done", status, note, report
 
 
 def wake_mode(handle):
@@ -2115,7 +2257,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._poke()
         if path == "/fold":
             # COMMIT WHEN INSTRUCTED — the holder's own hand from a page:
-            # POST {handle, passphrase, room?}; synchronous; the outcome returns.
+            # POST {handle, passphrase, room?, party?}; synchronous; the outcome
+            # returns. party — [{handle, passphrase}], the group page's other
+            # characters in this room — makes it a party's fold (instructed_fold).
             try:
                 b = self._body()
             except Exception:
@@ -2125,10 +2269,15 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(400, {"ok": False, "detail": "which character?"})
             if _throttled(handle):
                 return self._send(429, {"ok": False, "detail": "too many failed proofs — wait an hour"})
-            ok, status, note = instructed_fold(handle, str(b.get("passphrase", "") or ""), str(b.get("room", "") or "").strip())
+            party = None
+            if isinstance(b.get("party"), list):
+                party = [{"handle": str(m.get("handle", "")).strip(), "passphrase": str(m.get("passphrase", "") or "")}
+                         for m in b["party"][:PARTY_MAX] if isinstance(m, dict)]
+            ok, status, note, report = instructed_fold(handle, str(b.get("passphrase", "") or ""),
+                                                       str(b.get("room", "") or "").strip(), party)
             if not ok and "passphrase does not match" in note:
                 _verify_fails.setdefault(handle, []).append(time.monotonic())
-            return self._send(200, {"ok": True, "folded": ok, "status": status, "detail": note[:300]})
+            return self._send(200, dict({"ok": True, "folded": ok, "status": status, "detail": note[:600 if party is not None else 300]}, **report))
         if path != "/ring":
             return self._send(404, {"error": "not found"})
         got = self.headers.get("x-pool-webhook-secret")
