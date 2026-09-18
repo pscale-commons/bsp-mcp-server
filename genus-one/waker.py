@@ -1490,15 +1490,17 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
         except Exception:
             rules = ""
         who = dt.party_phrase(names) if party is not None else handle
-        given = dt.fold_input(dt.fold_scene(env), env["slips"], env["dice"], rules, env["ways"])
-        if party is not None:
+        if party is None:
+            given = dt.fold_input(dt.fold_scene(env), env["slips"], env["dice"], rules, env["ways"])
+        else:
             looks = []
             for h in names:
                 try:
                     looks.append((h, dt.look_of(beach_get_or_none("passport:%s" % h, beach=beach))))
                 except Exception:
                     looks.append((h, ""))
-            given += "\n\n" + dt.party_input(looks)
+            scene = dt.fold_scene(dt.cast_without(env, [look for _h, look in looks]))
+            given = dt.fold_input(scene, env["slips"], env["dice"], rules, env["ways"]) + "\n\n" + dt.party_input(looks)
         woven = model_call(fuel_key, model, max(max_tokens, 1600), dt.happen_directive(law, who), given)
         # The WAY line is the surface's, never the record's: stripped before
         # the claim, walked only once the claim has landed (the clean mirror §2).
