@@ -1992,8 +1992,6 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(400, {"ok": False, "detail": "unparseable body"})
         handle = str(b.get("handle", "")).strip()
         passphrase = str(b.get("passphrase", ""))
-        notify = str(b.get("notify", "")).strip()
-        fuel = str(b.get("fuel", "")).strip()
         # mode: 'lite' asks for the doorman (compile this handle's own manifest and
         # answer once in the room); anything else keeps the genus pulse, which is
         # the default so no standing instance changes behaviour on deploy.
@@ -2004,7 +2002,14 @@ class Handler(BaseHTTPRequestHandler):
         # holder pressing keep there would otherwise silently turn their doorman
         # back into a full pulse and lose its dial address. Absent means unchanged;
         # present-and-empty still clears, so nothing becomes unsettable.
+        # notify and fuel keep the same way (2026-09-19): a page re-keying a
+        # character's doorman — its passport's key changed since enrolment, and
+        # the doorman still holds the old one — knows nothing of the API key the
+        # holder deposited, and clearing it would move that character's wakes onto
+        # the beach's standing fuel with nobody having chosen it.
         prior = _store_load().get(handle) or {}
+        notify = (str(b["notify"]).strip() if "notify" in b else str(prior.get("notify", "")))
+        fuel = (str(b["fuel"]).strip() if "fuel" in b else str(prior.get("fuel", "")))
         mode = (str(b["mode"]).strip().lower() if "mode" in b else str(prior.get("mode", "")))
         dial = (str(b["dial"]).strip() if "dial" in b else str(prior.get("dial", "")))
         # beach: where this handle lives — a table (<beach>/w/<name>), a world,

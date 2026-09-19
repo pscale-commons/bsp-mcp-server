@@ -250,5 +250,40 @@ check(si.startswith("[THE NINE — the span the voicing at 10 stands for, in Uga
 sd = dt.summary_directive("[3.5] Zero-slots are the summaries.")
 check(sd.startswith("[THE LAW — the account's own, at the address of this act]\n[3.5] Zero-slots are the summaries.") and "ONE substantive paragraph in the zeroth person" in sd and "read-addresses" in sd, "the summary is written under the law at 3.5, then the call")
 
+# ── re-enrolment keeps what the caller did not mention ───────────────────────
+# A page re-keys a character's doorman when the passport's key has changed since
+# enrolment: it names the handle, the new key, the mode and the table — never the
+# holder's deposited fuel or notify address, which must survive the re-key.
+import waker  # noqa: E402
+
+
+def enrol(body, prior):
+    saved, out = {}, {}
+    waker._store_load = lambda: {k: dict(v) for k, v in prior.items()}
+    waker._store_save = lambda s: saved.update(s)
+    waker.verify_shell_key = lambda h, p, beach=None: (True, "proven")
+    waker.set_consent = waker.set_answer = waker.set_behaviours = lambda *a, **k: ""
+    waker.Dial = type("StubDial", (), {"__init__": lambda self, h: setattr(self, "on", False)})
+    hd = waker.Handler.__new__(waker.Handler)
+    hd._body = lambda: body
+    hd._send = lambda code, obj: out.update(code=code, obj=obj)
+    hd._enroll(False)
+    return out, saved.get(body.get("handle"), {})
+
+
+PRIOR = {"Ugarth": {"secret": "old-key", "fuel": "sk-holders-own", "notify": "holder@example.org", "mode": "character",
+                    "dial": "wake:Ugarth", "beach": "https://beach.happyseaurchin.com/w/brackenfoot-open"}}
+rekey = {"handle": "Ugarth", "passphrase": "new-key", "mode": "character", "beach": "https://beach.happyseaurchin.com/w/brackenfoot-open"}
+out, rec = enrol(rekey, PRIOR)
+check(out.get("code") == 200 and rec.get("secret") == "new-key", "a re-key from a page stores the new key")
+check(rec.get("fuel") == "sk-holders-own" and rec.get("notify") == "holder@example.org", "a re-key keeps the holder's deposited fuel and notify address")
+check(rec.get("dial") == "wake:Ugarth" and rec.get("mode") == "character", "a re-key keeps the dial and the mode")
+out, rec = enrol(dict(rekey, fuel=""), PRIOR)
+check(rec.get("fuel") == "", "fuel named empty still clears — nothing becomes unsettable")
+out, rec = enrol(dict(rekey, fuel="sk-new"), PRIOR)
+check(rec.get("fuel") == "sk-new", "fuel named is fuel replaced")
+out, rec = enrol(rekey, {})
+check(rec.get("fuel") == "" and rec.get("notify") == "", "a first enrolment without fuel has none")
+
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
