@@ -176,10 +176,10 @@ export function findAuthorSlot(block: Block | null, agentId: string): string | n
   if (typeof block !== 'object' || block === null) return null;
   // Same geometry as collectContributions: real entries live at slot length
   // <= floor; a longer slot is an entry's own field. Floor-aware so an absorbed
-  // author is still found after growth. (Liquid does not supernest today — the
-  // submit path allocates raw slots at floor 1 — so this is behaviour-identical
-  // to the old prefix prune for every shape liquid actually reaches, and simply
-  // stays correct if it ever grows a floor.)
+  // author is still found after growth. (Liquid never supernests — its nine
+  // places are the whole table and a tenth author is refused, findFreeSlot — so
+  // this is behaviour-identical to the old prefix prune for every shape liquid
+  // actually reaches, and simply stays correct if a buffer ever grows a floor.)
   const floor = Math.max(floorDepth(block), 1);
   for (const slot of digitPathSlots()) {
     if (slot.length > floor) continue;
@@ -190,6 +190,48 @@ export function findAuthorSlot(block: Block | null, agentId: string): string | n
     }
   }
   return null;
+}
+
+/**
+ * A new author's place in a liquid buffer: the first of the nine digits at the
+ * buffer's floor that nobody holds, or null when all nine are held.
+ *
+ * Liquid (block-conventions:4.5) is edited in place and never appended, so it
+ * never grows a floor. The accumulator's next slot after 9 is 11 (findNextSlot),
+ * and at floor 1 the floor imposes the decimal: 11 is 1.1, the first author's own
+ * field 1. A tenth author written there replaced that author's handle with the
+ * whole slip — the read-back passed, entry 1 lost its author, and the tenth voice
+ * stood where no reader looks (found 2026-09-18, lane rpg.6.group). So the places
+ * are the nine and a tenth author is refused: David's ruling of 2026-09-19, the
+ * answer the character page (happyseaurchin-home #265) and xstream's claim
+ * (xstream-bsp #237) already gave. Any number of voices combine in a stream, each
+ * in its own mirror — not here (proposals/2026-09-19-liquid-holds-nine).
+ *
+ * A place is held from an author's first stage until the buffer empties: a line
+ * taken back keeps its place, and its arrival on a restage, for the window — as on
+ * the page. Floor-aware (readAt), so on a buffer that somehow grew, "1" reads the
+ * oldest tier: still a place, never an entry's field.
+ */
+export function findFreeSlot(block: Block | null): string | null {
+  if (typeof block !== 'object' || block === null) return '1';
+  for (const slot of '123456789') {
+    if (readAt(block, slot) == null) return slot;
+  }
+  return null;
+}
+
+/**
+ * The read-back a liquid birth owes (strata 1.2): `agentId`'s entry stands at
+ * `slot`, AND `slot` is a place every reader enumerates — no longer than the
+ * buffer's floor, the geometry collectContributions and findAuthorSlot share.
+ * Field 1 alone was the old check, and it passed for the tenth voice at 11: that
+ * slip carried the right author, one level down inside entry 1.
+ */
+export function landedAtFloor(block: Block | null, slot: string, agentId: string): boolean {
+  if (typeof block !== 'object' || block === null) return false;
+  if (!/^[1-9]+$/.test(slot) || slot.length > Math.max(floorDepth(block), 1)) return false;
+  const v = readAt(block, slot);
+  return isEntryNode(v) && (v as Record<string, any>)['1'] === agentId;
 }
 
 // ── Returning-author detection (2026-07-20) ──
@@ -1197,16 +1239,17 @@ export function windowDicePerAuthor(
 
 // ── Liquid staging (submit) ──
 
-/**
- * Stage `text` to the author's slot in the pre-commit liquid buffer
- * (liquid:pool:<name>, block-conventions:4.5). One slot per author, OVERWRITING:
- * reuse the author's existing slot if present, else allocate the next free one,
- * and write only that slot surgically so co-present peers' pending slots stay
- * intact. Returns the slot written. Empty `text` writes an empty underscore —
- * the withdraw/clear convention. This is the pending-mirror affordance: liquid
- * lives on the beach, so submit makes "see what others intend before committing"
- * a substrate capability, not an xstream-only one.
- */
+/** A stage refused before any write: every place at the table is held. Said to
+ *  the caller as it stands, never as a beach rejection — nothing reached the
+ *  beach, and nothing is wrong with it. */
+class TableFullError extends Error {
+  constructor(liquidName: string) {
+    super(
+      `every place at the table is taken just now — nothing was written. ${liquidName} keeps one place per author, and all nine are held for this window; a tenth author is refused rather than written over one of them. Places open when the window closes (a fold empties the buffer) or the buffer is cleared — stage again then.`,
+    );
+  }
+}
+
 /** CLEAR THE WHOLE BUFFER — every author's staged line at once.
  *
  * The thing a person actually asks for. "Clear the pool please" means the
@@ -1243,6 +1286,18 @@ async function clearLiquid(
   return cleared;
 }
 
+/**
+ * Stage `text` to the author's slot in the pre-commit liquid buffer
+ * (liquid:pool:<name>, block-conventions:4.5). One slot per author, OVERWRITING:
+ * reuse the author's existing slot if present, else take the first free place of
+ * the nine (findFreeSlot) — and when all nine are held, refuse before writing
+ * anything (TableFullError). Only that slot is written, surgically, so co-present
+ * peers' pending slots stay intact. Returns the slot written, or null for a
+ * withdraw with no line of the author's to take back. Empty `text` writes an
+ * empty underscore — the withdraw/clear convention. This is the pending-mirror
+ * affordance: liquid lives on the beach, so submit makes "see what others intend
+ * before committing" a substrate capability, not an xstream-only one.
+ */
 async function stageLiquid(
   url: string,
   liquidName: string,
@@ -1251,10 +1306,16 @@ async function stageLiquid(
   face: string | undefined,
   secret: string | undefined,
   at?: string,
-): Promise<string> {
+): Promise<string | null> {
   const lrow = await loadBlock(url, liquidName);
   const exists = !!lrow && typeof lrow.block === 'object' && lrow.block !== null;
   const baseDesc = `Liquid pre-commit buffer for ${liquidName} (block-conventions:4.5) — one slot per author, overwriting; the social mirror of pending intentions before commit.`;
+
+  // A withdraw takes back a line that stood. With no slot of this author's there
+  // is nothing to take back, and an empty slot written anyway would hold one of
+  // the nine places for the rest of the window — at a full table it once went to
+  // 11, inside the first author's entry.
+  if (text.trim() === '' && (!exists || findAuthorSlot(lrow!.block, agentId) === null)) return null;
 
   // Slot shape: _ text · 1 author · 2 FIRST-STAGED (arrival — written once at slot
   // creation, never moved by a revise) · 3 last-touched (restamped every write).
@@ -1297,7 +1358,10 @@ async function stageLiquid(
   // on this write — the revise is what migrates it, and nothing else has to.
   const lblock: Block = JSON.parse(JSON.stringify(lrow!.block));
   const existingSlot = findAuthorSlot(lblock, agentId);
-  const mySlot = existingSlot ?? findNextSlot(lblock);
+  // A new author takes the first free place of the nine. With none free the stage
+  // is refused here, before anything is written — never allocated past the floor.
+  const mySlot = existingSlot ?? findFreeSlot(lblock);
+  if (mySlot === null) throw new TableFullError(liquidName);
   if (existingSlot) {
     const prior = readAt(lblock, existingSlot) as Record<string, any> | null;
     const firstStaged = arrivalOf(prior as Record<string, unknown> | null);
@@ -1322,23 +1386,22 @@ async function stageLiquid(
   // with the slip in place (saveWhole read-back-confirms; the whole-block race
   // is the same one the opening path already accepts); if it is STILL absent,
   // fail loud — silence is the one outcome this path may never produce again.
+  // Landed means found where every reader looks, at a place on the buffer's floor
+  // — not merely a slip somewhere that names the right author (landedAtFloor).
   const verify = await loadBlock(url, liquidName).catch(() => null);
-  const landed = verify?.block && typeof verify.block === 'object'
-    ? (readAt(verify.block as Block, mySlot) as Record<string, any> | null)
-    : null;
-  if (landed && landed['1'] === agentId) return mySlot;
+  if (landedAtFloor((verify?.block as Block) ?? null, mySlot, agentId)) return mySlot;
 
   const rebuilt: Block = verify?.block && typeof verify.block === 'object'
     ? JSON.parse(JSON.stringify(verify.block))
     : ({ _: baseDesc } as Block);
-  const rebornSlot = findAuthorSlot(rebuilt, agentId) ?? findNextSlot(rebuilt);
+  // The place may have gone meanwhile — the last one to another newcomer. Then
+  // the table is full for this author too, and it is said, not written over.
+  const rebornSlot = findAuthorSlot(rebuilt, agentId) ?? findFreeSlot(rebuilt);
+  if (rebornSlot === null) throw new TableFullError(liquidName);
   writeAt(rebuilt, rebornSlot, slotObj);
   await saveBlock(url, liquidName, rebuilt, { spindle: '', secret });
   const check = await loadBlock(url, liquidName).catch(() => null);
-  const relanded = check?.block && typeof check.block === 'object'
-    ? (readAt(check.block as Block, rebornSlot) as Record<string, any> | null)
-    : null;
-  if (!relanded || relanded['1'] !== agentId) {
+  if (!landedAtFloor((check?.block as Block) ?? null, rebornSlot, agentId)) {
     throw new Error(
       `liquid birth did not land: slot ${rebornSlot} for ${agentId} at ${liquidName} is absent after both the surgical write and the whole-block fallback — refusing to report a stage that did not happen`,
     );
@@ -1663,6 +1726,7 @@ export async function handlePoolEngage(
     try {
       submittedSlot = await stageLiquid(pool_url, liquidName, agent_id, submit, face, secret, params.at);
     } catch (e: any) {
+      if (e instanceof TableFullError) return { content: [{ type: 'text', text: e.message }] };
       return { content: [{ type: 'text', text: `Liquid submit rejected by beach: ${e?.message ?? String(e)}` }] };
     }
   }
