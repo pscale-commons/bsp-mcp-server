@@ -4,7 +4,9 @@
  * The handler (handlePoolEngage) reaches the federated beach over HTTP and is
  * exercised by RPG validation in a follow-on session. This smoke covers the
  * deterministic logic — digit-path enumeration, slot reading, next-free-slot,
- * envelope assembly, synthesis_hint fallback chain — without network.
+ * envelope assembly, synthesis_hint fallback chain — without network. One
+ * section drives handlePoolEngage itself against an in-memory beach (a fake
+ * fetch): liquid's table of nine, and the tenth author it refuses.
  */
 import {
   digitPathSlots,
@@ -449,6 +451,114 @@ console.log('\n=== dice by declaration — the measured invariant (grit, 2026-07
     typeof n === 'string' ? n : n && typeof n === 'object' ? Object.values(n).map(flat).join(' ') : '';
   assert(!/\bno dice\b/i.test(flat(grit['_']) + ' ' + flat(grit['1'])), 'grit root + branch 1 (the play mount) declare no suppression — dice preserved');
   assert(/\bno dice\b/i.test(flat(grit['5'])), 'grit:5 (the generic mount) declares "no dice" — trees fold clean');
+}
+
+import { findFreeSlot, landedAtFloor, handlePoolEngage } from '../src/tools/pool.js';
+import { readAt, writeAt } from '../src/bsp.js';
+
+// Liquid holds nine (found 2026-09-18, lane rpg.6.group; ruled 2026-09-19). A
+// tenth author staged through the router was allocated slot 11, which at floor 1
+// is 1.1 — the first author's own field — and the read-back passed.
+const LIQ_TS = '2026-09-18T20:00:00.000Z';
+const nineAtTable = (): Block => {
+  const b: any = { _: `Liquid pre-commit buffer for liquid:pool:211. Window opened ${LIQ_TS}.` };
+  ['garth', 'equinox', 'cob', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'].forEach((n, i) => {
+    b[String(i + 1)] = { _: `${n} acts`, '1': n, '2': '', '3': LIQ_TS, '4': 'character', '6': LIQ_TS };
+  });
+  return b;
+};
+
+console.log('\n=== liquid holds nine — the fault, and the places a new author may take ===');
+{
+  // The fault, kept as the reason: the accumulator's next slot past nine is 11.
+  const broken = nineAtTable();
+  assert(findNextSlot(broken) === '11', "the accumulator's next slot past nine is 11 — 1.1 at floor 1");
+  writeAt(broken, '11', { _: 'a10 acts', '1': 'a10', '2': '', '3': LIQ_TS, '4': 'character', '6': LIQ_TS });
+  assert(typeof (broken as any)['1']['1'] === 'object', "written there, the tenth slip replaces entry 1's author");
+  assert((readAt(broken, '11') as any)['1'] === 'a10', 'and the old read-back (field 1 only) still passed');
+  assert(findAuthorSlot(broken, 'a10') === null && findAuthorSlot(broken, 'garth') === null, 'while both voices vanish from every reader');
+  assert(collectContributions(broken, 0).contributions[0].agent_id === null, 'entry 1 reads with no author — the dice and the fold skip it');
+  assert(!landedAtFloor(broken, '11', 'a10'), 'landedAtFloor refuses it: 11 is longer than the floor');
+
+  // The cure: the nine places, the first free one; never past the floor.
+  assert(findFreeSlot(nineAtTable()) === null, 'a full table has no place for a tenth author');
+  assert(findFreeSlot(null) === '1' && findFreeSlot({ _: 'liquid' } as Block) === '1', 'an absent or empty buffer offers place 1');
+  const eight = nineAtTable(); delete (eight as any)['9'];
+  assert(findFreeSlot(eight) === '9', 'the ninth author takes place 9');
+  const gap = nineAtTable(); delete (gap as any)['5'];
+  assert(findFreeSlot(gap) === '5', 'a gap is taken first — the first free place, as the page takes it');
+  const takenBack = nineAtTable(); (takenBack as any)['4']._ = '';
+  assert(findFreeSlot(takenBack) === null, 'a line taken back keeps its place for the window');
+  assert(landedAtFloor(nineAtTable(), '5', 'a5'), "an author's slip at a place on the floor reads as landed");
+  assert(!landedAtFloor(nineAtTable(), '5', 'a6'), 'another author at that place does not');
+  let grown: Block = { _: 'liquid' } as Block;
+  for (let i = 1; i <= 12; i++) grown = appendWithSupernest(grown, { _: `staged ${i}`, '1': `auth${i}`, '3': LIQ_TS }).block;
+  assert(landedAtFloor(grown, '1', 'auth1') && landedAtFloor(grown, '11', 'auth10'), 'a grown buffer: both tiers read as landed at floor 2');
+}
+
+console.log('\n=== liquid holds nine — through the router door, against an in-memory beach ===');
+{
+  // handlePoolEngage over a fake beach that answers the wire the way a beach
+  // does: GET a block (404 when absent), POST a whole block, or POST a surgical
+  // write at a spindle, landed floor-aware. What a door is told, and what the
+  // beach keeps.
+  const ORIGIN = 'https://tenth.test';
+  const LIQ = 'liquid:pool:tenth';
+  const store: Record<string, any> = { 'pool:tenth': { _: 'Probe room: a table of nine, and a tenth who arrives.' } };
+  const answer = (v: unknown, status = 200) =>
+    new Response(JSON.stringify(v), { status, headers: { 'Content-Type': 'application/json' } });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: any, init?: any) => {
+    const url = new URL(typeof input === 'string' ? input : input.url);
+    if (url.origin !== ORIGIN || !url.pathname.endsWith('/.well-known/pscale-beach')) return answer({ error: 'no beach here' }, 404);
+    const name = url.searchParams.get('block');
+    if ((init?.method ?? 'GET') === 'GET') {
+      if (!name) return answer({ _: 'fixture beach', origin: ORIGIN, blocks: Object.keys(store) });
+      return name in store ? answer(store[name]) : answer({ error: 'not found' }, 404);
+    }
+    const body = JSON.parse(String(init.body));
+    if (!name || body.append) return answer({ error: 'this fixture takes whole and surgical writes only' }, 400);
+    if (body.spindle) {
+      const b = store[name] ?? {};
+      writeAt(b, String(body.spindle), body.content);
+      store[name] = b;
+    } else {
+      store[name] = body.content;
+    }
+    return answer({ ok: true });
+  }) as typeof fetch;
+  const engage = async (p: Record<string, unknown>) =>
+    (await handlePoolEngage({ pool_url: ORIGIN, pool_name: 'tenth', ...p } as any)).content.map((c) => c.text).join('\n');
+
+  try {
+    store[LIQ] = nineAtTable();
+    const before = JSON.stringify(store[LIQ]);
+
+    const refused = await engage({ agent_id: 'a10', submit: 'a10 acts' });
+    assert(/^every place at the table is taken just now — nothing was written\./.test(refused), 'the tenth author is told the table is full');
+    assert(!/rejected by beach/.test(refused), 'told plainly — nothing reached the beach, nothing is wrong with it');
+    assert(JSON.stringify(store[LIQ]) === before, 'and nothing was written: all nine lines stand as they were');
+
+    const passer = await engage({ agent_id: 'passer', submit: '' });
+    assert(JSON.stringify(store[LIQ]) === before, 'a withdraw with no line to take back writes nothing');
+    assert(!/every place at the table/.test(passer) && !/withdrawn: liquid slot/.test(passer), 'and claims neither a refusal nor a withdraw');
+
+    const revised = await engage({ agent_id: 'garth', submit: 'garth acts again' });
+    assert(/submitted: liquid slot 1\b/.test(revised), 'a seated author still revises at a full table');
+    assert(store[LIQ]['1']._ === 'garth acts again' && store[LIQ]['1']['1'] === 'garth' && store[LIQ]['1']['6'] === LIQ_TS, 'the revision lands in place — author kept, arrival kept');
+
+    delete store[LIQ]['5'];
+    const seated = await engage({ agent_id: 'a10', submit: 'a10 acts' });
+    assert(/submitted: liquid slot 5\b/.test(seated), 'when a place opens, the tenth author takes it');
+    assert(collectContributions(store[LIQ], 0).contributions.every((c) => c.agent_id !== null), 'and every line in the buffer keeps its author');
+    assert(findAuthorSlot(store[LIQ], 'a10') === '5', 'found where every reader looks');
+
+    await engage({ agent_id: 'garth', clear: true });
+    const fresh = await engage({ agent_id: 'a11', submit: 'a11 arrives' });
+    assert(/submitted: liquid slot 1\b/.test(fresh), 'once the buffer is cleared, the next author opens a fresh window at place 1');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 }
 
 console.log(`\n=== summary (located engagement) ===\n  pass: ${pass}\n  fail: ${fail}`);
