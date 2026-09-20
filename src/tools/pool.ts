@@ -1633,7 +1633,7 @@ export async function handlePoolEngage(
       return { content: [{ type: 'text', text: `tier='${params.tier}' is for a room of a table — pool:${pool_name} is not a place's address.` }] };
     }
     try {
-      return { content: [{ type: 'text', text: await composeTier(params.tier, pool_url, pool_name, agent_id) }] };
+      return { content: [{ type: 'text', text: await composeTier(params.tier, pool_url, pool_name, agent_id, sincePosition) }] };
     } catch (e: any) {
       return { content: [{ type: 'text', text: `The ${params.tier} call at pool:${pool_name} could not compose: ${e?.message ?? String(e)}` }] };
     }

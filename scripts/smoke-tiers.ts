@@ -186,6 +186,10 @@ console.log('\n=== soft — the telling, and where it lands ===');
   check('her story so far, already told', /the room did not look up/.test(input));
   check('the moment is the beat her account has not covered', /The alewife sets down a cup/.test(input) && !/\[THE MOMENT[^\]]*\][\s\S]*Mara and Dorn arrive/.test(input));
   check('the journal names the organ and the beat', /organ: witnessed:mara/.test(journal) && /location: pool:120:2/.test(journal));
+  const marked = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 1 } as any);
+  check("a surface's own marker names the moment, whatever the account covers", /The alewife sets down a cup/.test(marked.content[0].text) && /location: pool:120:2/.test(marked.content[0].text));
+  const past = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 2 } as any);
+  check('and nothing past it to tell says so', /nothing new to tell/.test(past.content[0].text));
   const covered = await tier('soft', '110', 'mara');
   check('a room her account already covers says so plainly, and costs no call', /nothing new to tell/.test(covered) && /covers slot 2/.test(covered));
 }
