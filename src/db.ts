@@ -371,6 +371,13 @@ export interface BeachIndex {
    *  the weight read before the block, so a reader picks an aperture before
    *  paying for the read. Absent on beaches that don't provide it. */
   bytes?: Record<string, number>;
+  /** The tables PLAYED at this beach, newest room write first, on a beach that
+   *  serves the listing. Tables are not in the `worlds` register by its own law
+   *  — the register is the curated map of canon and the operator's open tables
+   *  — so this listing is where they live, and carrying it in the index is what
+   *  lets an agent see what a browser has seen since the listing landed
+   *  (proposals/2026-09-20-tables-are-listed-where-they-are-played.md). */
+  tables?: wire.PlayedTable[];
 }
 
 /**
@@ -383,7 +390,14 @@ export interface BeachIndex {
 export async function loadBeachIndex(ownerId: string): Promise<BeachIndex | null> {
   const origin = await resolveFederationOrigin(ownerId);
   if (!origin) return null;
-  const parsed: any = await wire.surfaceIndex(origin, { timeoutMs: BEACH_TIMEOUT_MS });
+  // The blocks and the tables together: a surface is what it hosts AND what is
+  // being played on it, and an agent's first act at a beach should show both.
+  // Asked side by side, so discovery costs one round trip, and the tables read
+  // is best-effort — a beach without the listing simply has none.
+  const [parsed, tables]: [any, wire.PlayedTable[] | null] = await Promise.all([
+    wire.surfaceIndex(origin, { timeoutMs: BEACH_TIMEOUT_MS }),
+    wire.playedTables(origin, { timeoutMs: BEACH_TIMEOUT_MS }).catch(() => null),
+  ]);
   if (!parsed) return null;
   const bytes =
     parsed?.bytes && typeof parsed.bytes === 'object' && !Array.isArray(parsed.bytes)
@@ -398,7 +412,17 @@ export async function loadBeachIndex(ownerId: string): Promise<BeachIndex | null
     origin: typeof parsed?.origin === 'string' ? parsed.origin : origin,
     blocks: Array.isArray(parsed?.blocks) ? parsed.blocks.map(String) : [],
     ...(bytes && Object.keys(bytes).length > 0 ? { bytes } : {}),
+    ...(tables && tables.length > 0 ? { tables } : {}),
   };
+}
+
+/** The tables played at a beach, straight from its listing — for callers that
+ *  want them without the index (the doorway's self-correction when a world name
+ *  matches nothing). Empty when the beach does not serve the listing. */
+export async function loadPlayedTables(ownerId: string): Promise<wire.PlayedTable[]> {
+  const origin = await resolveFederationOrigin(ownerId);
+  if (!origin) return [];
+  return (await wire.playedTables(origin, { timeoutMs: BEACH_TIMEOUT_MS }).catch(() => null)) ?? [];
 }
 
 /**

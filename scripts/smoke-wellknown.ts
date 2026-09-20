@@ -34,6 +34,10 @@ const beach: BeachState = {
   position_hashes: {},
 };
 
+/** Whether this mock serves the played-tables listing. Flipped off to stand in
+ *  for a beach from before it existed. */
+let servesTables = true;
+
 function lockKey(agentId: string, blockName: string, secret: string): string {
   // Simple unsalted hash for the mock — production beaches use the same salt
   // namespace as Supabase locks (sha256(secret + 'block:' + ownerId + ':' + name + ':_')).
@@ -57,7 +61,27 @@ const server = createServer(async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     // Derived surface index on a no-?block= GET — mirrors the real beach's
     // {_, origin, blocks:[…]} response. With ?block=, return the block itself.
-    const blockName = new URL(req.url, 'http://localhost').searchParams.get('block');
+    const params = new URL(req.url, 'http://localhost').searchParams;
+    const blockName = params.get('block');
+    // The tables played here (?tables) — every /w/ world with a room written,
+    // newest first. `servesTables` off makes this mock a beach from before the
+    // listing existed: it answers with the ordinary index, which carries no
+    // `tables` key, and the reader must treat that as "none", never an error.
+    if (params.has('tables')) {
+      if (!servesTables) {
+        res.writeHead(200).end(JSON.stringify({ _: 'surface', origin: beachOrigin, blocks: ['beach'] }));
+        return;
+      }
+      res.writeHead(200).end(JSON.stringify({
+        _: `Tables played at ${beachOrigin}.`,
+        origin: beachOrigin,
+        tables: [
+          { name: 'brackenfoot-david-julie', room: 'pool:211', touched: '2026-09-20T16:38:21.563Z' },
+          { name: 'brackenfoot-open', room: 'pool:120', touched: '2026-09-19T14:58:29.273Z' },
+        ],
+      }));
+      return;
+    }
     if (!blockName) {
       res.writeHead(200).end(JSON.stringify({
         _: `URL surface at ${beachOrigin}. Named sibling blocks listed below; address each via ?block=<name>.`,
@@ -174,6 +198,29 @@ try {
   assert(getText(rIdx).includes('beach index'), 'omitted block returns a beach index');
   assert(getText(rIdx).includes('passport:weft'), 'index lists the named blocks');
   assert(getText(rIdx).includes(beachOrigin), 'index names the origin');
+
+  console.log('\n=== bsp() beach INDEX — the tables played here ===');
+  // A surface is what it hosts AND what is being played on it. The beach has
+  // listed its tables since pscale-beach #69 and the o-pages have read them;
+  // no LLM door did, so an agent asked where a character plays concluded the
+  // table was private while a public listing sat one read away.
+  assert(getText(rIdx).includes('tables played here'), 'the index names the tables played at this beach');
+  assert(getText(rIdx).includes('brackenfoot-david-julie'), 'each table is listed by name');
+  assert(getText(rIdx).includes('pool:211'), 'with the room its latest voice landed in');
+  assert(
+    getText(rIdx).indexOf('passport:weft') < getText(rIdx).indexOf('brackenfoot-david-julie'),
+    'blocks first, then the tables — the surface, then what is played on it',
+  );
+  {
+    // A beach from before the listing answers ?tables with its ordinary index:
+    // no `tables` key. That is "none", never an error, and the index renders
+    // exactly as it did before.
+    servesTables = false;
+    const rOld = await handleBsp({ agent_id: beachOrigin, pscale_attention: null });
+    assert(getText(rOld).includes('beach index'), 'a beach without the listing still indexes');
+    assert(!getText(rOld).includes('tables played here'), 'and claims no tables section');
+    servesTables = true;
+  }
 
   console.log('\n=== bsp() beach INDEX — explicit empty-string block ===');
   const rIdx2 = await handleBsp({ agent_id: beachOrigin, block: '', spindle: null, pscale_attention: null });
