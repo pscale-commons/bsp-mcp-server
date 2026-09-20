@@ -1144,14 +1144,14 @@ def pool_engage_rpc(beach, room, handle, secret=None, **extra):
     return router_call("pscale_pool_engage", args, timeout=60)
 
 
-def tier_call(beach, room, handle, tier, secret=None):
+def tier_call(beach, room, handle, tier, secret=None, **extra):
     """THE CALL FOR A TIER, composed beach-side (src/tools/tiers.ts): the law at
     the act's addresses and the contract as the system text, the frame as the
     message, and a last section saying what to do with the answer. One
     composition for every door — the mirror, this doorman, a page, an LLM app —
     so an amendment lands in all of them at once. Returns (sections, raw); the
     sections are empty when the router answered in plain words instead."""
-    raw = pool_engage_rpc(beach, room, handle, secret, tier=tier, with_liquid=False)
+    raw = pool_engage_rpc(beach, room, handle, secret, tier=tier, with_liquid=False, **extra)
     return dt.tier_sections(raw), raw
 
 
@@ -1560,8 +1560,18 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
                 elif named:
                     note += "; it named a way this place does not have, so %s stays where they are" % handle
                 return "done", note
+            # THE TABLE HEARS ONE TELLING of the moment it just made happen, and
+            # every character's account keeps it — composed BEFORE the first
+            # append, because an account that already covers the beat has
+            # nothing left to tell.
+            told = party_telling(handle, beach, room, [h for h, _k in travellers[1:]],
+                                 fuel_key, secret, model, max_tokens)
+            if report is not None and told:
+                report["told"] = told
             for h, key in travellers:
-                note += "; " + keep_shared(h, beach, room, slot, beat, key, fuel_key, model, max_tokens)
+                note += "; " + keep_shared(h, beach, room, slot, told or beat, key, fuel_key, model, max_tokens)
+            if told:
+                note += "; told once for the table"
             if way:
                 note += "; " + walk_party(travellers, beach, room, way, fuel_key, model, max_tokens, report)
             elif named:
@@ -1714,6 +1724,26 @@ def walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens, rende
     if not arrive:
         return "%s went on to %s" % (handle, label or to_addr)
     return arrive_at([(handle, secret)], beach, to_addr, label, fuel_key, model, max_tokens)
+
+
+def party_telling(handle, beach, room, others, fuel_key, secret, model, max_tokens):
+    """ONE TELLING FOR THE TABLE (soft) — several characters played round one
+    screen hear the moment together, so the narration is composed once for them
+    all and kept in each of their accounts, rather than one narrative each that
+    nobody sitting at the same phone wants (David's ruling, 2026-09-20). It is
+    the resolution TOLD: the place, what each of them knows and carries, the
+    story so far, and the beat that just landed. Returns the telling, or None —
+    and the caller keeps the beat itself when it is None, because an account
+    must never be left with nothing where a moment stood."""
+    try:
+        sections, _raw = tier_call(beach, room, handle, "soft", secret, party=list(others))
+        if "CALL" not in sections:
+            return None
+        text = model_call(fuel_key, model, max_tokens, sections["CALL"], sections["INPUT"])
+        return text.strip() or None
+    except Exception as e:
+        log("the table's telling at %s would not compose: %s" % (room, str(e)[:100]))
+        return None
 
 
 def keep_shared(handle, beach, room, slot, text, secret, fuel_key, model, max_tokens):
