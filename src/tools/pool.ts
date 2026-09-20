@@ -1543,6 +1543,10 @@ export const poolEngageParamsSchema = {
     .enum(['soft', 'medium', 'hard'])
     .optional()
     .describe("THE CALL FOR A TIER OF PLAY, composed from the blocks so every door runs the same one (grit 2 and 3). A room of a table only, and read-only: nothing is staged or committed. 'medium' — MAKE IT HAPPEN: the law, the contract and the bundle for the resolution of the window standing now (the place's faces, the story so far wherever it happened, the actors' sheets, the window with the world's own voices, the dice, the rules, the ways), plus the claim stamps and the ways a WAY line may name. 'hard' — THE KEEPER'S ADMIN after a resolution: the held registers whole, the place's hidden directories, the characters' sheets and tellings, and the contract for the world's next intentions and the sheets (JSON out). 'soft' — THE TELLING for agent_id: where they stand, what they know and carry, their story so far and the moment not yet told, plus where to journal it. Run THE CALL as the system text and THE INPUT as the message, on your own key; act on the third section."),
+  party: z
+    .array(z.string())
+    .optional()
+    .describe("With tier='soft': the OTHER characters played at this same screen. Several characters round one phone hear the moment together, so one telling is composed for the table and kept in each of their accounts — never one narrative each, which nobody at a shared screen wants. Omit it and the telling is that one character's own, as every other door asks for."),
   since_position: z
     .number()
     .int()
@@ -1575,6 +1579,7 @@ export type PoolEngageParams = {
   resolves_window?: string;
   resolves_seen?: string;
   tier?: Tier;
+  party?: string[];
 };
 
 // ── Handler ──
@@ -1633,7 +1638,7 @@ export async function handlePoolEngage(
       return { content: [{ type: 'text', text: `tier='${params.tier}' is for a room of a table — pool:${pool_name} is not a place's address.` }] };
     }
     try {
-      return { content: [{ type: 'text', text: await composeTier(params.tier, pool_url, pool_name, agent_id, sincePosition) }] };
+      return { content: [{ type: 'text', text: await composeTier(params.tier, pool_url, pool_name, agent_id, sincePosition, params.party ?? []) }] };
     } catch (e: any) {
       return { content: [{ type: 'text', text: `The ${params.tier} call at pool:${pool_name} could not compose: ${e?.message ?? String(e)}` }] };
     }

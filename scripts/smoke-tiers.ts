@@ -194,6 +194,20 @@ console.log('\n=== soft — the telling, and where it lands ===');
   check('a room her account already covers says so plainly, and costs no call', /nothing new to tell/.test(covered) && /covers slot 2/.test(covered));
 }
 
+console.log('\n=== soft for a table round one screen — told once, for them all ===');
+{
+  const r = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 1, party: ['dorn'] } as any);
+  const text = r.content[0].text;
+  const input = section(text, 'THE INPUT');
+  const call = section(text, 'THE CALL');
+  check('the contract tells one table, aloud, naming each character', /players sitting at ONE screen/.test(call) && /heard ALOUD/.test(call) && /NAME EACH CHARACTER/.test(call));
+  check('every character at the screen rides with what they know and carry', /- Mara/.test(input) && /- Dorn/.test(input) && /stowed in her pack since the ford/.test(input));
+  check('and none of them is listed as a stranger here', !/Here with you, by appearance/.test(input) || !/pedlar/.test(input));
+  check('the journal names the account it lands in and who it was told for', /organ: witnessed:mara/.test(section(text, 'THE JOURNAL')) && /told for: mara dorn/.test(section(text, 'THE JOURNAL')));
+  const alone = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 1 } as any);
+  check('without a party it is that character\'s own telling, as before', /You are Mara\./.test(section(alone.content[0].text, 'THE INPUT')) && /renders this character's lived moment/.test(section(alone.content[0].text, 'THE CALL')));
+}
+
 console.log('\n=== a tier engage writes nothing ===');
 {
   const r = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'medium', submit: 'I try to stage' } as any);
