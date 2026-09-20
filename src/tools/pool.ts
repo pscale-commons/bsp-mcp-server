@@ -46,6 +46,7 @@ import {
   isFederatedOwner,
   DEFAULT_BEACH,
 } from '../db.js';
+import { composeTier, type Tier } from './tiers.js';
 
 // ── Defaults ──
 
@@ -1538,6 +1539,10 @@ export const poolEngageParamsSchema = {
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
     .describe('CADO face tag for the contribution. Recorded at field 4 of the contribution slot. Advisory in v0.1; informs synthesis-target conventions. Ignored when `contribution` is omitted.'),
+  tier: z
+    .enum(['soft', 'medium', 'hard'])
+    .optional()
+    .describe("THE CALL FOR A TIER OF PLAY, composed from the blocks so every door runs the same one (grit 2 and 3). A room of a table only, and read-only: nothing is staged or committed. 'medium' — MAKE IT HAPPEN: the law, the contract and the bundle for the resolution of the window standing now (the place's faces, the story so far wherever it happened, the actors' sheets, the window with the world's own voices, the dice, the rules, the ways), plus the claim stamps and the ways a WAY line may name. 'hard' — THE KEEPER'S ADMIN after a resolution: the held registers whole, the place's hidden directories, the characters' sheets and tellings, and the contract for the world's next intentions and the sheets (JSON out). 'soft' — THE TELLING for agent_id: where they stand, what they know and carry, their story so far and the moment not yet told, plus where to journal it. Run THE CALL as the system text and THE INPUT as the message, on your own key; act on the third section."),
   since_position: z
     .number()
     .int()
@@ -1569,6 +1574,7 @@ export type PoolEngageParams = {
   purpose?: string;
   resolves_window?: string;
   resolves_seen?: string;
+  tier?: Tier;
 };
 
 // ── Handler ──
@@ -1613,6 +1619,24 @@ export async function handlePoolEngage(
         text: `pool_url must be an http(s):// URL (got "${pool_url}"). Pool engagement targets federated beaches; pass the beach URL hosting the pool.`,
       }],
     };
+  }
+
+  // ── A TIER OF PLAY — the call itself, composed beach-side (tiers.ts) ──
+  // Read-only by design: a door asks for the call, runs it on its own key, and
+  // acts with the ordinary verbs (a claim, a stage, a journal append). A tier
+  // riding with an act would make one call do two things and hide the second.
+  if (params.tier) {
+    if (contribution !== undefined || submit !== undefined || clear === true) {
+      return { content: [{ type: 'text', text: `tier='${params.tier}' composes a call and writes nothing — send the stage or the commit as its own engage, without tier.` }] };
+    }
+    if (!isLocationAddress(pool_name)) {
+      return { content: [{ type: 'text', text: `tier='${params.tier}' is for a room of a table — pool:${pool_name} is not a place's address.` }] };
+    }
+    try {
+      return { content: [{ type: 'text', text: await composeTier(params.tier, pool_url, pool_name, agent_id) }] };
+    } catch (e: any) {
+      return { content: [{ type: 'text', text: `The ${params.tier} call at pool:${pool_name} could not compose: ${e?.message ?? String(e)}` }] };
+    }
   }
 
   const blockName = `pool:${pool_name}`;

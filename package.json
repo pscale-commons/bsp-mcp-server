@@ -65,7 +65,8 @@
     "smoke:compile": "tsx scripts/smoke-compile.ts",
     "smoke:play-hands": "tsx scripts/smoke-play-hands.ts",
     "lint:block": "tsx scripts/lint-block.ts",
-    "smoke:room-fold": "tsx scripts/smoke-room-fold.ts"
+    "smoke:room-fold": "tsx scripts/smoke-room-fold.ts",
+    "smoke:tiers": "tsx scripts/smoke-tiers.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
