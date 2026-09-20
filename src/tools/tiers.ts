@@ -713,7 +713,14 @@ export const TELLING_CONTRACT =
   'line or an act it does not hold. Tell the moment, then stop where it leaves the player to act. Output only the rendered ' +
   'moment — no heading, no machinery.';
 
-export async function composeSoft(origin: string, room: string, handle: string): Promise<string> {
+/**
+ * `since` is the caller's OWN marker — the beats this surface has not shown.
+ * A mirror renders for whoever is looking, keyed or not, and its batch is not
+ * the account's coverage: an unkeyed viewer has no account at all, and a keyed
+ * one may be catching up a stretch it has already journaled. Given a marker the
+ * moment is the beats after it; without one the account says what it covers.
+ */
+export async function composeSoft(origin: string, room: string, handle: string, since = 0): Promise<string> {
   const index = await beachIndex(origin);
   const tw = await tableWorld(origin, index);
   const passport = blockOf(await loadBlock(origin, `passport:${handle}`));
@@ -739,6 +746,7 @@ export async function composeSoft(origin: string, room: string, handle: string):
 
   const pool = blockOf(await loadBlock(origin, `pool:${room}`));
   const beats = pool ? beatsOf(pool, room) : [];
+  if (since > 0) coveredSlot = since;
   let fresh = beats.filter((b) => b.slot > coveredSlot);
   if (!coveredSlot) {
     // Never tell a room from before the character came: start at their own first beat there.
@@ -783,8 +791,8 @@ export async function composeSoft(origin: string, room: string, handle: string):
 }
 
 /** The one door the engage handler calls. */
-export async function composeTier(tier: Tier, origin: string, room: string, agentId: string): Promise<string> {
+export async function composeTier(tier: Tier, origin: string, room: string, agentId: string, since = 0): Promise<string> {
   if (tier === 'medium') return composeMedium(origin, room, agentId);
   if (tier === 'hard') return composeHard(origin, room, agentId);
-  return composeSoft(origin, room, agentId);
+  return composeSoft(origin, room, agentId, since);
 }
