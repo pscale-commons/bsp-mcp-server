@@ -827,6 +827,8 @@ ROUTER_URL = os.environ.get("WAKER_ROUTER", "https://bsp.hermitcrab.me/mcp/v1")
 DOORMAN_MODEL = os.environ.get("WAKER_DOORMAN_MODEL", "claude-sonnet-5")
 DOORMAN_ROOM_ENTRIES = 12
 DOORMAN_MAX_TOKENS = int(os.environ.get("WAKER_DOORMAN_MAX_TOKENS", "4000"))
+#: The keeper writes lines, not prose: what the world does next and where it is.
+KEEPER_MAX_TOKENS = int(os.environ.get("WAKER_KEEPER_MAX_TOKENS", "1200"))
 PARTY_MAX = 8  # the other characters one party's fold may carry — a window holds nine voices
 
 DOORMAN_STANCE = """You are the doorman of a handle on a public federated beach: the
@@ -1142,6 +1144,17 @@ def pool_engage_rpc(beach, room, handle, secret=None, **extra):
     return router_call("pscale_pool_engage", args, timeout=60)
 
 
+def tier_call(beach, room, handle, tier, secret=None):
+    """THE CALL FOR A TIER, composed beach-side (src/tools/tiers.ts): the law at
+    the act's addresses and the contract as the system text, the frame as the
+    message, and a last section saying what to do with the answer. One
+    composition for every door — the mirror, this doorman, a page, an LLM app —
+    so an amendment lands in all of them at once. Returns (sections, raw); the
+    sections are empty when the router answered in plain words instead."""
+    raw = pool_engage_rpc(beach, room, handle, secret, tier=tier, with_liquid=False)
+    return dt.tier_sections(raw), raw
+
+
 def beach_get_or_none(block, beach=None):
     """A block that does not stand is None; every other failure raises."""
     try:
@@ -1166,28 +1179,6 @@ def ensure_daily(handle, beach, secret):
                                           "new_lock": secret}, beach=beach)
     except Exception as e:
         log("daily journal for %s could not be founded: %s" % (handle, str(e)[:70]))
-
-
-def room_law(beach, room, addresses):
-    """The room's law at the act's addresses (doorman_table.law_at): the mount
-    read off the room's own underscore (pscale:grit/1 at a table), the block
-    read where it stands — a sentinel through the router, an operator block at
-    the room's beach. Read fresh at every act, so an amendment reaches the
-    doorman the moment it stands; '' when any read fails."""
-    try:
-        url = "%s/.well-known/pscale-beach?block=%s&spindle=0" % (beach.rstrip("/"), quote("pool:%s" % room))
-        with urllib.request.urlopen(urllib.request.Request(url), timeout=15) as r:
-            under = json.loads(r.read().decode())
-        mount = dt.law_mount(under if isinstance(under, str) else dt.collect_underscore(under))
-        if not mount:
-            return ""
-        source, name = mount
-        block = (dt.parse_whole_block(router_call("bsp", {"agent_id": "pscale", "block": name}))
-                 if source == "pscale" else beach_get_or_none(name, beach=beach))
-        return dt.law_at(block, addresses)
-    except Exception as e:
-        log("the law at pool:%s could not be read: %s" % (room, str(e)[:100]))
-        return ""
 
 
 def sentinel_block(name):
@@ -1271,6 +1262,25 @@ def room_slips(pool, beach):
         liquid = None
     return [{"author": str(v.get("1", "")), "text": str(v.get("_", ""))}
             for k, v in (liquid or {}).items() if k != "_" and isinstance(v, dict)]
+
+
+def keeper_on_bell(cands, payload):
+    """A beat landed in a room where enrolled characters stand — whichever door
+    folded it. The keeper's pass follows it on that table's own fuel, so the
+    mirror, a page and an LLM app all leave the world set the same way."""
+    pool, slot = str(payload.get("pool", "")), str(payload.get("slot", ""))
+    room = pool[len("pool:"):] if pool.startswith("pool:") else ""
+    if not room:
+        return
+    keys = {h: egg_secret(h) for h, _b in cands if egg_secret(h)}
+    if not keys:
+        return
+    handle, beach = cands[0]
+    fuel_key, _funder = pick_fuel(handle, None)
+    if not fuel_key:
+        return
+    model, _mt = Dial(handle).answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS)
+    keeper_follows(handle, beach, room, slot, fuel_key, keys[handle], model, keys)
 
 
 def ring_character(cands, payload):
@@ -1381,6 +1391,56 @@ def ring_character(cands, payload):
     return False, "; ".join(reasons) or "no character stands in %s" % pool
 
 
+#: The keeper's pass waits for the pen like a rendering does — the moment it
+#: keeps for is the one just landed, and the next fold reads what it left.
+KEEPER_WAIT_S = 240
+#: (beach, room) → (when, slot) of the keeper's last pass there. A beat folded
+#: through the door also rings the bell, so both paths ask, and only one keeps:
+#: the same beat twice is refused, and so is a second pass moments after the
+#: first (a move lands its arrival in the room ahead within seconds of the beat
+#: that sent them, and one keeper pass sets the world for both).
+_keeper_at = {}
+_keeper_lock = threading.Lock()
+KEEPER_DEBOUNCE_S = 45
+
+
+def keeper_due(beach, room, slot):
+    """Claim the keeper's pass for this beat, or say it is already kept."""
+    now = time.monotonic()
+    with _keeper_lock:
+        key = (dt.norm_origin(beach), room)
+        last = _keeper_at.get(key)
+        if last and (last[1] == str(slot) or now - last[0] < KEEPER_DEBOUNCE_S):
+            return False
+        _keeper_at[key] = (now, str(slot))
+        return True
+
+
+def keeper_in_turn(handle, beach, room, fuel_key, secret, model, keys):
+    """The keeper's pass, once the pen is free — so it never races the fold it
+    follows, and the world it sets is waiting for the next one."""
+    if not _pulse_lock.acquire(timeout=KEEPER_WAIT_S):
+        log("the keeper's pass at %s stood down — the pen stayed busy %ds" % (room, KEEPER_WAIT_S))
+        return
+    try:
+        status, note = keeper_pass(handle, beach, room, fuel_key, secret, model, keys)
+    except Exception as e:
+        status, note = "failed", str(e)[:160]
+    finally:
+        _pulse_lock.release()
+    log("the keeper at %s: %s — %s" % (room, status, note))
+
+
+def keeper_follows(handle, beach, room, slot, fuel_key, secret, model, keys):
+    """Start the keeper's pass for a beat that has just landed, unless another
+    door's pass already keeps it. Never blocks the caller: the page hears its
+    moment while the world is being set for the next one."""
+    if not keeper_due(beach, room, slot):
+        return
+    threading.Thread(target=keeper_in_turn,
+                     args=(handle, beach, room, fuel_key, secret, model, keys), daemon=True).start()
+
+
 RENDER_WAIT_S = 240  # how long a rendering waits for the pen: an instructed fold is well inside it
 
 
@@ -1398,40 +1458,32 @@ def render_in_turn(handle, beach, room, ringer, slot, fuel_key, funder, secret):
 
 
 def render_for(handle, beach, room, fuel_key, secret, model, max_tokens):
-    """RENDER the moment for the character's player, into the character's own
-    account: the beats since the account's newest rendering for this room,
-    through the PERCEIVE lens the mirror renders with, journaled at a location
-    naming the last beat covered. The account is read again just before the
-    journal: the mirror renders too, and a rendering another hand kept while
-    this one was written is adopted, never doubled. Returns (status, note)."""
-    organs = account_organs(handle, beach)
-    if not organs:
-        return "declined", "no account to render into — genesis writes history:%s (or witnessed:%s) first" % (handle, handle)
-    organ = organs[0][0]
-    env = dt.parse_envelope(pool_engage_rpc(beach, room, handle, secret))
-    last = dt.newest_account_render([block for _organ, block in organs], room, env.get("beats"))
-    fresh = dt.beats_after(env.get("beats", []), last["slot"] if last else None, handle=handle)
-    if not fresh:
-        return "declined", "nothing new to render since slot %s" % (last["slot"] if last else "none")
-    law = room_law(beach, room, dt.RENDER_AT)
-    if not law:
-        return "declined", "the room's law could not be read — the moment is not rendered; the beats stand as they are"
-    # THE SCENE is the room as the substrate composes it for this character with
-    # the record already seen — the mirror's own scene (composeRoomCurrent).
-    seen = env.get("marker_new")
-    scene = pool_engage_rpc(beach, room, handle, secret, since_position=seen) if seen else env.get("raw", "")
-    text = model_call(fuel_key, model, max_tokens, dt.render_directive(law), dt.render_input(scene, fresh, handle))
+    """THE TELLING (soft) — this character's lived moment, rendered for their
+    player into their own account. The router frames it: where they stand, what
+    they know and carry, their story so far, and the beats their account has not
+    covered; it also says which organ and which beat the telling is journaled
+    at. The account is read again just before the append — the mirror renders
+    too, and a rendering another hand kept meanwhile is adopted, never doubled."""
+    sections, raw = tier_call(beach, room, handle, "soft", secret)
+    if "CALL" not in sections:
+        return "declined", raw.strip().split("\n")[0][:160] or "the telling would not compose"
+    journal = dt.journal_of(sections.get("JOURNAL", ""))
+    organ, where = journal.get("organ"), journal.get("location") or ""
+    if not organ or not where:
+        return "declined", "the telling has nowhere to land — genesis writes history:%s first" % handle
+    text = model_call(fuel_key, model, max_tokens, sections["CALL"], sections["INPUT"])
     if not text:
         return "failed", "the model returned no rendering"
-    kept = dt.newest_account_render([block for _organ, block in account_organs(handle, beach)], room, env.get("beats"))
-    if dt.covers(kept, fresh[-1]["slot"]):
+    slot = where.rsplit(":", 1)[-1]
+    kept = dt.newest_account_render([block for _organ, block in account_organs(handle, beach)], room)
+    if dt.covers(kept, slot):
         return "declined", "a rendering to slot %s was kept by another hand while this one was written — adopted, not doubled" % kept["slot"]
-    beach_append("%s:%s" % (organ, handle), {"_": text, "1": handle, "2": "pool:%s:%s" % (room, fresh[-1]["slot"]),
-                                             "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
+    beach_append(organ, {"_": text, "1": handle, "2": where,
+                         "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
                  secret, beach=beach)
-    note = "rendered %d beat%s (to slot %s) into %s:%s" % (len(fresh), "" if len(fresh) == 1 else "s", fresh[-1]["slot"], organ, handle)
+    note = "rendered into %s (to %s)" % (organ, where)
     try:
-        paid = pay_summaries(handle, beach, organ, secret, fuel_key, model, max_tokens)
+        paid = pay_summaries(handle, beach, organ.split(":")[0], secret, fuel_key, model, max_tokens)
     except Exception as e:
         paid = "the summary could not be paid (%s)" % str(e)[:80]
     return "done", note + ("; " + paid if paid else "")
@@ -1457,72 +1509,57 @@ def act_for(handle, beach, room, ringer, slot, fuel_key, secret, dial, model, ma
     return "done", "staged as %s at %s; another hand makes it happen (commit is off)" % (handle, room)
 
 
-def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, require_own, party=None, report=None):
-    """MAKE IT HAPPEN: weave what stands staged and claim the window with the
-    envelope's own stamps. With require_own, the doorman folds only a window
-    its own line still stands in (after its act); without, whatever stands
-    (instructed by the holder). WINDOW MOVED re-weaves once. Returns (status,
-    note); the caller holds the lock.
+def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, require_own, party=None, report=None, may_move=True):
+    """MAKE IT HAPPEN (medium) — weave what stands staged and claim the window.
+    The router frames it: the place's faces, the story so far wherever it
+    happened, the actors' sheets, the window (the players' lines and the
+    world's own voices, as the keeper set them), the dice, the rules and the
+    ways. With require_own, the doorman folds only a window its own line still
+    stands in (after its act); without, whatever stands (instructed by the
+    holder). WINDOW MOVED re-weaves once. Returns (status, note); the caller
+    holds the lock.
 
     A PARTY (the group page — several characters played round one table):
-    `party` is the other travellers, [(handle, key)], each already proven
-    against its own enrolment and standing in this room. The fold judges the
-    moment's move for all of them at once (they travel together), the landed
-    beat is kept in every traveller's account — the shared narration, one
-    beat and no extra call, where a rendering would cost one per character —
-    and a move walks every traveller, with one arriving beat for the party.
-    `report`, when given, is filled with what the page needs to follow:
-    the landed slot, who moved, and where."""
+    `party` is the other travellers, [(handle, key)], each already proven. The
+    beat is kept in every traveller's account — the shared narration, one beat
+    and no extra call — and a move walks them all. `report`, when given, is
+    filled with what the page needs to follow."""
     travellers = [(handle, secret)] + list(party or [])
     names = [h for h, _k in travellers]
     for attempt in (1, 2):
-        env = dt.parse_envelope(pool_engage_rpc(beach, room, handle, secret))
-        stamps = dt.window_stamps(env)
-        if not stamps:
+        sections, raw = tier_call(beach, room, handle, "medium", secret)
+        if "CALL" not in sections:
+            return "declined", raw.strip().split("\n")[0][:160] or "the resolution would not compose"
+        claim = dt.claim_of(sections.get("CLAIM", ""))
+        if not claim["window"] or not claim["seen"]:
             return "declined", "nothing stands staged — no window to make happen"
-        if require_own and not any((s.get("author") or "").lower() == handle.lower() for s in env["slips"]):
+        if require_own and not any((sl.get("author") or "").lower() == handle.lower()
+                                   for sl in room_slips("pool:%s" % room, beach)):
             return "declined", "nothing left to fold — a keyed hand made it happen, or the window emptied"
-        law = room_law(beach, room, dt.HAPPEN_AT)
-        if not law:
-            return "declined", "the room's law could not be read just now — nothing happened, and what was said still stands"
-        try:
-            rules = dt.rules_text(beach_get_or_none("rules:nomad", beach=beach))
-        except Exception:
-            rules = ""
-        who = dt.party_phrase(names) if party is not None else handle
-        if party is None:
-            given = dt.fold_input(dt.fold_scene(env), env["slips"], env["dice"], rules, env["ways"])
-        else:
-            looks = []
-            for h in names:
-                try:
-                    looks.append((h, dt.look_of(beach_get_or_none("passport:%s" % h, beach=beach))))
-                except Exception:
-                    looks.append((h, ""))
-            scene = dt.fold_scene(dt.cast_without(env, [look for _h, look in looks]))
-            given = dt.fold_input(scene, env["slips"], env["dice"], rules, env["ways"]) + "\n\n" + dt.party_input(looks)
-        woven = model_call(fuel_key, model, max(max_tokens, 1600), dt.happen_directive(law, who), given)
-        # The WAY line is the surface's, never the record's: stripped before
-        # the claim, walked only once the claim has landed (the clean mirror §2).
-        beat, way, named = dt.way_of(woven, env["ways"])
+        woven = model_call(fuel_key, model, max(max_tokens, 1600), sections["CALL"], sections["INPUT"])
+        # The WAY line is the surface's, never the record's: stripped before the
+        # claim, walked only once the claim has landed (the clean mirror §2).
+        beat, way, named = dt.way_of(woven, claim["ways"])
         if not beat:
             return "failed", "the moment would not weave"
         answer = pool_engage_rpc(beach, room, handle, secret, contribution=beat, face="character",
-                                 resolves_window=stamps[0], resolves_seen=stamps[1], with_liquid=False)
+                                 resolves_window=claim["window"], resolves_seen=claim["seen"], with_liquid=False)
         outcome = dt.claim_outcome(answer)
         if outcome == "moved" and attempt == 1:
             continue
         if outcome == "landed":
             note = "the moment happened — woven by %s's doorman" % handle
+            slot = dt.committed_slot(answer)
+            if report is not None:
+                report["slot"] = slot
+            if way and not may_move:
+                return "done", note + "; the way it named is the next moment's, not this arrival's"
             if party is None:
                 if way:
                     note += "; " + walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens)
                 elif named:
                     note += "; it named a way this place does not have, so %s stays where they are" % handle
                 return "done", note
-            slot = dt.committed_slot(answer)
-            if report is not None:
-                report["slot"] = slot
             for h, key in travellers:
                 note += "; " + keep_shared(h, beach, room, slot, beat, key, fuel_key, model, max_tokens)
             if way:
@@ -1534,6 +1571,108 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
         return status, {"resolved": "the moment already happened — a keyed hand folded first",
                         "moved": "the window kept moving — stood down after one re-weave"}.get(outcome, answer[:160])
     return "failed", "unreachable"
+
+
+def keeper_pass(handle, beach, room, fuel_key, secret, model, keys=None):
+    """THE KEEPER'S ADMIN (hard, grit 3) — run after a resolution, so the next
+    moment is waiting well formed. The router frames what the keeper holds and
+    no one else is given: the arc and the ways through it, the minds behind the
+    faces, the rules whole, the story as it stands. Two kinds of write come
+    back, each in the shape it lands in:
+
+      · THE WORLD'S NEXT INTENTIONS — staged into the room's window under the
+        label the characters would use, so the next resolution composes actions
+        and intentions from characters, the place's people among them (David's
+        ruling, 2026-09-19). The liquid is the world's memory too: what stands
+        there is what the world is in the middle of doing.
+      · EACH CHARACTER'S HOLDS — one small call per character, framed with that
+        character's own story, written to passport position 4 (grit 3.1). The
+        look stays the player's own words; where look and holds disagree about
+        where a thing is, the holds are the later truth and the resolution reads
+        them.
+
+    Keys are the characters' own (their enrolments'): a sheet or a move is
+    written only for a character whose key this service holds. Returns a note."""
+    sections, raw = tier_call(beach, room, handle, "hard", secret)
+    if "CALL" not in sections:
+        return "declined", raw.strip().split("\n")[0][:160] or "the keeper's call would not compose"
+    writes = dt.writes_of(sections.get("WRITES", ""))
+    keys = dict(keys or {})
+    answer = model_call(fuel_key, model, max(1200, KEEPER_MAX_TOKENS), sections["CALL"], sections["INPUT"])
+    lines = dt.keeper_lines(answer, places=writes.get("places"), room=writes.get("room") or room)
+    notes = []
+    for voice in lines["world"]:
+        try:
+            pool_engage_rpc(beach, voice["at"], voice["who"], submit=voice["intends"], face="character")
+            notes.append("%s waits at %s" % (voice["who"], voice["at"]))
+        except Exception as e:
+            notes.append("%s could not be set at %s (%s)" % (voice["who"], voice["at"], str(e)[:60]))
+    for gone in lines["drop"]:
+        try:
+            pool_engage_rpc(beach, gone["at"], gone["who"], submit="")
+            notes.append("%s is done at %s" % (gone["who"], gone["at"]))
+        except Exception:
+            pass
+    for moved in lines["where"]:
+        key = keys.get(moved["handle"])
+        if not key:
+            continue
+        try:
+            passport = beach_get_or_none("passport:%s" % moved["handle"], beach=beach)
+            after = dt.swap_location(passport.get("3") if isinstance(passport, dict) else None, moved["at"])
+            if after:
+                beach_post("passport:%s" % moved["handle"],
+                           {"block": "passport:%s" % moved["handle"], "spindle": "3", "content": after, "secret": key}, beach=beach)
+                notes.append("%s stands at %s" % (moved["handle"], moved["at"]))
+        except Exception as e:
+            notes.append("%s could not be placed at %s (%s)" % (moved["handle"], moved["at"], str(e)[:60]))
+    for name, body in sections.items():
+        if not name.startswith("SHEET INPUT"):
+            continue
+        who = name.split("—")[-1].strip()
+        key = keys.get(who)
+        if not key or not sections.get("SHEET CALL"):
+            continue
+        try:
+            sheet = model_call(fuel_key, model, 700, sections["SHEET CALL"], body)
+            held = dt.holds_lines(sheet)
+            if not held:
+                continue
+            passport = beach_get_or_none("passport:%s" % who, beach=beach) or {}
+            beach_post("passport:%s" % who,
+                       {"block": "passport:%s" % who, "spindle": "4",
+                        "content": dt.holds_node(dt.name_of(passport, who), held), "secret": key}, beach=beach)
+            notes.append("%s's holds kept (%d)" % (who, len(held)))
+        except Exception as e:
+            notes.append("%s's holds could not be kept (%s)" % (who, str(e)[:60]))
+    return "done", "; ".join(notes) or "the world stands as it was"
+
+
+def arrive_at(movers, beach, to_addr, label, fuel_key, model, max_tokens):
+    """AN ARRIVAL IS AN ACT LIKE ANY OTHER (xstream #327, ported): the coming-in
+    staged at the room ahead and folded there, so the place answers as they
+    arrive — with whatever the keeper has left waiting in that window. The plain
+    arriving line stands as the fallback, because a move must never be silent.
+    Returns a note for the page."""
+    names = [h for h, _k in movers]
+    first, key = movers[0]
+    line = "%s arrive%s." % (dt.names_said(names), "" if len(names) > 1 else "s")
+    try:
+        pool_engage_rpc(beach, to_addr, first, key, submit=line, face="character")
+        status, note = fold_window(first, beach, to_addr, fuel_key, key, model, max_tokens,
+                                   require_own=False, party=movers[1:] or None, may_move=False)
+        if status == "done":
+            return "%s arrived at %s" % (dt.names_said(names), label or to_addr)
+        log("the arrival at %s did not resolve (%s: %s) — the plain line stands" % (to_addr, status, note))
+    except Exception as e:
+        log("the arrival at %s would not resolve: %s" % (to_addr, str(e)[:100]))
+    try:
+        beach_append("pool:%s" % to_addr, {"_": dt.party_arriving_text(names, label), "1": first, "2": "",
+                                           "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
+                     key, beach=beach)
+    except Exception as e:
+        return "%s moved to %s, but the arrival has not landed yet (%s)" % (dt.names_said(names), label or to_addr, str(e)[:60])
+    return "%s arrived at %s (the place did not answer — the arrival stands plain)" % (dt.names_said(names), label or to_addr)
 
 
 def walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens, render_first=True, arrive=True):
@@ -1574,13 +1713,7 @@ def walk_on(handle, beach, room, way, fuel_key, secret, model, max_tokens, rende
         log("founding pool:%s for %s's move: %s — arriving will tell" % (to_addr, handle, str(e)[:80]))
     if not arrive:
         return "%s went on to %s" % (handle, label or to_addr)
-    try:
-        beach_append("pool:%s" % to_addr, {"_": dt.arriving_text(label), "1": handle, "2": "",
-                                          "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
-                     secret, beach=beach)
-    except Exception as e:
-        return "%s moved to %s, but the arrival has not landed yet (%s)" % (handle, label or to_addr, str(e)[:60])
-    return "%s went on to %s" % (handle, label or to_addr)
+    return arrive_at([(handle, secret)], beach, to_addr, label, fuel_key, model, max_tokens)
 
 
 def keep_shared(handle, beach, room, slot, text, secret, fuel_key, model, max_tokens):
@@ -1628,13 +1761,7 @@ def walk_party(travellers, beach, room, way, fuel_key, model, max_tokens, report
         report["moved"] = [h for h, _k in moved]
         report["to"] = way["addr"]
     if moved:
-        first, key = moved[0]
-        try:
-            beach_append("pool:%s" % way["addr"], {"_": dt.party_arriving_text([h for h, _k in moved], label), "1": first, "2": "",
-                                                   "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
-                         key, beach=beach)
-        except Exception as e:
-            notes.append("the arrival has not landed yet (%s)" % str(e)[:60])
+        notes.append(arrive_at(moved, beach, way["addr"], label, fuel_key, model, max_tokens))
     return "; ".join(notes)
 
 
@@ -1780,6 +1907,14 @@ def instructed_fold(handle, passphrase, room, party=None):
     finally:
         _pulse_lock.release()
     log("instructed fold for %s at %s: %s — %s (%s fuel)" % (handle, room, status, note, funder))
+    # THE KEEPER FOLLOWS THE RESOLUTION (grit 3): the world's next intentions
+    # and each character's holds, set while the table reads what just happened.
+    if status == "done":
+        keys = {handle: passphrase}
+        for h, k in (members or []):
+            keys[h] = k
+        where = report.get("to") or room
+        keeper_follows(handle, beach, where, report.get("slot") or "1", fuel_key, passphrase, model, keys)
     try:
         ensure_daily(handle, beach, passphrase)
         beach_append("daily:%s" % handle, {
@@ -1893,12 +2028,16 @@ def ring(payload):
         # Not the pinned beach: a table or a world. Only a character enrolled
         # AT that origin and standing in this room can answer.
         cands = character_candidates(origin, room)
+        if cands:
+            keeper_on_bell(cands, payload)
         if not cands:
             return False, "origin %s is not the pinned beach, and no character enrolled there stands in %s" % (origin, pool)
         return ring_character(cands, payload)
     handle = room
     if handle not in enrolled_handles():
         cands = character_candidates(origin or WAKER_BEACH, room)
+        if cands:
+            keeper_on_bell(cands, payload)
         if cands:
             return ring_character(cands, payload)
         return False, "%s is not a genus room here (no holder has enrolled it)" % pool
