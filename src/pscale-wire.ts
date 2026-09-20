@@ -201,6 +201,49 @@ export async function surfaceIndex(origin: string, opts: WireOpts = {}): Promise
   }
 }
 
+/** One table on a beach's played-tables listing. */
+export interface PlayedTable {
+  name: string;
+  /** The room its latest voice landed in — a pool: block name. */
+  room?: string;
+  /** ISO of that room's last content write. */
+  touched?: string;
+}
+
+/** The tables PLAYED at a beach — `?tables` on the same endpoint: every /w/
+ * world under it that has had a room written, newest room write first, derived
+ * per GET from the touched maps (pscale-beach #69). A table joins the list by
+ * being played and sinks down it by being left; nothing is kept for it.
+ *
+ * This is where tables live, and the `worlds` register deliberately does not
+ * list them (it is the curated map of canon and the operator's open tables).
+ * The o-pages have read this since it landed; no LLM-facing door did, so an
+ * agent asked where a character plays concluded the table was private when a
+ * public listing was one read away (proposals/2026-09-20-tables-are-listed-…).
+ *
+ * A beach that predates the listing answers a `?tables` GET with its ordinary
+ * index, which carries no `tables` key — absence reads as "this beach does not
+ * list tables", never as an error, and null comes back on any failure, because
+ * discovery is orientation and never a gate. */
+export async function playedTables(origin: string, opts: WireOpts = {}): Promise<PlayedTable[] | null> {
+  try {
+    const j = await retryTransient(
+      () => rawGet(`${base(origin)}?tables`, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+      opts.retryDelayMs ?? RETRY_DELAY_MS,
+    );
+    if (!j || typeof j !== 'object' || !Array.isArray(j.tables)) return null;
+    return j.tables
+      .filter((t: any) => t && typeof t === 'object' && typeof t.name === 'string')
+      .map((t: any) => ({
+        name: String(t.name),
+        room: typeof t.room === 'string' ? t.room : undefined,
+        touched: typeof t.touched === 'string' ? t.touched : undefined,
+      }));
+  } catch {
+    return null;
+  }
+}
+
 // ── writes ───────────────────────────────────────────────────────────────────
 
 /** Whole-block write: {confirm: true} always rides (the beach gates REPLACE
