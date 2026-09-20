@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>meet — the door (mock)</title>
+<meta name="description" content="Two questions and you are somewhere: which world, and how present you want to be in it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Space+Mono:wght@400;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* THE MOCK CARRIES THE PALETTE INLINE so it opens anywhere, offline included.
+   The real page links /theme.css and adds not one colour literal of its own. */
+:root{
+  --abyss:#06171E; --deep:#0A2129; --card:#123742; --card-hi:#17434F;
+  --foam:#EFF6F5; --vapour:#C4DBDF; --vapour-dim:#82A0A8; --ground-top:#0C2932;
+  --liquid:#33C2D2; --liquid-deep:#1B8B99; --solid:#E7B24C; --solid-deep:#C58F2C;
+  --liquid-rgb:51,194,210; --solid-rgb:231,178,76; --vapour-rgb:196,219,223;
+  --wash-rgb:255,255,255; --well-rgb:6,23,30; --card-rgb:18,55,66; --card-hi-rgb:23,67,79;
+  --line:rgba(var(--vapour-rgb),0.13); --line-strong:rgba(var(--vapour-rgb),0.24);
+  --display:'Syne',system-ui,sans-serif; --body:'Newsreader',Georgia,serif; --mono:'Space Mono',ui-monospace,monospace;
+}
+:root[data-theme="light"]{
+  --abyss:#FBF8F2; --deep:#F3EEE3; --card:#FFFFFF; --card-hi:#FFFDF8;
+  --foam:#12333C; --vapour:#3C5A63; --vapour-dim:#6B848D; --ground-top:#FFFDF8;
+  --liquid:#0D6B79; --liquid-deep:#0A5561; --solid:#8E6210; --solid-deep:#6F4C08;
+  --liquid-rgb:13,107,121; --solid-rgb:142,98,16; --vapour-rgb:60,90,99;
+  --wash-rgb:18,51,60; --well-rgb:255,255,255; --card-rgb:255,255,255; --card-hi-rgb:255,253,248;
+  --line:rgba(var(--vapour-rgb),0.16); --line-strong:rgba(var(--vapour-rgb),0.30);
+}
+*{box-sizing:border-box} html,body{margin:0}
+body{
+  font-family:var(--body); color:var(--foam); font-size:17.5px; line-height:1.55;
+  background:radial-gradient(1100px 560px at 70% -10%, rgba(var(--liquid-rgb),0.10), transparent 60%),
+    linear-gradient(180deg,var(--ground-top) 0%, var(--deep) 30%, var(--abyss) 100%);
+  -webkit-font-smoothing:antialiased; min-height:100dvh;
+}
+a{color:var(--liquid);text-decoration:none;border-bottom:1px solid rgba(var(--liquid-rgb),0.35)}
+a:hover{color:var(--foam);border-color:var(--foam)}
+button{font-family:var(--mono);cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid var(--liquid);outline-offset:3px}
+.wrap{max-width:720px;margin:0 auto;padding:0 18px 60px}
+
+/* the bar every page wears — /group's idiom exactly: the acts sit here, the choices below */
+.bar{position:sticky;top:0;z-index:10;background:rgba(var(--well-rgb),0.72);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:12px 18px;
+  font-family:var(--mono);font-size:12px;letter-spacing:0.08em;color:var(--vapour-dim);flex-wrap:wrap}
+.bar .dot{width:6px;height:6px;border-radius:50%;background:var(--liquid);box-shadow:0 0 10px var(--liquid);flex:none}
+.bar b{color:var(--foam)}
+.bar .spacer{flex:1}
+.bar .ctl{background:none;border:1px solid var(--line);border-radius:4px;color:var(--vapour-dim);
+  font-family:var(--mono);font-size:12px;padding:6px 10px}
+.bar .ctl:hover{color:var(--foam);border-color:var(--line-strong)}
+.bar .ctl[aria-pressed="true"]{color:var(--liquid);border-color:rgba(var(--liquid-rgb),0.45)}
+
+.head{padding:26px 0 4px}
+.head .step{font-family:var(--mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--solid);margin:0 0 10px}
+.head h1{font-family:var(--display);font-weight:800;font-size:clamp(1.9rem,7.5vw,2.7rem);line-height:1.06;margin:0 0 10px}
+.head h1 .cool{color:var(--liquid)}
+.head p{margin:0;color:var(--vapour);font-size:1.03rem}
+.back{background:none;border:none;color:var(--vapour-dim);font-family:var(--mono);font-size:12px;
+  letter-spacing:0.08em;padding:6px 0;margin:18px 0 0}
+.back:hover{color:var(--liquid)}
+
+/* THE BIG BUTTONS. One column always — a choice you make with a thumb.
+   The whole plate is the button; the chevron on its right opens the words. */
+.choices{display:flex;flex-direction:column;gap:14px;margin:22px 0 0}
+.choice{border:1px solid var(--line-strong);border-radius:16px;overflow:hidden;
+  background:linear-gradient(165deg,rgba(var(--card-hi-rgb),0.62) 0%,rgba(var(--card-rgb),0.62) 100%)}
+.choice.hot{border-color:rgba(var(--liquid-rgb),0.40)}
+.choice.cool{background:none;border-style:dashed}
+.plate{display:flex;align-items:stretch;gap:0}
+.go{flex:1;min-width:0;text-align:left;background:none;border:none;color:var(--foam);
+  font-family:var(--body);padding:20px 8px 20px 22px;display:block}
+.go .lab{font-family:var(--display);font-weight:700;font-size:clamp(1.25rem,5vw,1.55rem);line-height:1.15;display:block;margin:0 0 5px}
+.choice.hot .go .lab{color:var(--foam)}
+.choice.cool .go .lab{font-size:1.1rem;color:var(--vapour)}
+.go .feel{display:block;color:var(--vapour);font-size:1rem;line-height:1.45}
+.choice.cool .go .feel{color:var(--vapour-dim);font-size:0.95rem}
+.go:hover .lab{color:var(--liquid)}
+.more{flex:none;width:62px;background:none;border:none;border-left:1px solid var(--line);
+  color:var(--vapour-dim);font-size:19px;line-height:1;display:grid;place-items:center}
+.more:hover{color:var(--liquid);background:rgba(var(--wash-rgb),0.05)}
+.more span{display:block;transition:transform .18s ease}
+.choice.open .more span{transform:rotate(180deg)}
+
+/* the state chip — the honest half of the page: a door that is not open says so */
+.chip{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:0.12em;
+  text-transform:uppercase;padding:3px 8px;border-radius:999px;margin:0 0 9px;
+  border:1px solid var(--line-strong);color:var(--vapour-dim)}
+.chip.on{color:var(--liquid);border-color:rgba(var(--liquid-rgb),0.45)}
+.chip.thin{color:var(--solid);border-color:rgba(var(--solid-rgb),0.45)}
+.chip.off{color:var(--vapour-dim)}
+
+.words{display:none;padding:0 22px 20px;border-top:1px solid var(--line)}
+.choice.open .words{display:block}
+.words p{margin:14px 0 0;color:var(--vapour);font-size:1rem}
+.words p.say{font-style:italic;color:var(--foam)}
+.words .who{font-family:var(--mono);font-size:11.5px;letter-spacing:0.04em;color:var(--vapour-dim);line-height:1.7}
+.words .addr{display:flex;gap:8px;align-items:center;margin:14px 0 0}
+.words .addr code{flex:1;min-width:0;overflow-wrap:anywhere;background:rgba(var(--well-rgb),0.6);
+  border:1px solid var(--line-strong);border-radius:8px;padding:9px 11px;font-family:var(--mono);font-size:12px;color:var(--foam)}
+.words .addr button{background:none;border:1px solid var(--line-strong);border-radius:8px;color:var(--vapour);
+  font-size:11px;padding:8px 11px;flex:none}
+.words .addr button:hover{color:var(--foam);border-color:var(--foam)}
+.words .at{font-family:var(--mono);font-size:10.5px;letter-spacing:0.1em;color:var(--solid);margin:16px 0 0}
+
+.foot{max-width:720px;margin:0 auto;padding:10px 18px 46px;font-family:var(--mono);font-size:11px;
+  letter-spacing:0.05em;color:var(--vapour-dim);display:flex;gap:14px;flex-wrap:wrap;line-height:1.9}
+.foot a{border-bottom:none;color:var(--vapour-dim)} .foot a:hover{color:var(--liquid)}
+.mocknote{max-width:720px;margin:0 auto;padding:22px 18px 0}
+.mockbox{border:1px dashed var(--line-strong);border-radius:12px;padding:14px 16px;
+  font-family:var(--mono);font-size:11.5px;line-height:1.75;color:var(--vapour-dim)}
+.mockbox b{color:var(--solid);font-weight:400}
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.remove('no-js');</script>
+
+<div class="bar">
+  <span class="dot"></span>
+  <span><b>meet</b> · happyseaurchin.com</span>
+  <span class="spacer"></span>
+  <button type="button" class="ctl" id="c-words" aria-pressed="false" title="open every choice at once, so the whole map is on one screen">show the words</button>
+  <button type="button" class="ctl" id="c-theme" title="light or dark">◐</button>
+</div>
+
+<main class="wrap">
+  <header class="head">
+    <p class="step" id="step">first question</p>
+    <h1 id="title">Where do you want to <span class="cool">be?</span></h1>
+    <p id="lede">Two questions and you are somewhere. Nothing to join, no account, no email.</p>
+  </header>
+  <div class="choices" id="choices"></div>
+  <button class="back" id="back" hidden>← back</button>
+</main>
+
+<div class="foot">
+  <span id="cell-addr">meet · the door</span>
+  <a href="/pscale-ecology">what this is →</a>
+  <a href="/experiences">the deep grid →</a>
+</div>
+
+<div class="mocknote"><div class="mockbox">
+  <b>MOCK.</b> Every word below is held here so this file opens on its own. On the real page they come
+  from one block on the beach called <b>meet</b>, read live — so the words are changed by a write, never a deploy,
+  and an assistant composing an email reads the same block and quotes the same sentences.
+  The address under each cell (<b>meet:2.1</b>) is both the block address and the page's own query — <b>/meet?at=2.1</b> —
+  which is how a targeted email points at one cell without a route of its own.
+</div></div>
+
+<script>
+'use strict';
+/* ────────────────────────────────────────────────────────────────────────────
+   THE WORDS — a stand-in for the block. Shape held exactly as proposed:
+     <world>            _ the button; beneath it the three ways to be there
+       <way>            _ the button; and four leaves a reader actually asks for
+         1 where it takes you      2 what it is like
+         3 who hears you, how soon 4 the line to copy
+   ──────────────────────────────────────────────────────────────────────────── */
+const MEET = {
+  1: {
+    lab:'The real world', state:'on',
+    feel:'Your own day, and whoever else is about. It starts at the whole planet, and narrows as people arrive.',
+    words:'There is one room, Earth, because there is nobody else here yet. As numbers grow it divides the way the map already divides — continent, country, region, town — and people move into the room they are actually in. The last rung is the real one: at some point a few people say let us actually meet, and the address goes all the way down to a pub, a hill, a front door. That is the end of the path, never the start.',
+    ways: {
+      1: { lab:'Live, with whoever is here', state:'thin',
+        feel:'Everyone’s day, as it is being typed.',
+        where:'https://mirror.onen.ai/?block=spine:now',
+        what:'You see the others typing as they type, before they have finished the thought — and they see you. Whatever anyone commits stays where the day is kept.',
+        who:'Quiet. People write at today’s address on some days and not others; you may be the only one there this hour.',
+        say:'Come and say what your day is, live, with whoever is about: mirror.onen.ai at today’s address.' },
+      2: { lab:'On a page, in your own time', state:'on',
+        where:'https://happyseaurchin.com/welcome',
+        feel:'A name, one line, and your day stands beside everyone else’s.',
+        what:'A name, one line about you, a key of your own — then say what you are doing today, and it stands beside everyone else’s line for today. Nothing to install and nothing to join. After that /now is your day and /here is where you stand on the map.',
+        who:'Looking is invisible; the moment you write, a voice lands and David or Julie is told. Expect an answer in hours, not seconds.',
+        say:'Take a name and say what your day is, in a browser, no account: happyseaurchin.com/welcome' },
+      3: { lab:'Through your own assistant', state:'on',
+        feel:'It goes for you, and checks again when you ask it to.',
+        where:'https://bsp.hermitcrab.me/mcp/v1',
+        what:'Claude, ChatGPT, anything that takes a connector. Settings → Connectors → Add custom connector, paste the address, and then speak ordinary English. It goes and comes back; it checks again when you ask it to.',
+        who:'Same as a page: your assistant’s line lands where a person can see it, and the answer arrives when they next look.',
+        say:'Add the connector https://bsp.hermitcrab.me/mcp/v1 and say: “Write one line at my now for today, on the shared clock where everyone else’s day sits too.”' }
+    }
+  },
+  2: {
+    lab:'A made-up world', state:'on',
+    feel:'You arrive as someone else. A valley, an inn, and a table already playing.',
+    words:'You choose a name that is not your name and a character to be. At the table strangers are simply travellers and nobody asks where you came from. The rules are a block anyone can read, the dice are honest, and what happens is written down where it can be walked back through afterwards.',
+    ways: {
+      1: { lab:'Live, at the table', state:'off',
+        feel:'Everyone at their own screen, seeing what the others are about to do.',
+        where:'',
+        what:'The table in the mirror: everyone at their own screen, each seeing what the others are about to do before anyone commits it. This is being built.',
+        who:'Not open yet. Today the live table is a party round one phone — the group page — or a page each, answered as people come.',
+        say:'' },
+      2: { lab:'On a page, in your own time', state:'on',
+        feel:'Take a character at a table that is already standing.',
+        where:'https://happyseaurchin.com/rpg',
+        what:'Every world that has a table standing, and the tables inside it. Take a character, say what you intend, and make it happen; the moment is resolved under the room’s own law and written down. A party round one phone reads itself aloud.',
+        who:'Someone is told the moment your character speaks; the doorman answers at the table’s own register while you wait.',
+        say:'Pick a world with a table standing and take a character: happyseaurchin.com/rpg' },
+      3: { lab:'Through your own assistant', state:'on',
+        feel:'Your assistant walks in as your character and plays the turn with you.',
+        where:'https://bsp.hermitcrab.me/mcp/v1',
+        what:'Your own assistant walks in as your character, receives only what that character can perceive, and plays the turn with you. The same door the tables use, said in one call.',
+        who:'Your line lands at the table like any other; the others read it when they next sit down.',
+        say:'Add the connector https://bsp.hermitcrab.me/mcp/v1 and say: “Tell me which worlds have a table standing, and open one for me as a new character.”' }
+    }
+  },
+  3: {
+    lab:'Just tell me what this is', state:'on', cool:true,
+    feel:'The whole system on one page, in three levels — and what the industry does instead.',
+    words:'No name, no key, nothing to write. Read it, and come back to the two questions if you want to.',
+    go:'https://happyseaurchin.com/pscale-ecology'
+  }
+};
+
+const CHIP = { on:['open','on'], thin:['quiet','thin'], off:['not open yet','off'] };
+const $ = id => document.getElementById(id);
+const esc = s => { const d = document.createElement('span'); d.textContent = s == null ? '' : s; return d.innerHTML; };
+
+let ALL = false;                 /* 'show the words' — every choice open at once */
+let WORLD = null;                /* null = first question */
+
+function readAt(){
+  const at = (new URLSearchParams(location.search).get('at') || '').replace(/[^0-9.]/g,'');
+  const d = at.replace(/\./g,'');
+  return { world: d[0] || null, way: d[1] || null };
+}
+
+function cellHTML(addr, lab, feel, state, words, who, where, say, cool){
+  const [chipTxt, chipCls] = CHIP[state] || CHIP.on;
+  return '<section class="choice ' + (cool ? 'cool' : 'hot') + '" data-addr="' + esc(addr) + '">' +
+    '<div class="plate">' +
+      '<button type="button" class="go">' +
+        '<span class="lab">' + esc(lab) + '</span>' +
+        '<span class="feel">' + esc(feel) + '</span>' +
+      '</button>' +
+      '<button type="button" class="more" aria-label="what this is"><span>⌄</span></button>' +
+    '</div>' +
+    '<div class="words">' +
+      '<p><span class="chip ' + chipCls + '">' + esc(chipTxt) + '</span></p>' +
+      '<p>' + esc(words) + '</p>' +
+      (who   ? '<p class="who">' + esc(who) + '</p>' : '') +
+      (where ? '<div class="addr"><code>' + esc(where) + '</code><button type="button" class="cp">copy</button></div>' : '') +
+      (say   ? '<p class="say">' + esc(say) + '</p>' : '') +
+      '<p class="at">' + esc(addr) + '</p>' +
+    '</div>' +
+  '</section>';
+}
+
+function render(){
+  const box = $('choices');
+  if (!WORLD){
+    $('step').textContent = 'first question';
+    $('title').innerHTML = 'Where do you want to <span class="cool">be?</span>';
+    $('lede').textContent = 'Two questions and you are somewhere. Nothing to join, no account, no email.';
+    $('back').hidden = true;
+    $('cell-addr').textContent = 'meet · the door';
+    box.innerHTML = ['1','2','3'].map(d => {
+      const w = MEET[d];
+      return cellHTML('meet:' + d, w.lab, w.feel, w.state, w.words, '', w.go || '', '', !!w.cool);
+    }).join('');
+  } else {
+    const w = MEET[WORLD];
+    $('step').textContent = 'second question · ' + w.lab.toLowerCase();
+    $('title').innerHTML = 'How present do you want to <span class="cool">be?</span>';
+    $('lede').textContent = w.feel;
+    $('back').hidden = false;
+    $('cell-addr').textContent = 'meet:' + WORLD + ' · ' + w.lab.toLowerCase();
+    box.innerHTML = ['1','2','3'].map(d => {
+      const c = w.ways[d];
+      return cellHTML('meet:' + WORLD + '.' + d, c.lab, c.feel, c.state,
+                      c.what, c.who, c.where, c.say, false);
+    }).join('');
+  }
+  if (ALL) [].forEach.call(box.querySelectorAll('.choice'), c => c.classList.add('open'));
+}
+
+/* one delegated listener — the whole of the behaviour */
+$('choices').addEventListener('click', e => {
+  const sect = e.target.closest('.choice'); if (!sect) return;
+  if (e.target.closest('.cp')){
+    const code = sect.querySelector('.addr code'); const b = e.target.closest('.cp');
+    navigator.clipboard.writeText(code.textContent.trim()).then(
+      () => { b.textContent = 'copied'; setTimeout(() => b.textContent = 'copy', 1600); }, () => {});
+    return;
+  }
+  if (e.target.closest('.more')) { sect.classList.toggle('open'); return; }
+  if (e.target.closest('.go')){
+    const d = sect.dataset.addr.split(':')[1];
+    if (!WORLD){
+      if (MEET[d] && MEET[d].go) { alert('MOCK — the real page goes to ' + MEET[d].go); return; }
+      WORLD = d; history.replaceState(null, '', '?at=' + d); render(); scrollTo(0,0);
+    } else {
+      const c = MEET[WORLD].ways[d.split('.')[1]];
+      if (!c.where) { sect.classList.add('open'); return; }   /* a door not open explains itself */
+      alert('MOCK — the real page goes to ' + c.where);
+    }
+  }
+});
+
+$('c-words').addEventListener('click', () => {
+  ALL = !ALL;
+  $('c-words').setAttribute('aria-pressed', String(ALL));
+  $('c-words').textContent = ALL ? 'hide the words' : 'show the words';
+  render();
+});
+$('c-theme').addEventListener('click', () => {
+  const r = document.documentElement;
+  r.setAttribute('data-theme', r.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+});
+$('back').addEventListener('click', () => { WORLD = null; history.replaceState(null, '', location.pathname); render(); scrollTo(0,0); });
+
+const start = readAt();
+if (start.world && MEET[start.world] && MEET[start.world].ways) WORLD = start.world;
+render();
+if (start.way){
+  const s = document.querySelector('[data-addr="meet:' + start.world + '.' + start.way + '"]');
+  if (s) { s.classList.add('open'); s.scrollIntoView({block:'center'}); }
+}
+</script>
+</body>
+</html>
