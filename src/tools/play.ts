@@ -28,7 +28,7 @@
  */
 import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, DEFAULT_BEACH } from '../db.js';
-import { handlePoolEngage, resolveDirective, collectContributions, coveredThrough, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
+import { handlePoolEngage, resolveDirective, collectContributions, coveredThrough, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, declareRoomAtBirth, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
 // Re-exported so existing importers (smoke-play-split) keep one source of truth.
 export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
@@ -217,7 +217,7 @@ async function canonSignage(origin: string, world: string, handle: string): Prom
   // doorway stays thin: nothing here overrides the sign, it re-cuts the default
   // around it, and a scenario that re-authors its own branches to lead with the
   // placing will simply agree with this frame.
-  out.push(`THE FORK IS A REFERENCE, not a copy (world-genome 1.54 — the default). Found the table with the placing and the kit, and copy NO place: keeper:<scene> with the placing star-ref at position 3 ('PLACING: … *:${origin}:spatial:<world>:<the arrival address>' — this canon's own place; or the world spine above it, where this scenario is itself placed); the kit as verbatim copies under the founder's lock — every rules:* block, char-creation, roster:* — the run's lockfiles; pool:gate with the lobby prose; and the arrival room pool:<arrival address> mounted on 'pscale:grit/1'. NO spatial:* and NO identity:* copies — the place is read live from this canon through the placing, room by room at the room's own address, so a Character cannot write to it and a re-authored canon reaches every table at its next engage. Where a branch above walks a FULL COPY instead, that form remains available as the FREEZE (world-genome 1.3): a deliberate act for a run that must not move while this master is re-authored — copy every definition block verbatim, checked name against name, and the table reads only itself.`);
+  out.push(`THE FORK IS A REFERENCE, not a copy (world-genome 1.54 — the default). Found the table with the placing and the kit, and copy NO place: keeper:<scene> with the placing star-ref at position 3 ('PLACING: … *:${origin}:spatial:<world>:<the arrival address>' — this canon's own place; or the world spine above it, where this scenario is itself placed); the kit as verbatim copies under the founder's lock — every rules:* block, char-creation, roster:* — the run's lockfiles; pool:gate with the lobby prose; and the arrival room pool:<arrival address> FOUNDED BY PURPOSE — one engage, pscale_pool_engage(pool_name='<arrival address>', purpose='pscale:grit/1') — which mounts the play loop and declares the room beside it (convention:<arrival address>, underscore opening 'grit'; a room with no declaration is no table room in the mirror, so read it back, and write it by hand if it is missing). NO spatial:* and NO identity:* copies — the place is read live from this canon through the placing, room by room at the room's own address, so a Character cannot write to it and a re-authored canon reaches every table at its next engage. Where a branch above walks a FULL COPY instead, that form remains available as the FREEZE (world-genome 1.3): a deliberate act for a run that must not move while this master is re-authored — copy every definition block verbatim, checked name against name, and the table reads only itself.`);
   out.push('');
   out.push(`Play happens at a TABLE, never here. Whichever path above is yours, it ends the same way: call pscale_play again with world set to that table's FULL URL (this beach's origin with /w/<table name> in place of this scenario's). This canon surface stays untouched.`);
   return out.join('\n');
@@ -299,7 +299,7 @@ async function unauthoredWorld(origin: string, world: string, handle: string): P
   } catch { /* the listing is orientation too — absence skips it */ }
   out.push('');
   out.push(
-    `THE FIRST WRITES are shape-chosen (world-genome 1.5 — the four surface shapes; the mint recipe with each shape's writes in full is at the beach's ways:authoring branch 8: bsp(agent_id="${DEFAULT_BEACH}", block="ways:authoring", spindle="8")). A BUBBLE PLACED ON AN EXISTING SPINE binds before it builds: keeper:<scene> with the placing star-ref at position 3 (*:<world-beach-url>:spatial:<world>:<address> — the address grafted proximate to a named neighbour, per world-genome 2.4), then spatial:<scene> and identity:<scene>, the kit, and pool:1 mounted on 'pscale:grit/1'. A STANDALONE WORLD begins at its situation, never its map: spatial:<world> first, with the floor fixed before the first address (world-genome 7.1), then the walk below in order.`,
+    `THE FIRST WRITES are shape-chosen (world-genome 1.5 — the four surface shapes; the mint recipe with each shape's writes in full is at the beach's ways:authoring branch 8: bsp(agent_id="${DEFAULT_BEACH}", block="ways:authoring", spindle="8")). A BUBBLE PLACED ON AN EXISTING SPINE binds before it builds: keeper:<scene> with the placing star-ref at position 3 (*:<world-beach-url>:spatial:<world>:<address> — the address grafted proximate to a named neighbour, per world-genome 2.4), then spatial:<scene> and identity:<scene>, the kit, and pool:1 FOUNDED BY PURPOSE — pscale_pool_engage(pool_name='1', purpose='pscale:grit/1') — which mounts the play loop and declares the room beside it (convention:1, underscore opening 'grit'). A STANDALONE WORLD begins at its situation, never its map: spatial:<world> first, with the floor fixed before the first address (world-genome 7.1), then the walk below in order.`,
   );
   out.push('');
   out.push(
@@ -503,6 +503,10 @@ export async function handlePlay(
             if (u.trim()) { purpose = u; break; }
           }
           try { await saveBlock(resolved, `pool:${locAddr}`, { _: purpose } as any, { spindle: '' }); } catch { /* first writer wins — a race is fine */ }
+          // Opened on the play loop, the room is born declared — as every
+          // founding is (pool.ts declareRoomAtBirth); a copied variant mount
+          // declares nothing, its Designer's to say.
+          await declareRoomAtBirth(resolved, locAddr, purpose);
           roomName = locAddr;
         }
       } else if (rooms.length === 1) {

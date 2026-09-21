@@ -3,6 +3,9 @@
  * Spins a local beach with two locations (1, 6), two pools (pool:1, pool:6),
  * two characters, and asserts pscale_play derives each one's room from its
  * passport:3 location — and that a MOVE (rewriting passport:3) re-derives the pool.
+ * A third character stands where no room is yet: the door opens it on the play
+ * loop and the room is born declared (convention:<addr> = grit), while the rooms
+ * that already stood are never declared by a later visit.
  * No live beach, no key, no deploy.
  */
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -35,6 +38,8 @@ async function main() {
     await post('pool:6', { _: 'pscale:grit' }); await post('liquid:pool:6', { _: 'staging' });
     await post('passport:alice', { _: 'Alice.', '1': 'CF ~8.', '2': 'x', '3': `Alice stands by the hearth. Location: ${loc('1')}` });
     await post('passport:bob', { _: 'Bob.', '1': 'CF ~8.', '2': 'x', '3': `Bob waits at the crossroads. Location: ${loc('6')}` });
+    await post('spatial:test', { _: 'A test town.', '1': 'The hearth.', '3': 'The mill, where nobody has yet walked.', '6': 'The crossroads.' });
+    await post('passport:carol', { _: 'Carol.', '1': 'CF ~8.', '2': 'x', '3': `Carol stands at the mill. Location: ${loc('3')}` });
 
     const aliceRoom = roomOf((await handlePlay({ world: BEACH, handle: 'alice' } as any)).content[0].text);
     const bobRoom = roomOf((await handlePlay({ world: BEACH, handle: 'bob' } as any)).content[0].text);
@@ -44,11 +49,21 @@ async function main() {
     const aliceRoom2 = roomOf(aliceMovedEnv);
     const seesBob = /WHO IS HERE[\s\S]*crossroads/i.test(aliceMovedEnv);
 
+    // carol stands where no room is: the door opens pool:3 and it is born declared
+    const carolRoom = roomOf((await handlePlay({ world: BEACH, handle: 'carol' } as any)).content[0].text);
+    const read = async (name: string) => { const r = await fetch(`${BEACH}/.well-known/pscale-beach?block=${encodeURIComponent(name)}`); return r.ok ? await r.json() : null; };
+    const under = (b: any): string => { let n = b?.block ?? b; while (n && typeof n === 'object') n = n._; return typeof n === 'string' ? n : ''; };
+    const born = under(await read('convention:3'));
+    const old1 = await read('convention:1');
+
     const checks: [string, boolean][] = [
       [`alice @ location 1 → pool:${aliceRoom}`, aliceRoom === '1'],
       [`bob   @ location 6 → pool:${bobRoom}`, bobRoom === '6'],
       [`alice MOVES 1→6 → pool:${aliceRoom2} (move re-derives the pool)`, aliceRoom2 === '6'],
       [`alice now co-present with bob at the crossroads`, seesBob],
+      [`carol @ location 3, no room yet → the door opens pool:${carolRoom}`, carolRoom === '3'],
+      [`the room is born declared → convention:3 = "${born.slice(0, 24)}…"`, /^grit\b/.test(born)],
+      [`a room that already stood is never declared by a visit (convention:1 absent)`, old1 === null],
     ];
     for (const [m, ok] of checks) console.log(`  ${ok ? 'PASS' : 'FAIL'} · ${m}`);
     const allOk = checks.every(([, ok]) => ok);

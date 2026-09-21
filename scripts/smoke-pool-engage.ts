@@ -561,5 +561,74 @@ console.log('\n=== liquid holds nine — through the router door, against an in-
   }
 }
 
+console.log('\n=== a room declares at birth — founding-by-purpose, through the router door ===');
+{
+  // proposal 2026-09-21-rooms-declare-at-birth: the mirror gives table behaviour
+  // only to a room that declares itself, and every place-room is founded by
+  // purpose — so the founding writes convention:<room> = grit beside the pool.
+  const { mountsPlayLoop, GRIT_DECLARATION } = await import('../src/tools/pool.js');
+  for (const yes of ['pscale:grit', 'pscale:grit/1', '  pscale:grit/1 ']) assert(mountsPlayLoop(yes), `'${yes.trim()}' is the play loop`);
+  for (const no of ['', 'function:five', 'function:audit', 'grit:tremors/1', 'pscale:gritty', 'pscale:grit/1 and a welcome', 'Welcome to the gate of Brackenfoot.'])
+    assert(!mountsPlayLoop(no), `'${no.slice(0, 28)}' declares nothing — only the trunk's play loop is certainly the game`);
+  // Read as the mirror reads it (xstream kernel/convention.ts parseConventionName).
+  assert(GRIT_DECLARATION.trim().split(/[\s—–:,.]+/)[0].toLowerCase() === 'grit', "the declaration's first bare word names the convention");
+
+  const ORIGIN = 'https://born.test';
+  const store: Record<string, any> = {
+    'pool:211': { _: 'pscale:grit/1' },                                   // founded before rooms declared
+    'convention:300': { _: 'grit — tuned by its Designer', '4': 'solid_since = off' },
+  };
+  let refuse = '';                                                         // a block name the beach will not take
+  const answer = (v: unknown, status = 200) =>
+    new Response(JSON.stringify(v), { status, headers: { 'Content-Type': 'application/json' } });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: any, init?: any) => {
+    const url = new URL(typeof input === 'string' ? input : input.url);
+    if (url.origin !== ORIGIN || !url.pathname.endsWith('/.well-known/pscale-beach')) return answer({ error: 'no beach here' }, 404);
+    const name = url.searchParams.get('block');
+    if ((init?.method ?? 'GET') === 'GET') {
+      if (!name) return answer({ _: 'fixture beach', origin: ORIGIN, blocks: Object.keys(store) });
+      return name in store ? answer(store[name]) : answer({ error: 'not found' }, 404);
+    }
+    const body = JSON.parse(String(init.body));
+    const target = name ?? body.block;
+    if (target === refuse) return answer({ error: 'refused' }, 500);
+    if (body.append || body.spindle) return answer({ error: 'this fixture takes whole writes only' }, 400);
+    store[target] = body.content;
+    return answer({ ok: true });
+  }) as typeof fetch;
+  const found = async (pool_name: string, purpose: string) =>
+    (await handlePoolEngage({ pool_url: ORIGIN, pool_name, agent_id: 'mover', purpose } as any)).content.map((c) => c.text).join('\n');
+
+  try {
+    const room = await found('220', 'pscale:grit/1');
+    assert(store['pool:220']?._ === 'pscale:grit/1', 'the mover founds the room on the play loop');
+    assert(store['convention:220']?._ === GRIT_DECLARATION && Object.keys(store['convention:220']).length === 1, 'and the room is born declared — the underscore alone, no dial set');
+    assert(/^declared: convention:220 = grit/m.test(room), 'the ack says so');
+
+    const gate = await found('gate', 'Welcome to the gate of Brackenfoot.\n\nThis is where players meet before the story.');
+    assert('pool:gate' in store && !('convention:gate' in store), 'a lobby founded with prose stays a parlour: nothing is declared');
+    assert(!/declared/i.test(gate), 'and its ack says nothing of a declaration');
+
+    await found('audit-room', 'function:audit');
+    assert('pool:audit-room' in store && !('convention:audit-room' in store), 'a room founded on another operator declares nothing — a bare law is not the game');
+
+    const tuned = JSON.stringify(store['convention:300']);
+    const stood = await found('300', 'pscale:grit/1');
+    assert(JSON.stringify(store['convention:300']) === tuned, "a declaration that already stands is left exactly as it is — a Designer's dials survive the founding");
+    assert(/^declared: convention:300 already stood/m.test(stood), 'and the ack says it stood');
+
+    await found('211', 'pscale:grit/1');
+    assert(!('convention:211' in store), 'purpose is creation-only: a room that already stands is never declared by a later engage — inference stays out of the door');
+
+    refuse = 'convention:120';
+    const half = await found('120', 'pscale:grit/1');
+    assert(store['pool:120']?._ === 'pscale:grit/1', 'a founding never fails on its declaration: the room stands');
+    assert(/^NOT declared: .*convention:120/m.test(half) && /bsp\(agent_id="https:\/\/born\.test", block="convention:120"/.test(half), 'and the ack hands over the one line to write by hand');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
+
 console.log(`\n=== summary (located engagement) ===\n  pass: ${pass}\n  fail: ${fail}`);
 process.exit(fail > 0 ? 1 : 0);
