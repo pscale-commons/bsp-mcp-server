@@ -1,10 +1,15 @@
 # Tidying and spam — see what was born, set aside rather than wipe (2026-09-21)
 
-**Status: proposed — analysis and options. Nothing is built and nothing has been removed.
-Written in the spam.1 lane (watch:weft 429) on David's sentence of today: "We need a better
-way to tidy up things so we can deal with spam when it happens." Everything below was read
-from the running handler and the live apex on 2026-09-21; where I checked something rather
-than assumed it, I say so.**
+**Status: ACCEPTED 2026-09-21. David's words: "sentence to weft is enough" (section 3 — the
+script, and no operator key in the handler) · "set happyhedsgehog aside" (section 7, question
+1) · "Ok to your recommendations" (the build). Questions 2–4 of section 7 stand unanswered and
+nothing of theirs has moved. What was built, and where, is recorded at the foot.**
+
+**Written in the spam.1 lane (watch:weft 429) on David's sentence of the same day: "We need a
+better way to tidy up things so we can deal with spam when it happens." Everything below was
+read from the running handler and the live apex on 2026-09-21; where I checked something
+rather than assumed it, I say so. The text from here to the Sources is as proposed — it
+describes the beach before anything was built.**
 
 ## The recommendation, in six sentences
 
@@ -295,3 +300,30 @@ first write (1291–1302), the root latch governing append (1170–1177). The mi
 and 3.4; `proposals/2026-08-05-law-writes-get-their-record.md`;
 `proposals/2026-08-20-the-beach-remembers-when.md`. The live apex index, the lock keys
 (positions only) and the five blocks above, read 2026-09-21 between 11:48Z and 11:55Z.
+
+## What was built (2026-09-21, after the acceptance)
+
+| # | piece | where | state |
+|---|---|---|---|
+| 1 | `scripts/set-aside.mjs` — set aside, put back; dry run unless `--confirm` | pscale-beach #70, carried to pscale-beach-happyseaurchin #32 | built; 31 offline checks; **used live once** |
+| 2 | the door: `born` beside `touched`, `born: true` in every creation ack, the last copy kept before an unlatched wipe or whole-block replace; `set-aside.mjs --last` brings it back | pscale-beach #71, carried to pscale-beach-happyseaurchin #33 | built; 37 offline checks; **not deployed — merging #33 deploys the live beach** |
+
+**The first live use.** `now:happyhedsgehog` was set aside at 2026-09-21T12:54Z to
+`archive:now:happyhedsgehog:2026-09-21`, recorded at `beach-log` slot 35. Checked from the
+public side rather than through the script: the original answers 404, the copy is
+byte-identical to a copy taken beforehand, the `now:` family lists nine, no storage-side name
+appears in the index, and the sealed copy refuses a keyless write.
+
+**Two things the build changed from the text above.** The last copy keeps the block's **lock
+set** as well as its content: an open root may stand over latched positions (a roster's
+homesteads), a wipe deletes those with the block, and a restore that lost them would hand each
+position to whoever arrived first. And the way back handles a name that was **re-minted
+meanwhile, even under a stranger's latch** — wiping an open board and then homesteading its
+name is the real attack — by setting aside what stands first, then returning the kept copy
+open.
+
+**Known and left alone.** A position write on an unlatched block can still replace a branch;
+the daily image is the way back for that. A block with an open root over latched digits can be
+replaced whole by anyone — the kept copy softens it, but "fine locks bind the coarse" holds
+only for grains.
+
