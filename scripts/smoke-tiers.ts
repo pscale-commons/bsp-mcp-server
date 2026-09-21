@@ -152,7 +152,9 @@ console.log('=== medium — the resolution composes actions and intentions ===')
   const input = section(text, 'THE INPUT');
   const claim = section(text, 'THE CLAIM');
   check('the law rides at the act\'s addresses', /\[1\.4\]/.test(call) && /\[2\]/.test(call));
-  check('to ONE RING beneath them — a branch\'s own line, never its worked cases', /\[1\.44\]/.test(call) && !/\[1\.441\]/.test(call) && /\[2\.4\]/.test(call) && !/\[2\.41\]/.test(call));
+  check('to ONE RING beneath them — a branch\'s own line, never its worked cases', /\[1\.42\]/.test(call) && !/\[1\.421\]/.test(call) && /\[2\.4\]/.test(call) && !/\[2\.41\]/.test(call));
+  check('a finer position the act needs is NAMED, and arrives where it stands with a ring of its own',
+    /\[1\.441\]/.test(call) && call.indexOf('[1.43]') < call.indexOf('[1.44]') && call.indexOf('[1.44]') < call.indexOf('[1.441]') && call.indexOf('[1.443]') < call.indexOf('[1.45]'));
   check('the contract names the window as acts and intentions', /the people of the place as the keeper has set them/.test(call));
   check('THE PLACE gives the room\'s face', /\[120\] The Alehouse — low and smoky/.test(input));
   check('and the fixtures\' faces one level down', /The trestle — and behind it the alewife/.test(input));

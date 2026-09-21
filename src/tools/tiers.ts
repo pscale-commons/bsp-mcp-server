@@ -62,7 +62,10 @@ export type Tier = 'soft' | 'medium' | 'hard';
 /** Where each tier reads the room's law (grit's own addresses — the doors read
  *  these since xstream #318; the router now reads them once for every door). */
 export const RENDER_AT = ['1.1', '1.2'] as const;
-export const HAPPEN_AT = ['1.4', '1.6', '2'] as const;
+// 1.44 is named beneath 1.4 because the resolution is where a pressed figure
+// answers: its ring (the place's prose is its mind; past it, answer SMALL;
+// world-facts are Author work) is the guard against invented lore.
+export const HAPPEN_AT = ['1.4', '1.44', '1.6', '2'] as const;
 export const UPKEEP_AT = ['1.46', '3'] as const;
 export const SHEET_AT = ['1.46', '3.1'] as const;
 
@@ -204,36 +207,42 @@ export function placeWalk(spatial: Block, room: string, held: boolean): string |
  *  the act's addresses, where it arrives with a ring of its own. */
 export function lawAt(block: Block, addresses: readonly string[], ring = 1): string {
   const floor = floorDepth(block);
-  const lines: string[] = [];
-  const said = new Set<string>();
-  const say = (key: string, line: string) => { if (!said.has(key)) { said.add(key); lines.push(line); } };
   const child = (node: any, d: string) => (node && typeof node === 'object' ? node[d === '0' ? '_' : d] : undefined);
-  const emit = (node: any, digits: string[], indent: number, rings: number) => {
-    const text = faceOf(node);
-    if (text) say(digits.join(''), `${'  '.repeat(indent)}[${formatAddress(digits, floor)}] ${text}`);
-    if (rings > 0 && node && typeof node === 'object') {
-      for (let d = 1; d <= 9; d++) if (child(node, String(d)) != null) emit(child(node, String(d)), [...digits, String(d)], indent + 1, rings - 1);
-    }
-  };
-  let found = 0;
+  const at: string[][] = [];
   for (const address of addresses) {
     let digits: string[];
     try { digits = parseSpindle(address, floor).digits; } catch { continue; }
     let node: any = block;
     for (const d of digits) { node = child(node, d); if (node == null) break; }
-    if (node == null || !digits.length) continue;
-    found++;
-    const root = floorUnderscore(block);
-    if (root) say('', root);
-    let walk: any = block;
-    for (let i = 0; i < digits.length - 1; i++) {
-      walk = child(walk, digits[i]);
-      const text = faceOf(walk);
-      if (text) say(digits.slice(0, i + 1).join(''), `[${formatAddress(digits.slice(0, i + 1), floor)}] ${text}`);
-    }
-    emit(node, digits, 0, ring);
+    if (node != null && digits.length) at.push(digits);
   }
-  return found ? lines.join('\n') : '';
+  if (!at.length) return '';
+  const heads = (a: string[], b: string[]) => a.length <= b.length && a.every((x, i) => b[i] === x);
+  const lines: string[] = [];
+  const root = floorUnderscore(block);
+  if (root) lines.push(root);
+  // One walk, in the block's own order: an address named inside another's ring
+  // (1.44 beneath 1.4) arrives where it stands, its own ring beneath it.
+  const walk = (node: any, digits: string[]) => {
+    if (digits.length) {
+      const above = at.filter((a) => heads(a, digits));
+      const framing = at.some((a) => a.length > digits.length && heads(digits, a));
+      const riding = above.some((a) => digits.length - a.length <= ring);
+      if (!framing && !riding) return;
+      const text = faceOf(node);
+      const indent = riding ? digits.length - Math.min(...above.map((a) => a.length)) : 0;
+      if (text) lines.push(`${'  '.repeat(indent)}[${formatAddress(digits, floor)}] ${text}`);
+    }
+    if (!node || typeof node !== 'object') return;
+    for (let d = 0; d <= 9; d++) {
+      const c = child(node, String(d));
+      // The underscore is walked only as a path some address takes through it.
+      if (c == null || (d === 0 && !(typeof c === 'object' && at.some((a) => a.length > digits.length && heads([...digits, '0'], a))))) continue;
+      walk(c, [...digits, String(d)]);
+    }
+  };
+  walk(block, []);
+  return lines.join('\n');
 }
 
 /** A node and what stands beneath it, to `rings` levels: its own line, its
