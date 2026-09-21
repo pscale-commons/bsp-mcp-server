@@ -41,6 +41,7 @@
  */
 import { Block, floorDepth, formatAddress, parseSpindle } from '../bsp.js';
 import { loadBlock } from '../db.js';
+import type { Stratum } from '../flow.js';
 import {
   beachIndex,
   collectContributions,
@@ -58,6 +59,40 @@ import {
 } from './pool.js';
 
 export type Tier = 'soft' | 'medium' | 'hard';
+
+// ── THE PARTS A CALL IS MADE OF ─────────────────────────────────────────────
+// A composer already knows every piece it assembles: where the piece was read
+// from, what it is, and which side of the call it stands on. It used to throw
+// that away at the join and hand back one string. Now it DECLARES the pieces
+// and the string is their join — one code path, so the window's bytes cannot
+// drift from what the flow producer reports about them (src/flow-play.ts).
+// Nothing here is parsed back out of the composed text.
+export interface Part {
+  /** 1 the law and the role (SYSTEM), 2 the frame the call acts on (MESSAGE). */
+  side: 1 | 2;
+  stratum: Stratum;
+  /** Lodestone rung, for the viewer's colour. */
+  rung: string;
+  /** The address this piece was read from, as a reader could walk it. */
+  ref: string;
+  /** What it is, in the composer's own words. */
+  about: string;
+  /** The section exactly as it stands in the window. */
+  text: string;
+}
+export interface Composed {
+  text: string;
+  parts: Part[];
+  /** The kind of call, for the wake line: 'make it happen', 'the telling', … */
+  kind: string;
+  room: string;
+  origin: string;
+}
+const P = (side: 1 | 2, stratum: Stratum, rung: string, ref: string, about: string, text: string): Part =>
+  ({ side, stratum, rung, ref, about, text });
+/** The window is its parts, joined — exactly as the arrays were joined before:
+ *  same strings, same order, same separator, empty sections dropped. */
+const joinParts = (ps: Part[]): string => ps.filter((p) => p.text !== '').map((p) => p.text).join('\n\n');
 
 /** Where each tier reads the room's law (grit's own addresses — the doors read
  *  these since xstream #318; the router now reads them once for every door). */
@@ -496,14 +531,19 @@ function windowOf(liquid: Block | null): Slip[] {
 // ── the law mount ───────────────────────────────────────────────────────────
 
 /** The room's law block, read off the pool's underscore (pscale:grit/1 at a
- *  table → the grit sentinel; function:<name> → the beach's block). */
-async function roomLaw(origin: string, pool: Block | null): Promise<Block | null> {
+ *  table → the grit sentinel; function:<name> → the beach's block). Returns the
+ *  NAME it resolved as well as the block: the flow producer needs to say which
+ *  law a call carried, and re-deriving it from the underscore a second time
+ *  would be the same parse written twice. */
+async function roomLaw(origin: string, pool: Block | null): Promise<{ block: Block | null; name: string }> {
   const mount = pool ? floorUnderscore(pool).trim() : '';
   const m = mount.match(/^(pscale|function):([a-z0-9][a-z0-9_-]*)(?:\/\d+)?$/i);
-  if (!m) return null;
-  return m[1].toLowerCase() === 'pscale'
-    ? blockOf(await loadBlock('pscale', m[2]))
-    : blockOf(await loadBlock(origin, `function:${m[2]}`));
+  if (!m) return { block: null, name: 'no law' };
+  const pscale = m[1].toLowerCase() === 'pscale';
+  return {
+    block: pscale ? blockOf(await loadBlock('pscale', m[2])) : blockOf(await loadBlock(origin, `function:${m[2]}`)),
+    name: pscale ? m[2] : `function:${m[2]}`,
+  };
 }
 
 // ── shared gathering ────────────────────────────────────────────────────────
@@ -577,7 +617,7 @@ const SEAT_JOURNALS =
   "handle>, 2: <location>, 3: <now, ISO>, 4: 'character'}, secret=<the character's key>) — located, so no door tells " +
   "this beat again.";
 
-export async function composeMedium(origin: string, room: string, agentId: string): Promise<string> {
+export async function composeMedium(origin: string, room: string, agentId: string): Promise<Composed> {
   const index = await beachIndex(origin);
   const tw = await tableWorld(origin, index);
   const passports = await passportsAt(origin, index);
@@ -621,25 +661,6 @@ export async function composeMedium(origin: string, room: string, agentId: strin
   const opened = windowOpenTs(liquid) ?? arrivals[0] ?? null;
   const seen = arrivals[arrivals.length - 1] ?? null;
 
-  const input = [
-    `[THE PLACE — where it happens, in its own words; the figures standing in it by appearance]\n${place ?? '(the place did not compose — weave from the window and the story)'}`,
-    `[THE STORY SO FAR — the latest public beats these characters lived, oldest first, each where it happened]\n${renderStory(story, placeName)}`,
-    `[THE ACTORS — the characters in this moment]\n${actors.length ? actors.map((x) => sheetLines(x)).join('\n') : '(no character stands here)'}`,
-    `[THE WINDOW — what stands staged for this moment, verbatim, by author]\n${window.length
-      ? window.map((s) => `- ${isCharacter(s.who) ? nameFor(s.who) : `${s.who} (one of the place's people)`}: ${s.text}`).join('\n')
-      : '(nothing staged)'}`,
-    `[THE DICE — each actor's own luck, already rolled]\n${dice.length
-      ? dice.map((d) => `- ${d.agent_id && isCharacter(d.agent_id) ? nameFor(d.agent_id) : d.agent_id}: luck ${d.luck >= 0 ? '+' : ''}${d.luck} (positive ${d.pos}, negative ${d.neg})`).join('\n')
-      : '(no dice dealt — every act here is simple)'}`,
-    `[THE RULES — how an act resolves here]\n${[nomad ? wholeText(nomad) : '', worldRules ? rulesFraming(worldRules) : ''].filter(Boolean).join('\n\n') || '(no rules block — every act is simple)'}`,
-    `[THE WAYS — where this place leads, each with its address]\n${ways ?? '(no ways)'}`,
-  ].join('\n\n');
-
-  const call = [
-    `[THE LAW — the room's own, at the addresses of this act]\n${law ? lawAt(law, HAPPEN_AT) : '(the room mounts no law)'}`,
-    HAPPEN_CONTRACT,
-  ].join('\n\n');
-
   const claim = [
     `resolves_window: ${opened ?? 'none'}`,
     `resolves_seen: ${seen ?? 'none'}`,
@@ -648,7 +669,33 @@ export async function composeMedium(origin: string, room: string, agentId: strin
     SEAT_CLAIMS,
   ].join('\n');
 
-  return [`# THE CALL — make it happen at pool:${room}, ${origin} (medium)`, call, '# THE INPUT', input, '# THE CLAIM', claim].join('\n\n');
+  const w = tw.world ?? 'world';
+  const parts: Part[] = [
+    P(1, 'physics', '2.1', `tier:medium:header`, "the call's title line", `# THE CALL — make it happen at pool:${room}, ${origin} (medium)`),
+    P(1, 'biology', '1.4', `${law.name}:${HAPPEN_AT.join(',')}`, "the room's own law at the addresses of this act",
+      `[THE LAW — the room's own, at the addresses of this act]\n${law.block ? lawAt(law.block, HAPPEN_AT) : '(the room mounts no law)'}`),
+    P(1, 'biology', '1.4', 'tier:medium:contract', 'THIS CALL — the role worn and the shape of the reply', HAPPEN_CONTRACT),
+    P(2, 'chemistry', '4.2', `spatial:${w}:${room}:walk`, 'the place: faces only, two rings down',
+      `# THE INPUT\n\n[THE PLACE — where it happens, in its own words; the figures standing in it by appearance]\n${place ?? '(the place did not compose — weave from the window and the story)'}`),
+    P(2, 'chemistry', '5.3', `pool:${room}:beats`, `the latest public beats these characters lived`,
+      `[THE STORY SO FAR — the latest public beats these characters lived, oldest first, each where it happened]\n${renderStory(story, placeName)}`),
+    P(2, 'chemistry', '1', `passport:${room}:sheets`, 'the actors: name, capability, look, carries',
+      `[THE ACTORS — the characters in this moment]\n${actors.length ? actors.map((x) => sheetLines(x)).join('\n') : '(no character stands here)'}`),
+    P(2, 'chemistry', '6.1', `liquid:pool:${room}:window`, 'THE WINDOW — the staged acts themselves; the whole reason for the call',
+      `[THE WINDOW — what stands staged for this moment, verbatim, by author]\n${window.length
+        ? window.map((s) => `- ${isCharacter(s.who) ? nameFor(s.who) : `${s.who} (one of the place's people)`}: ${s.text}`).join('\n')
+        : '(nothing staged)'}`),
+    P(2, 'chemistry', '2', `liquid:pool:${room}:dice`, "each actor's own luck, already rolled",
+      `[THE DICE — each actor's own luck, already rolled]\n${dice.length
+        ? dice.map((d) => `- ${d.agent_id && isCharacter(d.agent_id) ? nameFor(d.agent_id) : d.agent_id}: luck ${d.luck >= 0 ? '+' : ''}${d.luck} (positive ${d.pos}, negative ${d.neg})`).join('\n')
+        : '(no dice dealt — every act here is simple)'}`),
+    P(2, 'chemistry', '2', [nomad ? 'rules:nomad' : '', worldRules ? `rules:${w}:framing` : ''].filter(Boolean).join(' + ') || 'no rules', 'how an act resolves here — the dice system where dice were dealt, and the world\'s framing',
+      `[THE RULES — how an act resolves here]\n${[nomad ? wholeText(nomad) : '', worldRules ? rulesFraming(worldRules) : ''].filter(Boolean).join('\n\n') || '(no rules block — every act is simple)'}`),
+    P(2, 'chemistry', '4.2', `spatial:${w}:${room}:ways`, 'the ways a WAY line may name',
+      `[THE WAYS — where this place leads, each with its address]\n${ways ?? '(no ways)'}`),
+    P(2, 'physics', '2.1', 'tier:medium:claim', 'the claim stamps and the ways, for the door to act on', `# THE CLAIM\n\n${claim}`),
+  ];
+  return { text: joinParts(parts), parts, kind: 'make it happen', room, origin };
 }
 
 
@@ -703,7 +750,7 @@ export const SHEET_CONTRACT =
   "THE SHAPE, one line each, nothing else — and no line at all where they carry nothing:\n" +
   "HOLDS <the thing> · <where it came from> · <where it is on them now>";
 
-export async function composeHard(origin: string, room: string, agentId: string): Promise<string> {
+export async function composeHard(origin: string, room: string, agentId: string): Promise<Composed> {
   const index = await beachIndex(origin);
   const tw = await tableWorld(origin, index);
   const passports = await passportsAt(origin, index);
@@ -758,29 +805,6 @@ export async function composeHard(origin: string, room: string, agentId: string)
 
   // TABLE, then ROOM, then THE MOMENT (KEEPER_TABLE_MARK above): nothing that
   // changes with a beat may stand ahead of a mark, or the cache behind it is spent.
-  const input = [
-    keeper ? `[THE KEEPER'S REGISTER — keeper:${tw.world}, its spine to two rings]\n${wholeText(keeper, REGISTER_RINGS)}` : '',
-    rules ? `[THE WORLD'S RULES — rules:${tw.world}, its spine to two rings]\n${wholeText(rules, REGISTER_RINGS)}` : '',
-    KEEPER_TABLE_MARK,
-    `[THE PLACE, HELD — where the characters stand: every face anyone sees, and beneath each (held) the truth you keep]\n${held ?? '(the place did not compose)'}`,
-    heldHow ? `[WHO HOLDS THIS PLACE HOW — identity:${tw.world}, walked to where the characters stand]\n${heldHow}` : '',
-    KEEPER_ROOM_MARK,
-    `[THE STORY SO FAR — the latest public beats at this table these characters lived, oldest first; the last is the moment just resolved]\n${renderStory(story, placeName)}`,
-    `[THE CHARACTERS — each sheet as it stands now]\n${sheets.length ? sheets.map((x) => sheetLines(x, true)).join('\n') : '(no character stands here)'}`,
-    tellings.length ? `[WHAT THEIR PLAYERS WERE TOLD — the newest telling each holds]\n${tellings.join('\n')}` : '',
-    `[THE WORLD NOW — the voices standing in the table's windows, room by room]\n${standing.join('\n') || '(none — the world has set nothing yet)'}`,
-    // The frame closes on the act, as a sheet's does ('You are keeping X's sheet.').
-    // Without it a cheaper mind took the story's last beat as its cue and told
-    // what happens next — the resolution's work, in prose no parser reads
-    // (haiku, 2026-09-21: one pass in two lost).
-    KEEPER_CLOSE,
-  ].filter(Boolean).join('\n\n');
-
-  const call = [
-    `[THE LAW — the room's own, at the addresses of this act]\n${law ? lawAt(law, UPKEEP_AT) : '(the room mounts no law)'}`,
-    KEEPER_CONTRACT,
-  ].join('\n\n');
-
   // The places a character can stand or a voice can wait: the ways from here,
   // and every room the table already holds — never a finer address than these.
   const ways = tw.spatial ? renderWays(tw.spatial, room) : null;
@@ -804,7 +828,7 @@ export async function composeHard(origin: string, room: string, agentId: string)
   // is audited against the whole story once; a character nothing has happened
   // to since is owed no call at all. THE WRITES tell the door how far this
   // keeping reaches, and the door closes the holds' voicing with it.
-  const sheetCall = [`[THE LAW — the account's own, at the address of this act]\n${law ? lawAt(law, SHEET_AT) : ''}`, SHEET_CONTRACT]
+  const sheetCall = [`[THE LAW — the account's own, at the address of this act]\n${law.block ? lawAt(law.block, SHEET_AT) : ''}`, SHEET_CONTRACT]
     .filter((p) => p.trim()).join('\n\n');
   const sheetBlocks: string[] = [];
   const keptNow: string[] = [];
@@ -829,12 +853,41 @@ export async function composeHard(origin: string, room: string, agentId: string)
     ...keptNow,
   ].join('\n');
 
-  return [
-    `# THE CALL — the keeper's admin at pool:${room}, ${origin} (hard)`, call,
-    '# THE INPUT', input,
-    '# THE WRITES', writes,
-    ...(sheetBlocks.length ? ['# THE SHEET CALL', sheetCall, ...sheetBlocks] : []),
-  ].join('\n\n');
+  const w = tw.world ?? 'world';
+  const parts: Part[] = [
+    P(1, 'physics', '2.1', 'tier:hard:header', "the call's title line", `# THE CALL — the keeper's admin at pool:${room}, ${origin} (hard)`),
+    P(1, 'biology', '1.4', `${law.name}:${UPKEEP_AT.join(',')}`, "the room's own law at the addresses of this act",
+      `[THE LAW — the room's own, at the addresses of this act]\n${law.block ? lawAt(law.block, UPKEEP_AT) : '(the room mounts no law)'}`),
+    P(1, 'biology', '1.4', 'tier:hard:contract', "THIS CALL — the keeper's role and the WORLD / DROP / WHERE shape", KEEPER_CONTRACT),
+    // THE INPUT, in the order it is cached: table, then room, then the moment.
+    P(2, 'chemistry', '3.3', keeper ? `keeper:${w}:spine` : 'no register', 'the held register, its spine to two rings',
+      keeper ? `# THE INPUT\n\n[THE KEEPER'S REGISTER — keeper:${tw.world}, its spine to two rings]\n${wholeText(keeper, REGISTER_RINGS)}` : '# THE INPUT'),
+    P(2, 'chemistry', '2', rules ? `rules:${w}:spine` : 'no rules', "the world's rules, their spine to two rings",
+      rules ? `[THE WORLD'S RULES — rules:${tw.world}, its spine to two rings]\n${wholeText(rules, REGISTER_RINGS)}` : ''),
+    P(2, 'physics', '2.1', 'tier:hard:table-mark', 'the cache mark: nothing beat-bound may stand above it', KEEPER_TABLE_MARK),
+    P(2, 'chemistry', '4.2', `spatial:${w}:${room}:held`, 'the place with every hidden directory opened',
+      `[THE PLACE, HELD — where the characters stand: every face anyone sees, and beneath each (held) the truth you keep]\n${held ?? '(the place did not compose)'}`),
+    P(2, 'chemistry', '4.2', heldHow ? `identity:${w}:${room}` : 'no register', 'who holds THIS place how, walked to the room',
+      heldHow ? `[WHO HOLDS THIS PLACE HOW — identity:${tw.world}, walked to where the characters stand]\n${heldHow}` : ''),
+    P(2, 'physics', '2.1', 'tier:hard:room-mark', 'the second cache mark: below it, the moment', KEEPER_ROOM_MARK),
+    P(2, 'chemistry', '5.3', `pool:${room}:beats`, `the latest ${KEEPER_STORY_BEATS} public beats, the last being the moment just resolved`,
+      `[THE STORY SO FAR — the latest public beats at this table these characters lived, oldest first; the last is the moment just resolved]\n${renderStory(story, placeName)}`),
+    P(2, 'chemistry', '1', `passport:${room}:sheets`, 'each sheet as it stands now',
+      `[THE CHARACTERS — each sheet as it stands now]\n${sheets.length ? sheets.map((x) => sheetLines(x, true)).join('\n') : '(no character stands here)'}`),
+    P(2, 'chemistry', '3.2', `history:${room}:latest`, 'what the players were last told',
+      tellings.length ? `[WHAT THEIR PLAYERS WERE TOLD — the newest telling each holds]\n${tellings.join('\n')}` : ''),
+    P(2, 'chemistry', '5.3', 'liquid:pool:all:standing', "the voices the keeper left standing, room by room",
+      `[THE WORLD NOW — the voices standing in the table's windows, room by room]\n${standing.join('\n') || '(none — the world has set nothing yet)'}`),
+    P(2, 'biology', '1.4', 'tier:hard:close', 'the frame closing on the act, so the call is not read as a cue to narrate', KEEPER_CLOSE),
+    P(2, 'physics', '2.1', 'tier:hard:writes', 'the rooms, characters and places the keeper may write', `# THE WRITES\n\n${writes}`),
+    ...(sheetBlocks.length
+      ? [
+          P(1, 'biology', '1.4', 'tier:sheet:contract', "THIS CALL — keep one character's holds, the HOLDS shape", `# THE SHEET CALL\n\n${sheetCall}`),
+          P(2, 'chemistry', '1', `passport:${room}:sheet-inputs`, `one framing per character owed a keeping (${sheetBlocks.length / 2})`, sheetBlocks.join('\n\n')),
+        ]
+      : []),
+  ];
+  return { text: joinParts(parts), parts, kind: "the keeper's admin", room, origin };
 }
 
 // ── SOFT — the telling, for one character ───────────────────────────────────
@@ -875,7 +928,7 @@ export const PARTY_TELLING_CONTRACT =
   "THE ONES THE MOMENT HOLDS, exactly, where they fall, and never add a line or an act it does not hold. Present tense. " +
   "Tell the moment, then stop where it leaves them to act. Output only the telling — no heading, no machinery.";
 
-export async function composeSoft(origin: string, room: string, handle: string, since = 0, party: string[] = []): Promise<string> {
+export async function composeSoft(origin: string, room: string, handle: string, since = 0, party: string[] = []): Promise<Composed & { declined?: boolean }> {
   // A TABLE ROUND ONE SCREEN IS TOLD ONCE. Several characters played at one
   // phone hear the moment together, so one telling is composed for them all and
   // kept in each of their accounts — David's ruling, 2026-09-20: "a collective
@@ -914,7 +967,11 @@ export async function composeSoft(origin: string, room: string, handle: string, 
     if (first >= 0) fresh = fresh.slice(first);
   }
   fresh = fresh.slice(-8);
-  if (!fresh.length) return `nothing new to tell ${handle} at pool:${room} — the account already covers slot ${coveredSlot}`;
+  if (!fresh.length) {
+    // Not a window: no call is composed and nothing is published.
+    const text = `nothing new to tell ${handle} at pool:${room} — the account already covers slot ${coveredSlot}`;
+    return { text, parts: [], kind: 'the telling', room, origin, declined: true };
+  }
 
   const law = await roomLaw(origin, pool);
   const place = tw.spatial ? placeWalk(tw.spatial, room, false) : null;
@@ -942,30 +999,6 @@ export async function composeSoft(origin: string, room: string, handle: string, 
 
   const where = `[WHERE YOU ARE]\n${[place ?? '', cast.length ? `Here with you, by appearance: ${cast.join('; ')}` : ''].filter(Boolean).join('\n') || '(the place did not compose)'}`;
   const moment = `[THE MOMENT — what has just happened, their own acts among it; not yet seen — tell it whole, as it happens]\n${fresh.map((b) => `- ${b.who}: ${b.text}`).join('\n')}`;
-  const input = (party.length
-    ? [
-        where,
-        `[WHAT EACH OF YOU KNOWS AND CARRIES]\n${together.join('\n')}`,
-        summary ? `[THE STORY SO FAR — in summary]\n${summary}` : '',
-        lastTelling ? `[THE STORY SO FAR — the last telling, already told; never tell it again]\n${lastTelling}` : '',
-        moment,
-        `You are telling this to the players of ${table.join(' and ')}, at one screen.`,
-      ]
-    : [
-        where,
-        knows ? `[WHAT YOU KNOW]\n${wholeText(knows)}` : '',
-        sheet ? `[WHAT YOU CARRY]\n${sheet.holds.length ? sheet.holds.join('\n') : 'what you came with, and nothing the story has not given you'}` : '',
-        summary ? `[YOUR STORY SO FAR — in summary]\n${summary}` : '',
-        lastTelling ? `[YOUR STORY SO FAR — the last telling, already told; never tell it again]\n${lastTelling}` : '',
-        moment,
-        `You are ${sheet?.name ?? handle}.`,
-      ]).filter(Boolean).join('\n\n');
-
-  const call = [
-    `[THE LAW — the room's own, at the addresses of this act]\n${law ? lawAt(law, RENDER_AT) : '(the room mounts no law)'}`,
-    party.length ? PARTY_TELLING_CONTRACT : TELLING_CONTRACT,
-  ].join('\n\n');
-
   const journal = [
     `organ: ${organ ? `${organ}:${handle}` : `history:${handle} (none stands — genesis founds it)`}`,
     `location: pool:${room}:${fresh[fresh.length - 1].slot}`,
@@ -974,11 +1007,56 @@ export async function composeSoft(origin: string, room: string, handle: string, 
     SEAT_JOURNALS,
   ].join('\n');
 
-  return [`# THE CALL — the telling for ${handle} at pool:${room}, ${origin} (soft)`, call, '# THE INPUT', input, '# THE JOURNAL', journal].join('\n\n');
+  const w = tw.world ?? 'world';
+  const acct = organ ? `${organ}:${handle}` : `history:${handle}`;
+  const parts: Part[] = [
+    P(1, 'physics', '2.1', 'tier:soft:header', "the call's title line", `# THE CALL — the telling for ${handle} at pool:${room}, ${origin} (soft)`),
+    P(1, 'biology', '1.4', `${law.name}:${RENDER_AT.join(',')}`, "the room's own law at the addresses of this act",
+      `[THE LAW — the room's own, at the addresses of this act]\n${law.block ? lawAt(law.block, RENDER_AT) : '(the room mounts no law)'}`),
+    P(1, 'biology', '1.4', party.length ? 'tier:soft:party-contract' : 'tier:soft:contract', "THIS CALL — the narrator's role and the shape of the telling",
+      party.length ? PARTY_TELLING_CONTRACT : TELLING_CONTRACT),
+    P(2, 'chemistry', '4.2', `spatial:${w}:${room}:walk`, 'where you are: the place and who is here by appearance', `# THE INPUT\n\n${where}`),
+    ...(party.length
+      ? [
+          P(2, 'chemistry', '3.2', `${table.map((h) => `passport:${h}`).join(' + ')}`, 'what each player at this screen knows and carries',
+            `[WHAT EACH OF YOU KNOWS AND CARRIES]\n${together.join('\n')}`),
+          P(2, 'chemistry', '3.2', `${acct}:summary`, 'the story so far — one paid summary standing for nine tellings',
+            summary ? `[THE STORY SO FAR — in summary]\n${summary}` : ''),
+          P(2, 'chemistry', '3.2', `${acct}:last`, 'the last telling, for the voice — never told again',
+            lastTelling ? `[THE STORY SO FAR — the last telling, already told; never tell it again]\n${lastTelling}` : ''),
+        ]
+      : [
+          P(2, 'chemistry', '3.2', knows ? knowsName : 'knows nothing yet', 'what the character knows', knows ? `[WHAT YOU KNOW]\n${wholeText(knows)}` : ''),
+          P(2, 'chemistry', '1', `passport:${handle}:holds`, 'what the character carries',
+            sheet ? `[WHAT YOU CARRY]\n${sheet.holds.length ? sheet.holds.join('\n') : 'what you came with, and nothing the story has not given you'}` : ''),
+          P(2, 'chemistry', '3.2', `${acct}:summary`, 'the story so far — one paid summary standing for nine tellings',
+            summary ? `[YOUR STORY SO FAR — in summary]\n${summary}` : ''),
+          P(2, 'chemistry', '3.2', `${acct}:last`, 'the last telling, for the voice — never told again',
+            lastTelling ? `[YOUR STORY SO FAR — the last telling, already told; never tell it again]\n${lastTelling}` : ''),
+        ]),
+    P(2, 'chemistry', '6.1', `pool:${room}:${fresh.map((b) => b.slot).join(',')}`, 'THE MOMENT — the beats to be told; the whole reason for the call', moment),
+    P(2, 'biology', '1.4', 'tier:soft:close', 'the frame closing on who is being told', party.length
+      ? `You are telling this to the players of ${table.join(' and ')}, at one screen.`
+      : `You are ${sheet?.name ?? handle}.`),
+    P(2, 'physics', '2.1', 'tier:soft:journal', 'where the telling is journaled and which beats it covers', `# THE JOURNAL\n\n${journal}`),
+  ];
+  return { text: joinParts(parts), parts, kind: 'the telling', room, origin };
 }
 
-/** The one door the engage handler calls. */
+/** The one door the engage handler calls — the composed window as text, exactly
+ *  as before. `composeTierParts` is the same call with its parts in hand, for
+ *  the flow producer; this is its text, so the two can never disagree. */
 export async function composeTier(tier: Tier, origin: string, room: string, agentId: string, since = 0, party: string[] = []): Promise<string> {
+  const c = await composeTierParts(tier, origin, room, agentId, since, party);
+  return c.text;
+}
+
+/** The composed call and the parts it is made of. `declined` carries the soft
+ *  tier's refusal (nothing new to tell), which is not a window and is never
+ *  published. */
+export async function composeTierParts(
+  tier: Tier, origin: string, room: string, agentId: string, since = 0, party: string[] = [],
+): Promise<Composed & { declined?: boolean }> {
   if (tier === 'medium') return composeMedium(origin, room, agentId);
   if (tier === 'hard') return composeHard(origin, room, agentId);
   return composeSoft(origin, room, agentId, since, party);

@@ -46,7 +46,9 @@ import {
   isFederatedOwner,
   DEFAULT_BEACH,
 } from '../db.js';
-import { composeTier, type Tier } from './tiers.js';
+import { composeTierParts, type Tier } from './tiers.js';
+import { publishPlay } from '../flow-play.js';
+import { wireStore } from '../genus.js';
 
 // ── Defaults ──
 
@@ -1775,7 +1777,19 @@ export async function handlePoolEngage(
       return { content: [{ type: 'text', text: `tier='${params.tier}' is for a room of a table — pool:${pool_name} is not a place's address.` }] };
     }
     try {
-      return { content: [{ type: 'text', text: await composeTier(params.tier, pool_url, pool_name, agent_id, sincePosition, params.party ?? []) }] };
+      const composed = await composeTierParts(params.tier, pool_url, pool_name, agent_id, sincePosition, params.party ?? []);
+      // BESIDE THE CALL, NEVER IN IT. The window is already composed; this
+      // reports the parts it was composed FROM to flow:<agent_id> at this table,
+      // and the text returned is the same either way. Off by default
+      // (wake:<handle>:7), and a keyless engage never publishes — the two gates
+      // the genus producer keeps, for the same reasons.
+      if (secret && !composed.declined) {
+        const line = await publishPlay(
+          wireStore(pool_url, agent_id, secret), agent_id, pool_url, composed, params.tier, Math.floor(Date.now() / 1000), secret,
+        );
+        if (line.startsWith('failed')) console.error(`[flow] ${agent_id} ${params.tier} at pool:${pool_name}: ${line}`);
+      }
+      return { content: [{ type: 'text', text: composed.text }] };
     } catch (e: any) {
       return { content: [{ type: 'text', text: `The ${params.tier} call at pool:${pool_name} could not compose: ${e?.message ?? String(e)}` }] };
     }
