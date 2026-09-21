@@ -3,7 +3,7 @@
  * Closed containers stand as their summary lines; the open container rides whole.
  *   npm run smoke:room-fold
  */
-import { foldContributions, collectContributions } from '../src/tools/pool.js';
+import { foldContributions, foldedAccountText, collectContributions } from '../src/tools/pool.js';
 import { appendWithSupernest } from '../src/accumulator.js';
 import type { Block } from '../src/bsp.js';
 
@@ -48,6 +48,28 @@ console.log('\nTHE FOLD — what it refuses to do');
   const marked = foldContributions(room, 9);
   ok('a holder past the first nine folds nothing — one container left', marked.folded === false);
   ok('and reads only forward from the marker', marked.open.length === 3);
+}
+
+console.log('\nTHE FOLD — a handle\'s account at the play door');
+{
+  // A character's account: each entry a telling, located at the beat it tells.
+  let young: Block = { _: 'history:probe' } as Block;
+  for (let i = 1; i <= 5; i++) young = appendWithSupernest(young, { _: `telling ${i}`, 1: 'probe', 2: `pool:211:${i}` }).block;
+  ok('an account that has not folded is left to the door as it always was', foldedAccountText(young, 'history:probe') === null);
+
+  let grown: Block = { _: 'history:probe' } as Block;
+  for (let i = 1; i <= 12; i++) grown = appendWithSupernest(grown, { _: `telling ${i}`, 1: 'probe', 2: `pool:211:${i}` }).block;
+  const owed = foldedAccountText(grown, 'history:probe') ?? '';
+  ok('a grown account folds', owed.length > 0);
+  ok('the open span rides whole, each telling with the beat it tells', owed.includes('[11 · pool:211:10] telling 10') && owed.includes('[13 · pool:211:12] telling 12'), owed);
+  ok('a closed span\'s tellings do not ride', !owed.includes('telling 3'));
+  ok('an unpaid summary is said, never hidden', owed.includes('## 01-09 (9) — SUMMARY OWED'));
+  ok('the reader is told where the rest is', owed.includes('a spindle read of history:probe'));
+
+  const paid: Block = JSON.parse(JSON.stringify(grown));
+  (paid as any)['1']._ = 'Came down to the ford and crossed it whole.';
+  const told = foldedAccountText(paid, 'history:probe') ?? '';
+  ok('a paid summary stands for its span', told.includes('## 01-09 (9)\nCame down to the ford and crossed it whole.') && !told.includes('SUMMARY OWED'));
 }
 
 console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);

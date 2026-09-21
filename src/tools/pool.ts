@@ -397,6 +397,42 @@ export function foldContributions(
   return { closed, open: byContainer.get(openKey)!, folded: true };
 }
 
+/**
+ * A handle's ACCOUNT delivered the way a room is: closed spans as their
+ * summaries, the open span whole. Null where the account has not yet folded
+ * (nine entries or fewer), so the caller delivers it as it always did.
+ *
+ * The play door dumped history:<handle> / witnessed:<handle> whole for every
+ * handle without a manifest — which is every character. Since history IS the
+ * narration (every beat's telling is journaled there), that dump grows with
+ * every moment played: Ugarth's arrival on 2026-09-21 was 55k characters, 36k
+ * of it twenty-seven tellings. The summaries are spindle ancestors, paid so that
+ * exactly this read is cheap; an older telling is a spindle read away.
+ */
+export function foldedAccountText(block: Block, name: string): string | null {
+  const fold = foldContributions(block, 0);
+  if (!fold.folded) return null;
+  const total = fold.closed.reduce((n, c) => n + c.entries, 0) + fold.open.length;
+  const lines: string[] = [
+    `(your account, folded — ${total} entries: each closed span stands as its summary, the open span is whole; an older telling is a spindle read of ${name}, never a whole-block one)`,
+  ];
+  for (const c of fold.closed) {
+    if (c.summary) {
+      lines.push(`## ${c.span} (${c.entries})`);
+      lines.push(c.summary);
+    } else {
+      lines.push(`## ${c.span} (${c.entries}) — SUMMARY OWED`);
+      lines.push('no voicing stands at this container, so its span cannot be read here; pay it by writing the container whole (block-conventions:3.5)');
+    }
+  }
+  lines.push(`# The open span (${fold.open.length})`);
+  for (const c of fold.open) {
+    const located = typeof c.address === 'string' && c.address ? ` · ${c.address}` : '';
+    lines.push(`[${c.position}${located}] ${c.text}`);
+  }
+  return lines.join('\n');
+}
+
 export function collectContributions(
   block: Block,
   sincePosition: number,

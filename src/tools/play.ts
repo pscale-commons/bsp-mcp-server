@@ -28,7 +28,7 @@
  */
 import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, DEFAULT_BEACH } from '../db.js';
-import { handlePoolEngage, resolveDirective, collectContributions, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
+import { handlePoolEngage, resolveDirective, collectContributions, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
 // Re-exported so existing importers (smoke-play-split) keep one source of truth.
 export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
@@ -562,7 +562,10 @@ export async function handlePlay(
     const row = await loadBlock(resolved, name);
     if (row && row.block && typeof row.block === 'object') {
       present.add(b);
-      legacy.push({ name, json: JSON.stringify(row.block, null, 1) });
+      // The account is an accumulator, and a grown accumulator is never pulled
+      // whole: once it has folded it arrives as its summaries and its open span.
+      const folded = b === 'witnessed' || b === 'history' ? foldedAccountText(row.block, name) : null;
+      legacy.push({ name, json: folded ?? JSON.stringify(row.block, null, 1) });
       if (b === 'shell') shellBlock = row.block;
     }
   }
