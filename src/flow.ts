@@ -70,6 +70,18 @@ export const FLOW_SWITCH = '7';
 export const FLOW_WAKES_KEPT = 3;
 const CHARS_PER_TOKEN = 4;
 
+// ── the stratum a span belongs to — David's three, named IN THE SPAN'S OWN LINE
+//    because the viewer reads them from there (STRATUM_LINE_RE in
+//    mindflow/flow/index.html) rather than from a field it would have to be
+//    taught. A genus span names none and its line is unchanged; a play span
+//    names one, which is what the strata colouring draws. ──────────────────────
+export type Stratum = 'physics' | 'chemistry' | 'biology';
+export const STRATUM_PHRASE: Record<Stratum, string> = {
+  physics: 'PHYSICS — how to use pscale and the tool',
+  chemistry: 'CHEMISTRY — the compound composed for this task',
+  biology: 'BIOLOGY — the loop: its law and the role worn for this call',
+};
+
 // ── the lodestone rung a reference answers to — the same table the viewer
 //    declares (REF_RUNG in mindflow/flow/index.html); the two stay in step by
 //    carrying the rung id in the block, not by re-deriving it there ──────────
@@ -102,7 +114,7 @@ export function rungFor(name: string | null | undefined): string | null {
   for (const [re, r] of REF_RUNG) if (re.test(n)) return r;
   return null;
 }
-const rungWord = (r: string | null): string => (r ? `${RUNG_NAME[r[0]] ?? 'rung'} ${r}` : 'no rung');
+export const rungWord = (r: string | null): string => (r ? `${RUNG_NAME[r[0]] ?? 'rung'} ${r}` : 'no rung');
 
 // ── the switch — wake:<handle> position 7 reads `on` ─────────────────────────
 export function flowSwitch(wake: PNode | null | undefined): boolean {
@@ -113,17 +125,17 @@ export function flowSwitch(wake: PNode | null | undefined): boolean {
 }
 
 // ── small helpers ────────────────────────────────────────────────────────────
-const sha = (s: string): string => createHash('sha256').update(s).digest('hex').slice(0, 10);
-const est = (chars: number): number => Math.round(chars / CHARS_PER_TOKEN);
-const fmt = (x: number): string => x.toLocaleString('en-GB');
-const stamp = (secs: number): string => new Date(secs * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+export const sha = (s: string): string => createHash('sha256').update(s).digest('hex').slice(0, 10);
+export const est = (chars: number): number => Math.round(chars / CHARS_PER_TOKEN);
+export const fmt = (x: number): string => x.toLocaleString('en-GB');
+export const stamp = (secs: number): string => new Date(secs * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
 const bytesOf = (v: PNode | undefined): string => (v === undefined ? '' : pyDumps(v));
 
 const GENOME_SLOTS: Record<string, string> = {
   '1': 'sunstone', '2': 'reflexive', '3': 'vision', '4': 'purpose', '5': 'conditions',
   '6': 'history', '7': 'capabilities', '8': 'relationships', '9': 'surface',
 };
-const FLAG_WORD: Record<string, string> = {
+export const FLAG_WORD: Record<string, string> = {
   first: 'first window recorded',
   new: 'entered since the previous window',
   changed: 'changed since the previous window',
@@ -168,7 +180,7 @@ function keyOf(side: 1 | 2, grouped: boolean, ref: string): string {
 const isSpan = (m: PNode | undefined): m is PMap =>
   m instanceof Map && typeof m.get('1') === 'string' && /^\d+$/.test(String(m.get('2') ?? ''));
 
-interface Span {
+export interface Span {
   key: string;
   ref: string;
   about: string;
@@ -176,9 +188,12 @@ interface Span {
   rung: string | null;
   hash: string;
   unresolved: boolean;
+  /** Omitted by the genus producer, whose lines are unchanged by this field;
+   *  named by the play producer, which is where the strata colouring reads it. */
+  stratum?: Stratum;
 }
 
-function spanNode(s: Span, prev: Map<string, string> | null): PMap {
+export function spanNode(s: Span, prev: Map<string, string> | null): PMap {
   const flag = s.unresolved
     ? 'unresolved'
     : prev === null
@@ -188,7 +203,8 @@ function spanNode(s: Span, prev: Map<string, string> | null): PMap {
         : prev.get(s.key) === s.hash
           ? 'unchanged'
           : 'changed';
-  const line = `${s.ref} — ${s.about} — ${fmt(s.chars)} chars ≈ ${fmt(est(s.chars))} tokens — ${rungWord(s.rung)} — ${FLAG_WORD[flag]}`;
+  const stratum = s.stratum ? `${STRATUM_PHRASE[s.stratum]} — ` : '';
+  const line = `${s.ref} — ${stratum}${s.about} — ${fmt(s.chars)} chars ≈ ${fmt(est(s.chars))} tokens — ${rungWord(s.rung)} — ${FLAG_WORD[flag]}`;
   return new Map<string, PNode>([
     [ZK, line],
     ['1', s.ref],
@@ -200,7 +216,7 @@ function spanNode(s: Span, prev: Map<string, string> | null): PMap {
 }
 
 /** The fingerprints of a previous window, keyed as spans key themselves. */
-function spanHashes(win: PMap | null): Map<string, string> | null {
+export function spanHashes(win: PMap | null): Map<string, string> | null {
   if (!win) return null;
   const out = new Map<string, string>();
   for (const side of [1, 2] as const) {
