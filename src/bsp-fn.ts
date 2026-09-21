@@ -813,8 +813,10 @@ export function formatRead(r: BspReadResult): string {
 // beach says `born` in its ack (proposals/2026-09-21-tidying-and-spam.md); this
 // is that fact, handed to the caller at the moment it happens. Nothing is
 // refused and nothing is asked: a newcomer is, by definition, a new name.
+// A dozen words and no more (David, 2026-09-21): agents mint blocks rightly and
+// often, and the noticing is the whole value — the how lives in the proposal.
 export function formatBorn(blockName: string): string {
-  return `\n  ⓘ born: "${blockName}" did not exist — this write created it. If the name is a slip for one that already stands, nothing need be wiped: a stray is set aside (moved whole to archive:<name>:<date>) and its holder's own passphrase is enough to do it.`;
+  return `\n  ⓘ born: this write created "${blockName}". If a slip, set it aside.`;
 }
 
 export function formatWrite(r: BspWriteResult): string {
