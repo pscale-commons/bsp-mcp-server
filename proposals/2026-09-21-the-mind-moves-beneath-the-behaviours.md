@@ -59,6 +59,17 @@ dash** of 9's underscore as the behaviours (`dt.parse_behaviours`), so a 9 found
 doorman stands must not open on prose that says "every act" — `/models` opens it
 "models — …" (happyseaurchin-home #302).
 
+> **Correction, 2026-09-22.** Trap (a) was not live at beach.happyseaurchin.com. The
+> beach has voiced-at-the-terminus since 2026-07-28 (`pscale-beach` `api/pscale-beach.js`
+> `writeAt`, ported to the operator clone the same day): a **scalar** written at a position
+> holding a subtree sets that position's underscore and keeps the children; only an
+> **object** replaces a subtree. So a behaviours line written bare over 9 would have
+> re-voiced 9 and left every mind beneath standing — found when xstream #348's walk wrote a
+> bare line over a node at 7 and read the note beneath back intact. The care stays, and is
+> right on its own terms: a client should not depend on a merge the server happens to make,
+> and a federated beach may run the package from before that date. The claim "would have
+> wiped" is withdrawn; "sends the position back whole" is what the code does and should.
+
 ## 4. The law text — `ways:doorbell` 1, after the merge, archive first
 
 > **stands**: "…5 refractory seconds, 6 the pointer to its pulse journal (daily:<handle>). The
