@@ -250,7 +250,30 @@ check(named.answer_with("svc", 4000, act="render") == ("claude-haiku-4-5-2025100
 check(named.answer_with("svc", 4000, act="commit") == ("claude-opus-4-8", 3000), "a model id and a ceiling after a comma read too")
 check(named.answer_with("svc", 4000, act="act") == ("claude-sonnet-5", 4000) and named.answer_with("svc", 4000) == ("claude-sonnet-5", 4000), "an unnamed act, and no act, keep 7's own word")
 check(dial_of({"1": "on"}).answer_with("svc", 4000, act="render") == ("svc", 4000), "a dial with no 7 falls to the service default")
-check(dial_of({"1": "on", "7": {"_": "", "1": "keeper opus 99999"}}).answer_with("x", 1200, act="keeper", general=False) == ("claude-opus-4-8", 8000), "a ceiling is held inside the doorman's bounds")
+check(dial_of({"1": "on", "9": {"_": "render commit", "1": "keeper opus 99999"}}).answer_with("x", 1200, act="keeper", general=False) == ("claude-opus-4-8", 8000), "a ceiling is held inside the doorman's bounds")
+
+# THE MIND MOVED BENEATH 9 (David, 2026-09-21: the flow switch and the mind were
+# found sharing position 7, and he ruled the doorman's the one to move).
+moved = dial_of({"1": "on", "7": "sonnet — the mind that answers here", "9": {"_": "render commit — this doorman's behaviours", "1": "mind basic — set at /models", "2": "keeper sonnet"}})
+check(moved.answer_with("svc", 4000) == ("claude-haiku-4-5-20251001", 4000), "what stands beneath 9 outranks what a dial still says at 7 — and 'basic' is a word the doorman knows")
+check(moved.answer_with(waker.KEEPER_MODEL, 1200, act="keeper", general=False)[0] == "claude-sonnet-5", "the keeper's own line beneath 9 is heard")
+check(moved.behaviours == dial_of({"9": "render commit — this doorman's behaviours"}).behaviours, "and the behaviours read the same whether 9 is a line or a node")
+flow = dial_of({"1": "on", "7": "on — publish my window composition to flow:egg-one while this reads on", "9": "render"})
+check(flow.answer_with("svc", 4000) == ("svc", 4000), "A FLOW SWITCH AT 7 IS NOT A MODEL CALLED 'on': a genus agent's dial falls to the service default")
+check(not waker.Dial.is_mind("on — publish my window composition") and not waker.Dial.is_mind("off") and not waker.Dial.is_mind("") and not waker.Dial.is_mind("moved — see beneath 9"), "a switch, nothing, a pointer: none is a mind")
+check(all(waker.Dial.is_mind(x) for x in ["haiku", "Sonnet 2000", "basic — set at /models", "claude-opus-4-8, 3000", "the mind that answers here — a nickname"]), "a nickname, a tier, a model id, or prose that says it is the mind")
+_dialblock = {"_": "THE DIAL", "9": {"_": "render commit — old gloss", "1": "mind sonnet — the general", "2": "keeper opus"}}
+waker.beach_get = lambda name, beach=None: _dialblock
+check(waker.nine_with("Ugarth", "") == _dialblock["9"], "position 9 written back untouched is position 9")
+n = waker.nine_with("Ugarth", "", says="render — new gloss")
+check(n == {"_": "render — new gloss", "1": "mind sonnet — the general", "2": "keeper opus"}, "A BEHAVIOUR TOGGLED KEEPS EVERY MIND BENEATH IT (a line written at a node replaces it — this is what would have wiped them)")
+n = waker.nine_with("Ugarth", "", mind="mind haiku — new")
+check(n == {"_": "render commit — old gloss", "1": "mind haiku — new", "2": "keeper opus"}, "and a new general mind replaces the old one, the behaviours and the keeper standing")
+waker.beach_get = lambda name, beach=None: {"_": "THE DIAL", "9": "render commit — a plain line"}
+check(waker.nine_with("Ugarth", "", says="act — toggled") == "act — toggled", "a 9 with nothing beneath it goes back as the plain line it was")
+check(waker.nine_with("Ugarth", "", mind="mind basic") == {"_": "render commit — a plain line", "1": "mind basic"}, "and grows its first line beneath when a mind is named")
+waker.beach_get = lambda name, beach=None: {"_": "a procedure", "8": {"_": "THE DIAL, nested", "9": {"_": "render", "1": "keeper sonnet"}}}
+check(waker.nine_with("weft", "wake:weft:8", says="none") == {"_": "none", "1": "keeper sonnet"}, "a dial nested inside another block is walked to where it stands")
 
 waker.enrolment, waker.enrolment_beach, waker.beach_get = _kept
 
