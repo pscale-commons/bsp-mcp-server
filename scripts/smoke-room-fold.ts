@@ -70,6 +70,19 @@ console.log('\nTHE FOLD — a handle\'s account at the play door');
   (paid as any)['1']._ = 'Came down to the ford and crossed it whole.';
   const told = foldedAccountText(paid, 'history:probe') ?? '';
   ok('a paid summary stands for its span', told.includes('## 01-09 (9)\nCame down to the ford and crossed it whole.') && !told.includes('SUMMARY OWED'));
+
+  // NOTHING RIDES TWICE: where the room above already carries the newest
+  // tellings whole, the account leaves them there and the rest of the open span
+  // arrives as a disc — each entry by its opening line, at its own position.
+  let long: Block = { _: 'history:probe' } as Block;
+  const prose = (i: number) => `telling ${i} opens here.\n\n${'and then it runs on at length, paragraph after paragraph. '.repeat(6)}`;
+  for (let i = 1; i <= 15; i++) long = appendWithSupernest(long, { _: prose(i), 1: 'probe', 2: `pool:211:${i}` }).block;
+  const once = foldedAccountText(long, 'history:probe', 3) ?? '';
+  ok('the tellings the room already carries are not delivered again', !once.includes('telling 14 opens') && !once.includes('telling 15 opens') && !once.includes('telling 13 opens'));
+  ok('the open span before them rides by opening line, one line each, at its position', /\[11 · pool:211:10\] telling 10 opens here\. and then it runs on[^\n]*…\n/.test(once + '\n') && once.includes('[13 · pool:211:12]'), once.slice(-600));
+  ok('and says so, with where a telling whole is read', once.includes('the last 3 ride whole above') && once.includes('a spindle read of history:probe'));
+  const youngOnce = foldedAccountText(young, 'history:probe', 3) ?? '';
+  ok('an account too young to fold is delivered the same way, never as its JSON', youngOnce.includes('[1 · pool:211:1] telling 1') && youngOnce.includes('[2 · pool:211:2] telling 2') && !youngOnce.includes('telling 3'));
 }
 
 console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);

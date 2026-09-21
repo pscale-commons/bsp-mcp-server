@@ -18,6 +18,11 @@
  *    and the resolution both get them.
  *  · A TELLING KNOWS WHERE IT LANDS, and says plainly when the account already
  *    covers the room.
+ *  · A WALK WHERE A WALK WOULD DO (the semantic-flow diet, 2026-09-21). The law
+ *    rides to one ring beneath the act's addresses, never the subtree; the dice
+ *    system rides with the dice; identity is walked to the room; a held register
+ *    rides as its spine; and a kept sheet is framed with the beats since it was
+ *    kept — a character nothing has happened to is owed no call.
  *
  *   npm run smoke:tiers
  */
@@ -47,6 +52,15 @@ const beaches: Record<string, Record<string, AnyBlock>> = {
       _: 'THE AUTHOR\'S HOLD — never a stranger\'s envelope.',
       '4': { _: 'THE ARC — what breaks the day strangers arrive.', '1': 'THE SQUEEZE — the doubled quota comes down and the crew takes the seed-corn.' },
       '5': { _: 'THE WAYS THROUGH — seven pressure points, found and never offered.', '1': 'PEEL OFF THE BOY — the Store\'s day-watch is sixteen and sick about it.' },
+      '9': { _: 'PROVENANCE — the authoring record for this seed.', '2': { _: 'THE REPAIRS LOG — where the source crossed the fence.', '1': 'a repair recorded three levels down, for authors.' } },
+    },
+    'identity:thornlea': {
+      _: { _: { _: 'IDENTITY:THORNLEA — every address here is spatial:thornlea\'s own; the place as each we holds it.' } },
+      '1': {
+        _: 'The Village as held — home under occupation to those who live in it.',
+        '2': { _: 'The Alehouse as held — our alehouse under their boots.', '1': { _: 'The trestle as held.', '1': 'to the village: the one warm room; to the crew: billet and board.' } },
+        '3': { _: 'The Store as held — the village\'s stolen winter, the crew\'s prize.' },
+      },
     },
     'rules:thornlea': {
       _: { _: 'Rules constraining action at Thornlea.', '1': 'Perception — the village is open ground; sound carries; the dark hides what daylight shows.' },
@@ -68,6 +82,7 @@ const beaches: Record<string, Record<string, AnyBlock>> = {
       _: 'Dorn — a hedge-soldier off a war.',
       '1': 'Character Force ~8; peak in a fight, weak in soft talk.',
       '3': 'Broad and scarred, a worn blade at his hip. Location: *:https://master.test/w/thornlea:spatial:thornlea:120',
+      '4': { _: 'HOLDS — what Dorn carries; consolidated at upkeep (grit 3.1). Kept through 2026-09-19T10:01:00.000Z.', '1': 'the worn blade · his from the war · at his hip' },
     },
     'pool:120': {
       _: 'pscale:grit/1',
@@ -137,6 +152,9 @@ console.log('=== medium — the resolution composes actions and intentions ===')
   const input = section(text, 'THE INPUT');
   const claim = section(text, 'THE CLAIM');
   check('the law rides at the act\'s addresses', /\[1\.4\]/.test(call) && /\[2\]/.test(call));
+  check('to ONE RING beneath them — a branch\'s own line, never its worked cases', /\[1\.42\]/.test(call) && !/\[1\.421\]/.test(call) && /\[2\.4\]/.test(call) && !/\[2\.41\]/.test(call));
+  check('a finer position the act needs is NAMED, and arrives where it stands with a ring of its own',
+    /\[1\.441\]/.test(call) && call.indexOf('[1.43]') < call.indexOf('[1.44]') && call.indexOf('[1.44]') < call.indexOf('[1.441]') && call.indexOf('[1.443]') < call.indexOf('[1.45]'));
   check('the contract names the window as acts and intentions', /the people of the place as the keeper has set them/.test(call));
   check('THE PLACE gives the room\'s face', /\[120\] The Alehouse — low and smoky/.test(input));
   check('and the fixtures\' faces one level down', /The trestle — and behind it the alewife/.test(input));
@@ -150,6 +168,10 @@ console.log('=== medium — the resolution composes actions and intentions ===')
   check('the window names the players\' line and the place\'s voice apart',
     /- Mara: I ask the alewife/.test(input) && /- the alewife \(one of the place's people\): wipes the same patch/.test(input));
   check('the dice are dealt per actor', /\[THE DICE/.test(input) && /- Mara: luck/.test(input));
+  check('and the dice system rides with them', /NOMAD — outcome/.test(input));
+  const quiet = section(await tier('medium', '110', 'dorn'), 'THE INPUT');
+  check('where no dice were dealt the dice system stays home, the world\'s framing still rides',
+    /no dice dealt/.test(quiet) && !/NOMAD/.test(quiet) && /Rules constraining action at Thornlea/.test(quiet));
   check('the claim carries the window\'s stamps', /resolves_window: 2026-09-19T10:06:00\.000Z/.test(claim) && /resolves_seen: 2026-09-19T10:06:30\.000Z/.test(claim));
   check('and the ways a WAY line may name', /way: \[110\] The Road In/.test(claim) || /way: \[100\] The Village/.test(claim));
   check('the actors are named for the beat', /actor: mara — Mara/.test(claim));
@@ -164,8 +186,11 @@ console.log('\n=== hard — the keeper holds what nobody else is given ===');
   check('the call asks for lines, not reasoning', /no reasoning, no commentary/.test(call) && /WORLD <label>/.test(call));
   check('the place opens its hidden directories', /\(held .*\) Half-commandeered as the crew's billet/.test(input));
   check('and the names behind the faces', /Maerla/.test(input));
-  check('the keeper\'s own register rides whole', /THE ARC/.test(input) && /PEEL OFF THE BOY/.test(input));
-  check('the world\'s rules ride whole', /THE REINFORCEMENT CLOCK/.test(input));
+  check('the keeper\'s own register rides as its spine — the branches and their children\'s lines', /THE ARC/.test(input) && /PEEL OFF THE BOY/.test(input) && /THE REPAIRS LOG/.test(input));
+  check('and an authoring record nested deeper stays where it is', !/three levels down/.test(input));
+  check('the world\'s rules ride to the same depth', /THE REINFORCEMENT CLOCK/.test(input));
+  check('identity is WALKED to the room — the alehouse as held, whole', /\[120\] The Alehouse as held/.test(input) && /the one warm room/.test(input) && /The Village as held/.test(input));
+  check('never the whole holding: the Store\'s holding is nothing to a moment at the trestle', !/The Store as held/.test(input));
   check('what the world already has standing', /the alewife: wipes the same patch/.test(input));
   check('what their players were told', /the room did not look up/.test(input));
   check('the writes name the places a voice may wait at', /place: \[120\]/.test(section(text, 'THE WRITES')));
@@ -173,6 +198,17 @@ console.log('\n=== hard — the keeper holds what nobody else is given ===');
   check('one sheet call per character standing here', sheets.length === 2 && sheets.includes('mara') && sheets.includes('dorn'));
   check('a sheet is framed with that character\'s own story', /At the ford, Mara lifts the bead/.test(text.split('# THE SHEET INPUT — mara')[1]));
   check('the sheet call asks for the holds whole', /THE WHOLE LIST/.test(section(text, 'THE SHEET CALL')));
+  const dornSheet = (text.split('# THE SHEET INPUT — dorn')[1] ?? '').split('# THE SHEET INPUT — ')[0];
+  check('a KEPT sheet is framed with the beats since it was kept', /kept through 2026-09-19T10:01:00\.000Z/.test(dornSheet) && /The alewife sets down a cup/.test(dornSheet));
+  check('and never the story it already stands true of', !/At the ford/.test(dornSheet) && !/Mara and Dorn arrive/.test(dornSheet));
+  check('the writes tell the door how far each keeping reaches',
+    /sheet: dorn — through 2026-09-19T10:05:00\.000Z/.test(section(text, 'THE WRITES')) && /sheet: mara — through 2026-09-19T10:05:00\.000Z/.test(section(text, 'THE WRITES')));
+  const dornPass = beaches[TABLE]['passport:dorn'] as any;
+  const keptThen = dornPass['4']._;
+  dornPass['4']._ = keptThen.replace('10:01:00.000Z', '10:05:00.000Z');
+  const later = await tier('hard', '120', 'dorn');
+  check('a character nothing has happened to since is owed no call', !/# THE SHEET INPUT — dorn/.test(later) && /# THE SHEET INPUT — mara/.test(later));
+  dornPass['4']._ = keptThen;
 }
 
 console.log('\n=== soft — the telling, and where it lands ===');
@@ -206,6 +242,24 @@ console.log('\n=== soft for a table round one screen — told once, for them all
   check('the journal names the account it lands in and who it was told for', /organ: witnessed:mara/.test(section(text, 'THE JOURNAL')) && /told for: mara dorn/.test(section(text, 'THE JOURNAL')));
   const alone = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 1 } as any);
   check('without a party it is that character\'s own telling, as before', /You are Mara\./.test(section(alone.content[0].text, 'THE INPUT')) && /renders this character's lived moment/.test(section(alone.content[0].text, 'THE CALL')));
+}
+
+console.log('\n=== the door and the turn — nothing rides twice ===');
+{
+  const { handlePlay } = await import('../src/tools/play.js');
+  const door = (await handlePlay({ world: TABLE, handle: 'mara' } as any)).content[0].text;
+  const count = (re: RegExp) => (door.match(re) ?? []).length;
+  check('the door opens on her room, her pages beneath it', /pool:120 @/.test(door) && /YOUR OWN CONTEXT \(mara\)/.test(door));
+  check('her newest tellings ride ONCE — in the room, never again in her own context', count(/the room did not look up/g) === 1);
+  check('what she knows rides once', count(/every road in the valley/g) === 1 && !/── knows:mara ──/.test(door));
+  check('the room\'s record rides from what her account has not told', /# Contributions since position 1 /.test(door) && /The alewife sets down a cup/.test(door) && !/## slot 1 — /.test(door));
+  check('and says why it starts there', /your account has told this room through slot 1/.test(door));
+  const turn = (await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', since_position: 2 } as any)).content[0].text;
+  check('a seat mid-session is told where its pages stand, never sent them again',
+    /# Your account and what you know — witnessed:mara, knows:mara/.test(turn) && !/the room did not look up/.test(turn) && !/every road in the valley/.test(turn));
+  check('the place and the ways still ride every engage — the mirror draws its situation from them', /# The place — /.test(turn) && /# The ways /.test(turn));
+  const first = (await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara' } as any)).content[0].text;
+  check('an engage with no marker is an arrival, and carries them', /# Your account — witnessed:mara, last 2 of 2/.test(first) && /# You know — knows:mara/.test(first));
 }
 
 console.log('\n=== a tier engage writes nothing ===');

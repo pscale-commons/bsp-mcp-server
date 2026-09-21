@@ -18,10 +18,12 @@
  *            hidden directory, no motivation ("the medium-llm is just composing
  *            actions and intentions from characters — some of them being NPCs").
  *   hard   — THE KEEPER'S ADMIN, after each resolution (grit 3). Reads anything:
- *            the held register, the place's hidden directories, the world's rules
- *            whole, the characters' sheets and tellings. Sets the world's next
- *            intentions into the window and keeps each sheet true, so the next
- *            bundle is waiting well formed.
+ *            the held register and the world's rules as their spines, the
+ *            place's hidden directories and who holds it how (walked to the
+ *            room), the characters' sheets and tellings. Sets the world's next
+ *            intentions into the window and keeps each sheet true — framed with
+ *            the beats since it was last kept — so the next bundle is waiting
+ *            well formed.
  *   soft   — THE TELLING, per character: where they stand, what they know and
  *            carry, their story so far, and the moment — rendered for the player.
  *
@@ -42,6 +44,7 @@ import { loadBlock } from '../db.js';
 import {
   beachIndex,
   collectContributions,
+  coveredThrough,
   floorUnderscore,
   foldContributions,
   movableAddress,
@@ -59,13 +62,21 @@ export type Tier = 'soft' | 'medium' | 'hard';
 /** Where each tier reads the room's law (grit's own addresses — the doors read
  *  these since xstream #318; the router now reads them once for every door). */
 export const RENDER_AT = ['1.1', '1.2'] as const;
-export const HAPPEN_AT = ['1.4', '1.6', '2'] as const;
+// 1.44 is named beneath 1.4 because the resolution is where a pressed figure
+// answers: its ring (the place's prose is its mind; past it, answer SMALL;
+// world-facts are Author work) is the guard against invented lore.
+export const HAPPEN_AT = ['1.4', '1.44', '1.6', '2'] as const;
 export const UPKEEP_AT = ['1.46', '3'] as const;
 export const SHEET_AT = ['1.46', '3.1'] as const;
 
 const STORY_BEATS = 8;       // the latest public beats the resolution continues from
 const KEEPER_STORY_BEATS = 30;  // the keeper reads further back: a thing stowed yesterday is still stowed
+const REGISTER_RINGS = 2;    // a held register rides as its spine: the root, its branches, their children's own lines
 const WAY_LINE = /^\s*WAY\b/;
+/** A kept sheet says how far into the story it was kept: the closing words of
+ *  the holds' voicing at passport 4, written by the door that kept it — the same
+ *  trace a window leaves at its buffer's underscore ("Window opened <ts>"). */
+const KEPT_THROUGH_RE = /\bKept through (\S+?)\.?\s*$/;
 
 // ── the world a table plays ──────────────────────────────────────────────────
 
@@ -187,63 +198,113 @@ export function placeWalk(spatial: Block, room: string, held: boolean): string |
 
 /** The law at a set of addresses, as a seat dialing them reads it: every
  *  ancestor's underscore once, framing from the root down, then each addressed
- *  node with its whole subtree, every line carrying its address. The same read
- *  the mirror's lawAt and the doorman's law_at made — now once, here. */
-export function lawAt(block: Block, addresses: readonly string[]): string {
+ *  node and ONE RING beneath it — its children's own lines, never theirs — every
+ *  line carrying its address. The measure is grit's own delivery law: "most
+ *  turns need only the first line of each branch; the finer positions stand
+ *  ready where the moment reaches them." Until 2026-09-21 the whole subtree
+ *  rode, worked cases and all — half of a telling's window, a third of a
+ *  resolution's. A finer position an act does need is dialed by naming it in
+ *  the act's addresses, where it arrives with a ring of its own. */
+export function lawAt(block: Block, addresses: readonly string[], ring = 1): string {
   const floor = floorDepth(block);
-  const lines: string[] = [];
-  const said = new Set<string>();
-  const say = (key: string, line: string) => { if (!said.has(key)) { said.add(key); lines.push(line); } };
   const child = (node: any, d: string) => (node && typeof node === 'object' ? node[d === '0' ? '_' : d] : undefined);
-  const emit = (node: any, digits: string[], indent: number) => {
-    const text = faceOf(node);
-    if (text) say(digits.join(''), `${'  '.repeat(indent)}[${formatAddress(digits, floor)}] ${text}`);
-    if (node && typeof node === 'object') {
-      for (let d = 1; d <= 9; d++) if (child(node, String(d)) != null) emit(child(node, String(d)), [...digits, String(d)], indent + 1);
-    }
-  };
-  let found = 0;
+  const at: string[][] = [];
   for (const address of addresses) {
     let digits: string[];
     try { digits = parseSpindle(address, floor).digits; } catch { continue; }
     let node: any = block;
     for (const d of digits) { node = child(node, d); if (node == null) break; }
-    if (node == null || !digits.length) continue;
-    found++;
-    const root = floorUnderscore(block);
-    if (root) say('', root);
-    let walk: any = block;
-    for (let i = 0; i < digits.length - 1; i++) {
-      walk = child(walk, digits[i]);
-      const text = faceOf(walk);
-      if (text) say(digits.slice(0, i + 1).join(''), `[${formatAddress(digits.slice(0, i + 1), floor)}] ${text}`);
-    }
-    emit(node, digits, 0);
+    if (node != null && digits.length) at.push(digits);
   }
-  return found ? lines.join('\n') : '';
+  if (!at.length) return '';
+  const heads = (a: string[], b: string[]) => a.length <= b.length && a.every((x, i) => b[i] === x);
+  const lines: string[] = [];
+  const root = floorUnderscore(block);
+  if (root) lines.push(root);
+  // One walk, in the block's own order: an address named inside another's ring
+  // (1.44 beneath 1.4) arrives where it stands, its own ring beneath it.
+  const walk = (node: any, digits: string[]) => {
+    if (digits.length) {
+      const above = at.filter((a) => heads(a, digits));
+      const framing = at.some((a) => a.length > digits.length && heads(digits, a));
+      const riding = above.some((a) => digits.length - a.length <= ring);
+      if (!framing && !riding) return;
+      const text = faceOf(node);
+      const indent = riding ? digits.length - Math.min(...above.map((a) => a.length)) : 0;
+      if (text) lines.push(`${'  '.repeat(indent)}[${formatAddress(digits, floor)}] ${text}`);
+    }
+    if (!node || typeof node !== 'object') return;
+    for (let d = 0; d <= 9; d++) {
+      const c = child(node, String(d));
+      // The underscore is walked only as a path some address takes through it.
+      if (c == null || (d === 0 && !(typeof c === 'object' && at.some((a) => a.length > digits.length && heads([...digits, '0'], a))))) continue;
+      walk(c, [...digits, String(d)]);
+    }
+  };
+  walk(block, []);
+  return lines.join('\n');
+}
+
+/** A node and what stands beneath it, to `rings` levels: its own line, its
+ *  hidden directory, then each child the same way — every line addressed. */
+function subtreeLines(node: any, digits: string[], floor: number, indent: number, out: string[], rings: number, label = formatAddress): void {
+  const a = label(digits, floor);
+  const f = faceOf(node);
+  if (f) out.push(`${'  '.repeat(indent)}[${a}] ${f}`);
+  for (const [h, hc] of hiddenOf(node)) heldLines(hc, `${a}*${h}`, '  '.repeat(indent + 1), out);
+  if (rings > 0 && node && typeof node === 'object') {
+    for (let d = 1; d <= 9; d++) {
+      if (node[String(d)] != null) subtreeLines(node[String(d)], [...digits, String(d)], floor, indent + 1, out, rings - 1, label);
+    }
+  }
 }
 
 /** A block delivered whole — every position, hidden directories included, each
- *  line carrying its address. For law-class and held blocks the keeper wears. */
-export function wholeText(block: Block): string {
+ *  line carrying its address — or, given `rings`, its SPINE to that depth: the
+ *  root, its branches' own lines, and as many rings beneath as asked. A held
+ *  register authored to depth stands true at every rung, so the keeper wears
+ *  its spine and an authoring record nested under a branch stays where it is. */
+export function wholeText(block: Block, rings = Infinity): string {
   const floor = floorDepth(block);
   const out: string[] = [];
   const root = floorUnderscore(block);
   if (root) out.push(root);
   for (const [d, h] of hiddenOf(block)) heldLines(h, `root*${d}`, '  ', out);
-  const walk = (node: any, digits: string[], indent: number) => {
-    for (let d = 1; d <= 9; d++) {
-      const c = node?.[String(d)];
-      if (c == null) continue;
-      const a = [...digits, String(d)];
-      const f = faceOf(c);
-      if (f) out.push(`${'  '.repeat(indent)}[${formatAddress(a, floor)}] ${f}`);
-      for (const [h, hc] of hiddenOf(c)) heldLines(hc, `${formatAddress(a, floor)}*${h}`, '  '.repeat(indent + 1), out);
-      if (c && typeof c === 'object') walk(c, a, indent + 1);
-    }
-  };
-  walk(block, [], 0);
+  for (let d = 1; d <= 9; d++) {
+    const c = (block as any)[String(d)];
+    if (c != null) subtreeLines(c, [String(d)], floor, 0, out, rings - 1);
+  }
   return out.join('\n');
+}
+
+/** A register that MIRRORS THE PLACE'S SKELETON, walked to the room. Every
+ *  address in identity:<world> is spatial:<world>'s own, so who holds the
+ *  Store how is nothing to a moment at the alehouse: the root, each ancestor's
+ *  line, and the room's own node whole are the read — the same spindle THE
+ *  PLACE is. Where the register does not carve the room, the deepest carved
+ *  ancestor is the honest end of the walk. Null when nothing of the address
+ *  resolves, and the caller says nothing rather than inventing a there. */
+export function registerWalk(block: Block, room: string): string | null {
+  const floor = floorDepth(block);
+  let digits: string[];
+  try { digits = parseSpindle(room, floor).digits; } catch { return null; }
+  if (!digits.length) return null;
+  const out: string[] = [];
+  let cur: any = block;
+  for (let i = 0; i < digits.length; i++) {
+    cur = cur?.[digits[i] === '0' ? '_' : digits[i]];
+    if (cur == null) break;
+    const here = digits.slice(0, i + 1);
+    if (i < digits.length - 1) {
+      const f = faceOf(cur);
+      if (f) out.push(`[${movableAddress(here, floor)}] ${f}`);
+    } else {
+      subtreeLines(cur, here, floor, 0, out, Infinity, movableAddress);
+    }
+  }
+  if (!out.length) return null;
+  const root = floorUnderscore(block);
+  return [root, ...out].filter(Boolean).join('\n');
 }
 
 /** A world's rules at their general framing only — the underscore and what the
@@ -299,6 +360,14 @@ export function holdsOf(passport: any): string[] {
     if (t && t.trim()) out.push(t.trim());
   }
   return out;
+}
+
+/** How far into the story this character's holds were last kept — null where
+ *  the sheet has never been kept, or was kept by a door that left no trace. */
+export function keptThrough(passport: any): string | null {
+  const four = passport?.['4'];
+  const m = four && typeof four === 'object' ? faceOf(four).match(KEPT_THROUGH_RE) : null;
+  return m ? m[1] : null;
 }
 
 export function sheetOf(passport: any, handle: string): ActorSheet {
@@ -521,11 +590,15 @@ export async function composeMedium(origin: string, room: string, agentId: strin
     return (line.replace(/^\[[^\]]*\]\s*/, '').split(/\s+[—–-]\s+/)[0] || `pool:${r}`).trim();
   };
 
-  const nomad = blockOf(await loadBlock(origin, 'rules:nomad')) ?? (tw.masterOrigin ? blockOf(await loadBlock(tw.masterOrigin, 'rules:nomad')) : null);
   const worldRules = tw.world ? await worldBlock(origin, tw, `rules:${tw.world}`, index) : null;
 
   const live = liquid ? collectContributions(liquid, 0).contributions.filter((s) => s.text && s.text.trim() && s.agent_id && !s.address) : [];
   const dice = live.length ? windowDicePerAuthor(`pool:${room}`, liquid, live) : [];
+  // The dice system rides with the dice. Where none were dealt every act is
+  // simple, and how a roll reads is nothing the moment can use.
+  const nomad = dice.length
+    ? blockOf(await loadBlock(origin, 'rules:nomad')) ?? (tw.masterOrigin ? blockOf(await loadBlock(tw.masterOrigin, 'rules:nomad')) : null)
+    : null;
   const arrivals = live.map((s) => s.arrival ?? s.ts).filter((t): t is string => !!t).sort();
   const opened = windowOpenTs(liquid) ?? arrivals[0] ?? null;
   const seen = arrivals[arrivals.length - 1] ?? null;
@@ -564,7 +637,7 @@ export async function composeMedium(origin: string, room: string, agentId: strin
 
 export const KEEPER_CONTRACT =
   "[THIS CALL] You are the keeper of this table: the world's own hand, after the moment just resolved. The frame above is " +
-  "what you hold — the arc and the ways through it, the minds behind the faces, the rules whole, the story as it stands. " +
+  "what you hold — the arc and the ways through it, the minds behind the faces, the world's rules, the story as it stands. " +
   "Write what the world does next: no reasoning, no commentary, no explanation of your choices.\n\n" +
   "THE WORLD — at most three of the place's people, or the day itself, each as ONE intention: what they are doing or about " +
   "to do and say, as anyone present would see or hear it — never a reason or a secret. LABEL each by its FACE in THE PLACE, " +
@@ -581,12 +654,14 @@ export const KEEPER_CONTRACT =
 
 export const SHEET_CONTRACT =
   "[THIS CALL] You keep this one character's HOLDS, under the law above. The frame gives the sheet as it stands and the " +
-  "story of what they have done and what has been done to them. Write the holds as they stand NOW — no reasoning, no " +
-  "commentary.\n\n" +
+  "story of what they have done and what has been done to them — SINCE THE SHEET WAS KEPT where the sheet says it was, " +
+  "and whole where it never has been. Write the holds as they stand NOW — no reasoning, no commentary.\n\n" +
   "THE WHOLE LIST, one line per thing they carry, each saying WHERE IT CAME FROM and WHERE IT IS on them — worn in sight, " +
-  "stowed in a pocket, slung, in hand. Not a change: every thing, whether or not the sheet ever recorded it. A thing moves " +
-  "only by an ACT in the story — taken, given, stowed, worn, dropped, spent — and a thing lost or given away leaves the " +
-  "list. Never a thing the story has not established (1.46); the kit their role implies is theirs from the start. The look " +
+  "stowed in a pocket, slung, in hand. Not a change: every thing. What a kept sheet already lists stands as it is written " +
+  "unless an act in the story moves it, and what the story shows them with joins it, whether or not the sheet ever " +
+  "recorded it. A thing moves only by an ACT in the story — taken, given, stowed, worn, dropped, spent — and a thing lost " +
+  "or given away leaves the list. Never a thing neither the sheet nor the story has established (1.46); the kit their role " +
+  "implies is theirs from the start. The look " +
   "is the player's own words and you never touch it: where the look and this list disagree about where a thing is, THIS " +
   "LIST is the later truth, and the resolution reads it.\n\n" +
   "THE SHAPE, one line each, nothing else — and no line at all where they carry nothing:\n" +
@@ -613,6 +688,12 @@ export async function composeHard(origin: string, room: string, agentId: string)
   const keeper = tw.world ? await worldBlock(origin, tw, `keeper:${tw.world}`, index) : null;
   const rules = tw.world ? await worldBlock(origin, tw, `rules:${tw.world}`, index) : null;
   const identity = tw.world ? await worldBlock(origin, tw, `identity:${tw.world}`, index) : null;
+  // identity:<world> stands on spatial's own addresses, so it is WALKED to the
+  // room as the place is — never the whole holding for a moment at one trestle.
+  // A register on another floor shares no address with the place: its spine.
+  const heldHow = identity && tw.spatial
+    ? (floorDepth(identity) === floorDepth(tw.spatial) ? registerWalk(identity, room) : wholeText(identity, REGISTER_RINGS))
+    : null;
 
   // Every voice the keeper left standing, room by room — its own memory of
   // what the world is about to do.
@@ -645,9 +726,9 @@ export async function composeHard(origin: string, room: string, agentId: string)
     `[THE CHARACTERS — each sheet as it stands now]\n${sheets.length ? sheets.map((x) => sheetLines(x, true)).join('\n') : '(no character stands here)'}`,
     tellings.length ? `[WHAT THEIR PLAYERS WERE TOLD — the newest telling each holds]\n${tellings.join('\n')}` : '',
     `[THE WORLD NOW — the voices standing in the table's windows, room by room]\n${standing.join('\n') || '(none — the world has set nothing yet)'}`,
-    keeper ? `[THE KEEPER'S REGISTER — keeper:${tw.world}, whole]\n${wholeText(keeper)}` : '',
-    rules ? `[THE WORLD'S RULES — rules:${tw.world}, whole]\n${wholeText(rules)}` : '',
-    identity && tw.spatial ? `[WHO HOLDS THIS PLACE HOW — identity:${tw.world}, whole]\n${wholeText(identity)}` : '',
+    keeper ? `[THE KEEPER'S REGISTER — keeper:${tw.world}, its spine to two rings]\n${wholeText(keeper, REGISTER_RINGS)}` : '',
+    rules ? `[THE WORLD'S RULES — rules:${tw.world}, its spine to two rings]\n${wholeText(rules, REGISTER_RINGS)}` : '',
+    heldHow ? `[WHO HOLDS THIS PLACE HOW — identity:${tw.world}, walked to where the characters stand]\n${heldHow}` : '',
   ].filter(Boolean).join('\n\n');
 
   const call = [
@@ -664,36 +745,50 @@ export async function composeHard(origin: string, room: string, agentId: string)
     if (m) places.set(m[1], m[2].split(/\s+[—–-]\s+/)[0].trim());
   }
   for (const r of roomsOf(index)) if (!places.has(r)) places.set(r, placeName(r));
-  const writes = [
-    `room: ${room}`,
-    ...sheets.map((s) => `character: ${s.handle} — ${s.name}`),
-    ...[...places].map(([a, n]) => `place: [${a}] ${n}`),
-  ].join('\n');
 
   // ONE ACT PER CALL. The world's next move looks forward from the moment; a
   // sheet looks back over everything the story did to one character. Asked
   // together, the sheet lost — the keeper answered the moment and wrote 'nothing
   // new' over a crystal stowed twenty beats back (2026-09-19). So the sheets ride
   // as their own small calls, each framed with that character's own story alone.
+  //
+  // A KEPT SHEET IS TRUE UP TO WHERE IT WAS KEPT, so it is framed with the holds
+  // as they stand and the beats SINCE — the way anyone keeps a sheet. The thirty
+  // beats rode twice in one pass until 2026-09-21: to the keeper, and again to
+  // every character. A sheet never kept (or kept by a door that left no trace)
+  // is audited against the whole story once; a character nothing has happened
+  // to since is owed no call at all. THE WRITES tell the door how far this
+  // keeping reaches, and the door closes the holds' voicing with it.
   const sheetCall = [`[THE LAW — the account's own, at the address of this act]\n${law ? lawAt(law, SHEET_AT) : ''}`, SHEET_CONTRACT]
     .filter((p) => p.trim()).join('\n\n');
   const sheetBlocks: string[] = [];
+  const keptNow: string[] = [];
   for (const sh of sheets) {
-    const mine = story.lines.filter((l) => livedBy(l, sh.handle));
+    const lived = story.lines.filter((l) => livedBy(l, sh.handle));
+    const kept = keptThrough(passports.get(sh.handle));
+    const mine = kept ? lived.filter((l) => (l.ts || '') > kept) : lived;
+    if (!mine.length) continue;
+    const through = mine[mine.length - 1].ts;
+    if (through) keptNow.push(`sheet: ${sh.handle} — through ${through}`);
     sheetBlocks.push(`# THE SHEET INPUT — ${sh.handle}`);
     sheetBlocks.push([
-      `[THE SHEET AS IT STANDS]\n${sheetLines(sh, true)}`,
-      `[THE STORY — what ${sh.name} has done and what has been done to them, oldest first]\n${renderStory({ lines: mine }, placeName)}`,
+      `[THE SHEET AS IT STANDS${kept ? ` — kept through ${kept}, and true up to there` : ''}]\n${sheetLines(sh, true)}`,
+      `[THE STORY — what ${sh.name} has done and what has been done to them${kept ? ' SINCE THE SHEET WAS KEPT' : ''}, oldest first]\n${renderStory({ lines: mine }, placeName)}`,
       `You are keeping ${sh.name}'s sheet.`,
     ].join('\n\n'));
   }
+  const writes = [
+    `room: ${room}`,
+    ...sheets.map((s) => `character: ${s.handle} — ${s.name}`),
+    ...[...places].map(([a, n]) => `place: [${a}] ${n}`),
+    ...keptNow,
+  ].join('\n');
 
   return [
     `# THE CALL — the keeper's admin at pool:${room}, ${origin} (hard)`, call,
     '# THE INPUT', input,
     '# THE WRITES', writes,
-    '# THE SHEET CALL', sheetCall,
-    ...sheetBlocks,
+    ...(sheetBlocks.length ? ['# THE SHEET CALL', sheetCall, ...sheetBlocks] : []),
   ].join('\n\n');
 }
 
@@ -760,13 +855,8 @@ export async function composeSoft(origin: string, room: string, handle: string, 
   }
   const entries = account ? collectContributions(account, 0).contributions.filter((c) => c.text && c.text.trim()) : [];
   // The newest telling OF THIS ROOM names the slot it covers (pool:<room>:<slot>).
-  let coveredSlot = 0;
-  let lastTelling = '';
-  for (const e of entries) {
-    const m = typeof e.address === 'string' ? e.address.match(/^pool:(.+):(\d+)$/) : null;
-    if (m && m[1] === room) { coveredSlot = Math.max(coveredSlot, parseInt(m[2], 10)); }
-  }
-  if (entries.length) lastTelling = entries[entries.length - 1].text;
+  let coveredSlot = coveredThrough(account, room);
+  const lastTelling = entries.length ? entries[entries.length - 1].text : '';
   const summary = account ? foldContributions(account, 0).closed.map((c) => c.summary).filter(Boolean).pop() ?? '' : '';
 
   const pool = blockOf(await loadBlock(origin, `pool:${room}`));

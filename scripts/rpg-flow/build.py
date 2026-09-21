@@ -80,14 +80,14 @@ def law_bundle(win, body):
             kids.append(span(win, 'grit:root', 'the engine in one paragraph, and how its delivery and further reads work', txt, 'P', '2.1'))
         else:
             deep = txt.count('\n') > 1
-            kids.append(span(win, f'grit:{addr}:{"subtree" if deep else "line"}', ('branch ' + addr + ' with EVERY descendant, worked cases included') if deep else ('the ancestor line of ' + addr), txt, 'B', '1.4'))
+            kids.append(span(win, f'grit:{addr}:{"ring" if deep else "line"}', ('branch ' + addr + ' and one ring beneath it — each child by its own line') if deep else ('the ancestor line of ' + addr), txt, 'B', '1.4'))
     return kids
 
 def whole_bundle(win, name, body, stratum, rung, what):
     kids = []
     for addr, txt in col0_chunks(body):
         ref = f'{name}:root' if addr == '' else f'{name}:{addr}:branch'
-        kids.append(span(win, ref, (what + ' — its root') if addr == '' else (what + f' — branch {addr}, whole'), txt, stratum, rung))
+        kids.append(span(win, ref, (what + ' — its root') if addr == '' else (what + f' — branch {addr}'), txt, stratum, rung))
     # a side's part holds nine children at most: fold the smallest together
     while len(kids) > 9:
         kids.sort(key=lambda k: k['chars']); a, b = kids[0], kids[1]
@@ -123,13 +123,13 @@ for c in m[1:]:
 open_kids = []
 for c in re.split(r'(?m)^(?=\[\d+ )', openspan)[1:]:
     n = re.match(r'\[(\d+)', c).group(1)
-    open_kids.append(span(W, f'witnessed:Ugarth:telling{n}', 'one telling of the open span, whole', c, 'C', '3.2'))
+    open_kids.append(span(W, f'witnessed:Ugarth:telling{n}', 'one telling of the open span — by its opening line where the room above carries the newest whole', c, 'C', '3.2'))
 totals[W]['P'] += len(re.split(r'(?m)^(?=\[\d+ )', openspan)[0])
 beats = find(s, '# Contributions since')
 beat_kids = []
 for c in re.split(r'(?m)^(?=## slot )', beats)[1:]:
     n = re.match(r'## slot (\d+)', c).group(1)
-    beat_kids.append(span(W, f'pool:120:beat{n}', 'one public beat of the room, whole', c, 'C', '5.3'))
+    beat_kids.append(span(W, f'pool:120:beat{n}', 'one public beat of the room the account has not yet told, whole', c, 'C', '5.3'))
 totals[W]['P'] += len(re.split(r'(?m)^(?=## slot )', beats)[0])
 sys_parts = [
     span(W, 'play:header', 'who you are, where you stand, PIN THIS BEACH, how to address every further call', find(s, '# You are now playing') + find(s, '═══════════ THE ROOM'), 'P', '2.1'),
@@ -139,9 +139,9 @@ sys_parts = [
 msg_parts = [
     span(W, 'spatial:brackenfoot:120:walk', 'the place walked to its address through the placing star-ref — root line, each ancestor, the room, one ring below', find(s, '# The place'), 'C', '4.2'),
     span(W, 'spatial:brackenfoot:120:ways', 'where this place leads, each with its address', find(s, '# The ways'), 'C', '4.2'),
-    span(W, 'witnessed:Ugarth:tail3', 'the last three tellings — ALSO delivered again inside the open span below', find(s, '# Your account'), 'C', '3.2'),
+    span(W, 'witnessed:Ugarth:tail3', 'the last three tellings, whole — delivered here and nowhere else', find(s, '# Your account'), 'C', '3.2'),
     [span(W, 'knows:Ugarth:room', 'what the character arrived knowing — in the room section', find(s, '# You know'), 'C', '3.2'),
-     span(W, 'knows:Ugarth:own', 'the same block AGAIN, as JSON, in own context', find(s, '── knows:Ugarth ──'), 'C', '3.2')],
+     span(W, 'knows:Ugarth:own', 'the same block again in own context (only where it holds more than the room\'s one ring showed)', find(s, '── knows:Ugarth ──'), 'C', '3.2')],
     [span(W, 'liquid:pool:120:window', 'the staged intentions standing now (none)', find(s, '# Liquid'), 'C', '5.3'),
      span(W, 'pool:100:background', 'the coarser life around the room — the village rung', find(s, '# Background'), 'C', '4.5')],
     beat_kids,
@@ -158,10 +158,12 @@ sys_parts = [
     span(W, 'play:marker', 'the read-cursor', find(s, '# Marker'), 'P', '2.1'),
 ]
 msg_parts = [
-    span(W, 'spatial:brackenfoot:120:walk', 'the place, again whole', find(s, '# The place'), 'C', '4.2'),
-    span(W, 'spatial:brackenfoot:120:ways', 'the ways, again whole', find(s, '# The ways'), 'C', '4.2'),
-    span(W, 'witnessed:Ugarth:tail3', 'the last three tellings, again', find(s, '# Your account'), 'C', '3.2'),
-    span(W, 'knows:Ugarth:room', 'what the character knows', find(s, '# You know'), 'C', '3.2'),
+    span(W, 'spatial:brackenfoot:120:walk', 'the place, again — it rides every engage while the mirror draws its situation from each envelope', find(s, '# The place'), 'C', '4.2'),
+    span(W, 'spatial:brackenfoot:120:ways', 'the ways, again — the same', find(s, '# The ways'), 'C', '4.2'),
+    (span(W, 'witnessed:Ugarth:pointer', 'the account and the stash NAMED, not re-sent — a seat mid-session holds them', find(s, '# Your account'), 'P', '2.1')
+     if find(s, '# Your account').startswith('# Your account and what you know')
+     else span(W, 'witnessed:Ugarth:tail3', 'the last three tellings, sent again', find(s, '# Your account'), 'C', '3.2')),
+    span(W, 'knows:Ugarth:room', 'what the character knows (an arrival only)', find(s, '# You know'), 'C', '3.2'),
     [span(W, 'liquid:pool:120:window', 'the staged intentions', find(s, '# Liquid'), 'C', '5.3'),
      span(W, 'pool:100:background', 'the coarser life around', find(s, '# Background'), 'C', '4.5')],
     span(W, 'pool:120:since', 'what is new since the marker (nothing)', find(s, '# Contributions since'), 'C', '5.3'),
@@ -170,7 +172,7 @@ windows.append(('A TURN', 'pscale_pool_engage with a marker — every say and ev
 
 # 3 ── MAKE IT HAPPEN (medium) ────────────────────────────────────────────────
 s = sections(T['medium']); W = 'medium'
-rules = find(s, '[THE RULES'); cut = rules.find('\n\nRules constraining')
+rules = find(s, '[THE RULES'); cut = rules.find('\n\nRules constraining') if 'NOMAD' in rules else len(rules.split('\n', 1)[0]) + 1
 sys_parts = [
     span(W, 'tier:medium:header', 'the call\'s title line', find(s, '# THE CALL'), 'P', '2.1'),
     law_bundle(W, find(s, '[THE LAW')),
@@ -182,7 +184,7 @@ msg_parts = [
     span(W, 'passport:Ugarth:sheet', 'the actors: name, capability, look, carries', find(s, '[THE ACTORS'), 'C', '1'),
     span(W, 'liquid:pool:120:window', 'THE WINDOW — the staged acts themselves; the whole reason for the call', find(s, '[THE WINDOW'), 'C', '6.1'),
     span(W, 'liquid:pool:120:dice', 'each actor\'s own luck, already rolled', find(s, '[THE DICE'), 'C', '2'),
-    [span(W, 'rules:nomad:whole', 'the resolution system, WHOLE, every call', rules[:cut] if cut > 0 else rules, 'C', '2'),
+    [span(W, 'rules:nomad:whole', 'the dice system — riding only where dice were dealt', rules[:cut] if cut > 0 else rules, 'C', '2'),
      span(W, 'rules:brackenfoot:framing', 'the world\'s rules at their general framing', rules[cut:] if cut > 0 else '', 'C', '2')],
     span(W, 'spatial:brackenfoot:120:ways', 'the ways a WAY line may name', find(s, '[THE WAYS'), 'C', '4.2'),
     span(W, 'tier:medium:claim', 'the claim stamps and the ways, for the door to act on', find(s, '# THE CLAIM'), 'P', '2.1'),
@@ -222,9 +224,9 @@ msg_parts = [
     span(W, 'passport:Ugarth:sheet', 'each sheet as it stands', find(s, '[THE CHARACTERS'), 'C', '1'),
     span(W, 'witnessed:Ugarth:last', 'what the players were last told', find(s, '[WHAT THEIR PLAYERS'), 'C', '3.2'),
     span(W, 'liquid:pool:all:standing', 'the voices the keeper left standing, room by room', find(s, '[THE WORLD NOW'), 'C', '5.3'),
-    whole_bundle(W, 'keeper:brackenfoot', find(s, "[THE KEEPER'S REGISTER"), 'C', '3.3', 'the held register, WHOLE whatever room the moment is in'),
-    whole_bundle(W, 'rules:brackenfoot', find(s, "[THE WORLD'S RULES"), 'C', '2', 'the world\'s rules, WHOLE'),
-    whole_bundle(W, 'identity:brackenfoot', find(s, '[WHO HOLDS THIS PLACE HOW'), 'C', '4.2', 'who holds each place how, WHOLE — every place in the world, not this one'),
+    whole_bundle(W, 'keeper:brackenfoot', find(s, "[THE KEEPER'S REGISTER"), 'C', '3.3', 'the held register, its spine to two rings'),
+    whole_bundle(W, 'rules:brackenfoot', find(s, "[THE WORLD'S RULES"), 'C', '2', 'the world\'s rules, their spine to two rings'),
+    whole_bundle(W, 'identity:brackenfoot', find(s, '[WHO HOLDS THIS PLACE HOW'), 'C', '4.2', 'who holds THIS place how — walked to the room\'s address'),
     span(W, 'tier:hard:writes', 'the rooms and characters the keeper may write', find(s, '# THE WRITES'), 'P', '2.1'),
 ]
 windows.append(('THE KEEPER', 'tier=hard after the resolution — one call per resolved moment, on the fuel of an enrolled doorman in the room', sys_parts, msg_parts,

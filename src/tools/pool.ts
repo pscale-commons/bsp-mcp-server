@@ -408,13 +408,31 @@ export function foldContributions(
  * every moment played: Ugarth's arrival on 2026-09-21 was 55k characters, 36k
  * of it twenty-seven tellings. The summaries are spindle ancestors, paid so that
  * exactly this read is cheap; an older telling is a spindle read away.
+ *
+ * `tailShown` — how many of the newest entries the room above ALREADY carries
+ * whole (composeCurrent's "Your account", the last three). Then nothing rides
+ * twice: those are left where they stand, and the rest of the open span arrives
+ * as a DISC, each entry by its opening line at its own position — the read the
+ * substrate teaches for any grown accumulator. The folded door of 2026-09-21
+ * still carried the open span's nine tellings whole (13k of a 36k arrival),
+ * the last three of them a second time, where the telling itself makes do
+ * with one summary and the last telling. With a tail shown an account that has
+ * not yet folded is delivered the same way, never as its whole JSON.
  */
-export function foldedAccountText(block: Block, name: string): string | null {
+export function foldedAccountText(block: Block, name: string, tailShown = 0): string | null {
   const fold = foldContributions(block, 0);
-  if (!fold.folded) return null;
+  if (!fold.folded && tailShown <= 0) return null;
   const total = fold.closed.reduce((n, c) => n + c.entries, 0) + fold.open.length;
+  const shown = Math.min(Math.max(tailShown, 0), fold.open.length);
+  const earlier = fold.open.slice(0, fold.open.length - shown);
+  const opening = (t: string) => {
+    const line = t.replace(/\s+/g, ' ').trim();
+    return line.length > 150 ? `${line.slice(0, 150).trimEnd()}…` : line;
+  };
   const lines: string[] = [
-    `(your account, folded — ${total} entries: each closed span stands as its summary, the open span is whole; an older telling is a spindle read of ${name}, never a whole-block one)`,
+    shown
+      ? `(your account — ${total} entries: each closed span stands as its summary; the last ${shown} ride whole above, at "Your account"; the open span before them stands by its opening lines — a telling whole is a spindle read of ${name} at its position, never a whole-block one)`
+      : `(your account, folded — ${total} entries: each closed span stands as its summary, the open span is whole; an older telling is a spindle read of ${name}, never a whole-block one)`,
   ];
   for (const c of fold.closed) {
     if (c.summary) {
@@ -425,12 +443,31 @@ export function foldedAccountText(block: Block, name: string): string | null {
       lines.push('no voicing stands at this container, so its span cannot be read here; pay it by writing the container whole (block-conventions:3.5)');
     }
   }
-  lines.push(`# The open span (${fold.open.length})`);
-  for (const c of fold.open) {
+  lines.push(!shown
+    ? `# The open span (${fold.open.length})`
+    : earlier.length
+      ? `# The open span (${fold.open.length}) — its last ${shown} whole above; the ${earlier.length} before them by opening line`
+      : `# The open span (${fold.open.length}) — whole above, at "Your account"`);
+  for (const c of earlier) {
     const located = typeof c.address === 'string' && c.address ? ` · ${c.address}` : '';
-    lines.push(`[${c.position}${located}] ${c.text}`);
+    lines.push(`[${c.position}${located}] ${shown ? opening(c.text) : c.text}`);
   }
   return lines.join('\n');
+}
+
+/** How far an ACCOUNT has told a room: a telling is journaled located
+ *  pool:<room>:<slot> (grit 1.243), so the newest slot named for this room is
+ *  the beat its holder has already been told through. 0 where none is. The
+ *  telling reads it to find the moment; the door reads it so a room's record
+ *  arrives from what has not been told, never from its first slot again. */
+export function coveredThrough(account: Block | null, room: string): number {
+  if (!account) return 0;
+  let covered = 0;
+  for (const e of collectContributions(account, 0).contributions) {
+    const m = typeof e.address === 'string' ? e.address.match(/^pool:(.+):(\d+)$/) : null;
+    if (m && m[1] === room) covered = Math.max(covered, parseInt(m[2], 10));
+  }
+  return covered;
 }
 
 export function collectContributions(
@@ -1049,8 +1086,16 @@ export function renderWays(spatial: Block, hereAddr: string): string | null {
  *  as the fallback), and the co-present cast at
  *  grain. Every part degrades gracefully to absence — an observer with no blocks
  *  still receives the place and the cast; a world with no spatial block yields
- *  cast alone; a non-room pool yields null and the envelope is unchanged. */
-export async function composeCurrent(origin: string, poolName: string, agentId: string): Promise<string | null> {
+ *  cast alone; a non-room pool yields null and the envelope is unchanged.
+ *
+ *  `continuing` — the caller holds a marker, so this is a seat mid-session and
+ *  not an arrival. Its account and what it knows change only by its own journal
+ *  appends, which that session already holds: they are named, not re-sent (the
+ *  same marker-aware delivery the law has had since NHITL round 3). They were
+ *  3.7k of an 8k turn, every say and every look. The place and the ways still
+ *  ride every engage: the mirror draws its situation from each envelope it
+ *  parses, and leans on them until it keeps the last one it was given. */
+export async function composeCurrent(origin: string, poolName: string, agentId: string, continuing = false): Promise<string | null> {
   if (!isLocationAddress(poolName)) return null;
   const parts: string[] = [];
   const index = await beachIndex(origin);
@@ -1184,44 +1229,57 @@ export async function composeCurrent(origin: string, poolName: string, agentId: 
     } catch { /* best-effort: a table with no readable placing composes without a place */ }
   }
 
+  // A seat mid-session is told where its own pages stand, never sent them again.
+  if (continuing) {
+    const mine = [
+      [`history:${agentId}`, `witnessed:${agentId}`].find((n) => index.includes(n)),
+      [`stash:${agentId}`, `knows:${agentId}`].find((n) => index.includes(n)),
+    ].filter(Boolean);
+    if (mine.length) {
+      parts.push(`# Your account and what you know — ${mine.join(', ')}: as your arrival delivered them. Neither changes but by what you journal yourself, so neither rides again; a line you need to hold again is a spindle read at its position, never the block whole.`);
+    }
+  }
+
   // The journal organ: history:<handle> — the shell-genome convergence (one
   // composition for every handle class) — with witnessed:<handle> as the
   // legacy name characters born before it still carry. Same shape as the
   // keeper:/notes: fallback above; the label names the block actually read.
-  let accountName = `history:${agentId}`;
-  let wrow = await loadBlock(origin, accountName);
-  if (!wrow?.block || typeof wrow.block !== 'object') {
-    accountName = `witnessed:${agentId}`;
-    wrow = await loadBlock(origin, accountName);
-  }
-  if (wrow?.block && typeof wrow.block === 'object') {
-    const all = collectContributions(wrow.block as Block, 0).contributions;
-    const tail = all.slice(-3);
-    if (tail.length) {
-      const head = `# Your account — ${accountName}, last ${tail.length} of ${all.length} (private; journal by APPEND, never a slot write)`;
-      parts.push([head, ...tail.map((c) => `[${c.position}] ${c.text}`)].join('\n'));
+  if (!continuing) {
+    let accountName = `history:${agentId}`;
+    let wrow = await loadBlock(origin, accountName);
+    if (!wrow?.block || typeof wrow.block !== 'object') {
+      accountName = `witnessed:${agentId}`;
+      wrow = await loadBlock(origin, accountName);
     }
-  }
+    if (wrow?.block && typeof wrow.block === 'object') {
+      const all = collectContributions(wrow.block as Block, 0).contributions;
+      const tail = all.slice(-3);
+      if (tail.length) {
+        const head = `# Your account — ${accountName}, last ${tail.length} of ${all.length} (private; journal by APPEND, never a slot write)`;
+        parts.push([head, ...tail.map((c) => `[${c.position}] ${c.text}`)].join('\n'));
+      }
+    }
 
-  // The curated knowledge: stash:<handle>, with knows:<handle> as the legacy name.
-  let knowsName = `stash:${agentId}`;
-  let krow = await loadBlock(origin, knowsName);
-  if (!krow?.block || typeof krow.block !== 'object') {
-    knowsName = `knows:${agentId}`;
-    krow = await loadBlock(origin, knowsName);
-  }
-  if (krow?.block && typeof krow.block === 'object') {
-    const k = krow.block as any;
-    const lines: string[] = [];
-    const u = floorUnderscore(k);
-    if (u) lines.push(u);
-    for (let d = 1; d <= 9; d++) {
-      const v = k[String(d)];
-      if (v === undefined || v === null) continue;
-      const t = typeof v === 'string' ? v : floorUnderscore(v as Block);
-      if (t) lines.push(`(${d}) ${t}`);
+    // The curated knowledge: stash:<handle>, with knows:<handle> as the legacy name.
+    let knowsName = `stash:${agentId}`;
+    let krow = await loadBlock(origin, knowsName);
+    if (!krow?.block || typeof krow.block !== 'object') {
+      knowsName = `knows:${agentId}`;
+      krow = await loadBlock(origin, knowsName);
     }
-    if (lines.length) parts.push(`# You know — ${knowsName}\n${lines.join('\n')}`);
+    if (krow?.block && typeof krow.block === 'object') {
+      const k = krow.block as any;
+      const lines: string[] = [];
+      const u = floorUnderscore(k);
+      if (u) lines.push(u);
+      for (let d = 1; d <= 9; d++) {
+        const v = k[String(d)];
+        if (v === undefined || v === null) continue;
+        const t = typeof v === 'string' ? v : floorUnderscore(v as Block);
+        if (t) lines.push(`(${d}) ${t}`);
+      }
+      if (lines.length) parts.push(`# You know — ${knowsName}\n${lines.join('\n')}`);
+    }
   }
 
   const cast = await castAtWorld(origin, agentId);
@@ -1620,7 +1678,7 @@ export const poolEngageParamsSchema = {
   tier: z
     .enum(['soft', 'medium', 'hard'])
     .optional()
-    .describe("THE CALL FOR A TIER OF PLAY, composed from the blocks so every door runs the same one (grit 2 and 3). A room of a table only, and read-only: nothing is staged or committed. 'medium' — MAKE IT HAPPEN: the law, the contract and the bundle for the resolution of the window standing now (the place's faces, the story so far wherever it happened, the actors' sheets, the window with the world's own voices, the dice, the rules, the ways), plus the claim stamps and the ways a WAY line may name. 'hard' — THE KEEPER'S ADMIN after a resolution: the held registers whole, the place's hidden directories, the characters' sheets and tellings, and the contract for the world's next intentions and the sheets (JSON out). 'soft' — THE TELLING for agent_id: where they stand, what they know and carry, their story so far and the moment not yet told, plus where to journal it. Run THE CALL as the system text and THE INPUT as the message, on your own key; act on the third section."),
+    .describe("THE CALL FOR A TIER OF PLAY, composed from the blocks so every door runs the same one (grit 2 and 3). A room of a table only, and read-only: nothing is staged or committed. 'medium' — MAKE IT HAPPEN: the law, the contract and the bundle for the resolution of the window standing now (the place's faces, the story so far wherever it happened, the actors' sheets, the window with the world's own voices, the dice, the rules, the ways), plus the claim stamps and the ways a WAY line may name. 'hard' — THE KEEPER'S ADMIN after a resolution: the held registers as their spines, the place's hidden directories and who holds it how, the characters' sheets and tellings, and the contract for the world's next intentions and the sheets (lines out, one per act). 'soft' — THE TELLING for agent_id: where they stand, what they know and carry, their story so far and the moment not yet told, plus where to journal it. Run THE CALL as the system text and THE INPUT as the message, on your own key; act on the third section."),
   party: z
     .array(z.string())
     .optional()
@@ -1667,6 +1725,7 @@ export async function handlePoolEngage(
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { agent_id, pool_url, pool_name, contribution, submit, clear, destination, face, secret } = params;
   const sincePosition = params.since_position ?? 0;
+  const arrival = (params as any).arrival === true;
   // The liquid mirror is the DEFAULT channel, for every caller (NHITL round 2,
   // §2c: "the channel that IS the lobby is opt-in" — a seat that never passed
   // with_liquid=true never saw its companion at all). The spool is what was
@@ -2297,7 +2356,10 @@ export async function handlePoolEngage(
   // envelope is unchanged. (2026-07-20; the A/B measured seats spending mid-loop
   // tool calls fetching exactly this set, which the door had compiled at entry.)
   try {
-    const situated = await composeCurrent(pool_url, pool_name, agent_id);
+    // An ARRIVAL (the play door) is never a continuing seat, whatever marker it
+    // carries: the door names the beat its holder's account has told through,
+    // and the holder still arrives needing their pages.
+    const situated = await composeCurrent(pool_url, pool_name, agent_id, sincePosition > 0 && !arrival);
     if (situated) {
       lines.push(situated);
       lines.push('');
@@ -2429,6 +2491,9 @@ export async function handlePoolEngage(
   const atView = params.at !== undefined ? ` at ${params.at} (located view — unlocated entries excluded; keep a marker per view${outsideNote})` : '';
   const foldNote = fold?.folded ? `, folded to ${fold.closed.length} + ${fold.open.length}` : '';
   lines.push(`# Contributions since position ${sincePosition}${atView} (count: ${contributions.length}${foldNote}${more_available ? ', more available' : ''})`);
+  if (arrival && sincePosition > 0) {
+    lines.push(`(your account has told this room through slot ${sincePosition}, so the record rides from what it has not: the beats before stand in your account above, and in pool:${pool_name} at their slots)`);
+  }
   // Verbatim-voices discipline (portal invariant, proposal 2026-07-12 §3): on a
   // plain pool the mediating LLM tends to compress the stream into a summary,
   // which hides what people actually said. Directive pools skip this — their

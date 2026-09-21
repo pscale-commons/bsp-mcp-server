@@ -28,7 +28,7 @@
  */
 import { z } from 'zod';
 import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, DEFAULT_BEACH } from '../db.js';
-import { handlePoolEngage, resolveDirective, collectContributions, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, declareRoomAtBirth, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
+import { handlePoolEngage, resolveDirective, collectContributions, coveredThrough, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, declareRoomAtBirth, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
 // Re-exported so existing importers (smoke-play-split) keep one source of truth.
 export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
@@ -522,9 +522,20 @@ export async function handlePlay(
   }
 
   // 3. Engage the room — the operating directive and the live scene arrive inlined.
+  //    THE RECORD RIDES FROM WHAT HAS NOT BEEN TOLD. A character's account says
+  //    how far it has told this room (each telling is located pool:<room>:<slot>),
+  //    so a holder returning to a room is handed the beats after that — the ones
+  //    before it arrive as they were told, in the account, and never a second
+  //    time as the raw record (8k of Ugarth's arrival, 2026-09-21). A handle whose
+  //    account names no slot here reads the room from its first, folded as ever.
+  let told = 0;
+  for (const organ of ['history', 'witnessed']) {
+    const arow = await loadBlock(resolved, `${organ}:${handle}`);
+    if (arow?.block && typeof arow.block === 'object') { told = coveredThrough(arow.block as any, roomName); break; }
+  }
   let env: string;
   try {
-    env = (await handlePoolEngage({ pool_url: resolved, pool_name: roomName, agent_id: handle, since_position: 0, with_liquid: true, fold: true } as any)).content[0].text;
+    env = (await handlePoolEngage({ pool_url: resolved, pool_name: roomName, agent_id: handle, since_position: told, with_liquid: true, fold: true, arrival: true } as any)).content[0].text;
   } catch (e: any) {
     return { content: [{ type: 'text', text: `Could not engage room "${roomName}" at ${resolved}: ${e?.message ?? String(e)}` }] };
   }
@@ -561,16 +572,28 @@ export async function handlePlay(
   let shellBlock: any = null;
   const present = new Set<string>();
   const legacy: { name: string; json: string }[] = [];
+  // NOTHING RIDES TWICE. At a table's room the envelope above already carries
+  // the account's newest tellings whole ("Your account … last N of M") and what
+  // the handle knows ("You know"): read off the envelope itself, so this holds
+  // for whatever the room composed and for nothing it did not.
+  const tailAbove = env.match(/^# Your account — (\S+), last (\d+) of \d+/m);
+  const knowsAbove = env.match(/^# You know — (\S+)$/m)?.[1] ?? null;
+  // A block the room's one ring already showed whole: no position beneath its branches.
+  const oneRing = (blk: any) => !Object.entries(blk).some(([k, v]) => k !== '_' && v && typeof v === 'object' && Object.keys(v as object).some((d) => d !== '_'));
   for (const b of ['passport', 'witnessed', 'knows', 'shell', 'history', 'stash']) {
     const name = `${b}:${handle}`;
     const row = await loadBlock(resolved, name);
     if (row && row.block && typeof row.block === 'object') {
       present.add(b);
-      // The account is an accumulator, and a grown accumulator is never pulled
-      // whole: once it has folded it arrives as its summaries and its open span.
-      const folded = b === 'witnessed' || b === 'history' ? foldedAccountText(row.block, name) : null;
-      legacy.push({ name, json: folded ?? JSON.stringify(row.block, null, 1) });
       if (b === 'shell') shellBlock = row.block;
+      if (name === knowsAbove && oneRing(row.block)) continue;
+      // The account is an accumulator, and a grown accumulator is never pulled
+      // whole: closed spans arrive as their summaries, and the open span as what
+      // the room has not already shown — whole where nothing was, by opening line
+      // where the newest tellings ride above.
+      const tailShown = tailAbove && tailAbove[1] === name ? parseInt(tailAbove[2], 10) : 0;
+      const folded = b === 'witnessed' || b === 'history' ? foldedAccountText(row.block, name, tailShown) : null;
+      legacy.push({ name, json: folded ?? JSON.stringify(row.block, null, 1) });
     }
   }
   // THE HANDS LAW at this door (#211/#237: a door delivers what the shell
