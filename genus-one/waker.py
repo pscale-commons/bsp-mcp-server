@@ -365,19 +365,19 @@ def dial_address(handle, dial):
 
 
 def set_answer(handle, dial, answer, secret, beach=None):
-    """Position 7 of the holder's own dial — which mind answers. Written only
-    when the holder said so, surgically, so a dial that already stands keeps
-    every other position."""
+    """Which mind answers — a named line BENEATH position 9 of the holder's own
+    dial ('mind sonnet'), where the behaviours it serves stand. Written only when
+    the holder said so, and node 9 goes back whole, so the behaviours' own line
+    and every other named mind survive."""
     if not answer:
         return ""
     block, spindle = dial_address(handle, dial)
-    line = ("%s — the mind that answers here; a nickname (haiku, sonnet, opus) or a model id, "
-            "optionally followed by a token ceiling. Beneath me, an exception for one act: "
-            "'keeper sonnet', 'render haiku', 'commit opus', 'act haiku' — the keeper answers with "
-            "haiku unless named here. Holder-set; mine to change." % answer)
+    line = ("mind %s — the mind that answers for me in every act, unless one is named beside this line "
+            "('keeper sonnet', 'render haiku', 'commit opus', 'act haiku'; the keeper answers with haiku "
+            "unless named). Holder-set; mine to change." % answer)
     try:
-        beach_post(block, {"spindle": (spindle + "7") if spindle else "7",
-                           "content": line, "secret": secret}, beach=beach)
+        beach_post(block, {"spindle": (spindle + "9") if spindle else "9",
+                           "content": nine_with(handle, dial, beach, mind=line), "secret": secret}, beach=beach)
         return ""
     except Exception as e:
         return " Its mind could NOT be set (%s)." % str(e)[:60]
@@ -395,10 +395,35 @@ def set_behaviours(handle, dial, words, secret, beach=None):
             "turn while I am away; 'every' for every beat). Holder-set; mine to change." % words)
     try:
         beach_post(block, {"spindle": (spindle + "9") if spindle else "9",
-                           "content": line, "secret": secret}, beach=beach)
+                           "content": nine_with(handle, dial, beach, says=line), "secret": secret}, beach=beach)
         return ""
     except Exception as e:
         return " Its behaviours could NOT be set (%s)." % str(e)[:60]
+
+
+def nine_with(handle, dial, beach=None, says=None, mind=None):
+    """Position 9 as it should be written back: a write at a node REPLACES it, so
+    the behaviours' line and the named minds beneath it travel together or one of
+    them is lost (a behaviour toggled would have wiped every mind). `says` is the
+    behaviours' own line, `mind` the general mind's; whichever is not given stands
+    as it stood. A 9 with nothing beneath it goes back as the plain line it was."""
+    block, spindle = dial_address(handle, dial)
+    node = None
+    try:
+        node = beach_get(block, beach=beach)
+        for step in (spindle or "") + "9":
+            node = node.get("_" if step == "0" else step) if isinstance(node, dict) else None
+    except Exception:
+        node = None
+    was = node if isinstance(node, dict) else {"_": node if isinstance(node, str) else ""}
+    out = {"_": says if says is not None else was.get("_", "")}
+    kept = [v for k, v in sorted(was.items()) if k != "_" and isinstance(v, str)
+            and not (mind is not None and v.strip().lower().startswith("mind "))]
+    if mind is not None:
+        kept.insert(0, mind)
+    for i, v in enumerate(kept[:9]):
+        out[str(i + 1)] = v
+    return out if len(out) > 1 else out["_"]
 
 
 def set_consent(handle, dial, on, secret, beach=None, cap=2):
@@ -417,10 +442,7 @@ def set_consent(handle, dial, on, secret, beach=None, cap=2):
             "1": line,
             "2": "%d — daily cap: at most this many rung wakes a day; a conservative seed, mine to adjust" % cap,
             "3": "notes to my waking self about who rings and how often — to be authored in my own wake",
-            "7": "the mind that answers here — a nickname (haiku, sonnet, opus) or a model id, "
-                 "optionally followed by a token ceiling; empty falls to the service default. Beneath "
-                 "me, an exception for one act: 'keeper sonnet', 'render haiku', 'commit opus', 'act "
-                 "haiku' — the keeper answers with haiku unless named here"}
+            }
     try:
         standing = beach_get(block, beach=beach)
     except Exception:
@@ -642,8 +664,12 @@ class Dial:
     notes (prose, never machine-parsed); 4 per-ringer cooldown seconds, with
     digit children as named exceptions ("<ringer> <seconds>" — 0 = rings
     free); 5 refractory seconds after any pulse; 6 a pointer to its pulse
-    journal; 7 which mind answers, with named exceptions beneath in 4's own
-    idiom ("<act> <mind> [ceiling]" — keeper, render, commit, act). Absent
+    journal; 7 a genus agent's FLOW SWITCH (not the waker's to read); 8 the span
+    a character's doorman waits; 9 its behaviours, and BENEATH 9 which mind each
+    wears — "<word> <mind> [ceiling]", the word one of mind (every act), keeper,
+    render, commit, act. The mind stood at 7 until 2026-09-21; a dial that still
+    says it there is still heard, but only where 7 IS a mind (David's ruling, the
+    day the flow switch and the mind were found sharing a position). Absent
     positions fall to the service defaults — the dial
     OVERRIDES the service, never the reverse. Absent dial reads as OFF:
     the doorbell only rings by consent."""
@@ -683,19 +709,19 @@ class Dial:
         self.refractory = _leading_int(dial.get("5", ""), REFRACTORY_S)
         self.span = _leading_int(dial.get("8", ""), SPAN_S)
         self.behaviours = dt.parse_behaviours(dial.get("9"))
+        # WHICH MIND, read where it stands: beneath 9 first, then — for a dial
+        # written before the move — at 7, and there only when 7 is a mind at all
+        # (a genus agent keeps its flow switch at 7: 'on — publish my window…'
+        # is not a model called 'on').
         seven = dial.get("7")
-        self.answer = seven if isinstance(seven, str) else (
-            seven.get("_", "") if isinstance(seven, dict) else "")
-        # Named exceptions beneath 7, the idiom position 4 already keeps:
-        # "<act> <mind> [ceiling]" — 'keeper sonnet', 'render haiku 900'.
-        if isinstance(seven, dict):
-            for k, v in seven.items():
-                if k == "_" or not isinstance(v, str):
-                    continue
-                parts = v.strip().replace(",", " ").split()
-                if len(parts) >= 2:
-                    self.minds[parts[0].lower()] = (
-                        parts[1], int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else None)
+        said = seven if isinstance(seven, str) else (seven.get("_", "") if isinstance(seven, dict) else "")
+        if Dial.is_mind(said):
+            self.answer = said
+            self._named(seven)
+        self._named(dial.get("9"))
+        if "mind" in self.minds:
+            mind, ceiling = self.minds.pop("mind")
+            self.answer = "%s %d" % (mind, ceiling) if ceiling else mind
         node4 = dial.get("4")
         if isinstance(node4, dict):
             for k, v in node4.items():
@@ -705,9 +731,37 @@ class Dial:
                 if len(parts) >= 2 and parts[1].isdigit():
                     self.per_ringer[parts[0]] = int(parts[1])
 
-    #: nicknames a holder can write instead of a model id, matching the kernel's
+    #: nicknames a holder can write instead of a model id, matching the kernel's —
+    #: and the three plain words happyseaurchin.com/models offers, which name a
+    #: tier rather than a maker's model.
     MODELS = {"haiku": "claude-haiku-4-5-20251001", "sonnet": "claude-sonnet-5",
-              "opus": "claude-opus-4-8"}
+              "opus": "claude-opus-4-8",
+              "basic": "claude-haiku-4-5-20251001", "medium": "claude-sonnet-5",
+              "advanced": "claude-opus-4-8"}
+
+    @staticmethod
+    def is_mind(text):
+        """Does this line name a mind? Its first word is a nickname, a tier or a
+        model id — or its own prose says it is the mind. Anything else standing
+        at the old position (a switch, a note) is not the waker's to read."""
+        t = str(text or "").strip()
+        first = t.replace(",", " ").split()[0].lower() if t else ""
+        return bool(first) and (first in Dial.MODELS or first.startswith("claude-")
+                                or (" mind " in " %s " % t.lower() and not re.match(r"^(on|off)\b", t.lower())))
+
+    def _named(self, node):
+        """The named lines beneath a position — '<word> <mind> [ceiling]', 4's own
+        idiom: 'keeper sonnet', 'render haiku 900', 'mind basic'. Later reads win,
+        so what stands beneath 9 outranks what a dial still says beneath 7."""
+        if not isinstance(node, dict):
+            return
+        for k, v in node.items():
+            if k == "_" or not isinstance(v, str):
+                continue
+            parts = v.strip().replace(",", " ").split()
+            if len(parts) >= 2:
+                self.minds[parts[0].lower()] = (
+                    parts[1], int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else None)
 
     def answer_with(self, default_model, default_tokens, act=None, general=True):
         """Position 7 — WHICH MIND ANSWERS, and how long it may be. A holder
