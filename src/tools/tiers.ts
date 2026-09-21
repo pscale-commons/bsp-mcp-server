@@ -559,6 +559,24 @@ export const HAPPEN_CONTRACT =
   '\'pool:\', no name — never a guessed digit, and nothing at all when they stay. Asking about a place, or hearing one named, ' +
   'is not going: they stay. The beat itself ends at their going; what waits where they arrive is the next moment\'s, told there.';
 
+/**
+ * A SEAT THAT IS ITS OWN DOOR. A doorman or a mirror splits these sections and
+ * acts in code; an LLM app wearing the law (grit 1, since 2026-09-21: "engage
+ * with tier='soft' … tier='medium'") is the voice AND the hand, and until now
+ * nothing told it what to do with a closing WAY line or where a telling goes.
+ * One plain line closes each acting section. Every door's parser reads its own
+ * keyed lines (resolves_window:, way:, actor:, organ:, location:) and passes
+ * over the rest, so the contract they split on is unchanged.
+ */
+const SEAT_CLAIMS =
+  "a seat that is its own door: commit the beat with pscale_pool_engage(contribution=<the beat>, resolves_window and " +
+  "resolves_seen as above, each left out where it reads none). A closing WAY line is WALKED, never committed: leave it off " +
+  "the beat — that beat is the leaving — then write passport:3 with its address and re-enter by pscale_play (grit 1.5).";
+const SEAT_JOURNALS =
+  "a seat that is its own door: keep the telling by bsp(block=<organ>, append=true, content={_: <the telling>, 1: <the " +
+  "handle>, 2: <location>, 3: <now, ISO>, 4: 'character'}, secret=<the character's key>) — located, so no door tells " +
+  "this beat again.";
+
 export async function composeMedium(origin: string, room: string, agentId: string): Promise<string> {
   const index = await beachIndex(origin);
   const tw = await tableWorld(origin, index);
@@ -627,6 +645,7 @@ export async function composeMedium(origin: string, room: string, agentId: strin
     `resolves_seen: ${seen ?? 'none'}`,
     ...(ways ? ways.split('\n').map((l) => l.match(/^\s*\[([\d.]+)\]\s+(.*)$/)).filter(Boolean).map((m) => `way: [${m![1]}] ${m![2]}`) : []),
     ...actors.map((a) => `actor: ${a.handle} — ${a.name}`),
+    SEAT_CLAIMS,
   ].join('\n');
 
   return [`# THE CALL — make it happen at pool:${room}, ${origin} (medium)`, call, '# THE INPUT', input, '# THE CLAIM', claim].join('\n\n');
@@ -926,6 +945,7 @@ export async function composeSoft(origin: string, room: string, handle: string, 
     `location: pool:${room}:${fresh[fresh.length - 1].slot}`,
     `covers: ${fresh.map((b) => b.slot).join(' ')}`,
     ...(party.length ? [`told for: ${table.join(' ')}`] : []),
+    SEAT_JOURNALS,
   ].join('\n');
 
   return [`# THE CALL — the telling for ${handle} at pool:${room}, ${origin} (soft)`, call, '# THE INPUT', input, '# THE JOURNAL', journal].join('\n\n');

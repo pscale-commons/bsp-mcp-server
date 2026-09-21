@@ -175,6 +175,9 @@ console.log('=== medium — the resolution composes actions and intentions ===')
   check('the claim carries the window\'s stamps', /resolves_window: 2026-09-19T10:06:00\.000Z/.test(claim) && /resolves_seen: 2026-09-19T10:06:30\.000Z/.test(claim));
   check('and the ways a WAY line may name', /way: \[110\] The Road In/.test(claim) || /way: \[100\] The Village/.test(claim));
   check('the actors are named for the beat', /actor: mara — Mara/.test(claim));
+  check('a seat that is its own door is told how to act on the claim — and that a WAY line is walked, never committed',
+    /a seat that is its own door: commit the beat/.test(claim) && /A closing WAY line is WALKED, never committed/.test(claim));
+  check('and no keyed line a door\'s parser reads is disturbed by it', (claim.match(/^resolves_window:/gm) ?? []).length === 1 && (claim.match(/^way: \[/gm) ?? []).length >= 1);
 }
 
 console.log('\n=== hard — the keeper holds what nobody else is given ===');
@@ -222,6 +225,7 @@ console.log('\n=== soft — the telling, and where it lands ===');
   check('her story so far, already told', /the room did not look up/.test(input));
   check('the moment is the beat her account has not covered', /The alewife sets down a cup/.test(input) && !/\[THE MOMENT[^\]]*\][\s\S]*Mara and Dorn arrive/.test(input));
   check('the journal names the organ and the beat', /organ: witnessed:mara/.test(journal) && /location: pool:120:2/.test(journal));
+  check('a seat that is its own door is told how to keep the telling, located', /a seat that is its own door: keep the telling by bsp\(block=<organ>, append=true/.test(journal) && (journal.match(/^location:/gm) ?? []).length === 1);
   const marked = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 1 } as any);
   check("a surface's own marker names the moment, whatever the account covers", /The alewife sets down a cup/.test(marked.content[0].text) && /location: pool:120:2/.test(marked.content[0].text));
   const past = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 2 } as any);
@@ -258,8 +262,18 @@ console.log('\n=== the door and the turn — nothing rides twice ===');
   check('a seat mid-session is told where its pages stand, never sent them again',
     /# Your account and what you know — witnessed:mara, knows:mara/.test(turn) && !/the room did not look up/.test(turn) && !/every road in the valley/.test(turn));
   check('the place and the ways still ride every engage — the mirror draws its situation from them', /# The place — /.test(turn) && /# The ways /.test(turn));
+  check('the rhythm a continuing seat is handed names the composed calls (grit 1)', /RENDER and MAKE IT HAPPEN are COMPOSED for you — engage with tier='soft' to tell, tier='medium' to resolve/.test(turn));
   const first = (await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara' } as any)).content[0].text;
   check('an engage with no marker is an arrival, and carries them', /# Your account — witnessed:mara, last 2 of 2/.test(first) && /# You know — knows:mara/.test(first));
+}
+
+console.log('\n=== the law a seat is delivered points at the composed calls ===');
+{
+  const first = (await handlePoolEngage({ pool_url: TABLE, pool_name: '110', agent_id: 'stranger' } as any)).content[0].text;
+  check('grit 1 tells the seat to engage with tier=soft for its telling', /RENDER the lived moment \(1\.2\): engage with tier='soft', tell the moment as it directs, journal where it says/.test(first));
+  check('and with tier=medium to make it happen, at the player\'s word', /at their word MAKE IT HAPPEN \(1\.4\): engage with tier='medium', write the one beat it asks, commit with its claim/.test(first));
+  check('the loop from before the tiers is gone from the line', !/COMMIT your own half/.test(first) && !/you may STAGE a preview/.test(first));
+  check('and the check it displaced still stands where it lives', /\[1\.6\] A CHECK only when/.test(first) && /wear branch 2/.test(first));
 }
 
 console.log('\n=== a tier engage writes nothing ===');
