@@ -212,6 +212,31 @@ console.log('\n=== hard — the keeper holds what nobody else is given ===');
   const later = await tier('hard', '120', 'dorn');
   check('a character nothing has happened to since is owed no call', !/# THE SHEET INPUT — dorn/.test(later) && /# THE SHEET INPUT — mara/.test(later));
   dornPass['4']._ = keptThen;
+
+  // THE FRAME IS LAID TO BE KEPT (proposal 2026-09-21-what-a-person-pays-for): a
+  // prompt cache is a prefix match, so what does not move rides first — the
+  // table, then the room — and only the moment rides last.
+  const { KEEPER_TABLE_MARK, KEEPER_ROOM_MARK } = await import('../src/tools/tiers.js');
+  const at = (t: string, needle: string | RegExp) => (typeof needle === 'string' ? t.indexOf(needle) : t.search(needle));
+  const tMark = at(input, KEEPER_TABLE_MARK), rMark = at(input, KEEPER_ROOM_MARK);
+  check('two marks say where the table ends and where the room ends, in that order', tMark > 0 && rMark > tMark);
+  check('THE TABLE rides first: the register and the rules stand above the first mark',
+    input.trimStart().startsWith("[THE KEEPER'S REGISTER") && at(input, "[THE WORLD'S RULES") > 0 && at(input, "[THE WORLD'S RULES") < tMark);
+  check('THE ROOM rides next: the place held, and who holds it how, between the marks',
+    at(input, '[THE PLACE, HELD') > tMark && at(input, '[WHO HOLDS THIS PLACE HOW') > at(input, '[THE PLACE, HELD') && at(input, '[WHO HOLDS THIS PLACE HOW') < rMark);
+  check('THE MOMENT rides last: the story, the sheets, the tellings, the standing voices',
+    [/\[THE STORY SO FAR/, /\[THE CHARACTERS/, /\[WHAT THEIR PLAYERS WERE TOLD/, /\[THE WORLD NOW/].every((h) => at(input, h) > rMark));
+  const keptPart = (t: string) => { const i = section(t, 'THE INPUT'); return i.slice(0, i.indexOf(KEEPER_ROOM_MARK) + KEEPER_ROOM_MARK.length); };
+  const tablePart = (t: string) => { const i = section(t, 'THE INPUT'); return i.slice(0, i.indexOf(KEEPER_TABLE_MARK) + KEEPER_TABLE_MARK.length); };
+  const pool120 = beaches[TABLE]['pool:120'] as any;
+  pool120['3'] = { _: 'Dorn drains the cup and sets it down hard.', '1': 'dorn', '3': '2026-09-19T10:09:00.000Z', '5': 'mara,dorn' };
+  const nextBeat = await tier('hard', '120', 'dorn');
+  delete pool120['3'];
+  check('A BEAT LATER NOTHING KEPT HAS MOVED — the law, and the frame down to the room\'s mark, are byte for byte what they were',
+    section(nextBeat, 'THE CALL') === call && keptPart(nextBeat) === keptPart(text) && /Dorn drains the cup/.test(section(nextBeat, 'THE INPUT')));
+  const otherRoom = await tier('hard', '110', 'dorn');
+  check('and in another room of the same table the TABLE\'s part is still byte for byte the same, while the room\'s is its own',
+    section(otherRoom, 'THE CALL') === call && tablePart(otherRoom) === tablePart(text) && keptPart(otherRoom) !== keptPart(text));
 }
 
 console.log('\n=== soft — the telling, and where it lands ===');
