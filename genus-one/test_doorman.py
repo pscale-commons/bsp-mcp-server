@@ -224,6 +224,91 @@ check(sd.startswith("[THE LAW — the account's own, at the address of this act]
 import waker  # noqa: E402
 
 
+# ── one mind per act, the keeper's own, and a frame laid to be kept ──────────
+# (proposal 2026-09-21-what-a-person-pays-for). Read off the REAL dial class,
+# before the enrolment tests below put a stub in its place.
+RealDial = waker.Dial
+_kept = (waker.enrolment, waker.enrolment_beach, waker.beach_get)
+
+
+def dial_of(block):
+    waker.enrolment = lambda h: {"dial": "", "beach": "https://beach.test/w/t"}
+    waker.enrolment_beach = lambda h: "https://beach.test/w/t"
+    waker.beach_get = lambda name, beach=None: block
+    return RealDial("Ugarth")
+
+
+plain = dial_of({"1": "on", "7": "sonnet — the mind that answers here"})
+check(plain.answer_with("svc", 4000) == ("claude-sonnet-5", 4000), "position 7 as a line still names the mind for every act")
+check(plain.answer_with("svc", 4000, act="render") == ("claude-sonnet-5", 4000), "an act the holder did not name keeps 7's own word")
+check(plain.answer_with(waker.KEEPER_MODEL, 1200, act="keeper", general=False) == ("claude-haiku-4-5-20251001", 1200),
+      "THE KEEPER NEVER WEARS THE GENERAL MIND: a dial that says sonnet still gets the cheap keeper")
+named = dial_of({"1": "on", "7": {"_": "sonnet — the mind that answers here", "1": "keeper sonnet — I want the world sharp",
+                                  "2": "render haiku 900", "3": "commit claude-opus-4-8, 3000", "4": "a line of prose only"}})
+check(named.answer_with(waker.KEEPER_MODEL, 1200, act="keeper", general=False) == ("claude-sonnet-5", 1200), "'keeper sonnet' beneath 7 is the holder's word for the keeper, prose after it ignored")
+check(named.answer_with("svc", 4000, act="render") == ("claude-haiku-4-5-20251001", 900), "'render haiku 900' names the telling's mind and its ceiling")
+check(named.answer_with("svc", 4000, act="commit") == ("claude-opus-4-8", 3000), "a model id and a ceiling after a comma read too")
+check(named.answer_with("svc", 4000, act="act") == ("claude-sonnet-5", 4000) and named.answer_with("svc", 4000) == ("claude-sonnet-5", 4000), "an unnamed act, and no act, keep 7's own word")
+check(dial_of({"1": "on"}).answer_with("svc", 4000, act="render") == ("svc", 4000), "a dial with no 7 falls to the service default")
+check(dial_of({"1": "on", "7": {"_": "", "1": "keeper opus 99999"}}).answer_with("x", 1200, act="keeper", general=False) == ("claude-opus-4-8", 8000), "a ceiling is held inside the doorman's bounds")
+
+waker.enrolment, waker.enrolment_beach, waker.beach_get = _kept
+
+FRAME = "[THE KEEPER'S REGISTER]\nthe arc\n\n[THE WORLD'S RULES]\nrules\n\n" + dt.KEEPER_TABLE_MARK + "\n\n[THE PLACE, HELD]\nthe green\n\n" + dt.KEEPER_ROOM_MARK + "\n\n[THE STORY SO FAR]\nbeat"
+table, here, moment = dt.keeper_frame(FRAME)
+check(table.startswith("[THE KEEPER'S REGISTER]") and table.endswith(dt.KEEPER_TABLE_MARK), "the table's part runs to its mark, the mark still standing")
+check(here.startswith("[THE PLACE, HELD]") and here.endswith(dt.KEEPER_ROOM_MARK), "the room's part runs to its mark")
+check(moment == "[THE STORY SO FAR]\nbeat", "and the moment is everything after")
+check("\n\n".join([table, here, moment]) == FRAME, "nothing is lost or reordered: the three parts ARE the frame")
+check(dt.keeper_frame("[THE STORY SO FAR]\nbeat") == ("", "", "[THE STORY SO FAR]\nbeat"), "a frame from an older router comes back whole as the moment")
+check(dt.keeper_frame(None) == ("", "", ""), "and no frame is no parts")
+_tiers = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "tools", "tiers.ts"), encoding="utf-8").read()
+check(("KEEPER_TABLE_MARK = '%s'" % dt.KEEPER_TABLE_MARK) in _tiers and ("KEEPER_ROOM_MARK = '%s'" % dt.KEEPER_ROOM_MARK) in _tiers,
+      "the two marks are the router's own words, letter for letter (src/tools/tiers.ts)")
+
+STANDING = ["the soldier at the fence rail", "the second soldier", "the day"]
+check(dt.standing_label("soldier at fence", STANDING) == "the soldier at the fence rail", "a drifted label takes the standing voice's label, letter for letter")
+check(dt.standing_label("second soldier", STANDING) == "the second soldier" and dt.standing_label("The Day", STANDING) == "the day", "articles and case aside")
+check(dt.standing_label("the soldier", STANDING) == "the soldier", "a label that fits two standing voices stands as written — never a guess")
+check(dt.standing_label("the alewife", STANDING) == "the alewife" and dt.standing_label("the day", STANDING) == "the day" and dt.standing_label("x", []) == "x", "a new person, an exact label, an empty window: as written")
+kl = dt.keeper_lines("Here is what the world does:\n**WORLD · the day · 100 · the cloud comes down.**\n- WORLD the alewife · 120 · wipes the trestle\n> DROP: the boy · 120\nThe first soldier reaches him and takes his arm, and the second one laughs.", places={"100": 1, "120": 1}, room="100")
+check([v["who"] for v in kl["world"]] == ["the day", "the alewife"] and kl["world"][0]["intends"] == "the cloud comes down.", "a line's dressing is forgiven — bold stars, a list dash, a dot after the keyword")
+check(kl["drop"] == [{"who": "the boy", "at": "120"}], "a quoted DROP with a colon reads too")
+check(len(kl["world"]) == 2, "and prose that tells the scene is still a line the world does not do")
+
+check(waker.kept_system("the law", []) == "the law" and waker.kept_system("the law", ["", "  "]) == "the law", "nothing kept: the system text goes as plain text, as it always has")
+ks = waker.kept_system("the law", ["the table", "", "the room"])
+check([b["text"] for b in ks] == ["the law", "the table", "the room"] and "cache_control" not in ks[0], "kept parts stand after the law, each a block of its own; the empty one is passed over")
+check(all(b.get("cache_control") == {"type": "ephemeral", "ttl": "1h"} for b in ks[1:]), "each kept part closes with a cache mark — an hour, because a table's beats come minutes apart")
+_sent = {}
+
+
+class _Reply:
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+    def read(self): return json.dumps({"content": [{"type": "text", "text": "WORLD the day · 100 · rain"}], "usage": {"input_tokens": 5100, "cache_read_input_tokens": 10600, "output_tokens": 180}}).encode()
+
+
+import json  # noqa: E402
+_real_urlopen = waker.urllib.request.urlopen
+waker.urllib.request.urlopen = lambda req, timeout=0: (_sent.update(json.loads(req.data.decode())), _Reply())[1]
+_spent = {}
+_said = waker.model_call("sk-test", "claude-haiku-4-5-20251001", 1200, "the law", "the moment", kept=["the table", "the room"], usage=_spent)
+waker.urllib.request.urlopen = _real_urlopen
+check(_said == "WORLD the day · 100 · rain" and _sent["messages"] == [{"role": "user", "content": "the moment"}], "the moment alone rides as the message")
+check(isinstance(_sent["system"], list) and len(_sent["system"]) == 3 and _sent["model"] == "claude-haiku-4-5-20251001", "the law and the kept frame ride as the system")
+check(_spent.get("cache_read_input_tokens") == 10600 and waker.usage_said(_spent) == "in 5.1k (+10.6k read from the kept frame) · out 0.2k", "what the API counted is said plainly, the kept part named")
+check(waker.usage_said({}) == "in 0.0k · out 0.0k" and waker.usage_said(None) == "", "and nothing counted says nothing")
+check("thinking" not in _sent, "a mind that does not think unasked is sent nothing about thinking")
+waker.urllib.request.urlopen = lambda req, timeout=0: (_sent.update(json.loads(req.data.decode())), _Reply())[1]
+waker.model_call("sk-test", "claude-sonnet-5", 1200, "the law", "the moment", plain=True)
+check(_sent.get("thinking") == {"type": "disabled"}, "a plain call to a mind that thinks unasked says so — it once spent the whole ceiling thinking and wrote nothing")
+_sent.pop("thinking", None)
+waker.model_call("sk-test", "claude-sonnet-5", 4000, "the law", "the moment")
+check("thinking" not in _sent, "and a call that is not plain leaves the mind to think as it will")
+waker.urllib.request.urlopen = _real_urlopen
+
+
 def enrol(body, prior):
     saved, out = {}, {}
     waker._store_load = lambda: {k: dict(v) for k, v in prior.items()}

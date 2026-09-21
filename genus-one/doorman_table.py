@@ -417,6 +417,32 @@ def claim_of(body):
     return {"window": none(window), "seen": none(seen), "ways": ways, "actors": actors}
 
 
+# THE KEEPER'S FRAME, SPLIT WHERE IT STOPS MOVING. The router lays the frame
+# stable-first — the table's register and rules, then the room's held place, then
+# the moment — and says where each ends in two lines of its own (src/tools/
+# tiers.ts KEEPER_TABLE_MARK, KEEPER_ROOM_MARK; the same words here, pinned by
+# test_doorman.py). A prompt cache is a prefix match, so the split is what lets
+# the parts that do not move be paid for once. A frame without the marks — an
+# older router — comes back whole as the moment, and the call runs as it always
+# has.
+KEEPER_TABLE_MARK = "[— above: what holds for the whole table. Below: this room. —]"
+KEEPER_ROOM_MARK = "[— above: what holds for this room. Below: the moment, which changes with every beat. —]"
+
+
+def keeper_frame(frame):
+    """(table, room, moment) — the three parts of the keeper's frame, each with
+    the mark that closes it still standing as its last line, so the mind reads
+    the same words in the same order whether or not anything is cached. Parts
+    that are not there come back empty; an unmarked frame is all moment."""
+    text = frame or ""
+    i = text.find(KEEPER_TABLE_MARK)
+    j = text.find(KEEPER_ROOM_MARK)
+    if i < 0 or j < 0 or j < i:
+        return "", "", text
+    a, b = i + len(KEEPER_TABLE_MARK), j + len(KEEPER_ROOM_MARK)
+    return text[:a].strip(), text[a:b].strip(), text[b:].strip()
+
+
 def writes_of(body):
     """What the keeper's writes may touch: the room, the characters standing
     there, the places a voice or a character may be set at, and — per sheet owed
@@ -443,6 +469,20 @@ def journal_of(body):
 # it is compiled as a frame"). Anything else in the reply is ignored rather than
 # guessed at: a line that does not parse is a line the world does not do.
 
+def standing_label(label, standing):
+    """THE SAME PERSON KEEPS THE SAME LABEL. A window's slot is keyed by its
+    author, so 'soldier at fence' beside a standing 'the soldier at the fence
+    rail' seats a second soldier. A label whose words — articles aside — are all
+    found in exactly ONE standing label is that voice, and takes its label letter
+    for letter; one that fits none, or more than one, stands as written."""
+    words = lambda t: {w for w in re.findall(r"[a-z0-9']+", (t or "").lower()) if w not in ("the", "a", "an")}
+    mine = words(label)
+    if not mine or label in (standing or []):
+        return label
+    fits = [s for s in (standing or []) if mine <= words(s) or words(s) <= mine]
+    return fits[0] if len(fits) == 1 else label
+
+
 def keeper_lines(text, places=None, room=None):
     """{'world': [{'who','at','intends'}], 'drop': [{'who','at'}],
     'where': [{'handle','at'}]} — every address checked against the places the
@@ -451,6 +491,13 @@ def keeper_lines(text, places=None, room=None):
     ok = lambda a: a if (places is None or a in places) else room
     world, drop, where = [], [], []
     for line in (text or "").split("\n"):
+        # A cheaper mind dresses its lines — a list dash, bold stars, a dot straight
+        # after the keyword ('**WORLD · the day · 100 · …**', seen from haiku on
+        # 2026-09-21) — and a whole pass was lost to it. The dressing is forgiven;
+        # the fields are not: a line still needs its keyword, its label and an
+        # address the frame listed, or it is a line the world does not do.
+        line = re.sub(r"^[\s>*_`#-]+", "", line).rstrip().rstrip("*_`").rstrip()
+        line = re.sub(r"^(WORLD|DROP|WHERE)\s*[·:]\s*", r"\1 ", line, flags=re.I)
         # Three fields at most: the intention keeps any dot of its own.
         parts = [p.strip() for p in line.split("·", 2)]
         head = parts[0] if parts else ""

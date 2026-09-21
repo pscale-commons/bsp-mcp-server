@@ -671,6 +671,23 @@ export const KEEPER_CONTRACT =
   "DROP <label> · <room address>   (a voice standing now whose moment has passed)\n" +
   "WHERE <handle> · <room address>";
 
+// ── THE KEEPER'S FRAME IS LAID STABLE-FIRST, so the door can cache it ──────────
+// The keeper's is the largest call at a table, and most of it does not move:
+// the register and the rules hold for the whole table, the place held and who
+// holds it hold for the room, and only the rest is the moment. A prompt cache is
+// a PREFIX match — one volatile byte ahead of a stable block spends it — and the
+// story used to ride first, so nothing could be kept. The frame now runs table,
+// room, moment, and two lines say where each ends: true words to the mind that
+// reads them, and the keyed lines a door splits on (genus-one/doorman_table.py
+// keeper_frame carries the same two, pinned by its test). A door that does not
+// know them sends the frame whole, exactly as before.
+export const KEEPER_CLOSE =
+  'You are setting what the world is about to do — intentions, not outcomes: nothing here happens until the next moment is made. ' +
+  'A voice already standing in THE WORLD NOW keeps the label it stands under, letter for letter — a new label is a new person. ' +
+  'Answer in THE SHAPE alone: plain lines that begin WORLD, DROP or WHERE, and no other word.';
+export const KEEPER_TABLE_MARK = '[— above: what holds for the whole table. Below: this room. —]';
+export const KEEPER_ROOM_MARK = '[— above: what holds for this room. Below: the moment, which changes with every beat. —]';
+
 export const SHEET_CONTRACT =
   "[THIS CALL] You keep this one character's HOLDS, under the law above. The frame gives the sheet as it stands and the " +
   "story of what they have done and what has been done to them — SINCE THE SHEET WAS KEPT where the sheet says it was, " +
@@ -739,15 +756,24 @@ export async function composeHard(origin: string, room: string, agentId: string)
     }
   }
 
+  // TABLE, then ROOM, then THE MOMENT (KEEPER_TABLE_MARK above): nothing that
+  // changes with a beat may stand ahead of a mark, or the cache behind it is spent.
   const input = [
-    `[THE STORY SO FAR — the latest public beats at this table these characters lived, oldest first; the last is the moment just resolved]\n${renderStory(story, placeName)}`,
+    keeper ? `[THE KEEPER'S REGISTER — keeper:${tw.world}, its spine to two rings]\n${wholeText(keeper, REGISTER_RINGS)}` : '',
+    rules ? `[THE WORLD'S RULES — rules:${tw.world}, its spine to two rings]\n${wholeText(rules, REGISTER_RINGS)}` : '',
+    KEEPER_TABLE_MARK,
     `[THE PLACE, HELD — where the characters stand: every face anyone sees, and beneath each (held) the truth you keep]\n${held ?? '(the place did not compose)'}`,
+    heldHow ? `[WHO HOLDS THIS PLACE HOW — identity:${tw.world}, walked to where the characters stand]\n${heldHow}` : '',
+    KEEPER_ROOM_MARK,
+    `[THE STORY SO FAR — the latest public beats at this table these characters lived, oldest first; the last is the moment just resolved]\n${renderStory(story, placeName)}`,
     `[THE CHARACTERS — each sheet as it stands now]\n${sheets.length ? sheets.map((x) => sheetLines(x, true)).join('\n') : '(no character stands here)'}`,
     tellings.length ? `[WHAT THEIR PLAYERS WERE TOLD — the newest telling each holds]\n${tellings.join('\n')}` : '',
     `[THE WORLD NOW — the voices standing in the table's windows, room by room]\n${standing.join('\n') || '(none — the world has set nothing yet)'}`,
-    keeper ? `[THE KEEPER'S REGISTER — keeper:${tw.world}, its spine to two rings]\n${wholeText(keeper, REGISTER_RINGS)}` : '',
-    rules ? `[THE WORLD'S RULES — rules:${tw.world}, its spine to two rings]\n${wholeText(rules, REGISTER_RINGS)}` : '',
-    heldHow ? `[WHO HOLDS THIS PLACE HOW — identity:${tw.world}, walked to where the characters stand]\n${heldHow}` : '',
+    // The frame closes on the act, as a sheet's does ('You are keeping X's sheet.').
+    // Without it a cheaper mind took the story's last beat as its cue and told
+    // what happens next — the resolution's work, in prose no parser reads
+    // (haiku, 2026-09-21: one pass in two lost).
+    KEEPER_CLOSE,
   ].filter(Boolean).join('\n\n');
 
   const call = [

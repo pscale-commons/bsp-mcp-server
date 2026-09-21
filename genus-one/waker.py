@@ -372,7 +372,9 @@ def set_answer(handle, dial, answer, secret, beach=None):
         return ""
     block, spindle = dial_address(handle, dial)
     line = ("%s — the mind that answers here; a nickname (haiku, sonnet, opus) or a model id, "
-            "optionally followed by a token ceiling. Holder-set; mine to change." % answer)
+            "optionally followed by a token ceiling. Beneath me, an exception for one act: "
+            "'keeper sonnet', 'render haiku', 'commit opus', 'act haiku' — the keeper answers with "
+            "haiku unless named here. Holder-set; mine to change." % answer)
     try:
         beach_post(block, {"spindle": (spindle + "7") if spindle else "7",
                            "content": line, "secret": secret}, beach=beach)
@@ -416,7 +418,9 @@ def set_consent(handle, dial, on, secret, beach=None, cap=2):
             "2": "%d — daily cap: at most this many rung wakes a day; a conservative seed, mine to adjust" % cap,
             "3": "notes to my waking self about who rings and how often — to be authored in my own wake",
             "7": "the mind that answers here — a nickname (haiku, sonnet, opus) or a model id, "
-                 "optionally followed by a token ceiling; empty falls to the service default"}
+                 "optionally followed by a token ceiling; empty falls to the service default. Beneath "
+                 "me, an exception for one act: 'keeper sonnet', 'render haiku', 'commit opus', 'act "
+                 "haiku' — the keeper answers with haiku unless named here"}
     try:
         standing = beach_get(block, beach=beach)
     except Exception:
@@ -638,7 +642,9 @@ class Dial:
     notes (prose, never machine-parsed); 4 per-ringer cooldown seconds, with
     digit children as named exceptions ("<ringer> <seconds>" — 0 = rings
     free); 5 refractory seconds after any pulse; 6 a pointer to its pulse
-    journal. Absent positions fall to the service defaults — the dial
+    journal; 7 which mind answers, with named exceptions beneath in 4's own
+    idiom ("<act> <mind> [ceiling]" — keeper, render, commit, act). Absent
+    positions fall to the service defaults — the dial
     OVERRIDES the service, never the reverse. Absent dial reads as OFF:
     the doorbell only rings by consent."""
 
@@ -647,6 +653,7 @@ class Dial:
         self.cooldown, self.refractory = COOLDOWN_S, REFRACTORY_S
         self.per_ringer = {}
         self.answer = ""
+        self.minds = {}
         # A character's doorman: 8 the span it waits before folding a ripe
         # window; 9 its BEHAVIOURS — act / every / commit / render, the
         # holder's words; absent reads 'commit render', the page player's case.
@@ -679,6 +686,16 @@ class Dial:
         seven = dial.get("7")
         self.answer = seven if isinstance(seven, str) else (
             seven.get("_", "") if isinstance(seven, dict) else "")
+        # Named exceptions beneath 7, the idiom position 4 already keeps:
+        # "<act> <mind> [ceiling]" — 'keeper sonnet', 'render haiku 900'.
+        if isinstance(seven, dict):
+            for k, v in seven.items():
+                if k == "_" or not isinstance(v, str):
+                    continue
+                parts = v.strip().replace(",", " ").split()
+                if len(parts) >= 2:
+                    self.minds[parts[0].lower()] = (
+                        parts[1], int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else None)
         node4 = dial.get("4")
         if isinstance(node4, dict):
             for k, v in node4.items():
@@ -692,14 +709,27 @@ class Dial:
     MODELS = {"haiku": "claude-haiku-4-5-20251001", "sonnet": "claude-sonnet-5",
               "opus": "claude-opus-4-8"}
 
-    def answer_with(self, default_model, default_tokens):
+    def answer_with(self, default_model, default_tokens, act=None, general=True):
         """Position 7 — WHICH MIND ANSWERS, and how long it may be. A holder
         writes a nickname or a model id, optionally followed by a token ceiling:
         'haiku', 'haiku 900', 'claude-sonnet-5 2000'. Absent falls to the
         service default. This is dial-absorbs-policy again: the cost of a wake
         is the holder's business, so the choice that decides it lives in their
         own block beside the cap — a cheap mind can stand open all day where an
-        expensive one answers three times."""
+        expensive one answers three times.
+
+        ONE MIND PER ACT, WHERE THE HOLDER SAYS SO. Beneath 7 a holder may name
+        an exception for one act — 'keeper sonnet', 'render haiku 900', 'commit
+        opus' — and that act answers with it; every other act keeps 7's own
+        word. `general=False` is the keeper's case: an act the holder did not
+        name falls straight to the service default, never to 7's general mind."""
+        named = self.minds.get(str(act or "").lower())
+        if named:
+            mind, ceiling = named
+            return (Dial.MODELS.get(mind.lower(), mind),
+                    max(200, min(ceiling, 8000)) if ceiling else default_tokens)
+        if not general:
+            return default_model, default_tokens
         raw = str(self.answer or "").strip()
         if not raw:
             return default_model, default_tokens
@@ -829,6 +859,17 @@ DOORMAN_ROOM_ENTRIES = 12
 DOORMAN_MAX_TOKENS = int(os.environ.get("WAKER_DOORMAN_MAX_TOKENS", "4000"))
 #: The keeper writes lines, not prose: what the world does next and where it is.
 KEEPER_MAX_TOKENS = int(os.environ.get("WAKER_KEEPER_MAX_TOKENS", "1200"))
+# THE KEEPER WEARS ITS OWN MIND (David, 2026-09-21). Its pass follows EVERY beat
+# and carries the largest frame at a table, so it is the first cost a holder
+# meets and the one they did not choose: it answers with the cheap mind unless
+# the holder's dial names another ('keeper sonnet' beneath position 7) — never
+# with the dial's general mind, which the holder set for their character's voice.
+KEEPER_MODEL = os.environ.get("WAKER_KEEPER_MODEL", "claude-haiku-4-5-20251001")
+# How long the parts of a frame that do not move are kept by the model's prompt
+# cache. A table's beats come minutes apart, not seconds: the five-minute cache
+# would be re-written at most beats, the hour-long one is written once a sitting
+# and read at a tenth of the price after ('5m' for a table that plays fast).
+CACHE_TTL = os.environ.get("WAKER_CACHE_TTL", "1h")
 PARTY_MAX = 8  # the other characters one party's fold may carry — a window holds nine voices
 
 DOORMAN_STANCE = """You are the doorman of a handle on a public federated beach: the
@@ -958,12 +999,51 @@ def orientation_window(handle):
         return "", True
 
 
-def model_call(fuel_key, model, max_tokens, system, message):
+def kept_system(system, kept):
+    """The system text, then each part of the frame that does not move as a
+    block of its own, closed by a cache mark — the prompt cache is a prefix
+    match, so each mark keeps everything above it (the law, the contract, the
+    parts before). Empty parts are passed over; nothing kept is plain text."""
+    parts = [k for k in (kept or []) if k and k.strip()]
+    if not parts:
+        return system
+    mark = {"type": "ephemeral", "ttl": CACHE_TTL} if CACHE_TTL == "1h" else {"type": "ephemeral"}
+    return ([{"type": "text", "text": system}] +
+            [{"type": "text", "text": k, "cache_control": mark} for k in parts[:3]])
+
+
+def usage_said(usage):
+    """What a call cost, in the API's own counts: 'in 5.1k (+10.6k read from the
+    kept frame) · out 0.2k'. '' when the API said nothing."""
+    if not isinstance(usage, dict):
+        return ""
+    k = lambda n: "%.1fk" % ((usage.get(n) or 0) / 1000.0)
+    kept = []
+    if usage.get("cache_read_input_tokens"):
+        kept.append("+%s read from the kept frame" % k("cache_read_input_tokens"))
+    if usage.get("cache_creation_input_tokens"):
+        kept.append("+%s newly kept" % k("cache_creation_input_tokens"))
+    return "in %s%s · out %s" % (k("input_tokens"), " (%s)" % ", ".join(kept) if kept else "", k("output_tokens"))
+
+
+# Minds that think unless told not to. Asked for three short lines under a small
+# ceiling, one of them spent the whole ceiling thinking and wrote nothing — billed,
+# and silent (sonnet-5 at the keeper's 1200, 2026-09-21). A call that wants lines,
+# not deliberation, says so (`plain=True`); a mind that cannot be told is left alone.
+THINKS_UNASKED = ("claude-sonnet-5", "claude-opus-5")
+
+
+def model_call(fuel_key, model, max_tokens, system, message, kept=None, usage=None, plain=False):
     """One model call, the doorman's way: a transient refusal (429, 529, 5xx)
     is retried once after five seconds; every other refusal raises with the
-    API's own reason. Returns the text, '' when the model returned none."""
-    body = json.dumps({"model": model, "max_tokens": max_tokens, "system": system,
-                       "messages": [{"role": "user", "content": message}]}).encode()
+    API's own reason. Returns the text, '' when the model returned none.
+    `kept` is the parts of the frame that do not move between calls (see
+    kept_system); `usage`, a dict, is filled with what the API counted."""
+    ask = {"model": model, "max_tokens": max_tokens, "system": kept_system(system, kept),
+           "messages": [{"role": "user", "content": message}]}
+    if plain and str(model).startswith(THINKS_UNASKED):
+        ask["thinking"] = {"type": "disabled"}
+    body = json.dumps(ask).encode()
 
     def send():
         with urllib.request.urlopen(
@@ -986,6 +1066,8 @@ def model_call(fuel_key, model, max_tokens, system, message):
             except Exception:
                 said = ""
             raise RuntimeError("the call was refused (HTTP %d): %s" % (e.code, (said or "no reason given")[:150]))
+    if isinstance(usage, dict):
+        usage.update(d.get("usage") or {})
     return "".join(c.get("text", "") for c in d.get("content", [])
                    if isinstance(c, dict) and c.get("type") == "text").strip()
 
@@ -1279,8 +1361,7 @@ def keeper_on_bell(cands, payload):
     fuel_key, _funder = pick_fuel(handle, None)
     if not fuel_key:
         return
-    model, _mt = Dial(handle).answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS)
-    keeper_follows(handle, beach, room, slot, fuel_key, keys[handle], model, keys)
+    keeper_follows(handle, beach, room, slot, fuel_key, keys[handle], keys)
 
 
 def ring_character(cands, payload):
@@ -1416,14 +1497,14 @@ def keeper_due(beach, room, slot):
         return True
 
 
-def keeper_in_turn(handle, beach, room, fuel_key, secret, model, keys):
+def keeper_in_turn(handle, beach, room, fuel_key, secret, keys):
     """The keeper's pass, once the pen is free — so it never races the fold it
     follows, and the world it sets is waiting for the next one."""
     if not _pulse_lock.acquire(timeout=KEEPER_WAIT_S):
         log("the keeper's pass at %s stood down — the pen stayed busy %ds" % (room, KEEPER_WAIT_S))
         return
     try:
-        status, note = keeper_pass(handle, beach, room, fuel_key, secret, model, keys)
+        status, note = keeper_pass(handle, beach, room, fuel_key, secret, keys)
     except Exception as e:
         status, note = "failed", str(e)[:160]
     finally:
@@ -1431,14 +1512,14 @@ def keeper_in_turn(handle, beach, room, fuel_key, secret, model, keys):
     log("the keeper at %s: %s — %s" % (room, status, note))
 
 
-def keeper_follows(handle, beach, room, slot, fuel_key, secret, model, keys):
+def keeper_follows(handle, beach, room, slot, fuel_key, secret, keys):
     """Start the keeper's pass for a beat that has just landed, unless another
     door's pass already keeps it. Never blocks the caller: the page hears its
     moment while the world is being set for the next one."""
     if not keeper_due(beach, room, slot):
         return
     threading.Thread(target=keeper_in_turn,
-                     args=(handle, beach, room, fuel_key, secret, model, keys), daemon=True).start()
+                     args=(handle, beach, room, fuel_key, secret, keys), daemon=True).start()
 
 
 RENDER_WAIT_S = 240  # how long a rendering waits for the pen: an instructed fold is well inside it
@@ -1503,8 +1584,10 @@ def act_for(handle, beach, room, ringer, slot, fuel_key, secret, dial, model, ma
         return "failed", "the model returned no beat"
     pool_engage_rpc(beach, room, handle, secret, submit=beat, face="character")
     if "commit" in dial.behaviours:
+        # The fold after the span is the commit, and wears the commit's mind.
+        fold_model, fold_tokens = dial.answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS, act="commit")
         threading.Timer(dial.span, fold_after_span,
-                        args=(handle, beach, room, fuel_key, secret, model, max_tokens)).start()
+                        args=(handle, beach, room, fuel_key, secret, fold_model, fold_tokens)).start()
         return "done", "staged as %s at %s; the fold follows in %ds unless a keyed hand makes it happen first" % (handle, room, dial.span)
     return "done", "staged as %s at %s; another hand makes it happen (commit is off)" % (handle, room)
 
@@ -1583,7 +1666,14 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
     return "failed", "unreachable"
 
 
-def keeper_pass(handle, beach, room, fuel_key, secret, model, keys=None):
+def keeper_mind(handle):
+    """(model, ceiling) for the keeper's pass at this character's table: the
+    dial's own word for it ('keeper sonnet' beneath position 7) or the service's
+    cheap default — never the dial's general mind (KEEPER_MODEL, above)."""
+    return Dial(handle).answer_with(KEEPER_MODEL, KEEPER_MAX_TOKENS, act="keeper", general=False)
+
+
+def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
     """THE KEEPER'S ADMIN (hard, grit 3) — run after a resolution, so the next
     moment is waiting well formed. The router frames what the keeper holds and
     no one else is given: the arc and the ways through it, the minds behind the
@@ -1604,17 +1694,30 @@ def keeper_pass(handle, beach, room, fuel_key, secret, model, keys=None):
         them.
 
     Keys are the characters' own (their enrolments'): a sheet or a move is
-    written only for a character whose key this service holds. Returns a note."""
+    written only for a character whose key this service holds. Returns a note.
+
+    THE MIND IS THE KEEPER'S OWN (keeper_mind) and the frame is laid so most of
+    it is paid for once: the table's register and rules, then the room's held
+    place, stand as kept blocks ahead of the moment (dt.keeper_frame). The note
+    closes with the mind and what the API counted, so the log says what a pass
+    cost."""
     sections, raw = tier_call(beach, room, handle, "hard", secret)
     if "CALL" not in sections:
         return "declined", raw.strip().split("\n")[0][:160] or "the keeper's call would not compose"
     writes = dt.writes_of(sections.get("WRITES", ""))
     keys = dict(keys or {})
-    answer = model_call(fuel_key, model, max(1200, KEEPER_MAX_TOKENS), sections["CALL"], sections["INPUT"])
+    model, ceiling = keeper_mind(handle)
+    table, here, moment = dt.keeper_frame(sections["INPUT"])
+    spent = {}
+    answer = model_call(fuel_key, model, max(1200, ceiling), sections["CALL"], moment,
+                        kept=[table, here], usage=spent, plain=True)
     lines = dt.keeper_lines(answer, places=writes.get("places"), room=writes.get("room") or room)
     notes = []
     for voice in lines["world"]:
         try:
+            # The same person keeps the same label (dt.standing_label): a drifted one
+            # would seat a second copy of a voice already waiting in that window.
+            voice["who"] = dt.standing_label(voice["who"], [sl["author"] for sl in room_slips("pool:%s" % voice["at"], beach)])
             pool_engage_rpc(beach, voice["at"], voice["who"], submit=voice["intends"], face="character")
             notes.append("%s waits at %s" % (voice["who"], voice["at"]))
         except Exception as e:
@@ -1646,7 +1749,7 @@ def keeper_pass(handle, beach, room, fuel_key, secret, model, keys=None):
         if not key or not sections.get("SHEET CALL"):
             continue
         try:
-            sheet = model_call(fuel_key, model, 700, sections["SHEET CALL"], body)
+            sheet = model_call(fuel_key, model, 700, sections["SHEET CALL"], body, plain=True)
             held = dt.holds_lines(sheet)
             if not held:
                 continue
@@ -1658,7 +1761,8 @@ def keeper_pass(handle, beach, room, fuel_key, secret, model, keys=None):
             notes.append("%s's holds kept (%d)" % (who, len(held)))
         except Exception as e:
             notes.append("%s's holds could not be kept (%s)" % (who, str(e)[:60]))
-    return "done", "; ".join(notes) or "the world stands as it was"
+    cost = usage_said(spent)
+    return "done", "%s [%s%s]" % ("; ".join(notes) or "the world stands as it was", model, " · " + cost if cost else "")
 
 
 def arrive_at(movers, beach, to_addr, label, fuel_key, model, max_tokens):
@@ -1828,13 +1932,14 @@ def run_character(handle, beach, room, ringer, slot, fuel_key, funder, secret, d
     notes, status = [], "done"
     try:
         dial = Dial(handle)
-        model, max_tokens = dial.answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS)
         if do_render:
+            model, max_tokens = dial.answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS, act="render")
             st, note = render_for(handle, beach, room, fuel_key, secret, model, max_tokens)
             notes.append("render: %s — %s" % (st, note))
             if st == "failed":
                 status = "failed"
         if do_act:
+            model, max_tokens = dial.answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS, act="act")
             st, note = act_for(handle, beach, room, ringer, slot, fuel_key, secret, dial, model, max_tokens)
             notes.append("act: %s — %s" % (st, note))
             if st == "failed":
@@ -1932,7 +2037,7 @@ def instructed_fold(handle, passphrase, room, party=None):
         return False, "declined", "the doorbell is busy — try again in a moment", report
     started = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     try:
-        model, max_tokens = dial.answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS)
+        model, max_tokens = dial.answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS, act="commit")
         status, note = fold_window(handle, beach, room, fuel_key, passphrase, model, max_tokens, require_own=False,
                                    party=members, report=report)
     except Exception as ex:
@@ -1947,7 +2052,7 @@ def instructed_fold(handle, passphrase, room, party=None):
         for h, k in (members or []):
             keys[h] = k
         where = report.get("to") or room
-        keeper_follows(handle, beach, where, report.get("slot") or "1", fuel_key, passphrase, model, keys)
+        keeper_follows(handle, beach, where, report.get("slot") or "1", fuel_key, passphrase, keys)
     try:
         ensure_daily(handle, beach, passphrase)
         beach_append("daily:%s" % handle, {
