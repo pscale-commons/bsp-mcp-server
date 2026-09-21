@@ -140,6 +140,9 @@ export async function runContract(wire: WireModule, sim: SimHandle): Promise<Con
     check('saveWhole read-back ran (a GET follows the POST)',
       log.some(r => r.method === 'GET' && r.query.block === 'plain'));
     check('saveWhole ok on read-back match', saved.ok === true);
+    check('saveWhole carries born when the beach says the block was minted', saved.born === true);
+    const again = await wire.saveWhole(o, 'plain', content, { secret: 's3', ...FAST });
+    check('saveWhole carries no born on a block that already stood', again.ok === true && !('born' in again));
   }
   const mut = await wire.saveWhole(o, 'mutating', { _: 'what I sent' }, FAST);
   check('saveWhole FAILS LOUDLY when read-back differs (a lost write is never ok)',
@@ -153,6 +156,10 @@ export async function runContract(wire: WireModule, sim: SimHandle): Promise<Con
     check('writeAt passes the spindle verbatim', post?.body?.spindle === '1.21');
     check('writeAt never sends confirm (surgical, not replace)', !('confirm' in (post?.body ?? {})));
   }
+  const minted = await wire.writeAt(o, 'now:a-new-name', '2', 'a first say', FAST);
+  check('writeAt carries born when the beach says the block was minted', minted.ok === true && minted.born === true);
+  const second = await wire.writeAt(o, 'now:a-new-name', '3', 'a second say', FAST);
+  check('writeAt carries no born on the next write', second.ok === true && !('born' in second));
   const refused = await wire.writeAt(o, 'locked', '1', 'x', FAST);
   check('writeAt surfaces a 403 as {ok:false, status:403}', refused.ok === false && refused.status === 403 && String(refused.error).includes('locked'));
 
@@ -173,6 +180,16 @@ export async function runContract(wire: WireModule, sim: SimHandle): Promise<Con
     const post = (await sim.log()).find(r => r.method === 'POST');
     check('node-scoped append carries the spindle', post?.body?.spindle === '2');
   }
+  // The door speaks in its ack, and the wire carries what it says. `owed` was
+  // declared in AppendResult and never returned until 0.2.0 — the router's
+  // "summary owed" line had never once fired.
+  const fresh = await wire.append(o, 'fresh-room', { _: 'first voice' }, FAST);
+  check('append carries born when the beach says the accumulator was minted', fresh.ok === true && fresh.born === true);
+  check('append carries no born otherwise', ap.ok === true && !('born' in ap));
+  const indebted = await wire.append(o, 'indebted-room', { _: 'a voice' }, FAST);
+  check('append carries the summaries the beach says are owed',
+    indebted.ok === true && Array.isArray(indebted.owed) && indebted.owed[0]?.slot === '10' && indebted.owed[0]?.over === '1-9');
+
   const taken = await wire.append(o, 'resolve-taken', { _: 'fold' }, { resolveWindow: 'w1', ...FAST });
   check('resolver 409 already_resolved comes back discriminated, not as an error string',
     taken.ok === false && taken.alreadyResolved === true && taken.resolvedBy === 'rival' && taken.window === 'w1');

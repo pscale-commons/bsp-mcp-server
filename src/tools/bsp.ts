@@ -28,6 +28,7 @@ import {
   bspWrite,
   formatRead,
   formatWrite,
+  formatBorn,
   BspWriteResult,
 } from '../bsp-fn.js';
 import {
@@ -681,6 +682,7 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       // requesting LLM as service-payment, which is exactly the reader of this
       // line. Oldest first, and truncated so a long-neglected block does not
       // bury the acknowledgement it rides on.
+      const bornNote = res.born ? formatBorn(target.block) : '';
       const dues = res.owed ?? [];
       const owed = dues.length
         ? `\n  ⓘ summary owed: ${dues.slice(0, 3).map(d => `${d.slot} over ${d.over}`).join(', ')}`
@@ -689,10 +691,10 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
         : '';
       if (res.address !== undefined) {
         const grew = res.supernested ? `  ⤴ node supernested — the ladder continues within` : '';
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}${stampedNote}]${owed}` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}${stampedNote}]${bornNote}${owed}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${owed}` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}` }] };
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       // The one refusal this change can newly provoke, named rather than left
@@ -933,8 +935,9 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   // saveBlock translates the agent_id internally and forwards to the beach
   // with secret/new_lock in the POST body.
   const blockToSave = writeResult?.block ?? block;
+  let bornNote = '';
   try {
-    await saveBlock(
+    const saved = await saveBlock(
       agent_id,
       blockName,
       blockToSave,
@@ -973,6 +976,7 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
         hasContent: writeResult !== null,
       },
     );
+    if (saved.born) bornNote = formatBorn(target.block);
   } catch (e: any) {
     return { content: [{ type: 'text', text: `Write rejected: ${e?.message ?? String(e)}` }] };
   }
@@ -997,7 +1001,7 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
 
   // Format response.
   if (writeResult) {
-    return { content: [{ type: 'text', text: formatWrite(writeResult) + lockNote }] };
+    return { content: [{ type: 'text', text: formatWrite(writeResult) + bornNote + lockNote }] };
   }
-  return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${lockNote}` }] };
+  return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${bornNote}${lockNote}` }] };
 }
