@@ -806,6 +806,17 @@ export function formatRead(r: BspReadResult): string {
   }
 }
 
+// A write that MINTED its block says so. An open beach lets any hand bring a
+// block into being, so a mistyped name — `now:hapyhedgehog` for
+// `now:happyhedgehog` — mints a permanent stray that every family sweep then
+// lists; and the hand that minted it is the one best placed to notice. The
+// beach says `born` in its ack (proposals/2026-09-21-tidying-and-spam.md); this
+// is that fact, handed to the caller at the moment it happens. Nothing is
+// refused and nothing is asked: a newcomer is, by definition, a new name.
+export function formatBorn(blockName: string): string {
+  return `\n  ⓘ born: "${blockName}" did not exist — this write created it. If the name is a slip for one that already stands, nothing need be wiped: a stray is set aside (moved whole to archive:<name>:<date>) and its holder's own passphrase is enough to do it.`;
+}
+
 export function formatWrite(r: BspWriteResult): string {
   // The honest ack: when the walk resolved somewhere a naive reading of the
   // input would not predict, the landed address rides in the head and the

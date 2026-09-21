@@ -73,6 +73,7 @@
 import { z } from 'zod';
 import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
 import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
+import { formatBorn } from '../bsp-fn.js';
 import { momentToAddress, voiceAddress, TEMPORAL_FLOOR } from '../temporal.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
@@ -302,10 +303,12 @@ export async function handleStreamEngage(params: StreamEngageParams) {
 
   // ── say — the one write act, into the caller's own mirror ──
   let saidAt: string | null = null;
+  let mintedMirror: string | null = null;   // this say brought <field>:<handle> into being
   if (params.say !== undefined && params.say.trim() !== '') {
     const mirrorName = `${field}:${handle}`;
     let mrow = await loadBlock(origin, mirrorName).catch(() => null);
     if (!mrow || typeof mrow.block !== 'object' || mrow.block === null) {
+      mintedMirror = mirrorName;
       const born =
         `MIRROR — ${handle}'s readings on the ${field} field (${spineName}), at the spine's own addresses. ` +
         `Sovereign to its holder; nobody else writes here. Silence at an address is honest absence, not a gap to be filled.`;
@@ -492,7 +495,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
 
   if (saidAt || keptTo) {
     lines.push('');
-    if (saidAt) lines.push(`✓ your reading landed at ${saidAt}`);
+    if (saidAt) lines.push(`✓ your reading landed at ${saidAt}${mintedMirror ? formatBorn(mintedMirror) : ''}`);
     if (keptTo) lines.push(`✓ fold kept at ${keptTo}`);
   }
 

@@ -48,7 +48,7 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Json = any;
 
-export const WIRE_VERSION = '0.1.0';
+export const WIRE_VERSION = '0.2.0';
 
 const DEFAULT_TIMEOUT_MS = 20_000;
 const RETRY_DELAY_MS = 1_500;
@@ -248,8 +248,11 @@ export async function playedTables(origin: string, opts: WireOpts = {}): Promise
 
 /** Whole-block write: {confirm: true} always rides (the beach gates REPLACE
  * behind it), and unless opts-disabled the write is verified by read-back —
- * ok:false on mismatch, because a lost write must fail loudly. */
-export async function saveWhole(origin: string, block: string, content: Json, opts: WriteOpts & { confirm?: boolean } = {}): Promise<{ ok: true } | WireErr> {
+ * ok:false on mismatch, because a lost write must fail loudly.
+ * `born` rides back when the beach says this write found no block there and
+ * made one — the moment a mistyped name mints a stray, said where the caller
+ * can hear it. Absent from a beach that does not stamp births. */
+export async function saveWhole(origin: string, block: string, content: Json, opts: WriteOpts & { confirm?: boolean } = {}): Promise<{ ok: true; born?: boolean } | WireErr> {
   const body: Json = { content, confirm: true };
   if (opts.secret !== undefined) body.secret = opts.secret;
   if (opts.newLock !== undefined) body.new_lock = opts.newLock;
@@ -266,7 +269,7 @@ export async function saveWhole(origin: string, block: string, content: Json, op
         return { ok: false, error: `write to ${block} at ${origin} did not read back identical` };
       }
     }
-    return { ok: true };
+    return r.body?.born === true ? { ok: true, born: true } : { ok: true };
   } catch (e) {
     return errOf(e);
   }
@@ -275,7 +278,7 @@ export async function saveWhole(origin: string, block: string, content: Json, op
 /** Surgical write at a spindle — the substrate's locks arbitrate (403 without
  * the right secret). No read-back: a position's shape is the walker's to
  * verify, not the transport's. */
-export async function writeAt(origin: string, block: string, spindle: string, content: Json, opts: WriteOpts = {}): Promise<{ ok: true; status: number } | WireErr> {
+export async function writeAt(origin: string, block: string, spindle: string, content: Json, opts: WriteOpts = {}): Promise<{ ok: true; status: number; born?: boolean } | WireErr> {
   const body: Json = { spindle, content };
   if (opts.pscaleAttention !== undefined) body.pscale_attention = opts.pscaleAttention;
   if (opts.secret !== undefined) body.secret = opts.secret;
@@ -287,7 +290,7 @@ export async function writeAt(origin: string, block: string, spindle: string, co
       opts.retryDelayMs ?? RETRY_DELAY_MS,
     );
     if (r.status >= 400) return errOf(new HttpError(r.status, r.text));
-    return { ok: true, status: r.status };
+    return r.body?.born === true ? { ok: true, status: r.status, born: true } : { ok: true, status: r.status };
   } catch (e) {
     return errOf(e);
   }
@@ -311,6 +314,9 @@ export interface AppendResult {
    *  Advisory — the beach never refuses an append for a due, since the writer
    *  does not owe it (block-conventions:3.5). Absent from older beaches. */
   owed?: { slot: string; over: string }[];
+  /** This append found no accumulator there and made one. Absent otherwise,
+   *  and from a beach that does not stamp births. */
+  born?: boolean;
   alreadyResolved?: boolean;
   resolvedBy?: string | null;
   window?: string;
@@ -356,6 +362,11 @@ export async function append(
       address: j.address,
       node: j.node,
       cleared: j.cleared ?? null,
+      // Both are the beach speaking in its ack, and both were being dropped
+      // here: `owed` was declared above and never carried, so the router's
+      // "summary owed" line had never once fired.
+      ...(Array.isArray(j.owed) && j.owed.length ? { owed: j.owed } : {}),
+      ...(j.born === true ? { born: true } : {}),
     };
   } catch (e) {
     const w = errOf(e) as WireErr;

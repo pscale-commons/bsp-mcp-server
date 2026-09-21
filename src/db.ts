@@ -57,6 +57,9 @@ export interface BlockRow {
   position_hashes: Record<string, string>;
   created_at: string;
   updated_at: string;
+  /** Set on a SAVE when the beach said this write found no block there and
+   *  made one. Absent on reads, and from a beach that does not stamp births. */
+  born?: boolean;
 }
 
 // ── Write options (federated POST passthrough) ──
@@ -524,12 +527,14 @@ async function saveBlockToBeach(
     newLock: opts.new_lock,
     gray: opts.gray,
   };
+  let born = false;
   if (isWholeBlock) {
     // Whole-block replace, read-back confirmed by the wire — the discipline
     // the seat has carried since wake-1 ("a lost write is a lost wake") now
     // holds at this door too; this path previously fired and trusted.
     const r = await wire.saveWhole(origin, blockName, block, wireOpts);
     if (!r.ok) throw beachRejection('save', r);
+    born = r.born === true;
   } else {
     const cleanedSpindle = userSpindle.replace(/\*$/, '');
     const value = deriveSurgicalValue(block, cleanedSpindle, opts.hasContent === true);
@@ -538,6 +543,7 @@ async function saveBlockToBeach(
       pscaleAttention: opts.pscale_attention ?? null,
     });
     if (!r.ok) throw beachRejection('save', r);
+    born = r.born === true;
   }
   const now = new Date().toISOString();
   return {
@@ -548,6 +554,7 @@ async function saveBlockToBeach(
     position_hashes: {},
     created_at: now,
     updated_at: now,
+    ...(born ? { born: true } : {}),
   };
 }
 
@@ -617,6 +624,8 @@ export async function appendToBeach(
    * marks board reached 82 entries with nine containers unvoiced).
    */
   owed?: { slot: string; over: string }[];
+  /** This append found no accumulator there and made one. */
+  born?: boolean;
   alreadyResolved?: boolean; resolvedBy?: string | null; window?: string;
   /** The fold that landed, returned with a stand-down (best-effort). */
   landed?: { slot?: string; entry?: any } | null;
@@ -649,7 +658,7 @@ export async function appendToBeach(
     return { windowMoved: true, window: r.window, buffer: r.buffer ?? null };
   }
   if (!r.ok) throw beachRejection('append', r);
-  return { slot: r.slot, supernested: r.supernested, floor: r.floor, address: r.address, node: r.node, cleared: r.cleared ?? null, owed: r.owed };
+  return { slot: r.slot, supernested: r.supernested, floor: r.floor, address: r.address, node: r.node, cleared: r.cleared ?? null, owed: r.owed, born: r.born };
 }
 
 /**

@@ -62,10 +62,22 @@ function startSim(): Promise<{ handle: SimHandle; close: () => void }> {
         return send(200, store.get(block));
       }
       if (req.method === 'POST') {
-        if (body?.append === true) return send(200, { slot: block === 'numeric-slot' ? 71 : '71' });
+        // A beach that stamps births says so in its ack, and names the summaries an
+        // accumulator owes — the sim does both for one named block each, so the
+        // battery can prove the wire carries what the door says.
+        if (body?.append === true) return send(200, {
+          slot: block === 'numeric-slot' ? 71 : '71',
+          ...(block === 'fresh-room' ? { born: true } : {}),
+          ...(block === 'indebted-room' ? { owed: [{ slot: '10', over: '1-9' }] } : {}),
+        });
         if (body?.action === 'reach') return send(200, { ok: true, state: 'created', pair_id: block.replace(/^grain:/, '') });
         if (body?.action === 'register') return send(200, { ok: true, position: '12', address: `${block}:12` });
-        if (body?.content !== undefined) { store.set(block, body.content); return send(200, { ok: true }); }
+        if (body?.content !== undefined) {
+          const born = !store.has(block);
+          if (body.spindle === undefined || body.spindle === '') store.set(block, body.content);
+          else if (born) store.set(block, { _: block });
+          return send(200, { ok: true, ...(born ? { born: true } : {}) });
+        }
         return send(200, { ok: true });
       }
       return send(405, { error: 'method' });
