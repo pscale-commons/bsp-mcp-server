@@ -572,6 +572,48 @@ export function isDirectiveRef(underscore: string): boolean {
   return s.length > 0 && !/\s/.test(s) && s.includes(':');
 }
 
+// ── A room declares at birth (proposal 2026-09-21-rooms-declare-at-birth) ──
+// One mirror; a ROOM may switch on a few named behaviours, a beach never can
+// (David, 2026-09-21). A surface gives table behaviour only to a room that SAYS
+// how it runs — convention:<room>, its underscore naming the convention —
+// because a bare law at a pool's underscore cannot tell a table's room from a
+// commons room that happens to mount an operator. Every place-room is founded by
+// purpose (world-genome 6.1 the arrival room, grit 1.57 the mover), so the
+// founding is where the declaration is written: one place, and every mover —
+// mirror, page, doorman, an LLM app — is covered without a line of its own.
+
+/** The underscore a declared play room is born carrying: the convention's name,
+ *  a dash, one sentence — the living form (convention:studio-fen at the apex). */
+export const GRIT_DECLARATION =
+  "grit — this room runs the play loop its pool mounts (pscale:grit): a table room wherever it stands. Born with the room; the digits beneath are this room's own dials (function:parlour 5), none set.";
+
+/** True when a founding purpose is the trunk's play loop — the bare mount
+ *  pscale:grit, with or without an aperture. Narrow on purpose: at a founding the
+ *  mount is the founder's own word, but only this one is certainly the game. A
+ *  lobby's prose, function:audit, a variant school's own law declare nothing here;
+ *  a Designer who mounts their own law declares by hand, as they mount by hand. */
+export function mountsPlayLoop(purpose: string): boolean {
+  return /^pscale:grit(\/\d+)?$/.test(purpose.trim());
+}
+
+/** Write convention:<room> = grit beside a pool just founded on the play loop.
+ *  Never overwrites a declaration that stands (a Designer's, with its dials), and
+ *  is born as open as the room: the caller holds a mover's key, never the table's.
+ *  Returns what happened, for the ack — a founding never fails on its declaration. */
+export async function declareRoomAtBirth(
+  origin: string, poolName: string, purpose: string,
+): Promise<'declared' | 'stands' | 'failed' | null> {
+  if (!mountsPlayLoop(purpose)) return null;
+  const name = `convention:${poolName}`;
+  try {
+    if (await loadBlock(origin, name)) return 'stands';
+    await saveBlock(origin, name, { _: GRIT_DECLARATION } as any, { spindle: '', pscale_attention: null });
+    return 'declared';
+  } catch {
+    return 'failed';
+  }
+}
+
 /**
  * Emit one position and EVERYTHING BENEATH IT, in full, each line carrying its
  * canonical pscale address.
@@ -1595,7 +1637,7 @@ export const poolEngageParamsSchema = {
   purpose: z
     .string()
     .optional()
-    .describe("Optional, CREATION-only. If the pool does NOT yet exist at this beach, providing `purpose` creates it with the right object shape: {_: '<purpose>'}. The tool constructs the shape internally — caller cannot get it wrong (no way to accidentally author a bare-string pool block). Ignored when the pool already exists (existing purpose is not overwritten). This is the canonical bsp-mcp path to create a pool; do NOT use raw bsp() with content='<purpose>' which produces a malformed string-root block."),
+    .describe("Optional, CREATION-only. If the pool does NOT yet exist at this beach, providing `purpose` creates it with the right object shape: {_: '<purpose>'}. The tool constructs the shape internally — caller cannot get it wrong (no way to accidentally author a bare-string pool block). Ignored when the pool already exists (existing purpose is not overwritten). This is the canonical bsp-mcp path to create a pool; do NOT use raw bsp() with content='<purpose>' which produces a malformed string-root block. A ROOM FOUNDED ON THE PLAY LOOP IS BORN DECLARED: when the purpose is the bare mount 'pscale:grit' (with or without an aperture — 'pscale:grit/1'), the same act writes convention:<pool_name> with underscore 'grit …' beside it, which is what makes the room a table room on every surface; a declaration already standing is never overwritten, and any other purpose — a lobby's prose, another operator — declares nothing."),
 };
 
 export type PoolEngageParams = {
@@ -1686,6 +1728,7 @@ export async function handlePoolEngage(
   // ── Load pool ──
   let row = await loadBlock(pool_url, blockName);
   let created = false;
+  let declared: Awaited<ReturnType<typeof declareRoomAtBirth>> = null;
   // Returning-author check runs against the PRE-CALL state — the commit or
   // stage this very call performs must not count as the prior trace, or a
   // first-touch committer would be judged returning and never see the law.
@@ -1733,6 +1776,8 @@ export async function handlePoolEngage(
         };
       }
       created = true;
+      // A room founded on the play loop is born declared (declareRoomAtBirth).
+      declared = await declareRoomAtBirth(pool_url, pool_name, params.purpose);
     } else {
       return {
         content: [{
@@ -2159,6 +2204,9 @@ export async function handlePoolEngage(
   lines.push('');
   if (created) {
     lines.push('created: pool authored with purpose at _');
+    if (declared === 'declared') lines.push(`declared: convention:${pool_name} = grit — the room says how it runs, so it is a table room on every surface`);
+    else if (declared === 'stands') lines.push(`declared: convention:${pool_name} already stood — left exactly as it is`);
+    else if (declared === 'failed') lines.push(`NOT declared: the room is founded but convention:${pool_name} did not land, and a surface gives table behaviour only to a declared room — write it: bsp(agent_id="${pool_url}", block="convention:${pool_name}", content={"_": "grit"})`);
     lines.push('');
   }
   if (clearedCount !== null) {

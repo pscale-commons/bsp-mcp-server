@@ -21,7 +21,7 @@ import { promises as fs, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { handlePoolEngage, poolEngageParamsSchema } from '../src/tools/pool.js';
+import { handlePoolEngage, poolEngageParamsSchema, GRIT_DECLARATION } from '../src/tools/pool.js';
 import { handlePlay, playParamsSchema } from '../src/tools/play.js';
 import { handleBsp, bspParamsSchema } from '../src/tools/bsp.js';
 import { INSTRUCTIONS } from '../src/server.js';
@@ -136,6 +136,8 @@ async function main() {
   { const r = await post(`rules:${WORLD}`, GENERIC_RULES(), SECRET); console.log(`  engine: rules:${WORLD} ${r.ok ? 'ok (generic, town-agnostic)' : 'FAIL ' + r.status + ' ' + JSON.stringify(r.body).slice(0, 80)}`); }
   // room pool — underscore points at the canonical GRIT loop sentinel (two-tier: GRIT + rules:<world>) + empty liquid
   await post(`pool:${ROOM}`, { _: 'pscale:grit' });
+  // a pool written by hand owes its declaration by hand (world-genome 6.1, 6.3)
+  await post(`convention:${ROOM}`, { _: GRIT_DECLARATION });
   await post(`liquid:pool:${ROOM}`, { _: `Staging for ${ROOM}.` });
   console.log(`  room: pool:${ROOM} (→ pscale:grit · rules:${WORLD} mounted)`);
 
