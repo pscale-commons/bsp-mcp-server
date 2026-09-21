@@ -419,11 +419,13 @@ def claim_of(body):
 
 def writes_of(body):
     """What the keeper's writes may touch: the room, the characters standing
-    there, and the places a voice or a character may be set at."""
+    there, the places a voice or a character may be set at, and — per sheet owed
+    a keeping — how far into the story this keeping reaches."""
     return {
         "room": (re.search(r"^room:\s*(\S+)$", body or "", re.M) or [None, None])[1],
         "characters": [m.group(1) for m in re.finditer(r"^character:\s*(\S+)\s+—", body or "", re.M)],
         "places": [m.group(1) for m in re.finditer(r"^place:\s*\[([\d.]+)\]", body or "", re.M)],
+        "sheets": {m.group(1): m.group(2) for m in re.finditer(r"^sheet:\s*(\S+)\s+—\s+through\s+(\S+)\s*$", body or "", re.M)},
     }
 
 
@@ -479,11 +481,17 @@ def holds_lines(text):
     return out[:9]
 
 
-def holds_node(name, lines):
+def holds_node(name, lines, through=None):
     """Position 4 of a passport: one line per thing, the voicing above them
     (grit 3.1). Nine at most — a tenth would need the ladder to grow, and a
-    character carrying ten things is a sheet asking for a stash."""
-    node = {"_": "HOLDS — what %s carries, each with where it came from and where it is now; consolidated at upkeep (grit 3.1)." % name}
+    character carrying ten things is a sheet asking for a stash.
+
+    `through` is how far into the story this keeping reached (the router names
+    it in THE WRITES). It closes the voicing, so the next keeping is framed with
+    these holds and the beats since — never the whole story again. The same
+    trace a window leaves at its buffer's underscore."""
+    voicing = "HOLDS — what %s carries, each with where it came from and where it is now; consolidated at upkeep (grit 3.1)." % name
+    node = {"_": voicing + (" Kept through %s." % through if through else "")}
     for i, line in enumerate(lines[:9], start=1):
         node[str(i)] = line
     return node

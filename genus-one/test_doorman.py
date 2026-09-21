@@ -289,7 +289,9 @@ check([w["addr"] for w in cl["ways"]] == ["150", "100"] and cl["ways"][0]["label
 check(cl["actors"] == [("garth", "Garth"), ("equinox", "Equinox")], "the actors, handle and name")
 check(dt.claim_of("resolves_window: none\nresolves_seen: none")["window"] is None, "no window standing reads as none, never as the word")
 check(dt.writes_of("room: 130\ncharacter: garth — Garth\nplace: [130] The Long House\nplace: [150] The Store") ==
-      {"room": "130", "characters": ["garth"], "places": ["130", "150"]}, "the keeper's writes name the room, its characters and the places")
+      {"room": "130", "characters": ["garth"], "places": ["130", "150"], "sheets": {}}, "the keeper's writes name the room, its characters and the places")
+check(dt.writes_of("room: 130\ncharacter: garth — Garth\nsheet: garth — through 2026-09-19T15:57:30.000Z")["sheets"] ==
+      {"garth": "2026-09-19T15:57:30.000Z"}, "and, per sheet owed a keeping, how far into the story the keeping reaches")
 check(dt.journal_of("organ: witnessed:Ugarth\nlocation: pool:120:8\ncovers: 7 8") == {"organ": "witnessed:Ugarth", "location": "pool:120:8"}, "a telling knows its organ and the beat it covers")
 check(dt.journal_of("organ: history:new (none stands — genesis founds it)\nlocation: pool:1:1")["organ"] == "history:new", "an organ yet to be founded still names itself")
 
@@ -314,6 +316,8 @@ check(dt.holds_lines("HOLDS a worn blade · his own · at his hip\n- HOLDS reeds
 hn = dt.holds_node("Equinox", ["the crystal · hers · stowed in her cloak", "a satchel · hers · at her hip"])
 check(hn["1"].startswith("the crystal") and hn["2"].startswith("a satchel") and "Equinox" in hn["_"] and "grit 3.1" in hn["_"], "holds land at passport 4, one line per thing, voiced above them")
 check(len(dt.holds_node("X", ["a"] * 12)) == 10, "nine things at most — a tenth is a stash, not a sheet")
+check(dt.holds_node("X", ["a"], "2026-09-19T15:57:30.000Z")["_"].endswith("(grit 3.1). Kept through 2026-09-19T15:57:30.000Z."), "a keeping closes the voicing with how far it reached, so the next is framed with the beats since")
+check("Kept through" not in dt.holds_node("X", ["a"])["_"], "and a router that names no reach leaves the voicing as it was")
 check(dt.name_of({"_": "Equinox — a self-named magic worker"}, "equinox") == "Equinox" and dt.name_of({"_": "no dash"}, "garth") == "garth" and dt.name_of(None, "moss") == "moss", "the name a character goes by, else the handle")
 
 

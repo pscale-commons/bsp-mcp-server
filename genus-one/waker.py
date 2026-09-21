@@ -1587,7 +1587,7 @@ def keeper_pass(handle, beach, room, fuel_key, secret, model, keys=None):
     """THE KEEPER'S ADMIN (hard, grit 3) — run after a resolution, so the next
     moment is waiting well formed. The router frames what the keeper holds and
     no one else is given: the arc and the ways through it, the minds behind the
-    faces, the rules whole, the story as it stands. Two kinds of write come
+    faces, the world's rules, the story as it stands. Two kinds of write come
     back, each in the shape it lands in:
 
       · THE WORLD'S NEXT INTENTIONS — staged into the room's window under the
@@ -1596,7 +1596,9 @@ def keeper_pass(handle, beach, room, fuel_key, secret, model, keys=None):
         ruling, 2026-09-19). The liquid is the world's memory too: what stands
         there is what the world is in the middle of doing.
       · EACH CHARACTER'S HOLDS — one small call per character, framed with that
-        character's own story, written to passport position 4 (grit 3.1). The
+        character's own story since the sheet was last kept (the router names how
+        far this keeping reaches, and the voicing closes with it), written to
+        passport position 4 (grit 3.1). The
         look stays the player's own words; where look and holds disagree about
         where a thing is, the holds are the later truth and the resolution reads
         them.
@@ -1651,7 +1653,8 @@ def keeper_pass(handle, beach, room, fuel_key, secret, model, keys=None):
             passport = beach_get_or_none("passport:%s" % who, beach=beach) or {}
             beach_post("passport:%s" % who,
                        {"block": "passport:%s" % who, "spindle": "4",
-                        "content": dt.holds_node(dt.name_of(passport, who), held), "secret": key}, beach=beach)
+                        "content": dt.holds_node(dt.name_of(passport, who), held, (writes.get("sheets") or {}).get(who)),
+                        "secret": key}, beach=beach)
             notes.append("%s's holds kept (%d)" % (who, len(held)))
         except Exception as e:
             notes.append("%s's holds could not be kept (%s)" % (who, str(e)[:60]))
