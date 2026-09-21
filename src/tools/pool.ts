@@ -2334,7 +2334,14 @@ export async function handlePoolEngage(
     // "hasn't answered" traces to exactly these lines (grit 1.3/1.4/1.8). The
     // stage/commit grammar is David's 2026-07-27 default: the player's own
     // words decide the verb, so seats stop committing every utterance.
-    lines.push('THE RHYTHM (hold these even where the law is compressed): DEFAULT TO STAGE — a first-person intention ("I…") stages; only the imperative deed or an explicit commit commits · COMMIT is the act — yours only, never their answer · CATCH — engage once more before you render; absence only from a read fetched after your beat landed (grit 1.8; the craft: grit 8).');
+    // At a table's room the telling and the resolution are composed beach-side
+    // (grit 1, David's ruling 2026-09-21): the reminder a continuing seat is
+    // handed every engage says so too, or the law compresses back to the loop
+    // from before the tiers. Elsewhere a tier has no meaning and is not named.
+    const composed = isLocationAddress(pool_name)
+      ? " · RENDER and MAKE IT HAPPEN are COMPOSED for you — engage with tier='soft' to tell, tier='medium' to resolve (grit 1)"
+      : '';
+    lines.push(`THE RHYTHM (hold these even where the law is compressed): DEFAULT TO STAGE — a first-person intention ("I…") stages; only the imperative deed or an explicit commit commits${composed} · COMMIT is the act — yours only, never their answer · CATCH — engage once more before you render; absence only from a read fetched after your beat landed (grit 1.8; the craft: grit 8).`);
     lines.push('');
   } else {
     lines.push('# Purpose');

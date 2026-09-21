@@ -288,6 +288,12 @@ check(cl["window"] == "2026-09-19T15:57:00.000Z" and cl["seen"] == "2026-09-19T1
 check([w["addr"] for w in cl["ways"]] == ["150", "100"] and cl["ways"][0]["label"].startswith("The Store"), "the ways a WAY line may name, in the envelope's order")
 check(cl["actors"] == [("garth", "Garth"), ("equinox", "Equinox")], "the actors, handle and name")
 check(dt.claim_of("resolves_window: none\nresolves_seen: none")["window"] is None, "no window standing reads as none, never as the word")
+SEAT = "a seat that is its own door: commit the beat with pscale_pool_engage(contribution=<the beat>, resolves_window and resolves_seen as above, each left out where it reads none). A closing WAY line is WALKED, never committed."
+withseat = dt.claim_of("resolves_window: 2026-09-19T15:57:00.000Z\nresolves_seen: 2026-09-19T15:57:30.000Z\nway: [150] The Store\nactor: garth — Garth\n" + SEAT)
+check(withseat["window"] == "2026-09-19T15:57:00.000Z" and [w["addr"] for w in withseat["ways"]] == ["150"] and withseat["actors"] == [("garth", "Garth")],
+      "the line a seat that is its own door reads is passed over by the doorman's own parser")
+check(dt.journal_of("organ: witnessed:Ugarth\nlocation: pool:120:8\ncovers: 7 8\na seat that is its own door: keep the telling by bsp(block=<organ>, append=true, content={_: <the telling>, 2: <location>})") ==
+      {"organ": "witnessed:Ugarth", "location": "pool:120:8"}, "and so is the journal's")
 check(dt.writes_of("room: 130\ncharacter: garth — Garth\nplace: [130] The Long House\nplace: [150] The Store") ==
       {"room": "130", "characters": ["garth"], "places": ["130", "150"], "sheets": {}}, "the keeper's writes name the room, its characters and the places")
 check(dt.writes_of("room: 130\ncharacter: garth — Garth\nsheet: garth — through 2026-09-19T15:57:30.000Z")["sheets"] ==
