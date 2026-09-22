@@ -37,6 +37,7 @@ import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from 
 import { compile, orderSweep, renderCompletions, renderFramedValue, renderSweptOrders, type Completion, type FetchOrigin } from '../compile.js';
 import { toPNode, pyDumps, type Loader, type PNode, type PMap } from '../genus.js';
 import { SENTINELS } from '../sentinels.js';
+import { clockTable, composeClockDoor } from './clock.js';
 
 /** Loaders for compile() at this door. `load` is beach-scoped: sentinels first
  *  (the completion's shallow points live there), then named blocks at the
@@ -376,6 +377,28 @@ export async function handlePlay(
   //     2026-07-23). Emptiness only; tables and the apex fall through (see helper).
   const unauthored = await unauthoredWorld(resolved, world, handle);
   if (unauthored) return { content: [{ type: 'text', text: unauthored }] };
+
+  // 1a-ter. A TABLE PLAYED ON THE CLOCK (the second track — proposals/2026-09-14-
+  //     rpg-on-the-clock-second-track, rung 2): there is no room to engage and
+  //     no pool to found — a character stands at a BEAT of the table's own
+  //     clock, and the door composes their turn (src/tools/clock.ts): the
+  //     standpoint, the night so far at each rung, what stands at their beat,
+  //     and the acts owed in order. A fresh handle falls through to genesis
+  //     exactly as at any table; the table's own char-creation says what a
+  //     passport's third line carries here (the Beat beside the Location).
+  {
+    const clock = await clockTable(resolved).catch(() => null);
+    if (clock) {
+      const mine = await loadBlock(resolved, `passport:${handle}`).catch(() => null);
+      if (mine?.block && typeof mine.block === 'object') {
+        try {
+          return { content: [{ type: 'text', text: await composeClockDoor(resolved, handle, clock) }] };
+        } catch (e: any) {
+          return { content: [{ type: 'text', text: `The door at ${resolved} could not compose ${handle}'s turn on the clock: ${e?.message ?? String(e)}` }] };
+        }
+      }
+    }
+  }
 
   // 1b. GENESIS-FIRST: a handle with no blocks cannot be handed a room it is
   //     not in. Detect fresh BEFORE room resolution — a multi-room world's

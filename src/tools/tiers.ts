@@ -87,12 +87,15 @@ export interface Composed {
   kind: string;
   room: string;
   origin: string;
+  /** Where the call stands, when it is not a room: a clock table's address
+   *  ('temporal:154'). The flow line prints it in place of pool:<room>. */
+  where?: string;
 }
-const P = (side: 1 | 2, stratum: Stratum, rung: string, ref: string, about: string, text: string): Part =>
+export const P = (side: 1 | 2, stratum: Stratum, rung: string, ref: string, about: string, text: string): Part =>
   ({ side, stratum, rung, ref, about, text });
 /** The window is its parts, joined — exactly as the arrays were joined before:
  *  same strings, same order, same separator, empty sections dropped. */
-const joinParts = (ps: Part[]): string => ps.filter((p) => p.text !== '').map((p) => p.text).join('\n\n');
+export const joinParts = (ps: Part[]): string => ps.filter((p) => p.text !== '').map((p) => p.text).join('\n\n');
 
 /** Where each tier reads the room's law (grit's own addresses — the doors read
  *  these since xstream #318; the router now reads them once for every door). */
@@ -106,7 +109,7 @@ export const SHEET_AT = ['1.46', '3.1'] as const;
 
 const STORY_BEATS = 8;       // the latest public beats the resolution continues from
 const KEEPER_STORY_BEATS = 30;  // the keeper reads further back: a thing stowed yesterday is still stowed
-const REGISTER_RINGS = 2;    // a held register rides as its spine: the root, its branches, their children's own lines
+export const REGISTER_RINGS = 2;    // a held register rides as its spine: the root, its branches, their children's own lines
 const WAY_LINE = /^\s*WAY\b/;
 /** A kept sheet says how far into the story it was kept: the closing words of
  *  the holds' voicing at passport 4, written by the door that kept it — the same
@@ -148,7 +151,7 @@ export async function tableWorld(origin: string, index?: string[]): Promise<Tabl
 
 /** A world register (rules:<world>, keeper:<world>, identity:<world>) — the
  *  table's own copy first, the master's when the table holds none. */
-async function worldBlock(origin: string, tw: TableWorld, name: string, index: string[]): Promise<Block | null> {
+export async function worldBlock(origin: string, tw: TableWorld, name: string, index: string[]): Promise<Block | null> {
   if (index.includes(name)) {
     const own = blockOf(await loadBlock(origin, name));
     if (own) return own;
@@ -156,7 +159,7 @@ async function worldBlock(origin: string, tw: TableWorld, name: string, index: s
   return tw.masterOrigin ? blockOf(await loadBlock(tw.masterOrigin, name)) : null;
 }
 
-function blockOf(row: any): Block | null {
+export function blockOf(row: any): Block | null {
   return row?.block && typeof row.block === 'object' && !Array.isArray(row.block) ? (row.block as Block) : null;
 }
 
@@ -548,7 +551,7 @@ async function roomLaw(origin: string, pool: Block | null): Promise<{ block: Blo
 
 // ── shared gathering ────────────────────────────────────────────────────────
 
-async function passportsAt(origin: string, index: string[]): Promise<Map<string, any>> {
+export async function passportsAt(origin: string, index: string[]): Promise<Map<string, any>> {
   const out = new Map<string, any>();
   for (const pn of index.filter((b) => b.startsWith('passport:'))) {
     const p = blockOf(await loadBlock(origin, pn));
@@ -562,7 +565,7 @@ function sameRoom(addr: string | null, room: string): boolean {
   return addr.replace(/[.,]/g, '').replace(/0+$/, '') === room.replace(/[.,]/g, '').replace(/0+$/, '');
 }
 
-function sheetLines(s: ActorSheet, keeper = false): string {
+export function sheetLines(s: ActorSheet, keeper = false): string {
   return [
     `- ${s.name}${s.name.toLowerCase() !== s.handle.toLowerCase() ? ` (handle ${s.handle})` : ''}`,
     s.capability ? `  capability: ${s.capability}` : '',

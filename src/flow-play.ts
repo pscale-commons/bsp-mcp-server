@@ -183,7 +183,7 @@ const windowTokens = (win: PMap): string => /≈ ([\d,]+) tokens/.exec(String(wi
 
 function callLine(c: Composed, tier: string, win: PMap): string {
   return (
-    `${c.kind.toUpperCase()} — tier=${tier} at pool:${c.room}, ${c.origin} — window ≈ ${windowTokens(win)} tokens — ` +
+    `${c.kind.toUpperCase()} — tier=${tier} at ${c.where ?? `pool:${c.room}`}, ${c.origin} — window ≈ ${windowTokens(win)} tokens — ` +
     `no reply recorded: the router composed this call, and the door runs it on its own key`
   );
 }
@@ -205,7 +205,7 @@ function underscore(handle: string, beach: string, n: number): string {
 
 function provenance(handle: string, at: number): string {
   return (
-    `Written by the pool_engage tier door of bsp-mcp (pscale-commons/bsp-mcp-server, src/flow-play.ts) from the parts src/tools/tiers.ts declares as it composes — never parsed back out of the composed text, so the sizes here are the sizes that were sent. ` +
+    `Written by the tier doors of bsp-mcp (pscale-commons/bsp-mcp-server, src/flow-play.ts) from the parts src/tools/tiers.ts and src/tools/clock.ts declare as they compose — never parsed back out of the composed text, so the sizes here are the sizes that were sent. ` +
     `The door (pscale_play) and an ordinary engage compose elsewhere and do not appear here until those composers declare their parts too. ` +
     `A genus-one wake of the same handle publishes through src/flow.ts instead, at its own beach. ` +
     `Last written ${stamp(at)}.`
