@@ -63,6 +63,14 @@ the residue.
 4.6 0/4, Haiku 0/4, Sonnet 5 0/4 walked him in. Sonnet 4.6 still skipped Ugarth's own
 line in 4/4 (it narrates his act rather than quoting it); the net asks for it again.
 
+**The resolver, since the dial's medium now moves it too**: the resolution at pool:130
+re-run read-only on the live window as it stood (three slips — the sergeant's staged
+intention, Ugarth's aside that had gone to the table, Modor's hello), three runs each.
+Sonnet 4.6 and Sonnet 5 coined no name in any run, paraphrased the staged intentions the
+same way, and wrote beats of the same length (750–860 and 690–770 characters); Sonnet 5
+once closed on a WAY line naming an address the ways do not hold, which the walk already
+refuses ("you stay where you are"). No regression; the setting stands.
+
 ## 3. Built here — where each acts in the flow
 
 **Pre-conscious — the frame (`src/tools/tiers.ts`)**
@@ -124,7 +132,15 @@ line in 4/4 (it narrates his act rather than quoting it); the net asks for it ag
   kept at the beat's next position, read by every later observer: no call per landing, no
   reload wobble. It is the "collective" of the stream track.
 
-## 5. Checked
+## 5. Seeded
+
+`names:scene` at `/w/brackenfoot-open` was founded open (like the liquid) with its first entry
+by hand on 2026-09-22, so the table is consistent from the first call after this merges:
+*Sergeant Vane — the sergeant who came to the Long House door…; the soldiers' word for him*,
+held name at 5 *Sergeant Bole*. Read back; the three frames composed against it: the
+resolution and the telling carry the face and never "Bole"; the keeper carries both.
+
+## 6. Checked
 
 `smoke:tiers` 89 (+13): the close carries the anchor with the name; the names ride the
 telling and the resolution by face and the keeper with the held name; the resolution is
