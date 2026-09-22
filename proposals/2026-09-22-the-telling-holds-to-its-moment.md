@@ -4,8 +4,7 @@
 recommendations seem sound. Process until done"), with the xstream half in
 happyseaurchin/xstream-bsp (the mirror's net, the device note, the dial's medium). Items
 he sent to track B — the ask as a bundle, the collective telling kept beside the beat —
-are named at the end and not built. **Lane**: costs (watch:weft 454; the trace this
-morning, 455).
+are named at the end and not built. **Lane**: costs (watch:weft 454; this lane's own account — the trace and the build together — 455).
 
 ## 1. What happened
 
