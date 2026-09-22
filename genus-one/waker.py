@@ -1609,6 +1609,21 @@ def render_for(handle, beach, room, fuel_key, secret, model, max_tokens):
     text = model_call(fuel_key, model, max_tokens, sections["CALL"], sections["INPUT"])
     if not text:
         return "failed", "the model returned no rendering"
+    # THE NET (dt.telling_faults): a telling that skips a beat's first spoken
+    # line, quotes words the moment does not hold, or names someone it has not
+    # named is asked for once more, the fault named; a second telling that still
+    # invents or coins is not kept — the record itself is, never a fiction.
+    held = ""
+    beats = dt.moment_beats(sections["INPUT"])
+    faults = dt.telling_faults(text, beats, sections["INPUT"] + "\n" + sections["CALL"]) if beats else []
+    if faults:
+        again = model_call(fuel_key, model, max_tokens, sections["CALL"],
+                           sections["INPUT"] + "\n\n" + dt.not_kept(faults))
+        second = dt.telling_faults(again, beats, sections["INPUT"] + "\n" + sections["CALL"]) if again else faults
+        if again and dt.keep_anyway(second):
+            text, held = again, "; told again (%s)" % dt.faults_said(faults)
+        else:
+            text, held = dt.record_as_telling(beats), "; the record stands as the telling (%s)" % dt.faults_said(second or faults)
     slot = where.rsplit(":", 1)[-1]
     kept = dt.newest_account_render([block for _organ, block in account_organs(handle, beach)], room)
     if dt.covers(kept, slot):
@@ -1616,7 +1631,7 @@ def render_for(handle, beach, room, fuel_key, secret, model, max_tokens):
     beach_append(organ, {"_": text, "1": handle, "2": where,
                          "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "4": "character"},
                  secret, beach=beach)
-    note = "rendered into %s (to %s)" % (organ, where)
+    note = "rendered into %s (to %s)%s" % (organ, where, held)
     try:
         paid = pay_summaries(handle, beach, organ.split(":")[0], secret, fuel_key, model, max_tokens)
     except Exception as e:
@@ -1679,6 +1694,16 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
         beat, way, named = dt.way_of(woven, claim["ways"])
         if not beat:
             return "failed", "the moment would not weave"
+        # A NAME NO ONE SAID (dt.coined_names): a beat that names one of the
+        # place's people by a name the frame does not carry is woven once more,
+        # the names named; the second stands unless it coins more than the first.
+        coined = dt.coined_names(beat, sections["INPUT"] + "\n" + sections["CALL"])
+        if coined:
+            again = model_call(fuel_key, model, max(max_tokens, 1600), sections["CALL"],
+                               sections["INPUT"] + "\n\n" + dt.not_kept("names someone the moment has not named: " + ", ".join(coined), "beat"))
+            beat2, way2, named2 = dt.way_of(again, claim["ways"]) if again else ("", None, None)
+            if beat2 and len(dt.coined_names(beat2, sections["INPUT"] + "\n" + sections["CALL"])) <= len(coined):
+                beat, way, named = beat2, way2, named2
         answer = pool_engage_rpc(beach, room, handle, secret, contribution=beat, face="character",
                                  resolves_window=claim["window"], resolves_seen=claim["seen"], with_liquid=False)
         outcome = dt.claim_outcome(answer)
@@ -1767,6 +1792,24 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
                         kept=[table, here], usage=spent, plain=True)
     lines = dt.keeper_lines(answer, places=writes.get("places"), room=writes.get("room") or room)
     notes = []
+    # KNOWN — a name the table has given one of the place's people, kept once
+    # in names:scene (open, like the liquid: the world's memory), read by every
+    # later resolution and telling by face and by the keeper with the held name.
+    for known in dt.known_lines(answer):
+        try:
+            standing = beach_get_or_none("names:scene", beach=beach)
+            if known["name"].lower() in dt.names_standing(standing):
+                continue
+            if standing is None:
+                beach_post("names:scene", {"block": "names:scene", "content": {
+                    "_": "NAMES THIS TABLE USES \u2014 what the table has come to call the place's people, kept by the keeper "
+                         "once a voice coins one (KNOWN), so every later call names them the same way. The table's name and the "
+                         "face it stands for at each entry; the held name at 5, the keeper's alone."}}, beach=beach)
+            beach_append("names:scene", dt.names_entry(known, writes.get("room") or room,
+                                                       time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())), None, beach=beach)
+            notes.append("%s is known as %s" % (known["face"], known["name"]))
+        except Exception as e:
+            notes.append("%s could not be kept as known (%s)" % (known["name"], str(e)[:60]))
     for voice in lines["world"]:
         try:
             # The same person keeps the same label (dt.standing_label): a drifted one

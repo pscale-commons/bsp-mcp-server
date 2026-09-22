@@ -105,6 +105,10 @@ const beaches: Record<string, Record<string, AnyBlock>> = {
       '2': { _: 'You came in out of the wet, and the room did not look up.', '1': 'mara', '2': 'pool:120:1', '3': '2026-09-19T10:01:00.000Z' },
     },
     'knows:mara': { _: 'Reads people well; no weapon worth speaking of.', '1': 'every road in the valley' },
+    'names:scene': {
+      _: 'NAMES THIS TABLE USES — what the table has come to call the place\'s people, kept by the keeper once a voice coins one.',
+      '1': { _: 'Sergeant Vane — the sergeant who came to the alehouse door; the soldiers\' word for him, and nobody corrects it', '1': 'keeper', '2': '120', '3': '2026-09-22T12:00:00.000Z', '4': 'designer', '5': 'held: Sergeant Bole' },
+    },
   },
 };
 
@@ -250,7 +254,7 @@ console.log('\n=== soft — the telling, and where it lands ===');
   check('her story so far, already told', /the room did not look up/.test(input));
   check('the moment is the beat her account has not covered', /The alewife sets down a cup/.test(input) && !/\[THE MOMENT[^\]]*\][\s\S]*Mara and Dorn arrive/.test(input));
   check('the journal names the organ and the beat', /organ: witnessed:mara/.test(journal) && /location: pool:120:2/.test(journal));
-  check('a seat that is its own door is told how to keep the telling, located', /a seat that is its own door: keep the telling by bsp\(block=<organ>, append=true/.test(journal) && (journal.match(/^location:/gm) ?? []).length === 1);
+  check('a seat that is its own door is told to hold the telling to the moment, then keep it, located', /a seat that is its own door: before keeping it, hold the telling to the moment/.test(journal) && /Then keep it by bsp\(block=<organ>, append=true/.test(journal) && (journal.match(/^location:/gm) ?? []).length === 1);
   const marked = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 1 } as any);
   check("a surface's own marker names the moment, whatever the account covers", /The alewife sets down a cup/.test(marked.content[0].text) && /location: pool:120:2/.test(marked.content[0].text));
   const past = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 2 } as any);
@@ -271,6 +275,30 @@ console.log('\n=== soft for a table round one screen — told once, for them all
   check('the journal names the account it lands in and who it was told for', /organ: witnessed:mara/.test(section(text, 'THE JOURNAL')) && /told for: mara dorn/.test(section(text, 'THE JOURNAL')));
   const alone = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 1 } as any);
   check('without a party it is that character\'s own telling, as before', /You are Mara\./.test(section(alone.content[0].text, 'THE INPUT')) && /renders this character's lived moment/.test(section(alone.content[0].text, 'THE CALL')));
+}
+
+console.log('\n=== the telling holds to its moment (2026-09-22) ===');
+{
+  const text = await tier('soft', '120', 'mara');
+  const input = section(text, 'THE INPUT');
+  check('the frame closes on where the moment ends, naming the character', /You are Mara\.\n\[THE MOMENT ENDS HERE\. Nothing after this line has happened\. Mara stands exactly where the last beat leaves them/.test(input) && /no further\.\]\s*$/.test(input.trim()));
+  check('the names the table uses ride the telling, by face — the held name never', /\[NAMES THIS TABLE USES[^\]]*\]\n- Sergeant Vane — the sergeant who came to the alehouse door/.test(input) && !/Bole/.test(text));
+  const medium = await tier('medium', '120', 'mara');
+  check('and the resolution, by face — the held name never', /\[NAMES THIS TABLE USES/.test(section(medium, 'THE INPUT')) && /Sergeant Vane/.test(section(medium, 'THE INPUT')) && !/Bole/.test(medium));
+  check('the resolution is told never to coin a name, and to use the table\'s where one stands', /never a name of your own making/.test(section(medium, 'THE CALL')) && /where \[NAMES THIS TABLE USES\] gives one, use it exactly/.test(section(medium, 'THE CALL')));
+  const hard = await tier('hard', '120', 'mara');
+  check('the keeper reads the held name beside the table\'s', /- Sergeant Vane — the sergeant who came to the alehouse door[^\n]*\(held: Sergeant Bole\)/.test(section(hard, 'THE INPUT')));
+  check('and is told the KNOWN shape — a coined name kept once, for the whole table', /KNOWN <the table's name> · <the face, as anyone present says it> · <the held name, or none> · <how the place explains it>/.test(section(hard, 'THE CALL')) && /never written twice/.test(section(hard, 'THE CALL')));
+  // AN OBSERVER — a handle at the table with no passport here.
+  const watched = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'watcher', tier: 'soft', since_position: 1 } as any);
+  const wt = watched.content[0].text;
+  const wi = section(wt, 'THE INPUT');
+  check('an observer is told under the shared-screen contract: named characters, never you', /NAME EACH CHARACTER/.test(section(wt, 'THE CALL')) && /NEVER say 'you'/.test(section(wt, 'THE CALL')));
+  check('nothing private rides for them — no knows, no carries', /no character here is yours: nothing is known or carried/.test(wi) && !/every road in the valley/.test(wi) && !/stowed in her pack/.test(wi));
+  check('their story so far is the room\'s own record before the moment', /\[THE STORY SO FAR — the room's record before this moment/.test(wi) && /Mara and Dorn arrive/.test(wi));
+  check('the moment is the beats since their own marker', /\[THE MOMENT[^\]]*\]\n- mara: The alewife sets down a cup/.test(wi));
+  check('the frame closes on watching, unseen, and where the moment ends', /You are watching, unseen: no character here is yours/.test(wi) && /\[THE MOMENT ENDS HERE/.test(wi));
+  check('the journal says an observer keeps nothing', /organ: none — an observer keeps no account/.test(section(wt, 'THE JOURNAL')) && /an observer keeps nothing: read it, and let it go\./.test(section(wt, 'THE JOURNAL')) && !/keep the telling by bsp/.test(section(wt, 'THE JOURNAL')));
 }
 
 console.log('\n=== the door and the turn — nothing rides twice ===');

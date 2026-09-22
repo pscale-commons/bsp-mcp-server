@@ -878,3 +878,185 @@ def covers(render, slot):
     return bool(render) and slot_key(render.get("slot")) >= slot_key(slot)
 
 
+
+
+# ── the telling held to its moment ───────────────────────────────────────────
+#
+# A telling given a beat that ended on an open door walked the character
+# through it and told the next beat as done (Ugarth at the Long House,
+# 2026-09-22): the record had him invited in, his account had him inside, met
+# by a line nobody resolved. The frame now closes on where the moment ends
+# (tiers.ts momentEnds); this is the net beneath it, run by the door before a
+# telling is journaled, with no model: a telling that holds contains the
+# moment's own words, quotes nothing the moment does not hold, and names no one
+# the moment has not named. A fault is re-asked once, named; a second fault
+# journals the record itself — the beats' own text — never a fiction.
+
+QUOTE_OPEN = "“\""
+QUOTE_CLOSE = "”\""
+ROLE_WORDS = {"sergeant", "reeve", "master", "mistress", "lord", "lady", "sir", "captain", "father", "mother",
+              "brother", "sister", "old", "young", "the", "a", "an", "and", "but", "then", "you", "he", "she",
+              "they", "it", "his", "her", "their", "your", "not", "no", "yes", "what", "where", "when", "who",
+              "why", "how", "there", "here", "this", "that", "these", "those", "i", "we", "our", "us", "god"}
+
+
+def _held_text(t):
+    t = re.sub(r"[—–-]", " ", (t or "").lower())
+    t = re.sub(r"[“”\"’'‘]", "", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+
+def quoted_spans(text, least=12):
+    """The spoken lines of a text: every span between an opening and a closing
+    quote — curly or straight, straight ones pairing in turn — of at least
+    `least` characters, in order."""
+    out, buf, inside = [], [], False
+    for ch in text or "":
+        if not inside and ch in QUOTE_OPEN:
+            inside, buf = True, []
+        elif inside and ch in QUOTE_CLOSE:
+            span = "".join(buf).strip()
+            if len(span) >= least:
+                out.append(span)
+            inside = False
+        elif inside:
+            buf.append(ch)
+    return out
+
+
+def coined_names(text, known):
+    """Capitalised words that stand mid-sentence in `text` and nowhere in
+    `known` (the frame the voice was given, and the moment): the names a voice
+    made up. A word opening a sentence is left alone — it may be a name or may
+    not, and a coined name recurs mid-sentence soon enough. Roles and the words
+    that open speech are never names."""
+    have = set(re.findall(r"[a-z]+", (known or "").lower()))
+    found = []
+    for m in re.finditer(r"(^|[^\n])\s*([A-Z][a-z]{2,})\b", text or ""):
+        before = m.group(1)
+        if before == "" or before in ".!?\n" or before in QUOTE_OPEN:
+            continue
+        w = m.group(2)
+        if w.lower() in ROLE_WORDS or w.lower() in have or w in found:
+            continue
+        found.append(w)
+    return found
+
+
+def moment_beats(frame_input):
+    """The beats of [THE MOMENT] in a telling's frame, each whole — the lines
+    that open '- <who>: ' and whatever runs on beneath them."""
+    m = re.search(r"^\[THE MOMENT[^\]]*\]\n(.*?)(?=^\[|^You are |^# |\Z)", frame_input or "", re.S | re.M)
+    if not m:
+        return []
+    beats, cur = [], None
+    for line in m.group(1).split("\n"):
+        hit = re.match(r"^- [^:\n]{1,60}: (.*)$", line)
+        if hit:
+            if cur is not None:
+                beats.append(cur.strip())
+            cur = hit.group(1)
+        elif cur is not None:
+            cur += "\n" + line
+    if cur is not None:
+        beats.append(cur.strip())
+    return [b for b in beats if b]
+
+
+def telling_faults(telling, beats, known):
+    """What a telling gets wrong against the moment it tells — [(kind, sentence)],
+    empty when it holds. `beats` are the moment's own texts, `known` everything
+    else the voice was given. Three kinds: 'begins-after' — a beat's first spoken
+    line is not in the telling (a beat is told whole and in order, the
+    character's own words first); 'invents' — it quotes words nothing it was
+    given holds; 'coins' — it names someone the moment has not named. The first
+    is the lesser fault; the other two put things in the world that are not
+    there."""
+    faults = []
+    told = _held_text(telling)
+    for b in beats:
+        first = quoted_spans(b)[:1]
+        if first and _held_text(first[0])[:32] not in told:
+            faults.append(("begins-after", "it skips a beat's first spoken line, \u201c%s\u201d" % first[0][:60]))
+            break
+    frame = _held_text(known) + " " + _held_text(" ".join(beats))
+    invented = [q for q in quoted_spans(telling) if _held_text(q)[:32] not in frame]
+    if invented:
+        faults.append(("invents", "it quotes words the moment does not hold: " + "; ".join("\u201c%s\u201d" % q[:60] for q in invented[:3])))
+    names = coined_names(telling, (known or "") + " " + " ".join(beats))
+    if names:
+        faults.append(("coins", "it names someone the moment has not named: " + ", ".join(names)))
+    return faults
+
+
+def faults_said(faults):
+    return "; ".join(f[1] for f in faults)
+
+
+def keep_anyway(faults):
+    """A second telling that only skips a line is kept; one that still invents
+    or coins is not — the record stands in for it."""
+    return all(f[0] == "begins-after" for f in faults)
+
+
+def not_kept(faults, what="telling"):
+    """The line put beneath the frame when a call is asked again: what was
+    wrong, and what to do instead — never the first answer itself."""
+    said = faults if isinstance(faults, str) else faults_said(faults)
+    if what == "beat":
+        return ("[NOT KEPT \u2014 the beat %s. A figure no one has named is called by what anyone sees: the sergeant, "
+                "the factor, the woman at the well. Weave the beat again.]" % said)
+    return ("[YOUR FIRST TELLING WAS NOT KEPT \u2014 %s. Tell the moment as it stands, from its first beat to its last "
+            "line, and no further.]" % said)
+
+
+def record_as_telling(beats):
+    """The record, as the telling of last resort: the beats' own text, whole
+    and in order. Never a fiction."""
+    return "\n\n".join(b.strip() for b in beats if b and b.strip())
+
+
+# ── a name the table has given one of the place's people (KNOWN) ─────────────
+
+def known_lines(text):
+    """The keeper's KNOWN lines: [{'name','face','held','how'}] — the table's
+    name, the face it stands for, the held name (None where the keeper says
+    none) and how the place explains it. Dressing forgiven as keeper_lines
+    forgives it; a line short of its four fields is a line the world does not
+    keep."""
+    out = []
+    for line in (text or "").split("\n"):
+        line = re.sub(r"^[\s>*_`#-]+", "", line).rstrip().rstrip("*_`").rstrip()
+        line = re.sub(r"^KNOWN\s*[·:]\s*", "KNOWN ", line, flags=re.I)
+        if not line.upper().startswith("KNOWN "):
+            continue
+        parts = [p.strip() for p in line[6:].split("·", 3)]
+        if len(parts) < 4 or not parts[0] or not parts[1]:
+            continue
+        held = parts[2] if parts[2] and parts[2].lower() not in ("none", "no one", "nobody", "-", "—") else None
+        out.append({"name": parts[0], "face": parts[1], "held": held, "how": parts[3]})
+    return out
+
+
+def names_entry(known, room, ts):
+    """One entry of names:scene — the table's name and the face at the
+    underscore, the accumulator's four fields, the held name at 5 for the
+    keeper alone (tiers.ts tableNames reads it there)."""
+    entry = {"_": "%s — %s; %s" % (known["name"], known["face"], known["how"]),
+             "1": "keeper", "2": str(room), "3": ts, "4": "designer"}
+    if known.get("held"):
+        entry["5"] = "held: %s" % known["held"]
+    return entry
+
+
+def names_standing(block):
+    """The table's names already kept, lowercased, so a KNOWN is never written twice."""
+    out = set()
+    for k, v in (block or {}).items():
+        if k == "_" or not isinstance(v, (dict, str)):
+            continue
+        line = v.get("_", "") if isinstance(v, dict) else v
+        head = str(line).split("—", 1)[0].strip().lower()
+        if head:
+            out.add(head)
+    return out
