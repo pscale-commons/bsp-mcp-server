@@ -26,6 +26,8 @@
     "smoke:floor": "tsx scripts/smoke-floor-align.ts",
     "smoke:dots": "tsx scripts/smoke-dots.ts",
     "smoke:hollow-ack": "tsx scripts/smoke-hollow-ack.ts",
+    "smoke:envelope": "tsx scripts/smoke-envelope.ts",
+    "habits": "python3 scripts/bsp-habits.py",
     "smoke:parser": "tsx scripts/smoke-parser.ts",
     "smoke:sentinel": "tsx scripts/smoke-sentinel.ts",
     "smoke:session": "tsx scripts/smoke-session.ts",
