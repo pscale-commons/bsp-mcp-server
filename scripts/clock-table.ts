@@ -72,8 +72,9 @@ const spine = floor3(
 const law = JSON.parse(readFileSync(fileURLToPath(new URL('../src/tools/clock-law.json', import.meta.url)), 'utf8'));
 
 const keeperScene = {
-  _: `The keeper's hold for ${tableName} — a table of ${world} played ON THE CLOCK (the second track). The place is never copied here: it is read live from the scenario through the placing at 3. The night — the bare block temporal — is born locked at the first fold, under the folder's key, and that key folds it ever after.`,
+  _: `The keeper's hold for ${tableName} — a table of ${world} played ON THE CLOCK (the second track). The place is never copied here: it is read live from the scenario through the placing at 3; a character new to the table begins at the beat named at 5. The night — the bare block temporal — is born locked at the first fold, under the folder's key, and that key folds it ever after; a keeper's hand named at 4 folds instead, and characters say and wait.`,
   '3': `PLACING: *:${master}:${spatialName}:${arrival}`,
+  '5': `FIRST BEAT: *:${origin}:spine:${CLOCK_FIELD}:${firstBeat} — where a character new to this table stands: the first beat of the clock's first gathering at the arrival place named at 3.`,
 };
 
 // The genesis delta: the canonical passage, with the one thing a clock table

@@ -541,6 +541,16 @@ export async function composeClockSoft(origin: string, at: string, handle: strin
   return { text: joinParts(parts), parts, kind: 'the telling', room: atAddr, origin, where };
 }
 
+/** THE FIRST BEAT of a table — keeper:scene position 5, "FIRST BEAT: *:<table>:spine:temporal:<address>":
+ *  where a character new to the table stands. Null where the hold names none. */
+export async function firstBeatOf(t: ClockTable): Promise<string | null> {
+  const name = t.index.find((b) => b === 'keeper:scene') ?? t.index.find((b) => b.startsWith('keeper:'));
+  if (!name) return null;
+  const k = blockOf(await loadBlock(t.origin, name));
+  const five = k ? voiceOf((k as any)['5']) : null;
+  return five ? (/FIRST BEAT:\s*(?:\*:\S+?:spine:temporal:)?(\d[\d.,]*)/i.exec(five)?.[1] ?? null) : null;
+}
+
 /** THE KEEPER'S HAND at this table — keeper:scene position 4, "KEEPER'S HAND: <handle>"
  *  — a seat or a doorman that folds. Null where none is named: then the player's
  *  own mind is the keeper too, and folds at the player's word (the pool's
@@ -574,8 +584,9 @@ export async function composeClockDoor(origin: string, handle: string, table?: C
   lines.push('');
   lines.push(`[YOUR STANDPOINT — passport:${handle} 3]\n${typeof passport['3'] === 'string' ? passport['3'] : '(no standpoint line)'}`);
   if (!beat) {
+    const first = await firstBeatOf(t);
     lines.push('');
-    lines.push(`Your passport names no Beat. Write your third line again with ' Beat: *:${origin}:spine:${CLOCK_FIELD}:<the address where you begin>' appended — the first beat of the clock's first gathering unless the table says otherwise — then re-enter.`);
+    lines.push(`Your passport names no Beat. Write your third line again with ' Beat: *:${origin}:spine:${CLOCK_FIELD}:${first ?? '<the address where you begin>'}' appended${first ? ` — ${first} is where this table's newcomers begin (keeper:scene 5)` : ' — the first beat of the clock\'s first gathering unless the table says otherwise'}: bsp(agent_id='${origin}', block='passport:${handle}', spindle='3', content=${JSON.stringify(standpointLine(passport, origin, first ?? '<address>'))}, secret=<your key>) — then re-enter.`);
     return lines.join('\n');
   }
   const digits = clockDigits(beat, t.floor);
