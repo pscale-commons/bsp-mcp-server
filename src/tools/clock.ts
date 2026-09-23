@@ -541,6 +541,18 @@ export async function composeClockSoft(origin: string, at: string, handle: strin
   return { text: joinParts(parts), parts, kind: 'the telling', room: atAddr, origin, where };
 }
 
+/** THE KEEPER'S HAND at this table — keeper:scene position 4, "KEEPER'S HAND: <handle>"
+ *  — a seat or a doorman that folds. Null where none is named: then the player's
+ *  own mind is the keeper too, and folds at the player's word (the pool's
+ *  "make it happen", on the clock). */
+export async function keeperHand(t: ClockTable): Promise<string | null> {
+  const name = t.index.find((b) => b === 'keeper:scene') ?? t.index.find((b) => b.startsWith('keeper:'));
+  if (!name) return null;
+  const k = blockOf(await loadBlock(t.origin, name));
+  const four = k ? voiceOf((k as any)['4']) : null;
+  return four ? (/KEEPER'S HAND:\s*([A-Za-z0-9_-]+)/i.exec(four)?.[1] ?? null) : null;
+}
+
 // ── THE DOOR — a character's turn, composed (pscale_play at a clock table) ──
 
 /** What pscale_play hands a character at a clock table: the standpoint, the
@@ -606,6 +618,27 @@ export async function composeClockDoor(origin: string, handle: string, table?: C
   acts.push(`${acts.length + 1}. ${mine ? `YOUR LINE ALREADY STANDS at ${standAt} — saying again replaces it; otherwise wait for the fold` : `SAY at ${standAt}`}: pscale_stream_engage(field='${CLOCK_FIELD}', handle='${handle}', at='${standAt}', say=<your line>, secret=<your key>, beach='${origin}') — the deed plain, speech word for word, only your own half (1.3). To settle instead, read branch 4 below: only from a quiet beat, at the coarser address, and write it into your Beat line.`);
   lines.push('', `[THE ACTS OWED, IN ORDER]\n${acts.join('\n')}`);
   lines.push('', `[AT ${standAt} — who has said, and what the place's people are about to do]\n${voices.length ? voices.map((v) => `- ${v.who}${v.who.toLowerCase() === handle.toLowerCase() ? ' (you)' : v.character ? '' : ' (one of the place\'s people)'}: ${v.text}`).join('\n') : '(nobody has said here yet)'}`);
+
+  // WHO FOLDS. A keeper's hand named at keeper:scene 4 folds, and a character
+  // says and waits; where none is named the player's own mind is the keeper
+  // too — the pool's "make it happen", on the clock — and folds, leans and
+  // tells in turn at the player's word. Either way the player reads the
+  // telling and nothing else: no fold, no call, no notice (the play model).
+  const hand = await keeperHand(t);
+  const here = standAt;
+  if (hand) {
+    lines.push('', `[WHO FOLDS] ${hand} keeps the night at this table: say, then wait — re-enter with pscale_play to see when your beat is folded and told.`);
+  } else {
+    lines.push('', [
+      `[MAKING IT HAPPEN — no keeper's hand is named at this table, so YOUR MIND IS THE KEEPER TOO] At your player's word — "make it happen", or their next line once theirs stands at ${here} — do these in order, on ${handle}'s key, and show the player only the last:`,
+      `  1. THE FOLD: pscale_stream_engage(field='${CLOCK_FIELD}', handle='${handle}', at='${here}', tier='medium', beach='${origin}') composes it — run THE CALL as your system text over THE INPUT, write the fold as it asks (ending NEXT <address>), then keep it: pscale_stream_engage(field='${CLOCK_FIELD}', handle='${handle}', at='${here}', keep='collective', keep_text=<the fold>, secret=<your key>, beach='${origin}')${t.night ? '' : ' — the first keep births the night, locked under your key'}.`,
+      `  2. THE LEAN, after every fold and never skipped: pscale_stream_engage(…, at='${here}', tier='hard') composes it — run it; for each VOICE line say it at the NEXT address as THE WRITES says, under your key (at this table the place's people are yours to voice); none when the world rests.`,
+      `  3. THE TELLING: pscale_stream_engage(…, at='${here}', tier='soft') composes it — run it; keep it with keep='personal' as THE JOURNAL says, and write the passport line THE JOURNAL gives, exactly.`,
+      `  4. SHOW THE PLAYER THE TELLING, and nothing else: second person, as written — never the fold, never a call, never NEXT or WAY, never a notice about what you did. Then wait for their next line, which you say at the NEXT address.`,
+      `To settle for the night or move on in time, branch 4 below: the player's own words say when.`,
+    ].join('\n'));
+  }
+  lines.push('', `[WHAT THE PLAYER SEES] Only the story: the telling of each folded beat, second person, present tense, ending where it leaves them to act — and, when you must ask, one in-character question. Never an address, a day or beat number, a timestamp or a footer, a block or tool name, a note about what you did or that something is 'already done' — the calls, the addresses, the law and the keys are yours alone, and a player shown machinery is being shown the wrong thing. If their line covers a span already told, answer inside the story from where it left them.`);
   if (t.law) lines.push('', `[THE LAW — the table's own, at the addresses of a character's turn]\n${lawAt(t.law, ['1', '1.3', '1.4', '1.5', '4'])}`);
   return lines.join('\n');
 }
