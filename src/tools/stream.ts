@@ -75,6 +75,9 @@ import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
 import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
 import { formatBorn } from '../bsp-fn.js';
 import { momentToAddress, voiceAddress, TEMPORAL_FLOOR } from '../temporal.js';
+import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLOCK_FIELD } from './clock.js';
+import { publishPlay } from '../flow-play.js';
+import { wireStore } from '../genus.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
 //    would tie this clean surface to the one it exists to stand beside) ──
@@ -236,6 +239,10 @@ export const streamEngageParamsSchema = {
     .string()
     .optional()
     .describe("Edit-latch proof, forwarded when the target position is locked. Sensitive — never repeat it in conversation."),
+  tier: z
+    .enum(['soft', 'medium', 'hard'])
+    .optional()
+    .describe("THE CALL FOR A TIER OF PLAY ON THE CLOCK, composed from the blocks so every door runs the same one — a table played on time (field='temporal' at a table that keeps spine:temporal, function:temporal and a keeper's hold; the second track, proposals/2026-09-14-rpg-on-the-clock-second-track). Requires `at`; read-only: nothing is said or kept. 'medium' — THE FOLD at the address: the law, the contract, every mirror's line standing there, the night so far at each rung, the actors as their passports stand, the place's faces, each actor's luck already rolled, the rules — and THE CLAIM: which address is ripe and what stands unplayed beneath it. 'hard' — THE LEAN after the fold at the address: the fold whole with its NEXT, the held side, and each figure's own last line; THE WRITES say where each VOICE line is said. 'soft' — THE TELLING of the fold at the address for `handle`, from where they stand; THE JOURNAL gives the keep and the passport line to copy. Run THE CALL as the system text and THE INPUT as the message, on your own key; act on the third section with the ordinary verbs (say, keep). Refused plainly at a family that is not a clock table."),
 };
 
 export interface StreamEngageParams {
@@ -247,6 +254,7 @@ export interface StreamEngageParams {
   keep_text?: string;
   beach?: string;
   secret?: string;
+  tier?: 'soft' | 'medium' | 'hard';
 }
 
 // ── Handler ──
@@ -268,6 +276,34 @@ export async function handleStreamEngage(params: StreamEngageParams) {
   }
   const spine = srow.block as Block;
   const spineFloor = floorDepth(spine);
+
+  // ── A TIER OF PLAY ON THE CLOCK — the call itself, composed (clock.ts) ──
+  // Read-only by design, exactly as the pool's tiers are: a door asks for the
+  // call, runs it on its own key, and acts with say and keep. The window it
+  // was composed from is reported to flow:<handle> at the table beside the
+  // call, under the same two gates the pool keeps (wake:<handle>:7 on, and a
+  // keyed engage).
+  if (params.tier) {
+    if (params.say !== undefined || params.keep !== undefined) {
+      return out(`tier='${params.tier}' composes a call and writes nothing — send the say or the keep as its own engage, without tier.`);
+    }
+    if (params.at === undefined) return out(`tier='${params.tier}' needs at=<the address to compose for>.`);
+    if (field !== CLOCK_FIELD) return out(`tier='${params.tier}' is for a table played on the clock — field='${CLOCK_FIELD}'; the ${field} family has no tiers.`);
+    const table = await clockTable(origin).catch(() => null);
+    if (!table) return out(`tier='${params.tier}' is for a table played on the clock, and ${origin} is not one: it needs spine:${CLOCK_FIELD}, function:${CLOCK_FIELD} and a keeper's hold (keeper:scene with its placing at 3) standing together.`);
+    try {
+      const composed = params.tier === 'medium' ? await composeClockMedium(origin, params.at, handle, table)
+        : params.tier === 'hard' ? await composeClockHard(origin, params.at, handle, table)
+        : await composeClockSoft(origin, params.at, handle, table);
+      if (params.secret && !(composed as any).declined) {
+        const line = await publishPlay(wireStore(origin, handle, params.secret), handle, origin, composed, params.tier, Math.floor(Date.now() / 1000), params.secret);
+        if (line.startsWith('failed')) console.error(`[flow] ${handle} ${params.tier} at ${CLOCK_FIELD}:${params.at}: ${line}`);
+      }
+      return out(composed.text);
+    } catch (e: any) {
+      return out(`The ${params.tier} call at ${CLOCK_FIELD}:${params.at} could not compose: ${e?.message ?? String(e)}`);
+    }
+  }
 
   // ── The map, when no address is attended ──
   // Deliberately not a heuristic on floor depth: a stream never guesses which
@@ -291,6 +327,8 @@ export async function handleStreamEngage(params: StreamEngageParams) {
   // 'now' is the register law made operational: the clock is always known, so
   // the coordinate is derived and the human is never asked for digits.
   const rawAt = namedRungAddress(params.at, new Date()) ?? params.at;
+  const index = await loadBeachIndex(origin).catch(() => null);
+  const index0Has = (name: string) => (index?.blocks ?? []).includes(name);
 
   let digits: string[];
   try {
@@ -357,11 +395,19 @@ export async function handleStreamEngage(params: StreamEngageParams) {
       } else {
         let frow = await loadBlock(origin, field).catch(() => null);
         if (!frow || typeof frow.block !== 'object' || frow.block === null) {
-          const born =
-            `${field.toUpperCase()} — the FOLD: the social product of ${spineName} and every ${field}:<handle> mirror, ` +
-            `at the spine's own addresses. Computed by anyone, owned by nobody; a snapshot here is endorsed by pointer and never gates anything, ` +
-            `and a better reading may always supersede it (tree:3, tree:4).`;
-          await saveBlock(origin, field, bornAt(born, spineFloor), { spindle: '', secret: params.secret });
+          // THE NIGHT IS BORN LOCKED. On a table played on the clock the bare
+          // field is the night, and one night needs one determiner: the first
+          // keep births it under the keeper's key, and that key folds it ever
+          // after (the trial's finding, 2026-09-21 — a rival keep is refused by
+          // the store, no code). Every other family's fold is born open, as the
+          // convention prefers (tree:3, tree:4): anyone may supersede.
+          const clock = field === CLOCK_FIELD && params.secret ? await clockTable(origin).catch(() => null) : null;
+          const born = clock
+            ? `THE NIGHT — what has happened at this table, kept by the keeper alone at the clock's own addresses: a beat's fold at its beat, a gathering's at its gathering, a day's at its day, each coarser fold standing above the finer ones it contains. One night, under one key, born at the first fold; a line revised after its fold is visibly later than the night it was folded into.`
+            : `${field.toUpperCase()} — the FOLD: the social product of ${spineName} and every ${field}:<handle> mirror, ` +
+              `at the spine's own addresses. Computed by anyone, owned by nobody; a snapshot here is endorsed by pointer and never gates anything, ` +
+              `and a better reading may always supersede it (tree:3, tree:4).`;
+          await saveBlock(origin, field, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(clock ? { new_lock: params.secret } : {}) });
           frow = await loadBlock(origin, field).catch(() => null);
         }
         const fblock: Block = JSON.parse(JSON.stringify(frow!.block));
@@ -375,11 +421,20 @@ export async function handleStreamEngage(params: StreamEngageParams) {
     }
   }
 
+  // ── S, as it stands — the fold already kept at this address, and at each
+  // rung above it. The ladder is the spine's face and says nothing of the
+  // night; a seat reading '(unvoiced)' there took a folded beat for an open one
+  // (the trial, 2026-09-21). What is kept is shown, whole at the attended
+  // address and marked on the ladder.
+  const frow0 = (index0Has(field) ? await loadBlock(origin, field).catch(() => null) : null);
+  const foldBlock = frow0 && typeof frow0.block === 'object' && frow0.block !== null ? (frow0.block as Block) : null;
+  const foldAt = (d: string[]): string | null => (foldBlock ? voiceOf(readAt(foldBlock, emitFor(d, foldBlock))) : null);
+  const standingFold = foldAt(digits);
+
   // ── L — every mirror's reading at this address ──
   // Enumeration is the surface index, walked not searched: mirrors are the
   // <field>:-prefixed names the beach already lists (the 2026-07-29 answer to
   // "how does a fold find its mirrors" — one GET, fine at hundreds).
-  const index = await loadBeachIndex(origin).catch(() => null);
   const mirrorNames = (index?.blocks ?? []).filter((n) => n.startsWith(`${field}:`)).sort();
 
   const readings: { who: string; text: string }[] = [];
@@ -454,13 +509,20 @@ export async function handleStreamEngage(params: StreamEngageParams) {
 
   const rungs = ladderOf(spine, digits);
   lines.push('');
-  lines.push('# The ladder — this address in its own context, coarse to fine');
-  for (const r of rungs) {
+  lines.push('# The ladder — this address in its own context, coarse to fine' + (foldBlock ? ' (FOLDED marks a rung the fold already keeps)' : ''));
+  for (let i = 0; i < rungs.length; i++) {
+    const r = rungs[i];
     const last = r.addr === spineAddr;
     const when = clockVoice(r.addr, spineFloor);
-    const head = `  p${r.pscale} [${r.addr}]${when ? ` ${when} —` : ''}`;
-    if (!r.text) { lines.push(`${head} (unvoiced)`); continue; }
+    const kept = foldAt(digits.slice(0, i + 1)) ? ' FOLDED' : '';
+    const head = `  p${r.pscale} [${r.addr}]${kept}${when ? ` ${when} —` : ''}`;
+    if (!r.text) { lines.push(`${head} (unvoiced on the spine)`); continue; }
     lines.push(`${head} ${last ? r.text : clip(r.text, 180)}`);
+  }
+  if (standingFold) {
+    lines.push('');
+    lines.push(`# The fold standing at ${spineAddr} — kept in ${field}; saying here now is saying into a folded address`);
+    lines.push(standingFold);
   }
 
   if (law) {
