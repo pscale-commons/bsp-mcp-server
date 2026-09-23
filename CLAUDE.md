@@ -78,7 +78,7 @@ Read when `content` and `new_lock` are omitted; write when `content` is given; *
 
 - bsp-mcp speaks **MCP only** (JSON-RPC over HTTP+SSE) — a tool cannot be curled. Sentinels are bundled: read them through `bsp(agent_id="pscale", …)` or at `src/<name>.json`.
 - A beach IS curl-able: `GET <origin>/.well-known/pscale-beach?block=<name>[&spindle=<addr>]`; `POST` with `{block, spindle, content, secret}`. A no-pscale GET returns the raw node. A subtree write REPLACES the node — children absent from the payload are gone; a whole-block write of an existing block needs `confirm` (the router sends it).
-- Read by the shape the turn needs: probe an unknown block with the disc at pscale 0; walk a spindle; never pull a grown accumulator whole. `spindle='0'` is the surgical underscore write — on a block supernested twice a scalar there replaces the node one step deeper, so re-voice a floor-3 root as a whole-block write or not at all.
+- Read by the shape the turn needs: probe an unknown block with the disc at pscale 0; walk a spindle; never pull a grown accumulator whole. Move each turn as ONE BOLUS: fire the addresses a read ack ends with (`beneath:`) together, and judge the read-back every write and append returns before the next act (orientation:weft 7.8; `npm run habits` counts the habit). `spindle='0'` is the surgical underscore write — on a block supernested twice a scalar there replaces the node one step deeper, so re-voice a floor-3 root as a whole-block write or not at all.
 - Self-encryption is salted by the `agent_id` string as passed: a vault decrypts only under the exact form it was sealed with.
 
 ## Discipline

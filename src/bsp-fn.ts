@@ -98,6 +98,15 @@ export interface BspReadResult {
   inner?: BspReadResult | null;
   // error shape:
   error_message?: string;
+  /** THE MUSCLE AHEAD — the digit positions standing beneath the terminus of a
+   *  path-walk, or beneath the node a point lands on, as full-width addresses a
+   *  caller fires verbatim, with the pscale that descends into them. The next
+   *  throw, composed by the ack rather than foreseen by the reader: across every
+   *  transcript on the keeper's machine one bsp read in four pulled the block
+   *  whole to see what was there (proposals/2026-09-23-the-bolus-envelope.md).
+   *  Absent at a leaf; one child only names a stub at that rung. */
+  beneath?: string[];
+  beneath_pscale?: number;
 }
 
 export interface BspWriteResult {
@@ -254,11 +263,13 @@ export function bspRead(
 
   // Case 3: spindle alone → path-walk.
   if (pscaleAttention === null || pscaleAttention === undefined) {
+    const kids = ringBeneath(walk(block, digits));
     return {
       shape: 'path-walk',
       floor,
       spindle: typeof spindle === 'string' ? spindle : null,
       entries: buildPathWalk(block, digits, floor),
+      ...(kids.length ? { beneath: kids.map((k) => fullWidthAddress([...digits, k], floor)), beneath_pscale: pEnd - 1 } : {}),
     };
   }
 
@@ -277,6 +288,7 @@ export function bspRead(
     }
     const prefix = digits.slice(0, target);
     const node = walk(block, prefix);
+    const kids = ringBeneath(node);
     return {
       shape: 'point',
       floor,
@@ -286,6 +298,7 @@ export function bspRead(
       address: fullWidthAddress(prefix, floor),
       content: semantic(node),
       stamp: entryStamp(node),
+      ...(kids.length ? { beneath: kids.map((k) => fullWidthAddress([...prefix, k], floor)), beneath_pscale: (pscaleAttention as number) - 1 } : {}),
     };
   }
 
@@ -320,6 +333,49 @@ export function bspRead(
 function fullWidthAddress(digits: string[], floor: number): string {
   if (digits.length <= floor) return digits.join('').padEnd(floor, '0');
   return `${digits.slice(0, floor).join('')}.${digits.slice(floor).join('')}`;
+}
+
+/** The digit positions a node holds, in address order — the ring beneath it. */
+function digitChildren(node: unknown): string[] {
+  if (!node || typeof node !== 'object') return [];
+  return Object.keys(node as object).filter((k) => /^[1-9]$/.test(k)).sort();
+}
+
+/** The ring a reader would descend into: the digit children less the arrival
+ *  stamp at field 3, which already rides the line as its suffix and is a
+ *  field of the entry, never a position beneath it (block-conventions 4.22). */
+function ringBeneath(node: unknown): string[] {
+  const kids = digitChildren(node);
+  return entryStamp(node) ? kids.filter((k) => k !== '3') : kids;
+}
+
+/** The longest digit chain through a payload; ties resolve to the lowest digit. */
+function deepestChain(node: unknown): string[] {
+  if (!node || typeof node !== 'object') return [];
+  let best: string[] = [];
+  for (const k of digitChildren(node)) {
+    const chain = [k, ...deepestChain((node as Record<string, unknown>)[k])];
+    if (chain.length > best.length) best = chain;
+  }
+  return best;
+}
+
+/** THE MUSCLE BEHIND — the spindle a write's read-back walks: the landed
+ *  address extended by the deepest chain of the payload, full width. The
+ *  read-back law (orientation:weft 6.4; the closing rung of strata's writing
+ *  spindle) says walk the deepest spindle as its future reader will; this
+ *  names that spindle so the envelope can walk it. Null when nothing
+ *  addressable landed (a string written at the root). A string at a spindle
+ *  voices the node, so the walk ends there. */
+export function readBackSpindle(block: Block, landed: string | null | undefined, content: unknown): string | null {
+  const floor = floorDepth(block);
+  let base: string[] = [];
+  if (landed) {
+    try { base = parseSpindleCanonical(landed, floor).digits; } catch { return null; }
+  }
+  const digits = [...base, ...deepestChain(content)];
+  if (!digits.length) return null;
+  return fullWidthAddress(digits, floor);
 }
 
 /** The arrival stamp an entry carries at field 3 — the mark/contribution ts
@@ -740,6 +796,11 @@ function stampSuffix(stamp: string | undefined): string {
   return stamp ? ` · ${stamp}` : '';
 }
 
+/** The one line the muscle ahead adds: the ring beneath, fire-ready. */
+function beneathLine(r: BspReadResult): string {
+  return `  beneath (pscale ${r.beneath_pscale}): ${(r.beneath ?? []).join(' · ')}`;
+}
+
 export function formatRead(r: BspReadResult): string {
   switch (r.shape) {
     case 'block':
@@ -756,6 +817,7 @@ export function formatRead(r: BspReadResult): string {
         const text = i === entries.length - 1 ? content : truncate(content, 150);
         lines.push(`  d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale)}: ${text}${stampSuffix(e.stamp)}`);
       }
+      if (r.beneath?.length) lines.push(beneathLine(r));
       return lines.join('\n');
     }
     case 'disc': {
@@ -768,7 +830,7 @@ export function formatRead(r: BspReadResult): string {
     }
     case 'point':
       if (r.note) return `[point @ pscale ${r.pscale}] ${r.note}`;
-      return `[point @ pscale ${r.pscale} depth ${r.depth} ${addrLabel(String(r.address), floorOf(r), r.pscale)}]\n  ${r.content ?? '(no content)'}${stampSuffix(r.stamp)}`;
+      return `[point @ pscale ${r.pscale} depth ${r.depth} ${addrLabel(String(r.address), floorOf(r), r.pscale)}]\n  ${r.content ?? '(no content)'}${stampSuffix(r.stamp)}${r.beneath?.length ? `\n${beneathLine(r)}` : ''}`;
     case 'path-walk+descent': {
       const lines = [`[path-walk+descent @ "${r.spindle}" pscale ${r.pscale}]`];
       lines.push('  path-walk:');

@@ -25,6 +25,7 @@ import { z } from 'zod';
 import { Block, writeAt, InvalidAddressError, parseSpindle, floorDepth, formatAddress } from '../bsp.js';
 import {
   bspRead,
+  readBackSpindle,
   bspWrite,
   formatRead,
   formatWrite,
@@ -416,6 +417,44 @@ function normaliseContent(value: any): any {
   return value;
 }
 
+/** THE MUSCLE BEHIND — the read-back law (orientation:weft 6.4; strata's
+ *  writing spindle closes on it) placed where it is due. After the beach admits
+ *  a write, walk the deepest spindle of what landed, on the block AS IT NOW
+ *  STANDS, and hand it back exactly as the next reader receives it — ancestors
+ *  framing, the leaf whole. The law had stood as prose since 2026-08-12 and run
+ *  nowhere: one authored write in ten reached three rungs across every
+ *  transcript on the keeper's machine (proposals/2026-09-23-the-bolus-envelope.md).
+ *  Best-effort by design: a failed re-read never breaks the ack it rides on. */
+async function readBackWalk(agent_id: string, blockName: string, spindle: string | null): Promise<string> {
+  if (!spindle) return '';
+  try {
+    const row = await loadBlock(agent_id, blockName);
+    const live = row?.block;
+    if (!live || typeof live !== 'object') return '';
+    const r = bspRead(live as Block, spindle, null);
+    if (r.shape !== 'path-walk') return '';
+    return `\n[read-back — "${spindle}" as its next reader receives it]\n${formatRead(r)}`;
+  } catch {
+    return '';
+  }
+}
+export async function readBackAfterWrite(agent_id: string, blockName: string, landed: string, content: unknown): Promise<string> {
+  try {
+    const row = await loadBlock(agent_id, blockName);
+    const live = row?.block;
+    if (!live || typeof live !== 'object') return '';
+    return readBackWalk(agent_id, blockName, readBackSpindle(live as Block, landed, content));
+  } catch {
+    return '';
+  }
+}
+/** An append walks to its landed slot, so the containers above it ride into
+ *  view — an unvoiced container shows as the debt it is, at the one moment it
+ *  is cheap to pay (block-conventions:3.5). */
+export async function readBackAfterAppend(agent_id: string, blockName: string, address: string | undefined): Promise<string> {
+  return readBackWalk(agent_id, blockName, address ?? null);
+}
+
 /** G2 — the arrival stamp for a plain-string append. An unstamped entry's
  *  indexicals ("this week", "today", "Thursday") rebind at every future read,
  *  invisibly, and no render can save it after the fact (pool:dovetail 89,
@@ -689,12 +728,15 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
           + `${dues.length > 3 ? ` (+${dues.length - 3} older)` : ''}`
           + ` — a scalar written at that address voices the container and leaves its entries untouched.`
         : '';
+      const readBack = wantGrayAppend
+        ? ''
+        : await readBackAfterAppend(agent_id, blockName, res.address ?? (res.slot !== undefined && res.slot !== null ? String(res.slot) : undefined));
       if (res.address !== undefined) {
         const grew = res.supernested ? `  ⤴ node supernested — the ladder continues within` : '';
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}${stampedNote}]${bornNote}${owed}` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}${stampedNote}]${bornNote}${owed}${readBack}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${readBack}` }] };
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       // The one refusal this change can newly provoke, named rather than left
@@ -999,9 +1041,11 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       : `\nLock SET at ${where} of ${blockName}, ${scope}. This call was ADMITTED, so the claim is yours: a position already held by another passphrase refuses the write outright rather than overwriting it.`;
   }
 
-  // Format response.
+  // Format response — and the muscle behind: the read-back rides every admitted
+  // content write (never a gray one — its leaf is an envelope).
   if (writeResult) {
-    return { content: [{ type: 'text', text: formatWrite(writeResult) + bornNote + lockNote }] };
+    const readBack = wantGray ? '' : await readBackAfterWrite(agent_id, blockName, writeResult.landed ?? (spindle ?? ''), content);
+    return { content: [{ type: 'text', text: formatWrite(writeResult) + bornNote + lockNote + readBack }] };
   }
   return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${bornNote}${lockNote}` }] };
 }
