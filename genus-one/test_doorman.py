@@ -435,5 +435,45 @@ check("Kept through" not in dt.holds_node("X", ["a"])["_"], "and a router that n
 check(dt.name_of({"_": "Equinox — a self-named magic worker"}, "equinox") == "Equinox" and dt.name_of({"_": "no dash"}, "garth") == "garth" and dt.name_of(None, "moss") == "moss", "the name a character goes by, else the handle")
 
 
+# ── the telling held to its moment (2026-09-22) ──────────────────────────────
+BEAT2 = ("Ugarth looks at the man \u2014 the half-buttoned coat, the red face \u2014 and gives him what he gave the soldiers at the "
+         "rail: nothing extra, nothing pressed.\n\n\u201cYou've got the place locked down,\u201d he says. \u201cWell done.\u201d He lets a "
+         "moment settle between them. \u201cWhat problem do you face?\u201d\n\n\u201cProblem.\u201d He repeats the word. \u201cYou'd best come "
+         "in out of the cold,\u201d he says, and stands back from the door, and the warmth of the Long House opens behind him.")
+OVERRAN = ("The warmth hits you first. Vane pulls the door behind you. The counting-room opens to the left: the factor bent "
+           "over it, grey-toothed.\n\n\u201cYou're not ground-work,\u201d he says. Not an accusation.\n\nWhat do you do?")
+HELD = ("You give him what you gave the soldiers at the rail: nothing extra, nothing pressed. \u201cYou've got the place locked "
+        "down,\u201d you say. \u201cWell done.\u201d The cold finds its way between the words. \u201cWhat problem do you face?\u201d\n\n"
+        "\u201cProblem.\u201d He repeats the word like a man checking his belt. \u201cYou'd best come in out of the cold,\u201d he says, "
+        "and stands back from the door.")
+KNOWN = ("[WHERE YOU ARE] [130] The Long House. [131] The counting-room. [131.1] a factor: knee-high and hunched, grey-toothed. "
+         "Here with you, by appearance: Sergeant Vane. You are Ugarth.")
+check(dt.quoted_spans(BEAT2) == ["You've got the place locked down,", "What problem do you face?", "You'd best come in out of the cold,"],
+      "the spoken lines of a beat, in order, the short ones left")
+check(dt.quoted_spans('He said "no" and then "come in out of the cold, man" and left') == ["come in out of the cold, man"], "straight quotes pair in turn")
+f = dt.telling_faults(OVERRAN, [BEAT2], KNOWN)
+check([k for k, _ in f] == ["begins-after", "invents"] and "You're not ground-work" in f[1][1], "slot 35 against beat 2: it began after the beat and invented the sergeant's next line")
+check(dt.telling_faults(HELD, [BEAT2], KNOWN) == [], "a telling that quotes the moment and adds nothing holds")
+check(dt.telling_faults("The word lands on him. \u201cYou'd best come in out of the cold,\u201d he says.", [BEAT2], KNOWN) == [("begins-after", "it skips a beat's first spoken line, \u201cYou've got the place locked down,\u201d")],
+      "a telling that opens on the world's answer skips the player's own line \u2014 the lesser fault")
+check(dt.keep_anyway([("begins-after", "x")]) and not dt.keep_anyway([("begins-after", "x"), ("invents", "y")]), "a second telling that only skips a line is kept; one that still invents is not")
+check(dt.coined_names("Sergeant Vane comes out into the grey morning. Behind him Pell counts. The Long House stands.",
+                      "the sergeant at the door; Ugarth; the Long House; Brackenfoot") == ["Vane", "Pell"], "a coined name beside a role word and the frame's own names")
+check(dt.coined_names("Vane comes out. Then Vane again, and Vane once more.", "nothing") == ["Vane"], "a word opening a sentence is left alone, and one coined name is named once")
+check(dt.telling_faults("Ugarth nods. \u201cYou've got the place locked down,\u201d he says, and Haldan watches from the shutter.", [BEAT2], KNOWN) == [("coins", "it names someone the moment has not named: Haldan")], "a name the moment has not said is a coin")
+inp = ("# THE INPUT\n\n[WHERE YOU ARE]\n[130] The Long House\n\n[THE MOMENT \u2014 what has just happened; tell it whole]\n- Ugarth: " + BEAT2 +
+       "\n- the day: The light goes.\n\nYou are Ugarth.\n[THE MOMENT ENDS HERE.]")
+check(dt.moment_beats(inp) == [BEAT2, "The light goes."], "the moment's beats are read off the frame, each whole, the run-on lines kept")
+check(dt.record_as_telling([BEAT2, "The light goes."]) == BEAT2 + "\n\nThe light goes.", "the record as the telling of last resort")
+check(dt.not_kept(f).startswith("[YOUR FIRST TELLING WAS NOT KEPT \u2014 it skips a beat's first spoken line") and dt.not_kept("names someone the moment has not named: Vane", "beat").startswith("[NOT KEPT \u2014 the beat names someone"), "the line beneath a frame asked again names the fault")
+kn = dt.known_lines("WORLD the sergeant \u00b7 130 \u00b7 steps back\nKNOWN Sergeant Vane \u00b7 the sergeant at the Long House door \u00b7 Sergeant Bole \u00b7 the soldiers' word for him, and nobody corrects it\n**KNOWN \u00b7 Pell \u00b7 the factor \u00b7 none \u00b7 a name said aloud**\nKNOWN short \u00b7 line")
+check(kn == [{"name": "Sergeant Vane", "face": "the sergeant at the Long House door", "held": "Sergeant Bole", "how": "the soldiers' word for him, and nobody corrects it"},
+             {"name": "Pell", "face": "the factor", "held": None, "how": "a name said aloud"}], "KNOWN lines, dressed and plain, four fields each; a short one is not kept")
+e = dt.names_entry(kn[0], "130", "2026-09-22T15:00:00Z")
+check(e["_"] == "Sergeant Vane \u2014 the sergeant at the Long House door; the soldiers' word for him, and nobody corrects it" and e["5"] == "held: Sergeant Bole" and e["2"] == "130" and e["4"] == "designer", "an entry of names:scene: the name and face at the underscore, the held name at 5")
+check("5" not in dt.names_entry(kn[1], "130", "t"), "no held name, no 5")
+check(dt.names_standing({"_": "NAMES", "1": e, "2": "Old Burr \u2014 the charcoal-burner; his own"}) == {"sergeant vane", "old burr"}, "the names already standing, so a KNOWN is never written twice")
+check(dt.keeper_lines("KNOWN Sergeant Vane \u00b7 the sergeant \u00b7 Sergeant Bole \u00b7 how", places=["130"], room="130") == {"world": [], "drop": [], "where": []}, "a KNOWN line is nothing to the WORLD / DROP / WHERE reader")
+
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
