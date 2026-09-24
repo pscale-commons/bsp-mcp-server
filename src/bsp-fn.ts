@@ -73,6 +73,12 @@ export interface DiscEntry {
   address: string;
   content: string | null;
   stamp?: string;
+  /** How many positions stand beneath this one (the ring, less the arrival
+   *  stamp) — so a disc says where depth is without listing it. A disc is
+   *  the one read shape that ended without a next throw, and keel's first
+   *  use of the envelope (2026-09-24) found the gap: it composed the next
+   *  addresses by hand and landed in the wrong container. */
+  beneath?: number;
 }
 
 export interface BspReadResult {
@@ -426,10 +432,12 @@ function collectDisc(block: Block, targetDepth: number, floor: number): DiscEntr
         node !== null &&
         typeof node === 'object';
       if (!onChainIntermediate) {
+        const ring = ringBeneath(node).length;
         results.push({
           address: fullWidthAddress(walked, floor),
           content: semantic(node),
           stamp: entryStamp(node),
+          ...(ring ? { beneath: ring } : {}),
         });
       }
       return;
@@ -824,7 +832,7 @@ export function formatRead(r: BspReadResult): string {
       const lines = [`[disc @ pscale ${r.pscale} (depth ${r.target_depth})]`];
       const fl = floorOf(r);
       for (const e of (r.entries as DiscEntry[]) ?? []) {
-        lines.push(`  ${addrLabel(e.address, fl, r.pscale)}: ${truncate(String(e.content ?? '(no content)'), 150)}${stampSuffix(e.stamp)}`);
+        lines.push(`  ${addrLabel(e.address, fl, r.pscale)}: ${truncate(String(e.content ?? '(no content)'), 150)}${stampSuffix(e.stamp)}${e.beneath ? ` · ${e.beneath} beneath` : ''}`);
       }
       return lines.join('\n');
     }
