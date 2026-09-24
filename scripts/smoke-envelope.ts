@@ -65,6 +65,21 @@ console.log('AHEAD — the beneath line');
   assert(r.shape === 'path-walk+descent' && r.beneath === undefined, 'walk+descent already shows the ring — no beneath line doubled beneath it');
 }
 
+console.log('AHEAD — the disc says where depth is');
+{
+  const r = bspRead(block, null, 0);
+  assert(r.shape === 'disc', 'pscale alone is a disc');
+  const es = (r.entries as any[]);
+  const at = (a: string) => es.find((e) => e.address === a);
+  assert(at('1')?.beneath === 2 && at('4')?.beneath === 2, 'positions with depth carry the count of the ring beneath');
+  assert(at('9')?.beneath === undefined, 'a leaf position carries none');
+  const text = formatRead(r);
+  assert(text.includes('[4]: four · 2 beneath') && !text.includes('[9]: nine-leaf ·'), 'the disc line ends with the count, and a leaf line does not');
+  const stamped: any = { _: 'r', 1: { _: 'plain', 3: '2026-09-23T10:08:28Z' }, 2: { _: 'grafted', 1: 'the graft', 3: '2026-09-23T10:09:00Z' } };
+  const d = (bspRead(stamped, null, 0).entries as any[]);
+  assert(d.find((e) => e.address === '1')?.beneath === undefined && d.find((e) => e.address === '2')?.beneath === 1, 'the stamp never counts; a graft does');
+}
+
 console.log('BEHIND — the read-back spindle');
 assert(readBackSpindle(block, '4.2', 'a voice') === '4.2', 'a string voices the node — the read-back walks to it');
 assert(readBackSpindle(block, '4.2', { _: 'x', 1: 'a', 2: { _: 'y', 1: 'z' } }) === '4.221', 'an object extends the landed address by its DEEPEST chain, not its first');
