@@ -222,6 +222,37 @@ export function paidInGray(block: Block, slot: string): boolean {
   }
 }
 
+/**
+ * Let an open line take the place of the gray envelope it landed on: the degray.
+ *
+ * A line voices the node it lands on and keeps what stands in it
+ * (block-conventions:3.5). Both writers do this: bspWrite here, and the beach's
+ * writeAt. An envelope is a node, so the gray parameter's own recipe (read with
+ * the key, write the plaintext back with gray:false) only replaced the
+ * envelope's note. The ciphertext, nonce and marker stayed and the node was
+ * still an envelope. A keyed read then decrypted the OLD text while an open read
+ * showed the new, so two readers saw two different entries. The recipe had
+ * never done what it said through this router. Reproduced offline on 2026-09-25
+ * against the beach's real handler.
+ *
+ * The envelope's own fields go. Whatever stands beside them stays with the line:
+ * the arrival stamp at 3 (so a degrayed append reads {_, 3}, as an open append
+ * does), and anything that landed inside. The node stays an object, because
+ * the beach replaces a node only when it receives one. A bare line would voice
+ * the envelope still standing there.
+ *
+ * Call after the open write, at the address it landed. Mutates `block`. Returns
+ * true when an envelope was shed.
+ */
+export function shedGray(block: Block, address: string): boolean {
+  const node: any = readAt(block, address);
+  // The marker must name its mode. This deletes, so a node that merely has a
+  // ninth entry reading "gray" keeps its entries and takes the voicing.
+  if (grayMode(node) === null) return false;
+  for (const k of ENVELOPE_FIELDS) if (k !== '_') delete node[k];
+  return true;
+}
+
 /** First significant side digit (1-9) of a spindle; null if none. */
 function leadingSideDigit(spindle: string): string | null {
   for (const ch of spindle) {
@@ -432,7 +463,7 @@ export const bspParamsSchema = {
   gray: z
     .boolean()
     .optional()
-    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle: at a leaf the envelope is the entry; at a position holding entries it voices that position and every entry stays, so a gray history pays its zero-slot summaries exactly as an open one does. Degray = read with secret, then write the plaintext back with gray:false. Grain mode needs both parties to have run pscale_key_publish."),
+    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle: at a leaf the envelope is the entry; at a position holding entries it voices that position and every entry stays, so a gray history pays its zero-slot summaries exactly as an open one does. Degray = read with the key, then write the plaintext back at the same address with gray:false: the line takes the envelope's place, keeping its arrival stamp and anything standing in it, so a keyed reader and an open one read the same line. Grain mode needs both parties to have run pscale_key_publish."),
   enc_secret: z
     .string()
     .optional()
@@ -993,6 +1024,8 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   // Set when a gray line voiced a node rather than landing as an entry: the
   // number of entries that travelled with it (placeGray).
   let grayVoiced: number | undefined;
+  // Set when an open line took a gray envelope's place (shedGray).
+  let degrayed = false;
   if (isGroupOp && params.gray !== false && (content !== undefined || params.members !== undefined)) {
     // ── Group: create / invite / private content ──
     try {
@@ -1052,6 +1085,12 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     } else {
       try {
         writeResult = bspWrite(block, spindle ?? '', pscale_attention ?? null, content);
+        // A line voices what it lands on. If that is a gray envelope, the
+        // envelope goes too, or its ciphertext outlives the degray (shedGray).
+        // An object write already replaces whatever stands at its address.
+        if (typeof content === 'string' && writeResult.landed !== undefined) {
+          degrayed = shedGray(block, writeResult.landed);
+        }
       } catch (e: any) {
         return { content: [{ type: 'text', text: `Write rejected: ${e.message}` }] };
       }
@@ -1156,10 +1195,13 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     const voicedNote = grayVoiced !== undefined
       ? `\n  ⓘ the encrypted line voices the node at "${spindle}" — its ${grayVoiced} ${grayVoiced === 1 ? 'entry travelled' : 'entries travelled'} with it and ${grayVoiced === 1 ? 'stands' : 'stand'} beneath it.`
       : '';
+    const degrayNote = degrayed
+      ? `\n  ⓘ the open line takes the gray envelope's place at "${spindle}" — the ciphertext is gone, so a keyed reader and an open one read this same line.`
+      : '';
     const readBack = wantGray && grayVoiced === undefined
       ? ''
       : await readBackAfterWrite(agent_id, blockName, writeResult.landed ?? (spindle ?? ''), content);
-    return { content: [{ type: 'text', text: formatWrite(writeResult) + voicedNote + bornNote + lockNote + readBack }] };
+    return { content: [{ type: 'text', text: formatWrite(writeResult) + voicedNote + degrayNote + bornNote + lockNote + readBack }] };
   }
   return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${bornNote}${lockNote}` }] };
 }

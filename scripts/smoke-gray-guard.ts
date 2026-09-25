@@ -21,12 +21,18 @@
  * where it voices one with a line, so container 1 and its nine entries went.
  * The next append then landed inside that envelope, and keyed reads hid it.
  *
+ * Battery 8 is the way back out: the degray. The gray parameter's own recipe
+ * (read with the key, write the plaintext back with gray:false) voiced the
+ * envelope instead of replacing it. The ciphertext stayed, and two readers saw
+ * two different entries.
+ *
  * Run: npm run smoke:gray-guard
  */
-import { grayCrossing, placeGray, paidInGray } from '../src/tools/bsp.js';
-import { writeAt, floorDepth } from '../src/bsp.js';
+import { grayCrossing, placeGray, paidInGray, shedGray, handleBsp } from '../src/tools/bsp.js';
+import { writeAt, floorDepth, parseSpindle } from '../src/bsp.js';
+import { bspWrite } from '../src/bsp-fn.js';
 import { deriveSurgicalValue } from '../src/db.js';
-import { isGrayEnvelope, decryptGrayNodes } from '../src/keys.js';
+import { isGrayEnvelope, decryptGrayNodes, selfEncrypt } from '../src/keys.js';
 import type { Block } from '../src/bsp.js';
 
 let pass = 0;
@@ -217,6 +223,139 @@ assert(paidInGray(ladder(), '10') === false, 'unvoiced: 10 is owed');
 const openPaid = ladder(); openPaid['1']._ = 'an open summary';
 assert(paidInGray(openPaid, '10') === false, 'voiced in the open: the beach itself already counts it paid');
 assert(paidInGray(ladder(), '20') === false && paidInGray(b4b, '20') === true, '20 likewise');
+
+// ── Battery 8 — the degray: an open line takes the envelope's place ─────────
+// A line voices the node it lands on (block-conventions:3.5). bspWrite does
+// this, and so does the beach's writeAt, and an envelope is a node. So the
+// recipe's open line became the envelope's note while the ciphertext stayed.
+// The node was still an envelope, on this side and at the beach: a keyed read
+// decrypted the old text and an open read showed the new. shedGray completes
+// the landing: the envelope's own fields go, what stands beside them stays, and
+// the node travels as an object so the beach replaces rather than voices.
+console.log('\n8. the degray — an open line at an envelope takes its place');
+const notes = (): any => ({ _: 'notes at floor 1', '1': 'an open line', '3': env('the-old-private-text') });
+const NEW = 'the new public text';
+
+const u8 = notes();
+bspWrite(u8, '3', null, NEW);
+assert(isGrayEnvelope(u8['3']) && u8['3']._ === NEW,
+  'unguarded, the line voices the envelope — still an envelope, with the new text as its note');
+assert((await decryptGrayNodes(u8, open6))['3'] === 'plain:the-old-private-text',
+  'so a keyed read decrypts the OLD text while an open read shows the new — two readers, two entries');
+assert(isGrayEnvelope(deriveSurgicalValue(u8, '3', true)),
+  'and what the save POSTs is the envelope itself, which the beach keeps whole');
+
+const g8 = notes();
+const w8 = bspWrite(g8, '3', null, NEW);
+assert(shedGray(g8, w8.landed!) && JSON.stringify(g8['3']) === JSON.stringify({ _: NEW }),
+  'guarded, the envelope is shed and the line stands alone at 3');
+const wire8 = deriveSurgicalValue(g8, '3', true);
+assert(typeof wire8 === 'object' && wire8._ === NEW && !isGrayEnvelope(wire8),
+  'the save POSTs an object, which the beach lands by replacing its envelope (a bare line would voice it)');
+assert(JSON.stringify(await decryptGrayNodes(g8, open6)) === JSON.stringify(g8),
+  'a keyed read and an open one read the same block');
+
+const s8: any = { _: 'x', '4': stamped('an-appended-private-line') };
+shedGray(s8, bspWrite(s8, '4', null, 'the appended line, public').landed!);
+assert(s8['4']._ === 'the appended line, public' && s8['4']['3'] === '2026-09-25T07:05:00.000Z' && Object.keys(s8['4']).length === 2,
+  'a gray-appended entry keeps its arrival stamp: it reads {_, 3}, the shape of an open append');
+
+const grain8: any = { _: 'a grain', '1': { _: 'side 1', '2': { ...(env('m') as any), '9': { _: 'gray', '1': 'grain', '2': 'bob' } } } };
+shedGray(grain8, bspWrite(grain8, '1.2', null, 'published').landed!);
+assert(JSON.stringify(grain8['1']['2']) === JSON.stringify({ _: 'published' }),
+  'a grain envelope is shed the same way — gray:false is how a party publishes its own side');
+
+// The state 2026-09-25 left: an envelope where container 1 was, and an entry
+// appended inside it at 13. A gray line there refuses (battery 5), because it
+// would replace the entry. An open line takes only the envelope's own fields.
+const d8: any = ladder();
+d8['1'] = { ...(env('the-summary') as any), '3': stamped('the-09:42-entry') };
+assert(shedGray(d8, bspWrite(d8, '10', null, 'the summary, public').landed!)
+  && d8['1']._ === 'the summary, public' && !('9' in d8['1']) && d8['1']['3']['1'] === 'the-09:42-entry',
+  'an envelope with an entry inside: 10 is voiced in the open and the entry at 13 stands beneath it, untouched');
+
+const v8 = ladder();
+placeGray(v8, '10', env('a private summary'));
+assert(!shedGray(v8, bspWrite(v8, '10', null, 'the summary, public').landed!)
+  && v8['1']._ === 'the summary, public'
+  && ['1', '2', '3', '4', '5', '6', '7', '8', '9'].every(d => v8['1'][d]['1'] === `span1-${d}`),
+  'a summary voiced in gray degrays by the ordinary voicing: nothing to shed, nine entries stand');
+assert(!paidInGray(v8, '10'), 'and 10 reads paid in the open, as the beach counts it');
+
+const hue: any = { _: 'x', '5': { _: 'colours', '1': 'red', '2': 'blue', '9': { _: 'gray', '1': 'light', '2': 'dark' } } };
+assert(!shedGray(hue, bspWrite(hue, '5', null, 'the colours of the shore').landed!)
+  && hue['5']._ === 'the colours of the shore' && hue['5']['1'] === 'red' && hue['5']['9']['2'] === 'dark',
+  'a node whose ninth entry merely reads "gray" takes the voicing and keeps every entry');
+
+// Through the door, against an in-memory beach that lands a POST as the beach
+// does: its writeAt, transcribed with the voicing at the terminus (pscale-beach
+// api/pscale-beach.js, since 2026-07-28) — a scalar at a node sets the node's
+// underscore, an object replaces the node.
+{
+  const ORIGIN = 'https://gray-guard.test';
+  const B = 'notes:degray';
+  const KEY = 'a-key-for-the-battery';
+  const store: Record<string, any> = { [B]: { _: 'notes at the fixture beach', '1': 'an open line' } };
+  const beachWriteAt = (block: any, address: string, value: any): void => {
+    const { digits } = parseSpindle(address, floorDepth(block));
+    let node = block;
+    for (let i = 0; i < digits.length - 1; i++) {
+      const key = digits[i] === '0' ? '_' : digits[i];
+      if (typeof node[key] === 'string') node[key] = { _: node[key] };
+      else if (typeof node[key] !== 'object' || node[key] === null) node[key] = {};
+      node = node[key];
+    }
+    const last = digits[digits.length - 1] === '0' ? '_' : digits[digits.length - 1];
+    const target = node[last];
+    if (target !== null && typeof target === 'object' && !Array.isArray(target) && (value === null || typeof value !== 'object')) target._ = value;
+    else node[last] = value;
+  };
+  const answer = (v: unknown, status = 200) =>
+    new Response(JSON.stringify(v), { status, headers: { 'Content-Type': 'application/json' } });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: any, init?: any) => {
+    const url = new URL(typeof input === 'string' ? input : input.url);
+    if (url.origin !== ORIGIN || !url.pathname.endsWith('/.well-known/pscale-beach')) return answer({ error: 'no beach here' }, 404);
+    const name = url.searchParams.get('block');
+    if ((init?.method ?? 'GET') === 'GET') {
+      if (!name) return answer({ _: 'fixture beach', origin: ORIGIN, blocks: Object.keys(store) });
+      return name in store ? answer(store[name]) : answer({ error: 'not found' }, 404);
+    }
+    const body = JSON.parse(String(init.body));
+    if (!name || !(name in store) || !body.spindle) return answer({ error: 'this fixture takes surgical writes to a standing block' }, 400);
+    beachWriteAt(store[name], String(body.spindle), body.content);
+    return answer({ ok: true });
+  }) as typeof fetch;
+  const door = async (p: Record<string, unknown>) =>
+    (await handleBsp({ agent_id: ORIGIN, block: B, ...p } as any)).content.map(c => c.text).join('\n');
+
+  try {
+    await door({ spindle: '3', content: 'the old private text', gray: true, enc_secret: KEY });
+    assert(isGrayEnvelope(store[B]['3']), 'door: a gray write at 3 leaves an envelope at the beach');
+    await door({ spindle: '6', content: store[B]['3'] });
+    assert(isGrayEnvelope(store[B]['6']),
+      'door: an envelope written as an OBJECT lands whole (moving an encrypted entry keeps it encrypted); only a line sheds');
+
+    const ack = await door({ spindle: '3', content: NEW, gray: false });
+    assert(JSON.stringify(store[B]['3']) === JSON.stringify({ _: NEW }),
+      'door: the degray leaves {_: line} at the beach, with no ciphertext, nonce or marker');
+    assert(/takes the gray envelope's place at "3"/.test(ack) && !/3\.1 · 3\.2/.test(ack),
+      'door: the ack says the envelope was replaced, and the read-back lists no envelope fields beneath the line');
+    const keyed = await door({ spindle: '3', enc_secret: KEY });
+    const openRead = await door({ spindle: '3' });
+    assert(keyed.includes(NEW) && !keyed.includes('old private') && openRead.includes(NEW),
+      'door: a keyed read and an open one both return the new line');
+    assert((await door({ spindle: '6', enc_secret: KEY })).includes('the old private text'),
+      'door: the envelope carried to 6 still opens with its key');
+
+    store[B]['4'] = { ...(await selfEncrypt('an appended private line', KEY, ORIGIN)), '3': '2026-09-25T07:05:00.000Z' };
+    await door({ spindle: '4', content: 'the appended line, public', gray: false });
+    assert(JSON.stringify(store[B]['4']) === JSON.stringify({ '3': '2026-09-25T07:05:00.000Z', _: 'the appended line, public' }),
+      'door: a gray-appended entry degrays to {_, 3} at the beach, its arrival stamp carried');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
 
 console.log(`\n${fail === 0 ? '✓' : '✗'} gray guard: ${pass} passed, ${fail} failed`);
 if (fail > 0) { failures.forEach(f => console.log(`   - ${f}`)); process.exit(1); }
