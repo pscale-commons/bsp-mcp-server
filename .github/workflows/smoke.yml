@@ -26,7 +26,7 @@ jobs:
           set -u
           FAILED=""
           for s in parser unit floor dots sentinel session wellknown wire-bsp \
-                   read-gate pool-engage reference-table networking gray group genus play-split \
+                   read-gate pool-engage reference-table networking gray gray-guard group genus play-split \
                    author-door room-fold \
                    grain-address grain-case grit-tree temporal temporal-envelope wellformed compile envelope; do
             echo "── smoke:$s ──"

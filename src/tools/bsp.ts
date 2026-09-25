@@ -22,7 +22,7 @@
  */
 
 import { z } from 'zod';
-import { Block, writeAt, InvalidAddressError, parseSpindle, floorDepth, formatAddress } from '../bsp.js';
+import { Block, writeAt, readAt, InvalidAddressError, parseSpindle, floorDepth, formatAddress } from '../bsp.js';
 import {
   bspRead,
   readBackSpindle,
@@ -128,9 +128,98 @@ export function grayCrossing(block: Block, address: string): string | null {
   let node: any = block;
   for (let i = 0; i < digits.length - 1; i++) {
     node = node?.[digits[i] === '0' ? '_' : digits[i]];
-    if (isGrayEnvelope(node)) return formatAddress(digits.slice(0, i + 1), floor);
+    if (isGrayEnvelope(node)) return nodeAddress(digits.slice(0, i + 1), floor);
   }
   return null;
+}
+
+/**
+ * The address to NAME a walked position by, so a reader can write it back.
+ * Entries sit at floor width and formatAddress renders them as parseSpindle
+ * reads them; a container sits above that, and its digits alone ("1" at floor
+ * 2) would re-parse left-padded as the ENTRY 01. Its own address is N0 — the
+ * container's digits filled to floor width with zeros (block-conventions:3.4).
+ */
+function nodeAddress(digits: string[], floor: number): string {
+  const short = floor - digits.length;
+  return formatAddress(digits, floor) + (short > 0 ? '0'.repeat(short) : '');
+}
+
+/** An envelope's own fields; anything else standing in one is not the envelope's. */
+const ENVELOPE_FIELDS = new Set(['_', '1', '2', '9']);
+
+/**
+ * Place a gray envelope where the caller's line would have landed.
+ *
+ * A caller hands gray a line; what travels is an envelope, and an envelope is
+ * an OBJECT. The beach voices a position when it receives a scalar and REPLACES
+ * it when it receives an object (block-conventions:3.5), so an envelope sent on
+ * its own to a position holding entries replaced the position and every entry
+ * beneath it, and the ack named only the address it wrote. Paid for on
+ * 2026-09-25 at history:Phenomemental: the owed summary of 1-9, written gray at
+ * 10 exactly as the append ack invited, took container 1 and its nine entries
+ * with it, and the next append then landed inside the envelope, out of sight.
+ *
+ * So the envelope goes where the line would go. At a position holding entries it
+ * becomes that position's voicing, and the node travels whole with every entry
+ * carried: the surgical save derives the value at the address, which is now the
+ * whole node, and the beach lands an object exactly as sent. A leaf or an empty
+ * address takes the envelope as the entry, and an existing envelope is replaced
+ * whole, both as before. Three placements refuse, because each would destroy
+ * something the author cannot see from the address:
+ *  - the root's underscore, whose chain IS the floor: an object there reads as
+ *    one more supernest and re-pads every address in the block;
+ *  - an envelope with entries standing inside it (the state 2026-09-25 left),
+ *    which replacing the envelope would take with it;
+ *  - a position whose underscore is itself a directory (a wrapped era, or
+ *    hidden entries), which voicing would replace.
+ *
+ * Mutates `block`. Returns the refusal, or — when the envelope voiced a node —
+ * how many entries travelled with it.
+ */
+export function placeGray(block: Block, address: string, envelope: unknown): { refused?: string; voiced?: number } {
+  const floor = floorDepth(block);
+  const { digits } = parseSpindle(address, floor);
+  if (digits.length === 1 && digits[0] === '0') {
+    return { refused: `"${address}" is the root's underscore, whose chain is the block's floor — an encrypted line there is an object that would read as one more supernest and re-pad every address in the block. Encrypt entries, not the block's identity. Nothing was written.` };
+  }
+  const target: any = readAt(block, address);
+  if (target === null || typeof target !== 'object' || Array.isArray(target)) {
+    writeAt(block, address, envelope);
+    return {};
+  }
+  const where = nodeAddress(digits, floor);
+  if (isGrayEnvelope(target)) {
+    // The arrival stamp the beach sets at 3 on an appended entry is a string and
+    // belongs to the entry being replaced; anything else here is an entry.
+    const fields = target as unknown as Record<string, unknown>;
+    const inside = Object.keys(fields).filter(k => !ENVELOPE_FIELDS.has(k) && !(k === '3' && typeof fields[k] === 'string'));
+    if (inside.length) {
+      const held = inside.map(k => nodeAddress([...digits, k], floor)).join(', ');
+      return { refused: `the encrypted entry at ${where} has ${held} standing inside it — replacing the entry would destroy ${inside.length === 1 ? 'that entry' : 'those entries'} with it. Nothing was written.` };
+    }
+    writeAt(block, address, envelope);
+    return {};
+  }
+  if (target._ !== null && typeof target._ === 'object' && !isGrayEnvelope(target._)) {
+    return { refused: `the underscore at ${where} is itself a directory (a wrapped era, or hidden entries) — an encrypted voicing there would replace everything in it. Nothing was written.` };
+  }
+  target._ = envelope;
+  return { voiced: Object.keys(target).filter(k => /^[1-9]$/.test(k)).length };
+}
+
+/**
+ * True when the zero-slot `slot` (N0, the container's own address) is voiced by
+ * a gray envelope — a summary paid in gray, which the beach's due-check still
+ * reports as owed because it counts only a string underscore as paid.
+ */
+export function paidInGray(block: Block, slot: string): boolean {
+  try {
+    const node: any = readAt(block, slot);
+    return !!node && typeof node === 'object' && isGrayEnvelope(node._);
+  } catch {
+    return false;
+  }
 }
 
 /** First significant side digit (1-9) of a spindle; null if none. */
@@ -224,7 +313,8 @@ async function applyGroupWrite(
     if (leadingSideDigit(String(spindle)) === '9') {
       throw new Error('position 9 is the keyring — write group content at positions 1-8.');
     }
-    writeAt(block, spindle, groupEncryptContent(stringifyForGray(content), groupKey));
+    const placed = placeGray(block, spindle, groupEncryptContent(stringifyForGray(content), groupKey));
+    if (placed.refused) throw new Error(placed.refused);
   }
 }
 
@@ -342,7 +432,7 @@ export const bspParamsSchema = {
   gray: z
     .boolean()
     .optional()
-    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle (encrypt at a leaf). Degray = read with secret, then write the plaintext back with gray:false. Grain mode needs both parties to have run pscale_key_publish."),
+    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle: at a leaf the envelope is the entry; at a position holding entries it voices that position and every entry stays, so a gray history pays its zero-slot summaries exactly as an open one does. Degray = read with secret, then write the plaintext back with gray:false. Grain mode needs both parties to have run pscale_key_publish."),
   enc_secret: z
     .string()
     .optional()
@@ -671,6 +761,9 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     const isGrainAppend = target.block.startsWith('grain:');
     const wantGrayAppend = isGrainAppend ? params.gray !== false : params.gray === true;
     let entry: any = content;
+    // The block as it stood before a gray append — loaded anyway to encrypt, and
+    // kept to tell which reported dues are already paid in gray (see `dues`).
+    let grayBlock: Block | null = null;
     if (wantGrayAppend) {
       if (!encSecret) {
         return { content: [{ type: 'text', text: 'Append rejected: gray encryption requires an encryption key (enc_secret, or secret as fallback). Pass gray:false to append in the open.' }] };
@@ -684,12 +777,14 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       try {
         if (isGrainAppend) {
           const grainRow: BlockRow | null = await loadBlock(agent_id, blockName);
+          grayBlock = grainRow?.block ?? null;
           entry = await encryptGrainLeaf(grainRow?.block ?? {}, appendSpindle, stringifyForGray(content), encSecret);
         } else {
           // A group accumulator would need its keyring rather than a self key,
           // and none exists in the field — refuse rather than encrypt to the
           // wrong key and call it private.
           const row: BlockRow | null = await loadBlock(agent_id, blockName);
+          grayBlock = row?.block ?? null;
           if ((row?.block as any)?.['9']?._ === GROUP_KEYRING_MARKER) {
             return { content: [{ type: 'text', text: 'Append rejected: this is a group block — a group append is not supported yet. Write group content at a leaf spindle (1-8).' }] };
           }
@@ -722,11 +817,16 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       // line. Oldest first, and truncated so a long-neglected block does not
       // bury the acknowledgement it rides on.
       const bornNote = res.born ? formatBorn(target.block) : '';
-      const dues = res.owed ?? [];
+      // The beach counts a container paid only when its underscore is a string,
+      // and a summary paid in gray is an envelope there (placeGray), so without
+      // this every later append would ask for it again. An append never touches
+      // a container's underscore, so the block as loaded answers for it — unless
+      // this append supernested, which re-pads every address; then trust the beach.
+      const dues = (res.owed ?? []).filter(d => !(grayBlock && !res.supernested && paidInGray(grayBlock, d.slot)));
       const owed = dues.length
         ? `\n  ⓘ summary owed: ${dues.slice(0, 3).map(d => `${d.slot} over ${d.over}`).join(', ')}`
           + `${dues.length > 3 ? ` (+${dues.length - 3} older)` : ''}`
-          + ` — a scalar written at that address voices the container and leaves its entries untouched.`
+          + ` — one line written at that address, in the open or gray, voices the container and leaves its entries untouched.`
         : '';
       const readBack = wantGrayAppend
         ? ''
@@ -890,6 +990,9 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
 
   // Apply content write if provided.
   let writeResult: BspWriteResult | null = null;
+  // Set when a gray line voiced a node rather than landing as an entry: the
+  // number of entries that travelled with it (placeGray).
+  let grayVoiced: number | undefined;
   if (isGroupOp && params.gray !== false && (content !== undefined || params.members !== undefined)) {
     // ── Group: create / invite / private content ──
     try {
@@ -921,14 +1024,18 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       }
       if (!spindle || spindle === '') {
         return {
-          content: [{ type: 'text', text: 'Write rejected: gray encryption requires a non-empty spindle (encrypt at a leaf, not the whole block).' }],
+          content: [{ type: 'text', text: 'Write rejected: gray encryption requires a non-empty spindle (encrypt at an address, not the whole block).' }],
         };
       }
       try {
         const envelope = isGrain
           ? await encryptGrainLeaf(block, spindle, stringifyForGray(content), encSecret)
           : await selfEncrypt(stringifyForGray(content), encSecret, agent_id);
-        writeAt(block, spindle, envelope);
+        const placed = placeGray(block, spindle, envelope);
+        if (placed.refused) {
+          return { content: [{ type: 'text', text: `Write rejected: ${placed.refused}` }] };
+        }
+        grayVoiced = placed.voiced;
         writeResult = {
           shape: 'point',
           written: true,
@@ -1042,10 +1149,17 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   }
 
   // Format response — and the muscle behind: the read-back rides every admitted
-  // content write (never a gray one — its leaf is an envelope).
+  // content write. A gray entry has none (its leaf is an envelope, opaque to the
+  // wire), but a gray VOICING does: the node it voiced is still a node, and its
+  // entries standing beneath the encrypted line is the whole of what to judge.
   if (writeResult) {
-    const readBack = wantGray ? '' : await readBackAfterWrite(agent_id, blockName, writeResult.landed ?? (spindle ?? ''), content);
-    return { content: [{ type: 'text', text: formatWrite(writeResult) + bornNote + lockNote + readBack }] };
+    const voicedNote = grayVoiced !== undefined
+      ? `\n  ⓘ the encrypted line voices the node at "${spindle}" — its ${grayVoiced} ${grayVoiced === 1 ? 'entry travelled' : 'entries travelled'} with it and ${grayVoiced === 1 ? 'stands' : 'stand'} beneath it.`
+      : '';
+    const readBack = wantGray && grayVoiced === undefined
+      ? ''
+      : await readBackAfterWrite(agent_id, blockName, writeResult.landed ?? (spindle ?? ''), content);
+    return { content: [{ type: 'text', text: formatWrite(writeResult) + voicedNote + bornNote + lockNote + readBack }] };
   }
   return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${bornNote}${lockNote}` }] };
 }
