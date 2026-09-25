@@ -384,6 +384,15 @@ export function groupDecryptContent(env: GrayEnvelope, groupKey: Uint8Array): st
 // Walk a block and replace each gray envelope with its plaintext, using the
 // supplied per-leaf decryptor (self or grain). Returns a new tree — does not
 // mutate. Envelopes the decryptor cannot open render as "[encrypted]".
+//
+// An envelope's own fields are _, 1 (ciphertext), 2 (nonce) and 9 (the marker).
+// Anything else standing in one is not the envelope's and stays in view, beside
+// the plaintext as the node's text: the arrival stamp the beach sets at 3 on an
+// appended entry (so a gray entry reads with its date, as an open one does), or
+// an entry that landed inside the envelope. On 2026-09-25 an append was
+// acknowledged at 13 on history:Phenomemental — inside an envelope standing
+// where container 1 had been — and every keyed read then hid it, because the
+// whole node was swapped for its plaintext.
 
 export async function decryptGrayNodes(
   node: any,
@@ -392,7 +401,12 @@ export async function decryptGrayNodes(
   if (node === null || typeof node !== 'object') return node;
   if (isGrayEnvelope(node)) {
     const pt = await decryptLeaf(node);
-    return pt !== null ? pt : '[encrypted]';
+    const text = pt !== null ? pt : '[encrypted]';
+    const beside = Object.keys(node).filter(k => k !== '_' && k !== '1' && k !== '2' && k !== '9');
+    if (beside.length === 0) return text;
+    const kept: Record<string, any> = { _: text };
+    for (const k of beside) kept[k] = await decryptGrayNodes((node as any)[k], decryptLeaf);
+    return kept;
   }
   if (Array.isArray(node)) {
     const out: any[] = [];
