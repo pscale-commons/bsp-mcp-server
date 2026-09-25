@@ -44,6 +44,8 @@ Across hands: every stack at self-same addresses, so `bsp-floor` over two stacks
 
 Zero code. The stack is a block; the envelope needs nothing new for it because beneath is next.
 
+**Found on day two (2026-09-25): the stack is per lane, not per hand.** A hand runs several open durations at once — weft in two Claude Code sessions the same afternoon, keel in two chats, a person in two tabs — and a stack with one open session at 1, edited in place, is clobbered by the second lane or skipped by it. The unit of co-presence is the open response of a lane, not the hand. So the root's digits are the open lanes, breadth, and each lane's open path is the depth beneath its digit — which is exactly the desk's shape already (`shell:weft:5`, nine slots, one per open lane). The stack is therefore not a new organ: **the desk gains an open path beneath each slot** — the slot's line as it stands, 1 beneath it the open response, 1.1 the bolus in flight — and `stack:<handle>` as founded on day one folds into the desk at this lane's close. A reader who wants to know what a hand is in the middle of reads the desk at pscale −2. This is the shape the mirror's torus view reads: one leaf per live lane, not one per hand.
+
 ## 4. What it dissolves, if the walk passes
 
 - **The transcript as the carrier of continuity.** A fresh session continues a lane from one walk of the stack, not from compaction of a conversation. Claude Code, the most transcript-bound of the situations, becomes a sequence of pulses through the beach.
