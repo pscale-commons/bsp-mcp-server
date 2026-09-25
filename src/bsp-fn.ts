@@ -885,8 +885,10 @@ export function formatRead(r: BspReadResult): string {
 // refused and nothing is asked: a newcomer is, by definition, a new name.
 // A dozen words and no more (David, 2026-09-21): agents mint blocks rightly and
 // often, and the noticing is the whole value — the how lives in the proposal.
+// Worded 'new' and turned toward the person (David, 2026-09-24): early days, so
+// whoever the LLM works for hears what it made (proposals/2026-09-24-early-days-at-the-door.md).
 export function formatBorn(blockName: string): string {
-  return `\n  ⓘ born: this write created "${blockName}". If a slip, set it aside.`;
+  return `\n  ⓘ new: this write created "${blockName}" — tell your person; a slip can be set aside.`;
 }
 
 export function formatWrite(r: BspWriteResult): string {
