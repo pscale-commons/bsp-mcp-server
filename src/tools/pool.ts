@@ -2313,7 +2313,7 @@ export async function handlePoolEngage(
       // THE MUSCLE BEHIND, at the door: the commit walks back to its landed slot
       // as the next reader receives it — the containers above it in view, an
       // unvoiced one showing as the debt it is (src/read-back.ts).
-      const readBack = await readBackAfterAppend(pool_url, postedTo, String(postedPosition));
+      const readBack = await readBackAfterAppend(pool_url, postedTo ?? blockName, String(postedPosition));
       if (readBack) lines.push(readBack.trim());
     }
     lines.push('');
