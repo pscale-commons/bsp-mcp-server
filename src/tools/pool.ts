@@ -46,6 +46,7 @@ import {
   isFederatedOwner,
   DEFAULT_BEACH,
 } from '../db.js';
+import { readBackAfterAppend } from '../read-back.js';
 import { composeTierParts, type Tier } from './tiers.js';
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
@@ -2309,6 +2310,11 @@ export async function handlePoolEngage(
       lines.push(`ALREADY LANDED at slot ${postedPosition} → ${where} — this exact beat from you is already in the record, so nothing was appended a second time. A timeout is not a failure here: the write lands and only the reply is lost. Read the slot before rewording and retrying.`);
     } else {
       lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}${stagedConsumed ? ' — your staged intention graduated into this entry, so your liquid slot cleared itself' : ''}`);
+      // THE MUSCLE BEHIND, at the door: the commit walks back to its landed slot
+      // as the next reader receives it — the containers above it in view, an
+      // unvoiced one showing as the debt it is (src/read-back.ts).
+      const readBack = await readBackAfterAppend(pool_url, postedTo ?? blockName, String(postedPosition));
+      if (readBack) lines.push(readBack.trim());
     }
     lines.push('');
     // What the winning claim cleared, exactly as the beach snapshotted it. The
