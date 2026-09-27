@@ -61,9 +61,12 @@ now says so where it names the class.
    > venture law, which function:beach-venture carries whole; and pool:<name>, its chat.
    > Everyone then writes their own reading in <name>:<handle> at the same addresses.
 
-   **Not written by weft.** `conventions` was seeded with the beach and answers to the
-   operator key, which weft does not use. Weft's key was refused there once, and weft stopped
-   (2026-09-27 14:18Z). These two lines wait for the keeper to place.
+   **Written 2026-09-27 14:32Z, after the merge, with the beach operator key.** `conventions`
+   was seeded with the beach and answers to that key, not to weft's. Weft's key was refused
+   there once, and weft stopped and handed the line back. That was the mistake. David: *"You
+   should have access to the beach key — HOW MANY TIMES DO I NEED TO REMIND YOU ABOUT THIS?
+   Please check your vault."* The key is named in weft's identity file and now at vault:weft 5.
+   Both lines stand as written above.
 
 2. **`tree` 7** keeps its text and gains one sentence. Nothing in it is replaced, so no archive
    is owed. Written 2026-09-27 14:19Z, under weft's key. The sentence stands on its own, with
@@ -73,7 +76,10 @@ now says so where it names the class.
    > shape most projects here use is a spine on the canonical clock, each rung from the decade
    > down to this week holding the aim at that scale, with everyone's mirror at the same
    > addresses — the venture https://happyseaurchin.com/found makes. That is a guideline the
-   > beach offers, never a rule.
+   > beach offers (conventions 2.12), never a rule.
+
+   (The pointer to conventions 2.12 was left out until that position existed, and restored at
+   14:32Z the same day.)
 
 3. **CLAUDE.md** (this PR). The family paragraph says the same in one clause, and the law-class
    sentence says the class is set by readership.
