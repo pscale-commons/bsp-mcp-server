@@ -238,7 +238,7 @@ export const streamEngageParamsSchema = {
   secret: z
     .string()
     .optional()
-    .describe("Edit-latch proof, forwarded when the target position is locked. Sensitive — never repeat it in conversation."),
+    .describe("Edit-latch proof, forwarded when the target position is locked — and the latch a mirror, or your personal tree, is born locked to on its first write, so only you write it after. Sensitive — never repeat it in conversation."),
   tier: z
     .enum(['soft', 'medium', 'hard'])
     .optional()
@@ -351,7 +351,12 @@ export async function handleStreamEngage(params: StreamEngageParams) {
         `MIRROR — ${handle}'s readings on the ${field} field (${spineName}), at the spine's own addresses. ` +
         `Sovereign to its holder; nobody else writes here. Silence at an address is honest absence, not a gap to be filled.`;
       try {
-        await saveBlock(origin, mirrorName, bornAt(born, spineFloor), { spindle: '', secret: params.secret });
+        // BORN LOCKED to the holder's key when a key rides the say, as the born
+        // text promises and as the /now page founds a mirror (new_lock on the
+        // create, R1): without it a mirror said through any bsp door was born
+        // open, and anyone could overwrite a person's reading. A keyless say
+        // still births an open mirror, which its holder may homestead later.
+        await saveBlock(origin, mirrorName, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(params.secret ? { new_lock: params.secret } : {}) });
         mrow = await loadBlock(origin, mirrorName).catch(() => null);
       } catch (e: any) {
         return out(`Could not create your mirror at ${mirrorName} — ${e?.message ?? String(e)}`);
@@ -384,7 +389,7 @@ export async function handleStreamEngage(params: StreamEngageParams) {
             `TREE — ${handle}'s own syntheses of ${spineName}, at the spine's own addresses: at each point, the LATEST reading this hand has folded, ` +
             `revisable forever and superseded by its next fold. A fold that matters as a moment may also leave a pointer in history:${handle}, by this hand's own choice; ` +
             `losslessness, when wanted, is the archive convention (archive:${treeName}:<date>), never automatic accumulation.`;
-          await saveBlock(origin, treeName, bornAt(born, spineFloor), { spindle: '', secret: params.secret });
+          await saveBlock(origin, treeName, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(params.secret ? { new_lock: params.secret } : {}) });
           trow = await loadBlock(origin, treeName).catch(() => null);
         }
         const tblock: Block = JSON.parse(JSON.stringify(trow!.block));
