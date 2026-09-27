@@ -62,9 +62,12 @@ reader already looks: the passport a person keeps, and the compass the beach kee
 
 ## 4. Matthew's side
 
-It's his to write, and he has been asked in his own room (`pool:Phenomemental`): put his homepage
-on passport 3 ("how you meet me"), and have each room's opening line name its page. Once he has, a
-reader finds his pages in one read, and the mirror shows the link to anyone who enters the room.
+It's his to write, and he has been asked in his own room (`pool:Phenomemental` 14): put his
+homepage on his passport at the empty position 4, beginning "My pages:", and have each room's
+opening line name its page. Position 3 is not the place for it: since today a passport's 3 is read
+as its Location line ([2026-09-27-a-passport-is-born-on-earth](2026-09-27-a-passport-is-born-on-earth.md)).
+Once he has, a reader finds his pages in one read, and the mirror shows the link to anyone who
+enters the room.
 
 ## 5. The check
 
