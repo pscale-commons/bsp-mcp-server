@@ -113,6 +113,12 @@ export interface BspReadResult {
    *  Absent at a leaf; one child only names a stub at that rung. */
   beneath?: string[];
   beneath_pscale?: number;
+  /** Set when a dot-free spindle shorter than the floor was left-padded into
+   *  the root's underscore chain: "13" at floor 3 reads as 013, not the
+   *  container of the 130s. Canonical and load-bearing (sunstone:1.41), and
+   *  the trap two hands fell into on one day, both after the rule was written
+   *  down (keel, pool:keel 25, 2026-09-25) — so the ack says what it did. */
+  padding?: string;
 }
 
 export interface BspWriteResult {
@@ -247,6 +253,9 @@ export function bspRead(
   }
 
   const { digits } = parseSpindleCanonical(spindle ?? null, floor);
+  const padding = typeof spindle === 'string' && /^[1-9][0-9]*$/.test(spindle) && spindle.length < floor
+    ? `"${spindle}" is shorter than the floor (${floor}) and was read as ${spindle.padStart(floor, '0')}, down the root's underscore chain — the container of the ${spindle}0s is ${spindle.padEnd(floor, '0')}`
+    : undefined;
 
   // Case 1: nothing → whole block.
   if (digits.length === 0 && (pscaleAttention === null || pscaleAttention === undefined)) {
@@ -276,6 +285,7 @@ export function bspRead(
       spindle: typeof spindle === 'string' ? spindle : null,
       entries: buildPathWalk(block, digits, floor),
       ...(kids.length ? { beneath: kids.map((k) => fullWidthAddress([...digits, k], floor)), beneath_pscale: pEnd - 1 } : {}),
+      ...(padding ? { padding } : {}),
     };
   }
 
@@ -305,6 +315,7 @@ export function bspRead(
       content: semantic(node),
       stamp: entryStamp(node),
       ...(kids.length ? { beneath: kids.map((k) => fullWidthAddress([...prefix, k], floor)), beneath_pscale: (pscaleAttention as number) - 1 } : {}),
+      ...(padding ? { padding } : {}),
     };
   }
 
@@ -319,6 +330,7 @@ export function bspRead(
     pscale: pscaleAttention as number,
     path_walk: buildPathWalk(block, digits, floor),
     descent: collectDescent(terminus, digits, floor, layers),
+    ...(padding ? { padding } : {}),
   };
 }
 
@@ -804,6 +816,11 @@ function stampSuffix(stamp: string | undefined): string {
   return stamp ? ` · ${stamp}` : '';
 }
 
+/** The padding note, first: a walk that landed somewhere the input did not name says so before anything else. */
+function paddingLine(r: BspReadResult): string[] {
+  return r.padding ? [`  [note] ${r.padding}`] : [];
+}
+
 /** The one line the muscle ahead adds: the ring beneath, fire-ready. */
 function beneathLine(r: BspReadResult): string {
   return `  beneath (pscale ${r.beneath_pscale}): ${(r.beneath ?? []).join(' · ')}`;
@@ -817,7 +834,7 @@ export function formatRead(r: BspReadResult): string {
       // Ancestors frame; the TERMINUS is what was asked for — render it whole.
       // (NHITL round 4: the fold law's own clauses were cut exactly where "who
       // folds" would be, and pulling one leaf in full took a third call.)
-      const lines = [`[path-walk @ "${r.spindle}"]`];
+      const lines = [`[path-walk @ "${r.spindle}"]`, ...paddingLine(r)];
       const entries = (r.entries as PathWalkEntry[]) ?? [];
       const fl = floorOf(r);
       for (const [i, e] of entries.entries()) {
@@ -838,9 +855,9 @@ export function formatRead(r: BspReadResult): string {
     }
     case 'point':
       if (r.note) return `[point @ pscale ${r.pscale}] ${r.note}`;
-      return `[point @ pscale ${r.pscale} depth ${r.depth} ${addrLabel(String(r.address), floorOf(r), r.pscale)}]\n  ${r.content ?? '(no content)'}${stampSuffix(r.stamp)}${r.beneath?.length ? `\n${beneathLine(r)}` : ''}`;
+      return `[point @ pscale ${r.pscale} depth ${r.depth} ${addrLabel(String(r.address), floorOf(r), r.pscale)}]${paddingLine(r).map((l) => `\n${l}`).join('')}\n  ${r.content ?? '(no content)'}${stampSuffix(r.stamp)}${r.beneath?.length ? `\n${beneathLine(r)}` : ''}`;
     case 'path-walk+descent': {
-      const lines = [`[path-walk+descent @ "${r.spindle}" pscale ${r.pscale}]`];
+      const lines = [`[path-walk+descent @ "${r.spindle}" pscale ${r.pscale}]`, ...paddingLine(r)];
       lines.push('  path-walk:');
       // The walk's own terminus renders whole (the descent beneath stays the
       // truncated breadth view — point-read a child for its full text).

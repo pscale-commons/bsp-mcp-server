@@ -80,6 +80,22 @@ console.log('AHEAD — the disc says where depth is');
   assert(d.find((e) => e.address === '1')?.beneath === undefined && d.find((e) => e.address === '2')?.beneath === 1, 'the stamp never counts; a graft does');
 }
 
+console.log('THE PADDING NOTE — a short spindle on a grown block says what it read');
+{
+  // floor 3: the root's underscore chain is three deep; "13" left-pads to 013 (the old root's 1 → 3),
+  // while the container of the 130s is 130.
+  const grown: any = { _: { _: { _: 'the old root' }, 1: { _: 'old one', 3: 'old thirteen' } }, 1: { _: 'container 1', 3: { _: 'container 13', 1: 'entry 131' } } };
+  const r = bspRead(grown, '13', null);
+  assert(typeof r.padding === 'string' && r.padding.includes('read as 013') && r.padding.includes('the container of the 130s is 130'), 'a dot-free spindle shorter than the floor carries the padding note');
+  assert(formatRead(r).split('\n')[1].startsWith('  [note] "13" is shorter than the floor (3)'), 'the note is the first line after the head');
+  const full = bspRead(grown, '130', null);
+  assert(full.padding === undefined, 'a full-width spindle carries no note');
+  const flat = bspRead(block, '4', null);
+  assert(flat.padding === undefined, 'at floor 1 nothing pads, nothing is noted');
+  const pt = bspRead(grown, '13', 0);
+  assert(typeof pt.padding === 'string' && formatRead(pt).includes('[note] "13"'), 'a point read carries it too');
+}
+
 console.log('BEHIND — the read-back spindle');
 assert(readBackSpindle(block, '4.2', 'a voice') === '4.2', 'a string voices the node — the read-back walks to it');
 assert(readBackSpindle(block, '4.2', { _: 'x', 1: 'a', 2: { _: 'y', 1: 'z' } }) === '4.221', 'an object extends the landed address by its DEEPEST chain, not its first');
