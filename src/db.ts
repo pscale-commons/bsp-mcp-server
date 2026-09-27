@@ -445,10 +445,16 @@ export async function probeFederation(ownerId: string): Promise<'federated' | 'a
  * capitalised first letter, the 2026-09-02 case), so the refusal itself
  * carries the pointer to the recovery law: teaching is found at the refusal,
  * never in a block waiting to be guessed at.
+ *
+ * "lock" is matched as a WORD START — lock, locked, locks — because nearly
+ * every beach message says "block", and an unanchored match read it as a key
+ * problem: a structural refusal ("whole-block content has no floor") then
+ * sent its caller into the rotation probe over a key that was never wrong
+ * (2026-09-25). Exported for the smoke battery (scripts/smoke-locks.ts); pure.
  */
-function beachRejection(kind: string, r: { status?: number; error?: string }): Error {
+export function beachRejection(kind: string, r: { status?: number; error?: string }): Error {
   const base = `Beach ${kind} rejected: ${r.error}`;
-  const keyish = r.status === 403 || /lock|secret|latch/i.test(String(r.error ?? ''));
+  const keyish = r.status === 403 || /\block|secret|latch/i.test(String(r.error ?? ''));
   if (!keyish) return new Error(base);
   return new Error(
     `${base} — a refused key is usually a drifted spelling (often one capitalised first letter). ` +
@@ -583,6 +589,42 @@ export async function saveBlock(
     throw new Error(`"${t.agent_id}" is a read-only sentinel; the bundled teaching blocks are server-fixed.`);
   }
   return saveBlockToBeach(t.agent_id, t.block, block, opts);
+}
+
+/**
+ * The identity a beach seeds at a block's root when a write births it — the
+ * pscale-beach `defaultIdentity` (api/floor.js), identical on every beach
+ * this router speaks to, ported so a block born through this door reads as
+ * one born at the beach: convention-aware for the open accumulators,
+ * "<name> at <origin>." otherwise. `origin` is the beach's name for itself,
+ * the host with no scheme or port, a /w/<world> path kept.
+ */
+function defaultIdentity(name: string, origin: string): string {
+  const base = String(name).split(':')[0];
+  const at = ` at ${origin}.`;
+  if (base === 'marks')    return `Marks${at} Open stigmergy — each digit-path slot is one contribution (block-conventions:9).`;
+  if (base === 'presence') return `Presence${at} One slot per agent, heartbeat-overwritten (block-conventions:4.6).`;
+  if (base === 'liquid')   return `Liquid composition buffer${at} Pre-commit slots (block-conventions:4.5).`;
+  return `${name}${at}`;
+}
+
+/**
+ * The block a beach would birth under this name: `{_: defaultIdentity}`, named
+ * for the origin the save will reach. For a whole block this door composes
+ * itself on a name that does not exist yet — a lock-only create, a group's
+ * first keyring — which the beach refuses without a floor (sunstone:1.51).
+ */
+export async function bornBlock(ownerId: string, name: string): Promise<Block> {
+  const t = translateAddress(ownerId, name);
+  const resolved = isFederatedOwner(t.agent_id)
+    ? (await resolveFederationOrigin(t.agent_id)) ?? canonicaliseOrigin(t.agent_id)
+    : t.agent_id;
+  let origin = resolved;
+  try {
+    const u = new URL(resolved);
+    origin = u.hostname + (u.pathname === '/' ? '' : u.pathname);
+  } catch { /* not a URL — the save refuses it anyway */ }
+  return { _: defaultIdentity(t.block, origin) } as Block;
 }
 
 /**

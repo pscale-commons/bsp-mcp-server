@@ -40,6 +40,7 @@ import {
   BeachIndex,
   saveBlock,
   appendToBeach,
+  bornBlock,
   BlockRow,
   isFederatedOwner,
   isSentinelOwner,
@@ -459,7 +460,7 @@ export const bspParamsSchema = {
     .string()
     .nullable()
     .optional()
-    .describe('Target value for the EDIT-LATCH — a wiki-style edit token on a public page you own, not an account credential (pscale://open-commons:4). Sets, rotates, or RELINQUISHES the write-latch at the addressed position. Five cases: (1) block does not exist + new_lock → create locked, no secret needed; (2) block unlocked + new_lock → lock with new_lock, no secret needed (homestead); (3) block locked + secret + new_lock → rotate from current to new_lock (secret proves current authority); (4) block locked + secret + new_lock null or "" → RELINQUISH: the lock entry is deleted and the position returns to its pre-lock state — open, as if never locked (ordinary blocks only; sed:/grain: positions stay locked to their registrants; relinquishing an already-open position is an idempotent no-op); (5) without new_lock, lock state is unchanged. Forwarded to the federated beach.'),
+    .describe('Target value for the EDIT-LATCH — a wiki-style edit token on a public page you own, not an account credential (pscale://open-commons:4). Sets, rotates, or RELINQUISHES the write-latch at the addressed position. Five cases: (1) block does not exist + new_lock → create locked, no secret needed; sent without content, the block is born holding only the beach\'s default identity ("<block> at <beach>.") — write its own line at spindle "0" next; (2) block unlocked + new_lock → lock with new_lock, no secret needed (homestead); (3) block locked + secret + new_lock → rotate from current to new_lock (secret proves current authority); (4) block locked + secret + new_lock null or "" → RELINQUISH: the lock entry is deleted and the position returns to its pre-lock state — open, as if never locked (ordinary blocks only; sed:/grain: positions stay locked to their registrants; relinquishing an already-open position, or on a block that does not exist, is an idempotent no-op); (5) without new_lock, lock state is unchanged. Forwarded to the federated beach.'),
   gray: z
     .boolean()
     .optional()
@@ -663,7 +664,8 @@ async function notFoundResponse(
 
 /**
  * Five-rule semantics for content + new_lock interaction (enforced at the beach):
- *   (R1) Block doesn't exist + new_lock     → create locked at new_lock, no secret needed.
+ *   (R1) Block doesn't exist + new_lock     → create locked at new_lock, no secret needed
+ *        (with no content, born holding the beach's default identity).
  *   (R2) Block unlocked       + new_lock     → set lock to new_lock, no secret needed (homestead).
  *   (R3) Block locked         + secret       → secret proves current authority for content writes.
  *   (R4) Block locked         + secret + new_lock → rotate current→new_lock (with optional content).
@@ -947,12 +949,28 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
   // compute hashes — it forwards `secret` and `new_lock` and the beach
   // accepts or rejects. For sentinel writes, we already rejected above.
 
-  // Load existing state to merge writes against (and to seed an empty block
-  // when locking-only on a new target).
+  // Load existing state to merge writes against.
   const row: BlockRow | null = await loadBlock(agent_id, blockName);
 
-  // Determine starting block — existing or empty seed.
-  const block: Block = row?.block ?? {};
+  // A LOCK STANDS ON A BLOCK, AND A BLOCK ON ITS FLOOR. A beach keeps no block
+  // whose root lacks an identity underscore (sunstone:1.51): it seeds one
+  // itself when an append or a first digit-slot write births a block, and
+  // refuses a floorless whole block outright. So where this door composes the
+  // whole block for a name that does not exist yet — a lock-only create (R1
+  // with no content), a group's first keyring — it starts from the block the
+  // beach would birth. Both started from {} and were refused "no floor": the
+  // lock seen live 2026-09-25, the group since the floor gate of 2026-06-03.
+  // A content write starts from {} as before: a whole block the caller wrote
+  // carries its own root, and the beach seeds the root of a surgical one.
+  const lockOnly = content === undefined && params.members === undefined;
+  if (!row && lockOnly && (new_lock === null || new_lock === '')) {
+    // A relinquish never births a block, and the beach no-ops one on an absent
+    // name — so say so here, where a mistyped name can still be noticed.
+    return { content: [{ type: 'text', text:
+      `[lock @ "${target.agent_id}/${target.block}"]\nLock unchanged: "${target.block}" does not exist here, so no lock stands on it to relinquish — check the name.` }] };
+  }
+  const block: Block = row?.block
+    ?? (lockOnly || params.members !== undefined ? await bornBlock(agent_id, blockName) : {});
 
   // Grain blocks curate privately by default; ordinary blocks are public unless
   // gray:true is passed. gray:false forces a public write either way.
@@ -1081,12 +1099,20 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
       `new_lock was the literal string "${params.new_lock}", which is a serialisation slip rather than a passphrase — it would SET a lock answering to that word, not relinquish. To relinquish, send JSON null (not the string) or an empty string "". To genuinely lock, choose a passphrase that is not a null-word.` }] };
   }
 
-  // Persist content (or seed empty block if locking-only on a new block).
+  // Persist content (or, locking-only, the block as it stands or is born).
   // saveBlock translates the agent_id internally and forwards to the beach
   // with secret/new_lock in the POST body.
   const blockToSave = writeResult?.block ?? block;
   let bornNote = '';
   try {
+    // A lock-only create at a DIGIT births its block first, open, and the save
+    // below then locks that digit alone. One POST cannot do both — a lock at a
+    // digit carries no content — and sent alone to a name with no block, that
+    // lock stood on nothing: the beach kept the hash, made no block, and the
+    // ack said ADMITTED. At the root the one POST carries the born block.
+    if (!row && lockOnly && lockPositionOf(target.block, spindle, block) !== '_') {
+      if ((await saveBlock(agent_id, blockName, block)).born) bornNote = formatBorn(target.block);
+    }
     const saved = await saveBlock(
       agent_id,
       blockName,
@@ -1144,7 +1170,15 @@ export async function handleBsp(params: BspToolParams): Promise<{ content: { typ
     const scope = pos === '_'
       ? 'governing the whole block — every position that carries no lock of its own now answers to this one, and a digit locked separately is a delegation to another holder'
       : 'covering that position and its whole subtree, and overriding any lock at the root for it';
-    lockNote = (new_lock === null || new_lock === '')
+    // A block born by its lock stands on the beach's placeholder line: say so,
+    // and where the block's own line goes.
+    if (!row && lockOnly) {
+      const id = (block as any)._;
+      lockNote = pos === '_'
+        ? `\n  ⓘ its root holds only the beach's default identity, "${id}" — write what the block is at spindle "0", with the new lock as secret.`
+        : `\n  ⓘ its root holds only the beach's default identity, "${id}", and stays open — write what the block is at spindle "0".`;
+    }
+    lockNote += (new_lock === null || new_lock === '')
       ? `\nLock RELINQUISHED at ${where} of ${blockName} — open again, as if never locked.`
       : `\nLock SET at ${where} of ${blockName}, ${scope}. This call was ADMITTED, so the claim is yours: a position already held by another passphrase refuses the write outright rather than overwriting it.`;
   }
