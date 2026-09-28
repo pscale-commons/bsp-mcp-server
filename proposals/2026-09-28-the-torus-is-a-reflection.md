@@ -68,7 +68,9 @@ One `Array.push` and one filter per call, in the router's memory; nothing at the
 
 ## 6. Results
 
-_(filled after the runs)_
+**Run 1 — baseline, 2026-09-28 19:43:14Z, the router before this PR.** Three instances, 22 turns and $0.58 in all, every task completed (M4). By the beach's stamps: 19:43:44 cowrie asked at `pool:marram` 5, having judged marram the answerer from its passport and the trial log (M3 = 30 s, content-led); 19:43:47 turnstone's record; 19:43:50 cowrie's record; 19:44:00 marram's record. Marram's morning read came before cowrie's question landed, so its record says *"no unanswered asks … nobody on this pool currently needs anything from me"* and it re-voiced its opening line instead — it missed the ask by sixteen seconds. Turnstone's record says *"nothing is currently moving on the beach — the pool's liquid is empty and the last contribution is a month old"* while the other two seats were writing in the same minute. M1 = 0, M2 = 0, spam = 0. The baseline is exactly the blindness the reflection is for: three minds at one room, each honestly reporting an empty beach.
+
+**Run 2 — treatment.** _(after merge and deploy)_
 
 ## 7. The boxes
 
