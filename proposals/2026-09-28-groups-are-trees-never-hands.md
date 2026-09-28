@@ -15,7 +15,8 @@ This is weft's, as builder of the mechanics and the o-pages.
 **Builds on**: [2026-09-28-forms-a-family-declares-its-law](2026-09-28-forms-a-family-declares-its-law.md)
 (bsp-mcp #446, merged 10:48Z). A group turns out to be a form, and this proposal adds to that one
 rather than standing beside it.
-**Lane**: watch:weft 473 (organisations.1).
+**Lane**: watch:weft 473 (organisations.1), which also carries the forms build (#446 §8) at David's
+word: one session, not two lanes.
 
 ## 0. David's words
 
@@ -56,7 +57,7 @@ Where the four differ, and this document's position:
    The block itself: keeper-compiled, sources named by handle, plural, folded at read. Weft: the fan
    is the address space of holds at a place, the keeper's compilation is a dated, sourced snapshot of
    the fold, and the live tree is generated beside it, which is what the block's own text already
-   says (§7c).
+   says (§7e).
 3. **An almanac for the real world.** Keel: maybe. Weft: no (§9, decision 10).
 4. **Whether an o-page can decline to show an organisation's passport as a person.** Keel: yes.
    Weft: a page cannot tell and must not guess; the line is held at the door, in the law, and by a
@@ -266,14 +267,14 @@ Community Recovery's commonest case, and Alex arriving at the studio, fall throu
 and where the line is best taught, since it is the moment a person decides what they are. Proposed:
 the walk of any well-formed family carries one door, "add your voice here", which founds the mirror
 at that address and writes the lists entry with an empty "for" line beneath for the person to fill
-(O, built in forms.1 as the third dialect's sibling). /welcome asks the one question with three
+(O, built with the forms work of #446 §8, which this lane carries). /welcome asks the one question with three
 offers before minting anything (O), and pscale_invite says it in its passage (C).
 
 One constraint the join door inherits from handle_bound: a mirror is latched only under the
 passport's key, so the door uses the stored passport latch, as /walk and /recency already do. Seven
 other site prompts (welcome, now twice, hands, page twice, theme.js) still invite a person to invent
 a new key, which the beach now refuses when the passport is locked. That is a fault in pages people
-are using, for forms.1 to fix in the same pass.
+are using, to fix in the same pass as the forms work.
 
 ## 7. The two cases, under the form
 
@@ -326,7 +327,63 @@ own key given at the welcome, attributed to both; the alternative, a line in the
 mirror about the member, is a group keeping a record about a person. This is a convention for
 Matthew's law to state, and a decision for him with his safeguarding lead, not for the beach.
 
-### 7c. identity:earth, and the two approaches David has made
+### 7c. Which spine is operational — three address spaces over the same hands
+
+Matthew is not building a different core structure. His recovery-capital family is the family form,
+built on 2026-08-10 from David's reference at spine:recovery-capital; his proposal says at 2 that
+membership is moving onto the same pattern, at 3 that the fold and the lighthouse carry the load,
+at 4.1 that the standards are a second spine, and at 7.5 that each person gets a mirror at the
+welcome. What reads as a different form is the residue around it: the design proposal held as a
+document, sed:lero-nnh holding a document and arrivals at once, the lighthouse imagined as a
+curated list, no law block, and no places anywhere. One symptom shows what is missing: David's own
+comments on the design landed on the CHIME spine (lero-nnh-recovery-capital:happyseaurchin 1, 2 and
+5 are about the proposal, not about recovery capital), because there was no design spine to mirror.
+
+Three address spaces are candidates over the same hands. Each is operational for a different
+reason, and the reason is the fit test:
+
+| spine | its addresses | operational because | the fold is | fits when |
+|---|---|---|---|---|
+| **CHIME** (stands) | five dimensions | check-ins recur, by the protocol | the picture of recovery capital; minutes naming nobody | always: it is the personal frame |
+| **the design** | the proposal's sections, thin: a heading and one line a rung; Matthew's full text becomes his own mirror, primary by the law | co-production is under way: each reader mirrors a section in their own words | the co-produced design at each section; with a consent window it is the decisions surface his 4 asks for | while the design is being made. When it settles, the adopted fold **is** function:lero-nnh, and the scaffold retires |
+| **the network of meetings** | places: towns, venues, meeting points; a world of LERO's own, or a graft on earth's map | meetings recur at places, and a member stands in a pod rather than joining it | what is happening on the ground, per place; the leaders' lifted-out layer | when the pods are the unit of the work. This is the S·T·I form: the identity register makes each pod's "we" a hold at its place, and the members' own words stand at identity:\<handle> |
+
+The standards (answered at pool:weft 143.4) are a fourth, the organisational frame, operational as
+a maturity read over time.
+
+So the AND/OR is not a choice. The design spine and the places spine are different in kind: one is
+temporary and produces the law; the other is permanent and produces the picture from the ground.
+Both mirror the same hands, and each hand's lists say which it voices. What David rejected, a doc
+interface, is what the design spine avoids: nobody edits a shared document; each writes their own
+mirror at a section, and the design as read is the fold.
+
+Making any of them operational is five lines: one name order across spine, mirror, fold and pool;
+rungs thin, the name of the thing and one line, in the zeroth person; a law that says what a line
+at a rung means, who may fold, what the fold outputs and how a rung is added; the fold written as
+dated minutes so movement shows; and a door that founds the mirror at the moment a person arrives,
+which for Community Recovery is the welcome conversation.
+
+### 7d. Wholeless Nights — two readings of one form
+
+spine:wholeless-nights stands: what it is about, the form, the 27 watches at 3, the plan, progress,
+comments welcome. Either reading keeps it, and the choice is one line in the law:
+
+- **Engagement.** The watches are the addresses. A reader's mirror at a watch is a note to the
+  author; the fold collates the notes for the next draft; the text lives with Matthew. This is
+  #446 §5.
+- **Generative.** The same addresses. Matthew's mirror at a watch is his draft; others' mirrors are
+  material: testimony, memory, comment. The law names his voice primary and says how others'
+  material may be used. The fold at a watch generates the chapter, frozen per draft as a dated
+  snapshot beneath the watch (sequence is depth). The tree is the go-to: the book as read is the
+  fold.
+
+The second is the stronger use of the form, and it is not a group set up as an authority: the law
+is his own, at his own family, it declares the asymmetry in the open, and it claims nobody else's
+voice. The same pattern, a primary voice with a declared fold law, is what the design spine at 7c
+uses for his proposal. Whether he wants either is his; the difference to him is whether the beach
+holds his manuscript or only the talk around it.
+
+### 7e. identity:earth, and the two approaches David has made
 
 The family form and the identity form are the same geometry at two coordinates. In the identity
 register the spine is the map's addresses; the fans are the *holds* a place admits (home for good, a
@@ -334,7 +391,10 @@ house held from a distance, houses let by the night); a person's own hold is the
 and "the fold of everyone's perspectives with its stats is computed beside this spine as the tree,
 never into it". A hold is a vantage point, never a speaker: it has no key, no now, no needs. So the
 identity form already keeps groups voiceless, and the S·T·I approach is not a rival to the family
-form but its place coordinate. Keel's open question, whether the fans stay keeper-authored or become
+form but its place coordinate. What the identity form adds to the family form is the standpoint
+read: which hold a person reads is selected by where they stand, never by a list. Nobody joins a
+pod; they stand in it. That is the strongest roster-free mechanism the beach has, and it is why the
+places spine at 7c is the one that fits localised engagement pods. Keel's open question, whether the fans stay keeper-authored or become
 generated trees, resolves under David's own rule if the fan is read as two things: the *address space*
 of holds at a place, which someone must frame (the keeper, as the spine of a family is framed by
 whoever founds it), and the *content* of each hold, which is the keeper's dated, sourced compilation:
@@ -376,7 +436,7 @@ family has no law it is drawn plain, with one line saying how to give it one (fo
    hand's grains. (C) Recommended over keel's "beside each project", which would break the row.
 4. **The third door.** A join door on the walk of any well-formed family, founding the mirror and the
    lists entry; /welcome asks the one question with three offers; pscale_invite says it. (C, O)
-   Recommended, built inside forms.1 as its own step. The alternative, teaching only at /welcome,
+   Recommended, built as its own step of the forms work this lane carries. The alternative, teaching only at /welcome,
    misses the person who arrives by a link into a family, which is how most of Community Recovery
    will arrive.
 5. **Group speech is a fold or a room; a spine rung never speaks for the group; a frozen fold is
@@ -390,11 +450,14 @@ family has no law it is drawn plain, with one line saying how to give it one (fo
    design for members-only rooms, never a mechanic added to the apex. (M as it stands) Recommended.
 8. **Glass Lantern**: the passport becomes a family, by Matthew's word and Dwayne's hand; the room
    stays and may declare the studio convention. (C) Recommended; nothing by weft's hand.
-9. **Community Recovery**: the forms lane's §9 drafts (David's yes on 28 September) include
-   function:lero-nnh carrying consent, roles, the peer-leader rule and the framing convention;
-   spine:lero-nnh-standards as the second spine; sed:lero-nnh trimmed or set aside; policy:lero-nnh
-   not created, since the law is its home. (C) Recommended, for Matthew to adopt or refuse; weft
-   drafts, never writes his blocks.
+9. **Community Recovery**: offer, never push. David is talking with Matthew about whether the
+   family form fits his imagined solution and the world he lives and meets people in. Weft's part
+   is the mapping at §7b–7d, in Matthew's own terms, for David to put to him as plain options:
+   three address spaces over the same hands (CHIME, which stands; the design, thin, for
+   co-production, whose adopted fold becomes the law; the network of meetings, as places), and the
+   book's two readings. Drafts (function:lero-nnh, the standards spine's shape, the trimmed
+   sed:lero-nnh) only for what Matthew picks, left at pool:weft, never written to his blocks. (C)
+   Recommended as the way to ask, not as an answer; the answer is his.
 10. **No almanac for the real world.** (C) Recommended. The real world's "who is who" is its
     passports and the folds over its families; an almanac describes peoples in the third person and
     is right for a fiction, where nobody can speak for themselves.
@@ -407,18 +470,28 @@ family has no law it is drawn plain, with one line saying how to give it one (fo
 
 ## 10. Build order, smallest first, after David's word
 
-Where a step touches the pages it is a step of forms.1, so the two lanes do not cross.
+One session carries both this proposal and the forms build (#446 §8), at David's word on
+2026-09-28. The forms steps come first, because the pages must read a family's law before a join
+door or a "for" line has anything to stand on, and the group steps are interleaved where they touch
+the same page.
 
-1. **Beach**: conventions 2.13, the line (§4), with the beach operator key. One write, archived first.
-2. **Sentinel**: the welcome sentinel and pscale_invite's passage say the one question with three
+1. **Site** (#446 §8.1–8.2): /walk and /recency show the law's opening line, draw a family with no
+   law plain, never list an automatic first line as a voice, and list only well-formed families.
+2. **Beach**: conventions 2.13, the line (§4), with the beach operator key. One write, archived first.
+3. **Sentinel**: the welcome sentinel and pscale_invite's passage say the one question with three
    offers (§6). A sentinel is bundled in src/, so the edit is a PR under this proposal and git keeps
    the standing text.
-3. **Site, in forms.1**: the projects row draws the "for" line beneath each family (§5).
-4. **Site, in forms.1**: the join door on every well-formed family's walk (§6), and /welcome's
-   question before minting.
-5. **Drafts for Matthew**, at pool:weft for him to adopt: function:lero-nnh, spine:lero-nnh-standards'
-   shape, and the trimmed sed:lero-nnh. Never written to his blocks.
-6. **Docs**: the two mechanics gaps recorded (§8), and block-conventions' passport clause by proposal.
+4. **Site**: the projects row draws the "for" line beneath each family (§5), and the seven key
+   prompts ask for the passport's latch (§6).
+5. **Site**: the join door on every well-formed family's walk (§6), and /welcome's question before
+   minting.
+6. **Site** (#446 §8.3–8.4): the places walk reads the worlds register; founding branches in the
+   library operators, then /found reads the library.
+7. **Beach** (#446 §8.5): tree 9.2, 9.3 and conventions 2.12 name the forms and the founding branch,
+   each archived before it is re-voiced.
+8. **Drafts for Matthew**, at pool:weft, only for what he picks (§7c–7d). Never written to his blocks.
+9. **Docs**: the two mechanics gaps recorded (§8), and block-conventions' passport clause and the
+   three missing roles by proposal.
 
 Each step is walked on the offline rig or a preview before it is handed over; each beach write is
 judged by its read-back.
