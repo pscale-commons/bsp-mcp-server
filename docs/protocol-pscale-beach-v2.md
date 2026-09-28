@@ -467,6 +467,8 @@ These are deliberately deferred:
 4. Cross-beach grain — when Alice and Bob are on different home beaches, where does their grain live? (Probably: at one of the beaches by mutual choice, with the other beach holding a pointer mark.)
 5. Sub-paths for marks — does `https://foo.com/blog/post-1` get its own beach view, or do all marks land at the origin's single beach? (Local-beach-first answer: origin-level. Sub-path semantics are conversation-block conventions, not separate beaches.)
 6. Should bsp-mcp eventually serve its own `/.well-known/pscale-beach` to make the commons a federation peer? (Currently deferred — see roadmap.)
+7. Group accumulators — a members-keyed block (group encryption, the keyring at position 9) cannot be appended to, so a bounded core such as a leadership team has a shared block but no private room. Recorded 2026-09-28 from the group proposal (bsp-mcp proposals/2026-09-28-groups-are-trees-never-hands §8) so it is not built by reflex: the line that keeps groups voiceless needs no new mechanic.
+8. Members-only reading at scale — the standing design is a private beach with a read gate, never content encryption of shared blocks. Same record; same reason.
 
 ---
 
