@@ -234,11 +234,16 @@ goes *beneath* the entry, as depth:
 
 ```
 lists:Phenomemental
-  1.1  lero-nnh-recovery-capital
-  1.11 as coordinator, for Community Recovery — since August 2026, funded by The Forward Trust
-  1.2  lero-nnh-standards
-  1.21 as coordinator, for Community Recovery
+  1     the projects, a chain: each rung's 1 is the next rung (rank is depth)
+  1.1   lero-nnh-recovery-capital
+  1.12  as coordinator, for Community Recovery — since August 2026, funded by The Forward Trust
+  1.11  lero-nnh-standards
+  1.112 as coordinator, for Community Recovery
 ```
+
+(Corrected the same day: the chain runs through each rung's 1, so the line sits at the rung's 2,
+never at its 1 — the first draft's 1.11 was the second project's slot. theme.js keeps a rung's
+own children through a save, so re-ordering the row never strips a line.)
 
 One hand, several relationships, changed at will, no roster anywhere, and the family can still
 answer "who faces this centre" from the index of its mirrors. relationships:\<handle> stays what it
