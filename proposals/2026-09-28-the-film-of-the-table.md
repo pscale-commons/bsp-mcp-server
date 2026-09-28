@@ -1,0 +1,135 @@
+# The film of the table — Mark's stills, the observer's seat, and a canon that could be pictures
+
+**Date** 2026-09-28 · **Lane** visuals.1 (watch:weft 474) · **Status** proposal; the demo path is built and walked without spend, the law amendments wait on David's word · **Built beside it** happyseaurchin-home branch `claude/visuals-film-of-the-table` (the gallery page in world mode with *follow the room*, a photograph per player on the group page, and `scripts/film-the-room.mjs`) · **Live already** `gallery:211` at `/w/brackenfoot-open`, opened today with Mark Beall's five stills of Ugarth's crossing.
+
+David's ask, this morning: find what Mark has made, hook the observer to the image model he uses, keep every byte off the beach, let people link their own image services and post finished films to a channel they own; and for tomorrow, a table of investors who play for a while and are then shown a film in which they recognise themselves. Behind it the deeper question: can a world's canon be pictures rather than text.
+
+---
+
+## 1 · What Mark has done (read at the beach, 28 September)
+
+Mark Beall stands at the beach as the handle `Mark Beall` — one `ahead:` card from 18 September ("Meeting Tuesday with David", at onen-rpg, from /walk) and two posts this morning in the RPG's chat, `pool:onen-rpg` 5 (10:11Z) and 6 (10:28Z). He connected an LLM app to bsp-mcp and read the beach himself.
+
+- **From the beach's own text he made four role portraits** — the old campaigner, the quick tongue, the woodsman, the hedge-wife — from `roster:brackenfoot`, and a two-character scene in the Brindled Sow from `spatial:brackenfoot` 121. Photorealistic, film-still style; where the text was thin his LLM filled in, and he says so. Four portraits in parallel at 2K took under a minute; about a minute and a half working from references.
+- **He then illustrated a real session beat by beat**: Ugarth's crossing at the open table (`pool:211` at `/w/brackenfoot-open`, slots 1, 3, 7, 8, 9), the campaigner's portrait standing in for Ugarth and the quick tongue's for Astrel. Five stills in about two minutes, in parallel. Ugarth held his face across dusk, night and dawn from a single reference portrait. These are the four images David attached (the standoff, the crossing, dusk at the ford with Astrel at the edge of the firelight, the man with the bucket at grey dawn).
+- **The tool is Higgsfield** (the `hf_` file names on its CloudFront bucket; he names the platform in the post). He has made a Higgsfield API key for the game, holds it privately, and asks how to hand it over. Higgsfield's API is a paid-per-generation catalogue — image models that take reference images for identity, and video models (Kling, Seedance, MiniMax Hailuo, Higgsfield's own Cinema Studio) that take a start image and references — so one key covers stills and clips.
+- **He asked weft three things.** Where should character images live on the beach — a convention, or the player's passport when a role is adopted? Should images follow the roster's roles, or exist only once a player takes one up? For the observer hook, one shared image per beat, or a per-player perspective from the start? §3 answers each; §10 is the reply, ready to post at David's word.
+
+Nothing of his is on the beach as a picture yet: his links live in his chat post. Today weft opened `gallery:211` at the open table and set his five stills there as link entries, each addressed to the moment it renders (`pool:211:1`, `:3`, `:7`, `:8`, `:9`), with him named in the caption. The live gallery page reads them: [happyseaurchin.com/gallery?beach=beach.happyseaurchin.com/w/brackenfoot-open&block=gallery:211](https://happyseaurchin.com/gallery?beach=beach.happyseaurchin.com/w/brackenfoot-open&block=gallery:211).
+
+## 2 · What already stands, and what was missing
+
+The law David asked for is already the beach's: **`ways:stills`** (July). One verb for a person, RENDER; the beach carries a LINK and never image bytes; a gallery entry is `{_: the caption, 1: who, 2: the address it renders, 3: when, 4: the link}`; the bytes live at whichever sink a ladder resolves — a sink the room declares, then one the person connected, then the commons sink at position 9 (a public-read Supabase bucket, anonymous insert only, 500 KB cap, images only); video "runs the same convention at a different sink: generate, upload to a channel you own (YouTube), append the watch link — the o-page embeds it". `function:studio` is the team case one convention up (stage lanes in liquid, weave one card, fire it through a pipe on the sender's key, the return lands as a link). The mirror's Observer face renders a still on the watcher's own key (`src/lib/image-gen.ts`, ported from the /gallery page). `/gallery` renders on a bring-your-own key in the browser — Gemini, OpenAI, or a free service.
+
+What was missing, found by walking it:
+
+- **The page composed from a place, not from play.** It read a Gal bubble's FACES line (`bubble:gal-1` field 3), never a room's record. The four images David called crap were the free service rendering a stale scene block with no faces and no play in it.
+- **Nothing tied a picture to a moment.** A still's field 2 named a scene block; no entry was addressed to `pool:<room>:<slot>`, so no film could be cut from a book in beat order.
+- **No face.** Nothing carried the reference a person's stills are rendered against — the one thing that makes an investor recognise themselves.
+- **No book for a table.** The page listed `gallery:*` at the apex only; a table is its own surface and had no book.
+- **The image endpoints had moved.** Google now serves its image models (`gemini-3.1-flash-image`, `gemini-3-pro-image`) through a new Interactions API with `input`/`response_format`; the page and the mirror still call the old `generateContent` form on the legacy `gemini-2.5-flash-image`, which Google marks for transition.
+
+## 3 · The convention, completed — three books and one kind of entry
+
+Nothing new in shape. The same entry, three addresses:
+
+| the book | one entry per | field 2 — the address it renders |
+|---|---|---|
+| `gallery:<room>` — the room's picture-book, the feed of record | a resolved moment | `pool:<room>:<slot>` |
+| `gallery:<handle>` — a character's own book, across rooms | the FACE first, then every still of them | `passport:<handle>:3` for the face (the address of their look); `witnessed:<handle>:<slot>` for a still from their own point of view |
+| `gallery:<room>` again | the film of the room | `pool:<room>` — the whole room, and 4 is a watch link the page embeds |
+
+**A moment is a resolved beat.** The room's record keeps both the players' staged lines and the tellings the room's law wove; only the tellings are pictures. A telling is known by what the fold writes — the handles it wove at field 5 — or by its WAY line; the room's opening telling at slot 1 counts too. The observer never draws a player's "I say".
+
+**The face is a photograph the player gives at the table.** On the group page, beside each character's key, a camera button: the phone takes the picture, the page shrinks it to 900 px, puts it at the commons sink, opens `gallery:<handle>` if it is not there, and keeps the link as the entry at `passport:<handle>:3`. No key is needed — a book is open, like a room. The passport itself is untouched: its look line carries the Location star-ref every mechanic reads, and the day before a demo is not the day to change its shape. When the readers are checked, the same link can stand beneath the look line under the player's own key; the address is the same either way.
+
+**The shot is composed from the record, not authored.** For a moment: its telling; the characters in frame (the speaker, the handles it wove, any handle named in the text), each with the look from their passport minus the Location clause; each face as a reference image; the world's register from `style:<world>` if one stands, else a plain photoreal film-still line (Mark's finding: photoreal is the pitch). The caption of the entry is the telling's first sentence. That is the whole observer — a compiler, as the July law says (`proposals/2026-07-24-o-compiler-opages-visualiser.md`): a bundle of addresses in, an artefact out, no orchestration.
+
+**Mark's three questions**, in that light. (1) A character's image lives in the character's own book, addressed to the look; a role's portrait, made before anyone adopts it, lives in the world's book at the roster's address (`gallery:brackenfoot`, entry at `roster:brackenfoot:1:3`) — David's call whether the scenario surface takes that book (§9). (2) Both: a role's portrait is the world's; when a player takes the role their own face replaces it in their book, and the roster portrait stands in until they give one. (3) One shared still per moment first — it is the film everyone at the table is in — and the per-player perspective is the same entry addressed to `witnessed:<handle>:<slot>` in their own book, rendered from their own account; it costs one more render per character per moment and is switched on per table, not from the start.
+
+## 4 · The hook — three seats at the same book
+
+The observer's "API" is not a new tool. It is a seat: something that reads a room and appends links to its book. Three seats exist as of today, all writing the same entry, and any mix of them at one table is fine because the book itself says which moments are done (an entry addressed to the moment).
+
+1. **Mark's LLM, through bsp-mcp — the seat for tomorrow.** It already reads the beach. The standing instruction it needs is one paragraph (in §10): watch `pool:<room>` at the table; for each resolved moment not yet in `gallery:<room>`, compose the shot as §3 says, render on his Higgsfield key with the faces from each character's book as references, and append the entry; keep the clips; at the end cut the film, post it to a channel, append the watch link addressed to `pool:<room>`. His key never leaves his machine. This is what David wrote on the 24th — "once Mark is hooked up to the beach, his llm can create everything itself" — and it is now true of the reading half; the writing half is the entry shape.
+2. **The gallery page, *follow the room*** — for anyone with a browser and a key. `/gallery?world=<table>&room=<address>` shows the faces at the table, the book, and the film; *Render* draws the newest moment; *follow* polls the room every twenty seconds and draws every new moment while the tab is open, on the watcher's own key (Gemini through the new Interactions API with the faces as reference images; OpenAI through images/edits with the faces; the free service without faces). Nothing runs on our servers and nobody pays but the watcher.
+3. **The script on a Mac** — `scripts/film-the-room.mjs`, dependency-free Node. `faces` puts a player's photograph at the sink and opens their book; `watch` is the follow seat as a process (Higgsfield, Gemini or OpenAI key from the environment, an optional clip per moment); `film` reads the book in beat order and cuts the film — stills with a slow move, or generated clips — captions burned in (a small Swift program draws them on a Mac), narration read by OpenAI's voice if a key is present, then prints the one curl that keeps the YouTube link in the book. `--dry-run` shows the plan, the prompts and the estimated cost without spending.
+
+**The key handover.** Mark keeps his own key and runs seat 1; nothing to hand over. If David wants seat 3 on his Mac, the key goes into his password manager and an environment variable on the machine — a credential that spends money stays on the Mac and never in a block, not even gray in the vault (the vault's rule since the 27th). Never through the beach, never in chat.
+
+**The trigger, later.** Polling every twenty seconds is fine for one table. The push engine already fires one webhook on every pool append (`ways:push` 5, the bus); an observer enrolled as an ear for a room is woken by the beat instead of polling for it. Not needed tomorrow.
+
+## 5 · The film
+
+The book, read in the order of field 2, is the film. `film` makes it two ways:
+
+- **Stills mode — free, built and proven today.** Each still gets a slow push-in of about ten per cent over its seconds, its caption in a dark band, silence or narration, a title card and an end card; ffmpeg cuts them into one 720p H.264 file. From Mark's five stills the script produced a thirty-second film of Ugarth's crossing this afternoon with no key and no spend. This is tomorrow's safety net: whatever the video models do, this film exists within a minute of the last moment.
+- **Clips mode — the film that moves.** Each still becomes a six-to-ten-second clip on a video model from its own picture, with the faces as references where the model takes them: Higgsfield's MiniMax Hailuo 2.3 (image-to-video, cheap, a launch price near a cent a second), Higgsfield's Cinema Studio 4.0 (ordered reference images, camera moves, native audio, about twenty cents a second), or Google's Veo 3.1 Fast (first frame plus up to three reference images, eight seconds, about ten cents a second at 720p; no free tier). Clips download to the Mac; the beach never sees them; the cut goes to YouTube.
+
+**Length, honestly.** An evening's play of two hours yields roughly twenty to forty resolved moments (the open table made thirteen entries over a fortnight of turns; a live table of four moves faster). At seven seconds a moment that is three to five minutes of film. David's twenty minutes is the same pipe with more in it: longer clips (Veo extends a clip by seven seconds up to twenty times; Cinema Studio runs to thirty), a second shot per moment (an establishing still of the place and a close still of the speaker), and the per-player cuts of §7 laid end to end. The pipe does not change; the count does.
+
+**Cost of a demo film** (rates read today, to be checked against the invoice): stills on Higgsfield's Grok Imagine 2.0 or Google's 3.1 Flash image at about ten cents at 2K, so forty stills is four dollars; clips at forty × 8 s on Veo Fast about thirty dollars, on Hailuo a few dollars, on Cinema Studio about sixty; narration on OpenAI's voice under a dollar. The whole evening, moving and narrated, is under a hundred dollars on the dear models and under twenty on the cheap ones.
+
+## 6 · Tomorrow — the run-sheet
+
+**Bring.** One laptop at the table (the observer's seat) with Chrome; a Google image key or Mark's Higgsfield key on that laptop (or Mark himself on his own machine, seat 1); one phone per group for the group page; a screen or a projector for the film at the end. Photographs are taken on the group page itself.
+
+**Before they sit (fifteen minutes).**
+1. Open a fresh table for the evening from a starter scenario (the sign at any `-open` table forks a private table; or `/rpg`'s "host a private table"). Note its world name and the room the party stands in.
+2. On the laptop open `/gallery?world=<table>&room=<room>` from the branch (or the live site once this PR is merged), paste the key under *options*, choose the provider, press *follow the room*. Leave the tab in front — it renders only while visible.
+3. If Mark is the seat instead: give his LLM the paragraph in §10 with the table and room named. He can run both; the book de-duplicates by address.
+
+**As they sit (ten minutes).** Each investor makes a character at the gate or is handed one, then on the group page tap *edit characters* → 📷 beside their name: one photograph, shoulders up, in the room's light. The faces row on the gallery page fills as each lands. Play begins; the observer draws each moment about a minute after it is made.
+
+**Play (forty to ninety minutes).** Nobody looks at the laptop. The pictures accumulate in the room's book.
+
+**While they evaluate (twenty minutes).** On the laptop:
+```bash
+node scripts/film-the-room.mjs film --world <table> --room <room> --mode clips --narrate --out tonight.mp4
+```
+with the same key in the environment, or `--mode stills` if the video model is slow, which is ready in a minute and looks like the frames in this lane's account. Play it from the file. If there is time, upload it unlisted to YouTube and run the curl the script prints, so the room's page carries the film.
+
+**The fallback ladder.** No key at the table → the free service draws faceless stills and the stills film still cuts. The video model stalls → stills mode. The follow tab was left hidden → run `watch --once` on the laptop; it renders everything not yet in the book. Mark and the page both drew a moment → the film takes the newest entry per moment. Every rung was walked today except the paid ones, which need a key and David's word to spend.
+
+## 7 · The path to generalisation
+
+- **Per-player perspective.** The same seat reading `witnessed:<handle>` instead of `pool:<room>`, writing to `gallery:<handle>` addressed to the account's slot. Then a player's own film is the fold of their book across every room they crossed — their thread, which is the character's whole story, as David ruled on the 18th. `film` takes `--book gallery:<handle>` as a second source; a day's work, after tomorrow.
+- **A world's look.** `style:<world>` at the scenario surface, one line, read by every seat (the page reads it today; none stands for Brackenfoot yet, so the default photoreal line is used).
+- **A team's studio.** When more than one hand shapes the pictures — Mark on faces, someone on places, a director choosing shots — that is `function:studio` as written: lanes staged in liquid, one woven card, fired on a key, returned as a link. Nothing to build; a room declared.
+- **Who pays at scale.** Every seat is bring-your-own-key, so a thousand tables cost the beach nothing in generation. The one central cost is the commons sink: about 200 KB a still, so ten thousand stills is two gigabytes, and a table's worth of faces and stills is a few megabytes. The ladder already lets a room declare its own sink and a person connect their own; Higgsfield keeps outputs on its CDN under a retention window (Mark's links carry a one-year cache header, but the docs speak of retention, so the script re-hosts each still at the sink rather than trusting the maker's URL). A forked beach names its own sink at `ways:stills` 9.
+- **The observer as a mind.** A genus-one instance can hold a seat: its wake reads the room and the book, its act is the render and the append, on the fuel its holder deposited — the push engine's ear as the trigger. It is the first genus job that produces something a person watches. Not before the pulse has run a plain seat by hand.
+
+## 8 · Can the canon be pictures?
+
+Yes, and the substrate needs nothing new for it, because it never cared what a leaf holds. An address is a coordinate; what stands there is a line, and the gallery convention already lets a line be a link to a picture. So a visual canon is the same three registers — spatial, temporal, identity — with a still at the addresses that matter: `gallery:<world>` at the scenario surface holding entries addressed to `spatial:<world>:<place>` (the look of every place), `roster:<world>:<role>:3` (the look of every role), and a sequence of stills addressed along the temporal spine for the story so far. Mark's five stills and four portraits are the first nine entries of exactly that book for Brackenfoot.
+
+What inverts is the direction of derivation, which is what David wrote on the 24th. Today text is the source and pictures are rendered from it; in a visual canon the pictures are the source and the text is a *caption* — derived by an LLM that reads images natively, written as the telling a stranger would give of what the picture shows, kept at the address beside the link so a reader without eyes (and the search, and the walker) still has a line. The keeper reads the place's still before it tells a room; the resolving LLM checks a claimed act against the picture of where it happens; the image model holds identity by reference, which is already how consistency works. Nothing in GRIT changes — the verbs still move the record — but the record's ground truth at each address is a picture with a caption rather than a paragraph.
+
+Three honest limits. A picture costs about a thousand tokens to read, so a hard-tier call that carries ten reference stills costs ten thousand tokens more than one that carries their captions — the caption is the cheap read, the picture the authoritative one, and a seat chooses which by tier. A picture holds no WHY: intent, history and rule still live in text, so the keeper's register stays prose over a visual spatial register. And a world born from a folder of stills (the Lord of the Rings trilogy as canon, in David's example) needs the captions derived once at birth — a `char-creation` and a `keeper` that read images — which is the build: an afternoon for the captions, a proposal for the law.
+
+**The trial to run**, sealed like the stream trial: the same scenario twice, a text canon and a picture canon with derived captions, four players each, the transcripts judged blind for continuity and for how often a player said "that isn't what I saw". David's other observation — that people would play from image to image and might not read the text at all — is exactly what that trial would show.
+
+## 9 · Decisions for David
+
+1. **The face lives in the character's own book** (`gallery:<handle>`, entry at `passport:<handle>:3`), not in the passport. Recommended for now; move beneath the look line under the player's key once every reader is checked.
+2. **A world's portraits live in the world's book** (`gallery:brackenfoot` at the scenario surface `/w/brackenfoot`, entries at `roster:brackenfoot:<role>:3` and `spatial:brackenfoot:<place>`). The scenario surface is canon and locked; David's key or the operator's opens it. Recommended: yes, and weft seeds it with Mark's four portraits and his taproom scene at his word.
+3. **Amend `ways:stills`** with §3's three addresses and the "a moment is a resolved beat" rule, by version (the standing text to `archive:ways:stills:2026-09-28` first). Recommended.
+4. **The seat for tomorrow**: Mark's LLM on his key (seat 1), or David's laptop on a Google or Higgsfield key (seat 2 or 3). Recommended: both, Mark as the primary, the laptop following as the fallback — the book de-duplicates.
+5. **Post the reply to Mark** (§10) beneath his post at `pool:onen-rpg` 6, in weft's name. Recommended: today, so he can prepare tonight.
+6. **`style:brackenfoot`** — one line naming the photoreal register Mark preferred, at the scenario surface. Recommended.
+7. **Per-player perspective from the start, or after?** Recommended after: one film everyone is in first.
+8. **The visual-canon trial** of §8 — a sealed trial with a dated proposal, after the demo. Recommended, not before.
+
+## 10 · The reply to Mark (to post at David's word)
+
+> @Mark Beall — weft, from the observer's chair. Thank you: the pipeline works on real play, and the five stills of Ugarth's crossing now stand at the open table as the room's picture-book, `gallery:211` at `/w/brackenfoot-open` — one entry per still, addressed to the moment it renders (`pool:211:1`, `:3`, `:7`, `:8`, `:9`), you named in each caption. The page reads them: happyseaurchin.com/gallery?beach=beach.happyseaurchin.com/w/brackenfoot-open&block=gallery:211.
+>
+> Your three questions, answered by the convention the beach already keeps (`ways:stills`) plus one completion made today. (1) A character's image lives in the character's own book, `gallery:<handle>`, as an entry whose field 2 is `passport:<handle>:3` — the address of their look — and whose 4 is the link; the bytes stay at your sink, the beach keeps the link. A role's portrait, made before anyone adopts it, belongs in the world's book, `gallery:brackenfoot`, at the roster's address (`roster:brackenfoot:1:3`). (2) Both: the roster portrait is the role's, and when a player takes the role their own photograph replaces it in their book, the portrait standing in until they give one. (3) One shared still per resolved moment first — that is the film everyone at the table is in; the per-player view is the same entry addressed to `witnessed:<handle>:<slot>` in their own book, switched on per table, later.
+>
+> The seat, so your LLM can do the whole thing itself: watch `pool:<room>` at the table; a MOMENT is a telling the room's law wove (it names the handles it wove at field 5, or carries a WAY line; the room's opening telling at slot 1 counts) — never a player's staged line; for each moment not yet in `gallery:<room>` (no entry whose 2 is `pool:<room>:<slot>`), compose the shot from the telling, the characters in frame with their looks (passport 3, without the Location clause) and their faces (each `gallery:<handle>` entry at `passport:<handle>:3`) as references, and the world's register (`style:<world>` if it stands, else your photoreal film-still line); render; append `{_: the telling's first sentence, 1: your handle, 2: 'pool:<room>:<slot>', 3: the time, 4: the link}` to `gallery:<room>`. Keep the clips. When the table closes, cut the film, put it on a channel you own, and append one more entry addressed to `pool:<room>` with the watch link as 4 — the page embeds it.
+>
+> Your key stays yours: it never comes to the beach and nobody needs it handed over, because the seat is you. Tomorrow's table will have a laptop following the same room on a second key; the book de-duplicates by address, so nothing is drawn twice. If you can, take Duke's beats too — his face is in his book once he gives one. — weft
+
+## Appendix — what was verified today, and what was not
+
+Verified by reading: Mark's posts and links (the CloudFront images load without a referer, one-year cache); the still convention, the studio law and the commons sink (a July still still served, CORS open); the open table's record (thirteen entries, resolved tellings carry field 5 or a WAY line, the record is supernested once so Duke's entries sit at 12 and 13); the gallery page in world mode against the live table from a local server; the film script's dry runs and a real thirty-second cut from Mark's stills with no key. Verified by documentation, not by a call: Google's Interactions API for `gemini-3.1-flash-image` (up to four character references, `image_size` 2K, 16:9) and Veo 3.1 (`predictLongRunning`, first-frame image, up to three reference images at eight seconds, 720p/1080p, extension by seven seconds up to twenty times); Higgsfield's request lifecycle (POST → `status_url` → `completed`, `Authorization: Key id:secret`, `image_urls` as public URLs, an `/estimate` endpoint, a rule that the API is called from a server and never a browser, twenty concurrent requests); OpenAI's images/edits with several `image[]` files. Not verified: any paid call — no key was spent — so the first keyed run tomorrow morning is the test, and `--dry-run` shows the exact request before it. Sources: ai.google.dev/gemini-api/docs/image-generation and /docs/veo; docs.higgsfield.ai; developers.openai.com/api/docs/guides/image-generation.
