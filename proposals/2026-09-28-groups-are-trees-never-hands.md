@@ -111,10 +111,36 @@ peoples, families and orders in the third person and never lets them speak; ther
 position and inherits from the root. `sed:` allocates by arrival order. `grain:` is a pair. `members`
 is a declared read-list with a keyring at 9, flat, and the append primitive says group accumulators
 are not supported yet. `gray` is per writer. Since 2026-09-28 (pscale-beach #77, bsp-mcp #445) a
-block named \<x>:\<handle> latches only under the passport's own key: the passport is the root of a
-hand's sovereignty, and everything a hand founds inherits from it. Nothing in the physics knows or
-can know whether a handle is a person; the same string names a person, an agent, a character and a
+block whose name ends in :\<x> can be latched only under the key of passport:\<x>, once that passport's
+root is locked. The handle is simply the last colon segment, so spine:\<x>, function:\<x>, pool:\<x>,
+lists:\<x> and every \<family>:\<x> are bound alike, and passport: itself is exempt: whoever locks
+passport:\<x> first holds the name \<x> for every role. (passport:GlassLanternStudios is latched at 1
+only, its root open, so the studio's name is not yet bound.) The handler validates no block name and
+routes by prefix alone; a new block's identity is `<name> at <origin>`. Nothing in the physics knows
+or can know whether a handle is a person; the same string names a person, an agent, a character and a
 studio.
+
+**What the doors do** (the site at origin/main, 2026-09-28; the local checkout is stale). No page asks
+whether an arrival is a person or a project; every door takes a bare handle. /welcome is, in its own
+comment, "the one place on the site a passport is founded": a name, one line, a key, then today's
+line; it mints passport:\<name> with the Location line at 3 and, only if the passport stands,
+now:\<name>. /now refuses a handle with neither passport nor now and sends it to /welcome. So the
+passport is the gate to the now, and the single decision at the door, to mint a passport or not, is
+the whole guard. /found takes a kind (the venture, or a question set), a name, a keeper typed free and
+never checked against any passport, a key and an access word; it mints spine:\<name>, function:\<name>
+and an open pool:\<name>, writes no mirror for the keeper and no lists entry, and writes no sed: block
+(the access word is text inside the law; /next treats a handle as a member if a line in that sed:
+begins with it, and calls this "convention, not enforcement"). /walk and /recency mint \<f>:\<h> when a
+person writes a line at a rung, /walk asking for the passport's key; neither writes a lists entry and
+neither reads function:\*. theme.js builds the projects row from lists:\<h> branch 1 and says in its own
+comments: "a family exists iff spine:\<name> stands; you are in it iff \<name>:\<handle> stands", and
+"a default, not a law: there is no substrate fact that means project". /walk's cast lens reads
+sed:\<f>-cast as "a view, never a gate". The welcome sentinel asks what brings the person and where
+they are, mints a mark, a passport on Earth, a stashed thought, a now cell and a line at
+pool:happyseaurchin, and says "their line in a project already has its place; anything else new, name
+it to them first". No code reads a family's law to decide anything: function:\<name> is read only as
+settings by /fold, /next and /tree. block-conventions, the sentinel catalogue of roles, has no entry
+for lists:, now: or function:, the three roles every page reads.
 
 **The now family.** function:now 0 says a person's NOW. Ten now mirrors stand beside the fold, and
 none is an organisation's. /now and the torus list the mirrors of the now family; they cannot tell a
@@ -152,6 +178,14 @@ Everything a bounded group keeps as a record, the form gives as a read:
 | roles | the hand's own "as … for …" line, plural, changed at will |
 | the group's voice | the fold, or a room — never a rung, never a passport line |
 | the group's needs | none: a family has no now; each hand's now says what it did for it |
+
+In the physics the whole line is one fact: **a name with a locked passport is a hand; a name without
+one is a family.** A person's own diary is already a family named after them (/page founds
+spine:\<handle> on the first post), so the family form hosts persons and projects alike, and the only
+thing that makes a name a hand is its passport. Minting passport:\<Org> does not give an organisation
+a card. It converts a family into a hand, opens the now to it, and since handle_bound claims the name
+for every role: now:\<Org>, lists:\<Org>, \<family>:\<Org>. That is the exact mistake, and it is one
+write.
 
 Matthew's four open challenges are answered by the form he already runs, not by new machinery:
 consent to lift out is what a person leaves readable to the fold (open, gray, a buddy grain, a
@@ -223,16 +257,23 @@ exists:
 |---|---|---|
 | **be here, as themselves** | passport:\<handle>; a now on first use | /welcome, pscale_invite, char-creation |
 | **start something** | spine:\<name> and function:\<name> from the library; the room and the fold born of use | /found (two forms from code; the forms proposal moves them into the library) |
-| **join something already being made** | \<name>:\<handle>, their mirror, born on first use; and a "for" line beneath the entry in their own lists | nothing offers it |
+| **join something already being made** | \<name>:\<handle>, their mirror, born on first use; and a "for" line beneath the entry in their own lists | half of it: /walk and /recency found the mirror when a person writes a line at a rung, as an edit, not a door; no lists entry, nothing that says join |
 
-The third row is the gap. A mirror is "born on first use" (ways:founding 2.3), so the mechanism
-exists; no door offers it as an act. That is where Community Recovery's commonest case, and Alex
-arriving at the studio, fall through the middle today, and where the line is best taught, since it
-is the moment a person decides what they are. Proposed: the walk of any well-formed family carries
-one door, "add your voice here", which founds the mirror at that address and writes the lists entry
-with an empty "for" line beneath for the person to fill (O, built in forms.1 as the third dialect's
-sibling). /welcome asks the one question with three offers before minting anything (O), and
-pscale_invite says it in its passage (C).
+The third row is the gap. A mirror is "born on first use" (ways:founding 2.3), and the pages do
+found one when a line is written, so the mechanism exists; no door offers it as an act, and the
+welcome sentinel only says a person's "line in a project already has its place". That is where
+Community Recovery's commonest case, and Alex arriving at the studio, fall through the middle today,
+and where the line is best taught, since it is the moment a person decides what they are. Proposed:
+the walk of any well-formed family carries one door, "add your voice here", which founds the mirror
+at that address and writes the lists entry with an empty "for" line beneath for the person to fill
+(O, built in forms.1 as the third dialect's sibling). /welcome asks the one question with three
+offers before minting anything (O), and pscale_invite says it in its passage (C).
+
+One constraint the join door inherits from handle_bound: a mirror is latched only under the
+passport's key, so the door uses the stored passport latch, as /walk and /recency already do. Seven
+other site prompts (welcome, now twice, hands, page twice, theme.js) still invite a person to invent
+a new key, which the beach now refuses when the passport is locked. That is a fault in pages people
+are using, for forms.1 to fix in the same pass.
 
 ## 7. The two cases, under the form
 
@@ -307,7 +348,7 @@ mirrors.
 
 | layer | what it is | what it knows about groups | what this proposal does there |
 |---|---|---|---|
-| **M** core mechanics | the walker, names, latches, append and supernest, sed arrival order, grain, members keyrings, gray, handle_bound | nothing. A handle is a string; a passport is the root of a hand's sovereignty | **changes nothing.** Two gaps named, not filled: (1) a members-keyed block cannot be appended to, so a bounded core has a shared block but not a private room; (2) members-only reading at scale is the private-beach design (a read gate at a beach of one's own), not content encryption. Neither is needed for the line |
+| **M** core mechanics | the walker, names, latches, append and supernest, sed arrival order, grain, members keyrings, gray, handle_bound | nothing. A handle is a string; a locked passport binds every role's :\<x> to its key, so a passport is the root of a hand's sovereignty and a claim on the name | **changes nothing.** Two gaps named, not filled: (1) a members-keyed block cannot be appended to, so a bounded core has a shared block but not a private room; (2) members-only reading at scale is the private-beach design (a read gate at a beach of one's own), not content encryption. Neither is needed for the line |
 | **C** conventions of use | role-with-handle naming; each family's law; the library of forms; the beach's conventions block; the welcome | this is where the line lives, and where every group rule is declared, once, where an LLM reads first | the line (§4); "for" beneath the lists entry (§5); the third door (§6); group speech is a fold or a room (§3); a family without a law is not well-formed (forms proposal) |
 | **O** o-pages | /welcome, /found, /walk, /recency, /now, /hands, the torus, mirror.onen.ai, Matthew's pages | they render what a family declares; they cannot tell a person from a studio and must not guess | the question at the door (§6); the join door on the walk (§6); the projects row shows the "for" line (§5); a family's "who" is its voices, drawn from the index; a fold is shown as "the current picture, from N voices", each reachable; a passport is drawn as a hand's card, whatever it says |
 
@@ -357,8 +398,9 @@ family has no law it is drawn plain, with one line saying how to give it one (fo
 10. **No almanac for the real world.** (C) Recommended. The real world's "who is who" is its
     passports and the folds over its families; an almanac describes peoples in the third person and
     is right for a fiction, where nobody can speak for themselves.
-11. **The sentinel edits** (block-conventions' passport clause; the whetstone's note on the two
-    gaps) go by proposal and version, as law-class blocks do: the beach's conventions block is
+11. **The sentinel edits** (block-conventions' passport clause, and entries for lists:, now: and
+    function:, the three roles every page reads and the catalogue does not name; the whetstone's
+    note on the two gaps) go by proposal and version, as law-class blocks do: the beach's conventions block is
     archived at archive:conventions:2026-09-28 before 2.13 is written, and a bundled sentinel's
     standing text stays in git. (C) Recommended; small, but they are the words every arriving LLM
     reads.
