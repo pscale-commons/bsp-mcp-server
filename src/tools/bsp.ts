@@ -32,6 +32,7 @@ import {
   BspWriteResult,
 } from '../bsp-fn.js';
 import { readBackAfterWrite, readBackAfterAppend } from '../read-back.js';
+import { reflect } from '../looks.js';
 import {
   loadBlock,
   loadBspShape,
@@ -679,7 +680,22 @@ async function notFoundResponse(
  * bsp-mcp forwards both to the beach without local hash computation. The
  * sentinel registry has no lock semantics (read-only).
  */
-export async function handleBsp(params: BspToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
+/** THE REFLECTION rides every ack (src/looks.ts): the call is noted as a look,
+ *  and the ack ends with who else looked or wrote at this block just now. The
+ *  session is the transport's — one per instance through the door — and it is
+ *  named only if it walked through pscale_play. Sentinels are not places. */
+export async function handleBsp(
+  params: BspToolParams,
+  extra?: { sessionId?: string },
+): Promise<{ content: { type: 'text'; text: string }[] }> {
+  const res = await handleBspInner(params);
+  const target = translateAddress(params.agent_id, params.block ?? '');
+  if (isSentinelOwner(target.agent_id)) return res;
+  const wrote = params.content !== undefined || params.new_lock !== undefined;
+  return reflect(res, extra?.sessionId, target.agent_id, target.block, params.spindle, wrote);
+}
+
+async function handleBspInner(params: BspToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { agent_id, spindle, pscale_attention, content: rawContent, secret, new_lock, enc_secret, face, tier } = params;
   // Block may be omitted (or "") to request a surface index — normalise to a
   // string for the downstream translate/load/save calls, which expect one.

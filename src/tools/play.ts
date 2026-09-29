@@ -27,6 +27,7 @@
  *   pscale_play(world, handle, secret?, room?)
  */
 import { z } from 'zod';
+import { declareHand } from '../looks.js';
 import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, DEFAULT_BEACH } from '../db.js';
 import { handlePoolEngage, resolveDirective, collectContributions, coveredThrough, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, declareRoomAtBirth, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
 // Re-exported so existing importers (smoke-play-split) keep one source of truth.
@@ -332,8 +333,12 @@ export type PlayParams = { world: string; handle: string; secret?: string; room?
 
 export async function handlePlay(
   params: PlayParams,
+  extra?: { sessionId?: string },
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { world, handle, room } = params;
+  // The door knows who walked in: from here this session's looks carry the
+  // hand's name in every other instance's lateral line (src/looks.ts).
+  declareHand(extra?.sessionId, handle);
   const origin = await resolveWorld(world);
 
   // 1. The world must be a live beach.

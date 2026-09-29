@@ -71,7 +71,8 @@
     "lint:block": "tsx scripts/lint-block.ts",
     "smoke:room-fold": "tsx scripts/smoke-room-fold.ts",
     "smoke:tiers": "tsx scripts/smoke-tiers.ts",
-    "smoke:clock": "tsx scripts/smoke-clock.ts"
+    "smoke:clock": "tsx scripts/smoke-clock.ts",
+    "smoke:looks": "tsx scripts/smoke-looks.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",

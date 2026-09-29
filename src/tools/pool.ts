@@ -36,6 +36,7 @@
  */
 
 import { z } from 'zod';
+import { reflect } from '../looks.js';
 import { createHash } from 'node:crypto';
 import { Block, writeAt, readAt, floorDepth, formatAddress, parseSpindle } from '../bsp.js';
 import { isLocationAddress, ancestorsOf, contains, pscaleOf, walkedOf } from '../grain-address.js';
@@ -1723,7 +1724,19 @@ export type PoolEngageParams = {
 
 // ── Handler ──
 
+/** THE REFLECTION rides the room's ack too (src/looks.ts): an engage is a look
+ *  at pool:<name>, a stage or a commit a touch, and the ack ends with who else
+ *  is at this pool just now. */
 export async function handlePoolEngage(
+  params: PoolEngageParams,
+  extra?: { sessionId?: string },
+): Promise<{ content: { type: 'text'; text: string }[] }> {
+  const res = await handlePoolEngageInner(params);
+  const wrote = params.contribution !== undefined || params.submit !== undefined || params.clear === true;
+  return reflect(res, extra?.sessionId, String(params.pool_url ?? ''), `pool:${params.pool_name}`, (params as any).at ?? null, wrote);
+}
+
+async function handlePoolEngageInner(
   params: PoolEngageParams,
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { agent_id, pool_url, pool_name, contribution, submit, clear, destination, face, secret } = params;
