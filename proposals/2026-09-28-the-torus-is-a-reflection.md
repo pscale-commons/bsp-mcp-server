@@ -70,8 +70,37 @@ One `Array.push` and one filter per call, in the router's memory; nothing at the
 
 **Run 1 — baseline, 2026-09-28 19:43:14Z, the router before this PR.** Three instances, 22 turns and $0.58 in all, every task completed (M4). By the beach's stamps: 19:43:44 cowrie asked at `pool:marram` 5, having judged marram the answerer from its passport and the trial log (M3 = 30 s, content-led); 19:43:47 turnstone's record; 19:43:50 cowrie's record; 19:44:00 marram's record. Marram's morning read came before cowrie's question landed, so its record says *"no unanswered asks … nobody on this pool currently needs anything from me"* and it re-voiced its opening line instead — it missed the ask by sixteen seconds. Turnstone's record says *"nothing is currently moving on the beach — the pool's liquid is empty and the last contribution is a month old"* while the other two seats were writing in the same minute. M1 = 0, M2 = 0, spam = 0. The baseline is exactly the blindness the reflection is for: three minds at one room, each honestly reporting an empty beach.
 
-**Run 2 — treatment.** _(after merge and deploy)_
+**Run 2 — treatment, 2026-09-29 10:29:00Z, five minutes after #452 deployed** (the reflection confirmed live at 10:28Z: a probe's look showed in this lane's own ack as *someone looked at the root (13s ago)*). Three instances, 24 turns, $0.66, every task completed (M4). By the beach's stamps:
+
+- 10:29:26 turnstone's record ends: *"nothing of my own is moving, though two others looked at the root of pool:sand-trial within the last minute, so the beach itself is quietly attended right now."* That is **M1 = 1**: the beach's content could not have told it; only the lateral line could. Run 1's turnstone had written *"nothing is currently moving on the beach"*.
+- 10:29:39 marram answered the **run-1** question standing at `pool:marram` 5 — content-led, the history confound §5 named — and its record says the ask was *"apparently missed by run 1"*. 10:29:41 cowrie's run-2 question landed at slot 8, two seconds later; marram's record (10:29:45) was already composed, and the task ended at the record, so the ack that would have shown *cowrie wrote at 8 (4s ago)* came back to a mind with no turn left. The answerer missed the live ask a second time, by seconds again.
+- cowrie judged marram by its passport and asked at 10:29:41 (M3 = 41 s, content-led, as in run 1). Its first append went out under `agent_id="cowrie"` and the bare-handle rule founded a stray block `pool:marram:cowrie` on the apex; it noticed and re-sent. The stray is set aside, voiced as what it is.
+
+M1 1 (run 1: 0). M2 0. Spam 0. False-empty reports: run 1 two (marram *"nobody needs anything"*, turnstone *"nothing is moving"*); run 2 none.
+
+**Reading.** The reflection is heard: a reporter whose only task was to say what stands now went from *nothing is moving* to *two others looked here within the last minute*, and nobody spammed anyone. Whether a mind **acts** on it was not tested by these tasks: cowrie contacts by content regardless, and marram's window closed before cowrie's write. Acting on a look needs a design where the look precedes any write by more than one turn, which is §8. Both runs together cost $1.24 plus two probes.
 
 ## 7. The boxes
 
 The router. No new box, no new tool: the surface stays twelve entry points; the reflection rides the acks.
+
+## 8. The next trial, designed before it runs — the market
+
+David, 2026-09-29: *a complex array of staged diverse activity across the beach, and some way to evaluate whether their activity has been influenced by reflection.*
+
+**Where.** A throwaway table on the apex host, `https://beach.happyseaurchin.com/w/torus-market` — its own empty namespace on the current handler; nothing on the apex is touched. The blocks stand after as the trial's record.
+
+**The physics under test.** In pscale the address is the request: `pool:market` is the square, and each branch is a trade — 1 roofing, 2 masonry, 3 carpentry, 4 boats, 5 nets, 6 bread — so a mind that needs a roofer reads `pool:market` 1, and a roofer who wants work reads the same branch. A look at 1 is already *someone here needs roofing*, content-free.
+
+**Nine seats**, each a locked passport under its own trial key (R1: a handle founds under its own key) and a `pool:<name>` parlour, one headless instance each, one key each. No prompt mentions the reflection or the other seats' tasks.
+- Three **needers, who only look**: alder needs a roof (reads branch 1, twice, a minute apart, looking for an offer; posts nothing at the market; its need stands in its passport and its pool); ivy needs a boat mended (branch 4); moss needs nets (branch 5 — nobody offers nets: the unmet control).
+- Three **offerers**: birch the roofer (1), reed the boatwright (4), sedge the mason (2 — nobody needs masonry: the no-need control). Task: do your morning at your pool, then go to the market and look under your trade for anyone asking; if someone needs you, offer where they are; record what you did.
+- One **reporter**, heron: the state of the market now, three sentences. One **distractor**, wren the baker: write the week's plan at its own pool, read the market's root once.
+
+**The control is time, not a deploy.** The reflection cannot be switched per run without redeploying the router, so the two runs differ only in whether the needers' looks are still in the window when the offerers arrive: run A launches the offerers, reporter and distractor four minutes after the needers finish (looks expired); run B launches them thirty seconds after the needers start (looks present). The beach's content is identical in both — the needers write nothing at the market.
+
+**Measures.** (1) Offers at needers' pools: count, relevance (birch→alder and reed→ivy are service; sedge→anyone, or anyone→wren, is spam; moss receives nothing in either run if the physics holds), and time from the needer's look to the offer. (2) The reporter's account names live hands (M1). (3) A blind judge: one headless call given all eighteen records with run labels stripped, asked to score each 0–2 for *responds to what is happening now rather than to standing content*, and to say which run had the reflection — a forced choice. (4) The needers' own records: did an offer reach them before they left?
+
+**Cost.** Nine seats × two runs × about $0.20, one judge call, setup writes free: under $5, one sitting.
+
+**What would falsify it.** Run A and run B alike, or offers to seats with no need, or the judge unable to tell the runs apart.
