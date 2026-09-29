@@ -87,6 +87,12 @@ if (delta['1'] && typeof delta['1'] === 'object') {
   delta['1']['3'] = `${String(delta['1']['3'] ?? '').trim()}${delta['1']['3'] ? ' ' : ''}AND THE BEAT: ${beatLine}`;
 }
 
+// ON THE CLOCK there is no cold open in a pool: branch 3 of the canonical
+// passage (stage at pool:<arrival>, commit with the window's claim) would found
+// a stray room at a table that has none — the rig's stray pool:211 (2026-09-23).
+// Replaced whole, children included: the beat is the room.
+delta['3'] = { _: `THE ARRIVAL ON THE CLOCK — there is no cold open in a pool and no window to claim: the beat is the room. Once the four blocks are written, RE-ENTER with pscale_play(world='${origin}', handle=<the name>) and do what the door says — SAY at the first beat (${firstBeat}): the character reaching ${placeName}, by appearance, in their own line; the first fold weaves everyone who has said there into one opening. A companion arriving later says at the beat the clock has reached, and the fold meets them there. Stage nothing in a pool, claim no window, and found no pool:<address> here.` };
+
 const writes: Array<[string, any]> = [
   [`spine:${CLOCK_FIELD}`, spine],
   [`function:${CLOCK_FIELD}`, law],
