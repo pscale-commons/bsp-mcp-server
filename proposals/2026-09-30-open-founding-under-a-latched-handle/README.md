@@ -376,7 +376,10 @@ would be the wrong fix."* And it cannot be made complete:
 - *An LLM calling `bsp()` follows no page.*
 - *More founding code is more hazard.* Four places in this router already treat a failed read
   as a missing block and then write the block whole (`stream.ts` 347, 386, 401; `pool.ts`
-  2026), with `confirm` riding every whole-block write (`pscale-wire.ts` 256).
+  2026), with `confirm` riding every whole-block write (`pscale-wire.ts` 256). On the rig, a
+  read of a standing, latched mirror that fails is followed by its holder's own keyed `say`
+  replacing the mirror with its born line, her readings gone. That fault is its own and is
+  flagged apart from this proposal; it is what founding-in-the-door costs when it goes wrong.
 
 ### Option 3 — the beach says which blocks are latched, and every reader draws only those
 
