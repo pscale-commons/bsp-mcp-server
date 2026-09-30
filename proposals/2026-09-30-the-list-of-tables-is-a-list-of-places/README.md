@@ -4,8 +4,8 @@
 nothing on any beach was written: not at Community Recovery's place, not at the apex, and nothing
 of Matthew's. §7 lists the decisions, each one act with a recommendation.
 **Prompted by**: a finding made in passing at certification.1 (`2026-09-30-confirmed-or-removed`,
-§2 and §11, still on its own branch as this is written): the beach's list of "tables played" named
-Community Recovery's place first, and that place is not a game.
+§2 and §11; #462, open as this is written): the beach's list of "tables played" named Community
+Recovery's place first, and that place is not a game.
 **Builds on**: [tables are listed where they are played](../2026-09-20-tables-are-listed-where-they-are-played.md)
 (the doors taking up the list, which pscale-beach #69 had made two days before), [rooms declare at birth](../2026-09-21-rooms-declare-at-birth.md) (what
 makes a room a table room), [the clock door](../2026-09-22-the-clock-door.md) (a table that has no
@@ -188,11 +188,10 @@ command in sixty-nine. These are the reasons against it:
 - **It drops a table.** `rpg9-clock4` leaves the list, and no table on the clock can join it
   (check 3).
 - **It rests on a block that is born open.** A declaration is unlatched beside an unlatched room,
-  on purpose (world-genome 6.3). At a place whose room is open to anyone, and Community
-  Recovery's rooms take a visitor with no name, any hand can write `convention:<room>` opening
-  `grit`, and the place is on the list as a table again (check 5). The same line makes the room a
-  table room in the mirror today. That exposure is the mirror's and older than this; a filter
-  would lean the list on it too.
+  on purpose (world-genome 6.3, and §3 and §8 of the proposal that made it). Where a room is open
+  to anyone and nothing is declared beside it, any hand can write the line, and the place is on
+  the list as a table again (check 5). That openness is the declaration's own and older than
+  this; a filter would lean the list on it too.
 - **It narrows five readers that work on any place** (§3). A handle standing at a place that is
   not a table is no longer found, and the mistyped name of such a place is no longer matched.
 - **It changes what an existing query answers.** The package's rule for its wire is that
@@ -364,8 +363,7 @@ Each is one act. The recommendation is the sentence as written.
    a character at that place (`src/tools/play.ts` 415–443: where a place keeps no `char-creation`
    the door takes the bundled one). The door itself writes nothing. Shown offline on the real
    handler (`router-doors.mts` 3). It is reachable by the place's name with or without this list,
-   so no answer here closes it. *Recommended*: a proposal of its own, and soon, because the place
-   is live and reachable by its name today.
+   so no answer here closes it. *Recommended*: a proposal of its own, and soon.
 5. **Leave the tables on the clock unlisted for now.** Five stand off the list and one is on it by
    accident. What lists a table with no room is the clock lane's to say. *Recommended.*
 
