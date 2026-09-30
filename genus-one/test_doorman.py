@@ -294,10 +294,11 @@ check(dt.standing_label("soldier at fence", STANDING) == "the soldier at the fen
 check(dt.standing_label("second soldier", STANDING) == "the second soldier" and dt.standing_label("The Day", STANDING) == "the day", "articles and case aside")
 check(dt.standing_label("the soldier", STANDING) == "the soldier", "a label that fits two standing voices stands as written — never a guess")
 check(dt.standing_label("the alewife", STANDING) == "the alewife" and dt.standing_label("the day", STANDING) == "the day" and dt.standing_label("x", []) == "x", "a new person, an exact label, an empty window: as written")
-kl = dt.keeper_lines("Here is what the world does:\n**WORLD · the day · 100 · the cloud comes down.**\n- WORLD the alewife · 120 · wipes the trestle\n> DROP: the boy · 120\nThe first soldier reaches him and takes his arm, and the second one laughs.", places={"100": 1, "120": 1}, room="100")
-check([v["who"] for v in kl["world"]] == ["the day", "the alewife"] and kl["world"][0]["intends"] == "the cloud comes down.", "a line's dressing is forgiven — bold stars, a list dash, a dot after the keyword")
+kl = dt.keeper_lines("Here is what the world does:\n**ARRIVES · the boy on the watch · 100 · comes round the barn at a run.**\n- NEWS 120 · a shout carries down from the hill\n> DROP: the boy · 120\nThe first soldier reaches him and takes his arm, and the second one laughs.", places={"100": 1, "120": 1}, room="100")
+check([v["who"] for v in kl["arrives"]] == ["the boy on the watch"] and kl["arrives"][0]["text"] == "comes round the barn at a run.", "a line's dressing is forgiven — bold stars, a list dash, a dot after the keyword")
+check(kl["news"] == [{"at": "120", "text": "a shout carries down from the hill"}], "news is read with its place and its words")
 check(kl["drop"] == [{"who": "the boy", "at": "120"}], "a quoted DROP with a colon reads too")
-check(len(kl["world"]) == 2, "and prose that tells the scene is still a line the world does not do")
+check(len(kl["arrives"]) == 1 and len(kl["news"]) == 1, "and prose that tells the scene is still a line the world does not do")
 
 check(waker.kept_system("the law", []) == "the law" and waker.kept_system("the law", ["", "  "]) == "the law", "nothing kept: the system text goes as plain text, as it always has")
 ks = waker.kept_system("the law", ["the table", "", "the room"])
@@ -309,7 +310,7 @@ _sent = {}
 class _Reply:
     def __enter__(self): return self
     def __exit__(self, *a): return False
-    def read(self): return json.dumps({"content": [{"type": "text", "text": "WORLD the day · 100 · rain"}], "usage": {"input_tokens": 5100, "cache_read_input_tokens": 10600, "output_tokens": 180}}).encode()
+    def read(self): return json.dumps({"content": [{"type": "text", "text": "NEWS 100 · rain"}], "usage": {"input_tokens": 5100, "cache_read_input_tokens": 10600, "output_tokens": 180}}).encode()
 
 
 import json  # noqa: E402
@@ -318,7 +319,7 @@ waker.urllib.request.urlopen = lambda req, timeout=0: (_sent.update(json.loads(r
 _spent = {}
 _said = waker.model_call("sk-test", "claude-haiku-4-5-20251001", 1200, "the law", "the moment", kept=["the table", "the room"], usage=_spent)
 waker.urllib.request.urlopen = _real_urlopen
-check(_said == "WORLD the day · 100 · rain" and _sent["messages"] == [{"role": "user", "content": "the moment"}], "the moment alone rides as the message")
+check(_said == "NEWS 100 · rain" and _sent["messages"] == [{"role": "user", "content": "the moment"}], "the moment alone rides as the message")
 check(isinstance(_sent["system"], list) and len(_sent["system"]) == 3 and _sent["model"] == "claude-haiku-4-5-20251001", "the law and the kept frame ride as the system")
 check(_spent.get("cache_read_input_tokens") == 10600 and waker.usage_said(_spent) == "in 5.1k (+10.6k read from the kept frame) · out 0.2k", "what the API counted is said plainly, the kept part named")
 check(waker.usage_said({}) == "in 0.0k · out 0.0k" and waker.usage_said(None) == "", "and nothing counted says nothing")
@@ -403,7 +404,13 @@ check(withseat["window"] == "2026-09-19T15:57:00.000Z" and [w["addr"] for w in w
 check(dt.journal_of("organ: witnessed:Ugarth\nlocation: pool:120:8\ncovers: 7 8\na seat that is its own door: keep the telling by bsp(block=<organ>, append=true, content={_: <the telling>, 2: <location>})") ==
       {"organ": "witnessed:Ugarth", "location": "pool:120:8"}, "and so is the journal's")
 check(dt.writes_of("room: 130\ncharacter: garth — Garth\nplace: [130] The Long House\nplace: [150] The Store") ==
-      {"room": "130", "characters": ["garth"], "places": ["130", "150"], "sheets": {}}, "the keeper's writes name the room, its characters and the places")
+      {"room": "130", "characters": ["garth"], "places": ["130", "150"], "sheets": {}, "figures": [], "stands": [], "unsaid": []}, "the keeper's writes name the room, its characters and the places")
+check(dt.writes_of("room: 311\nfigure: the diggers at the pale stone\nfigure: the guard")["figures"] == ["the diggers at the pale stone", "the guard"],
+      "and the figures present who speak for themselves next, in the order the beat touched them")
+check(dt.writes_of("room: 311\nstands: [130] Sergeant Vane\nstands: [100] the man at the Sow")["stands"] == [("130", "Sergeant Vane"), ("100", "the man at the Sow")],
+      "and who stands in which window, room by room")
+check(dt.place_lines("room: 311\ncharacter: Ugarth — Ugarth\nplace: [311] The working face\nplace: [121] The taproom") == "place: [311] The working face\nplace: [121] The taproom",
+      "the places a table has heard of, never its characters' names")
 check(dt.writes_of("room: 130\ncharacter: garth — Garth\nsheet: garth — through 2026-09-19T15:57:30.000Z")["sheets"] ==
       {"garth": "2026-09-19T15:57:30.000Z"}, "and, per sheet owed a keeping, how far into the story the keeping reaches")
 check(dt.journal_of("organ: witnessed:Ugarth\nlocation: pool:120:8\ncovers: 7 8") == {"organ": "witnessed:Ugarth", "location": "pool:120:8"}, "a telling knows its organ and the beat it covers")
@@ -411,20 +418,24 @@ check(dt.journal_of("organ: history:new (none stands — genesis founds it)\nloc
 
 # ── what the keeper writes, read off its own lines ──────────────────────────
 
-KEEPER = """WORLD the alewife · 120 · wipes the same patch of trestle · and does not look up
-WORLD the day · 120 · goes grey at the window
+KEEPER = """ARRIVES the boy on the watch · 120 · comes in wet from the yard · and stands by the door
+NEWS 130 · a shout carries up from the Store
 DROP the boy on the watch · 130
 WHERE equinox · 150
-WORLD a figure · 999 · stands where the world has no such place
+ARRIVES a figure · 999 · stands where the world has no such place
+NEWS 999 · word for a place the world does not carve
+WORLD the alewife · 120 · wipes the same patch of trestle
 not a line the keeper writes
-WORLD half a line · 120
+ARRIVES half a line · 120
 """
 kl = dt.keeper_lines(KEEPER, places=["120", "130", "150"], room="120")
-check([v["who"] for v in kl["world"]] == ["the alewife", "the day", "a figure"], "every world line is read, and a line that is not one is passed over")
-check(kl["world"][0]["intends"] == "wipes the same patch of trestle · and does not look up", "an intention keeps any dot of its own")
-check(kl["world"][2]["at"] == "120", "a voice set at an address the world does not carve waits where the characters stand instead")
+check([v["who"] for v in kl["arrives"]] == ["the boy on the watch", "a figure"], "every ARRIVES line is read, and a line that is not one is passed over")
+check(kl["arrives"][0]["text"] == "comes in wet from the yard · and stands by the door", "what anyone sees keeps any dot of its own")
+check(kl["arrives"][1]["at"] == "120", "one who comes in at an address the world does not carve comes in where the characters stand instead")
+check(kl["news"] == [{"at": "130", "text": "a shout carries up from the Store"}], "news reaches only a place the world carves — news for nowhere is not written")
+check(set(kl) == {"arrives", "news", "drop", "where"}, "the keeper never voices a person: a WORLD line is a line the world no longer does")
 check(kl["drop"] == [{"who": "the boy on the watch", "at": "130"}] and kl["where"] == [{"handle": "equinox", "at": "150"}], "a voice withdrawn, and a character the story carried elsewhere")
-check(dt.keeper_lines("WORLD x · 120 · y", places=["130"], room=None)["world"] == [], "with nowhere to put it, a voice is not staged at all")
+check(dt.keeper_lines("ARRIVES x · 120 · y", places=["130"], room=None)["arrives"] == [], "with nowhere to put it, no one comes in")
 check(dt.holds_lines("HOLDS a worn blade · his own · at his hip\n- HOLDS reeds · cut at the bank · slung\nHOLDS <the thing> · x · y\nprose") ==
       ["a worn blade · his own · at his hip", "reeds · cut at the bank · slung"], "the holds are the lines that carry a thing; the shape's own example is not one")
 hn = dt.holds_node("Equinox", ["the crystal · hers · stowed in her cloak", "a satchel · hers · at her hip"])
@@ -473,7 +484,122 @@ e = dt.names_entry(kn[0], "130", "2026-09-22T15:00:00Z")
 check(e["_"] == "Sergeant Vane \u2014 the sergeant at the Long House door; the soldiers' word for him, and nobody corrects it" and e["5"] == "held: Sergeant Bole" and e["2"] == "130" and e["4"] == "designer", "an entry of names:scene: the name and face at the underscore, the held name at 5")
 check("5" not in dt.names_entry(kn[1], "130", "t"), "no held name, no 5")
 check(dt.names_standing({"_": "NAMES", "1": e, "2": "Old Burr \u2014 the charcoal-burner; his own"}) == {"sergeant vane", "old burr"}, "the names already standing, so a KNOWN is never written twice")
-check(dt.keeper_lines("KNOWN Sergeant Vane \u00b7 the sergeant \u00b7 Sergeant Bole \u00b7 how", places=["130"], room="130") == {"world": [], "drop": [], "where": []}, "a KNOWN line is nothing to the WORLD / DROP / WHERE reader")
+check(dt.keeper_lines("KNOWN Sergeant Vane \u00b7 the sergeant \u00b7 Sergeant Bole \u00b7 how", places=["130"], room="130") == {"arrives": [], "news": [], "drop": [], "where": []}, "a KNOWN line is nothing to the ARRIVES / NEWS / DROP / WHERE reader")
+
+
+# ── each figure speaks for itself (bsp-mcp #459) ─────────────────────────────
+check(("NEWS_LABEL = '%s'" % dt.NEWS_LABEL) in _tiers, "the place's own label for news is the router's own words, letter for letter (src/tools/tiers.ts)")
+FIG = ("# THE INPUT\n\n[WHO YOU ARE]\nthe diggers at the pale stone — here at The Slopes & the Diggings\n\n"
+       "[WHERE YOU STAND — the place as anyone here sees it, and beneath it (held) what it keeps to itself]\n"
+       "[311] The working face — men at the stone.\n    (held 311*1) The one guard dozes by noon.\n\n"
+       "[WHAT YOU HAVE SEEN AND HEARD HERE — this place's latest record, oldest first]\n"
+       "Orik looks at the blade in Ugarth's hand. “Well met, Tam,” the scarred man says.\n\n"
+       "[YOUR LAST LINE — standing in this place's window, not yet happened]\nwe keep our heads down\n\n"
+       "You are the diggers at the pale stone. Say your next line, or GONE.")
+check(dt.frame_section(FIG, "YOUR LAST LINE") == "we keep our heads down\n\n", "a frame's section is read off its bracketed head, to the frame's closing line")
+check(dt.figure_faults("I watch the scarred one call the short man Tam, and keep my head down.", FIG) == [], "a name heard said aloud where it stands is the figure's to say")
+check(dt.figure_faults("We keep low while the short one, Orik, strings his bow.", FIG) == [("coins", "it names someone you have not heard named here: Orik")],
+      "a name only the narration used is not the figure's — both soldiers said 'Orik' in the replay of 2026-09-30")
+check(dt.figure_faults("I edge back to the pale stone and keep my head down.", FIG) == [], "a line with no name holds")
+check(dt.is_gone("GONE") and dt.is_gone("  gone. ") and not dt.is_gone("I am gone from here soon"), "GONE is the figure's own word that it has left or can no longer act")
+check(dt.figure_line("DO I set a cup in front of the scarred man.\nSAY Passing through?") == "I set a cup in front of the scarred man. \u201cPassing through?\u201d",
+      "a figure's line is its deed, then its words said aloud, quoted — public, so nothing else")
+check(dt.figure_line("**DO:** I wipe the trestle and do not look up.") == "I wipe the trestle and do not look up." and dt.figure_line("SAY \u201cMove along.\u201d") == "\u201cMove along.\u201d",
+      "a deed alone, or words alone, and the dressing forgiven")
+check(dt.figure_line("I know the levy will drink itself stupid tonight, and I keep it to myself.") == "",
+      "an answer in neither shape — a thought given as a line — is a line the world does not do")
+check(dt.figure_line("GONE") == "GONE", "GONE stands as GONE")
+check(dt.called_names("I wipe the trestle. \u201cAldric, fetch the cask.\u201d", "the trestle the cask") == ["Aldric"] and dt.called_names("\u201cAldric.\u201d", "") == ["Aldric"],
+      "a name called aloud at the head of a quote is a name — the alewife called an old man Aldric")
+check(dt.called_names("\u201cSergeant, a word.\u201d", "") == [] and dt.called_names("\u201cWell, sit down.\u201d", "well met") == [],
+      "a role, or a word the frame already holds, is not a name called")
+check(dt.figure_faults("I wipe the trestle. \u201cAldric, fetch the cask.\u201d", FIG) == [("coins", "it names someone you have not heard named here: Aldric")],
+      "and the figure net asks again for it")
+check(dt.not_kept([("coins", "it names someone you have not heard named here: Orik")], "figure").startswith("[YOUR LINE WAS NOT KEPT — it names someone"),
+      "the line beneath a figure's frame asked again names the fault")
+
+check(dt.within("311", "300") and dt.within("300", "300") and not dt.within("300", "311") and not dt.within("121", "300"),
+      "a place inside a room is within it: the working face is within the upland, never the other way")
+
+# THE KEEPER'S PASS, in order, against a table held in memory: what it takes down
+# is taken down first, one it brings in is not asked to speak this beat, news
+# joins news already waiting, and each figure present speaks for itself — a
+# line that coins a name asked once more, GONE taking the label down.
+_saved = {n: getattr(waker, n) for n in ("tier_call", "model_call", "pool_engage_rpc", "room_slips", "keeper_mind", "figure_mind", "beach_get_or_none")}
+_engaged, _asked = [], []
+_windows = {"pool:311": [{"author": "the place", "text": "Boots on the track below."}, {"author": "the guard at the working face", "text": "I stand."},
+                         {"author": "Sergeant Vane", "text": "walks the sunken track toward the diggings"}]}
+_STANDS = "\nstands: [311] the guard at the working face\nstands: [311] Sergeant Vane\nstands: [130] the soldiers in the bracken\nstands: [130] the factor"
+_HARD = {"CALL": "the keeper's call", "INPUT": "[NAMES THIS TABLE USES — the place's people as the table calls them]\n- Sergeant Vane — the sergeant\n\n[THE WORLD NOW]\nnothing", "WRITES": "room: 311\nplace: [311] The working face\nplace: [3111] The pale stone\nplace: [121] The Brindled Sow\n"
+         "character: Ugarth — Ugarth\ncharacter: Orik — Orik\nunsaid: Orik\nfigure: the guard at the working face\nfigure: the diggers at the pale stone\nfigure: the soldiers in the bracken\nfigure: the boy with the arrow" + _STANDS}
+_KEEPER_SAYS = ("DROP the guard at the working face · 311\nARRIVES the soldiers in the bracken · 311 · two men push up out of the bracken\n"
+                "ARRIVES Sergeant Vane · 311 · walks the sunken track toward the diggings\n"
+                "NEWS 311 · a horn sounds from the village\nNEWS 121 · word of the hill reaches the taproom\nWORLD the alewife · 121 · wipes\n"
+                "ARRIVES the men from the Sow · 121 · come down the stairs\nNEWS 121 · Sergeant Vane is dead, and Orik strung the bow\n"
+                "ARRIVES the diggers · 3111 · press flat against the pale stone\n"
+                "DROP the factor · 130\nNEWS 121 · Ugarth has killed the sergeant on the hill\n"
+                "ARRIVES the lad with the lamp · 311 · comes up behind Orik with a lamp held high")
+_FIG_SAYS = {"the diggers at the pale stone": ["DO We keep low while Orik strings his bow.", "DO We keep low behind the spoil and watch the track."],
+             "the boy with the arrow": ["GONE"],
+             "the soldiers in the bracken": ["DO We split and climb wide of the heap.\nSAY Keep him turning his head!"],
+             "the diggers": ["GONE"]}
+
+
+def _tier_call(beach, room, handle, tier, secret=None, **extra):
+    _asked.append((tier, handle))
+    return (_HARD if tier == "hard" else {"CALL": "the figure's call", "INPUT": FIG, "WRITES": "room: %s\nfigure: %s" % (room, handle)}), ""
+
+
+def _model_call(fuel, model, max_tokens, system, message, kept=None, usage=None, plain=False):
+    if isinstance(usage, dict):
+        usage.update({"input_tokens": 600, "output_tokens": 40})
+    if system == "the keeper's call":
+        return _KEEPER_SAYS
+    who = _asked[-1][1]
+    return _FIG_SAYS[who].pop(0) if _FIG_SAYS.get(who) else ""
+
+
+waker.tier_call = _tier_call
+waker.model_call = _model_call
+waker.pool_engage_rpc = lambda beach, room, handle, secret=None, **extra: _engaged.append((room, handle, extra.get("submit")))
+waker.room_slips = lambda pool, beach: list(_windows.get(pool, []))
+waker.keeper_mind = lambda handle: ("claude-haiku-4-5-20251001", 1200)
+waker.figure_mind = lambda handle: ("claude-haiku-4-5-20251001", 300)
+waker.beach_get_or_none = lambda block, beach=None: None
+try:
+    _status, _note = waker.keeper_pass("Ugarth", "https://table.test", "311", "sk-test", "key", {})
+finally:
+    for n, f in _saved.items():
+        setattr(waker, n, f)
+check(_status == "done", "the keeper's pass runs whole")
+check(_engaged[0] == ("311", "the guard at the working face", ""), "what the keeper takes down is taken down first")
+check(("311", "the soldiers in the bracken", "two men push up out of the bracken") in _engaged, "one it brings in is staged as anyone sees them come")
+check(not any(h == "Sergeant Vane" for _r, h, _t in _engaged) and "Sergeant Vane already stands at 311 — no one arrives twice" in _note,
+      "no one arrives where their voice already stands — the replay's keeper brought a dead sergeant in from his own stale line")
+check(("311", "the place", "Boots on the track below. a horn sounds from the village") in _engaged, "news joins news already waiting there, never overwrites it")
+check(("121", "the place", "word of the hill reaches the taproom") in _engaged, "and news reaches another place, written there")
+check(("311", "the diggers", "press flat against the pale stone") in _engaged, "one seated at a place inside the characters' room is seated in that room's window")
+check(not any(h == "the men from the Sow" for _r, h, _t in _engaged) and "the men from the Sow would come in at 121, where no character stands — not staged" in _note,
+      "the arc reaches the characters where they stand: no one is brought in at a room nobody is in")
+check(not any("Orik" in (t or "") for _r, _h, t in _engaged) and "it names someone that place never heard named: Orik" in _note,
+      "news that names someone the place never heard named is not written — the village never heard the strangers' names")
+check(not any("Ugarth has killed" in (t or "") for _r, _h, t in _engaged) and "it names someone that place never heard named: Ugarth" in _note,
+      "a character's name riding in THE WRITES is no name the place has heard")
+check(not any(h == "the alewife" for _r, h, _t in _engaged), "a WORLD line voices no one — the keeper never voices a person")
+check(("figure", "the guard at the working face") not in _asked, "a figure taken down is never asked")
+check(_asked.index(("figure", "the soldiers in the bracken")) < _asked.index(("figure", "the diggers at the pale stone")),
+      "one just brought in is asked AT ONCE, ahead of those the beat touched")
+check(("311", "the soldiers in the bracken", "We split and climb wide of the heap. \u201cKeep him turning his head!\u201d") in _engaged,
+      "and its own deed and words take the place of the keeper's line — the first a player reads is its own")
+check(("130", "the soldiers in the bracken", "") in _engaged, "one person, one window: whoever comes in here has left the window where they stood")
+check(("311", "the diggers", "") in _engaged and "the diggers is gone from 311" in _note, "one just seated who answers GONE is taken down at once")
+check(("130", "the factor", "") in _engaged, "a DROP reaches a room where a voice stands, though no way leads there now")
+check(not any(h == "the lad with the lamp" for _r, h, _t in _engaged) and "the lad with the lamp not brought in — the line names Orik, whose name no one has said here" in _note,
+      "no one is brought in by a line that names a character whose name was never said there")
+check(("311", "the diggers at the pale stone", "We keep low behind the spoil and watch the track.") in _engaged,
+      "a figure's line that coins a name is asked once more, and the second is staged")
+check(("figure", "the boy with the arrow") not in _asked, "three at most a beat — those brought in first, then those the beat touched; the rest meet the next beat")
+check(_note.rstrip("]").endswith("figures in 2.4k · out 0.2k"), "the note says what the figures' calls cost, summed")
 
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)

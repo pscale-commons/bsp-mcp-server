@@ -127,7 +127,9 @@ console.log('\n=== REFERENCE table — full envelope with place + ways from the 
   check("the room's own address wins — the master's Slip renders", /The Slip — a ford where the good road gives out/.test(text));
   check('ancestors frame the walk (the master root)', /The holding of canon, floor 3/.test(text));
   check('ways section rides from the master', /# The ways \(public faces of the referenced master/.test(text));
-  check('ways list the master grounds, addressed', /\[100\] The village/.test(text) && /\[200\] The road in/.test(text));
+  // A way lands in a room (world-genome 2.1), and never at the room you stand in:
+  // the road region lands at the Slip, where this seat stands, so it rides by name alone.
+  check('ways list the master grounds, each where it lands', /\[111\] The village/.test(text) && /The road in[^\n]*\(where you stand\)/.test(text) && !/\[211\] The road in/.test(text));
   check('the operating directive rides (grit mount)', /# Operating directive/.test(text));
   check('the liquid mirror rides', /# Liquid — pending intentions/.test(text));
 }

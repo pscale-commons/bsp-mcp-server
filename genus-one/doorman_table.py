@@ -445,14 +445,39 @@ def keeper_frame(frame):
 
 def writes_of(body):
     """What the keeper's writes may touch: the room, the characters standing
-    there, the places a voice or a character may be set at, and — per sheet owed
-    a keeping — how far into the story this keeping reaches."""
+    there, the places a voice or a character may be set at, per sheet owed a
+    keeping how far into the story this keeping reaches, and the figures present
+    who speak for themselves next (the router's `figure:` lines, those the beat
+    touched first), and every one of the place's people standing in a window,
+    room by room (`stands:`) — the rooms a DROP may reach, and where a person
+    stands when it is brought in somewhere else."""
     return {
         "room": (re.search(r"^room:\s*(\S+)$", body or "", re.M) or [None, None])[1],
         "characters": [m.group(1) for m in re.finditer(r"^character:\s*(\S+)\s+—", body or "", re.M)],
         "places": [m.group(1) for m in re.finditer(r"^place:\s*\[([\d.]+)\]", body or "", re.M)],
         "sheets": {m.group(1): m.group(2) for m in re.finditer(r"^sheet:\s*(\S+)\s+—\s+through\s+(\S+)\s*$", body or "", re.M)},
+        "figures": [m.group(1).strip() for m in re.finditer(r"^figure:\s*(\S.*?)\s*$", body or "", re.M)],
+        "stands": [(m.group(1), m.group(2).strip()) for m in re.finditer(r"^stands:\s*\[([\d.]+)\]\s*(\S.*?)\s*$", body or "", re.M)],
+        "unsaid": [m.group(1).strip() for m in re.finditer(r"^unsaid:\s*(\S.*?)\s*$", body or "", re.M)],
     }
+
+
+def character_names(body):
+    """Every name THE WRITES gives a character standing here — the handle and the
+    name it goes by — which no place has heard unless someone said it there."""
+    out = []
+    for m in re.finditer(r"^character:\s*(\S+)\s+\u2014\s*(.*?)\s*$", body or "", re.M):
+        for n in (m.group(1), m.group(2)):
+            if n and n not in out:
+                out.append(n)
+    return out
+
+
+def place_lines(body):
+    """The `place:` lines of THE WRITES alone — the places a table has heard of,
+    and never its characters' names (review of #463: news naming the strangers
+    passed because the character lines rode with the places)."""
+    return "\n".join(l for l in (body or "").split("\n") if l.startswith("place:"))
 
 
 def journal_of(body):
@@ -483,13 +508,35 @@ def standing_label(label, standing):
     return fits[0] if len(fits) == 1 else label
 
 
-def keeper_lines(text, places=None, room=None):
-    """{'world': [{'who','at','intends'}], 'drop': [{'who','at'}],
-    'where': [{'handle','at'}]} — every address checked against the places the
-    frame listed, so a voice is never staged at an address the world does not
-    carve; an unknown one falls back to the room the characters stand in."""
+def within(address, room):
+    """Is this place inside that room — the same digits, or finer beneath them?
+    Trailing zeros are the container's own, so 311 is within 300 and 300 is
+    not within 311."""
+    a = re.sub(r"[.,]", "", str(address or "")).rstrip("0")
+    r = re.sub(r"[.,]", "", str(room or "")).rstrip("0")
+    return bool(a and r) and a.startswith(r)
+
+
+#: The author a piece of NEWS stands under in a room's window — the place's own
+#: voice, never a person's, so it is woven like any staged line and never asked
+#: to speak for itself (src/tools/tiers.ts NEWS_LABEL, the same words).
+NEWS_LABEL = "the place"
+
+
+def keeper_lines(text, places=None, room=None, standing_rooms=None):
+    """{'arrives': [{'who','at','text'}], 'news': [{'at','text'}],
+    'drop': [{'who','at'}], 'where': [{'handle','at'}]} — the keeper keeps the
+    books and carries the news, and never voices a person (bsp-mcp #459). Every
+    address is checked against the places the frame listed, so a line is never
+    written at an address the world does not carve. A figure with nowhere known
+    to come in falls back to the room the characters stand in; news with no
+    known place to reach is news nowhere, and is not written. A DROP reaches any
+    room where a voice stands (`standing_rooms`), a room founded before ways
+    landed in rooms among them."""
     ok = lambda a: a if (places is None or a in places) else room
-    world, drop, where = [], [], []
+    known = lambda a: a if (places is None or a in places) else None
+    droppable = lambda a: a if (places is None or a in places or a in (standing_rooms or ())) else room
+    arrives, news, drop, where = [], [], [], []
     for line in (text or "").split("\n"):
         # A cheaper mind dresses its lines — a list dash, bold stars, a dot straight
         # after the keyword ('**WORLD · the day · 100 · …**', seen from haiku on
@@ -497,23 +544,28 @@ def keeper_lines(text, places=None, room=None):
         # the fields are not: a line still needs its keyword, its label and an
         # address the frame listed, or it is a line the world does not do.
         line = re.sub(r"^[\s>*_`#-]+", "", line).rstrip().rstrip("*_`").rstrip()
-        line = re.sub(r"^(WORLD|DROP|WHERE)\s*[·:]\s*", r"\1 ", line, flags=re.I)
-        # Three fields at most: the intention keeps any dot of its own.
+        line = re.sub(r"^(ARRIVES|NEWS|DROP|WHERE)\s*[·:]\s*", r"\1 ", line, flags=re.I)
+        # Three fields at most: what is seen or heard keeps any dot of its own.
         parts = [p.strip() for p in line.split("·", 2)]
         head = parts[0] if parts else ""
-        if head.upper().startswith("WORLD ") and len(parts) >= 3:
+        if head.upper().startswith("ARRIVES ") and len(parts) >= 3:
             at = ok(parts[1])
-            if at:
-                world.append({"who": head[6:].strip(), "at": at, "intends": parts[2].strip()})
+            if at and head[8:].strip() and parts[2].strip():
+                arrives.append({"who": head[8:].strip(), "at": at, "text": parts[2].strip()})
+        elif head.upper().startswith("NEWS ") and len(parts) >= 2:
+            at = known(head[5:].strip())
+            said = " · ".join(p for p in parts[1:] if p).strip()
+            if at and said:
+                news.append({"at": at, "text": said})
         elif head.upper().startswith("DROP ") and len(parts) >= 2:
-            at = ok(parts[1])
+            at = droppable(parts[1])
             if at:
                 drop.append({"who": head[5:].strip(), "at": at})
         elif head.upper().startswith("WHERE ") and len(parts) >= 2:
             at = ok(parts[1])
             if at:
                 where.append({"handle": head[6:].strip(), "at": at})
-    return {"world": world, "drop": drop, "where": where}
+    return {"arrives": arrives, "news": news, "drop": drop, "where": where}
 
 
 def holds_lines(text):
@@ -1003,6 +1055,9 @@ def not_kept(faults, what="telling"):
     """The line put beneath the frame when a call is asked again: what was
     wrong, and what to do instead — never the first answer itself."""
     said = faults if isinstance(faults, str) else faults_said(faults)
+    if what == "figure":
+        return ("[YOUR LINE WAS NOT KEPT \u2014 %s. Call people by how they look or what they do, and say your line "
+                "again.]" % said)
     if what == "beat":
         return ("[NOT KEPT \u2014 the beat %s. A figure no one has named is called by what anyone sees: the sergeant, "
                 "the factor, the woman at the well. Weave the beat again.]" % said)
@@ -1014,6 +1069,80 @@ def record_as_telling(beats):
     """The record, as the telling of last resort: the beats' own text, whole
     and in order. Never a fiction."""
     return "\n\n".join(b.strip() for b in beats if b and b.strip())
+
+
+# \u2500\u2500 one of the place's people, speaking for itself (bsp-mcp #459) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+#
+# A figure's call is framed with its own place, what has happened there and its
+# own last line, and nothing else \u2014 but that record is narration, and narration
+# names people the place has never heard named (both soldiers in the replay of
+# 2026-09-30 said 'Orik'). So a figure's line is held to the words SPOKEN ALOUD
+# where it stands: a name it says must stand in a quoted span of what it
+# witnessed, or in its place's own lines, its label, its last line, or the names
+# the table uses. Asked once more, named; a second fault is not staged \u2014 a
+# figure that says nothing this beat is still there the next.
+
+def frame_section(text, head):
+    """The body of one bracketed section of a composed frame ('' when absent):
+    from its '[HEAD \u2026]' line to the next section's head, the frame's closing
+    line, or a new part."""
+    m = re.search(r"^\[%s[^\]\n]*\]\n(.*?)(?=^\[[A-Z][A-Z ,'\u2019]+(?: \u2014[^\]\n]*)?\]$|^You are |^# |\Z)" % re.escape(head),
+                  text or "", re.S | re.M)
+    return m.group(1) if m else ""
+
+
+def is_gone(line):
+    """The figure's own word that it has left this place or can no longer act."""
+    return bool(re.match(r"^\W*GONE\W*$", (line or "").strip(), re.I))
+
+
+_DO_RE = re.compile(r"^[\s>*_`#-]*DO\b[*_`]*\s*[:\u00b7\u2014-]?[*_`]*\s*(\S.*?)[*_`]*\s*$", re.M)
+_SAY_RE = re.compile(r"^[\s>*_`#-]*SAY\b[*_`]*\s*[:\u00b7\u2014-]?[*_`]*\s*(\S.*?)[*_`]*\s*$", re.M)
+
+
+def figure_line(answer, label=None):
+    """The line as it will stand in the window, built from the figure's DO and
+    SAY \u2014 the deed as anyone there sees it, then the words said aloud, quoted:
+    'I set a cup in front of the scarred man. \u201cPassing through?\u201d'. A line that
+    is PUBLIC holds a deed and speech and nothing else (review of #463). An
+    answer with neither is a line the world does not do: ''. GONE stands as
+    'GONE'."""
+    text = (answer or "").strip()
+    if is_gone(text):
+        return "GONE"
+    do = _DO_RE.search(text)
+    say = _SAY_RE.search(text)
+    deed = do.group(1).strip() if do else ""
+    words = say.group(1).strip().strip("\"\u201c\u201d").strip() if say else ""
+    if not deed and not words:
+        return ""
+    return (deed + (" \u201c%s\u201d" % words if words else "")).strip()
+
+
+def called_names(text, known):
+    """Names CALLED ALOUD: a quote that is one capitalised word, or opens on one
+    before a comma \u2014 'Aldric.', 'Aldric, fetch the cart' \u2014 which the sentence
+    rule in coined_names passes over (review of #463: the alewife called an old
+    man Aldric). Each is a name unless the frame already holds the word."""
+    have = set(re.findall(r"[a-z]+", (known or "").lower()))
+    out = []
+    for q in quoted_spans(text, least=1):
+        m = re.match(r"^\s*([A-Z][a-z]{2,})\s*(?:[,.!?]|$)", q)
+        if m and m.group(1).lower() not in ROLE_WORDS and m.group(1).lower() not in have and m.group(1) not in out:
+            out.append(m.group(1))
+    return out
+
+
+def figure_faults(line, frame_input):
+    """[(kind, said)] \u2014 empty when the line holds. 'coins': it names someone
+    the figure has not heard named where it stands \u2014 mid-sentence, or called
+    aloud at the head of a quote."""
+    heard = " ".join(quoted_spans(frame_section(frame_input, "WHAT YOU HAVE SEEN AND HEARD HERE"), least=1))
+    own = " ".join(frame_section(frame_input, h) for h in
+                   ("WHO YOU ARE", "WHERE YOU STAND", "NAMES THIS TABLE USES", "YOUR LAST LINE"))
+    names = coined_names(line, own + " " + heard)
+    names += [n for n in called_names(line, own + " " + heard) if n not in names]
+    return [("coins", "it names someone you have not heard named here: " + ", ".join(names))] if names else []
 
 
 # ── a name the table has given one of the place's people (KNOWN) ─────────────

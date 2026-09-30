@@ -140,7 +140,7 @@ function check(name: string, ok: boolean, detail?: string): void {
   else { fail++; console.log(`  ✗ ${name}${detail ? ` — ${detail}` : ''}`); }
 }
 
-async function tier(t: 'soft' | 'medium' | 'hard', room: string, agent: string): Promise<string> {
+async function tier(t: 'soft' | 'medium' | 'hard' | 'figure', room: string, agent: string): Promise<string> {
   const r = await handlePoolEngage({ pool_url: TABLE, pool_name: room, agent_id: agent, tier: t } as any);
   return r.content[0].text;
 }
@@ -159,14 +159,20 @@ console.log('=== medium — the resolution composes actions and intentions ===')
   check('to ONE RING beneath them — a branch\'s own line, never its worked cases', /\[1\.42\]/.test(call) && !/\[1\.421\]/.test(call) && /\[2\.4\]/.test(call) && !/\[2\.41\]/.test(call));
   check('a finer position the act needs is NAMED, and arrives where it stands with a ring of its own',
     /\[1\.441\]/.test(call) && call.indexOf('[1.43]') < call.indexOf('[1.44]') && call.indexOf('[1.44]') < call.indexOf('[1.441]') && call.indexOf('[1.443]') < call.indexOf('[1.45]'));
-  check('the contract names the window as acts and intentions', /the people of the place as the keeper has set them/.test(call));
+  check('the contract names the window as acts and intentions — the place\'s people each speaking for itself, and its news', /the people of the place each speaking for itself/.test(call) && /what news has reached the place/.test(call));
+  // NAMES (rpg.11, 2026-09-29): a character is who they look like until their name
+  // is said aloud — the record said 'Ugarth doesn't answer Orik yet' before Orik
+  // had given it, and the telling carried the name to Ugarth.
+  check('the resolution names no one by a name not yet spoken aloud — a character included', /NAME NO ONE BY A NAME NOT YET SPOKEN ALOUD/.test(call) && /THE ACTORS' names tell you who is who; they are never what the place has heard/.test(call));
+  check('grit 1.45 rides with it: appearance until a name is spoken aloud', /\[1\.45\] Name actors by appearance until a name is spoken aloud/.test(call));
   check('THE PLACE gives the room\'s face', /\[120\] The Alehouse — low and smoky/.test(input));
   check('and the fixtures\' faces one level down', /The trestle — and behind it the alewife/.test(input));
   check('THE FENCE — no hidden line reaches the resolution', !/Maerla/.test(input) && !/guards badly/.test(input) && !/weak seam/.test(input));
   check('THE FENCE — no keeper register either', !/THE ARC/.test(input) && !/PRESSURE POINTS/i.test(input) && !/REINFORCEMENT CLOCK/.test(input));
   check('the world\'s rules ride at their framing only', /Rules constraining action at Thornlea/.test(input) && !/THE OCCUPATION/.test(input));
   check('the story crosses rooms — the ford beat rides here', /At the ford, Mara lifts the bead/.test(input));
-  check('and a beat of theirs is theirs by the weave, not by name', /woven|voiced by dorn/.test(input));
+  check('the resolution\'s story headings carry no handle — a handle in a heading is a name it would carry into the record', !/voiced by/.test(input) && /At the ford, Mara lifts the bead/.test(input));
+  check('each actor says, as a fact the record holds, whether their name has been said aloud', /- Mara — this name has NOT been said aloud here: the record calls them by how they look/.test(input));
   check('a stranger\'s beat in another room stays out', !/A carter passes/.test(input));
   check('the actors carry their sheets', /Mara/.test(input) && /stowed in her pack since the ford/.test(input));
   check('the window names the players\' line and the place\'s voice apart',
@@ -177,7 +183,9 @@ console.log('=== medium — the resolution composes actions and intentions ===')
   check('where no dice were dealt the dice system stays home, the world\'s framing still rides',
     /no dice dealt/.test(quiet) && !/NOMAD/.test(quiet) && /Rules constraining action at Thornlea/.test(quiet));
   check('the claim carries the window\'s stamps', /resolves_window: 2026-09-19T10:06:00\.000Z/.test(claim) && /resolves_seen: 2026-09-19T10:06:30\.000Z/.test(claim));
-  check('and the ways a WAY line may name', /way: \[110\] The Road In/.test(claim) || /way: \[100\] The Village/.test(claim));
+  // A WAY LANDS IN A ROOM (world-genome 2.1): the village is entered at its first
+  // room down its first branch, a place with nothing finer is its own finest place.
+  check('and the ways a WAY line may name — each where it lands, a room', /way: \[121\] The Village/.test(claim) && /way: \[200\] The Road In/.test(claim) && !/way: \[100\]/.test(claim));
   check('the actors are named for the beat', /actor: mara — Mara/.test(claim));
   check('a seat that is its own door is told how to act on the claim — and that a WAY line is walked, never committed',
     /a seat that is its own door: commit the beat/.test(claim) && /A closing WAY line is WALKED, never committed/.test(claim));
@@ -190,7 +198,12 @@ console.log('\n=== hard — the keeper holds what nobody else is given ===');
   const input = section(text, 'THE INPUT');
   const call = section(text, 'THE CALL');
   check('the law rides at upkeep\'s addresses', /\[3\]/.test(call) && /\[1\.46\]/.test(call));
-  check('the call asks for lines, not reasoning', /no reasoning, no commentary/.test(call) && /WORLD <label>/.test(call));
+  check('the call asks for lines, not reasoning', /no reasoning, no commentary/.test(call) && /ARRIVES <label>/.test(call) && /NEWS <room address/.test(call));
+  // THE KEEPER KEEPS THE BOOKS AND CARRIES THE NEWS (#459): one mind asked to be
+  // every person at once voiced a man at the inn answering a killing on the hill.
+  check('the keeper never voices a person — each figure present speaks for itself', /you never voice a person/.test(call) && !/WORLD <label>/.test(call) && !/at most three of the place's people/.test(call));
+  check('news travels only as the world carries it, and is written where it will be heard', /only when the world's own rules carry it there NOW/.test(call) && /where it will be heard/.test(call));
+  check('a held name is never cast onto a face from elsewhere', /never a\s+held name from elsewhere cast onto a face here/.test(call));
   check('the place opens its hidden directories', /\(held .*\) Half-commandeered as the crew's billet/.test(input));
   check('and the names behind the faces', /Maerla/.test(input));
   check('the keeper\'s own register rides as its spine — the branches and their children\'s lines', /THE ARC/.test(input) && /PEEL OFF THE BOY/.test(input) && /THE REPAIRS LOG/.test(input));
@@ -199,8 +212,13 @@ console.log('\n=== hard — the keeper holds what nobody else is given ===');
   check('identity is WALKED to the room — the alehouse as held, whole', /\[120\] The Alehouse as held/.test(input) && /the one warm room/.test(input) && /The Village as held/.test(input));
   check('never the whole holding: the Store\'s holding is nothing to a moment at the trestle', !/The Store as held/.test(input));
   check('what the world already has standing', /the alewife: wipes the same patch/.test(input));
-  check('what their players were told', /the room did not look up/.test(input));
-  check('the writes name the places a voice may wait at', /place: \[120\]/.test(section(text, 'THE WRITES')));
+  check('the keeper is no longer handed the players\' tellings — the books need the moment, not their minds', !/the room did not look up/.test(input) && !/WHAT THEIR PLAYERS WERE TOLD/.test(input));
+  check('the writes name the figures present who speak next — the place\'s people, never a character', /^figure: the alewife$/m.test(section(text, 'THE WRITES')) && !/^figure: (mara|dorn)$/mi.test(section(text, 'THE WRITES')));
+  check('the writes name the places a voice may wait at — every room of the place, and the room they stand in', /place: \[121\]/.test(section(text, 'THE WRITES')) && /place: \[120\]/.test(section(text, 'THE WRITES')));
+  check('and never a table room at no room of the place — news left there would wait where no way leads', !/place: \[110\]/.test(section(text, 'THE WRITES')));
+  check('the writes say who stands in which window, for a DROP to reach and one person to keep one window', /^stands: \[120\] the alewife$/m.test(section(text, 'THE WRITES')));
+  check('the writes name each character whose name no one has said here, so no line the characters read carries it', /^unsaid: Mara$/m.test(section(text, 'THE WRITES')) && /^unsaid: Dorn$/m.test(section(text, 'THE WRITES')));
+  check('the keeper is shown who speaks for themselves next here, so one person is never seated twice', /\[WHO SPEAKS FOR THEMSELVES NEXT, HERE[^\]]*\]\n- the alewife/.test(input));
   const sheets = text.split(/^# THE SHEET INPUT — /m).slice(1).map((s) => s.split('\n')[0]);
   check('one sheet call per character standing here', sheets.length === 2 && sheets.includes('mara') && sheets.includes('dorn'));
   check('a sheet is framed with that character\'s own story', /At the ford, Mara lifts the bead/.test(text.split('# THE SHEET INPUT — mara')[1]));
@@ -228,8 +246,8 @@ console.log('\n=== hard — the keeper holds what nobody else is given ===');
     input.trimStart().startsWith("[THE KEEPER'S REGISTER") && at(input, "[THE WORLD'S RULES") > 0 && at(input, "[THE WORLD'S RULES") < tMark);
   check('THE ROOM rides next: the place held, and who holds it how, between the marks',
     at(input, '[THE PLACE, HELD') > tMark && at(input, '[WHO HOLDS THIS PLACE HOW') > at(input, '[THE PLACE, HELD') && at(input, '[WHO HOLDS THIS PLACE HOW') < rMark);
-  check('THE MOMENT rides last: the story, the sheets, the tellings, the standing voices',
-    [/\[THE STORY SO FAR/, /\[THE CHARACTERS/, /\[WHAT THEIR PLAYERS WERE TOLD/, /\[THE WORLD NOW/].every((h) => at(input, h) > rMark));
+  check('THE MOMENT rides last: the story, the sheets, the standing voices',
+    [/\[THE STORY SO FAR/, /\[THE CHARACTERS/, /\[THE WORLD NOW/].every((h) => at(input, h) > rMark));
   const keptPart = (t: string) => { const i = section(t, 'THE INPUT'); return i.slice(0, i.indexOf(KEEPER_ROOM_MARK) + KEEPER_ROOM_MARK.length); };
   const tablePart = (t: string) => { const i = section(t, 'THE INPUT'); return i.slice(0, i.indexOf(KEEPER_TABLE_MARK) + KEEPER_TABLE_MARK.length); };
   const pool120 = beaches[TABLE]['pool:120'] as any;
@@ -254,6 +272,12 @@ console.log('\n=== soft — the telling, and where it lands ===');
   check('her story so far, already told', /the room did not look up/.test(input));
   check('the moment is the beat her account has not covered', /The alewife sets down a cup/.test(input) && !/\[THE MOMENT[^\]]*\][\s\S]*Mara and Dorn arrive/.test(input));
   check('the journal names the organ and the beat', /organ: witnessed:mara/.test(journal) && /location: pool:120:2/.test(journal));
+  // A HANDLE IS NEVER A NAME HEARD (rpg.11): '- Orik:' handed a telling the name
+  // before anyone said it. The head says whose act it was; the look rides so the
+  // telling knows itself in a record that calls it by how it looks.
+  check('the moment is headed by whose act it was — her own is "you", never her handle', /\[THE MOMENT[^\]]*\]\n- you: The alewife sets down a cup/.test(input) && !/^- mara:/m.test(input));
+  check('the telling is told a name is the character\'s only once heard said aloud', /A NAME IS THE CHARACTER'S ONLY ONCE THEY HAVE HEARD IT SAID ALOUD/.test(section(text, 'THE CALL')) && /never a name they heard \(1\.14\)/.test(section(text, 'THE CALL')));
+  check('and is shown how the others see her, so a record that says so is hers', /\[YOU, AS THE OTHERS SEE YOU[^\]]*\]\nQuick-eyed and easy/.test(input) && !/Location:/.test(input.split('[YOU, AS THE OTHERS SEE YOU')[1]?.split('\n[')[0] ?? ''));
   check('a seat that is its own door is told to hold the telling to the moment, then keep it, located', /a seat that is its own door: before keeping it, hold the telling to the moment/.test(journal) && /Then keep it by bsp\(block=<organ>, append=true/.test(journal) && (journal.match(/^location:/gm) ?? []).length === 1);
   const marked = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 1 } as any);
   check("a surface's own marker names the moment, whatever the account covers", /The alewife sets down a cup/.test(marked.content[0].text) && /location: pool:120:2/.test(marked.content[0].text));
@@ -273,6 +297,8 @@ console.log('\n=== soft for a table round one screen — told once, for them all
   check('every character at the screen rides with what they know and carry', /- Mara/.test(input) && /- Dorn/.test(input) && /stowed in her pack since the ford/.test(input));
   check('and none of them is listed as a stranger here', !/Here with you, by appearance/.test(input) || !/pedlar/.test(input));
   check('the journal names the account it lands in and who it was told for', /organ: witnessed:mara/.test(section(text, 'THE JOURNAL')) && /told for: mara dorn/.test(section(text, 'THE JOURNAL')));
+  check('at one screen the moment is headed by the companion whose act it was', /\[THE MOMENT[^\]]*\]\n- mara: The alewife sets down a cup/.test(input));
+  check('and each companion rides with the look the record may call them by', /looks: Quick-eyed and easy/.test(input) && /looks: Broad and scarred/.test(input));
   const alone = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'mara', tier: 'soft', since_position: 1 } as any);
   check('without a party it is that character\'s own telling, as before', /You are Mara\./.test(section(alone.content[0].text, 'THE INPUT')) && /renders this character's lived moment/.test(section(alone.content[0].text, 'THE CALL')));
 }
@@ -285,7 +311,7 @@ console.log('\n=== the telling holds to its moment (2026-09-22) ===');
   check('the names the table uses ride the telling, by face — the held name never', /\[NAMES THIS TABLE USES[^\]]*\]\n- Sergeant Vane — the sergeant who came to the alehouse door/.test(input) && !/Bole/.test(text));
   const medium = await tier('medium', '120', 'mara');
   check('and the resolution, by face — the held name never', /\[NAMES THIS TABLE USES/.test(section(medium, 'THE INPUT')) && /Sergeant Vane/.test(section(medium, 'THE INPUT')) && !/Bole/.test(medium));
-  check('the resolution is told never to coin a name, and to use the table\'s where one stands', /never a name of your own making/.test(section(medium, 'THE CALL')) && /where \[NAMES THIS TABLE USES\] gives one, use it exactly/.test(section(medium, 'THE CALL')));
+  check('the resolution is told never to coin a name, and to use the table\'s where one stands', /[Nn]ever a name of your own making/.test(section(medium, 'THE CALL')) && /where \[NAMES THIS TABLE USES\] gives one, use it exactly/.test(section(medium, 'THE CALL')));
   const hard = await tier('hard', '120', 'mara');
   check('the keeper reads the held name beside the table\'s', /- Sergeant Vane — the sergeant who came to the alehouse door[^\n]*\(held: Sergeant Bole\)/.test(section(hard, 'THE INPUT')));
   check('and is told the KNOWN shape — a coined name kept once, for the whole table', /KNOWN <the table's name> · <the face, as anyone present says it> · <the held name, or none> · <how the place explains it>/.test(section(hard, 'THE CALL')) && /never written twice/.test(section(hard, 'THE CALL')));
@@ -296,9 +322,33 @@ console.log('\n=== the telling holds to its moment (2026-09-22) ===');
   check('an observer is told under the shared-screen contract: named characters, never you', /NAME EACH CHARACTER/.test(section(wt, 'THE CALL')) && /NEVER say 'you'/.test(section(wt, 'THE CALL')));
   check('nothing private rides for them — no knows, no carries', /no character here is yours: nothing is known or carried/.test(wi) && !/every road in the valley/.test(wi) && !/stowed in her pack/.test(wi));
   check('their story so far is the room\'s own record before the moment', /\[THE STORY SO FAR — the room's record before this moment/.test(wi) && /Mara and Dorn arrive/.test(wi));
-  check('the moment is the beats since their own marker', /\[THE MOMENT[^\]]*\]\n- mara: The alewife sets down a cup/.test(wi));
+  check('the moment is the beats since their own marker, headed by whose act — never a handle', /\[THE MOMENT[^\]]*\]\n- another: The alewife sets down a cup/.test(wi) && !/- mara:/.test(wi));
   check('the frame closes on watching, unseen, and where the moment ends', /You are watching, unseen: no character here is yours/.test(wi) && /\[THE MOMENT ENDS HERE/.test(wi));
   check('the journal says an observer keeps nothing', /organ: none — an observer keeps no account/.test(section(wt, 'THE JOURNAL')) && /an observer keeps nothing: read it, and let it go\./.test(section(wt, 'THE JOURNAL')) && !/keep the telling by bsp/.test(section(wt, 'THE JOURNAL')));
+}
+
+console.log('\n=== figure — one of the place\'s people, speaking for itself (#459) ===');
+{
+  const r = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'the alewife', tier: 'figure' } as any);
+  const text = r.content[0].text;
+  const call = section(text, 'THE CALL');
+  const input = section(text, 'THE INPUT');
+  const writes = section(text, 'THE WRITES');
+  // ITS LINE IS PUBLIC (review of #463): asked in the first person, the alewife
+  // said the fact a stranger is meant to earn, 2 of 4. A deed, and words said aloud.
+  check('the call is one person\'s own, and public: a DEED and WORDS SAID ALOUD, never a mind — or GONE', /YOUR LINE IS PUBLIC/.test(call) && /never a\s+thought/.test(call) && /^DO </m.test(call) && /^SAY </m.test(call) && /the one word GONE/.test(call));
+  check('a figure carries no engine law — it is a person in the world, not a player of GRIT', !/\[1\.4\]/.test(call) && !/\[3\]/.test(call));
+  check('it is told who it is, and where', /\[WHO YOU ARE\]\nthe alewife — here at The Alehouse/.test(input));
+  check('the place it stands in rides with what the place keeps, down the spine to its room', /Half-commandeered as the crew's billet/.test(input));
+  check('and what stands inside the room is seen by its face, never its keeping — not the alewife\'s own mind at the trestle', /The trestle — and behind it the alewife/.test(input) && !/Maerla/.test(input));
+  check('KNOWLEDGE IS LOCATED — no keeper register, no arc, no world clock', !/THE ARC/.test(input) && !/PEEL OFF THE BOY/.test(input) && !/REINFORCEMENT CLOCK/.test(input));
+  check('what it has seen is this room\'s own record', /Mara and Dorn arrive\./.test(input) && /The alewife sets down a cup/.test(input));
+  check('and never another room\'s — a beat at the ford never reaches the alehouse', !/At the ford/.test(input) && !/A carter passes/.test(input));
+  check('no character\'s private pages ride: not what she knows, carries or was told', !/every road in the valley/.test(input) && !/stowed in her pack/.test(input) && !/the room did not look up/.test(input));
+  check('its own last line rides, standing in the window', /\[YOUR LAST LINE[^\]]*\]\nwipes the same patch of trestle/.test(input));
+  check('the writes say where the line is staged and under what label', /^room: 120$/m.test(writes) && /^figure: the alewife$/m.test(writes));
+  const news = await handlePoolEngage({ pool_url: TABLE, pool_name: '120', agent_id: 'the place', tier: 'figure' } as any);
+  check('the place\'s own news is no one\'s voice, and is never asked to speak', /no figure to voice/.test(news.content[0].text));
 }
 
 console.log('\n=== the door and the turn — nothing rides twice ===');

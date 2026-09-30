@@ -919,6 +919,13 @@ KEEPER_MAX_TOKENS = int(os.environ.get("WAKER_KEEPER_MAX_TOKENS", "1200"))
 # the holder's dial names another ('keeper sonnet' beneath position 7) — never
 # with the dial's general mind, which the holder set for their character's voice.
 KEEPER_MODEL = os.environ.get("WAKER_KEEPER_MODEL", "claude-haiku-4-5-20251001")
+# EACH FIGURE SPEAKS FOR ITSELF (bsp-mcp #459): one small call per figure present
+# after a beat, the cheap mind unless the dial names another ('figure sonnet'
+# beneath position 7). Its line is a deed and a few words said (DO / SAY), public in
+# every player's window: at 300 tokens lines ran to a wall of blue (watch:weft 488).
+FIGURE_MODEL = os.environ.get("WAKER_FIGURE_MODEL", "claude-haiku-4-5-20251001")
+FIGURE_MAX_TOKENS = int(os.environ.get("WAKER_FIGURE_MAX_TOKENS", "160"))
+FIGURES_PER_BEAT = 3
 # How long the parts of a frame that do not move are kept by the model's prompt
 # cache. A table's beats come minutes apart, not seconds: the five-minute cache
 # would be re-written at most beats, the hour-long one is written once a sitting
@@ -1752,18 +1759,74 @@ def keeper_mind(handle):
     return Dial(handle).answer_with(KEEPER_MODEL, KEEPER_MAX_TOKENS, act="keeper", general=False)
 
 
+def figure_mind(handle):
+    """(model, ceiling) for a figure's line at this character's table: the
+    dial's word for it ('figure sonnet' beneath position 7) or the cheap default."""
+    return Dial(handle).answer_with(FIGURE_MODEL, FIGURE_MAX_TOKENS, act="figure", general=False)
+
+
+def figure_pass(handle, beach, room, figures, fuel_key):
+    """EACH FIGURE SPEAKS FOR ITSELF (bsp-mcp #459, grit 3.2) — after a beat,
+    the people of the place present in its room, those the beat touched first,
+    each in a call of its own: the router frames it with its place, what has
+    happened there and its own last line, and nothing else, so no one answers
+    what did not reach where they stand. The line is staged in that room's
+    window under the figure's label, exactly as a player's is; GONE takes the
+    label down; a line that names someone the figure never heard named is asked
+    for once more, and not staged if it still does. Returns (notes, usage)."""
+    notes, used = [], {}
+    model, ceiling = figure_mind(handle)
+    for label in figures[:FIGURES_PER_BEAT]:
+        try:
+            sections, raw = tier_call(beach, room, label, "figure")
+            if "CALL" not in sections:
+                continue
+            frame = sections.get("INPUT", "")
+            spent = {}
+            line = dt.figure_line(model_call(fuel_key, model, ceiling, sections["CALL"], frame, usage=spent, plain=True))
+            for k, v in spent.items():
+                if isinstance(v, int):
+                    used[k] = used.get(k, 0) + v
+            if dt.is_gone(line):
+                pool_engage_rpc(beach, room, label, submit="")
+                notes.append("%s is gone from %s" % (label, room))
+                continue
+            faults = dt.figure_faults(line, frame)
+            if faults:
+                spent = {}
+                again = dt.figure_line(model_call(fuel_key, model, ceiling, sections["CALL"],
+                                                  frame + "\n\n" + dt.not_kept(faults, "figure"), usage=spent, plain=True))
+                for k, v in spent.items():
+                    if isinstance(v, int):
+                        used[k] = used.get(k, 0) + v
+                if not again or dt.is_gone(again) or dt.figure_faults(again, frame):
+                    notes.append("%s said nothing this beat (%s)" % (label, dt.faults_said(faults)))
+                    continue
+                line = again
+            if not line:
+                continue
+            pool_engage_rpc(beach, room, label, submit=line, face="character")
+            notes.append("%s speaks at %s" % (label, room))
+        except Exception as e:
+            notes.append("%s could not speak at %s (%s)" % (label, room, str(e)[:60]))
+    return notes, used
+
+
 def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
     """THE KEEPER'S ADMIN (hard, grit 3) — run after a resolution, so the next
-    moment is waiting well formed. The router frames what the keeper holds and
-    no one else is given: the arc and the ways through it, the minds behind the
-    faces, the world's rules, the story as it stands. Two kinds of write come
-    back, each in the shape it lands in:
+    moment is waiting well formed. The keeper keeps the books and carries the
+    news; it never voices a person (David's ruling, 2026-09-30, bsp-mcp #459).
+    The router frames what the keeper holds and no one else is given: the arc
+    and the ways through it, the minds behind the faces, the world's rules, the
+    room as it stands and the moment. What comes back, each in the shape it
+    lands in:
 
-      · THE WORLD'S NEXT INTENTIONS — staged into the room's window under the
-        label the characters would use, so the next resolution composes actions
-        and intentions from characters, the place's people among them (David's
-        ruling, 2026-09-19). The liquid is the world's memory too: what stands
-        there is what the world is in the middle of doing.
+      · ARRIVES — one of the place's people coming into a room where a
+        character stands, staged in that window under its label as anyone there
+        sees it come; from the next beat it speaks for itself.
+      · NEWS — what of the moment reaches another place, staged there under the
+        place's own label (dt.NEWS_LABEL), where it will be heard.
+      · DROP, WHERE, KNOWN — a voice taken down, a character placed, a name kept.
       · EACH CHARACTER'S HOLDS — one small call per character, framed with that
         character's own story since the sheet was last kept (the router names how
         far this keeping reaches, and the voicing closes with it), written to
@@ -1771,6 +1834,10 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
         look stays the player's own words; where look and holds disagree about
         where a thing is, the holds are the later truth and the resolution reads
         them.
+
+    Then THE FIGURES the router names in THE WRITES — those the beat touched
+    first — each speak for themselves (figure_pass), less any the keeper just
+    took down or brought in.
 
     Keys are the characters' own (their enrolments'): a sheet or a move is
     written only for a character whose key this service holds. Returns a note.
@@ -1790,8 +1857,15 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
     spent = {}
     answer = model_call(fuel_key, model, max(1200, ceiling), sections["CALL"], moment,
                         kept=[table, here], usage=spent, plain=True)
-    lines = dt.keeper_lines(answer, places=writes.get("places"), room=writes.get("room") or room)
+    here_room = writes.get("room") or room
+    stands = writes.get("stands") or []
+    lines = dt.keeper_lines(answer, places=writes.get("places"), room=here_room,
+                            standing_rooms=sorted({r for r, _w in stands}))
     notes = []
+    # What the table has heard named: its kept names and its places — never its
+    # characters' names, which ride in THE WRITES beside the places (review of
+    # #463: 'Ugarth has killed the sergeant' passed as news to the village).
+    heard = dt.frame_section(sections["INPUT"], "NAMES THIS TABLE USES") + " " + dt.place_lines(sections.get("WRITES", ""))
     # KNOWN — a name the table has given one of the place's people, kept once
     # in names:scene (open, like the liquid: the world's memory), read by every
     # later resolution and telling by face and by the keeper with the held name.
@@ -1810,21 +1884,80 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
             notes.append("%s is known as %s" % (known["face"], known["name"]))
         except Exception as e:
             notes.append("%s could not be kept as known (%s)" % (known["name"], str(e)[:60]))
-    for voice in lines["world"]:
-        try:
-            # The same person keeps the same label (dt.standing_label): a drifted one
-            # would seat a second copy of a voice already waiting in that window.
-            voice["who"] = dt.standing_label(voice["who"], [sl["author"] for sl in room_slips("pool:%s" % voice["at"], beach)])
-            pool_engage_rpc(beach, voice["at"], voice["who"], submit=voice["intends"], face="character")
-            notes.append("%s waits at %s" % (voice["who"], voice["at"]))
-        except Exception as e:
-            notes.append("%s could not be set at %s (%s)" % (voice["who"], voice["at"], str(e)[:60]))
+    # A voice taken down is taken down before anyone new comes in, and before
+    # anyone is asked to speak: a dead man is never asked his next line.
+    dropped = set()
     for gone in lines["drop"]:
         try:
+            gone["who"] = dt.standing_label(gone["who"], [sl["author"] for sl in room_slips("pool:%s" % gone["at"], beach)])
             pool_engage_rpc(beach, gone["at"], gone["who"], submit="")
+            dropped.add((gone["at"], gone["who"].lower()))
             notes.append("%s is done at %s" % (gone["who"], gone["at"]))
         except Exception:
             pass
+    arrived = set()
+    for come in lines["arrives"]:
+        try:
+            # The same person keeps the same label (dt.standing_label): a drifted one
+            # would seat a second copy of a voice already waiting in that window.
+            # THE ARC REACHES THE CHARACTERS WHERE THEY STAND: a keeper's pass
+            # follows the beat in one room, and every other room with a character
+            # in it has a pass of its own. Replayed on 2026-09-30, the keeper sent
+            # the Sow's men 'in' at the Long House, where no one stood to meet them.
+            # A place INSIDE the characters' room is that room: at a table whose
+            # characters still stand at a region (300), the keeper seats the diggers
+            # at the working face (311), where they are — the window is the region's.
+            if come["at"] != here_room and dt.within(come["at"], here_room):
+                come["at"] = here_room
+            if come["at"] != here_room:
+                notes.append("%s would come in at %s, where no character stands — not staged" % (come["who"], come["at"]))
+                continue
+            # Whoever comes in is seen by everyone there: their label and what they
+            # are seen doing may name a character only once that name has been said.
+            named = [n for n in writes.get("unsaid") or []
+                     if re.search(r"\b%s\b" % re.escape(n), come["who"] + " " + come["text"], re.I)]
+            if named:
+                notes.append("%s not brought in — the line names %s, whose name no one has said here" % (come["who"], ", ".join(named)))
+                continue
+            standing = [sl["author"] for sl in room_slips("pool:%s" % come["at"], beach)]
+            come["who"] = dt.standing_label(come["who"], standing)
+            # NO ONE ARRIVES WHERE THEIR VOICE ALREADY STANDS. Replayed against the
+            # table on 2026-09-30, the keeper 'brought in' the sergeant at the Long
+            # House from his own stale line there — a man dead an hour of the story.
+            if (come["at"], come["who"].lower()) not in dropped and come["who"] in standing:
+                notes.append("%s already stands at %s — no one arrives twice" % (come["who"], come["at"]))
+                continue
+            pool_engage_rpc(beach, come["at"], come["who"], submit=come["text"], face="character")
+            arrived.add((come["at"], come["who"].lower()))
+            notes.append("%s comes in at %s" % (come["who"], come["at"]))
+            # ONE PERSON, ONE WINDOW: whoever comes in here has left wherever their
+            # voice stood — the sergeant's line at the Long House goes when he is
+            # brought to the hill.
+            for r, w in stands:
+                if r != come["at"] and w.lower() == come["who"].lower():
+                    pool_engage_rpc(beach, r, w, submit="")
+                    notes.append("%s has left %s" % (w, r))
+        except Exception as e:
+            notes.append("%s could not come in at %s (%s)" % (come["who"], come["at"], str(e)[:60]))
+    for word in lines["news"]:
+        try:
+            # A character's name is news to no place: it is caught wherever it
+            # stands, the head of the sentence included, where coined_names looks away.
+            coined = [n for n in dt.character_names(sections.get("WRITES", ""))
+                      if re.search(r"\b%s\b" % re.escape(n), word["text"], re.I)]
+            coined += [n for n in dt.coined_names(word["text"], heard) if n not in coined]
+            if coined:
+                notes.append("news for %s not written — it names someone that place never heard named: %s" % (word["at"], ", ".join(coined)))
+                continue
+            # News that has not been heard yet is still news: a second word to the
+            # same place joins the first, never overwrites it.
+            standing = [sl["text"] for sl in room_slips("pool:%s" % word["at"], beach)
+                        if sl["author"].lower() == dt.NEWS_LABEL and sl["text"].strip()]
+            said = (standing[0].rstrip() + " " + word["text"]) if standing else word["text"]
+            pool_engage_rpc(beach, word["at"], dt.NEWS_LABEL, submit=said, face="character")
+            notes.append("news reaches %s" % word["at"])
+        except Exception as e:
+            notes.append("news could not reach %s (%s)" % (word["at"], str(e)[:60]))
     for moved in lines["where"]:
         key = keys.get(moved["handle"])
         if not key:
@@ -1858,8 +1991,23 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
             notes.append("%s's holds kept (%d)" % (who, len(held)))
         except Exception as e:
             notes.append("%s's holds could not be kept (%s)" % (who, str(e)[:60]))
+    # WHO SPEAKS: whoever was just brought in, AT ONCE — its first line the
+    # player reads is its own, and framed with the room's record it can answer
+    # GONE (the replayed keeper seated a guard killed three beats earlier) — then
+    # those the beat touched, less any taken down (review of #463).
+    speakers = []
+    for come in lines["arrives"]:
+        if (here_room, come["who"].lower()) in arrived and come["who"].lower() not in [x.lower() for x in speakers]:
+            speakers.append(come["who"])
+    for f in writes.get("figures") or []:
+        if (here_room, f.lower()) not in dropped and f.lower() not in [x.lower() for x in speakers]:
+            speakers.append(f)
+    said, used = figure_pass(handle, beach, here_room, speakers, fuel_key) if speakers else ([], {})
+    notes += said
     cost = usage_said(spent)
-    return "done", "%s [%s%s]" % ("; ".join(notes) or "the world stands as it was", model, " · " + cost if cost else "")
+    fcost = usage_said(used) if used else ""
+    return "done", "%s [%s%s%s]" % ("; ".join(notes) or "the world stands as it was", model,
+                                     " · " + cost if cost else "", " · figures " + fcost if fcost else "")
 
 
 def arrive_at(movers, beach, to_addr, label, fuel_key, model, max_tokens):

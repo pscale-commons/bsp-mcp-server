@@ -1051,17 +1051,43 @@ export function movableAddress(digits: string[], floor: number): string {
   return digits.concat(Array(floor - digits.length).fill('0')).join('');
 }
 
-/** The holding's WAYS — a wayfinding digest from the spatial block: the top
- *  grounds and, for the ground containing the current address, its buildings —
- *  first sentence of each PUBLIC face, addressed. This is what makes a raw
+/** WHERE A WAY LANDS — in a room. A three-digit address at a floor-3 world IS
+ *  the room (world-genome 2.1: "a walk to 2 gives the region and a walk to 211
+ *  gives the room inside it"), so a way to a region or a building walks on
+ *  down its first branch until the floor: the village is entered on the Green,
+ *  the Sow in its taproom, the slopes at the working face. Where a place holds
+ *  nothing finer it is itself the finest place there, and the walk stops. Until
+ *  2026-09-30 a way handed out the region's own address, and two characters
+ *  followed a sergeant up the hill to [300], the whole upland (rpg.11). */
+export function landingOf(spatial: Block, digits: string[]): string[] {
+  const floor = floorDepth(spatial);
+  let node: any = spatial;
+  for (const d of digits) node = node?.[d];
+  const out = [...digits];
+  while (out.length < floor && node && typeof node === 'object') {
+    let next = '';
+    for (let d = 1; d <= 9 && !next; d++) if (node[String(d)] != null) next = String(d);
+    if (!next) break;
+    out.push(next);
+    node = node[next];
+  }
+  return out;
+}
+
+/** The holding's WAYS — a wayfinding digest from the spatial block: the
+ *  grounds, then down the rung you stand on to the floor — the buildings of
+ *  your ground, the rooms of your building — first sentence of each PUBLIC
+ *  face, each addressed where it LANDS (landingOf), so every address a
+ *  resolution may name on a WAY line is a room. This is what makes a raw
  *  spatial read unnecessary for movement (ab5: seats read the whole block —
  *  hidden directories and all — because the move law told them to copy an
  *  address from it and nothing else carried one). Faces only; the finer place
  *  reveals on arrival. */
 export function renderWays(spatial: Block, hereAddr: string): string | null {
   const floor = floorDepth(spatial);
-  let hereTop = '';
-  try { hereTop = parseSpindle(hereAddr, floor).digits[0] ?? ''; } catch { /* no here */ }
+  let here: string[] = [];
+  try { here = parseSpindle(hereAddr, floor).digits; } catch { /* no here */ }
+  while (here.length && here[here.length - 1] === '0') here.pop();
   const first = (n: any): string => {
     const u = typeof n === 'string' ? n : floorUnderscore(n as Block);
     if (!u) return '';
@@ -1069,20 +1095,48 @@ export function renderWays(spatial: Block, hereAddr: string): string | null {
     return (m ? m[0] : u).trim();
   };
   const out: string[] = [];
-  for (let g = 1; g <= 9; g++) {
-    const ground = (spatial as any)[String(g)];
-    if (ground === undefined || ground === null) continue;
-    const gAddr = movableAddress([String(g)], floor);
-    out.push(`[${gAddr}] ${first(ground)}`);
-    if (String(g) === hereTop && ground && typeof ground === 'object') {
-      for (let b = 1; b <= 9; b++) {
-        const bld = ground[String(b)];
-        if (bld === undefined || bld === null) continue;
-        out.push(`  [${movableAddress([String(g), String(b)], floor)}] ${first(bld)}`);
+  const hereAt = here.join('');
+  const rung = (parent: any, at: string[]): void => {
+    for (let d = 1; d <= 9; d++) {
+      const node = parent?.[String(d)];
+      if (node === undefined || node === null) continue;
+      const digits = [...at, String(d)];
+      const land = landingOf(spatial, digits);
+      // A WAY NEVER LEADS TO WHERE YOU STAND. The building you are in lands in the
+      // room you are in ([131] The Long House, from the counting-room), and a walk
+      // along it would arrive where it left (review of #463, watch:weft 488). It
+      // stays in the list for its name, unaddressed, so nothing can copy it.
+      out.push(land.join('') === hereAt
+        ? `${'  '.repeat(at.length)}· ${first(node)} (where you stand)`
+        : `${'  '.repeat(at.length)}[${movableAddress(land, floor)}] ${first(node)}`);
+      if (here[at.length] === String(d) && digits.length < floor && typeof node === 'object') rung(node, digits);
+    }
+  };
+  rung(spatial, []);
+  return out.length ? out.join('\n') : null;
+}
+
+/** EVERY ROOM OF THE PLACE — the addresses a person can stand at: each place at
+ *  the floor, and above it each place that holds nothing finer. The keeper
+ *  writes only to these, so news is never left where no way leads again (a
+ *  table's rooms founded at a region or a building before 2026-09-30 are such
+ *  places). */
+export function roomsOfPlace(spatial: Block): string[] {
+  const floor = floorDepth(spatial);
+  const out: string[] = [];
+  const walk = (node: any, digits: string[]): void => {
+    let finer = false;
+    if (digits.length < floor && node && typeof node === 'object') {
+      for (let d = 1; d <= 9; d++) {
+        if (node[String(d)] == null) continue;
+        finer = true;
+        walk(node[String(d)], [...digits, String(d)]);
       }
     }
-  }
-  return out.length ? out.join('\n') : null;
+    if (digits.length && !finer) out.push(movableAddress(digits, floor));
+  };
+  walk(spatial, []);
+  return out;
 }
 
 /** Compile the situated current for a room engage: the place at the room's address,
@@ -1680,9 +1734,9 @@ export const poolEngageParamsSchema = {
     .optional()
     .describe('CADO face tag for the contribution. Recorded at field 4 of the contribution slot. Advisory in v0.1; informs synthesis-target conventions. Ignored when `contribution` is omitted.'),
   tier: z
-    .enum(['soft', 'medium', 'hard'])
+    .enum(['soft', 'medium', 'hard', 'figure'])
     .optional()
-    .describe("THE CALL FOR A TIER OF PLAY, composed from the blocks so every door runs the same one (grit 2 and 3). A room of a table only, and read-only: nothing is staged or committed. 'medium' — MAKE IT HAPPEN: the law, the contract and the bundle for the resolution of the window standing now (the place's faces, the story so far wherever it happened, the actors' sheets, the window with the world's own voices, the dice, the rules, the ways), plus the claim stamps and the ways a WAY line may name. 'hard' — THE KEEPER'S ADMIN after a resolution: the held registers as their spines, the place's hidden directories and who holds it how, the characters' sheets and tellings, and the contract for the world's next intentions and the sheets (lines out, one per act). 'soft' — THE TELLING for agent_id: where they stand, what they know and carry, their story so far and the moment not yet told, plus where to journal it. Run THE CALL as the system text and THE INPUT as the message, on your own key; act on the third section."),
+    .describe("THE CALL FOR A TIER OF PLAY, composed from the blocks so every door runs the same one (grit 2 and 3). A room of a table only, and read-only: nothing is staged or committed. 'medium' — MAKE IT HAPPEN: the law, the contract and the bundle for the resolution of the window standing now (the place's faces, the story so far wherever it happened, the actors' sheets, the window with the world's own voices, the dice, the rules, the ways), plus the claim stamps and the ways a WAY line may name. 'hard' — THE KEEPER'S ADMIN after a resolution: the held registers as their spines, the place's hidden directories and who holds it how, the moment and the characters' sheets, and the contract for the books and the news (ARRIVES, NEWS, DROP, WHERE, KNOWN — lines out, one per act), the sheets, and in THE WRITES the figures present who speak next. 'figure' — ONE OF THE PLACE'S PEOPLE, speaking for itself after a beat: agent_id is its label in the room's window; its frame is where it stands, what it has seen and heard there since it came, and its last line, and it answers with its own next intention to be staged under that label (grit 3.2). 'soft' — THE TELLING for agent_id: where they stand, what they know and carry, their story so far and the moment not yet told, plus where to journal it. Run THE CALL as the system text and THE INPUT as the message, on your own key; act on the third section."),
   party: z
     .array(z.string())
     .optional()
