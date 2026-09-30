@@ -921,9 +921,10 @@ KEEPER_MAX_TOKENS = int(os.environ.get("WAKER_KEEPER_MAX_TOKENS", "1200"))
 KEEPER_MODEL = os.environ.get("WAKER_KEEPER_MODEL", "claude-haiku-4-5-20251001")
 # EACH FIGURE SPEAKS FOR ITSELF (bsp-mcp #459): one small call per figure present
 # after a beat, the cheap mind unless the dial names another ('figure sonnet'
-# beneath position 7). Its line is one to three sentences; the ceiling keeps it so.
+# beneath position 7). Its line is a deed and a few words said (DO / SAY), public in
+# every player's window: at 300 tokens lines ran to a wall of blue (watch:weft 488).
 FIGURE_MODEL = os.environ.get("WAKER_FIGURE_MODEL", "claude-haiku-4-5-20251001")
-FIGURE_MAX_TOKENS = int(os.environ.get("WAKER_FIGURE_MAX_TOKENS", "300"))
+FIGURE_MAX_TOKENS = int(os.environ.get("WAKER_FIGURE_MAX_TOKENS", "160"))
 FIGURES_PER_BEAT = 3
 # How long the parts of a frame that do not move are kept by the model's prompt
 # cache. A table's beats come minutes apart, not seconds: the five-minute cache
@@ -1782,7 +1783,7 @@ def figure_pass(handle, beach, room, figures, fuel_key):
                 continue
             frame = sections.get("INPUT", "")
             spent = {}
-            line = dt.figure_line(model_call(fuel_key, model, ceiling, sections["CALL"], frame, usage=spent, plain=True), label)
+            line = dt.figure_line(model_call(fuel_key, model, ceiling, sections["CALL"], frame, usage=spent, plain=True))
             for k, v in spent.items():
                 if isinstance(v, int):
                     used[k] = used.get(k, 0) + v
@@ -1794,7 +1795,7 @@ def figure_pass(handle, beach, room, figures, fuel_key):
             if faults:
                 spent = {}
                 again = dt.figure_line(model_call(fuel_key, model, ceiling, sections["CALL"],
-                                                  frame + "\n\n" + dt.not_kept(faults, "figure"), usage=spent, plain=True), label)
+                                                  frame + "\n\n" + dt.not_kept(faults, "figure"), usage=spent, plain=True))
                 for k, v in spent.items():
                     if isinstance(v, int):
                         used[k] = used.get(k, 0) + v
@@ -1857,11 +1858,14 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
     answer = model_call(fuel_key, model, max(1200, ceiling), sections["CALL"], moment,
                         kept=[table, here], usage=spent, plain=True)
     here_room = writes.get("room") or room
-    lines = dt.keeper_lines(answer, places=writes.get("places"), room=here_room)
+    stands = writes.get("stands") or []
+    lines = dt.keeper_lines(answer, places=writes.get("places"), room=here_room,
+                            standing_rooms=sorted({r for r, _w in stands}))
     notes = []
-    # What the table has heard named: its kept names and its places. News names
-    # no one else — the village never heard the strangers' names on the hill.
-    heard = dt.frame_section(sections["INPUT"], "NAMES THIS TABLE USES") + " " + sections.get("WRITES", "")
+    # What the table has heard named: its kept names and its places — never its
+    # characters' names, which ride in THE WRITES beside the places (review of
+    # #463: 'Ugarth has killed the sergeant' passed as news to the village).
+    heard = dt.frame_section(sections["INPUT"], "NAMES THIS TABLE USES") + " " + dt.place_lines(sections.get("WRITES", ""))
     # KNOWN — a name the table has given one of the place's people, kept once
     # in names:scene (open, like the liquid: the world's memory), read by every
     # later resolution and telling by face and by the keeper with the held name.
@@ -1908,6 +1912,13 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
             if come["at"] != here_room:
                 notes.append("%s would come in at %s, where no character stands — not staged" % (come["who"], come["at"]))
                 continue
+            # Whoever comes in is seen by everyone there: their label and what they
+            # are seen doing may name a character only once that name has been said.
+            named = [n for n in writes.get("unsaid") or []
+                     if re.search(r"\b%s\b" % re.escape(n), come["who"] + " " + come["text"], re.I)]
+            if named:
+                notes.append("%s not brought in — the line names %s, whose name no one has said here" % (come["who"], ", ".join(named)))
+                continue
             standing = [sl["author"] for sl in room_slips("pool:%s" % come["at"], beach)]
             come["who"] = dt.standing_label(come["who"], standing)
             # NO ONE ARRIVES WHERE THEIR VOICE ALREADY STANDS. Replayed against the
@@ -1919,11 +1930,22 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
             pool_engage_rpc(beach, come["at"], come["who"], submit=come["text"], face="character")
             arrived.add((come["at"], come["who"].lower()))
             notes.append("%s comes in at %s" % (come["who"], come["at"]))
+            # ONE PERSON, ONE WINDOW: whoever comes in here has left wherever their
+            # voice stood — the sergeant's line at the Long House goes when he is
+            # brought to the hill.
+            for r, w in stands:
+                if r != come["at"] and w.lower() == come["who"].lower():
+                    pool_engage_rpc(beach, r, w, submit="")
+                    notes.append("%s has left %s" % (w, r))
         except Exception as e:
             notes.append("%s could not come in at %s (%s)" % (come["who"], come["at"], str(e)[:60]))
     for word in lines["news"]:
         try:
-            coined = dt.coined_names(word["text"], heard)
+            # A character's name is news to no place: it is caught wherever it
+            # stands, the head of the sentence included, where coined_names looks away.
+            coined = [n for n in dt.character_names(sections.get("WRITES", ""))
+                      if re.search(r"\b%s\b" % re.escape(n), word["text"], re.I)]
+            coined += [n for n in dt.coined_names(word["text"], heard) if n not in coined]
             if coined:
                 notes.append("news for %s not written — it names someone that place never heard named: %s" % (word["at"], ", ".join(coined)))
                 continue
@@ -1969,8 +1991,17 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
             notes.append("%s's holds kept (%d)" % (who, len(held)))
         except Exception as e:
             notes.append("%s's holds could not be kept (%s)" % (who, str(e)[:60]))
-    speakers = [f for f in writes.get("figures") or []
-                if (here_room, f.lower()) not in dropped and (here_room, f.lower()) not in arrived]
+    # WHO SPEAKS: whoever was just brought in, AT ONCE — its first line the
+    # player reads is its own, and framed with the room's record it can answer
+    # GONE (the replayed keeper seated a guard killed three beats earlier) — then
+    # those the beat touched, less any taken down (review of #463).
+    speakers = []
+    for come in lines["arrives"]:
+        if (here_room, come["who"].lower()) in arrived and come["who"].lower() not in [x.lower() for x in speakers]:
+            speakers.append(come["who"])
+    for f in writes.get("figures") or []:
+        if (here_room, f.lower()) not in dropped and f.lower() not in [x.lower() for x in speakers]:
+            speakers.append(f)
     said, used = figure_pass(handle, beach, here_room, speakers, fuel_key) if speakers else ([], {})
     notes += said
     cost = usage_said(spent)

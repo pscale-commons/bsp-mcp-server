@@ -214,7 +214,11 @@ console.log('\n=== hard — the keeper holds what nobody else is given ===');
   check('what the world already has standing', /the alewife: wipes the same patch/.test(input));
   check('the keeper is no longer handed the players\' tellings — the books need the moment, not their minds', !/the room did not look up/.test(input) && !/WHAT THEIR PLAYERS WERE TOLD/.test(input));
   check('the writes name the figures present who speak next — the place\'s people, never a character', /^figure: the alewife$/m.test(section(text, 'THE WRITES')) && !/^figure: (mara|dorn)$/mi.test(section(text, 'THE WRITES')));
-  check('the writes name the places a voice may wait at', /place: \[120\]/.test(section(text, 'THE WRITES')));
+  check('the writes name the places a voice may wait at — every room of the place, and the room they stand in', /place: \[121\]/.test(section(text, 'THE WRITES')) && /place: \[120\]/.test(section(text, 'THE WRITES')));
+  check('and never a table room at no room of the place — news left there would wait where no way leads', !/place: \[110\]/.test(section(text, 'THE WRITES')));
+  check('the writes say who stands in which window, for a DROP to reach and one person to keep one window', /^stands: \[120\] the alewife$/m.test(section(text, 'THE WRITES')));
+  check('the writes name each character whose name no one has said here, so no line the characters read carries it', /^unsaid: Mara$/m.test(section(text, 'THE WRITES')) && /^unsaid: Dorn$/m.test(section(text, 'THE WRITES')));
+  check('the keeper is shown who speaks for themselves next here, so one person is never seated twice', /\[WHO SPEAKS FOR THEMSELVES NEXT, HERE[^\]]*\]\n- the alewife/.test(input));
   const sheets = text.split(/^# THE SHEET INPUT — /m).slice(1).map((s) => s.split('\n')[0]);
   check('one sheet call per character standing here', sheets.length === 2 && sheets.includes('mara') && sheets.includes('dorn'));
   check('a sheet is framed with that character\'s own story', /At the ford, Mara lifts the bead/.test(text.split('# THE SHEET INPUT — mara')[1]));
@@ -330,10 +334,13 @@ console.log('\n=== figure — one of the place\'s people, speaking for itself (#
   const call = section(text, 'THE CALL');
   const input = section(text, 'THE INPUT');
   const writes = section(text, 'THE WRITES');
-  check('the call is one person\'s own: first person, an intention, never an outcome — or GONE', /FIRST PERSON/.test(call) && /an intention and never an outcome/.test(call) && /the one word GONE/.test(call));
+  // ITS LINE IS PUBLIC (review of #463): asked in the first person, the alewife
+  // said the fact a stranger is meant to earn, 2 of 4. A deed, and words said aloud.
+  check('the call is one person\'s own, and public: a DEED and WORDS SAID ALOUD, never a mind — or GONE', /YOUR LINE IS PUBLIC/.test(call) && /never a\s+thought/.test(call) && /^DO </m.test(call) && /^SAY </m.test(call) && /the one word GONE/.test(call));
   check('a figure carries no engine law — it is a person in the world, not a player of GRIT', !/\[1\.4\]/.test(call) && !/\[3\]/.test(call));
   check('it is told who it is, and where', /\[WHO YOU ARE\]\nthe alewife — here at The Alehouse/.test(input));
-  check('the place it stands in rides with what the place keeps to itself', /Half-commandeered as the crew's billet/.test(input) && /Maerla/.test(input));
+  check('the place it stands in rides with what the place keeps, down the spine to its room', /Half-commandeered as the crew's billet/.test(input));
+  check('and what stands inside the room is seen by its face, never its keeping — not the alewife\'s own mind at the trestle', /The trestle — and behind it the alewife/.test(input) && !/Maerla/.test(input));
   check('KNOWLEDGE IS LOCATED — no keeper register, no arc, no world clock', !/THE ARC/.test(input) && !/PEEL OFF THE BOY/.test(input) && !/REINFORCEMENT CLOCK/.test(input));
   check('what it has seen is this room\'s own record', /Mara and Dorn arrive\./.test(input) && /The alewife sets down a cup/.test(input));
   check('and never another room\'s — a beat at the ford never reaches the alehouse', !/At the ford/.test(input) && !/A carter passes/.test(input));

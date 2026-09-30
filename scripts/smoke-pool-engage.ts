@@ -381,12 +381,16 @@ console.log('\n=== renderWays — every way lands in a room, and the rooms of yo
   const fromHouse = renderWays(spatial, '131')!;
   assert(/^\[311\] The Slopes/m.test(fromHouse) && !/\[300\]/.test(fromHouse), 'a region lands at its first room down its first branch — the slopes at the working face, never [300]');
   assert(/^  \[111\] The Green/m.test(fromHouse) && /^\[111\] The Village/m.test(fromHouse), 'the village is entered on the Green');
-  assert(/^    \[131\] The counting-room/m.test(fromHouse) && /^    \[132\] The bed-chamber/m.test(fromHouse), 'the rooms of the building you stand in are ways');
+  assert(/^    \[132\] The bed-chamber/m.test(fromHouse), 'the rooms of the building you stand in are ways');
+  assert(/^  · The Long House[^\n]*\(where you stand\)$/m.test(fromHouse) && /^    · The counting-room[^\n]*\(where you stand\)$/m.test(fromHouse) && !/\[131\]/.test(fromHouse),
+    'a way never leads to where you stand — the building and the room you are in ride by name, unaddressed (review of #463)');
   assert(/\[170\] The Chapel/.test(fromHouse), 'a place holding nothing finer (its digits only in the hidden directory) is its own finest place');
   const fromRegion = renderWays(spatial, '300')!;
   assert(/^  \[311\] The Diggings/m.test(fromRegion) && /^  \[320\] The high slopes/m.test(fromRegion), 'from a region, its places land in their rooms — a way out of a coarse address');
   const addrs = [...fromHouse.matchAll(/\[(\d+)\]/g)].map((m) => m[1]);
   assert(addrs.every((a) => a.length === 3), 'every way handed out is a full-width address');
+  const { roomsOfPlace } = await import('../src/tools/pool.js');
+  assert(roomsOfPlace(spatial).join(' ') === '111 131 132 170 311 320', 'every room of the place: each at the floor, and above it each place holding nothing finer');
 }
 console.log(`\n=== summary (a way lands in a room) ===\n  pass: ${pass}\n  fail: ${fail}`);
 

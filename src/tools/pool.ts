@@ -1095,17 +1095,48 @@ export function renderWays(spatial: Block, hereAddr: string): string | null {
     return (m ? m[0] : u).trim();
   };
   const out: string[] = [];
+  const hereAt = here.join('');
   const rung = (parent: any, at: string[]): void => {
     for (let d = 1; d <= 9; d++) {
       const node = parent?.[String(d)];
       if (node === undefined || node === null) continue;
       const digits = [...at, String(d)];
-      out.push(`${'  '.repeat(at.length)}[${movableAddress(landingOf(spatial, digits), floor)}] ${first(node)}`);
+      const land = landingOf(spatial, digits);
+      // A WAY NEVER LEADS TO WHERE YOU STAND. The building you are in lands in the
+      // room you are in ([131] The Long House, from the counting-room), and a walk
+      // along it would arrive where it left (review of #463, watch:weft 488). It
+      // stays in the list for its name, unaddressed, so nothing can copy it.
+      out.push(land.join('') === hereAt
+        ? `${'  '.repeat(at.length)}· ${first(node)} (where you stand)`
+        : `${'  '.repeat(at.length)}[${movableAddress(land, floor)}] ${first(node)}`);
       if (here[at.length] === String(d) && digits.length < floor && typeof node === 'object') rung(node, digits);
     }
   };
   rung(spatial, []);
   return out.length ? out.join('\n') : null;
+}
+
+/** EVERY ROOM OF THE PLACE — the addresses a person can stand at: each place at
+ *  the floor, and above it each place that holds nothing finer. The keeper
+ *  writes only to these, so news is never left where no way leads again (a
+ *  table's rooms founded at a region or a building before 2026-09-30 are such
+ *  places). */
+export function roomsOfPlace(spatial: Block): string[] {
+  const floor = floorDepth(spatial);
+  const out: string[] = [];
+  const walk = (node: any, digits: string[]): void => {
+    let finer = false;
+    if (digits.length < floor && node && typeof node === 'object') {
+      for (let d = 1; d <= 9; d++) {
+        if (node[String(d)] == null) continue;
+        finer = true;
+        walk(node[String(d)], [...digits, String(d)]);
+      }
+    }
+    if (digits.length && !finer) out.push(movableAddress(digits, floor));
+  };
+  walk(spatial, []);
+  return out;
 }
 
 /** Compile the situated current for a room engage: the place at the room's address,

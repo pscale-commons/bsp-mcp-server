@@ -66,13 +66,61 @@ keeper's places, the clock), so nothing else changes.
 The telling skipping Ugarth's own line in that moment happens on main as well (2 of 2); the net
 asks again, as it did before. About $0.60 of replays.
 
-## 5. For David
+## 5. After the review (watch:weft 488, the costs lane)
+
+The six asked for, and two more a second world found:
+
+1. **CI red** — `smoke:reference-table` still expected `[100]`/`[200]`; it reads the ways each where
+   it lands. The local run had skipped it; every suite CI runs now passes.
+2. **A figure's line is public** — it stands in every player's window. The figure answers `DO`
+   (a deed, as anyone there sees it) and `SAY` (words aloud), never a mind; its ceiling is 160
+   tokens; and what the place keeps is opened only down the spine to its room, what stands inside
+   the room by its face (`placeWalk(…, held, heldBelow=false)`).
+3. **News let the characters' names through** — the guard now reads the table's names and the
+   place lines of THE WRITES, never its character lines, and refuses a character's name wherever
+   it stands in the news, the head of a sentence included.
+4. **The dead could be brought in** — whoever is seated is asked AT ONCE (its first line a player
+   reads is its own, and framed with the room's record it can answer GONE); one person keeps one
+   window (seated here, its line elsewhere is withdrawn); a DROP reaches any room where a voice
+   stands (THE WRITES' `stands:` lines), a room founded before ways landed in rooms among them.
+5. **A name called at the head of a quote** ("Aldric.", "Aldric, fetch the cask") is checked
+   (`called_names`), for a figure's line.
+6. **A way to where you stand** — a building or ground whose way lands in your own room rides
+   by name, unaddressed (`· The Long House … (where you stand)`); no door can walk it.
+7. (Coldcote) **The keeper seated the same man twice** under a new label — it is now shown who
+   speaks for themselves next in the room, and told one person keeps one voice.
+8. (Coldcote) **An arrival named a character whose name was never said** ("looking past Wren and
+   Tolly") — THE WRITES name the unsaid (`unsaid:`), and such a line is not staged.
+9. (from 488's "also seen") **Places are the rooms of the place** (`roomsOfPlace`) and the
+   characters' own room; a table room founded at a region or a building is no place for news.
+
+**The alewife at the inn**, replayed as the review asked — `pool:120`, Haiku, eight runs each:
+
+| | before | after |
+|---|---|---|
+| her mind on show ("I know what he is") | 4 | 0 |
+| a held fact or held name said (the warrant's hiding place, Bole) | 2 | 0 |
+| the fact a stranger must earn (the nightly drinking) | 1 | 0 |
+| the name net asks again | 0 | 1 (Ugarth, never named aloud at the inn — caught) |
+| length | 60–165 tokens | 36–82 tokens |
+
+**A second world** — Coldcote (floor 2, its held truths in its registers, not its places), an
+in-memory table at the mill, the same built router: the ways land in its rooms and never at the
+mill one stands in; the make-it-happen and the telling call the big man by his look (his name never
+said) and name Wren (she said it); the keeper writes only to Coldcote's rooms; the voice behind
+the door answers DO/SAY with no name. **The keeper's mind decides the rest**: Sonnet was clean in
+every run on both worlds (5 of 5); Haiku, the service default since 2026-09-21, re-voiced a dead
+man, invented people (a "carter's child"), addressed a region, voiced others inside an arrival,
+and used a held name as a label (1 of 3 — the register's own PAMBER), which no word test can
+catch without catching ordinary words too.
+
+## 6. For David
 
 1. Merge — the router and the waker deploy together; the mirror is untouched.
-2. Sergeant Vane's line standing at `liquid:pool:130` — drop it now (#459 §7.4): the Haiku keeper
-   re-voiced him twice in the replay before the sharper DROP took hold.
-3. `names:scene` entry 2, the register's Cob cast onto a hard-case at the inn (#459 §7.3).
-4. The keeper's mind at this table — `keeper sonnet` beneath position 7 of `wake:Ugarth`
-   (Haiku is the service default, his ruling of 2026-09-21).
-5. #459 §7.2 as built: three figures a beat; the day speaks as NEWS to the characters' own
-   room. §7.5, the per-character story in the resolution: later.
+2. Ruled 2026-09-30, to follow the correction: drop Sergeant Vane's line at `liquid:pool:130`;
+   strike `names:scene` entry 2; `keeper sonnet` on Ugarth's dial (`wake:Ugarth` 9.2).
+3. The keeper's mind for EVERY table — the service default (`WAKER_KEEPER_MODEL`) is Haiku by the
+   ruling of 2026-09-21; the replays on two worlds say the keeper's job needs Sonnet. His word.
+4. #459 §7.2 as built: three figures a beat; the day speaks as NEWS to the characters' own
+   room. §7.5, the per-character story in the resolution: later. The people register (#460) is the
+   natural source of a figure's own face — its next step.

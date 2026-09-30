@@ -404,9 +404,13 @@ check(withseat["window"] == "2026-09-19T15:57:00.000Z" and [w["addr"] for w in w
 check(dt.journal_of("organ: witnessed:Ugarth\nlocation: pool:120:8\ncovers: 7 8\na seat that is its own door: keep the telling by bsp(block=<organ>, append=true, content={_: <the telling>, 2: <location>})") ==
       {"organ": "witnessed:Ugarth", "location": "pool:120:8"}, "and so is the journal's")
 check(dt.writes_of("room: 130\ncharacter: garth — Garth\nplace: [130] The Long House\nplace: [150] The Store") ==
-      {"room": "130", "characters": ["garth"], "places": ["130", "150"], "sheets": {}, "figures": []}, "the keeper's writes name the room, its characters and the places")
+      {"room": "130", "characters": ["garth"], "places": ["130", "150"], "sheets": {}, "figures": [], "stands": [], "unsaid": []}, "the keeper's writes name the room, its characters and the places")
 check(dt.writes_of("room: 311\nfigure: the diggers at the pale stone\nfigure: the guard")["figures"] == ["the diggers at the pale stone", "the guard"],
       "and the figures present who speak for themselves next, in the order the beat touched them")
+check(dt.writes_of("room: 311\nstands: [130] Sergeant Vane\nstands: [100] the man at the Sow")["stands"] == [("130", "Sergeant Vane"), ("100", "the man at the Sow")],
+      "and who stands in which window, room by room")
+check(dt.place_lines("room: 311\ncharacter: Ugarth — Ugarth\nplace: [311] The working face\nplace: [121] The taproom") == "place: [311] The working face\nplace: [121] The taproom",
+      "the places a table has heard of, never its characters' names")
 check(dt.writes_of("room: 130\ncharacter: garth — Garth\nsheet: garth — through 2026-09-19T15:57:30.000Z")["sheets"] ==
       {"garth": "2026-09-19T15:57:30.000Z"}, "and, per sheet owed a keeping, how far into the story the keeping reaches")
 check(dt.journal_of("organ: witnessed:Ugarth\nlocation: pool:120:8\ncovers: 7 8") == {"organ": "witnessed:Ugarth", "location": "pool:120:8"}, "a telling knows its organ and the beat it covers")
@@ -498,8 +502,19 @@ check(dt.figure_faults("We keep low while the short one, Orik, strings his bow."
       "a name only the narration used is not the figure's — both soldiers said 'Orik' in the replay of 2026-09-30")
 check(dt.figure_faults("I edge back to the pale stone and keep my head down.", FIG) == [], "a line with no name holds")
 check(dt.is_gone("GONE") and dt.is_gone("  gone. ") and not dt.is_gone("I am gone from here soon"), "GONE is the figure's own word that it has left or can no longer act")
-check(dt.figure_line("the diggers at the pale stone: we keep low.", "the diggers at the pale stone") == "we keep low." and dt.figure_line("we keep low.", "the diggers") == "we keep low.",
-      "a label the mind set in front of its line is taken off")
+check(dt.figure_line("DO I set a cup in front of the scarred man.\nSAY Passing through?") == "I set a cup in front of the scarred man. \u201cPassing through?\u201d",
+      "a figure's line is its deed, then its words said aloud, quoted — public, so nothing else")
+check(dt.figure_line("**DO:** I wipe the trestle and do not look up.") == "I wipe the trestle and do not look up." and dt.figure_line("SAY \u201cMove along.\u201d") == "\u201cMove along.\u201d",
+      "a deed alone, or words alone, and the dressing forgiven")
+check(dt.figure_line("I know the levy will drink itself stupid tonight, and I keep it to myself.") == "",
+      "an answer in neither shape — a thought given as a line — is a line the world does not do")
+check(dt.figure_line("GONE") == "GONE", "GONE stands as GONE")
+check(dt.called_names("I wipe the trestle. \u201cAldric, fetch the cask.\u201d", "the trestle the cask") == ["Aldric"] and dt.called_names("\u201cAldric.\u201d", "") == ["Aldric"],
+      "a name called aloud at the head of a quote is a name — the alewife called an old man Aldric")
+check(dt.called_names("\u201cSergeant, a word.\u201d", "") == [] and dt.called_names("\u201cWell, sit down.\u201d", "well met") == [],
+      "a role, or a word the frame already holds, is not a name called")
+check(dt.figure_faults("I wipe the trestle. \u201cAldric, fetch the cask.\u201d", FIG) == [("coins", "it names someone you have not heard named here: Aldric")],
+      "and the figure net asks again for it")
 check(dt.not_kept([("coins", "it names someone you have not heard named here: Orik")], "figure").startswith("[YOUR LINE WAS NOT KEPT — it names someone"),
       "the line beneath a figure's frame asked again names the fault")
 
@@ -514,15 +529,20 @@ _saved = {n: getattr(waker, n) for n in ("tier_call", "model_call", "pool_engage
 _engaged, _asked = [], []
 _windows = {"pool:311": [{"author": "the place", "text": "Boots on the track below."}, {"author": "the guard at the working face", "text": "I stand."},
                          {"author": "Sergeant Vane", "text": "walks the sunken track toward the diggings"}]}
+_STANDS = "\nstands: [311] the guard at the working face\nstands: [311] Sergeant Vane\nstands: [130] the soldiers in the bracken\nstands: [130] the factor"
 _HARD = {"CALL": "the keeper's call", "INPUT": "[NAMES THIS TABLE USES — the place's people as the table calls them]\n- Sergeant Vane — the sergeant\n\n[THE WORLD NOW]\nnothing", "WRITES": "room: 311\nplace: [311] The working face\nplace: [3111] The pale stone\nplace: [121] The Brindled Sow\n"
-         "figure: the guard at the working face\nfigure: the diggers at the pale stone\nfigure: the soldiers in the bracken\nfigure: the boy with the arrow"}
+         "character: Ugarth — Ugarth\ncharacter: Orik — Orik\nunsaid: Orik\nfigure: the guard at the working face\nfigure: the diggers at the pale stone\nfigure: the soldiers in the bracken\nfigure: the boy with the arrow" + _STANDS}
 _KEEPER_SAYS = ("DROP the guard at the working face · 311\nARRIVES the soldiers in the bracken · 311 · two men push up out of the bracken\n"
                 "ARRIVES Sergeant Vane · 311 · walks the sunken track toward the diggings\n"
                 "NEWS 311 · a horn sounds from the village\nNEWS 121 · word of the hill reaches the taproom\nWORLD the alewife · 121 · wipes\n"
                 "ARRIVES the men from the Sow · 121 · come down the stairs\nNEWS 121 · Sergeant Vane is dead, and Orik strung the bow\n"
-                "ARRIVES the diggers · 3111 · press flat against the pale stone")
-_FIG_SAYS = {"the diggers at the pale stone": ["We keep low while Orik strings his bow.", "We keep low behind the spoil and watch the track."],
-             "the boy with the arrow": ["GONE"]}
+                "ARRIVES the diggers · 3111 · press flat against the pale stone\n"
+                "DROP the factor · 130\nNEWS 121 · Ugarth has killed the sergeant on the hill\n"
+                "ARRIVES the lad with the lamp · 311 · comes up behind Orik with a lamp held high")
+_FIG_SAYS = {"the diggers at the pale stone": ["DO We keep low while Orik strings his bow.", "DO We keep low behind the spoil and watch the track."],
+             "the boy with the arrow": ["GONE"],
+             "the soldiers in the bracken": ["DO We split and climb wide of the heap.\nSAY Keep him turning his head!"],
+             "the diggers": ["GONE"]}
 
 
 def _tier_call(beach, room, handle, tier, secret=None, **extra):
@@ -563,13 +583,23 @@ check(not any(h == "the men from the Sow" for _r, h, _t in _engaged) and "the me
       "the arc reaches the characters where they stand: no one is brought in at a room nobody is in")
 check(not any("Orik" in (t or "") for _r, _h, t in _engaged) and "it names someone that place never heard named: Orik" in _note,
       "news that names someone the place never heard named is not written — the village never heard the strangers' names")
+check(not any("Ugarth has killed" in (t or "") for _r, _h, t in _engaged) and "it names someone that place never heard named: Ugarth" in _note,
+      "a character's name riding in THE WRITES is no name the place has heard")
 check(not any(h == "the alewife" for _r, h, _t in _engaged), "a WORLD line voices no one — the keeper never voices a person")
-check(("figure", "the guard at the working face") not in _asked and ("figure", "the soldiers in the bracken") not in _asked,
-      "a figure taken down is never asked, and one just brought in speaks from the next beat")
+check(("figure", "the guard at the working face") not in _asked, "a figure taken down is never asked")
+check(_asked.index(("figure", "the soldiers in the bracken")) < _asked.index(("figure", "the diggers at the pale stone")),
+      "one just brought in is asked AT ONCE, ahead of those the beat touched")
+check(("311", "the soldiers in the bracken", "We split and climb wide of the heap. \u201cKeep him turning his head!\u201d") in _engaged,
+      "and its own deed and words take the place of the keeper's line — the first a player reads is its own")
+check(("130", "the soldiers in the bracken", "") in _engaged, "one person, one window: whoever comes in here has left the window where they stood")
+check(("311", "the diggers", "") in _engaged and "the diggers is gone from 311" in _note, "one just seated who answers GONE is taken down at once")
+check(("130", "the factor", "") in _engaged, "a DROP reaches a room where a voice stands, though no way leads there now")
+check(not any(h == "the lad with the lamp" for _r, h, _t in _engaged) and "the lad with the lamp not brought in — the line names Orik, whose name no one has said here" in _note,
+      "no one is brought in by a line that names a character whose name was never said there")
 check(("311", "the diggers at the pale stone", "We keep low behind the spoil and watch the track.") in _engaged,
       "a figure's line that coins a name is asked once more, and the second is staged")
-check(("311", "the boy with the arrow", "") in _engaged and "the boy with the arrow is gone from 311" in _note, "GONE takes a figure's label down")
-check(_note.rstrip("]").endswith("figures in 1.8k · out 0.1k"), "the note says what the figures' calls cost, summed")
+check(("figure", "the boy with the arrow") not in _asked, "three at most a beat — those brought in first, then those the beat touched; the rest meet the next beat")
+check(_note.rstrip("]").endswith("figures in 2.4k · out 0.2k"), "the note says what the figures' calls cost, summed")
 
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
