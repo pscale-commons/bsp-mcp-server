@@ -1,11 +1,11 @@
 # Community Recovery on the beach — the constitution first (2026-09-30)
 
-**Status**: a proposal for David's review, at his word (*"provide a systemic approach and
-architectural proposals which I can review"*). Nothing is built. Nothing on the live beach was
-written except this lane's opening line in weft's own pile, and none of Matthew's blocks were
-touched. What §5 and §7 claim as feasible was run against the beach's real handler on a scratch
-folder (Appendix C). Everything else is design. §13 lists the decisions, each with a
-recommendation, and then the choices that go to Matthew.
+**Status**: RULED AND BUILT, 30 September 2026. David ruled the same day: every recommendation
+as made, with three words in place of four, and the whole of it built as a working place, not a
+draft (§14 has his words, what stands, and what changed in the building). The text from here to
+§13 is the proposal as it was written that morning (*"provide a systemic approach and
+architectural proposals which I can review"*) and is kept as the design record. None of Matthew's
+blocks were touched, before or after.
 **Prompted by**: David's ask of 30 September, with two documents attached: Community Recovery's
 constitution working draft, and its membership, participation and community agreement form, both
 September 2026.
@@ -577,7 +577,8 @@ from this proposal's offline work.
    contact details, the emergency contact, access needs, the safe-participation conversation and
    signatures. *Recommended.*
 5. **The page gives each person four words** and does not ask them to invent a password; lost
-   words are handled in person through whoever keeps the store. *Recommended.*
+   words are handled in person through whoever keeps the store. *Recommended.* **Ruled: three
+   words.**
 6. **Put the pages in a small repository of their own** under pscale-commons, published on GitHub
    Pages, so that Matthew can link or copy them and another LERO can fork them. *Recommended* over
    a change to Matthew's own repository, which is his to change, and over happyseaurchin.com, which
@@ -599,6 +600,92 @@ from this proposal's offline work.
 
 How membership is recorded is not on this list. It is the members' question, the constitution's
 own Appendix B asks it, and nothing built here depends on the answer.
+
+## 14. Ruled and built (30 September 2026)
+
+### David's words
+
+> "Recommendation 5 -- please use three words. And we are going ahead with the build ... I want
+> this to be operational, not draft. I want to test it myself. It only becomes 'ratified' when it
+> is used. There is no formal acceptance required until Matthew and others from lero and the
+> charity actually use it. ... We are not pretending to be Apple inc. We are just creating a bunch
+> of pscale blocks and text. It is the users who make it real with their participation ... we
+> don't want to create 'draft' versions and then 'public' versions. It is just something on the
+> beach. ... The authority is in people's agency, not dead, solid text on the beach."
+
+> "Ensure the plan is conformal [with Matthew's pages] -- bearing in mind Matthew's personal
+> perspective of the operationality of the beach is limited."
+
+### What stands
+
+| | where |
+|---|---|
+| the place | `https://beach.happyseaurchin.com/w/community-recovery`: `lighthouse`; `spine:`, `function:` and `pool:` for constitution, agreement and standards; `pool:community-recovery`. Eleven blocks, the frames, laws and lighthouse latched under the keepers' words |
+| the pages | https://pscale-commons.github.io/community-recovery/ (front door, join us, the constitution, the standards, the agreement's wording, how it was made) |
+| the kit | [pscale-commons/community-recovery](https://github.com/pscale-commons/community-recovery): the pages, the blocks as seeds, the seeding script, the lost-words script |
+| the keepers' words | in weft's identity file and `vault:weft` 8; held for Community Recovery until Matthew asks |
+
+It was walked end to end on a local copy of the beach's real handler, then on the published pages
+against the live place with a probe name that was removed afterwards. The live place was left
+holding only its eleven seeded blocks.
+
+### No pretence
+
+The place says what it is in three places a reader meets: the lighthouse's own opening line, the
+mark at the top of the front page, and the foot of every page. It was made for Community Recovery
+to use, it does not speak for Community Recovery, it becomes theirs as its members use it, and it
+is removed if they ask. The pages ask search engines not to list them until then. How the beach's
+owner marks a place as confirmed, or removes it, is a separate lane (certification.1).
+
+### What changed in the building
+
+1. **Three words**, from a list of about 1,100 plain ones curated for this community: nothing about
+   drink, drugs, gambling, harm, illness, the law or money, no sound-alike twins, no numbers. A slip
+   of a letter when typing them back is put right.
+2. **A person's notebooks are made, latched, at the moment they are named.** The proposal had them
+   born at the first answer. The handler lets a stranger create an unlatched block under a name
+   that has not yet written there, and a write to a missing block brings it back unlatched. Founding
+   them at naming closes both, and it is Matthew's own picture: everyone gets their notebook at the
+   welcome. The kept minutes are still born of use, at the first minute.
+3. **Writes to one block go one after another.** The handler reads, changes and writes a block
+   whole, so two writes sent together can lose one. The page queues them.
+4. **The three answer words and the doors are read from blocks**: lines 2.1 to 2.3 of each law, and
+   the entries of the lighthouse. Changing a block changes the page. The laws also name the three
+   words and the two syntheses in their branch lines, because the stream delivers a law as its
+   branch lines only.
+5. **Lost words are built**, which answers the custodian reset Matthew asked for:
+   `operator/reset-words.mjs` clears the latches of one person's blocks at the store, writes a line
+   in the public block `resets`, and the person takes new words on the page. Their writing is
+   untouched and whoever helped holds nothing.
+6. **A person can leave**: the join page removes their card and every notebook by their own words.
+7. **The standards page shows Matthew's reading beside the readings made at the place**, read from
+   the apex where he wrote it. The frame at the place keeps his addresses, so nothing of his moved.
+8. **The agreement is agreed a part at a time** on the join page and its wording is answered line
+   by line on a page of its own, in the same notebook.
+
+### Conformance with Matthew's pages
+
+| his page says | the place |
+|---|---|
+| everyone has their own notebook; the wall shows all answers side by side, nobody rewritten | a notebook per frame; every answer beside the clause; the keepers' minute beneath |
+| the website is the lighthouse, rendered | the front page draws the block `lighthouse` |
+| a door that works for anyone, with no Claude account and no knowledge of the beach | the pages |
+| what the organisation needs for safety and admin stays in its own secure system, not on the beach | nothing identifying is asked for |
+| belonging through an act, not a list; moving away from the arrival directory as a register | the act is agreeing; the list is read, never kept; no `sed:` |
+| a custodian reset with the person present, visible, leaving no writing access | built (5 above) |
+| no tracking, so no cookie banner; GitHub Pages | none; GitHub Pages |
+| everything carries the organisation's name so it belongs together | the place carries the name; the blocks inside it have plain names |
+| the shared calendar; places; recovery capital; sealed notes to leaders; the organisation's hand | not built, and said so on the page that explains the place |
+
+His standards family, his book and his pages stand exactly as he left them.
+
+### What was not verified
+
+The keepers' words were never typed into the published page: keeping a minute was walked in the
+page on the local handler, and on the live place a probe minute was written through the same
+calls, read on the published page, and removed. The lost-words script was run against a stand-in
+for the store, never against the live store. Speech in and out was not exercised. Nobody from
+Community Recovery has used any of it.
 
 ## Appendix A. The address map of the draft
 
