@@ -7,6 +7,13 @@ recipe line is `ways:stills` 6.6, with the convention as it stood that morning a
 `archive:ways:stills:2026-09-30`. Nothing in the substrate, the router or any page changed. This
 file is the record of what was founded and why it has the shape it has.
 
+**CORRECTED THE SAME DAY.** David read the register and ruled the method wrong: a person is not one
+spindle read closer and closer (§2 below), the body spreads by scale into parts and details; and the
+unnamed are not individuated at all (the three soldiers of §4 are withdrawn). The register was re-cut
+that afternoon and the text this file describes stands at `archive:people:brackenfoot:2026-09-30`.
+What stands now, and why, is `2026-09-30-a-person-spreads-by-scale.md`. §3 (a sibling block, not a
+subnest of the places register) still holds.
+
 ## 1. What was wrong
 
 David, looking at the latest pictures of play at the open Brackenfoot table: *"all the soldiers
