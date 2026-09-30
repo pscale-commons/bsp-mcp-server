@@ -840,7 +840,8 @@ export const KEEPER_CONTRACT =
   "NEWS — what of the moment carries to another place, and only when the world's own rules carry it there NOW: a shout " +
   "carries down a slope, a runner takes the time a runner takes, and nothing travels that no one there could see, hear or " +
   "be brought. Say only WHAT REACHES the place — the sound, the sight, the word brought — never what anyone there does about " +
-  "it (they speak for themselves), and never a thing the moment does not hold. It is written in that place's window, " +
+  "it (they speak for themselves), never a thing the moment does not hold, and never a line to say that nothing has " +
+  "reached a place. It is written in that place's window, " +
   "where it will be heard. What the day itself does where the characters stand — the light going, weather coming, a " +
   "sound from elsewhere reaching them — is news to their own room.\n\n" +
   "DROP — a voice standing in a window whose person has left that room, died, or can no longer act there: its line is " +
@@ -872,9 +873,9 @@ export const KEEPER_CONTRACT =
 // know them sends the frame whole, exactly as before.
 export const KEEPER_CLOSE =
   'You are keeping the books and carrying the news — never voicing a person, and never an outcome: nothing here happens ' +
-  'until the next moment is made. A voice already standing in THE WORLD NOW keeps the label it stands under, letter for ' +
-  'letter — a new label is a new person. Answer in THE SHAPE alone: plain lines that begin ARRIVES, NEWS, DROP, WHERE or ' +
-  'KNOWN, and no other word.';
+  'until the next moment is made. A voice standing in THE WORLD NOW, or speaking for itself next, keeps the label it has, ' +
+  'letter for letter — a new label is a new person, never a better name for one already there. Answer in THE SHAPE alone: ' +
+  'plain lines that begin ARRIVES, NEWS, DROP, WHERE or KNOWN, and no other word.';
 export const KEEPER_TABLE_MARK = '[— above: what holds for the whole table. Below: this room. —]';
 export const KEEPER_ROOM_MARK = '[— above: what holds for this room. Below: the moment, which changes with every beat. —]';
 

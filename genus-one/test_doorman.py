@@ -241,8 +241,10 @@ def dial_of(block):
 plain = dial_of({"1": "on", "7": "sonnet — the mind that answers here"})
 check(plain.answer_with("svc", 4000) == ("claude-sonnet-5", 4000), "position 7 as a line still names the mind for every act")
 check(plain.answer_with("svc", 4000, act="render") == ("claude-sonnet-5", 4000), "an act the holder did not name keeps 7's own word")
-check(plain.answer_with(waker.KEEPER_MODEL, 1200, act="keeper", general=False) == ("claude-haiku-4-5-20251001", 1200),
-      "THE KEEPER NEVER WEARS THE GENERAL MIND: a dial that says sonnet still gets the cheap keeper")
+check(waker.KEEPER_MODEL == "claude-sonnet-5", "the keeper's mind is sonnet for every table unless a dial names another (David, 2026-09-30)")
+opus = dial_of({"1": "on", "7": "opus — the mind that answers here"})
+check(opus.answer_with(waker.KEEPER_MODEL, 1200, act="keeper", general=False) == ("claude-sonnet-5", 1200),
+      "THE KEEPER NEVER WEARS THE GENERAL MIND: a dial that says opus still gets the service's keeper")
 named = dial_of({"1": "on", "7": {"_": "sonnet — the mind that answers here", "1": "keeper sonnet — I want the world sharp",
                                   "2": "render haiku 900", "3": "commit claude-opus-4-8, 3000", "4": "a line of prose only"}})
 check(named.answer_with(waker.KEEPER_MODEL, 1200, act="keeper", general=False) == ("claude-sonnet-5", 1200), "'keeper sonnet' beneath 7 is the holder's word for the keeper, prose after it ignored")
@@ -538,7 +540,8 @@ _KEEPER_SAYS = ("DROP the guard at the working face · 311\nARRIVES the soldiers
                 "ARRIVES the men from the Sow · 121 · come down the stairs\nNEWS 121 · Sergeant Vane is dead, and Orik strung the bow\n"
                 "ARRIVES the diggers · 3111 · press flat against the pale stone\n"
                 "DROP the factor · 130\nNEWS 121 · Ugarth has killed the sergeant on the hill\n"
-                "ARRIVES the lad with the lamp · 311 · comes up behind Orik with a lamp held high")
+                "ARRIVES the lad with the lamp · 311 · comes up behind Orik with a lamp held high\n"
+                "NEWS 121 · nothing new reaches the taproom from the hill")
 _FIG_SAYS = {"the diggers at the pale stone": ["DO We keep low while Orik strings his bow.", "DO We keep low behind the spoil and watch the track."],
              "the boy with the arrow": ["GONE"],
              "the soldiers in the bracken": ["DO We split and climb wide of the heap.\nSAY Keep him turning his head!"],
@@ -578,6 +581,7 @@ check(not any(h == "Sergeant Vane" for _r, h, _t in _engaged) and "Sergeant Vane
       "no one arrives where their voice already stands — the replay's keeper brought a dead sergeant in from his own stale line")
 check(("311", "the place", "Boots on the track below. a horn sounds from the village") in _engaged, "news joins news already waiting there, never overwrites it")
 check(("121", "the place", "word of the hill reaches the taproom") in _engaged, "and news reaches another place, written there")
+check(not any("nothing new reaches" in (t or "") for _r, _h, t in _engaged), "news that says nothing reached a place is not written")
 check(("311", "the diggers", "press flat against the pale stone") in _engaged, "one seated at a place inside the characters' room is seated in that room's window")
 check(not any(h == "the men from the Sow" for _r, h, _t in _engaged) and "the men from the Sow would come in at 121, where no character stands — not staged" in _note,
       "the arc reaches the characters where they stand: no one is brought in at a room nobody is in")
