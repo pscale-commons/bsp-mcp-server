@@ -244,8 +244,12 @@ r = await deployed.call('POST', { world: 'riverside-recovery', block: 'conventio
 check('a stranger with no key writes one line beside the community\'s open room', r.status === 200, r);
 d = await declared.list();
 check('and the alternative now lists the community\'s place as a table', d.names.includes('riverside-recovery'), d.names);
+r = await deployed.call('POST', { world: 'brackentest-kin', block: 'convention:211', body: { spindle: '', content: { _: 'parlour' }, confirm: true } });
+check('the same hand rewrites the unlatched line beside the table\'s room', r.status === 200, r);
+d = await declared.list();
+check('and the alternative no longer lists the table', !d.names.includes('brackentest-kin'), d.names);
 const after = await words.list();
-check('the recommendation\'s list is what it was: the place, under words that claim nothing about it', after.names.includes('riverside-recovery') && /^Places at/.test(after.body._), after.names);
+check('the recommendation\'s list is what it was: the place and the table, under words that claim nothing about either', after.names.includes('riverside-recovery') && after.names.includes('brackentest-kin') && /^Places at/.test(after.body._), after.names);
 
 fs.rmSync(scratch, { recursive: true, force: true });
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -188,10 +188,11 @@ command in sixty-nine. These are the reasons against it:
 - **It drops a table.** `rpg9-clock4` leaves the list, and no table on the clock can join it
   (check 3).
 - **It rests on a block that is born open.** A declaration is unlatched beside an unlatched room,
-  on purpose (world-genome 6.3, and §3 and §8 of the proposal that made it). Where a room is open
-  to anyone and nothing is declared beside it, any hand can write the line, and the place is on
-  the list as a table again (check 5). That openness is the declaration's own and older than
-  this; a filter would lean the list on it too.
+  on purpose (world-genome 6.3, and §3 and §8 of the proposal that made it). Where no declaration
+  stands beside a room, any hand can write one, and the place is on the list as a table again.
+  Where one stands unlatched as it was born, the same hand can rewrite it, and a table is off the
+  list (check 5). That openness is the declaration's own and older than this; a filter would lean
+  the list on it too.
 - **It narrows five readers that work on any place** (§3). A handle standing at a place that is
   not a table is no longer found, and the mistyped name of such a place is no longer matched.
 - **It changes what an existing query answers.** The package's rule for its wire is that
@@ -387,7 +388,7 @@ BEACH_DIR=/path/to/pscale-beach npx tsx proposals/2026-09-30-the-list-of-tables-
 `offline-checks.mjs` runs the handler four ways over one store: as `BEACH_DIR` holds it, with the
 words of §6, with the filter of §5.1, and with the same test by name only. The three changed
 handlers are copies in the scratch folder, each made by one exact replacement, so the script is
-also the record of each change. `BEACH_DIR` is never written to. 27 checks, all passing on 30
+also the record of each change. `BEACH_DIR` is never written to. 29 checks, all passing on 30
 September 2026 against both the handler deployed at beach.happyseaurchin.com (the operator clone
 at origin/main, a9fc45a) and the public package at origin/main (a8bffeb).
 
@@ -397,7 +398,7 @@ at origin/main, a9fc45a) and the public package at origin/main (a8bffeb).
 | 2 | the words: the same rows in the same order, the store asked exactly the same, the answer opening "Places at … with a room written", the envelope's shape and the plain index unchanged |
 | 3 | the filter: the table listed; the community's place, a trial and a notice board not; no table on the clock listed; one MGET and a third round trip more; a voice at the lobby still raises its table |
 | 4 | the filter by name only: no read more than today, and the notice board listed as a table |
-| 5 | a stranger with no key writes one line beside the community's open room, and the filter lists the place as a table; the words' list is what it was |
+| 5 | a stranger with no key writes one line beside the community's open room, and the filter lists the place as a table; the same hand rewrites the unlatched line beside a table's room, and the filter drops the table; the words' list is what it was |
 
 `router-doors.mts` prints what this repository's doors say from those rows (§2), and what the play
 door hands a fresh handle at a place that is not a game (decision 4). It asserts nothing: it is
