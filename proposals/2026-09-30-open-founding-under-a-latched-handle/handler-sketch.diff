@@ -1,0 +1,107 @@
+--- a/api/pscale-beach.js   pscale-beach-happyseaurchin origin/main a9fc45a — the deployed handler
++++ b/api/pscale-beach.js   a scratch copy — a sketch for the builder, never committed to a beach repo
+@@ -369,8 +369,40 @@
+   return {
+     status: 403,
+     body: {
+-      error: `"${blockName}" is named for ${handle}, whose passport is locked — a lock here can only be set with ${handle}'s own key, the one that locks ${passport} (as the secret, or as the new lock itself). Founding it open, with no lock, is still allowed.`,
++      error: `"${blockName}" is named for ${handle}, whose passport is locked — a lock here can only be set with ${handle}'s own key, the one that locks ${passport} (as the secret, or as the new lock itself).`,
+       code: 'handle_bound',
++    },
++  };
++}
++
++// A LATCHED NAME BEARS ITS OWN BLOCKS (sketch for bsp-mcp proposals/2026-09-30-open-founding-
++// under-a-latched-handle, option 1). The rule above binds the LATCH; this binds the BIRTH: a
++// block named for a handle whose passport is latched is created only under that passport's key
++// (as the secret, or as the new lock), and is born latched at its root under that key unless
++// the write set a root latch of its own or said new_lock '' (open by the holder's own word).
++// A room and its staging buffer stay open to a visitor's first word. The passport itself is
++// the claim and is bound by nothing, but it too is born latched at its root by whatever key
++// rides its founding, so a first write at a position can no longer leave the name unheld.
++const BIRTH_OPEN_TO_VISITORS = ['pool:', 'liquid:'];
++async function birthBinding(origin, blockName, secret, newLock) {
++  const cut = blockName.lastIndexOf(':');
++  if (cut <= 0 || cut === blockName.length - 1) return null;
++  if (HANDLE_BOUND_EXEMPT.some((prefix) => blockName.startsWith(prefix))) return null;
++  if (BIRTH_OPEN_TO_VISITORS.some((prefix) => blockName.startsWith(prefix))) return null;
++  const handle = blockName.slice(cut + 1);
++  const passport = `passport:${handle}`;
++  const held = (await loadHashes(origin, passport))['_'];
++  if (held === undefined) return null;
++  const proves = (key) => typeof key === 'string' && key !== '' && hashOrdinary(origin, key, passport, '_') === held;
++  if (proves(secret)) return { key: secret };
++  if (proves(newLock)) return { key: newLock };
++  return {
++    refused: {
++      status: 403,
++      body: {
++        error: `"${blockName}" is named for ${handle}, whose passport is latched — only ${handle}'s own key, the one that latches ${passport}, creates a block in that name (send it as the secret, or as the new lock). ${handle}'s room, pool:${handle}, is open to anyone's first word.`,
++        code: 'handle_bound',
++      },
+     },
+   };
+ }
+@@ -1477,16 +1509,27 @@
+     const entry = stampAppendTimestamp(content);
+     const locked = await withAppendLock(origin, blockName, async () => {
+       const existing = await loadBlock(origin, blockName);
++      let bornUnder = null;
++      if (existing == null && !blockName.startsWith('sed:') && !blockName.startsWith('grain:')) {
++        const b = await birthBinding(origin, blockName, secret, undefined);
++        if (b && b.refused) return { refused: b.refused };
++        if (b) bornUnder = b.key;
++      }
+       const r = appendWithSupernest(blockName, origin, existing, entry);
+       let block = r.block;
+       if (blockName === 'presence') block = sweepStalePresence(block);
+       await saveBlock(origin, blockName, block, existing == null);
++      if (bornUnder !== null) {
++        hashes['_'] = hashByBlockName(origin, blockName, '_', bornUnder);
++        await saveHashes(origin, blockName, hashes);
++      }
+       return { ...r, born: existing == null };
+     });
+     if (!locked) {
+       return { status: 503, body: { error: 'append contention — retry', code: 'append_contention' } };
+     }
+     const r = locked.done;
++    if (r.refused) return r.refused;
+     // Report the zero-slot dues this append made — or left — outstanding, so the
+     // debt is visible where it is incurred rather than discovered by a scan
+     // months later. Additive and advisory: nothing is refused and no writer is
+@@ -1622,6 +1665,20 @@
+         code: 'invalid_shape'
+       }
+     };
++  }
++
++  // A latched name bears its own blocks — the birth of a block named for a handle whose
++  // passport is latched needs that passport's key.
++  let bornUnder = null;
++  if (existing == null && content !== undefined && inherits) {
++    if (blockName.startsWith('passport:')) {
++      // The passport is the claim itself: whatever key rides its founding latches its root.
++      bornUnder = [new_lock, secret].find((k) => typeof k === 'string' && k !== '') ?? null;
++    } else {
++      const b = await birthBinding(origin, blockName, secret, new_lock);
++      if (b && b.refused) return b.refused;
++      if (b) bornUnder = b.key;
++    }
+   }
+ 
+   // A handle founds under its own key — setting a lock where none stands, on a block
+@@ -1700,6 +1757,13 @@
+     }
+   }
+ 
++  // Born latched: the root of a block born under a latched name takes that name's key,
++  // unless this write latched the root itself or asked for it open (new_lock '').
++  if (bornUnder !== null && !relinquish && hashes['_'] === undefined) {
++    hashes['_'] = hashByBlockName(origin, blockName, '_', bornUnder);
++    await saveHashes(origin, blockName, hashes);
++  }
++
+   // born: this write found no block here and made one. Said in the ack so every
+   // surface learns of a birth at the moment it happens, at no extra read — a
+   // mistyped handle mints a block, and the hand that minted it is the one best
