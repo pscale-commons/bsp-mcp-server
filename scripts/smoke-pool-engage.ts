@@ -362,10 +362,33 @@ console.log('\n=== movableAddress — what a player copies must walk where it sa
   assert(movableAddress(['0','0','1'], 3) === '001', 'a 0-walk label keeps its zeros — never masquerades as a ground');
   const spatial: Block = { _: { _: { _: 'land.' } }, 1: { _: 'The Village — grey.', 2: { _: 'The alehouse — low.' } }, 2: { _: 'The Road — long.' } } as any;
   const ways = renderWays(spatial, '121')!;
-  assert(/\[100\] The Village/.test(ways) && /\[120\] The alehouse/.test(ways) && /\[200\] The Road/.test(ways), 'the ways hand out padded, walkable addresses');
+  assert(/\[120\] The Village/.test(ways) && /\[120\] The alehouse/.test(ways) && /\[200\] The Road/.test(ways), 'the ways hand out padded, walkable addresses — where the place holds nothing finer, its own');
   assert(!/\[1\] /.test(ways) && !/\[12\] /.test(ways), 'no short forms escape');
 }
 console.log(`\n=== summary (movable) ===\n  pass: ${pass}\n  fail: ${fail}`);
+
+// ── A way lands in a room (world-genome 2.1; rpg.11, 2026-09-30) ──
+// From the Long House [130] the only way up the hill was [300], the whole
+// upland, so a sergeant's walk put two characters at a region, not a room.
+console.log('\n=== renderWays — every way lands in a room, and the rooms of your building are ways ===');
+{
+  const spatial: Block = { _: { _: { _: 'A holding.' } },
+    1: { _: 'The Village — grey.', 1: { _: 'The Green — mud.', 1: 'The common ground — the stocks in the middle.' },
+         3: { _: 'The Long House — the reeve\'s.', 1: 'The counting-room — sacks and a ledger.', 2: 'The bed-chamber — a stout door.' },
+         7: { _: { _: 'The Chapel — shut.', 1: 'held: a lock-up now.' } } },
+    3: { _: 'The Slopes — the ground above.', 1: { _: 'The Diggings — a working.', 1: 'The working face — a raw cut.' }, 2: 'The high slopes — bracken.' },
+  } as any;
+  const fromHouse = renderWays(spatial, '131')!;
+  assert(/^\[311\] The Slopes/m.test(fromHouse) && !/\[300\]/.test(fromHouse), 'a region lands at its first room down its first branch — the slopes at the working face, never [300]');
+  assert(/^  \[111\] The Green/m.test(fromHouse) && /^\[111\] The Village/m.test(fromHouse), 'the village is entered on the Green');
+  assert(/^    \[131\] The counting-room/m.test(fromHouse) && /^    \[132\] The bed-chamber/m.test(fromHouse), 'the rooms of the building you stand in are ways');
+  assert(/\[170\] The Chapel/.test(fromHouse), 'a place holding nothing finer (its digits only in the hidden directory) is its own finest place');
+  const fromRegion = renderWays(spatial, '300')!;
+  assert(/^  \[311\] The Diggings/m.test(fromRegion) && /^  \[320\] The high slopes/m.test(fromRegion), 'from a region, its places land in their rooms — a way out of a coarse address');
+  const addrs = [...fromHouse.matchAll(/\[(\d+)\]/g)].map((m) => m[1]);
+  assert(addrs.every((a) => a.length === 3), 'every way handed out is a full-width address');
+}
+console.log(`\n=== summary (a way lands in a room) ===\n  pass: ${pass}\n  fail: ${fail}`);
 
 // ── Located engagement — at= writes/filters the address-of-attention (2026-07-29) ──
 import { digitsOfAddress } from '../src/tools/pool.js';
