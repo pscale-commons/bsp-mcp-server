@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch · the constitution page</title>
+<!-- A SKETCH for review, with invented names and invented comments; grey bars stand in for the clauses' own words. It reads nothing and writes nothing.
+     The look follows Matthew's own Community Recovery pages (his palette), so the real page would sit beside them. -->
+<style>
+  :root { --bg:#f7f5f0; --card:#fff; --ink:#26302e; --muted:#5f6b68; --faint:#d9ddd8; --line:#e6e8e3; --accent:#3f6f66; --accent-soft:#e8f0ed; --quiet:#eeefea; --yes:#4f7f63; --change:#b7812a; --unsure:#8e9794; }
+  * { box-sizing: border-box; }
+  html { background:#dfe3de; } body { margin:0 auto; max-width:400px; min-height:100vh; background:var(--bg); color:var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size:17px; line-height:1.6; }
+  .wrap { max-width: 42rem; margin:0 auto; padding:0 1rem; }
+  header { background:var(--card); border-bottom:1px solid var(--line); padding:.8rem 0; }
+  .brand { font-weight:700; display:flex; align-items:center; gap:.5rem; }
+  .brand i { width:26px; height:26px; border-radius:50%; background:var(--accent); display:inline-block; }
+  h1 { font-size:1.5rem; line-height:1.2; margin:1.2rem 0 .3rem; }
+  .pill { display:inline-block; font-size:.78rem; color:var(--muted); border:1px solid var(--faint); border-radius:999px; padding:.05rem .6rem; }
+  .how { color:var(--muted); margin:.7rem 0 1.1rem; }
+  .part { background:var(--card); border:1px solid var(--line); border-radius:12px; margin:0 0 .6rem; }
+  .part > .row { display:flex; justify-content:space-between; gap:.8rem; padding:.85rem 1rem; font-weight:700; }
+  .part .chev { color:var(--muted); font-weight:400; }
+  .open > .row { border-bottom:1px solid var(--line); }
+  .section { padding:.7rem 1rem .2rem; }
+  .section h2 { font-size:1rem; margin:0 0 .6rem; color:var(--accent); }
+  .section.shut h2 { color:var(--ink); font-weight:400; margin-bottom:.7rem; display:flex; justify-content:space-between; }
+  .clause { border-top:1px solid var(--line); padding:.9rem 0 1rem; }
+  .head { display:flex; gap:.6rem; align-items:flex-start; }
+  .head b { display:block; }
+  .clause p { margin:.35rem 0 .7rem; }
+  /* the clause's own words are Community Recovery's to publish: bars stand in for them here */
+  .words-here i { display:block; height:.7rem; border-radius:4px; background:var(--faint); margin:.5rem 0; }
+  .btns { display:flex; gap:.45rem; flex-wrap:wrap; align-items:center; }
+  button { font:inherit; font-size:.95rem; border-radius:999px; border:1px solid var(--faint); background:var(--card); color:var(--ink); padding:.42rem 1rem; }
+  button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.quiet { border-color:transparent; color:var(--muted); padding-left:.4rem; padding-right:.4rem; }
+  .voices { margin:.8rem 0 0; font-size:.95rem; }
+  .voices summary { color:var(--muted); cursor:pointer; }
+  .voice { display:flex; gap:.5rem; align-items:baseline; padding:.35rem 0 0; }
+  .voice .who { font-weight:700; white-space:nowrap; }
+  .tag { font-size:.8rem; border-radius:999px; padding:0 .5rem; color:#fff; white-space:nowrap; }
+  .tag.yes { background:var(--yes);} .tag.change { background:var(--change);} .tag.unsure { background:var(--unsure);}
+  .kept { background:var(--quiet); border-radius:8px; padding:.5rem .8rem; font-size:.92rem; margin:.7rem 0 0; }
+  .kept span { color:var(--muted); }
+  textarea { width:100%; min-height:5.2rem; font:inherit; border:1px solid var(--faint); border-radius:10px; padding:.6rem .7rem; margin:.7rem 0 .5rem; background:var(--card); color:var(--ink); }
+  .me { color:var(--muted); font-size:.9rem; padding:1.2rem 0 2rem; text-align:center; }
+  .me a { color:var(--accent); }
+  .dot { flex:none; margin-top:.2rem; }
+  /* the sheet */
+  .veil { position:fixed; inset:0; background:rgba(20,26,25,.45); display:none; }
+  .sheet { position:fixed; left:0; right:0; bottom:0; background:var(--card); border-radius:18px 18px 0 0; padding:1.2rem 1.1rem 1.4rem; display:none; max-width:400px; margin:0 auto; }
+  body.sheet-open .veil, body.sheet-open .sheet { display:block; }
+  .sheet label { display:block; font-weight:700; margin:.2rem 0 .3rem; }
+  .sheet input[type=text] { width:100%; font:inherit; border:1px solid var(--faint); border-radius:10px; padding:.6rem .7rem; }
+  .words { display:flex; gap:.4rem; flex-wrap:wrap; margin:.1rem 0 .4rem; }
+  .words span { background:var(--accent-soft); border-radius:8px; padding:.35rem .7rem; font-weight:700; letter-spacing:.01em; }
+  .sheet .small { color:var(--muted); font-size:.92rem; margin:.3rem 0 .8rem; }
+  .sheet .check { display:flex; gap:.5rem; align-items:center; margin:.2rem 0 1rem; }
+  .sheet .go { width:100%; padding:.7rem; font-size:1.05rem; }
+  .sheet .alt { text-align:center; margin:.8rem 0 0; font-size:.92rem; }
+  .sheet .alt a { color:var(--accent); }
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="brand"><i></i>Community Recovery</div></div></header>
+<main class="wrap">
+  <h1>Our constitution</h1>
+  <span class="pill">Working draft · September 2026</span>
+  <p class="how">Read a part. Tap what you think. Say more if you like.</p>
+
+  <div class="part open">
+    <div class="row"><span>Why Community Recovery exists and what it stands on</span><span class="chev">⌃</span></div>
+    <div class="section shut"><h2><span>About this Constitution</span><span class="chev">⌄</span></h2></div>
+    <div class="section shut"><h2><span>1. Name, Purpose and Vision</span><span class="chev">⌄</span></h2></div>
+    <div class="section">
+      <h2>2. Recovery Framework, Values and Principles</h2>
+
+      <div class="clause">
+        <div class="head">
+          <svg class="dot" viewBox="0 0 24 24" width="26" height="26"><path d="M12 2 A10 10 0 0 0 12 22 Z" fill="#4f7f63"/><path d="M12 2 A10 10 0 0 1 12 22 Z" fill="#b7812a"/><path d="M12 1.5 V22.5" stroke="#fff" stroke-width="1.6"/></svg>
+          <div><b>2.7 Recovery First</b></div>
+        </div>
+        <p class="words-here" aria-label="the clause's own words"><i></i><i></i><i style="width:62%"></i></p>
+        <div class="btns"><button class="on">Yes</button><button>Change</button><button>Not sure</button><button class="quiet">🔊 Listen</button></div>
+        <details class="voices" open>
+          <summary>4 people</summary>
+          <div class="voice"><span class="who">Sam</span><span class="tag yes">Yes</span></div>
+          <div class="voice"><span class="who">Jo</span><span class="tag yes">Yes</span><span>This is why I stayed.</span></div>
+          <div class="voice"><span class="who">Pat</span><span class="tag change">Change</span><span>Say family too. Some weeks my kids come first.</span></div>
+          <div class="voice"><span class="who">Ade</span><span class="tag yes">Yes</span></div>
+          <div class="kept"><span>Kept on 29 September · </span>Three agree. One asks that family be named beside health and wellbeing.</div>
+        </details>
+      </div>
+
+      <div class="clause">
+        <div class="head">
+          <svg class="dot" viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="10" fill="none" stroke="#8e9794" stroke-width="2" stroke-dasharray="3.2 2.6"/></svg>
+          <div><b>2.8 Lived Experience Leadership</b></div>
+        </div>
+        <p class="words-here" aria-label="the clause's own words"><i></i><i style="width:48%"></i></p>
+        <div class="btns"><button>Yes</button><button class="on">Change</button><button>Not sure</button><button class="quiet">🔊 Listen</button></div>
+        <textarea aria-label="Say more, if you like">Could it say whose experience? Families have it too.</textarea>
+        <div class="btns"><button class="quiet">🎙 Speak</button><button class="on">Save</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="part"><div class="row"><span>Who we are to each other</span><span class="chev">⌄</span></div></div>
+  <div class="part"><div class="row"><span>How we decide, answer to one another and keep each other safe</span><span class="chev">⌄</span></div></div>
+  <div class="part"><div class="row"><span>What we hold and who we work with</span><span class="chev">⌄</span></div></div>
+  <div class="part"><div class="row"><span>How the rules themselves are kept, changed and ended</span><span class="chev">⌄</span></div></div>
+  <div class="part"><div class="row"><span>What stands beside the clauses</span><span class="chev">⌄</span></div></div>
+
+  <p class="me">You are <b>Sam</b> on this phone · <a href="#">not you?</a></p>
+</main>
+
+<div class="veil"></div>
+<div class="sheet" role="dialog" aria-label="Your name">
+  <label for="n">What shall we call you?</label>
+  <input id="n" type="text" value="Sam" autocapitalize="none" autocomplete="off" spellcheck="false">
+  <p class="small">Any name you like. It shows beside what you write, and everyone can read it.</p>
+  <label>Your four words</label>
+  <div class="words"><span>river</span><span>candle</span><span>seven</span><span>north</span><button class="quiet">↻ other words</button></div>
+  <p class="small">These are the only key to your name. Nobody can look them up for you, so keep them somewhere safe.</p>
+  <div class="check"><input type="checkbox" checked id="r"><label for="r" style="margin:0;font-weight:400">Remember me on this phone</label></div>
+  <button class="on go">Save my card and carry on</button>
+  <p class="alt"><a href="#">I already have a name</a></p>
+</div>
+<script>if (/sheet/.test(location.search)) document.body.classList.add('sheet-open');</script>
+</body>
+</html>
