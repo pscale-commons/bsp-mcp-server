@@ -588,19 +588,22 @@ function formatBeachIndex(idx: BeachIndex): string {
       lines.push(`    • ${name}${typeof b === 'number' ? ` (${fmtBlockBytes(b)})` : ''}`);
     }
   }
-  // The tables PLAYED here — what a browser has seen at /rpg since the beach
-  // began listing them, and what no LLM door showed until now: a surface is
-  // what it hosts AND what is being played on it. Tables are deliberately not
-  // in the `worlds` register (that is canon and the operator's open tables);
-  // the beach lists them itself, newest room write first, so a table joins the
-  // list by being played and sinks down it by being left.
+  // The /w/ addresses with a room written — what a browser has seen at /rpg
+  // since the beach began listing them, and what no LLM door showed before
+  // 2026-09-20: a surface is what it hosts AND where rooms have been written
+  // beneath it. Tables are deliberately not in the `worlds` register (that is
+  // canon and the operator's open tables); the beach lists every address with
+  // a room itself, newest room write first, so a table joins the list by being
+  // played — and so does anything else with a room. The beach says where a
+  // room was written, never what stands there, so this line names none of
+  // them: each address's own blocks say what it is.
   if (idx.tables && idx.tables.length > 0) {
     // A beach names its origin without the scheme; an agent_id needs the URL.
     const bare = idx.origin.replace(/\/+$/, '');
     const origin = /^https?:\/\//i.test(bare) ? bare : `https://${bare}`;
     lines.push('');
     lines.push(
-      `  ${idx.tables.length} table${idx.tables.length === 1 ? '' : 's'} played here, newest first — each is its own surface: read one with agent_id="${origin}/w/<name>", or enter it with pscale_play(world="<name>", handle=…):`,
+      `  ${idx.tables.length} address${idx.tables.length === 1 ? '' : 'es'} with a room written here, newest first — each is its own surface, and its own blocks say what it is: read one with agent_id="${origin}/w/<name>":`,
     );
     for (const t of idx.tables) {
       const where = t.room ? ` · last voice in ${t.room}` : '';
