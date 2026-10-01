@@ -204,6 +204,7 @@ console.log('\n=== hard — the keeper holds what nobody else is given ===');
   check('the keeper never voices a person — each figure present speaks for itself', /you never voice a person/.test(call) && !/WORLD <label>/.test(call) && !/at most three of the place's people/.test(call));
   check('news travels only as the world carries it, and is written where it will be heard', /only when the world's own rules carry it there NOW/.test(call) && /where it will be heard/.test(call));
   check('a held name is never cast onto a face from elsewhere', /never a\s+held name from elsewhere cast onto a face here/.test(call));
+  check('a voice speaking next keeps its label — never a better name for one already there', /never a better name for one already there/.test(input) && /never a line to say that nothing has/.test(call));
   check('the place opens its hidden directories', /\(held .*\) Half-commandeered as the crew's billet/.test(input));
   check('and the names behind the faces', /Maerla/.test(input));
   check('the keeper\'s own register rides as its spine — the branches and their children\'s lines', /THE ARC/.test(input) && /PEEL OFF THE BOY/.test(input) && /THE REPAIRS LOG/.test(input));

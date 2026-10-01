@@ -373,7 +373,7 @@ def set_answer(handle, dial, answer, secret, beach=None):
         return ""
     block, spindle = dial_address(handle, dial)
     line = ("mind %s — the mind that answers for me in every act, unless one is named beside this line "
-            "('keeper sonnet', 'render haiku', 'commit opus', 'act haiku'; the keeper answers with haiku "
+            "('keeper haiku', 'render haiku', 'commit opus', 'act haiku'; the keeper answers with sonnet "
             "unless named). Holder-set; mine to change." % answer)
     try:
         beach_post(block, {"spindle": (spindle + "9") if spindle else "9",
@@ -913,12 +913,13 @@ DOORMAN_ROOM_ENTRIES = 12
 DOORMAN_MAX_TOKENS = int(os.environ.get("WAKER_DOORMAN_MAX_TOKENS", "4000"))
 #: The keeper writes lines, not prose: what the world does next and where it is.
 KEEPER_MAX_TOKENS = int(os.environ.get("WAKER_KEEPER_MAX_TOKENS", "1200"))
-# THE KEEPER WEARS ITS OWN MIND (David, 2026-09-21). Its pass follows EVERY beat
-# and carries the largest frame at a table, so it is the first cost a holder
-# meets and the one they did not choose: it answers with the cheap mind unless
-# the holder's dial names another ('keeper sonnet' beneath position 7) — never
-# with the dial's general mind, which the holder set for their character's voice.
-KEEPER_MODEL = os.environ.get("WAKER_KEEPER_MODEL", "claude-haiku-4-5-20251001")
+# THE KEEPER WEARS ITS OWN MIND (David, 2026-09-21) — never the dial's general
+# mind, which the holder set for their character's voice; a holder may name
+# another beneath 9 ('keeper haiku'). Its default is SONNET for every table
+# (David, 2026-09-30): replayed on two worlds, the cheap mind brought a dead man
+# back, invented people and used a held name as a label, where Sonnet kept the
+# books clean (bsp-mcp #463, proposals/2026-09-30-rooms-names-figures-built.md).
+KEEPER_MODEL = os.environ.get("WAKER_KEEPER_MODEL", "claude-sonnet-5")
 # EACH FIGURE SPEAKS FOR ITSELF (bsp-mcp #459): one small call per figure present
 # after a beat, the cheap mind unless the dial names another ('figure sonnet'
 # beneath position 7). Its line is a deed and a few words said (DO / SAY), public in
@@ -1754,8 +1755,8 @@ def fold_window(handle, beach, room, fuel_key, secret, model, max_tokens, requir
 
 def keeper_mind(handle):
     """(model, ceiling) for the keeper's pass at this character's table: the
-    dial's own word for it ('keeper sonnet' beneath position 7) or the service's
-    cheap default — never the dial's general mind (KEEPER_MODEL, above)."""
+    dial's own word for it ('keeper haiku' beneath position 9) or the service's
+    default — never the dial's general mind (KEEPER_MODEL, above)."""
     return Dial(handle).answer_with(KEEPER_MODEL, KEEPER_MAX_TOKENS, act="keeper", general=False)
 
 
@@ -1940,6 +1941,11 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
         except Exception as e:
             notes.append("%s could not come in at %s (%s)" % (come["who"], come["at"], str(e)[:60]))
     for word in lines["news"]:
+        # News that says nothing reached a place is no news: replayed on the
+        # keeper's own mind, it wrote 'nothing new reaches the Long House' twice,
+        # which would stand in that window as a line of the place's.
+        if re.match(r"^\W*(nothing|no (word|news|sound|one)\b)", word["text"], re.I):
+            continue
         try:
             # A character's name is news to no place: it is caught wherever it
             # stands, the head of the sentence included, where coined_names looks away.
