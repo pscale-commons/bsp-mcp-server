@@ -197,6 +197,20 @@ const httpServer = createHttpServer(async (req, res) => {
   res.end();
 });
 
+// A REDEPLOY IS NOT A CRASH (David, 2026-10-03: Railway marked the router
+// "crashed" after every update). The platform stops the outgoing deployment
+// with SIGTERM, and a process that dies by the signal reads as a crash — npm
+// says "command failed … signal SIGTERM". So the listener closes and the
+// process leaves with 0, at once: every session re-initialises against the
+// deployment that replaced this one. (`npm start` execs node, so the signal
+// reaches this process and not a shell that would die of it first.)
+for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+  process.on(signal, () => {
+    httpServer.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 3000).unref();
+  });
+}
+
 httpServer.listen(PORT, () => {
   console.log(`bsp-mcp-server running on http://localhost:${PORT}${MCP_PATH}`);
   console.log('Streamable HTTP transport ready.');
