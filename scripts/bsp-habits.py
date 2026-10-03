@@ -13,6 +13,12 @@ row per month (or per week with --weekly):
   rungs    mean digits walked on spindle reads (10+ digit temporal addresses excluded)
   authored object writes that are not appends (a JSON payload passed as a string is parsed and counted)
   deep     share of authored writes nesting THREE OR MORE rungs in one write — the fan fault, measured
+  writes   writes counted for depth: every write carrying a payload, except an append at a block's root
+           (an accumulator's slot is depth the beach supplies, not depth the author wrote)
+  wdepth   mean depth a write LANDS at: the digits of its address (an append beneath a spindle lands one
+           deeper) plus the rungs its payload spans below that address — depth written by address, which
+           deep cannot see, since a string written at 5.31 or grafted beneath 513 nests nothing itself
+  wdeep    share of those writes landing THREE OR MORE levels deep
 
 Baseline and findings to 2026-09-22: proposals/2026-09-23-the-bolus-envelope.md. Run it before and a week
 after any change to a door, an envelope or an orientation block, and report the delta in the same columns.
@@ -42,9 +48,16 @@ def depth(o):
     kids = [v for k, v in o.items() if re.fullmatch(r"[1-9_]", str(k))]
     return 1 + max([depth(v) for v in kids] or [0])
 
+def below(o):
+    # rungs a payload spans beneath the address it is written at: a digit child is one rung down, an
+    # underscore that holds a node walks the zero chain one rung down, an underscore string voices the node
+    if not isinstance(o, dict): return 0
+    return max([1 + below(v) for k, v in o.items() if re.fullmatch(r"[1-9]", str(k)) or (k == "_" and isinstance(v, dict))] or [0])
+
 M = collections.defaultdict(collections.Counter)
 turns = collections.defaultdict(collections.Counter)
 rungs = collections.defaultdict(list)
+wdepth = collections.defaultdict(list)
 for f in files:
     try: fh = open(f, encoding="utf-8", errors="replace")
     except OSError: continue
@@ -83,15 +96,19 @@ for f in files:
                     if isinstance(payload, dict) and not inp.get("append"):
                         m["authored"] += 1
                         if depth(payload) >= 3: m["deep"] += 1
+                    d = len(re.sub(r"[^0-9]", "", sp))
+                    if d < 10 and not (inp.get("append") and sp == ""):
+                        wdepth[b].append(d + (1 if inp.get("append") else 0) + below(payload))
 
 def pct(a, b): return "%3d%%" % round(100.0 * a / b) if b else "   -"
-print("%-10s calls turns bundled | whole  disc  walk  desc | rungs | authored deep" % ("week" if WEEKLY else "month"))
+print("%-10s calls turns bundled | whole  disc  walk  desc | rungs | authored deep | writes wdepth wdeep" % ("week" if WEEKLY else "month"))
 for b in sorted(M):
     if b < SINCE: continue
-    m, t, rg = M[b], turns[b], rungs[b]
+    m, t, rg, wd = M[b], turns[b], rungs[b], wdepth[b]
     multi = sum(1 for v in t.values() if v >= 2)
-    print("%-10s %5d %5d  %s   | %s  %s  %s  %s | %4.1f  | %5d   %s" % (
+    print("%-10s %5d %5d  %s   | %s  %s  %s  %s | %4.1f  | %5d   %s | %5d   %4.1f  %s" % (
         b, m["calls"], len(t), pct(multi, len(t)),
         pct(m["r_whole"], m["reads"]), pct(m["r_disc"], m["reads"]), pct(m["r_walk"], m["reads"]), pct(m["r_desc"], m["reads"]),
-        (sum(rg) / len(rg)) if rg else 0.0, m["authored"], pct(m["deep"], m["authored"])))
+        (sum(rg) / len(rg)) if rg else 0.0, m["authored"], pct(m["deep"], m["authored"]),
+        len(wd), (sum(wd) / len(wd)) if wd else 0.0, pct(sum(1 for x in wd if x >= 3), len(wd))))
 print("\nfiles scanned: %d" % len(files))
