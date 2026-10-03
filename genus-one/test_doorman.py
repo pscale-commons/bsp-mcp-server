@@ -605,5 +605,60 @@ check(("311", "the diggers at the pale stone", "We keep low behind the spoil and
 check(("figure", "the boy with the arrow") not in _asked, "three at most a beat — those brought in first, then those the beat touched; the rest meet the next beat")
 check(_note.rstrip("]").endswith("figures in 2.4k · out 0.2k"), "the note says what the figures' calls cost, summed")
 
+# ── THE WORLD'S KEEPER (David, 2026-10-03: the author's keeper for every door) ──
+MASTER = "https://beach.happyseaurchin.com/w/brackenfoot"
+OPEN = "beach.happyseaurchin.com/w/brackenfoot-open"
+SCENE = {"_": "The table's scene.", "3": "PLACING: *:%s:spatial:brackenfoot:211" % MASTER}
+check(dt.placing(SCENE) == (MASTER, "brackenfoot"), "a table's PLACING names its world and the world's surface")
+check(dt.placing({"_": "PLACING: *:https://b.test/w/coldcote:spatial:coldcote:11"}) == ("https://b.test/w/coldcote", "coldcote"),
+      "wherever the PLACING line stands")
+check(dt.placing({"_": "a pool with no world"}) is None and dt.placing(None) is None, "a surface placed in no world has no keeper")
+
+out, rec = enrol({"handle": "keeper:brackenfoot", "passphrase": "the-register-latch", "beach": MASTER, "fuel": "sk-author", "mode": "character"}, {})
+check(out.get("code") == 200 and rec.get("mode") == "keeper" and rec.get("fuel") == "sk-author",
+      "a world's keeper enrols by its name alone, on its author's fuel")
+check(rec.get("secret") == "", "the key that proved the world's register is not kept — nothing here needs it again")
+out, rec = enrol({"handle": "keeper:brackenfoot", "passphrase": "the-register-latch", "beach": MASTER}, {})
+check(out.get("code") == 400 and not rec, "no author's key, no keeper — nothing else may pay for a world")
+
+STORE = {"keeper:brackenfoot": {"mode": "keeper", "fuel": "sk-author", "beach": MASTER, "secret": ""},
+         "Ugarth": {"mode": "character", "fuel": "sk-ugarths-player", "secret": "ugarth-key", "beach": "https://" + OPEN}}
+_followed = []
+_dial_on = {"on": True}
+waker._store_load = lambda: STORE
+waker.enrolment = lambda h: STORE.get(h)
+waker.egg_secret = lambda h: (STORE.get(h) or {}).get("secret") or None
+waker.beach_get_or_none = lambda block, beach=None: (SCENE if block == "keeper:scene" and "brackenfoot-open" in (beach or "") else None)
+waker.Dial = type("KeeperDial", (), {"__init__": lambda self, h: setattr(self, "on", _dial_on["on"])})
+waker.keeper_follows = lambda *a: _followed.append(a)
+_bell = {"pool": "pool:300", "slot": "5", "agent_id": "Orik", "origin": OPEN}
+
+
+def bell(cands, payload=_bell):
+    del _followed[:]
+    waker._placing_seen.clear()
+    waker.keeper_on_bell(cands, payload)
+    return list(_followed)
+
+
+got = bell([("Ugarth", "https://" + OPEN)])
+check(got == [("keeper:brackenfoot", "https://" + OPEN, "300", "5", "sk-author", None, {"Ugarth": "ugarth-key"})],
+      "a beat at the table is kept by the world's keeper on its author's key — the doorman in the room lends only its own key")
+check(bell([]) == [("keeper:brackenfoot", "https://" + OPEN, "300", "5", "sk-author", None, {})],
+      "and where no doorman stands at all — an LLM app's beat — the world is kept the same")
+_dial_on["on"] = False
+check(bell([("Ugarth", "https://" + OPEN)]) == [], "the author's switch off: nothing is kept")
+_dial_on["on"] = True
+STORE["keeper:brackenfoot"]["beach"] = "https://beach.happyseaurchin.com/w/elsewhere"
+check(bell([("Ugarth", "https://" + OPEN)]) == [], "a keeper enrolled at another surface keeps no table of this world")
+STORE["keeper:brackenfoot"]["beach"] = MASTER
+STORE["keeper:brackenfoot"]["fuel"] = ""
+check(bell([("Ugarth", "https://" + OPEN)]) == [], "a keeper without its author's key keeps nothing")
+del STORE["keeper:brackenfoot"]
+check(bell([("Ugarth", "https://" + OPEN)]) == [],
+      "no keeper enrolled for the world: nothing is kept — never on the doorman's key, never this service's")
+STORE["keeper:brackenfoot"] = {"mode": "keeper", "fuel": "sk-author", "beach": MASTER, "secret": ""}
+check(bell([], dict(_bell, origin="beach.happyseaurchin.com")) == [], "a pool placed in no world rings no keeper")
+
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)

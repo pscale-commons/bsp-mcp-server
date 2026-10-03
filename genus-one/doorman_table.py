@@ -76,6 +76,25 @@ def standpoint_room(passport):
     return s[2] if s else None
 
 
+PLACING_RE = re.compile(r"PLACING:\s*\*:(\S+?):spatial:([^:\s]+)")
+
+
+def placing(scene):
+    """(master, world) from a table's keeper:scene — its PLACING line,
+    `PLACING: *:<master-url>:spatial:<world>:<digits>`, at whichever position
+    it stands — or None for a surface that is no table placed in a world. The
+    world names its keeper (keeper:<world>, enrolled at the master)."""
+    if not isinstance(scene, dict):
+        return None
+    for k in sorted(scene):
+        v = scene[k]
+        text = v if isinstance(v, str) else (v.get("_", "") if isinstance(v, dict) else "")
+        m = PLACING_RE.search(text or "")
+        if m:
+            return m.group(1), m.group(2)
+    return None
+
+
 # ── addressed ────────────────────────────────────────────────────────────────
 
 def mentions(text, name):
