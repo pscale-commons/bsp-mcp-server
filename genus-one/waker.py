@@ -712,6 +712,9 @@ class Dial:
         self.search, self.search_uses = None, 0
         # A world's keeper: the beats one seat keeps; 0 keeps every beat.
         self.seats = 0
+        # ...and the beats every character has before any seat: the
+        # game-keeper's gift to all ('free 20'); 0 when unsaid.
+        self.free = 0
         # A character's doorman: 8 the span it waits before folding a ripe
         # window; 9 its BEHAVIOURS — act / every / commit / render, the
         # holder's words; absent reads 'commit render', the page player's case.
@@ -767,6 +770,12 @@ class Dial:
         said = self.minds.pop("seats", None)
         if said and str(said[0]).isdigit():
             self.seats = int(said[0])
+        # 'free 20' — every character's first 20 beats at the world are the
+        # game-keeper's, before any seat is needed (David, 2026-10-03: "can the
+        # keeper be triggered 'free' — subsidised by the keeper?").
+        said = self.minds.pop("free", None)
+        if said and str(said[0]).isdigit():
+            self.free = int(said[0])
         if "mind" in self.minds:
             mind, ceiling = self.minds.pop("mind")
             self.answer = "%s %d" % (mind, ceiling) if ceiling else mind
@@ -1865,27 +1874,34 @@ def keeper_due(beach, room, slot):
 def seat_spent(handle, committer):
     """SEATS (David, 2026-10-03: '£5 for 100 beats. Each player pays their own
     ticket'). A world's keeper whose dial asks for seats ('seats 100' beneath 9)
-    keeps a beat only for a character with beats left: the seats bought for it
-    on sed:<world>-seats at the beach, times the beats a seat keeps, less the
-    kept passes its journal has charged to that character. Returns why the beat
+    keeps a beat only for a character with beats left. A character's beats are
+    the seats BOUGHT for it — entries on seats:<world>, a list only the ticket
+    machine can write — and the seats GIVEN it, entries on gifts:<world>, a
+    list only the game-keeper can write, each times the beats a seat keeps;
+    plus the beats every character has free ('free 20' beneath 9); less the
+    kept passes its journal has charged to that character. An open sed: list
+    is never counted: anyone could register a seat there. Returns why the beat
     is not kept, or '' when it is: no seats asked, beats left, or the reckoning
     unreadable just now — a beach that does not answer never costs a player."""
-    per = Dial(handle).seats
+    dial = Dial(handle)
+    per = dial.seats
     if not per:
         return ""
     world, who = handle[len("keeper:"):], (committer or "").strip()
     if not who:
         return "no one is named as having made this beat happen, and %s keeps only seated beats" % world
     try:
-        seats = dt.seats_of(beach_get_or_none("sed:%s-seats" % world, beach=WAKER_BEACH), who)
+        bought = dt.seats_of(beach_get_or_none("seats:%s" % world, beach=WAKER_BEACH), who)
+        given = dt.gifted_of(beach_get_or_none("gifts:%s" % world, beach=WAKER_BEACH), who)
         used = dt.beats_used(beach_get_or_none("daily:%s" % handle, beach=enrolment_beach(handle)), who)
     except Exception as e:
         log("the seats of %s at %s could not be read (%s) — the beat is kept" % (who, world, str(e)[:60]))
         return ""
-    if used < seats * per:
+    allowed = (bought + given) * per + dial.free
+    if used < allowed:
         return ""
-    return "%s has no beats left at %s (%d seat%s, %d of %d beats used)" % (
-        who, world, seats, "" if seats == 1 else "s", used, seats * per)
+    return "%s has no beats left at %s (%d bought, %d given, %d free; %d of %d beats used)" % (
+        who, world, bought, given, dial.free, used, allowed)
 
 
 def keeper_in_turn(handle, beach, room, fuel_key, secret, keys, slot="", committer=""):

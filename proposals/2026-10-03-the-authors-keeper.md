@@ -96,3 +96,18 @@ the source for the game-keeper's page: beats kept and spend per table.
   less `dt.beats_used` (the journal's kept passes naming that character, at 7). A beat with no beats left is not
   kept: no call is made, and the journal records it as `unkept`, with the reason. A beach that does not answer
   never costs a player: the beat is kept.
+
+## 8. Seats only their writers can add, gifts, and free beats (David, 2026-10-03)
+
+- **The open list is not counted.** Anyone may register into a `sed:` collective, so a seat written to
+  `sed:brackenfoot-seats` could have been anyone's. That list is retired. Bought seats are written to
+  `seats:<world>`, an ordinary block founded and appended under a key derived from the ticket machine's secret
+  (ticketing-agent #9, `list_block`); `seats:brackenfoot` was founded that way the same day, so no one else can
+  write it first. A keyless append there is refused.
+- **Gifts**: `gifts:<world>`, founded under the game-keeper's lock (the shared project lock for brackenfoot). An
+  entry is `<handle> — <date> — 2 seats given by the game-keeper` (one when the count is unsaid), counted as if
+  bought. The game-keeper's own key pays for the beats.
+- **Free beats**: `free 20` beneath 9 of the keeper's dial gives every character its first 20 beats before any
+  seat is needed. That is the subsidy.
+- The reckoning is (bought + given) × the beats a seat keeps + the free beats, less the kept passes charged to
+  the character.
