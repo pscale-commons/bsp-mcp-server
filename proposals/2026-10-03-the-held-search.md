@@ -28,6 +28,12 @@ vets it.
 `search off`, or no line, holds none. A block that cannot be read, or links nothing, holds none. The beach's own
 hosts are never searched: the beach is read.
 
+**The helper's own law moved with it.** `function:lero-helper` 1.2 said to name no local people or places, which
+a helper that looks up help near a person cannot keep. It now says to name a local service, group or place only as
+the sources or the LEROs listed by place give it, or as a search of the sources' sites finds it, always with where
+it came from and never from memory; a new 1.5 says where to start when someone asks where help is near them. The
+standing text was archived first, at `archive:function:lero-helper:2026-10-03`.
+
 ## 2. What it does not change
 
 - **Nothing is kept.** The door still writes nothing and logs nothing a person said. The search words the model
