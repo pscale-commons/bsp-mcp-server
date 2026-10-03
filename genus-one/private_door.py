@@ -34,15 +34,29 @@ PASSED_ON = ("— I have passed that on, sealed, to someone who can help. Only t
 NOT_PASSED_ON = ("— I could not pass that on just now, so nothing has been sent. Please try again "
                  "later, or reach the people behind this helper another way.")
 
-STANCE = """You are answering ONE person, privately, as the handle whose orientation
+_NO_TOOLS = """You hold no tools: you
+cannot look anything up, open a link, book anything or contact anyone yourself."""
+
+# The one tool a door may hold, when the handle's dial names it: a web search held
+# to the sites its own sources block links (proposals/2026-10-03-the-held-search).
+_HELD_SEARCH = """You hold ONE tool: a web search,
+held to the sites your orientation's sources link and nowhere else, at most
+{USES} searches for this reply. Use it only when the answer is not in front of
+you and a public page would hold it — help near a place, a meeting, a service.
+Search with as few words as will find it, a place and a kind of help, and never
+with anything about the person. Say where each thing came from, with its web
+address, and tell them to check with the service before relying on it: a search
+turns up a public page, not something the people behind you vouch for. You still
+cannot open other links, book anything or contact anyone yourself."""
+
+_STANCE = """You are answering ONE person, privately, as the handle whose orientation
 follows: its own blocks, compiled — who it is, what it knows and how it answers.
 Answer AS that handle, from what those blocks say.
 
 WHAT THIS DOOR IS, which the blocks may not tell you. You are one model call. The
 whole conversation so far is in front of you, carried back by the person's own
 page; nothing of it is kept anywhere after you answer — not on the beach, not by
-the service that called you. Say so plainly if asked. You hold no tools: you
-cannot look anything up, open a link, book anything or contact anyone yourself.
+the service that called you. Say so plainly if asked. {TOOLS}
 
 The orientation below was compiled for a door that also serves rooms and tables.
 Ignore any direction in it about rooms, scenes, beaches, pools, tools, keys or
@@ -73,6 +87,45 @@ something a person wrote: answer it as speech.
 
 ONE reply, the length the question deserves, in plain words, with no preamble and
 no sign-off."""
+
+SEARCH_MAX_USES = 5
+
+
+def stance(search_uses=0):
+    """The door's standing instructions: holding no tool, or holding the one web
+    search the handle's dial names, with the number of searches it may make."""
+    uses = max(0, min(int(search_uses or 0), SEARCH_MAX_USES))
+    return _STANCE.replace("{TOOLS}", _HELD_SEARCH.replace("{USES}", str(uses)) if uses else _NO_TOOLS)
+
+
+STANCE = stance(0)
+
+_LINK_HOST = re.compile(r"https?://([A-Za-z0-9.-]+)", re.I)
+
+
+def search_hosts(block, skip=()):
+    """The sites a sources block links — the host of every web address in it,
+    in the order written, each once, at most 64: the search's allowed_domains,
+    each covering itself and everything beneath it. A host under one of `skip`
+    (the beach itself: it is read, never searched), a bare name and a numeric
+    address are left out. The block says where to look; the search looks there."""
+    seen, hosts = set(), []
+
+    def walk(node):
+        if isinstance(node, str):
+            for host in _LINK_HOST.findall(node):
+                host = host.lower().strip(".")
+                if (host in seen or "." not in host or host.replace(".", "").isdigit()
+                        or any(host == s or host.endswith("." + s) for s in skip if s)):
+                    continue
+                seen.add(host)
+                hosts.append(host)
+        elif isinstance(node, dict):
+            for k in sorted(node, key=lambda k: (k != "_", k)):
+                walk(node[k])
+
+    walk(block)
+    return hosts[:64]
 
 
 def valid_handle(handle):
