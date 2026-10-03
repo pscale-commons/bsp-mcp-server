@@ -453,6 +453,16 @@ def set_consent(handle, dial, on, secret, beach=None, cap=2):
             "2": "%d — daily cap: at most this many rung wakes a day; a conservative seed, mine to adjust" % cap,
             "3": "notes to my waking self about who rings and how often — to be authored in my own wake",
             }
+    if handle.startswith("keeper:"):
+        world = handle[len("keeper:"):]
+        line = ("on — the world is kept (the author's to flip)" if on
+                else "off — no table placed in %s is kept (the author's to flip)" % world)
+        seed = {"_": "THE KEEPER'S DIAL — the switch for %s's keeper, its author's own block (ways:doorbell:1). "
+                     "While 1 says on, every beat that lands at a table placed in %s is kept on the author's "
+                     "key, whichever door made it happen: the world's admin after each resolution (grit 3), "
+                     "and each figure speaking for itself (grit 3.2). The keeper's mind is named beneath 9 "
+                     "('keeper sonnet', 'figure haiku'), the author's to re-voice." % (world, world),
+                "1": line}
     try:
         standing = beach_get(block, beach=beach)
     except Exception:
@@ -506,7 +516,12 @@ def verify_shell_key(handle, passphrase, beach=None):
     # born with a passport, locked under its player's passphrase (the table's
     # char-creation 2), so the passport is the third block the proof may use,
     # at the beach the enrolment names (the character's doorman, 2026-09-16).
-    for name in ("shell:%s" % handle, "reflexive:%s" % handle, "passport:%s" % handle):
+    # A WORLD'S KEEPER proves against the world's own held register,
+    # keeper:<world> at the world's surface — whoever holds that latch keeps
+    # the world (2026-10-03).
+    names = ((handle,) if handle.startswith("keeper:") else
+             ("shell:%s" % handle, "reflexive:%s" % handle, "passport:%s" % handle))
+    for name in names:
         try:
             block = beach_get(name, beach=beach)
         except urllib.error.HTTPError as e:
@@ -532,8 +547,8 @@ def verify_shell_key(handle, passphrase, beach=None):
             return False, "beach refused the proof: HTTP %d" % e.code
         except Exception as e:
             return False, "proof failed: %s" % str(e)[:60]
-    return False, ("no provable block for %s — none of shell:%s, reflexive:%s or passport:%s carries a "
-                   "string position to write back" % (handle, handle, handle, handle))
+    return False, ("no provable block for %s — none of %s carries a string position to write back"
+                   % (handle, " or ".join(names)))
 
 
 def enrolment(handle):
@@ -1544,22 +1559,78 @@ def room_slips(pool, beach):
             for k, v in (liquid or {}).items() if k != "_" and isinstance(v, dict)]
 
 
+def table_url(origin):
+    """A beach URL for an origin as the beach reports it (`<host>/w/<name>`)."""
+    o = (origin or "").strip().rstrip("/")
+    return o if o.startswith(("https://", "http://")) else "https://" + o
+
+
+PLACING_TTL_S = 600
+_placing_seen = {}   # norm origin -> (monotonic, (master, world) or None)
+
+
+def table_placing(origin):
+    """(master, world) for the table at this origin, read off its keeper:scene
+    and kept ten minutes, so a busy table costs one read and not one a beat —
+    or None for a surface that is no table placed in a world."""
+    key = dt.norm_origin(origin)
+    now = time.monotonic()
+    seen = _placing_seen.get(key)
+    if seen and now - seen[0] < PLACING_TTL_S:
+        return seen[1]
+    try:
+        found = dt.placing(beach_get_or_none("keeper:scene", beach=table_url(origin)))
+    except Exception:
+        return seen[1] if seen else None
+    _placing_seen[key] = (now, found)
+    return found
+
+
+def world_keeper(origin):
+    """THE WORLD'S KEEPER (David, 2026-10-03: the author's keeper for every
+    door). The handle and enrolment of the keeper enrolled for the world this
+    table is placed in — keeper:<world>, at the world's own surface, carrying
+    its author's key — or None. No one else's key keeps a world: not a
+    character's doorman standing in the room, not this service's own."""
+    found = table_placing(origin)
+    if not found:
+        return None
+    master, world = found
+    handle = "keeper:%s" % world
+    e = enrolment(handle) or {}
+    if str(e.get("mode", "")).strip().lower() != "keeper" or not e.get("fuel"):
+        return None
+    if not dt.origin_matches(master, e.get("beach") or ""):
+        return None
+    return handle, e
+
+
+def keep_world(origin, room, slot, keys):
+    """The world's keeper follows a beat at a table, on its author's key, while
+    the author's switch says on. keys — the characters' own, for the sheet and
+    the move that are theirs alone: written only for a character whose doorman
+    stands here."""
+    kept = world_keeper(origin)
+    if not kept:
+        return
+    handle, e = kept
+    if not Dial(handle).on:
+        return
+    keeper_follows(handle, table_url(origin), room, slot, e["fuel"], None, keys)
+
+
 def keeper_on_bell(cands, payload):
-    """A beat landed in a room where enrolled characters stand — whichever door
-    folded it. The keeper's pass follows it on that table's own fuel, so the
-    mirror, a page and an LLM app all leave the world set the same way."""
+    """A beat landed at a table — whichever door folded it: the mirror, a page,
+    an LLM app or a doorman. The world's keeper follows it (keep_world), so
+    every door leaves the world set the same way and no player's key pays for
+    the world's admin. cands — the characters enrolled here who stand in the
+    room — lend only their own keys."""
     pool, slot = str(payload.get("pool", "")), str(payload.get("slot", ""))
     room = pool[len("pool:"):] if pool.startswith("pool:") else ""
     if not room:
         return
     keys = {h: egg_secret(h) for h, _b in cands if egg_secret(h)}
-    if not keys:
-        return
-    handle, beach = cands[0]
-    fuel_key, _funder = pick_fuel(handle, None)
-    if not fuel_key:
-        return
-    keeper_follows(handle, beach, room, slot, fuel_key, keys[handle], keys)
+    keep_world(str(payload.get("origin", "") or "") or WAKER_BEACH, room, slot, keys)
 
 
 def ring_character(cands, payload):
@@ -2433,13 +2504,13 @@ def instructed_fold(handle, passphrase, room, party=None):
         _pulse_lock.release()
     log("instructed fold for %s at %s: %s — %s (%s fuel)" % (handle, room, status, note, funder))
     # THE KEEPER FOLLOWS THE RESOLUTION (grit 3): the world's next intentions
-    # and each character's holds, set while the table reads what just happened.
+    # and each character's holds, set while the table reads what just happened —
+    # by the world's keeper, on its author's key (keep_world), never this fold's.
     if status == "done":
         keys = {handle: passphrase}
         for h, k in (members or []):
             keys[h] = k
-        where = report.get("to") or room
-        keeper_follows(handle, beach, where, report.get("slot") or "1", fuel_key, passphrase, keys)
+        keep_world(beach, report.get("to") or room, report.get("slot") or "1", keys)
     try:
         ensure_daily(handle, beach, passphrase)
         beach_append("daily:%s" % handle, {
@@ -2550,19 +2621,18 @@ def ring(payload):
         return False, "not a pool"
     room = pool[len("pool:"):]
     if origin and host_of(origin) != host_of(WAKER_BEACH):
-        # Not the pinned beach: a table or a world. Only a character enrolled
-        # AT that origin and standing in this room can answer.
+        # Not the pinned beach: a table or a world. The world's keeper follows
+        # every beat; only a character enrolled AT that origin and standing in
+        # this room can answer.
         cands = character_candidates(origin, room)
-        if cands:
-            keeper_on_bell(cands, payload)
+        keeper_on_bell(cands, payload)
         if not cands:
             return False, "origin %s is not the pinned beach, and no character enrolled there stands in %s" % (origin, pool)
         return ring_character(cands, payload)
     handle = room
     if handle not in enrolled_handles():
         cands = character_candidates(origin or WAKER_BEACH, room)
-        if cands:
-            keeper_on_bell(cands, payload)
+        keeper_on_bell(cands, payload)
         if cands:
             return ring_character(cands, payload)
         return False, "%s is not a genus room here (no holder has enrolled it)" % pool
@@ -2686,8 +2756,11 @@ class Handler(BaseHTTPRequestHandler):
         handle = str(b.get("handle", "")).strip()
         passphrase = str(b.get("passphrase", ""))
         # mode: 'lite' asks for the doorman (compile this handle's own manifest and
-        # answer once in the room); anything else keeps the genus pulse, which is
-        # the default so no standing instance changes behaviour on deploy.
+        # answer once in the room); 'character' a character's doorman at a table;
+        # 'keeper' — set by the name alone, keeper:<world> — a world's keeper,
+        # proven against the world's register and paid by its author's fuel;
+        # anything else keeps the genus pulse, which is the default so no
+        # standing instance changes behaviour on deploy.
         # dial: where this handle's doorbell settings live, when wake:<handle>
         # already means something else ("<block>" or "<block>:<spindle>").
         # A FIELD THE CALLER DID NOT MENTION IS KEPT. The mirror's card posts
@@ -2718,6 +2791,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(400, {"ok": False, "detail": "handle and passphrase are both needed"})
         if _throttled(handle):
             return self._send(429, {"ok": False, "detail": "too many failed proofs for this handle — wait an hour"})
+        if handle.startswith("keeper:"):
+            # A WORLD'S KEEPER keeps every table placed in its world on its
+            # author's key, and nothing else may pay for it: no key, no keeper.
+            mode = "keeper"
+            if not remove and not fuel:
+                return self._send(400, {"ok": False, "detail": "a world's keeper runs on its author's key — deposit it as fuel"})
         ok, reason = verify_shell_key(handle, passphrase, beach=beach or None)
         log("enrolment %s for %s%s: %s (%s)" % ("remove" if remove else "add", handle,
                                                 (" at " + beach) if beach else "",
@@ -2737,7 +2816,10 @@ class Handler(BaseHTTPRequestHandler):
             closed = set_consent(handle, where, False, passphrase, beach=beach or None)
             return self._send(200, {"ok": True, "detail": "%s removed — its doorbell no longer rings here, and its switch is closed.%s"
                                     % (handle, closed)})
-        store[handle] = {"secret": passphrase, "notify": notify, "fuel": fuel,
+        # A keeper's proof key opens the world's own register, and nothing here
+        # needs it again — the keeper composes keyless and writes only open
+        # positions and the characters' own — so it is not kept.
+        store[handle] = {"secret": "" if mode == "keeper" else passphrase, "notify": notify, "fuel": fuel,
                          "mode": mode, "dial": dial, "beach": beach,
                          "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
         _store_save(store)
@@ -2758,13 +2840,19 @@ class Handler(BaseHTTPRequestHandler):
                      "to the character's account after every commit in its room, make it happen when you instruct it, "
                      "act as the character while you are away" % (beach or WAKER_BEACH, behaviours or "commit render")
                      if mode == "character" else
+                     "the KEEPER of %s — every beat that lands at a table placed in it is kept on this fuel, "
+                     "whichever door made it happen" % handle[len("keeper:"):]
+                     if mode == "keeper" else
                      "the genus PULSE — it composes from this handle's genome")
+        rings = ("the room %s stands in" % handle if mode == "character" else
+                 "any table placed in %s" % handle[len("keeper:"):] if mode == "keeper" else
+                 "pool:%s" % handle)
         return self._send(200, {"ok": True, "mode": mode or "genus", "dial": where,
                                 "consent": "on" if d.on else "off",
                                 "detail": "%s enrolled as %s. Its consent and pacing live at %s, which reads %s right now%s — a landed voice in %s rings it only while that says on.%s%s"
                                 % (handle, body_kind, where, "ON" if d.on else "OFF",
-                                   (", cap %d/day" % d.cap) if d.on else "",
-                                   ("the room %s stands in" % handle) if mode == "character" else ("pool:%s" % handle), switched,
+                                   (", cap %d/day" % d.cap) if d.on and mode != "keeper" else "",
+                                   rings, switched,
                                    (" Wake notes go to " + notify) if notify else "")})
 
     def do_GET(self):
