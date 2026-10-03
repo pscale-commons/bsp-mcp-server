@@ -28,12 +28,13 @@ He also said, at `pool:onen-rpg` 22, that weft's long posts had pushed people ou
   - The three rungs' "Transposed from…" notes moved into the root's own text.
   - It was one whole-block write, because the root is ten underscores deep (orientation:weft 9.12).
 - **`orientation:weft` 6.52**: in a pool, weft writes a line or two and a link.
-- **The mirror, in xstream-bsp (branch `claude/mirror-opening-line`)**:
+- **The mirror, in xstream-bsp #369**:
   - A spine view shows the family's own opening sentence above the line for the point, and the rest of the root's text is folded.
   - Where a landing goes is read from `function:<field>` 7, per the 2026-08-19 ruling (`proposals/2026-08-19-the-landing-default-and-the-operator-menu.md`). Until now it was never read.
   - A table's story folds to its last few entries.
   - The system's words are plainer.
   - The room's lines show on the spine view again. They had been read into the wrong slot since xstream-bsp #351.
+- **A test law for weft's scratch family**: `function:weft-slice2-test` 7 declares PERSONAL, so the mirror's keep path can be walked. It was walked once and kept `tree:weft-slice2-test:anon-xstxaw` at 1.
 
 ## Not done
 
