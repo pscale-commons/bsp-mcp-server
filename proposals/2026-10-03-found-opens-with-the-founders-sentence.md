@@ -19,7 +19,7 @@ The mirror shows a spine's first sentence as its welcome, so a new project greet
 
 - **The four templates at 8.11 put \<why> first** and keep the label after it, for example "\<why> TEMPORAL SPINE — \<name>. …". Nothing else in them moves, and /found still tells a clock form by "FLOOR 10".
 - **conventions 2.121**, the guidance for a mind founding with bsp(), now says the root opens with the founder's own sentence, carrying their one link when there is one.
-- **/found (happyseaurchin-home, branch `claude/found-opening-sentence`)**:
+- **/found (happyseaurchin-home #354)**:
   - It asks, optionally, for the family's own page elsewhere.
   - The link joins the end of the founder's first sentence, in brackets. So it stands in the opening line wherever that line is read: the spine's root, which is the mirror's welcome, and the law's root, which is the /walk band.
   - A founder's sentence with no closing full stop gets one, so the label never runs on into it.
