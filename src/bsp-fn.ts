@@ -788,6 +788,49 @@ function floorOf(r: BspReadResult): number | null {
   return null;
 }
 
+/** A label as the floor-anchored address a reader can copy back as a spindle.
+ *  A beach computes a wire read itself and labels with formatAddress — the
+ *  short form, leading AND trailing zeros stripped — so at floor 3 the
+ *  container 360 arrived as "36" and 010 as "1"; copied back, "36" pads to
+ *  036 and opens the July entry instead (daily:weft, two weekly reviews,
+ *  2026-10-03). Local reads already emit the full width, so every shape now
+ *  prints one form. The entry's depth (floor − pscale) says how many digits
+ *  the short form lost; the stripped zeros are taken as leading (the root's
+ *  underscore chain, which a supernested accumulator always carries) — except
+ *  on the floor-10 clock, whose zeros are interior — unless the walked
+ *  spindle says otherwise. A label that is already full width
+ *  comes back unchanged; anything unparseable rides through as given. */
+function anchoredLabel(address: string, floor: number | null, pscale?: number | null, walked?: string[]): string {
+  if (floor == null || pscale == null || !/^\d+(\.\d+)?$/.test(address)) return address;
+  const depth = floor - pscale;
+  if (depth < 1) return address;
+  const [left, right] = address.split('.');
+  let digits: string[] | null = null;
+  if (right !== undefined) {
+    if (left.length <= floor && depth > floor && right.length <= depth - floor) {
+      digits = [...left.padStart(floor, '0'), ...right.padEnd(depth - floor, '0')];
+    }
+  } else if (left.length === floor && depth <= floor && /^0*$/.test(left.slice(depth))) {
+    digits = [...left.slice(0, depth)]; // already full width
+  } else if (left.length <= Math.min(depth, floor)) {
+    const spare = depth - left.length;
+    const lead = Math.min(depth, floor) - left.length;
+    // The clock is born at floor 10 and never supernests; its zeros are the
+    // year's own digits (2026 walks 2 → 0 → 2 → 6), so there they trail.
+    const ks = Array.from({ length: lead + 1 }, (_, i) => (floor === 10 ? i : lead - i));
+    const cands = ks.map((k) => [...'0'.repeat(k), ...left, ...'0'.repeat(spare - k)]);
+    digits = cands.find((c) => !walked?.length || c.every((d, i) => i >= walked.length || d === walked[i])) ?? cands[0];
+  }
+  return digits ? fullWidthAddress(digits, floor) : address;
+}
+
+/** The digits a wire read walked, for anchoring its labels; empty when the
+ *  spindle is absent or will not parse at this floor. */
+function walkedDigits(r: BspReadResult, floor: number | null): string[] {
+  if (floor == null || typeof r.spindle !== 'string' || !r.spindle) return [];
+  try { return parseSpindleCanonical(r.spindle, floor).digits; } catch { return []; }
+}
+
 /** An emitted address label, tagged with its relation to now when the block
  *  is on the sundial (floor 10 and the digits rung-valid — any other floor-10
  *  address fails the rung ranges and rides through bare). The tag gives
@@ -795,7 +838,8 @@ function floorOf(r: BspReadResult): number | null {
  *  behind is record, AHEAD is intention, (now — …) is present at the
  *  address's own grain. Wire labels arrive with trailing zeros stripped;
  *  renderAddressRelation right-pads them itself. */
-function addrLabel(address: string, floor: number | null, entryPscale?: number | null): string {
+function addrLabel(address: string, floor: number | null, entryPscale?: number | null, walked?: string[]): string {
+  address = anchoredLabel(address, floor, entryPscale, walked);
   if (floor === 10) {
     // A walked interior-zero ancestor's label strips to a coarser address
     // than the rung it stands at (d2 p8 prints the millennium's own label),
@@ -823,7 +867,9 @@ function paddingLine(r: BspReadResult): string[] {
 
 /** The one line the muscle ahead adds: the ring beneath, fire-ready. */
 function beneathLine(r: BspReadResult): string {
-  return `  beneath (pscale ${r.beneath_pscale}): ${(r.beneath ?? []).join(' · ')}`;
+  const fl = floorOf(r);
+  const walked = walkedDigits(r, fl);
+  return `  beneath (pscale ${r.beneath_pscale}): ${(r.beneath ?? []).map((a) => anchoredLabel(a, fl, r.beneath_pscale, walked)).join(' · ')}`;
 }
 
 export function formatRead(r: BspReadResult): string {
@@ -837,10 +883,11 @@ export function formatRead(r: BspReadResult): string {
       const lines = [`[path-walk @ "${r.spindle}"]`, ...paddingLine(r)];
       const entries = (r.entries as PathWalkEntry[]) ?? [];
       const fl = floorOf(r);
+      const walked = walkedDigits(r, fl);
       for (const [i, e] of entries.entries()) {
         const content = String(e.content ?? '(no content)');
         const text = i === entries.length - 1 ? content : truncate(content, 150);
-        lines.push(`  d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale)}: ${text}${stampSuffix(e.stamp)}`);
+        lines.push(`  d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale, walked)}: ${text}${stampSuffix(e.stamp)}`);
       }
       if (r.beneath?.length) lines.push(beneathLine(r));
       return lines.join('\n');
@@ -855,7 +902,7 @@ export function formatRead(r: BspReadResult): string {
     }
     case 'point':
       if (r.note) return `[point @ pscale ${r.pscale}] ${r.note}`;
-      return `[point @ pscale ${r.pscale} depth ${r.depth} ${addrLabel(String(r.address), floorOf(r), r.pscale)}]${paddingLine(r).map((l) => `\n${l}`).join('')}\n  ${r.content ?? '(no content)'}${stampSuffix(r.stamp)}${r.beneath?.length ? `\n${beneathLine(r)}` : ''}`;
+      return `[point @ pscale ${r.pscale} depth ${r.depth} ${addrLabel(String(r.address), floorOf(r), r.pscale, walkedDigits(r, floorOf(r)))}]${paddingLine(r).map((l) => `\n${l}`).join('')}\n  ${r.content ?? '(no content)'}${stampSuffix(r.stamp)}${r.beneath?.length ? `\n${beneathLine(r)}` : ''}`;
     case 'path-walk+descent': {
       const lines = [`[path-walk+descent @ "${r.spindle}" pscale ${r.pscale}]`, ...paddingLine(r)];
       lines.push('  path-walk:');
@@ -863,14 +910,15 @@ export function formatRead(r: BspReadResult): string {
       // truncated breadth view — point-read a child for its full text).
       const pw = r.path_walk ?? [];
       const fl = floorOf(r);
+      const walked = walkedDigits(r, fl);
       for (const [i, e] of pw.entries()) {
         const c = String(e.content ?? '(no content)');
         const text = i === pw.length - 1 ? c : truncate(c, 150);
-        lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale)}: ${text}${stampSuffix(e.stamp)}`);
+        lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale, walked)}: ${text}${stampSuffix(e.stamp)}`);
       }
       lines.push('  descent:');
       for (const e of r.descent ?? []) {
-        lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale)}: ${truncate(String(e.content ?? ''), 150)}${stampSuffix(e.stamp)}`);
+        lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale, walked)}: ${truncate(String(e.content ?? ''), 150)}${stampSuffix(e.stamp)}`);
       }
       return lines.join('\n');
     }
