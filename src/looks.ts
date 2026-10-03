@@ -5,8 +5,11 @@
  *  reflection lives here. Each call it serves is a LOOK — a beach, a block, an
  *  address, an instant, and the hand if this session walked through the play
  *  door — held in process memory for a short window and written nowhere. On
- *  the way back, every ack gains one lateral line: who else looked or wrote at
- *  this block just now, nearest address first. That is the whole mechanic, and
+ *  the way back, every ack gains one lateral line: who else is working this
+ *  beach just now and where — this block first, then the blocks of the same
+ *  hand or field, then elsewhere — and only what has changed since this session
+ *  was last told (David, 2026-10-03: any instance should sense any other at the
+ *  beach, not only one standing where it stands). That is the whole mechanic, and
  *  it costs the mind nothing: no post, no register, no declaration — its
  *  ordinary calls are the reflection, as a person's ordinary standing before a
  *  mirror is. In pscale what you look for IS where you look, so a look at an
@@ -41,6 +44,9 @@ export interface Look {
 
 const ring: Look[] = [];
 const hands = new Map<string, string>();
+/** What each listening session was last told of each other session, and when —
+ *  so a line says only what has changed. Forgotten with the window. */
+const told = new Map<string, Map<string, { said: string; at: number }>>();
 
 /** One key for a beach however a door spells it. */
 export function beachKey(url: string | null | undefined): string {
@@ -93,6 +99,10 @@ function prune(now: number): void {
   while (i < ring.length && ring[i].ts < cutoff) i++;
   if (i > 0) ring.splice(0, i);
   if (ring.length > CAP) ring.splice(0, ring.length - CAP);
+  if (told.size > 500) {
+    const live = new Set(ring.map(l => l.session));
+    for (const listener of told.keys()) if (!live.has(listener)) told.delete(listener);
+  }
 }
 
 /** Digits shared from the left, the decimal ignored: 4.26 and 4.2 share two. */
@@ -109,9 +119,28 @@ function ago(ms: number): string {
   return s < 60 ? `${s}s ago` : `${Math.round(s / 60)}m ago`;
 }
 
+/** Two block names are near when one is OF the other's hand or field: the last
+ *  part of a name is what the block is of — shell:weft and watch:weft are both
+ *  of weft; spine:now and now:weft both carry now. A shared role (pool:weft,
+ *  pool:keel) is not nearness. No list of roles is kept: the name says it. */
+export function near(a: string, b: string): boolean {
+  if (a === b) return true;
+  const pa = a.toLowerCase().split(':');
+  const pb = b.toLowerCase().split(':');
+  return pb.includes(pa[pa.length - 1]) || pa.includes(pb[pb.length - 1]);
+}
+
+function nearness(l: Look, block: string, mine: string): number {
+  if (l.block === block) return 2000 + sharedPrefix(l.spindle, mine);
+  return near(l.block, block) ? 1000 : 0;
+}
+
 /** The lateral line for a call at (beach, block, spindle) by this session: the
- *  latest look of every OTHER session at the same block within the window,
- *  nearest address first, then most recent. '' when nobody. */
+ *  latest look of every OTHER session anywhere on this beach within the window
+ *  — nearest first: this block by address, then a near block, then elsewhere,
+ *  each by recency — and only those whose place or act has changed since this
+ *  session was last told. Five are said; the rest are counted and said on the
+ *  next call. '' when nobody is here, or nothing is new. */
 export function lateralLine(
   session: string | undefined,
   beach: string,
@@ -124,20 +153,30 @@ export function lateralLine(
   const mine = spindle ?? '';
   const latest = new Map<string, Look>();
   for (const l of ring) {
-    if (l.session === session || l.beach !== key || l.block !== block) continue;
+    if (l.session === session || l.beach !== key) continue;
     const prev = latest.get(l.session);
     if (!prev || l.ts > prev.ts) latest.set(l.session, l);
   }
   if (latest.size === 0) return '';
   const others = [...latest.values()].sort(
-    (a, b) => sharedPrefix(b.spindle, mine) - sharedPrefix(a.spindle, mine) || b.ts - a.ts,
+    (a, b) => nearness(b, block, mine) - nearness(a, block, mine) || b.ts - a.ts,
   );
-  const shown = others
-    .slice(0, SHOW)
-    .map(l => `${handOf(l.session) ?? 'someone'} ${l.wrote ? 'wrote' : 'looked'} at ${l.spindle || 'the root'} (${ago(now - l.ts)})`);
-  const more = others.length > SHOW ? ` · +${others.length - SHOW} more` : '';
+  const heard = (session ? told.get(session) : undefined) ?? new Map<string, { said: string; at: number }>();
+  const saying = (l: Look) => `${l.block}|${l.spindle}|${l.wrote ? 'w' : 'r'}`;
+  const fresh = others.filter(l => {
+    const h = heard.get(l.session);
+    return !h || now - h.at > LOOKS_WINDOW_MS || h.said !== saying(l);
+  });
+  if (fresh.length === 0) return '';
+  const shown = fresh.slice(0, SHOW);
+  for (const l of shown) heard.set(l.session, { said: saying(l), at: now });
+  if (session) told.set(session, heard);
+  const where = (l: Look) => (l.block === block ? (l.spindle || 'the root') : (l.spindle ? `${l.block} ${l.spindle}` : l.block));
+  const lines = shown.map(l => `${handOf(l.session) ?? 'someone'} ${l.wrote ? 'wrote' : 'looked'} at ${where(l)} (${ago(now - l.ts)})`);
+  const more = fresh.length > shown.length ? ` · +${fresh.length - shown.length} more` : '';
   const w = Math.round(LOOKS_WINDOW_MS / 1000);
-  return `\n[here now — ${others.length} other${others.length === 1 ? '' : 's'} at this block in the last ${w}s: ${shown.join(' · ')}${more}]`;
+  const partial = fresh.length < others.length ? '; new since you last looked' : '';
+  return `\n[here now — ${others.length} other${others.length === 1 ? '' : 's'} on this beach in the last ${w}s${partial}: ${lines.join(' · ')}${more}]`;
 }
 
 /** Ride the reflection onto an ack: note the call, then append the line. */
@@ -165,4 +204,5 @@ export function reflect(
 export function resetLooks(): void {
   ring.length = 0;
   hands.clear();
+  told.clear();
 }
