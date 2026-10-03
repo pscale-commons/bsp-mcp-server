@@ -1,6 +1,9 @@
 # The author's keeper — every door's beats kept on the world author's key (2026-10-03)
 
-**Status**: BUILT, for David's merge. **Ruled**: David, 2026-10-03 — *"yes, author's keeper for
+**Status**: BUILT and merged (#473); brackenfoot's keeper enrolled live the same day. **Named**: the
+person who runs a world's keeper, pays for it and sells its tickets is its **game-keeper** (David,
+2026-10-03: *"game-keeper it is"*); "author" below, written before the name, means that person. The
+keeper is the LLM's pass. **Ruled**: David, 2026-10-03 — *"yes, author's keeper for
 every door — start with brackenfoot"*. Lane rpg.11; the trace and the options at watch:weft 476.6
 and 476.7.
 
@@ -64,3 +67,13 @@ it; the next beat at any brackenfoot table is kept by it, whoever commits and th
   needs the world to name its keeper's bell.
 - **The waker's own key** still funds David's own genus agents (2026-09-01) and any doorman enrolled
   without a key of its own. The keeper never touches it.
+
+## 6. The game-keeper's journal (step 2, David's order of 2026-10-03)
+
+Each pass of a world's keeper now writes one entry to `daily:keeper:<world>` at the world's surface:
+the table and the room and beat it kept (2, 4), what it did (5 and the line), and what the API
+counted (6: `keeper <model> in= read= write= out= · sheets … · figures …`). The sheets' calls are
+counted too, which the log line never did. The journal is latched to a key the waker makes at the
+keeper's enrolment and keeps, so a stranger's append is never counted as a pass; each span of nine
+is voiced plainly from its own entries (passes, tables, span, counts), with no model call. It is
+the source for the game-keeper's page: beats kept and spend per table.

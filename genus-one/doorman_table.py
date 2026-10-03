@@ -935,6 +935,59 @@ def summary_directive(law):
     return "[THE LAW — the account's own, at the address of this act]\n" + (law or "").strip() + "\n\n" + SUMMARY_CALL
 
 
+# ── the game-keeper's journal ────────────────────────────────────────────────
+
+USAGE_RE = re.compile(r"(keeper|sheets|figures) (\S+) in=(\d+) read=(\d+) write=(\d+) out=(\d+)")
+
+
+def usage_line(usage):
+    """What the API counted in one pass of a world's keeper, as one line a page
+    can sum: `keeper <model> in= read= write= out= · sheets … · figures …`, a
+    part that spent nothing left out. usage — {part: (model, counts)}, the
+    counts as model_call fills them."""
+    parts = []
+    for part in ("keeper", "sheets", "figures"):
+        model, n = (usage or {}).get(part) or (None, None)
+        if not model or not n:
+            continue
+        parts.append("%s %s in=%d read=%d write=%d out=%d" % (
+            part, model, int(n.get("input_tokens") or 0), int(n.get("cache_read_input_tokens") or 0),
+            int(n.get("cache_creation_input_tokens") or 0), int(n.get("output_tokens") or 0)))
+    return " · ".join(parts)
+
+
+def usage_of(line):
+    """The counts back out of a usage line: {part: (model, [in, read, write, out])}."""
+    return {m.group(1): (m.group(2), [int(m.group(i)) for i in range(3, 7)]) for m in USAGE_RE.finditer(line or "")}
+
+
+def journal_summary(address, entries):
+    """The voicing a game-keeper's journal owes at a zero-slot, written plainly
+    from the nine it stands for: how many passes, at which tables, over what
+    span, and what the API counted in all — the span's own handles, no call."""
+    tables, totals, stamps, reads = {}, {}, [], []
+    for read_address, e in entries:
+        if not isinstance(e, dict) or not isinstance(e.get("_"), str):
+            continue
+        reads.append(read_address)
+        table = str(e.get("2", "")).rstrip("/").split("/")[-1] or "an unnamed table"
+        tables[table] = tables.get(table, 0) + 1
+        if isinstance(e.get("3"), str):
+            stamps.append(e["3"])
+        for part, (model, counts) in usage_of(str(e.get("6", ""))).items():
+            key = "%s %s" % (part, model)
+            totals[key] = [a + b for a, b in zip(totals.get(key, [0, 0, 0, 0]), counts)]
+    if not reads:
+        return ""
+    k = lambda v: "%.1fk" % (v / 1000.0)
+    counted = "; ".join("%s in %s, read %s, write %s, out %s" % (key, k(c[0]), k(c[1]), k(c[2]), k(c[3]))
+                        for key, c in sorted(totals.items()))
+    return "Summary of %s-%s%s: %d passes of the world's keeper — %s. The API counted %s." % (
+        reads[0], reads[-1], (" (%s → %s)" % (min(stamps), max(stamps))) if stamps else "", len(reads),
+        ", ".join("%s %d" % (t, c) for t, c in sorted(tables.items(), key=lambda x: (-x[1], x[0]))),
+        counted or "nothing")
+
+
 def slot_key(slot):
     """Slots sort as digit paths: shorter first, then by value — 9 before 11."""
     s = str(slot or "")
