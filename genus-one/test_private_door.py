@@ -259,9 +259,14 @@ check(post({"handle": "lero-helper", "turns": [U("q")]}, {"content-length": str(
       "a body past any conversation's bounds is refused before it is read")
 check(post({"handle": "pool:weft", "turns": [U("q")]})["code"] == 400, "a block name is not a helper")
 check(post({"handle": "lero-helper", "turns": [A("x")]})["code"] == 400, "a conversation out of order is refused before any call")
-out = post({"handle": "lero-helper", "turns": [U("q")]}, {"x-forwarded-for": "203.0.113.7, 10.0.0.2"})
+out = post({"handle": "lero-helper", "turns": [U("q")]}, {"x-forwarded-for": "203.0.113.7"})
 check(out["code"] == 200 and SEEN[-1] == ("lero-helper", [{"role": "user", "content": "q"}], "203.0.113.7"),
-      "a good ask reaches the door, paced by the first address the proxy names")
+      "a good ask reaches the door, paced by the address the proxy names")
+post({"handle": "lero-helper", "turns": [U("q")]}, {"x-forwarded-for": "198.51.100.9, 203.0.113.7"})
+check(SEEN[-1][2] == "203.0.113.7",
+      "an address the visitor sent ahead of the proxy's own is ignored: the last entry paces them")
+post({"handle": "lero-helper", "turns": [U("q")]}, {"x-forwarded-for": " , "})
+check(SEEN[-1][2] == "10.0.0.1", "an empty proxy header falls back to the socket's own address")
 post({"handle": "lero-helper", "turns": [U("q")]})
 check(SEEN[-1][2] == "10.0.0.1", "with no proxy header, the socket's own address")
 waker.private_answer = real_private_answer
