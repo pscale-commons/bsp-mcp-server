@@ -64,6 +64,7 @@ import importlib
 import json
 import re
 import os
+import secrets
 import sys
 import threading
 import time
@@ -455,13 +456,13 @@ def set_consent(handle, dial, on, secret, beach=None, cap=2):
             }
     if handle.startswith("keeper:"):
         world = handle[len("keeper:"):]
-        line = ("on — the world is kept (the author's to flip)" if on
-                else "off — no table placed in %s is kept (the author's to flip)" % world)
-        seed = {"_": "THE KEEPER'S DIAL — the switch for %s's keeper, its author's own block (ways:doorbell:1). "
-                     "While 1 says on, every beat that lands at a table placed in %s is kept on the author's "
+        line = ("on — the world is kept (the game-keeper's to flip)" if on
+                else "off — no table placed in %s is kept (the game-keeper's to flip)" % world)
+        seed = {"_": "THE KEEPER'S DIAL — the switch for %s's keeper, its game-keeper's own block (ways:doorbell:1). "
+                     "While 1 says on, every beat that lands at a table placed in %s is kept on the game-keeper's "
                      "key, whichever door made it happen: the world's admin after each resolution (grit 3), "
                      "and each figure speaking for itself (grit 3.2). The keeper's mind is named beneath 9 "
-                     "('keeper sonnet', 'figure haiku'), the author's to re-voice." % (world, world),
+                     "('keeper sonnet', 'figure haiku'), the game-keeper's to re-voice." % (world, world),
                 "1": line}
     try:
         standing = beach_get(block, beach=beach)
@@ -1670,10 +1671,10 @@ def table_placing(origin):
 
 
 def world_keeper(origin):
-    """THE WORLD'S KEEPER (David, 2026-10-03: the author's keeper for every
-    door). The handle and enrolment of the keeper enrolled for the world this
+    """THE WORLD'S KEEPER (David, 2026-10-03: the game-keeper's keeper for
+    every door). The handle and enrolment of the keeper enrolled for the world this
     table is placed in — keeper:<world>, at the world's own surface, carrying
-    its author's key — or None. No one else's key keeps a world: not a
+    its game-keeper's key — or None. No one else's key keeps a world: not a
     character's doorman standing in the room, not this service's own."""
     found = table_placing(origin)
     if not found:
@@ -1689,8 +1690,8 @@ def world_keeper(origin):
 
 
 def keep_world(origin, room, slot, keys):
-    """The world's keeper follows a beat at a table, on its author's key, while
-    the author's switch says on. keys — the characters' own, for the sheet and
+    """The world's keeper follows a beat at a table, on its game-keeper's key,
+    while the game-keeper's switch says on. keys — the characters' own, for the sheet and
     the move that are theirs alone: written only for a character whose doorman
     stands here."""
     kept = world_keeper(origin)
@@ -1849,19 +1850,23 @@ def keeper_due(beach, room, slot):
         return True
 
 
-def keeper_in_turn(handle, beach, room, fuel_key, secret, keys):
+def keeper_in_turn(handle, beach, room, fuel_key, secret, keys, slot=""):
     """The keeper's pass, once the pen is free — so it never races the fold it
-    follows, and the world it sets is waiting for the next one."""
+    follows, and the world it sets is waiting for the next one. A world's keeper
+    then writes the pass into its game-keeper's journal (keeper_journal)."""
     if not _pulse_lock.acquire(timeout=KEEPER_WAIT_S):
         log("the keeper's pass at %s stood down — the pen stayed busy %ds" % (room, KEEPER_WAIT_S))
         return
+    report = {}
     try:
-        status, note = keeper_pass(handle, beach, room, fuel_key, secret, keys)
+        status, note = keeper_pass(handle, beach, room, fuel_key, secret, keys, report=report)
     except Exception as e:
         status, note = "failed", str(e)[:160]
     finally:
         _pulse_lock.release()
     log("the keeper at %s: %s — %s" % (room, status, note))
+    if handle.startswith("keeper:"):
+        keeper_journal(handle, beach, room, slot, status, note, report.get("usage"))
 
 
 def keeper_follows(handle, beach, room, slot, fuel_key, secret, keys):
@@ -1871,7 +1876,41 @@ def keeper_follows(handle, beach, room, slot, fuel_key, secret, keys):
     if not keeper_due(beach, room, slot):
         return
     threading.Thread(target=keeper_in_turn,
-                     args=(handle, beach, room, fuel_key, secret, keys), daemon=True).start()
+                     args=(handle, beach, room, fuel_key, secret, keys, str(slot)), daemon=True).start()
+
+
+def keeper_journal(handle, table, room, slot, status, note, usage):
+    """THE GAME-KEEPER'S JOURNAL — one entry per pass of a world's keeper, at
+    the world's own surface as daily:<keeper>: which table and beat it kept,
+    what it did, and what the API counted (dt.usage_line), so the game-keeper
+    reads beats and spend per table where they read everything else. It is
+    latched to a key this service made at enrolment, so no stranger's append
+    is counted as a pass; a span of nine owes its voicing, written plainly from
+    the nine (dt.journal_summary) — counting needs no call."""
+    e = enrolment(handle) or {}
+    key = str(e.get("journal") or "")
+    if not key:
+        return
+    world = enrolment_beach(handle)
+    name = "daily:%s" % handle
+    try:
+        if beach_get_or_none(name, beach=world) is None:
+            beach_post(name, {"content": {"_": "THE GAME-KEEPER'S JOURNAL of %s — one entry per pass of the world's "
+                                               "keeper: the table and beat it kept (2, 4), what it did, and what the API "
+                                               "counted (6: keeper, sheets and figures, each model in= read= write= out=). "
+                                               "Written by the waker under its own key; read by the game-keeper's page."
+                                               % handle[len("keeper:"):]},
+                              "new_lock": key}, beach=world)
+        beach_append(name, {"_": "%s · pool:%s beat %s — %s: %s" % (table.rstrip("/").split("/")[-1], room, slot or "?",
+                                                                   status, note[:400]),
+                            "1": "waker", "2": table, "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                            "4": room, "5": status, "6": dt.usage_line(usage)}, key, beach=world)
+        for address, entries in dt.owed_summaries(beach_get_or_none(name, beach=world)):
+            said = dt.journal_summary(address, entries)
+            if said:
+                beach_post(name, {"block": name, "spindle": address, "content": said, "secret": key}, beach=world)
+    except Exception as ex:
+        log("the game-keeper's journal for %s: %s" % (handle, str(ex)[:100]))
 
 
 RENDER_WAIT_S = 240  # how long a rendering waits for the pen: an instructed fold is well inside it
@@ -2103,7 +2142,7 @@ def figure_pass(handle, beach, room, figures, fuel_key):
     return notes, used
 
 
-def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
+def keeper_pass(handle, beach, room, fuel_key, secret, keys=None, report=None):
     """THE KEEPER'S ADMIN (hard, grit 3) — run after a resolution, so the next
     moment is waiting well formed. The keeper keeps the books and carries the
     news; it never voices a person (David's ruling, 2026-09-30, bsp-mcp #459).
@@ -2267,6 +2306,7 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
                 notes.append("%s stands at %s" % (moved["handle"], moved["at"]))
         except Exception as e:
             notes.append("%s could not be placed at %s (%s)" % (moved["handle"], moved["at"], str(e)[:60]))
+    sheets_spent = {}
     for name, body in sections.items():
         if not name.startswith("SHEET INPUT"):
             continue
@@ -2275,7 +2315,11 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
         if not key or not sections.get("SHEET CALL"):
             continue
         try:
-            sheet = model_call(fuel_key, model, 700, sections["SHEET CALL"], body, plain=True)
+            got = {}
+            sheet = model_call(fuel_key, model, 700, sections["SHEET CALL"], body, usage=got, plain=True)
+            for k, v in got.items():
+                if isinstance(v, int):
+                    sheets_spent[k] = sheets_spent.get(k, 0) + v
             held = dt.holds_lines(sheet)
             if not held:
                 continue
@@ -2300,10 +2344,15 @@ def keeper_pass(handle, beach, room, fuel_key, secret, keys=None):
             speakers.append(f)
     said, used = figure_pass(handle, beach, here_room, speakers, fuel_key) if speakers else ([], {})
     notes += said
+    if isinstance(report, dict):
+        report["usage"] = {"keeper": (model, spent), "sheets": (model, sheets_spent),
+                           "figures": (figure_mind(handle)[0], used)}
     cost = usage_said(spent)
+    scost = usage_said(sheets_spent) if sheets_spent else ""
     fcost = usage_said(used) if used else ""
-    return "done", "%s [%s%s%s]" % ("; ".join(notes) or "the world stands as it was", model,
-                                     " · " + cost if cost else "", " · figures " + fcost if fcost else "")
+    return "done", "%s [%s%s%s%s]" % ("; ".join(notes) or "the world stands as it was", model,
+                                       " · " + cost if cost else "", " · sheets " + scost if scost else "",
+                                       " · figures " + fcost if fcost else "")
 
 
 def arrive_at(movers, beach, to_addr, label, fuel_key, model, max_tokens):
@@ -2588,7 +2637,7 @@ def instructed_fold(handle, passphrase, room, party=None):
     log("instructed fold for %s at %s: %s — %s (%s fuel)" % (handle, room, status, note, funder))
     # THE KEEPER FOLLOWS THE RESOLUTION (grit 3): the world's next intentions
     # and each character's holds, set while the table reads what just happened —
-    # by the world's keeper, on its author's key (keep_world), never this fold's.
+    # by the world's keeper, on its game-keeper's key (keep_world), never this fold's.
     if status == "done":
         keys = {handle: passphrase}
         for h, k in (members or []):
@@ -2841,7 +2890,7 @@ class Handler(BaseHTTPRequestHandler):
         # mode: 'lite' asks for the doorman (compile this handle's own manifest and
         # answer once in the room); 'character' a character's doorman at a table;
         # 'keeper' — set by the name alone, keeper:<world> — a world's keeper,
-        # proven against the world's register and paid by its author's fuel;
+        # proven against the world's register and paid by its game-keeper's fuel;
         # anything else keeps the genus pulse, which is the default so no
         # standing instance changes behaviour on deploy.
         # dial: where this handle's doorbell settings live, when wake:<handle>
@@ -2876,10 +2925,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(429, {"ok": False, "detail": "too many failed proofs for this handle — wait an hour"})
         if handle.startswith("keeper:"):
             # A WORLD'S KEEPER keeps every table placed in its world on its
-            # author's key, and nothing else may pay for it: no key, no keeper.
+            # game-keeper's key, and nothing else may pay for it: no key, no keeper.
             mode = "keeper"
             if not remove and not fuel:
-                return self._send(400, {"ok": False, "detail": "a world's keeper runs on its author's key — deposit it as fuel"})
+                return self._send(400, {"ok": False, "detail": "a world's keeper runs on its game-keeper's key — deposit it as fuel"})
         ok, reason = verify_shell_key(handle, passphrase, beach=beach or None)
         log("enrolment %s for %s%s: %s (%s)" % ("remove" if remove else "add", handle,
                                                 (" at " + beach) if beach else "",
@@ -2901,10 +2950,13 @@ class Handler(BaseHTTPRequestHandler):
                                     % (handle, closed)})
         # A keeper's proof key opens the world's own register, and nothing here
         # needs it again — the keeper composes keyless and writes only open
-        # positions and the characters' own — so it is not kept.
+        # positions and the characters' own — so it is not kept. Its journal
+        # (keeper_journal) is latched to a key this service makes once and keeps.
         store[handle] = {"secret": "" if mode == "keeper" else passphrase, "notify": notify, "fuel": fuel,
                          "mode": mode, "dial": dial, "beach": beach,
                          "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+        if mode == "keeper":
+            store[handle]["journal"] = str(prior.get("journal") or "") or secrets.token_urlsafe(24)
         _store_save(store)
         # SAY BACK WHAT WAS RECORDED. The holder's only feedback is this line, and
         # the two fields that decide everything — which body wakes, and where its

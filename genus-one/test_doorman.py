@@ -605,7 +605,7 @@ check(("311", "the diggers at the pale stone", "We keep low behind the spoil and
 check(("figure", "the boy with the arrow") not in _asked, "three at most a beat — those brought in first, then those the beat touched; the rest meet the next beat")
 check(_note.rstrip("]").endswith("figures in 2.4k · out 0.2k"), "the note says what the figures' calls cost, summed")
 
-# ── THE WORLD'S KEEPER (David, 2026-10-03: the author's keeper for every door) ──
+# ── THE WORLD'S KEEPER (David, 2026-10-03: the game-keeper's keeper for every door) ──
 MASTER = "https://beach.happyseaurchin.com/w/brackenfoot"
 OPEN = "beach.happyseaurchin.com/w/brackenfoot-open"
 SCENE = {"_": "The table's scene.", "3": "PLACING: *:%s:spatial:brackenfoot:211" % MASTER}
@@ -614,14 +614,14 @@ check(dt.placing({"_": "PLACING: *:https://b.test/w/coldcote:spatial:coldcote:11
       "wherever the PLACING line stands")
 check(dt.placing({"_": "a pool with no world"}) is None and dt.placing(None) is None, "a surface placed in no world has no keeper")
 
-out, rec = enrol({"handle": "keeper:brackenfoot", "passphrase": "the-register-latch", "beach": MASTER, "fuel": "sk-author", "mode": "character"}, {})
-check(out.get("code") == 200 and rec.get("mode") == "keeper" and rec.get("fuel") == "sk-author",
-      "a world's keeper enrols by its name alone, on its author's fuel")
+out, rec = enrol({"handle": "keeper:brackenfoot", "passphrase": "the-register-latch", "beach": MASTER, "fuel": "sk-game-keeper", "mode": "character"}, {})
+check(out.get("code") == 200 and rec.get("mode") == "keeper" and rec.get("fuel") == "sk-game-keeper",
+      "a world's keeper enrols by its name alone, on its game-keeper's fuel")
 check(rec.get("secret") == "", "the key that proved the world's register is not kept — nothing here needs it again")
 out, rec = enrol({"handle": "keeper:brackenfoot", "passphrase": "the-register-latch", "beach": MASTER}, {})
-check(out.get("code") == 400 and not rec, "no author's key, no keeper — nothing else may pay for a world")
+check(out.get("code") == 400 and not rec, "no game-keeper's key, no keeper — nothing else may pay for a world")
 
-STORE = {"keeper:brackenfoot": {"mode": "keeper", "fuel": "sk-author", "beach": MASTER, "secret": ""},
+STORE = {"keeper:brackenfoot": {"mode": "keeper", "fuel": "sk-game-keeper", "beach": MASTER, "secret": ""},
          "Ugarth": {"mode": "character", "fuel": "sk-ugarths-player", "secret": "ugarth-key", "beach": "https://" + OPEN}}
 _followed = []
 _dial_on = {"on": True}
@@ -642,23 +642,66 @@ def bell(cands, payload=_bell):
 
 
 got = bell([("Ugarth", "https://" + OPEN)])
-check(got == [("keeper:brackenfoot", "https://" + OPEN, "300", "5", "sk-author", None, {"Ugarth": "ugarth-key"})],
-      "a beat at the table is kept by the world's keeper on its author's key — the doorman in the room lends only its own key")
-check(bell([]) == [("keeper:brackenfoot", "https://" + OPEN, "300", "5", "sk-author", None, {})],
+check(got == [("keeper:brackenfoot", "https://" + OPEN, "300", "5", "sk-game-keeper", None, {"Ugarth": "ugarth-key"})],
+      "a beat at the table is kept by the world's keeper on its game-keeper's key — the doorman in the room lends only its own key")
+check(bell([]) == [("keeper:brackenfoot", "https://" + OPEN, "300", "5", "sk-game-keeper", None, {})],
       "and where no doorman stands at all — an LLM app's beat — the world is kept the same")
 _dial_on["on"] = False
-check(bell([("Ugarth", "https://" + OPEN)]) == [], "the author's switch off: nothing is kept")
+check(bell([("Ugarth", "https://" + OPEN)]) == [], "the game-keeper's switch off: nothing is kept")
 _dial_on["on"] = True
 STORE["keeper:brackenfoot"]["beach"] = "https://beach.happyseaurchin.com/w/elsewhere"
 check(bell([("Ugarth", "https://" + OPEN)]) == [], "a keeper enrolled at another surface keeps no table of this world")
 STORE["keeper:brackenfoot"]["beach"] = MASTER
 STORE["keeper:brackenfoot"]["fuel"] = ""
-check(bell([("Ugarth", "https://" + OPEN)]) == [], "a keeper without its author's key keeps nothing")
+check(bell([("Ugarth", "https://" + OPEN)]) == [], "a keeper without its game-keeper's key keeps nothing")
 del STORE["keeper:brackenfoot"]
 check(bell([("Ugarth", "https://" + OPEN)]) == [],
       "no keeper enrolled for the world: nothing is kept — never on the doorman's key, never this service's")
-STORE["keeper:brackenfoot"] = {"mode": "keeper", "fuel": "sk-author", "beach": MASTER, "secret": ""}
+STORE["keeper:brackenfoot"] = {"mode": "keeper", "fuel": "sk-game-keeper", "beach": MASTER, "secret": ""}
 check(bell([], dict(_bell, origin="beach.happyseaurchin.com")) == [], "a pool placed in no world rings no keeper")
+
+# ── THE GAME-KEEPER'S JOURNAL (David, 2026-10-03: 'game-keeper it is'; check usage) ──
+_use = {"keeper": ("claude-sonnet-5", {"input_tokens": 612, "cache_read_input_tokens": 9800, "cache_creation_input_tokens": 0, "output_tokens": 41}),
+        "sheets": ("claude-sonnet-5", {}),
+        "figures": ("claude-haiku-4-5-20251001", {"input_tokens": 2300, "output_tokens": 160})}
+_line = dt.usage_line(_use)
+check(_line == "keeper claude-sonnet-5 in=612 read=9800 write=0 out=41 · figures claude-haiku-4-5-20251001 in=2300 read=0 write=0 out=160",
+      "a pass's usage is one line a page can sum, a part that spent nothing left out")
+check(dt.usage_of(_line) == {"keeper": ("claude-sonnet-5", [612, 9800, 0, 41]), "figures": ("claude-haiku-4-5-20251001", [2300, 0, 0, 160])},
+      "and the counts come back out of it")
+_nine = [("1.%d" % i, {"_": "pass", "1": "waker", "2": "https://b.test/w/" + ("brackenfoot-open" if i < 3 else "brackenfoot-david-julie"),
+                       "3": "2026-10-03T16:0%d:00Z" % i, "6": _line}) for i in (1, 2, 3)]
+check(dt.journal_summary("20", _nine) ==
+      "Summary of 1.1-1.3 (2026-10-03T16:01:00Z → 2026-10-03T16:03:00Z): 3 passes of the world's keeper — brackenfoot-open 2, "
+      "brackenfoot-david-julie 1. The API counted figures claude-haiku-4-5-20251001 in 6.9k, read 0.0k, write 0.0k, out 0.5k; "
+      "keeper claude-sonnet-5 in 1.8k, read 29.4k, write 0.0k, out 0.1k.",
+      "a span of the journal is voiced plainly from its own entries: passes, tables, span, counts — no call")
+
+_posted, _appended = [], []
+waker.enrolment = lambda h: {"mode": "keeper", "journal": "jkey", "beach": MASTER} if h == "keeper:brackenfoot" else None
+waker.enrolment_beach = lambda h: MASTER
+waker.beach_get_or_none = lambda block, beach=None: None
+waker.beach_post = lambda block, body, beach=None: _posted.append((block, body, beach))
+waker.beach_append = lambda block, entry, secret, beach=None: _appended.append((block, entry, secret, beach))
+waker.keeper_journal("keeper:brackenfoot", "https://" + OPEN, "300", "5", "done", "the diggers speak at 311 [claude-sonnet-5 · in 0.6k]", _use)
+check(_posted and _posted[0][0] == "daily:keeper:brackenfoot" and _posted[0][1].get("new_lock") == "jkey" and _posted[0][2] == MASTER
+      and _posted[0][1]["content"]["_"].startswith("THE GAME-KEEPER'S JOURNAL of brackenfoot"),
+      "the journal is founded at the world's surface, latched to the key this service made")
+_e = _appended[0][1] if _appended else {}
+check(_appended and _appended[0][2] == "jkey" and _e.get("2") == "https://" + OPEN and _e.get("4") == "300" and _e.get("5") == "done"
+      and _e.get("6") == _line and _e.get("_", "").startswith("brackenfoot-open · pool:300 beat 5 — done"),
+      "each pass is one entry: the table, the room and beat, what it did, and what the API counted")
+del _posted[:], _appended[:]
+waker.enrolment = lambda h: {"mode": "keeper", "beach": MASTER}
+waker.keeper_journal("keeper:brackenfoot", "https://" + OPEN, "300", "6", "done", "", _use)
+check(not _posted and not _appended, "a keeper enrolled before the journal had a key writes none — it is minted at the next enrolment")
+
+out, rec = enrol({"handle": "keeper:brackenfoot", "passphrase": "the-register-latch", "beach": MASTER, "fuel": "sk-game-keeper"}, {})
+check(len(rec.get("journal") or "") >= 24, "a world's keeper is given its journal's key at enrolment")
+_minted = rec.get("journal")
+out, rec = enrol({"handle": "keeper:brackenfoot", "passphrase": "the-register-latch", "beach": MASTER, "fuel": "sk-new"},
+                 {"keeper:brackenfoot": {"mode": "keeper", "fuel": "sk-game-keeper", "beach": MASTER, "journal": _minted}})
+check(rec.get("journal") == _minted and rec.get("fuel") == "sk-new", "a new key for the keeper keeps its journal's key")
 
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
