@@ -642,9 +642,9 @@ def bell(cands, payload=_bell):
 
 
 got = bell([("Ugarth", "https://" + OPEN)])
-check(got == [("keeper:brackenfoot", "https://" + OPEN, "300", "5", "sk-game-keeper", None, {"Ugarth": "ugarth-key"})],
+check(got == [("keeper:brackenfoot", "https://" + OPEN, "300", "5", "sk-game-keeper", None, {"Ugarth": "ugarth-key"}, "Orik")],
       "a beat at the table is kept by the world's keeper on its game-keeper's key — the doorman in the room lends only its own key")
-check(bell([]) == [("keeper:brackenfoot", "https://" + OPEN, "300", "5", "sk-game-keeper", None, {})],
+check(bell([]) == [("keeper:brackenfoot", "https://" + OPEN, "300", "5", "sk-game-keeper", None, {}, "Orik")],
       "and where no doorman stands at all — an LLM app's beat — the world is kept the same")
 _dial_on["on"] = False
 check(bell([("Ugarth", "https://" + OPEN)]) == [], "the game-keeper's switch off: nothing is kept")
@@ -702,6 +702,54 @@ _minted = rec.get("journal")
 out, rec = enrol({"handle": "keeper:brackenfoot", "passphrase": "the-register-latch", "beach": MASTER, "fuel": "sk-new"},
                  {"keeper:brackenfoot": {"mode": "keeper", "fuel": "sk-game-keeper", "beach": MASTER, "journal": _minted}})
 check(rec.get("journal") == _minted and rec.get("fuel") == "sk-new", "a new key for the keeper keeps its journal's key")
+
+# ── SEATS (David, 2026-10-03: '£5 for 100 beats. Each player pays their own ticket') ──
+SEATLIST = {"_": "Seats at brackenfoot — each entry below is one seat…",
+            "1": {"1": {"_": "Ugarth — 3 October 2026"}, "2": {"_": "Orik — 3 October 2026 — “for the road”"},
+                  "3": {"_": "ugarth — 4 October 2026"}}}
+check(dt.seats_of(SEATLIST, "Ugarth") == 2 and dt.seats_of(SEATLIST, "Orik") == 1 and dt.seats_of(SEATLIST, "Wren") == 0,
+      "a character's seats are the list's entries that open with its handle, the case aside")
+check(dt.seats_of({"_": {"_": "Seats…", "1": {"_": "Ugarth — 1 October 2026"}}, "2": {"1": {"_": "Ugarth — 9 October 2026"}}}, "Ugarth") == 2,
+      "and a list grown past nine is walked whole, the era before the wrap included")
+JOURNAL = {"_": "THE GAME-KEEPER'S JOURNAL of brackenfoot",
+           "1": {"_": "pass", "5": "done", "7": "Ugarth"}, "2": {"_": "pass", "5": "done", "7": "Orik"},
+           "3": {"_": "pass", "5": "unkept", "7": "Ugarth"}, "4": {"_": "pass", "5": "done", "7": "ugarth"},
+           "5": {"_": "a pass from before seats", "5": "done"}}
+check(dt.beats_used(JOURNAL, "Ugarth") == 2 and dt.beats_used(JOURNAL, "Orik") == 1,
+      "the beats a seat has paid for are the kept passes that name its character; an unkept one costs nothing")
+
+_seatdial = {"on": True, "seats": 0}
+def _seat_dial(self, h):
+    self.on, self.seats = _seatdial["on"], _seatdial["seats"]
+
+
+waker.Dial = type("SeatDial", (), {"__init__": _seat_dial})
+waker.enrolment = lambda h: {"mode": "keeper", "journal": "jkey", "beach": MASTER}
+waker.enrolment_beach = lambda h: MASTER
+_blocks = {"sed:brackenfoot-seats": SEATLIST, "daily:keeper:brackenfoot": JOURNAL}
+waker.beach_get_or_none = lambda block, beach=None: _blocks.get(block)
+check(waker.seat_spent("keeper:brackenfoot", "Ugarth") == "", "a world that asks for no seats keeps every beat")
+_seatdial["seats"] = 2
+check(waker.seat_spent("keeper:brackenfoot", "Ugarth") == "", "Ugarth: two seats of two beats, two used — kept")
+_seatdial["seats"] = 1
+check(waker.seat_spent("keeper:brackenfoot", "Ugarth").startswith("Ugarth has no beats left at brackenfoot (2 seats, 2 of 2 beats used)"),
+      "and at one beat a seat, two used of two — not kept")
+check(waker.seat_spent("keeper:brackenfoot", "Orik").startswith("Orik has no beats left at brackenfoot (1 seat, 1 of 1 beats used)"),
+      "Orik: one seat of one beat, one used — not kept, and the journal is told why")
+check(waker.seat_spent("keeper:brackenfoot", "Wren").startswith("Wren has no beats left at brackenfoot (0 seats"), "a character with no seat is not kept")
+check(waker.seat_spent("keeper:brackenfoot", "").startswith("no one is named"), "a beat nobody is named for is not kept where seats are asked")
+_seatdial["seats"] = 100
+
+_passes, _journaled = [], []
+waker.keeper_pass = lambda handle, beach, room, fuel_key, secret, keys=None, report=None: (_passes.append(handle), "done", "kept")[1:]
+waker.keeper_journal = lambda handle, table, room, slot, status, note, usage, committer="": _journaled.append((status, committer, note))
+waker.keeper_in_turn("keeper:brackenfoot", "https://" + OPEN, "300", "sk-game-keeper", None, {}, "7", "Ugarth")
+check(_passes == ["keeper:brackenfoot"] and _journaled and _journaled[-1][:2] == ("done", "Ugarth"),
+      "a seated beat is kept, and the journal names who made it happen")
+del _passes[:], _journaled[:]
+waker.keeper_in_turn("keeper:brackenfoot", "https://" + OPEN, "300", "sk-game-keeper", None, {}, "8", "Wren")
+check(not _passes and _journaled and _journaled[-1][:2] == ("unkept", "Wren"),
+      "an unseated beat is not kept — no call is made — and the journal says so")
 
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
