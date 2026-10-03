@@ -15,6 +15,7 @@
  * Run: npm run smoke:envelope
  */
 import { bspRead, formatRead, readBackSpindle } from '../src/bsp-fn.js';
+import { formatAddress, parseSpindle } from '../src/bsp.js';
 
 let failures = 0;
 function assert(cond: boolean, label: string) {
@@ -129,6 +130,80 @@ const b2: any = { _: { _: 'the old root', 1: 'old one' }, 1: { _: 'wrap', 2: { _
     const back = bspRead(block, a, null);
     assert(back.shape === 'path-walk' && (back.entries as any[]).length === 2, `beneath address "${a}" round-trips as a spindle`);
   }
+}
+
+// ONE FORM — a beach computes a wire read itself and labels with formatAddress
+// (the short form: leading and trailing zeros stripped), so a floor-3
+// accumulator's container 360 arrived as "36", which copied back pads to 036
+// (daily:weft, 2026-10-03). formatRead anchors every label to the floor, so a
+// wire read and a local read of the same node print the same address, and
+// every printed label read back as a spindle lands on the node it labels.
+console.log('ONE FORM — wire labels print floor-anchored');
+{
+  const toWire = (r: any, floor: number) => {
+    const short = (a: string) => formatAddress(parseSpindle(a, floor).digits, floor);
+    const w = JSON.parse(JSON.stringify(r));
+    for (const k of ['entries', 'path_walk', 'descent']) if (Array.isArray(w[k])) for (const e of w[k]) e.address = short(e.address);
+    if (typeof w.address === 'string') w.address = short(w.address);
+    if (Array.isArray(w.beneath)) w.beneath = w.beneath.map(short);
+    delete w.floor;
+    return w;
+  };
+  const labels = (text: string) => [...text.matchAll(/\[(\d+(?:\.\d+)?)\]/g)].map((m) => m[1]);
+  const node = (b: any, a: string, floor: number) => {
+    const r: any = bspRead(b, a, null);
+    return r.entries?.[r.entries.length - 1]?.content;
+  };
+
+  // Floor 3 — an accumulator supernested twice, the shape of daily:weft.
+  const leaf = (n: number) => ({ _: `entry ${n}` });
+  const old: any = { _: { _: 'the first nine', 1: 'entry 001' } };
+  for (let i = 1; i <= 9; i++) old[i] = { _: `container 0${i}0`, 1: `entry 0${i}1`, 2: `entry 0${i}2` };
+  const b3: any = { _: old, 3: { _: 'container 300' } };
+  for (let i = 3; i <= 6; i++) b3[3][i] = { _: `container 3${i}0`, 1: leaf(Number(`3${i}1`)), 9: leaf(Number(`3${i}9`)) };
+
+  const disc = bspRead(b3, null, 1);
+  const wire = formatRead(toWire(disc, 3));
+  assert(wire === formatRead(disc), 'a wire disc prints exactly what the local disc prints');
+  const dl = labels(wire);
+  assert(['330', '340', '350', '360'].every((a) => dl.includes(a)) && !dl.includes('36'), 'the disc at pscale 1 lists [330] [340] [350] [360]');
+  assert(dl.includes('010') && !dl.includes('1'), 'the old block\'s first container prints 010, never [1]');
+  assert(dl.every((a) => node(b3, a, 3) !== undefined && node(b3, a, 3) === `container ${a}`), 'every disc label read back as a spindle lands on the container it labels');
+
+  const pwd = bspRead(b3, '350', 0);
+  const pwdWire = formatRead(toWire(pwd, 3));
+  assert(pwdWire === formatRead(pwd), 'a wire path-walk+descent prints what the local one prints');
+  assert(pwdWire.includes('d1 p2 [300]') && pwdWire.includes('d2 p1 [350]') && pwdWire.includes('d3 p0 [351]'), 'its walk prints [300] [350] and the descent [351]');
+
+  const deep = bspRead(b3, '359', -1);
+  assert(formatRead(toWire(deep, 3)) === formatRead(deep), 'below pscale 0 the single-decimal form is unchanged');
+  const shortWalk = bspRead(b3, '36', 0);
+  assert(formatRead(toWire(shortWalk, 3)) === formatRead(shortWalk), 'a padded short spindle (036) labels its own walk 000 · 030 · 036');
+
+  const pt = bspRead(b3, '36', 1);
+  const ptWire = formatRead(toWire(pt, 3));
+  assert(ptWire === formatRead(pt), 'a wire point prints the local point, beneath line included');
+
+  // Floor 1 — nothing to pad; labels unchanged.
+  for (const r of [bspRead(block, null, 0), bspRead(block, '4.2', -2), bspRead(block, '4', 0)]) {
+    assert(formatRead(toWire(r, 1)) === formatRead(r), `floor 1 ${r.shape} labels unchanged`);
+  }
+  assert(formatRead(bspRead(block, null, 0)).includes('[4]: four'), 'floor 1 still prints [4]');
+
+  // Floor 10 — the clock: its zeros are the year's own (2 → 0 → 2 → 6), so a
+  // stripped wire label pads at the tail and keeps its relation to now.
+  const chain: any = { _: 'the clock' };
+  let u: any = chain; for (let i = 0; i < 8; i++) { u._ = { _: 'chain' }; u = u._; }
+  const c10: any = { _: chain, 2: { _: { _: 'the millennium 20', 2: { _: 'the decade 202', 6: { _: 'the year 2026', 4: { _: 'season', 1: { _: 'month', 1: { _: 'week' } } } } } } } };
+  for (const p of [6, 5, 4, 3]) {
+    const r = bspRead(c10, null, p);
+    const w = formatRead(toWire(r, 10));
+    assert(w === formatRead(r), `a wire clock disc at pscale ${p} prints what the local one prints`);
+  }
+  const yr = formatRead(toWire(bspRead(c10, null, 6), 10));
+  assert(yr.includes('[2026000000]') && /\[2026000000\] \(/.test(yr), 'the year prints full width with its relation to now');
+  const walk = bspRead(c10, '2026411000', null);
+  assert(formatRead(toWire(walk, 10)) === formatRead(walk), 'a wire clock walk prints what the local walk prints');
 }
 
 if (failures) { console.error(`\n${failures} failure(s)`); process.exit(1); }
