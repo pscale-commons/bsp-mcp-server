@@ -45,6 +45,15 @@ between matches the home nest); PUSH_ENGINE_URL (the push engine's /event —
 where a completed wake is announced as a {kind:"wake"} event so holders hear
 it through their own ear, ways:push; unset = no announcement); PORT.
 
+THE PRIVATE DOOR (/ask, 2026-10-03): the doorman's composer answering one
+person at a time outside any room — the conversation held in the asker's own
+tab, nothing written to the beach except a SEALED note the asker asked to have
+passed on, on the handle's side of a grain its steward accepted. Requests run
+side by side; pacing is in memory only. proposals/2026-10-03-the-private-door.md;
+the pure law is private_door.py. Env: WAKER_ASK_MAX_TOKENS (default 2000, the
+dial's mind ceiling overrides), WAKER_ASK_GAP_S (3), WAKER_ASK_PER_HOUR (40),
+WAKER_SIGNAL_GAP_S (600 — one note per visitor per span).
+
 Teaching: kernel.py loads the constant teaching from ../src (repo layout).
 Deployed alone, this service fetches src/*.json from the canonical GitHub
 main at boot into ./teaching and points GENUS_TEACHING there — no vendored
@@ -65,6 +74,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
 import doorman_table as dt  # noqa: E402 — the character's doorman, pure
+import private_door as pd  # noqa: E402 — the private door, pure
 
 DOORBELL_SECRET = os.environ.get("DOORBELL_SECRET", "")
 WAKER_BEACH = os.environ.get("WAKER_BEACH", "https://beach.happyseaurchin.com").rstrip("/")
@@ -1095,14 +1105,15 @@ def usage_said(usage):
 THINKS_UNASKED = ("claude-sonnet-5", "claude-opus-5")
 
 
-def model_call(fuel_key, model, max_tokens, system, message, kept=None, usage=None, plain=False):
+def model_call(fuel_key, model, max_tokens, system, message, kept=None, usage=None, plain=False, turns=None):
     """One model call, the doorman's way: a transient refusal (429, 529, 5xx)
     is retried once after five seconds; every other refusal raises with the
     API's own reason. Returns the text, '' when the model returned none.
     `kept` is the parts of the frame that do not move between calls (see
-    kept_system); `usage`, a dict, is filled with what the API counted."""
+    kept_system); `usage`, a dict, is filled with what the API counted;
+    `turns`, when given, is a whole conversation sent in place of `message`."""
     ask = {"model": model, "max_tokens": max_tokens, "system": kept_system(system, kept),
-           "messages": [{"role": "user", "content": message}]}
+           "messages": turns or [{"role": "user", "content": message}]}
     if plain and str(model).startswith(THINKS_UNASKED):
         ask["thinking"] = {"type": "disabled"}
     body = json.dumps(ask).encode()
@@ -1248,6 +1259,131 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
     except Exception as e:
         return "failed", "the answer could not land: %s" % str(e)[:90]
     return "done", "answered by %s%s" % (model, " (degraded orientation)" if degraded else "")
+
+
+# ── the private door — one person, one conversation, nothing kept ──────────
+#
+# The doorbell answers into a PUBLIC room; this door answers the person who
+# asked (proposals/2026-10-03-the-private-door.md). The asker's own page holds
+# the conversation and carries it back whole each turn; the door compiles the
+# handle's orientation the doorman's way, makes one call on the handle's fuel
+# and returns the answer. Nothing is written to the beach. The one thing that
+# leaves is a note the asker asked to have passed to a person: it lands SEALED
+# on the handle's side of a grain that person accepted, and the push engine
+# rings them with no content at all. Requests run side by side — nothing here
+# takes the pulse lock — and the pacing lives in memory only. A door for
+# doormen: a handle enrolled as 'lite', its dial on. The pure law is
+# private_door.py.
+
+ASK_MAX_TOKENS = int(os.environ.get("WAKER_ASK_MAX_TOKENS", "2000"))
+ASK_MAX_BODY = 4 * pd.MAX_TOTAL_CHARS + 16000  # bytes: the longest conversation, in any script, with room for its JSON
+_pacer = pd.Pacer(gap_s=int(os.environ.get("WAKER_ASK_GAP_S", "3")),
+                  per_hour=int(os.environ.get("WAKER_ASK_PER_HOUR", "40")),
+                  signal_gap_s=int(os.environ.get("WAKER_SIGNAL_GAP_S", "600")))
+
+
+def ask_cap(handle, dial, funder):
+    """The private door's ceiling for the day — the same shadow of who pays that
+    the doorbell casts (ways:doorbell:3): the dial's cap; the holder's budget on
+    holder fuel; that and the service's MAX_DAILY on the beach's."""
+    caps = [dial.cap]
+    if funder == "holder":
+        caps += [c for c in (holder_ceiling(handle),) if c is not None]
+    elif funder == "beach":
+        caps += [c for c in (holder_ceiling(handle), MAX_DAILY) if c is not None]
+    return min(caps)
+
+
+def bare_window(text):
+    """The compiled orientation without its clock line, the one line that moves
+    at every compile, so the frame stays byte-identical from turn to turn and
+    the prompt cache keeps it."""
+    return "\n".join(l for l in str(text).splitlines() if not l.startswith("now · ")).strip()
+
+
+def grain_complete(block):
+    """Reached AND accepted: both sides written, and no reach still pending at 8
+    (src/tools/grain.ts — 8 stands only between establish and accept)."""
+    if not isinstance(block, dict) or "8" in block:
+        return False
+    return all(block.get(s) not in (None, "", {}) for s in ("1", "2"))
+
+
+def pass_on(handle, target, line, secret):
+    """One note the asker asked to have passed on: SEALED on this handle's side
+    of the grain it holds with `target` (a grain is gray by default, so the
+    router seals it to the pair's shared key and only the two can read it), then
+    a ring through the push engine that says only that a note waits. Returns
+    (ok, reason) — the reason is for the service log and never holds the note."""
+    if not pd.valid_handle(target) or target == handle:
+        return False, "no one by that name may hear"
+    if not secret:
+        return False, "no key is held for %s, so nothing can be sealed" % handle
+    pid = pd.pair_id(handle, target)
+    try:
+        grain = beach_get("grain:%s" % pid)
+    except Exception:
+        grain = None
+    if not grain_complete(grain):
+        return False, "%s holds no accepted grain with %s" % (handle, target)
+    side = pd.side_of(handle, target)
+    ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    try:
+        said = router_call("bsp", {"agent_id": WAKER_BEACH, "block": "grain:%s" % pid, "spindle": side,
+                                   "append": True, "secret": secret,
+                                   "content": "%s · passed on from a private conversation: %s" % (ts, line)})
+    except Exception as e:
+        return False, "the sealed note could not land: %s" % str(e)[:80]
+    if not said.lstrip().startswith("[append"):
+        return False, "the sealed note was refused: %s" % said.strip()[:120]
+    forward_event({"origin": WAKER_BEACH, "kind": "wake", "agent": handle,
+                   "ringer": "a private conversation", "status": "a sealed note for %s" % target, "ts": ts})
+    return True, "sealed at grain:%s side %s" % (pid, side)
+
+
+def private_answer(handle, turns, visitor):
+    """One private answer → (http code, body). The body carries the answer, or a
+    detail a person can act on; nothing of the conversation is logged."""
+    if handle not in enrolled_handles() or wake_mode(handle) != "lite":
+        return 404, {"ok": False, "detail": "%s has no private door here" % handle}
+    dial = Dial(handle)
+    if not dial.on:
+        return 503, {"ok": False, "detail": "%s is not answering just now" % handle}
+    fuel_key, funder = pick_fuel(handle, None)
+    if not fuel_key:
+        return 503, {"ok": False, "detail": "%s has nothing to answer with just now" % handle}
+    ok, why = _pacer.admit(handle, visitor, ask_cap(handle, dial, funder))
+    if not ok:
+        return 429, {"ok": False, "detail": why}
+    window, degraded = orientation_window(handle)
+    if degraded:
+        window = thin_brief(handle)
+    if not window.strip():
+        return 503, {"ok": False, "detail": "%s cannot find its own blocks just now" % handle}
+    model, max_tokens = dial.answer_with(DOORMAN_MODEL, ASK_MAX_TOKENS)
+    usage = {}
+    try:
+        text = model_call(fuel_key, model, max_tokens, pd.STANCE, "", kept=[bare_window(window)],
+                          usage=usage, plain=True, turns=turns)
+    except Exception as e:
+        log("private answer for %s failed: %s" % (handle, str(e)[:120]))
+        return 502, {"ok": False, "detail": "no answer could be made just now — please try again"}
+    answer, signals = pd.split_signals(text)
+    passed = None
+    if signals:
+        target, line = signals[0]
+        passed = False
+        if _pacer.may_signal(visitor):
+            passed, note = pass_on(handle, target, line, egg_secret(handle))
+            if passed:
+                _pacer.signalled(visitor)
+            log("private note from %s's door: %s" % (handle, note))
+        answer = ((answer + "\n\n") if answer else "") + (pd.PASSED_ON if passed else pd.NOT_PASSED_ON)
+    if not answer.strip():
+        return 502, {"ok": False, "detail": "no answer came back — please try again"}
+    log("private answer for %s: %s fuel%s%s" % (handle, funder, " (degraded orientation)" if degraded else "",
+                                                 (" · " + usage_said(usage)) if usage_said(usage) else ""))
+    return 200, {"ok": True, "answer": answer, "passed_on": passed}
 
 
 # ── the doorman's behaviours — a shell's LLM hand, switched by its holder ───
@@ -2513,6 +2649,33 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("content-length", "0"))
         return json.loads(self.rfile.read(length).decode() or "{}")
 
+    def _visitor(self):
+        """Who is asking, for pacing alone and in memory alone: the first address
+        the proxy names, else the socket's own."""
+        fwd = (self.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+        return fwd or (self.client_address[0] if self.client_address else "unknown")
+
+    def _ask(self):
+        """POST {handle, turns} — the private door (private_answer). A body past
+        any conversation's bounds is refused before it is read."""
+        try:
+            if int(self.headers.get("content-length", "0") or 0) > ASK_MAX_BODY:
+                return self._send(413, {"ok": False, "detail": "that is too much to send at once"})
+        except ValueError:
+            return self._send(400, {"ok": False, "detail": "unparseable body"})
+        try:
+            b = self._body()
+        except Exception:
+            return self._send(400, {"ok": False, "detail": "unparseable body"})
+        handle = str(b.get("handle", "")).strip()
+        if not pd.valid_handle(handle):
+            return self._send(400, {"ok": False, "detail": "which helper?"})
+        turns, why = pd.parse_turns(b.get("turns"))
+        if why:
+            return self._send(400, {"ok": False, "detail": why})
+        code, body = private_answer(handle, turns, self._visitor())
+        return self._send(code, body)
+
     def _enroll(self, remove):
         try:
             b = self._body()
@@ -2642,6 +2805,16 @@ class Handler(BaseHTTPRequestHandler):
                 elif h in WAKER_EGGS:
                     out.append({"handle": h, "beach": WAKER_BEACH, "mode": "genus", "dial": "wake:%s" % h})
             self._send(200, {"ok": True, "asked": len(asked), "doormen": out})
+        elif path == "/ask":
+            # The private door's page: a conversation held in the asker's own
+            # tab, nothing else (private_door.PAGE; ?h=<handle> names the helper).
+            body = pd.PAGE.encode()
+            self.send_response(200)
+            self.send_header("content-type", "text/html; charset=utf-8")
+            self.send_header("content-length", str(len(body)))
+            self.send_header("cache-control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
         elif path == "/enroll":
             # A browser gets the door; anything asking for JSON keeps the
             # explainer it has always had.
@@ -2790,6 +2963,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._enroll(remove=False)
         if path == "/poke":
             return self._poke()
+        if path == "/ask":
+            return self._ask()
         if path == "/fold":
             # COMMIT WHEN INSTRUCTED — the holder's own hand from a page:
             # POST {handle, passphrase, room?, party?}; synchronous; the outcome
