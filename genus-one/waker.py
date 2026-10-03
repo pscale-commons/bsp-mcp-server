@@ -2650,10 +2650,12 @@ class Handler(BaseHTTPRequestHandler):
         return json.loads(self.rfile.read(length).decode() or "{}")
 
     def _visitor(self):
-        """Who is asking, for pacing alone and in memory alone: the first address
-        the proxy names, else the socket's own."""
-        fwd = (self.headers.get("x-forwarded-for") or "").split(",")[0].strip()
-        return fwd or (self.client_address[0] if self.client_address else "unknown")
+        """Who is asking, for pacing alone and in memory alone: the LAST address in
+        x-forwarded-for, the one the proxy in front of this service saw and added,
+        else the socket's own. Every earlier entry arrived from the visitor and can
+        say anything, so trusting the first let one person ask as many people."""
+        hops = [h.strip() for h in (self.headers.get("x-forwarded-for") or "").split(",") if h.strip()]
+        return hops[-1] if hops else (self.client_address[0] if self.client_address else "unknown")
 
     def _ask(self):
         """POST {handle, turns} — the private door (private_answer). A body past
