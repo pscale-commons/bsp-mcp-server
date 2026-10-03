@@ -2,7 +2,7 @@
  *  other's looks by name once the play door has named them, nearest address
  *  first; a different block, a different beach, or the window's end shows
  *  nothing; sentinels are the caller's business (bsp.ts skips them). */
-import { declareHand, lateralLine, noteLook, resetLooks, sharedPrefix, reflect, LOOKS_WINDOW_MS } from '../src/looks.js';
+import { declareHand, lateralLine, nameAtTheDoor, noteLook, resetLooks, sharedPrefix, reflect, LOOKS_WINDOW_MS } from '../src/looks.js';
 
 let fails = 0;
 function check(name: string, ok: boolean, got?: string): void {
@@ -47,6 +47,18 @@ const res = reflect({ content: [{ type: 'text', text: 'ack' }] }, 'Y', B, 'pool:
 check('reflect appends the line to the ack', res.content[0].text.startsWith('ack\n[here now — 1 other'), res.content[0].text);
 const quiet = reflect({ content: [{ type: 'text', text: 'ack' }] }, 'Y', B, 'pool:nobody', null, false);
 check('reflect leaves a quiet ack alone', quiet.content[0].text === 'ack', quiet.content[0].text);
+
+// A door that is given a name keeps it; an anonymous tab and a URL are not names.
+resetLooks();
+nameAtTheDoor('M', 'happyseaurchin');
+nameAtTheDoor('N', 'anon-p4o9h3');
+nameAtTheDoor('O', 'https://beach.happyseaurchin.com');
+nameAtTheDoor('P', undefined);
+noteLook('M', B, 'pool:weft', null, false, t0);
+noteLook('N', B, 'pool:weft', null, false, t0);
+noteLook('O', B, 'pool:weft', null, false, t0);
+const named = lateralLine('Q', B, 'pool:weft', null, t0 + 1_000);
+check('a room engage names the session; an anon tab and a URL stay someone', /happyseaurchin looked/.test(named) && (named.match(/someone looked/g) || []).length === 2 && !/anon-/.test(named), named);
 
 console.log(fails === 0 ? '\nsmoke:looks — all pass' : `\nsmoke:looks — ${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);

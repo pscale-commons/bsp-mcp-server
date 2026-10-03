@@ -17,7 +17,8 @@
  *  and a record is a photograph where a mirror stores nothing. Not presence,
  *  which is a tab's heartbeat and belongs to the glass. Not a name on a read: a
  *  read carries no handle, so a session that never walked through the play door
- *  is reflected as 'someone'. Sentinel reads are not reflected — the teaching is
+ *  is reflected as 'someone' — as is one that never gave a name at a room engage
+ *  (nameAtTheDoor). Sentinel reads are not reflected — the teaching is
  *  not a place. The window is the response rung, not the clock: two minutes by
  *  default (LOOKS_WINDOW_MS), the span in which two minds mid-response overlap.
  *  One process is one pane; a second replica would be a second pane.
@@ -54,6 +55,18 @@ export function beachKey(url: string | null | undefined): string {
 export function declareHand(session: string | undefined, handle: string): void {
   if (!session || !handle) return;
   hands.set(session, handle);
+}
+
+/** A DOOR THAT IS GIVEN A NAME KEEPS IT. The play door is told a handle; a room
+ *  engage is told who is engaging. Either way the session said who it is, and
+ *  from then on its looks carry that name. An anonymous tab's id is not a name
+ *  and a URL is not a hand: those stay 'someone'. Unproven, as the play door's
+ *  handle is when no key rides with it — a name at a door, not a credential. */
+export function nameAtTheDoor(session: string | undefined, said: unknown): void {
+  if (typeof said !== 'string') return;
+  const name = said.trim();
+  if (!name || /^anon-/i.test(name) || /^https?:\/\//i.test(name)) return;
+  declareHand(session, name);
 }
 
 export function handOf(session: string | undefined): string | null {
