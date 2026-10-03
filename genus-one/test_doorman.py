@@ -718,26 +718,39 @@ JOURNAL = {"_": "THE GAME-KEEPER'S JOURNAL of brackenfoot",
 check(dt.beats_used(JOURNAL, "Ugarth") == 2 and dt.beats_used(JOURNAL, "Orik") == 1,
       "the beats a seat has paid for are the kept passes that name its character; an unkept one costs nothing")
 
-_seatdial = {"on": True, "seats": 0}
+_seatdial = {"on": True, "seats": 0, "free": 0}
 def _seat_dial(self, h):
-    self.on, self.seats = _seatdial["on"], _seatdial["seats"]
+    self.on, self.seats, self.free = _seatdial["on"], _seatdial["seats"], _seatdial["free"]
 
 
 waker.Dial = type("SeatDial", (), {"__init__": _seat_dial})
 waker.enrolment = lambda h: {"mode": "keeper", "journal": "jkey", "beach": MASTER}
 waker.enrolment_beach = lambda h: MASTER
-_blocks = {"sed:brackenfoot-seats": SEATLIST, "daily:keeper:brackenfoot": JOURNAL}
+GIFTS = {"_": "Seats given at brackenfoot by its game-keeper",
+         "1": {"_": "Wren — 3 October 2026 — 2 seats given by the game-keeper"}, "2": {"_": "orik — 4 October 2026 — given by the game-keeper"}}
+OPENLIST = {"_": "an open sed: list anyone may register into", "1": {"_": "Wren — 3 October 2026"}, "2": {"_": "Wren — 3 October 2026"}}
+_blocks = {"seats:brackenfoot": SEATLIST, "daily:keeper:brackenfoot": JOURNAL, "sed:brackenfoot-seats": OPENLIST}
 waker.beach_get_or_none = lambda block, beach=None: _blocks.get(block)
+check(dt.gifted_of(GIFTS, "Wren") == 2 and dt.gifted_of(GIFTS, "Orik") == 1 and dt.gifted_of(GIFTS, "Ugarth") == 0,
+      "a gift counts the seats it names, or one")
 check(waker.seat_spent("keeper:brackenfoot", "Ugarth") == "", "a world that asks for no seats keeps every beat")
 _seatdial["seats"] = 2
 check(waker.seat_spent("keeper:brackenfoot", "Ugarth") == "", "Ugarth: two seats of two beats, two used — kept")
 _seatdial["seats"] = 1
-check(waker.seat_spent("keeper:brackenfoot", "Ugarth").startswith("Ugarth has no beats left at brackenfoot (2 seats, 2 of 2 beats used)"),
+check(waker.seat_spent("keeper:brackenfoot", "Ugarth").startswith("Ugarth has no beats left at brackenfoot (2 bought, 0 given, 0 free; 2 of 2 beats used)"),
       "and at one beat a seat, two used of two — not kept")
-check(waker.seat_spent("keeper:brackenfoot", "Orik").startswith("Orik has no beats left at brackenfoot (1 seat, 1 of 1 beats used)"),
+check(waker.seat_spent("keeper:brackenfoot", "Orik").startswith("Orik has no beats left at brackenfoot (1 bought, 0 given, 0 free; 1 of 1"),
       "Orik: one seat of one beat, one used — not kept, and the journal is told why")
-check(waker.seat_spent("keeper:brackenfoot", "Wren").startswith("Wren has no beats left at brackenfoot (0 seats"), "a character with no seat is not kept")
+check(waker.seat_spent("keeper:brackenfoot", "Wren").startswith("Wren has no beats left at brackenfoot (0 bought, 0 given"),
+      "a character with no seat is not kept — and two seats written on an OPEN list count for nothing")
 check(waker.seat_spent("keeper:brackenfoot", "").startswith("no one is named"), "a beat nobody is named for is not kept where seats are asked")
+_blocks["gifts:brackenfoot"] = GIFTS
+check(waker.seat_spent("keeper:brackenfoot", "Wren") == "", "seats the game-keeper gave count as if bought")
+check(waker.seat_spent("keeper:brackenfoot", "Orik") == "", "Orik's gift of one more beat keeps him going")
+_seatdial["free"] = 3
+check(waker.seat_spent("keeper:brackenfoot", "Ugarth") == "" and waker.seat_spent("keeper:brackenfoot", "Stranger") == "",
+      "free beats are every character's, before any seat: a stranger's first beats are kept")
+_seatdial["free"] = 0
 _seatdial["seats"] = 100
 
 _passes, _journaled = [], []
@@ -747,8 +760,8 @@ waker.keeper_in_turn("keeper:brackenfoot", "https://" + OPEN, "300", "sk-game-ke
 check(_passes == ["keeper:brackenfoot"] and _journaled and _journaled[-1][:2] == ("done", "Ugarth"),
       "a seated beat is kept, and the journal names who made it happen")
 del _passes[:], _journaled[:]
-waker.keeper_in_turn("keeper:brackenfoot", "https://" + OPEN, "300", "sk-game-keeper", None, {}, "8", "Wren")
-check(not _passes and _journaled and _journaled[-1][:2] == ("unkept", "Wren"),
+waker.keeper_in_turn("keeper:brackenfoot", "https://" + OPEN, "300", "sk-game-keeper", None, {}, "8", "Stranger")
+check(not _passes and _journaled and _journaled[-1][:2] == ("unkept", "Stranger"),
       "an unseated beat is not kept — no call is made — and the journal says so")
 
 print("test_doorman: %d passed, %d failed" % (PASS, FAIL))

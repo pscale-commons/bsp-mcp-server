@@ -994,6 +994,24 @@ def seats_of(block, handle):
     return sum(1 for text, _n in _entries(block) if text.strip().lower().startswith(want + " — "))
 
 
+GIFT_COUNT_RE = re.compile(r"—\s*(\d+)\s+seats?\b")
+
+
+def gifted_of(block, handle):
+    """How many seats the game-keeper has given a character: the entries on the
+    world's gift list whose line opens '<handle> — ', each counting the seats it
+    names ('— 2 seats given by the game-keeper') or one."""
+    want = (handle or "").strip().lower()
+    if not want:
+        return 0
+    n = 0
+    for text, _n in _entries(block):
+        if text.strip().lower().startswith(want + " — "):
+            m = GIFT_COUNT_RE.search(text)
+            n += int(m.group(1)) if m else 1
+    return n
+
+
 def beats_used(journal, handle):
     """The beats a character's seats have paid for: the game-keeper's journal's
     passes that were kept (5 'done') and name that character as the one who made
