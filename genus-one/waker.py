@@ -692,7 +692,9 @@ class Dial:
     journal; 7 a genus agent's FLOW SWITCH (not the waker's to read); 8 the span
     a character's doorman waits; 9 its behaviours, and BENEATH 9 which mind each
     wears — "<word> <mind> [ceiling]", the word one of mind (every act), keeper,
-    render, commit, act. The mind stood at 7 until 2026-09-21; a dial that still
+    render, commit, act — and, in the same idiom, the one tool a helper's mind may
+    hold at the private door: "search <block> [uses]", the sites that block links
+    (proposals/2026-10-03-the-held-search). The mind stood at 7 until 2026-09-21; a dial that still
     says it there is still heard, but only where 7 IS a mind (David's ruling, the
     day the flow switch and the mind were found sharing a position). Absent
     positions fall to the service defaults — the dial
@@ -705,6 +707,8 @@ class Dial:
         self.per_ringer = {}
         self.answer = ""
         self.minds = {}
+        # The one tool a helper's mind may hold — read by the private door alone.
+        self.search, self.search_uses = None, 0
         # A character's doorman: 8 the span it waits before folding a ripe
         # window; 9 its BEHAVIOURS — act / every / commit / render, the
         # holder's words; absent reads 'commit render', the page player's case.
@@ -744,6 +748,14 @@ class Dial:
             self.answer = said
             self._named(seven)
         self._named(dial.get("9"))
+        # BENEATH 9, beside the mind and in its idiom, the one tool that mind may
+        # hold at the private door: 'search <block> [uses]' — search the web, but
+        # only the sites that block links, at most <uses> times an answer (2 when
+        # unsaid). 'search off', or no line at all, holds none.
+        said = self.minds.pop("search", None)
+        if said and said[0].lower() not in ("off", "none", "no"):
+            self.search = said[0]
+            self.search_uses = max(1, min(said[1] or 2, pd.SEARCH_MAX_USES))
         if "mind" in self.minds:
             mind, ceiling = self.minds.pop("mind")
             self.answer = "%s %d" % (mind, ceiling) if ceiling else mind
@@ -1110,7 +1122,10 @@ def usage_said(usage):
         kept.append("+%s read from the kept frame" % k("cache_read_input_tokens"))
     if usage.get("cache_creation_input_tokens"):
         kept.append("+%s newly kept" % k("cache_creation_input_tokens"))
-    return "in %s%s · out %s" % (k("input_tokens"), " (%s)" % ", ".join(kept) if kept else "", k("output_tokens"))
+    searched = (usage.get("server_tool_use") or {}).get("web_search_requests") if isinstance(
+        usage.get("server_tool_use"), dict) else None
+    return "in %s%s · out %s%s" % (k("input_tokens"), " (%s)" % ", ".join(kept) if kept else "", k("output_tokens"),
+                                  " · %d searched" % searched if searched else "")
 
 
 # Minds that think unless told not to. Asked for three short lines under a small
@@ -1120,44 +1135,69 @@ def usage_said(usage):
 THINKS_UNASKED = ("claude-sonnet-5", "claude-opus-5")
 
 
-def model_call(fuel_key, model, max_tokens, system, message, kept=None, usage=None, plain=False, turns=None):
+def _add_usage(total, part):
+    """The API's counts added into a running total — numbers summed, the nested
+    counts (cache_creation, server_tool_use) summed a level down, anything else
+    as last said — so a turn the API paused and resumed is counted whole."""
+    for k, v in (part or {}).items():
+        if isinstance(v, dict):
+            total[k] = _add_usage(dict(total[k]) if isinstance(total.get(k), dict) else {}, v)
+        elif isinstance(v, (int, float)) and not isinstance(v, bool):
+            total[k] = (total.get(k) or 0) + v if isinstance(total.get(k, 0), (int, float)) else v
+        else:
+            total[k] = v
+    return total
+
+
+def model_call(fuel_key, model, max_tokens, system, message, kept=None, usage=None, plain=False, turns=None,
+               tools=None):
     """One model call, the doorman's way: a transient refusal (429, 529, 5xx)
     is retried once after five seconds; every other refusal raises with the
     API's own reason. Returns the text, '' when the model returned none.
     `kept` is the parts of the frame that do not move between calls (see
     kept_system); `usage`, a dict, is filled with what the API counted;
-    `turns`, when given, is a whole conversation sent in place of `message`."""
+    `turns`, when given, is a whole conversation sent in place of `message`;
+    `tools`, when given, are tools the API runs itself (the private door's held
+    search) — a turn the API pauses mid-search is resumed, twice at most, and
+    the text of every part is joined."""
     ask = {"model": model, "max_tokens": max_tokens, "system": kept_system(system, kept),
            "messages": turns or [{"role": "user", "content": message}]}
+    if tools:
+        ask["tools"] = tools
     if plain and str(model).startswith(THINKS_UNASKED):
         ask["thinking"] = {"type": "disabled"}
-    body = json.dumps(ask).encode()
 
     def send():
         with urllib.request.urlopen(
-                urllib.request.Request("https://api.anthropic.com/v1/messages", data=body,
+                urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(ask).encode(),
                                        headers={"content-type": "application/json",
                                                 "x-api-key": fuel_key,
                                                 "anthropic-version": "2023-06-01"},
                                        method="POST"), timeout=120) as r:
             return json.loads(r.read().decode())
 
-    try:
-        d = send()
-    except urllib.error.HTTPError as e:
-        if e.code in (429, 529) or 500 <= e.code < 600:
-            time.sleep(5)
+    said_so_far = []
+    for _ in range(3):
+        try:
             d = send()
-        else:
-            try:
-                said = json.loads(e.read().decode()).get("error", {}).get("message", "")
-            except Exception:
-                said = ""
-            raise RuntimeError("the call was refused (HTTP %d): %s" % (e.code, (said or "no reason given")[:150]))
-    if isinstance(usage, dict):
-        usage.update(d.get("usage") or {})
-    return "".join(c.get("text", "") for c in d.get("content", [])
-                   if isinstance(c, dict) and c.get("type") == "text").strip()
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 529) or 500 <= e.code < 600:
+                time.sleep(5)
+                d = send()
+            else:
+                try:
+                    said = json.loads(e.read().decode()).get("error", {}).get("message", "")
+                except Exception:
+                    said = ""
+                raise RuntimeError("the call was refused (HTTP %d): %s" % (e.code, (said or "no reason given")[:150]))
+        if isinstance(usage, dict):
+            _add_usage(usage, d.get("usage"))
+        said_so_far.append("".join(c.get("text", "") for c in d.get("content", [])
+                                   if isinstance(c, dict) and c.get("type") == "text"))
+        if not tools or d.get("stop_reason") != "pause_turn":
+            break
+        ask["messages"] = ask["messages"] + [{"role": "assistant", "content": d.get("content") or []}]
+    return "".join(said_so_far).strip()
 
 
 def thin_brief(handle):
@@ -1356,6 +1396,36 @@ def pass_on(handle, target, line, secret):
     return True, "sealed at grain:%s side %s" % (pid, side)
 
 
+def search_tool(model, hosts, uses):
+    """The API's own web search, held to `hosts`: the version that filters its
+    results before they reach the window where the mind has it, the plain one
+    for haiku, which does not."""
+    kind = "web_search_20250305" if "haiku" in str(model) else "web_search_20260209"
+    return {"type": kind, "name": "web_search", "max_uses": uses, "allowed_domains": hosts}
+
+
+def held_search(handle, dial, model):
+    """([the held search], uses) when the handle's dial names a sources block and
+    that block links at least one site; (None, 0) otherwise. The block is read
+    fresh at every ask, as the dial is, so a curator's edit is in force at the
+    next question. The beach's own hosts are never searched: it is read."""
+    block_name = getattr(dial, "search", None)
+    if not block_name:
+        return None, 0
+    beach = enrolment_beach(handle)
+    try:
+        block = beach_get(block_name, beach=beach)
+    except Exception as e:
+        log("held search for %s: %s could not be read (%s); answering without it" % (handle, block_name, str(e)[:80]))
+        return None, 0
+    home = (re.match(r"https?://([^/:]+)", beach) or [None, ""])[1].lower().split(".")
+    hosts = pd.search_hosts(block, skip=(".".join(home[-2:]),))
+    if not hosts:
+        log("held search for %s: %s links no site to search; answering without it" % (handle, block_name))
+        return None, 0
+    return [search_tool(model, hosts, dial.search_uses)], dial.search_uses
+
+
 def private_answer(handle, turns, visitor):
     """One private answer → (http code, body). The body carries the answer, or a
     detail a person can act on; nothing of the conversation is logged."""
@@ -1376,13 +1446,26 @@ def private_answer(handle, turns, visitor):
     if not window.strip():
         return 503, {"ok": False, "detail": "%s cannot find its own blocks just now" % handle}
     model, max_tokens = dial.answer_with(DOORMAN_MODEL, ASK_MAX_TOKENS)
+    tools, uses = held_search(handle, dial, model)
     usage = {}
     try:
-        text = model_call(fuel_key, model, max_tokens, pd.STANCE, "", kept=[bare_window(window)],
-                          usage=usage, plain=True, turns=turns)
+        text = model_call(fuel_key, model, max_tokens, pd.stance(uses), "", kept=[bare_window(window)],
+                          usage=usage, plain=True, turns=turns, tools=tools)
     except Exception as e:
-        log("private answer for %s failed: %s" % (handle, str(e)[:120]))
-        return 502, {"ok": False, "detail": "no answer could be made just now — please try again"}
+        # A refused search — a site the search will not take, or search not open to
+        # this key's account — never costs the person their answer: ask again
+        # without it, and leave the reason in the log for the holder.
+        if not tools:
+            log("private answer for %s failed: %s" % (handle, str(e)[:120]))
+            return 502, {"ok": False, "detail": "no answer could be made just now — please try again"}
+        log("private answer for %s: the held search was refused (%s); answering without it" % (handle, str(e)[:120]))
+        usage = {}
+        try:
+            text = model_call(fuel_key, model, max_tokens, pd.STANCE, "", kept=[bare_window(window)],
+                              usage=usage, plain=True, turns=turns)
+        except Exception as e2:
+            log("private answer for %s failed: %s" % (handle, str(e2)[:120]))
+            return 502, {"ok": False, "detail": "no answer could be made just now — please try again"}
     answer, signals = pd.split_signals(text)
     passed = None
     if signals:

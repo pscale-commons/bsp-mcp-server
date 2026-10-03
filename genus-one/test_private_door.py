@@ -106,6 +106,25 @@ check(not p.may_signal("v1") and p.may_signal("v2"), "and not again inside the s
 clock[0] += 601
 check(p.may_signal("v1"), "after the span, again")
 
+# ── the held search: the block says where to look, the search looks there ───
+SOURCES = {"_": "Where to look — every link here may be searched: https://www.clero.co.uk/ and the beach's own "
+                "directory at https://earth.beach.happyseaurchin.com/.well-known/pscale-beach?block=lero",
+           "1": {"_": "Treatment near you", "1": "FRANK, by postcode: https://www.talktofrank.com/get-help/find-support-near-you",
+                 "2": "the NHS: https://www.nhs.uk/nhs-services/find-a-service and again https://www.nhs.uk/other"},
+           "2": "Meetings: https://ukna.org/meetings/ · http://127.0.0.1/x · https://localhost/y · https://happyseaurchin.com/ask"}
+check(pd.search_hosts(SOURCES, skip=("happyseaurchin.com",)) == ["www.clero.co.uk", "www.talktofrank.com", "www.nhs.uk", "ukna.org"],
+      "the sites are the hosts of the block's links, root first, each once, the beach and bare or numeric names left out")
+check(pd.search_hosts({"_": "nothing linked"}) == [] and pd.search_hosts(None) == [], "a block that links nothing names no site")
+check(len(pd.search_hosts({"_": " ".join("https://s%d.example.org/" % i for i in range(80))})) == 64,
+      "at most 64 sites, the search's own limit")
+check(pd.stance(0) == pd.STANCE and "You hold no tools" in pd.STANCE and "web search" not in pd.STANCE,
+      "with no search the stance holds no tools, as before")
+held = pd.stance(2)
+check("ONE tool: a web search" in held and "at most\n2 searches" in held and "You hold no tools" not in held
+      and "never\nwith anything about the person" in held and "check with the service" in held,
+      "with a search the stance names it, its limit, that nothing of the person goes into it, and to check what it finds")
+check("at most\n5 searches" in pd.stance(9), "never more than five searches a reply, whatever the dial says")
+
 # ── the door itself, with the waker's I/O stubbed ───────────────────────────
 import waker  # noqa: E402
 
@@ -136,9 +155,15 @@ waker.pick_fuel = lambda h, k: ("sk-charity", "holder")
 REPLY = ["A LERO is a lived experience recovery organisation."]
 
 
-def fake_model(fuel, model, max_tokens, system, message, kept=None, usage=None, plain=False, turns=None):
-    CALLS.append({"fuel": fuel, "system": system, "kept": kept, "plain": plain, "turns": turns})
+def fake_model(fuel, model, max_tokens, system, message, kept=None, usage=None, plain=False, turns=None, tools=None):
+    CALLS.append({"fuel": fuel, "model": model, "system": system, "kept": kept, "plain": plain, "turns": turns,
+                  "tools": tools})
+    if tools and REFUSE_SEARCH[0]:
+        raise RuntimeError("the call was refused (HTTP 400): allowed_domains.0: a domain the search will not take")
     return REPLY[0]
+
+
+REFUSE_SEARCH = [False]
 
 
 waker.model_call = fake_model
@@ -171,6 +196,7 @@ c = CALLS[-1]
 check(code == 200 and body == {"ok": True, "answer": REPLY[0], "passed_on": None}, "an answer comes back to the asker")
 check(c["system"] == pd.STANCE and c["plain"] and c["turns"] == ASKED and c["fuel"] == "sk-charity",
       "made under the door's stance, on the handle's fuel, from the whole conversation, thinking off")
+check(c["tools"] is None, "a dial that names no search holds none")
 check(c["kept"] == ["# lero-helper\nThe 33 standards stand here."], "the orientation rides as the kept frame, its clock line taken out")
 check(not APPENDS and not ROUTED and not EVENTS, "nothing is written to the beach and no one is rung")
 check(not any("sober" in m or "struggling" in m for m in LOGS), "nothing the person said reaches the service log")
@@ -231,6 +257,45 @@ REPLY[0] = "SIGNAL Phenomemental: " + NOTE
 ROUTER_SAYS[0] = "[append @ grain → 2.2]"
 code, body = waker.private_answer("lero-helper", ASKED, "visitor-g")
 check(code == 200 and body["answer"] == pd.PASSED_ON, "a reply that is only a signal still answers the asker")
+
+# ── a dial that names a search: the door holds it to the sources' sites ─────
+REPLY[0] = "A LERO is a lived experience recovery organisation."
+waker.beach_get = lambda name, beach=None: SOURCES if name == "sources:lero-helper" else (_ for _ in ()).throw(RuntimeError("404"))
+Dial.search, Dial.search_uses = "sources:lero-helper", 2
+code, body = waker.private_answer("lero-helper", ASKED, "visitor-h")
+c = CALLS[-1]
+t = (c["tools"] or [{}])[0]
+check(code == 200 and body["answer"] == REPLY[0], "with a search held, the answer still comes back")
+check(t.get("type") == "web_search_20260209" and t.get("name") == "web_search" and t.get("max_uses") == 2,
+      "the API's own web search, the filtering version, at most the dial's number of searches")
+check(t.get("allowed_domains") == ["www.clero.co.uk", "www.talktofrank.com", "www.nhs.uk", "ukna.org"],
+      "held to the sites the sources block links, the beach left out")
+check(c["system"] == pd.stance(2), "and the stance names the search it holds")
+check(not APPENDS and not any("sober" in m or "struggling" in m for m in LOGS),
+      "a search writes nothing and logs nothing the person said")
+
+calls = len(CALLS)
+REFUSE_SEARCH[0] = True
+code, body = waker.private_answer("lero-helper", ASKED, "visitor-i")
+check(code == 200 and body["answer"] == REPLY[0] and len(CALLS) == calls + 2,
+      "a refused search never costs the person their answer: asked again without it")
+check(CALLS[-1]["tools"] is None and CALLS[-1]["system"] == pd.STANCE, "the second call holds no tool and says so")
+check(any("held search was refused" in m and "allowed_domains" in m for m in LOGS)
+      and not any("sober" in m for m in LOGS), "the reason is left in the log for the holder, and nothing of the person")
+REFUSE_SEARCH[0] = False
+
+waker.beach_get = lambda name, beach=None: (_ for _ in ()).throw(RuntimeError("404"))
+code, body = waker.private_answer("lero-helper", ASKED, "visitor-j")
+check(code == 200 and CALLS[-1]["tools"] is None and any("could not be read" in m for m in LOGS),
+      "a sources block that cannot be read: answered without a search, and logged")
+waker.beach_get = lambda name, beach=None: {"_": "nothing linked yet"}
+code, body = waker.private_answer("lero-helper", ASKED, "visitor-k")
+check(code == 200 and CALLS[-1]["tools"] is None and any("links no site" in m for m in LOGS),
+      "a sources block that links nothing: answered without a search")
+check(waker.search_tool("claude-haiku-4-5-20251001", ["ukna.org"], 1)["type"] == "web_search_20250305",
+      "haiku holds the plain search, which it has")
+Dial.search, Dial.search_uses = None, 0
+waker.beach_get = lambda name, beach=None: GRAIN
 
 # ── the day's ceiling is the shadow of who pays ─────────────────────────────
 waker.holder_ceiling = lambda h: 12
@@ -308,6 +373,57 @@ waker.model_call("sk", "claude-sonnet-5", 2000, pd.STANCE, "", kept=["frame"], p
 check(_sent["messages"] == CONV and _sent["thinking"] == {"type": "disabled"}, "model_call sends the conversation as its turns")
 waker.model_call("sk", "claude-sonnet-5", 2000, "law", "the moment")
 check(_sent["messages"] == [{"role": "user", "content": "the moment"}], "and every other caller's single message is unchanged")
+
+# ── the dial reads its search line beneath 9, in the minds' own idiom ───────
+DIAL_BLOCK = {"1": "on — my door answers", "2": "40 — answers a day",
+              "9": {"_": "the mind that answers, named beneath", "1": "mind sonnet — the mind that answers",
+                    "2": "search sources:lero-helper 2 — the web, only the sites that block links"}}
+waker.enrolment = lambda h: {}
+waker.beach_get = lambda name, beach=None: DIAL_BLOCK
+d = waker.Dial("lero-helper")
+check(d.on and d.search == "sources:lero-helper" and d.search_uses == 2, "the dial names the sources block and the searches")
+check("search" not in d.minds and d.answer_with("x", 1)[0] == "claude-sonnet-5", "the search line is not taken for a mind")
+DIAL_BLOCK["9"]["2"] = "search off — not this month"
+d = waker.Dial("lero-helper")
+check(d.search is None and d.search_uses == 0, "'search off' holds none")
+DIAL_BLOCK["9"]["2"] = "search sources:lero-helper 12"
+check(waker.Dial("lero-helper").search_uses == pd.SEARCH_MAX_USES, "the searches are held to the door's own limit")
+del DIAL_BLOCK["9"]["2"]
+check(waker.Dial("lero-helper").search is None, "and no line, no search")
+
+_pages = []
+
+
+class _Paused:
+    def __init__(self, d):
+        self.d = d
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def read(self):
+        return json.dumps(self.d).encode()
+
+
+PAGES = [{"stop_reason": "pause_turn", "usage": {"input_tokens": 100, "server_tool_use": {"web_search_requests": 1}},
+          "content": [{"type": "text", "text": "Looking in Sheffield. "},
+                      {"type": "server_tool_use", "id": "s1", "name": "web_search", "input": {"query": "LERO Sheffield"}}]},
+         {"stop_reason": "end_turn", "usage": {"input_tokens": 50, "server_tool_use": {"web_search_requests": 1}},
+          "content": [{"type": "text", "text": "Kickback is one; check with them first."}]}]
+waker.urllib.request.urlopen = lambda req, timeout=0: (_pages.append(json.loads(req.data.decode())), _Paused(PAGES[len(_pages) - 1]))[1]
+used = {}
+said = waker.model_call("sk", "claude-sonnet-5", 2000, pd.stance(2), "", plain=True, turns=CONV, usage=used,
+                        tools=[waker.search_tool("claude-sonnet-5", ["ukna.org"], 2)])
+check(_pages[0]["tools"][0]["allowed_domains"] == ["ukna.org"], "the call carries the held search")
+check(len(_pages) == 2 and _pages[1]["messages"][-1]["role"] == "assistant"
+      and _pages[1]["messages"][-1]["content"] == PAGES[0]["content"] and _pages[1]["messages"][:-1] == CONV,
+      "a turn paused mid-search is resumed with what it said so far, and nothing added")
+check(said == "Looking in Sheffield. Kickback is one; check with them first.", "and the text of both parts is the answer")
+check(used["input_tokens"] == 150 and used["server_tool_use"]["web_search_requests"] == 2
+      and "2 searched" in waker.usage_said(used), "the counts are the whole turn's, searches included")
 
 print("test_private_door: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
