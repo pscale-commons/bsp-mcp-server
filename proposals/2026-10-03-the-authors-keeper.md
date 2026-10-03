@@ -77,3 +77,22 @@ counted too, which the log line never did. The journal is latched to a key the w
 keeper's enrolment and keeps, so a stranger's append is never counted as a pass; each span of nine
 is voiced plainly from its own entries (passes, tables, span, counts), with no model call. It is
 the source for the game-keeper's page: beats kept and spend per table.
+
+## 7. Seats (step 4, David 2026-10-03: "£5 for 100 beats. Each player pays their own ticket")
+
+- **The price** is a live Stripe price, `price_1UMW1xBj8x7c0F1eDXq4iqBj` (lookup key `brackenfoot-seat-100`,
+  £5.00 once). The ticket machine sells it as the product `brackenfoot-seat`, deployed 2026-10-03; its buy page is
+  `https://genus-tickets-production.up.railway.app/buy/brackenfoot-seat`. The buyer names their character as it
+  stands at the table.
+- **The list** is `sed:brackenfoot-seats` at the beach, founded under the shared project lock. The machine settles
+  one entry per paid seat: `<handle> — <date>`, with a line of the buyer's own if they leave one. There are no
+  amounts on it; Stripe is the money record.
+- **The rule** stands beneath 9 of the keeper's dial: `seats 100`. Each seat keeps 100 of the beats its character
+  makes happen. A beat is paid from the seat of the character who committed it, which the bell names (`agent_id`);
+  a page's fold names the folding character. A doorman's fold counts too, and a move counts twice (one beat where
+  the character leaves, one where it arrives). With no `seats` line, or `seats off`, every beat is kept. The line
+  goes on when the game-keeper decides, so nobody is cut off before they can buy.
+- **The reckoning** is `dt.seats_of` (the list's entries naming the character) times the beats a seat keeps,
+  less `dt.beats_used` (the journal's kept passes naming that character, at 7). A beat with no beats left is not
+  kept: no call is made, and the journal records it as `unkept`, with the reason. A beach that does not answer
+  never costs a player: the beat is kept.

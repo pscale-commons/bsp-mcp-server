@@ -710,6 +710,8 @@ class Dial:
         self.minds = {}
         # The one tool a helper's mind may hold — read by the private door alone.
         self.search, self.search_uses = None, 0
+        # A world's keeper: the beats one seat keeps; 0 keeps every beat.
+        self.seats = 0
         # A character's doorman: 8 the span it waits before folding a ripe
         # window; 9 its BEHAVIOURS — act / every / commit / render, the
         # holder's words; absent reads 'commit render', the page player's case.
@@ -757,6 +759,14 @@ class Dial:
         if said and said[0].lower() not in ("off", "none", "no"):
             self.search = said[0]
             self.search_uses = max(1, min(said[1] or 2, pd.SEARCH_MAX_USES))
+        # BENEATH 9, in the same idiom, a world's keeper may ask for SEATS:
+        # 'seats 100' — each seat bought for a character on sed:<world>-seats
+        # keeps 100 of the beats that character makes happen, and a character
+        # with none left is not kept (David, 2026-10-03: '£5 for 100 beats; each
+        # player pays their own ticket'). 'seats off', or no line, keeps every beat.
+        said = self.minds.pop("seats", None)
+        if said and str(said[0]).isdigit():
+            self.seats = int(said[0])
         if "mind" in self.minds:
             mind, ceiling = self.minds.pop("mind")
             self.answer = "%s %d" % (mind, ceiling) if ceiling else mind
@@ -1689,18 +1699,19 @@ def world_keeper(origin):
     return handle, e
 
 
-def keep_world(origin, room, slot, keys):
+def keep_world(origin, room, slot, keys, committer=""):
     """The world's keeper follows a beat at a table, on its game-keeper's key,
     while the game-keeper's switch says on. keys — the characters' own, for the sheet and
     the move that are theirs alone: written only for a character whose doorman
-    stands here."""
+    stands here. committer — the character who made the beat happen, whose
+    seat the beat is paid from where the world asks for seats (seat_spent)."""
     kept = world_keeper(origin)
     if not kept:
         return
     handle, e = kept
     if not Dial(handle).on:
         return
-    keeper_follows(handle, table_url(origin), room, slot, e["fuel"], None, keys)
+    keeper_follows(handle, table_url(origin), room, slot, e["fuel"], None, keys, committer)
 
 
 def keeper_on_bell(cands, payload):
@@ -1714,7 +1725,8 @@ def keeper_on_bell(cands, payload):
     if not room:
         return
     keys = {h: egg_secret(h) for h, _b in cands if egg_secret(h)}
-    keep_world(str(payload.get("origin", "") or "") or WAKER_BEACH, room, slot, keys)
+    keep_world(str(payload.get("origin", "") or "") or WAKER_BEACH, room, slot, keys,
+               str(payload.get("agent_id", "") or ""))
 
 
 def ring_character(cands, payload):
@@ -1850,10 +1862,43 @@ def keeper_due(beach, room, slot):
         return True
 
 
-def keeper_in_turn(handle, beach, room, fuel_key, secret, keys, slot=""):
+def seat_spent(handle, committer):
+    """SEATS (David, 2026-10-03: '£5 for 100 beats. Each player pays their own
+    ticket'). A world's keeper whose dial asks for seats ('seats 100' beneath 9)
+    keeps a beat only for a character with beats left: the seats bought for it
+    on sed:<world>-seats at the beach, times the beats a seat keeps, less the
+    kept passes its journal has charged to that character. Returns why the beat
+    is not kept, or '' when it is: no seats asked, beats left, or the reckoning
+    unreadable just now — a beach that does not answer never costs a player."""
+    per = Dial(handle).seats
+    if not per:
+        return ""
+    world, who = handle[len("keeper:"):], (committer or "").strip()
+    if not who:
+        return "no one is named as having made this beat happen, and %s keeps only seated beats" % world
+    try:
+        seats = dt.seats_of(beach_get_or_none("sed:%s-seats" % world, beach=WAKER_BEACH), who)
+        used = dt.beats_used(beach_get_or_none("daily:%s" % handle, beach=enrolment_beach(handle)), who)
+    except Exception as e:
+        log("the seats of %s at %s could not be read (%s) — the beat is kept" % (who, world, str(e)[:60]))
+        return ""
+    if used < seats * per:
+        return ""
+    return "%s has no beats left at %s (%d seat%s, %d of %d beats used)" % (
+        who, world, seats, "" if seats == 1 else "s", used, seats * per)
+
+
+def keeper_in_turn(handle, beach, room, fuel_key, secret, keys, slot="", committer=""):
     """The keeper's pass, once the pen is free — so it never races the fold it
     follows, and the world it sets is waiting for the next one. A world's keeper
-    then writes the pass into its game-keeper's journal (keeper_journal)."""
+    first asks whether the beat is paid for (seat_spent), and then writes the
+    pass, kept or not, into its game-keeper's journal (keeper_journal)."""
+    if handle.startswith("keeper:"):
+        spent = seat_spent(handle, committer)
+        if spent:
+            log("the keeper at %s: unkept — %s" % (room, spent))
+            keeper_journal(handle, beach, room, slot, "unkept", spent, None, committer)
+            return
     if not _pulse_lock.acquire(timeout=KEEPER_WAIT_S):
         log("the keeper's pass at %s stood down — the pen stayed busy %ds" % (room, KEEPER_WAIT_S))
         return
@@ -1866,20 +1911,20 @@ def keeper_in_turn(handle, beach, room, fuel_key, secret, keys, slot=""):
         _pulse_lock.release()
     log("the keeper at %s: %s — %s" % (room, status, note))
     if handle.startswith("keeper:"):
-        keeper_journal(handle, beach, room, slot, status, note, report.get("usage"))
+        keeper_journal(handle, beach, room, slot, status, note, report.get("usage"), committer)
 
 
-def keeper_follows(handle, beach, room, slot, fuel_key, secret, keys):
+def keeper_follows(handle, beach, room, slot, fuel_key, secret, keys, committer=""):
     """Start the keeper's pass for a beat that has just landed, unless another
     door's pass already keeps it. Never blocks the caller: the page hears its
     moment while the world is being set for the next one."""
     if not keeper_due(beach, room, slot):
         return
     threading.Thread(target=keeper_in_turn,
-                     args=(handle, beach, room, fuel_key, secret, keys, str(slot)), daemon=True).start()
+                     args=(handle, beach, room, fuel_key, secret, keys, str(slot), committer), daemon=True).start()
 
 
-def keeper_journal(handle, table, room, slot, status, note, usage):
+def keeper_journal(handle, table, room, slot, status, note, usage, committer=""):
     """THE GAME-KEEPER'S JOURNAL — one entry per pass of a world's keeper, at
     the world's own surface as daily:<keeper>: which table and beat it kept,
     what it did, and what the API counted (dt.usage_line), so the game-keeper
@@ -1896,15 +1941,17 @@ def keeper_journal(handle, table, room, slot, status, note, usage):
     try:
         if beach_get_or_none(name, beach=world) is None:
             beach_post(name, {"content": {"_": "THE GAME-KEEPER'S JOURNAL of %s — one entry per pass of the world's "
-                                               "keeper: the table and beat it kept (2, 4), what it did, and what the API "
-                                               "counted (6: keeper, sheets and figures, each model in= read= write= out=). "
-                                               "Written by the waker under its own key; read by the game-keeper's page."
+                                               "keeper: the table and beat it kept (2, 4), what it did (5: done, or unkept "
+                                               "when the character who made it happen had no seat beats left), what the API "
+                                               "counted (6: keeper, sheets and figures, each model in= read= write= out=), and "
+                                               "who made the beat happen (7), whose seat paid for it. Written by the waker "
+                                               "under its own key; read by the game-keeper's page."
                                                % handle[len("keeper:"):]},
                               "new_lock": key}, beach=world)
         beach_append(name, {"_": "%s · pool:%s beat %s — %s: %s" % (table.rstrip("/").split("/")[-1], room, slot or "?",
                                                                    status, note[:400]),
                             "1": "waker", "2": table, "3": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                            "4": room, "5": status, "6": dt.usage_line(usage)}, key, beach=world)
+                            "4": room, "5": status, "6": dt.usage_line(usage), "7": committer or ""}, key, beach=world)
         for address, entries in dt.owed_summaries(beach_get_or_none(name, beach=world)):
             said = dt.journal_summary(address, entries)
             if said:
@@ -2642,7 +2689,7 @@ def instructed_fold(handle, passphrase, room, party=None):
         keys = {handle: passphrase}
         for h, k in (members or []):
             keys[h] = k
-        keep_world(beach, report.get("to") or room, report.get("slot") or "1", keys)
+        keep_world(beach, report.get("to") or room, report.get("slot") or "1", keys, handle)
     try:
         ensure_daily(handle, beach, passphrase)
         beach_append("daily:%s" % handle, {

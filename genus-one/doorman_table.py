@@ -961,6 +961,50 @@ def usage_of(line):
     return {m.group(1): (m.group(2), [int(m.group(i)) for i in range(3, 7)]) for m in USAGE_RE.finditer(line or "")}
 
 
+def _entries(node):
+    """(text, node) for every entry of an accumulator, however deep it has grown:
+    a digit position that is a line, or a node voiced by its underscore — and an
+    underscore that holds the block from before a supernest is walked too."""
+    if not isinstance(node, dict):
+        return
+    for k, v in node.items():
+        if k == "_":
+            if isinstance(v, dict):
+                for x in _entries(v):
+                    yield x
+            continue
+        if len(k) != 1 or k not in "123456789":
+            continue
+        if isinstance(v, str):
+            yield v, None
+        elif isinstance(v, dict):
+            if isinstance(v.get("_"), str):
+                yield v["_"], v
+            for x in _entries(v):
+                yield x
+
+
+def seats_of(block, handle):
+    """How many seats a character holds on a world's seat list: the entries whose
+    line opens '<handle> — ', as the ticket machine settles them (the handle, the
+    date, a line of their own), the handle's case aside."""
+    want = (handle or "").strip().lower()
+    if not want:
+        return 0
+    return sum(1 for text, _n in _entries(block) if text.strip().lower().startswith(want + " — "))
+
+
+def beats_used(journal, handle):
+    """The beats a character's seats have paid for: the game-keeper's journal's
+    passes that were kept (5 'done') and name that character as the one who made
+    the beat happen (7)."""
+    want = (handle or "").strip().lower()
+    if not want:
+        return 0
+    return sum(1 for _t, n in _entries(journal)
+               if n and str(n.get("5", "")).strip() == "done" and str(n.get("7", "")).strip().lower() == want)
+
+
 def journal_summary(address, entries):
     """The voicing a game-keeper's journal owes at a zero-slot, written plainly
     from the nine it stands for: how many passes, at which tables, over what
