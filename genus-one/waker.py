@@ -65,6 +65,7 @@ import json
 import re
 import os
 import secrets
+import signal
 import sys
 import threading
 import time
@@ -3303,6 +3304,11 @@ def main():
     ensure_teaching()
     port = int(os.environ.get("PORT", "8080"))
     log("listening on :%d — beach %s, eggs %s" % (port, WAKER_BEACH, WAKER_EGGS))
+    # A REDEPLOY IS NOT A CRASH (David, 2026-10-03): the platform stops the
+    # outgoing deployment with SIGTERM, and a process that dies of the signal
+    # reads as a crash. Leave with 0 instead; a keeper's pass in flight runs on
+    # a daemon thread, and the store is only ever replaced whole.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     ThreadingHTTPServer(("", port), Handler).serve_forever()
 
 

@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
-    "start": "tsx src/index.ts",
+    "start": "exec node --import tsx src/index.ts",
     "smoke:flow": "tsx scripts/smoke-flow.ts",
     "smoke:flow-play": "tsx scripts/smoke-flow-play.ts",
     "smoke:wire": "tsx scripts/smoke-wire.ts",
