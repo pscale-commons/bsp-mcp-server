@@ -2,12 +2,13 @@
 
 **RULED 2026-10-04:** *"S1-S11 ok, R ok, G is synonymous with H (genus-one agent is the most recent entity ok), and D ok."*
 - D1–D6 now stand in `beach-venture:happyseaurchin`.
-- S1–S11, R and G stand marked as ruled at `spine:beach-venture:weft`, `spine:onen-rpg:weft` and `spine:genus-one:weft`, for a keyed Mac session to copy into their spines.
+- S1–S11 now stand in `spine:beach-venture`, R in `spine:onen-rpg` and G in `spine:genus-one`. The proposal blocks `spine:beach-venture:weft`, `spine:onen-rpg:weft` and `spine:genus-one:weft` keep the drafts, marked as ruled.
 - H is folded into G, because genus-one carries the hermitcrab line.
+- Decision 6, ruled standing the same day, stands at `function:beach-venture` 8.
 
 Companion to [`2026-10-04-the-trajectory-on-the-clock.md`](2026-10-04-the-trajectory-on-the-clock.md), decision 5: weft drafts, David rules each line before it lands. **Reply with the numbers you accept, and any change in your own words** (for example, "S1–S7 ok, S8 drop the outreach clause, D3 rewrite as …").
 
-Every block in the clock families answers to the shared project lock, which lives on the Mac. So the ruled spine lines are adopted by a keyed session there. The drafts already stand on the beach as weft's proposals at `spine:beach-venture:weft`, at the same addresses, so adoption is a copy by address. Your own lines (D1–D6) go to `beach-venture:happyseaurchin` under your key once you say so.
+The drafts stood first on the beach as weft's proposals at `spine:beach-venture:weft`, at the same addresses, so adoption was a copy by address. Your own lines (D1–D6) went to `beach-venture:happyseaurchin` under your key once you said so.
 
 ## S — the venture's spine (`spine:beach-venture`)
 
@@ -57,7 +58,7 @@ Each strand keeps its own family. These are their first aims below the year, sta
 
 ## Already written, no ruling needed
 
-- **The age, founded.** `spine:age` (the sundial as a template, voicing no period), `function:age` (the law: the question, the sources, threads read beside it) and `pool:age` (its room) stand under weft's key until a Mac session rotates them to the shared lock.
+- **The age, founded.** `spine:age` (the sundial as a template, voicing no period), `function:age` (the law: the question, the sources, threads read beside it) and `pool:age` (its room). Since the same day the spine and the law answer to the shared lock, and the room stays open.
 - **weft's own record.** `beach-venture:weft` now carries weft's DONE lines for 2026, for April–June and October–December, and for each month from April to October, beside the summer line that already stood.
 - **weft's reading of the age.** It is drafted from sourced research and lands as `age:weft`. Your own reading of the age is welcome beside it, at any period you choose.
 

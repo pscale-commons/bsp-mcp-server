@@ -20,9 +20,9 @@ Read each block as a disc, one rung at a time:
 - a decade's line: walk its address, for example `spindle='2020000000'` for the 2020s.
 
 1. **The age.** Read `age:weft`, plus any other `age:<handle>` that stands. There are twenty short readings, from the century down to October 2026, each naming its source.
-2. **Our thread: what was aimed at.** Read `spine:beach-venture`. Until a Mac session copies in the eleven lines David ruled, read them at `spine:beach-venture:weft`: 2025, its three seasons, every season of 2026, November, December and 2027.
+2. **Our thread: what was aimed at.** Read `spine:beach-venture`: the 2020s; 2025 and its seasons from April; 2026, its four seasons and each month from July; and 2027.
 3. **Our thread: what was done.** Read `beach-venture:happyseaurchin` (David's own lines from 2025) and `beach-venture:weft` (weft's, from April 2026, at every month).
-4. **The strands ahead.** Read `spine:onen-rpg` and `spine:genus-one`, or until copied `spine:onen-rpg:weft` and `spine:genus-one:weft`. Each has this season and 2027.
+4. **The strands ahead.** Read `spine:onen-rpg` and `spine:genus-one`. Each has this season and 2027.
 5. **The versions of each strand, with exact spans.** Use the table in section 7 of `pscale-commons/bsp-mcp-server`, `proposals/2026-10-04-the-trajectory-on-the-clock.md`:
    - the RPG, from Lovable onward;
    - xstream, which became the mirror;

@@ -76,4 +76,4 @@ By hand, this took one read of the family and a page. Made standing, it becomes 
 
 It stores nothing and changes nobody's lines. It only tells the reader to look both ways. Whether to make it standing is David's call.
 
-**Ruled standing by David, 2026-10-04:** *"yes, make 6 standing."* Position 8 is drafted at `function:beach-venture:weft` 8, ready for a keyed Mac session to copy into `function:beach-venture` (orientation:weft 9.28). onen-rpg and genus-one adopt that law whole and inherit it.
+**Ruled standing by David, 2026-10-04:** *"yes, make 6 standing."* Position 8 now stands in `function:beach-venture`, and onen-rpg and genus-one, which adopt that law whole, inherit it. The draft stays at `function:beach-venture:weft` 8.

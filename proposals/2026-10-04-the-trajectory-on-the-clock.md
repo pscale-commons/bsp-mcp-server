@@ -1,6 +1,6 @@
 # The trajectory on the clock — the age as the frame, our work one thread through it (2026-10-04)
 
-**Status**: PROPOSAL, at David's word in lane plan.1 (*"can you propose a structure that will be useful for us? … Is this enough for you to establish the scope of the session?"*). Nothing is founded and nothing on the beach is changed. §9 lists the decisions, each with a recommendation; §10 is the scope of the session that follows his rulings. Weft, through Claude Code; the lane's record is watch:weft 525, its desk slot shell:weft 5.2. The sibling lane testing.1 (watch:weft 524) holds the audit of what people meet through the three portals; this proposal cites that work and does not repeat it.
+**Status**: PROPOSAL, at David's word in lane plan.1 (*"can you propose a structure that will be useful for us? … Is this enough for you to establish the scope of the session?"*). As first written it founded nothing and changed nothing on the beach; the rulings below record what has landed since. §9 lists the decisions, each with a recommendation; §10 is the scope of the session that follows his rulings. Weft, through Claude Code; the lane's record is watch:weft 525, its desk slot shell:weft 5.2. The sibling lane testing.1 (watch:weft 524) holds the audit of what people meet through the three portals; this proposal cites that work and does not repeat it.
 
 **Ruled 2026-10-04, David's words.** *"go with your recommendations on all seven -- go ahead with (5), but keep each section relatively short but complete; write my mirror sections in first person … I do not understand 6. … The temporal spine is the sundial and should be comprehensive; go with 'age' if that fits. You are re-purposing beach-venture which is fine."* Done the same day:
 - **The age is founded.** `spine:age` is the sundial as a template, voicing no period. `function:age` adopts function:now's mechanics by name and adds the question, the sources and threads. `pool:age` is its room.
@@ -26,6 +26,18 @@
 - **Still open:**
   - decision 7, the weekly review's added act, waits for the first roll-up after the spine lines land;
   - the bsp-floor fix is in another lane.
+
+**Done at David's word, 2026-10-04:** *"i don't understand -- i am on my mac -- i am using claude-code, which is weft on the beach which you have access to, why do i have to state this 9.28...? do it"* This supersedes every "wait for the Mac" above.
+- **No Mac session was needed.** This lane runs in a cloud container that the desktop app opened, so it cannot see the Mac's files. But weft's own passphrase is the operational lock, and it opens `vault:weft`, which holds the keys these writes needed. Twice weft sent David to his Mac for a key the beach already held. The trap is recorded at orientation:weft 9.15, and 9.28 is cleared.
+- **The venture's spine is voiced.** S1–S11 stand in `spine:beach-venture`, written with David's key at his word. S7 replaces the stub "Reference for this node: David to set." His own lines for the 2020s, 2026 and October, and the month lines for July to September, are unchanged.
+- **The strands are voiced.** R1–R2 stand in `spine:onen-rpg` and G1–G2 in `spine:genus-one`, under the shared lock.
+- **Decision 6 stands.** `function:beach-venture` 8 holds the two projections as a standing read, stored nowhere. onen-rpg and genus-one adopt the venture's law whole, so they inherit it. A stream read of the venture at this season delivers it.
+- **The age is on the shared lock.** `spine:age` and `function:age` are rotated; `pool:age` stays an open room.
+- **The drafts stay as the record.** `spine:beach-venture:weft`, `spine:onen-rpg:weft`, `spine:genus-one:weft` and `function:beach-venture:weft` 8 keep the ruled drafts.
+- **A stray year is cleared.** An append with no spindle had misfiled the 3 September evening settle four times at the year 1111 in `beach-venture:weft`. The note stands at its day, and the copies are gone.
+- **Still open:**
+  - decision 7, the weekly review's added act, after the first roll-up;
+  - the bsp-floor fix, in another lane.
 
 ## 0. David's words
 
