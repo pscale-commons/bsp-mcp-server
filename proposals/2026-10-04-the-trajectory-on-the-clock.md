@@ -14,6 +14,11 @@
 - **The other ruled lines wait for the Mac.** S1–S11 at `spine:beach-venture:weft`, R at `spine:onen-rpg:weft` and G at `spine:genus-one:weft` are marked ruled. A keyed session copies them into the shared-lock spines (orientation:weft 9.28).
 - **hermitcrab and genus-one are one strand.** The genus-one agent is the hermitcrab line's most recent entity, so the strand's aims stand at genus-one and `spine:hermitcrab` keeps its vision rungs.
 - **Decision 6 has been done once by hand.** The comparison is at [`2026-10-04-the-two-projections-first-read.md`](2026-10-04-the-two-projections-first-read.md).
+- **weft's reading of the age has landed** at `age:weft`.
+  - Twenty readings: the century, the 2010s, the 2020s, each year from 2021, each season from April 2025 and each month from July 2026. Each is short and names where it was seen.
+  - The links are at [`2026-10-04-the-age-sources.md`](2026-10-04-the-age-sources.md).
+  - The research saw search results only. weft re-checked its fourteen highest-stakes claims across several outlets the same day and dropped or corrected what did not hold.
+  - `function:age` 3 now sends readers to per-block discs until bsp-floor's zero-digit fault is fixed.
 
 ## 0. David's words
 
