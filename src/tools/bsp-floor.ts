@@ -23,6 +23,7 @@
 
 import { z } from 'zod';
 import { Block, floorDepth } from '../bsp.js';
+import { formatRead } from '../bsp-fn.js';
 import { floorAlign, AlignedLevel, PscaleNode } from '../floor-align.js';
 import { loadBlock, translateAddress } from '../db.js';
 
@@ -55,11 +56,11 @@ export type BspFloorToolParams = {
 
 // ── Formatter ──
 
-function truncate(s: string, max: number): string {
-  return s.length > max ? s.slice(0, max) + '...' : s;
-}
-
-function formatLevel(level: AlignedLevel, labels: string[]): string {
+/** One block's positions at one level, rendered as its own disc renders them:
+ *  the floor-anchored label (with its relation to now on the clock), the
+ *  content, the stamp, what stands beneath — so a bsp-floor line and a bsp()
+ *  disc line are the same line, and a label copies back as a spindle. */
+function formatLevel(level: AlignedLevel, labels: string[], floors: number[]): string {
   const tag =
     level.pscale === 0 ? 'pscale 0 (floor plane)'
     : level.pscale > 0 ? `pscale +${level.pscale} (above floor — coarser)`
@@ -71,15 +72,19 @@ function formatLevel(level: AlignedLevel, labels: string[]): string {
       lines.push(`  ${label}: (none — zero-padded)`);
       return;
     }
-    nodes.forEach((n, j) => {
-      const head = j === 0 ? `  ${label}:` : `  ${' '.repeat(label.length)} `;
-      lines.push(`${head} [${n.address}] ${truncate(n.text ?? '(no text)', 140)}`);
-    });
+    const disc = formatRead({
+      shape: 'disc',
+      floor: floors[i],
+      pscale: level.pscale,
+      target_depth: floors[i] - level.pscale,
+      entries: nodes.map((n) => ({ address: n.address, content: n.text, stamp: n.stamp, beneath: n.beneath })),
+    }).split('\n').slice(1).map((l) => l.trimStart());
+    disc.forEach((l, j) => lines.push(`${j === 0 ? `  ${label}:` : `  ${' '.repeat(label.length)} `} ${l}`));
   });
   return lines.join('\n');
 }
 
-function formatFloorAlign(
+export function formatFloorAlign(
   levels: AlignedLevel[],
   labels: string[],
   floors: number[],
@@ -89,7 +94,7 @@ function formatFloorAlign(
   labels.forEach((l, i) => header.push(`  ${l}  (floor ${floors[i]})`));
   if (pscaleFocus != null) header.push(`  (restricted to pscale ${pscaleFocus})`);
   const body = levels.length
-    ? levels.map((lvl) => formatLevel(lvl, labels)).join('\n')
+    ? levels.map((lvl) => formatLevel(lvl, labels, floors)).join('\n')
     : '(no shared positions)';
   return header.join('\n') + '\n\n' + body;
 }

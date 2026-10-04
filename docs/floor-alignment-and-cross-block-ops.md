@@ -143,18 +143,29 @@ programmatic scorer.
 ### Reference implementation
 
 `src/floor-align.ts` — `indexByPscale`, `floorAlign(...blocks)`,
-`floorPlane(blocks, pscale)`, `floorProduct(A, B, sim)`. Reuses the canonical
-`collectUnderscore` / `floorDepth` / `formatAddress` from `bsp.ts` (no second
-parser/formatter). `src/tools/bsp-floor.ts` is the MCP tool; registered in
-`server.ts` as a sibling of `bsp`. `scripts/smoke-floor-align.ts` is the acceptance
-test (the floor-1 ↔ floor-2 meeting-at-the-floor case + the n-ary
-root-definition index + the resonance scalar).
+`floorPlane(blocks, pscale)`, `floorProduct(A, B, sim)`. It holds no walk of
+its own: at each pscale a block's side of the frame is its disc, `bsp(B, P)`,
+read by `bspRead` exactly as a single read delivers it, so `bsp-floor` at a
+pscale is the n discs laid side by side at the decimal and cannot drift from
+`bsp()`. `src/tools/bsp-floor.ts` is the MCP tool, registered in `server.ts` as
+a sibling of `bsp`; it prints each side through the disc's own formatter
+(`formatRead`), so the labels are full width and copy back as spindles, and on
+the clock each carries its relation to now. `scripts/smoke-floor-align.ts` is
+the acceptance test: the floor-1 ↔ floor-2 meeting at the floor, the n-ary
+root-definition index, the resonance scalar, the zero-digit fixtures (the clock,
+a pile, ground never carved, the clock extended both ways), the frame equal to
+the disc at every pscale, and every label read back.
 
-**Boundary (documented).** `indexByPscale` walks the floor identity and the
-digit branches. It does **not** descend a node's hidden directory (the star
-door is a separate operator), and it does **not** yet surface above-floor rung
-*summaries* of a supernested block. Refining above-floor rung handling rhymes
-with the supernest-operation work and is left for that coordination.
+**Digit 0 is a position.** The underscore is digit 0 (`bsp.ts`: "Digit 0 maps
+to key '_'"; sunstone `1.4` — walking zero into a digit's underscore enters its
+hidden directory), so the alignment walks a zero-position as the disc does: the
+clock's 2000s under millennium 2, an accumulator's wrapped entries under its
+root chain, ground never carved (sunstone `1.72`). Only the root chain's own
+rungs, the ladder, are not positions. Star stays the door into a hidden
+directory's *own* frame; in the block's frame it is position 0. (Until
+2026-10-04 `indexByPscale` walked digits 1-9 only and documented that skip as a
+boundary here; on the floor-10 clock it read nothing from 2000 to 2999, and on
+every accumulator nothing beneath its root chain — watch:weft 525-527.)
 
 ---
 
