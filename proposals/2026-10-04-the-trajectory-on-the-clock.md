@@ -35,9 +35,13 @@
 - **The age is on the shared lock.** `spine:age` and `function:age` are rotated; `pool:age` stays an open room.
 - **The drafts stay as the record.** `spine:beach-venture:weft`, `spine:onen-rpg:weft`, `spine:genus-one:weft` and `function:beach-venture:weft` 8 keep the ruled drafts.
 - **A stray year is cleared.** An append with no spindle had misfiled the 3 September evening settle four times at the year 1111 in `beach-venture:weft`. The note stands at its day, and the copies are gone.
-- **Still open:**
-  - decision 7, the weekly review's added act, after the first roll-up;
-  - the bsp-floor fix, in another lane.
+- **Still open:** decision 7, the weekly review's added act, after the first roll-up.
+
+**bsp-floor fixed, 2026-10-04.** David: *"i think the 2000 issue has been solved please check and then ammend the visualisation brief."*
+- **It is solved.** #484 (6493b43, from another lane) makes each side of bsp-floor's frame the block's own disc, so digit 0 is a position and the clock's 2000s align.
+- **It was checked live the same day.** One call per rung lays all six blocks of the visualisation side by side, at the century, the decade, the years, the seasons and the months.
+- **The readers follow.** `function:age` 3 already says so, and the [visualisation brief](2026-10-04-visualisation-brief.md) now reads with one `bsp-floor` call per rung.
+- **A second stray is cleared.** An old eight-digit write had left an empty branch at `0020264111` in `beach-venture:weft`, inside the root's underscore chain. It showed as a dateless cell at every rung, and it is gone below the decade.
 
 ## 0. David's words
 
@@ -93,7 +97,7 @@ What David describes (arcs at the coarse rungs, versions at the seasons they ran
 
 Three consequences, all already law somewhere:
 
-1. **No new block shape.** Projects that live in time stand on the clock (conventions 2.12). Cross-family reading is by address, because every clock family is floor 10, so `bsp-floor` should lay any set of them on one plane and a single read at pscale 5 should return every season cell of every family side by side (sundial 8; `bsp-floor` law). As built it does not. `bsp-floor` misses every cell beneath a zero digit, which on the clock is every date from 2000 on. This lane's read-back found it on 2026-10-04 and it is queued as its own fix. Until then, the single-block disc at pscale 5 or 6 reads one family's seasons or years in one call.
+1. **No new block shape.** Projects that live in time stand on the clock (conventions 2.12). Cross-family reading is by address, because every clock family is floor 10, so `bsp-floor` should lay any set of them on one plane and a single read at pscale 5 should return every season cell of every family side by side (sundial 8; `bsp-floor` law). This lane's read-back found on 2026-10-04 that it did not: `bsp-floor` missed every cell beneath a zero digit, which on the clock is every date from 2000 on. Fixed the same day (#484), it now does.
 2. **Sequence stays depth where sequence is read in order** (`2026-09-24-sequence-is-depth` R1, R6). The calendar address serves meeting at the same when. A trajectory is exactly that, many hands and many projects meeting at the same season, so the calendar is the right coordinate here, and depth carries the sequence inside a cell's own account.
 3. **The record goes where the backcast law already puts it.** function:backcast 2: at past and present horizons DONE, DOING and BLOCKED lead each hand's account; at future horizons the entry is the commitment. Each hand voices its own doings only. function:backcast 3: when a horizon's span closes, its fold summarises into the parent horizon.
 
@@ -165,7 +169,7 @@ New work is not another duty for every lane, and a law placed where no loop read
 |---|---|
 | David and the fixit team: where are we on every front | `pscale_stream_engage(field='beach-venture', at='this month')`: the ladder from the century to this month, every hand's DOING and BLOCKED, the batteries cited |
 | a new person or an investor | the venture's fold at the years and seasons, beside the age's fold at the same addresses |
-| the visualisation session (claude.ai) | one disc per block at pscale 5 (seasons) and 6 (years): `bsp(agent_id=<beach>, block=<a family block>, pscale_attention=5)`, across the age's mirrors, the venture's spine and mirrors, and the strands' spines. Every season and year of every family reads in a handful of calls, so the swimlanes need no other source. Once bsp-floor's zero-digit fault is fixed, two `bsp-floor` calls do the same |
+| the visualisation session (claude.ai) | one `bsp-floor` call per rung across the age's mirrors, the venture's spine and mirrors, and the strands' spines: pscale 6 for years, 5 for seasons, 4 for months. Every year, season and month of every family reads in three calls, so the swimlanes need no other source |
 | a human commenting | their own mirror at the address they speak to; the fold names them, and their silence is named honestly |
 
 ## 7. The first cut of our thread
@@ -199,7 +203,7 @@ The record behind this cut: 45 sibling repositories (8,601 commits from 2025-05-
 
 | front | where it stands | planned and not built |
 |---|---|---|
-| the substrate | The walker is unchanged in substance since 06-03 and frozen (`l1-kernel-v2`, 07-25), guarded by the 72-case battery and CI. The router is stateless with twelve entry points since 08-10. Four beaches and many `/w/` tables stand, all one operator's. | federation across operators in practice; read-gated private beaches; the zero-crossing bsp-floor; the `formatAddress` kernel fix; the Anthropic directory submission (prepared 05-16, never sent) |
+| the substrate | The walker is unchanged in substance since 06-03 and frozen (`l1-kernel-v2`, 07-25), guarded by the 72-case battery and CI. The router is stateless with twelve entry points since 08-10. Four beaches and many `/w/` tables stand, all one operator's. bsp-floor crosses the zero digit since 10-04 (#484). | federation across operators in practice; read-gated private beaches; the `formatAddress` kernel fix; the Anthropic directory submission (prepared 05-16, never sent) |
 | the RPG | Track A is complete across four doors and has been played by David and Julie; it now has a funded keeper and paid seats. Track B has a door and a trial verdict, and no human player yet. | Plan A's exit test (two players who are not David, two doors, a third catching up) never attempted; Plan B's home, living world, second rules block, second beach and battery; the lattice; NOMAD damage and death |
 | the mirror | mirror.onen.ai is the human door for rooms, families and tables. Pools for acts and streams for readings are settled as siblings, and the torus is a reflection held in the router's memory. | the vapour torus; the torus strip on the glass; vapour scoped by grain; the now-tree view |
 | hermitcrab and genus-one | egg-one wakes twice daily and when rung. The waker has become service infrastructure (doormen, keepers, the helper) rather than a population of minds. | MAGI not approached; egg-two never woken; the genome as a template; fuel in the vault |

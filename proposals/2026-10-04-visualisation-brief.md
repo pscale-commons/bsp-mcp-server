@@ -13,28 +13,44 @@ Draw the trajectory on the clock for a newcomer or an investor:
 
 Every block below sits on the canonical clock at floor 10, so the address is the date. 2025 is `2025000000`, July to September 2026 is `2026300000`, October 2026 is `2026410000`.
 
-Read each block as a disc, one rung at a time:
-- years: `bsp(agent_id=<beach>, block=<name>, pscale_attention=6)`
-- seasons: `pscale_attention=5`
-- months: `pscale_attention=4`
-- a decade's line: walk its address, for example `spindle='2020000000'` for the 2020s.
+Lay the six blocks side by side with `bsp-floor`, one call per rung. For the seasons:
 
-1. **The age.** Read `age:weft`, plus any other `age:<handle>` that stands. There are twenty short readings, from the century down to October 2026, each naming its source.
-2. **Our thread: what was aimed at.** Read `spine:beach-venture`: the 2020s; 2025 and its seasons from April; 2026, its four seasons and each month from July; and 2027.
-3. **Our thread: what was done.** Read `beach-venture:happyseaurchin` (David's own lines from 2025) and `beach-venture:weft` (weft's, from April 2026, at every month).
-4. **The strands ahead.** Read `spine:onen-rpg` and `spine:genus-one`. Each has this season and 2027.
-5. **The versions of each strand, with exact spans.** Use the table in section 7 of `pscale-commons/bsp-mcp-server`, `proposals/2026-10-04-the-trajectory-on-the-clock.md`:
+```
+bsp-floor(targets=[
+  {agent_id: "https://beach.happyseaurchin.com", block: "age:weft"},
+  {agent_id: "https://beach.happyseaurchin.com", block: "spine:beach-venture"},
+  {agent_id: "https://beach.happyseaurchin.com", block: "beach-venture:happyseaurchin"},
+  {agent_id: "https://beach.happyseaurchin.com", block: "beach-venture:weft"},
+  {agent_id: "https://beach.happyseaurchin.com", block: "spine:onen-rpg"},
+  {agent_id: "https://beach.happyseaurchin.com", block: "spine:genus-one"}
+], pscale_attention=5)
+```
+
+For the other rungs, change `pscale_attention`: 8 for the century, 7 for the decades, 6 for the years, 4 for the months.
+- Each line comes back with its date and how far it is from today.
+- `bsp-floor` shows only the opening of each line. To read a line whole, walk its address in its own block, for example `bsp(agent_id="https://beach.happyseaurchin.com", block="spine:beach-venture", spindle="2025300000")`.
+
+The six blocks:
+
+1. **The age.** `age:weft`: twenty short readings, from the century down to October 2026, each naming its source. If any other `age:<handle>` stands, add it to the targets.
+2. **Our thread: what was aimed at.** `spine:beach-venture`: the 2020s; 2025 and its seasons from April; 2026, its four seasons and each month from July; and 2027.
+3. **Our thread: what was done.** `beach-venture:happyseaurchin` (David's own lines from 2025) and `beach-venture:weft` (weft's, from April 2026, at every month).
+4. **The strands.** `spine:onen-rpg` and `spine:genus-one`: lines for 2026 and for August and September, and the aims for this autumn and 2027, stated as tests. The RPG's spine also looks back to 2025.
+
+Two more sources, in the repo `pscale-commons/bsp-mcp-server`:
+
+5. **The versions of each strand, with exact spans.** Use the table in section 7 of `proposals/2026-10-04-the-trajectory-on-the-clock.md`:
    - the RPG, from Lovable onward;
    - xstream, which became the mirror;
    - hermitcrab, which became genus-one;
    - the substrate;
    - the economy;
    - the clock, with the person's door and places.
-6. **Where plan and trace agree and part.** Use `proposals/2026-10-04-the-two-projections-first-read.md` in the same repo.
+6. **Where plan and trace agree and part.** Use `proposals/2026-10-04-the-two-projections-first-read.md`.
 
 **Don't:**
-- Don't use bsp-floor. Until it is fixed it misses every date after 2000.
 - Don't read any block whole.
+- Don't plot a cell that says "(no content)". It only holds finer lines beneath.
 - Don't show a viewer an address, a digit or a block name. Speak in years, seasons and months.
 
 **Shape.** One horizontal time axis from 2020 to 2027:
