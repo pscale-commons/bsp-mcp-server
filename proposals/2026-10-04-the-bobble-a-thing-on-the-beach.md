@@ -6,6 +6,31 @@ On the beach this lane founds only the room the spine already names (`pool:bobbl
 (`bobble:weft`). Every write below to `spine:bobble`, `function:bobble` or `sed:bobble` is a draft for David's
 word. `spine:bobble` has answered to his latch since 17:08Z today, when keel rotated it at his asking
 (history:keel 122).
+**Landed 2026-10-04, at David's word ("Go ahead").** Done the same day, in this lane:
+
+- **Branch 3 is delegated to weft.** One lock write set it: his key as the secret, weft's operational lock as
+  the new latch, at spindle 3. Weft's first write there proved it: 3.1 now names the public MCP door, the
+  transport fact and the gateway's code.
+- **The road stands at 8** as drafted in §4, with its provenance in its underscore. The text it replaced is kept
+  verbatim at watch:weft 534.6. Lines 2.1 and 6.111 now point at stages instead of the old decisions line.
+- **`function:bobble` stands** (§8.1), locked to his key. Spine 9 points at it, and keel's 9 is kept verbatim at
+  watch:weft 534.7. The stream envelope now delivers it as the family's law.
+- **The talk is the owner's** (decision 7). Lines 2.3, 2.11, 1.11111111 and 7.1 say so, and 6.2 is net of VAT
+  and fees.
+- **Sharing words throughout.** David ruled the same day, in another lane: *"ensure the language throughout is
+  not buy and sell, but sharing"*. Across branches 2, 4, 5, 6, 7 and 8, pre-orders became pledges, buyers became
+  the people who pledged, and selling became offering. Line 2.2 now links the film.
+- **Stage one is built** (decision 4). The gateway is at `gateway/` (commit ad6c3df), with 41 offline checks
+  through the real door. It waits on his three accounts (`gateway/README.md`), and weft's mirror says so at 3.1
+  and 8.1.
+- **The page is built** (decision 5). It is `bobble.html` in happyseaurchin-home, on branch claude/bobble-page
+  (commit 8613932), listed at /beach-pages and in the sitemap, with 23 offline checks in Chromium. It goes live
+  once merged.
+- **Still David's alone.** He holds the promise for stage two's small sums (decision 6, recorded at 8.2 and 6.1).
+  Forming the company or co-operative before stage five, and taking the legal advice, are acts no lane can do.
+- **Corrections to this text.** The draft's "the beach listens back (1.12)" is 1.112, and the buying words below
+  are trued up to the same rule.
+
 **Prompted by**: David, 2026-10-04, handing in the feasibility study of 3 October:
 
 > "I am playing around with producing a complete project on the beach — the beach bobble. It's a proposal for
@@ -22,8 +47,8 @@ The block is fit for purpose as a document and not yet as a family: it has no la
 it. The beach can keep the record of a crowd-built thing (who funded it, who built it, who carried whom, in what
 order), but it cannot be the bank: it cannot hold money against a goal, it is not a legal holder, and it does
 not ship parcels. The road should be **gated, not scheduled**. Prove the voice by phone, on David's own money.
-Then sell seats in the build, by hand, on the ticket machine that has already taken live money. Take device
-pre-orders only after a pilot, an Author, and a rail that holds pledges against a goal all exist. The talk must
+Then offer seats in the build, by hand, on the ticket machine that has already taken live money. Take device
+pledges only after a pilot, an Author, and a rail that holds pledges against a goal all exist. The talk must
 be paid from each owner's own key, or the design fails its own scale test.
 
 ## 1. What stands (read 2026-10-04, 17:06–17:16Z)
@@ -135,7 +160,7 @@ the stages they gate, and the timings become each rung's window.
 - **8.11** — STAGE TWO, SEATS IN THE BUILD — opens when 8.1 passes. Five to twenty dev-kit bobbles in testers'
   hands (3.11), pointed at the stage-one gateway, with the three speeds added. Money: contribution tickets (a
   gift toward the build, no device promised, no financial return, credits minted on each) and builder seats (a
-  flashed dev kit posted to a tester), both sold by the beach's ticket machine, settled in `sed:bobble` and
+  flashed dev kit posted to a tester), both offered through the beach's ticket machine, settled in `sed:bobble` and
   fulfilled by hand. Test: do people reach for it daily, and what does a month of talk cost? Window:
   November 2026 – January 2027 (approx.).
 - **8.111** — STAGE THREE, THE FOUNDATIONS AND A FIRST OWN BOARD — opens when 8.11 passes. Per-device keys and
@@ -143,7 +168,7 @@ the stages they gate, and the timings become each rung's window.
   shared key; the first own board, 10–50 units, from open files (3.111). Test: a bobble lost is an object lost,
   never authority; a month of talk is paid by its owner. Window: early 2027 (20271, approx.).
 - **8.1111** — STAGE FOUR, THE PILOT — opens when 8.111 passes. 50–100 units in real hands for a month (3.1111),
-  pilot seats sold as stage two's were. Test: the pilot names the radio — tethered, Wi-Fi or 4G — with the
+  pilot seats offered as stage two's were. Test: the pilot names the radio — tethered, Wi-Fi or 4G — with the
   battery hours, the delay, what people used it for and what broke. Window: the first half of 2027 (approx.).
 - **8.11111** — STAGE FIVE, THE DEVICE TICKET — opens when 8.1111 passes and three things stand: an Author able
   to hold the promise (6.1), legal advice taken (7.1), and a rail that holds pledges against a goal and charges
@@ -158,7 +183,7 @@ the stages they gate, and the timings become each rung's window.
 - **8.1111111** — STAGE SEVEN, TEN THOUSAND — opens when the line's pilot batch passes. The full run, shipped in
   queue order (2.111), the manufacturer of record's duties met in each market (4.1111).
 - **8.11111111** — STAGE EIGHT, IN DAILY USE — bobbles in hands; the talk costs what 1.11111111 says, paid from
-  each owner's own key; the beach listens back (1.12). What happens here decides whether there is a second run.
+  each owner's own key; the beach listens back (1.112). What happens here decides whether there is a second run.
 - **8.2** — DECISIONS OPEN, each beside the stage it gates: the Author and its form (stage two for small sums,
   stage five for the device ticket); the payment rail (stage five); the device price, goal and date (stage five);
   the licence for the open files (stage three); the name — bobble, conch or cowrie, searched as a trademark
@@ -173,7 +198,7 @@ tallies the entries and names the blockers.
 ### 5.1 What stands and has run
 
 - **The ticket machine.** The payway convention plus `pscale-commons/ticketing-agent`, on Stripe live. Every
-  verdict goes into a public audit log, and registration lands buyers in order, so a `sed:` position is a queue
+  verdict goes into a public audit log, and registration lands people in order, so a `sed:` position is a queue
   position. The newest pattern, keeper seats, shows how little the beach needs to hold: one entry per paid
   seat, no amounts, and Stripe as the money record.
 - **The two product patterns** (ways:tickets 5). In MEMBERSHIP the registration is the thing. In PROVISIONING
@@ -199,12 +224,12 @@ checks out of the reference machine. Building them into the beach would make it 
 
 ### 5.3 So: the rail, stage by stage
 
-| stage | what is sold | pattern | rail | holder |
+| stage | what is offered | pattern | rail | holder |
 |---|---|---|---|---|
 | 1, the voice by phone | nothing; the trial runs on David's own key, a few pounds of talk | — | — | David |
 | 2, seats in the build | contribution tickets (a gift, `credits=`), and a few builder seats (a flashed dev kit, posted) | membership, and provisioning by hand | the existing machine, two products settling in `sed:bobble`, as keeper seats settle | David as Author: small sums |
 | 3–4, the board and the pilot | pilot seats | provisioning by hand | the same | the Author formed by then |
-| 5, the device ticket | pre-orders, with a goal, a date and no charge if missed | provisioning at volume | an all-or-nothing platform: Crowd Supply (open hardware, all-or-nothing, 5% on campaigns, its warehouse ships the orders and handles VAT and returns — [Crowd Supply](https://www.crowdsupply.com/working-with-crowd-supply)) or Kickstarter; each backer issued a ticket grain by the machine's manual driver | the Author: company or co-operative |
+| 5, the device ticket | pledges, with a goal, a date and no charge if missed | provisioning at volume | an all-or-nothing platform: Crowd Supply (open hardware, all-or-nothing, 5% on campaigns, its warehouse ships the bobbles and handles VAT and returns — [Crowd Supply](https://www.crowdsupply.com/working-with-crowd-supply)) or Kickstarter; each backer issued a ticket grain by the machine's manual driver | the Author: company or co-operative |
 
 Payway's interoperability invariant (6.5) already permits stage five's move: a collective changes issuer by
 rewriting 9.1 and 9.2. The beach keeps the queue, the carrying and the credits whichever rail takes the money.
@@ -237,7 +262,7 @@ opening line as its introduction.
 - live counts read from blocks: mirrors (`bobble:*`), voices (`pool:bobble`), and seats (`sed:bobble`, once
   founded);
 - one line to say something, appended to `pool:bobble` with no key;
-- the ticket button only once `sed:bobble` 9 stands, naming its issuer (payway §4.1: the buyer sees whom they
+- the ticket button only once `sed:bobble` 9 stands, naming its issuer (payway §4.1: whoever pledges sees whom they
   pay).
 
 **Named where it lives** (soft-agent 3.344):
