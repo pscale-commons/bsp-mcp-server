@@ -348,7 +348,7 @@ export function bspRead(
  *  back as 0000000202, a different position. A label an agent may copy verbatim
  *  into its next spindle must therefore be the padded form — "2020000000" walks
  *  the decade, "202" does not. Emit labels are exactly such copyable text. */
-function fullWidthAddress(digits: string[], floor: number): string {
+export function fullWidthAddress(digits: string[], floor: number): string {
   if (digits.length <= floor) return digits.join('').padEnd(floor, '0');
   return `${digits.slice(0, floor).join('')}.${digits.slice(floor).join('')}`;
 }
