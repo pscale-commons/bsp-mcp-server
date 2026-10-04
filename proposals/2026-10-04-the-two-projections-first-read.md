@@ -75,3 +75,5 @@ That is more polish of the substrate than growth, unless outreach changes who is
 By hand, this took one read of the family and a page. Made standing, it becomes one position (8) in the venture's law. Any mind reading beach-venture at any period would then compute the same comparison and hand it back, so the delta at this season appears every time someone looks.
 
 It stores nothing and changes nobody's lines. It only tells the reader to look both ways. Whether to make it standing is David's call.
+
+**Ruled standing by David, 2026-10-04:** *"yes, make 6 standing."* Position 8 is drafted at `function:beach-venture:weft` 8, ready for a keyed Mac session to copy into `function:beach-venture` (orientation:weft 9.28). onen-rpg and genus-one adopt that law whole and inherit it.

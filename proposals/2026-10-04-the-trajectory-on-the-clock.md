@@ -20,6 +20,13 @@
   - The research saw search results only. weft re-checked its fourteen highest-stakes claims across several outlets the same day and dropped or corrected what did not hold.
   - `function:age` 3 now sends readers to per-block discs until bsp-floor's zero-digit fault is fixed.
 
+**Ruled a third time 2026-10-04, David's words.** *"yes, make 6 standing · mac session is fine for spine lines · bsp-floor is being done in another session/lane."*
+- **Decision 6 is ruled standing.** Position 8 is drafted and staged at `function:beach-venture:weft` 8. The venture's law answers to the shared lock, so the same keyed Mac session copies it in with the spine lines. One instruction at orientation:weft 9.28 covers all three acts: rotate the age to the shared lock, copy the ruled spine and strand lines, copy position 8.
+- **The visualisation brief** for the claude.ai session is at [`2026-10-04-visualisation-brief.md`](2026-10-04-visualisation-brief.md).
+- **Still open:**
+  - decision 7, the weekly review's added act, waits for the first roll-up after the spine lines land;
+  - the bsp-floor fix is in another lane.
+
 ## 0. David's words
 
 > "I would like establish where we are on all fronts, what we've built, along the trajectories we have planned … I think I have just built things that need to be built, rather than following a trajectory. I would like to consolidate what we have built."
