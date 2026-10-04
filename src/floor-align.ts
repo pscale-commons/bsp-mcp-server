@@ -34,77 +34,71 @@
  *
  * This module is the binary/n-ary companion to bsp(): bsp() indexes WITHIN a
  * block, floor-align relates ACROSS blocks. It deliberately does NOT modify
- * bsp.ts and reuses the canonical helpers (collectUnderscore, floorDepth,
- * formatAddress) rather than re-deriving a parser/formatter.
+ * bsp.ts and re-derives nothing: floorDepth names the floor, and bsp()'s own
+ * disc supplies every position.
  *
- * BOUNDARY (documented): indexByPscale walks the floor identity and the digit
- * branches (transversal content). It does NOT descend a node's hidden directory
- * (an underscore-OBJECT under a digit) — that is the star door, a separate
- * operator. It also does not currently surface above-floor rung SUMMARIES of a
- * supernested block (the wrapped layers' inductive underscores); the floor
- * identity and all digit-positioned content are indexed. Refining above-floor
- * rung handling rhymes with the supernest-operation work (PR #60) and is left
- * for that coordination. See docs/floor-alignment-and-cross-block-ops.md.
+ * ONE WALK, NOT TWO: at each pscale a block's contribution to the frame IS its
+ * disc — bsp(B, P), exactly as a single read delivers it — so this module holds
+ * no traversal of its own and cannot drift from bsp(). Digit 0 is the
+ * underscore (bsp.ts: "Digit 0 maps to key '_'"; sunstone:1.4 — walking zero
+ * into a digit's underscore enters its hidden directory), so a zero-position is
+ * a position like any other: the clock's 2000s under millennium 2, an
+ * accumulator's wrapped entries under the root chain, ground never carved
+ * (sunstone:1.72). Only the root chain's own rungs — the ladder — are not
+ * positions, by the disc's rule. Star stays the door into a hidden directory's
+ * OWN frame; in this block's frame it is simply position 0.
+ *
+ * This replaces a walk of digits 1-9 only that documented the skip as a
+ * boundary, leaving the hidden directory to star. It went unseen until the
+ * clock: bsp-floor read nothing of the 2000s on any floor-10 block, and on
+ * every accumulator nothing beneath its root chain (2026-10-04, watch:weft
+ * 525-527). See docs/floor-alignment-and-cross-block-ops.md.
  */
 
-import { Block, collectUnderscore, floorDepth, formatAddress } from './bsp.js';
+import { Block, floorDepth } from './bsp.js';
+import { bspRead, DiscEntry } from './bsp-fn.js';
 
 // ── pscale indexing ──
 
 export interface PscaleNode {
   /** floor-anchored coordinate; 0 = floor, + above (coarser), - below (finer). */
   pscale: number;
-  /** canonical single-dot pscale address, e.g. "34.5". */
+  /** the full-width floor-anchored address the disc prints ("2026400000",
+   *  "34.5") — copyable back as a spindle. */
   address: string;
-  /** the walk as comma notation, e.g. "3,4,5" (tree-walk form, never multi-dot). */
+  /** the walk as comma notation, e.g. "2,0,2,6,4" (tree-walk form, never multi-dot). */
   walk: string;
   text: string | null;
+  /** the arrival stamp and the count of positions beneath, as the disc carries them. */
+  stamp?: string;
+  beneath?: number;
 }
 
-/** Semantic text of a node — a string leaf, or follow the underscore chain.
- *  Numeric and boolean leaves render their JSON form (legal wire values). */
-function nodeText(node: any): string | null {
-  if (typeof node === 'string') return node;
-  if (typeof node === 'number' || typeof node === 'boolean') return JSON.stringify(node);
-  return collectUnderscore(node);
+/** The deepest walk a block holds — how many discs it has. */
+function deepest(node: any): number {
+  if (!node || typeof node !== 'object') return 0;
+  return 1 + Math.max(0, ...['_', ...'123456789'].filter((k) => k in node).map((k) => deepest(node[k])));
 }
 
 /**
- * Index every floor-anchored position of a block by pscale.
- *
- * Emits the floor identity (the root underscore-chain string) at pscale 0, then
- * every digit-walked position at pscale = floor - depth. Hidden directories
- * (underscore-objects under a digit branch) are not descended — star is that
- * door. The result is the block laid out against its own floor, ready to be
- * laid against another block's floor at the shared pscale coordinate.
+ * Index every floor-anchored position of a block by pscale: the block's discs,
+ * every one of them, read by bsp() itself. The result is the block laid out
+ * against its own floor, ready to be laid against another block's floor at the
+ * shared pscale coordinate.
  */
 export function indexByPscale(block: Block): PscaleNode[] {
   const out: PscaleNode[] = [];
   if (!block || typeof block !== 'object') return out;
   const F = floorDepth(block);
-
-  // Floor identity — the root underscore chain followed to its string. pscale 0.
-  const rootText = collectUnderscore(block);
-  if (rootText !== null) {
-    out.push({ pscale: 0, address: '0', walk: '0', text: rootText });
-  }
-
-  // Transversal content — digit children 1-9, recursively.
-  function visit(node: any, digits: string[]): void {
-    const depth = digits.length;
-    out.push({
-      pscale: F - depth,
-      address: formatAddress(digits, F),
-      walk: digits.join(','),
-      text: nodeText(node),
-    });
-    if (!node || typeof node !== 'object') return;
-    for (const d of '123456789') {
-      if (d in node) visit(node[d], digits.concat(d));
+  const D = deepest(block);
+  for (let depth = 1; depth <= D; depth++) {
+    const pscale = F - depth;
+    for (const e of (bspRead(block, null, pscale).entries ?? []) as DiscEntry[]) {
+      // A full-width address is the walk right-padded to the floor, so its
+      // first `depth` digits are the walk itself.
+      const walk = e.address.replace('.', '').slice(0, depth).split('').join(',');
+      out.push({ pscale, address: e.address, walk, text: e.content, stamp: e.stamp, beneath: e.beneath });
     }
-  }
-  for (const d of '123456789') {
-    if (d in block) visit(block[d], [d]);
   }
   return out;
 }
