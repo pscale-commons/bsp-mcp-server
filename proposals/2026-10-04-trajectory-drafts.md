@@ -1,5 +1,10 @@
 # Drafts for David's ruling — the trajectory, first pass (2026-10-04)
 
+**RULED 2026-10-04:** *"S1-S11 ok, R ok, G is synonymous with H (genus-one agent is the most recent entity ok), and D ok."*
+- D1–D6 now stand in `beach-venture:happyseaurchin`.
+- S1–S11, R and G stand marked as ruled at `spine:beach-venture:weft`, `spine:onen-rpg:weft` and `spine:genus-one:weft`, for a keyed Mac session to copy into their spines.
+- H is folded into G, because genus-one carries the hermitcrab line.
+
 Companion to [`2026-10-04-the-trajectory-on-the-clock.md`](2026-10-04-the-trajectory-on-the-clock.md), decision 5: weft drafts, David rules each line before it lands. **Reply with the numbers you accept, and any change in your own words** (for example, "S1–S7 ok, S8 drop the outreach clause, D3 rewrite as …").
 
 Every block in the clock families answers to the shared project lock, which lives on the Mac. So the ruled spine lines are adopted by a keyed session there. The drafts already stand on the beach as weft's proposals at `spine:beach-venture:weft`, at the same addresses, so adoption is a copy by address. Your own lines (D1–D6) go to `beach-venture:happyseaurchin` under your key once you say so.

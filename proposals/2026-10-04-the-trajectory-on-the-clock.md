@@ -9,6 +9,12 @@
 - **The drafts wait for David's ruling.** They are at [`2026-10-04-trajectory-drafts.md`](2026-10-04-trajectory-drafts.md), and the spine lines also stand as `spine:beach-venture:weft`.
 - **Decision 6 is held until David has seen it once**, as the drafts' last section explains plainly.
 
+**Ruled again 2026-10-04, David's words.** *"S1-S11 ok, R ok, G is synonymous with H (genus-one agent is the most recent entity ok), and D ok."* Done the same day:
+- **His past lines are in his mirror.** D1–D6 stand in `beach-venture:happyseaurchin` under his key, each tagged as drafted with weft and ruled.
+- **The other ruled lines wait for the Mac.** S1–S11 at `spine:beach-venture:weft`, R at `spine:onen-rpg:weft` and G at `spine:genus-one:weft` are marked ruled. A keyed session copies them into the shared-lock spines (orientation:weft 9.28).
+- **hermitcrab and genus-one are one strand.** The genus-one agent is the hermitcrab line's most recent entity, so the strand's aims stand at genus-one and `spine:hermitcrab` keeps its vision rungs.
+- **Decision 6 has been done once by hand.** The comparison is at [`2026-10-04-the-two-projections-first-read.md`](2026-10-04-the-two-projections-first-read.md).
+
 ## 0. David's words
 
 > "I would like establish where we are on all fronts, what we've built, along the trajectories we have planned … I think I have just built things that need to be built, rather than following a trajectory. I would like to consolidate what we have built."
@@ -63,7 +69,7 @@ What David describes (arcs at the coarse rungs, versions at the seasons they ran
 
 Three consequences, all already law somewhere:
 
-1. **No new block shape.** Projects that live in time stand on the clock (conventions 2.12). Cross-family reading is by address, because every clock family is floor 10, so `bsp-floor` lays any set of them on one plane and a single read at pscale 5 returns every season cell of every family side by side (sundial 8; `bsp-floor` law).
+1. **No new block shape.** Projects that live in time stand on the clock (conventions 2.12). Cross-family reading is by address, because every clock family is floor 10, so `bsp-floor` should lay any set of them on one plane and a single read at pscale 5 should return every season cell of every family side by side (sundial 8; `bsp-floor` law). As built it does not. `bsp-floor` misses every cell beneath a zero digit, which on the clock is every date from 2000 on. This lane's read-back found it on 2026-10-04 and it is queued as its own fix. Until then, the single-block disc at pscale 5 or 6 reads one family's seasons or years in one call.
 2. **Sequence stays depth where sequence is read in order** (`2026-09-24-sequence-is-depth` R1, R6). The calendar address serves meeting at the same when. A trajectory is exactly that, many hands and many projects meeting at the same season, so the calendar is the right coordinate here, and depth carries the sequence inside a cell's own account.
 3. **The record goes where the backcast law already puts it.** function:backcast 2: at past and present horizons DONE, DOING and BLOCKED lead each hand's account; at future horizons the entry is the commitment. Each hand voices its own doings only. function:backcast 3: when a horizon's span closes, its fold summarises into the parent horizon.
 
@@ -96,7 +102,7 @@ Our work is one thread through the age, and it already has a family on the clock
 
 ### 3.3 The strands: the families that stand (existing, re-voiced forward)
 
-`onen-rpg`, `genus-one` and `hermitcrab` keep their own spines and laws. Each gains its season and month aims ahead, cut from the ladders and the worktables. The worktables keep completions and the spines keep objectives, the separation function:onen-rpg 2 already insists on. No new strand family is founded now. The mirror and the substrate are named in the thread's record until one of them needs its own mirrors, and then /found makes it in a step.
+`onen-rpg` and `genus-one` keep their own spines and laws, and each gains its aims below the year. genus-one carries the hermitcrab strand: David ruled them synonymous, the genus-one agent being the line's most recent entity, so `hermitcrab` keeps its vision rungs and gains no aims of its own. The worktables keep completions and the spines keep objectives, the separation function:onen-rpg 2 already insists on. No new strand family is founded now. The mirror and the substrate are named in the thread's record until one of them needs its own mirrors, and then /found makes it in a step.
 
 ### 3.4 The two projections and the delta (computed, never stored)
 
@@ -135,7 +141,7 @@ New work is not another duty for every lane, and a law placed where no loop read
 |---|---|
 | David and the fixit team: where are we on every front | `pscale_stream_engage(field='beach-venture', at='this month')`: the ladder from the century to this month, every hand's DOING and BLOCKED, the batteries cited |
 | a new person or an investor | the venture's fold at the years and seasons, beside the age's fold at the same addresses |
-| the visualisation session (claude.ai) | two `bsp-floor` calls at pscale 5 and 6 across the age's and the venture's mirrors and the strands' spines: every season and every year of every family on one plane, so the swimlanes need no other source |
+| the visualisation session (claude.ai) | one disc per block at pscale 5 (seasons) and 6 (years): `bsp(agent_id=<beach>, block=<a family block>, pscale_attention=5)`, across the age's mirrors, the venture's spine and mirrors, and the strands' spines. Every season and year of every family reads in a handful of calls, so the swimlanes need no other source. Once bsp-floor's zero-digit fault is fixed, two `bsp-floor` calls do the same |
 | a human commenting | their own mirror at the address they speak to; the fold names them, and their silence is named honestly |
 
 ## 7. The first cut of our thread
@@ -209,5 +215,5 @@ The record behind this cut: 45 sibling repositories (8,601 commits from 2025-05-
 3. **The age founded**: spine, law, room, by /found's form under the shared key; weft's first reading at the 2020s, 2025 and 2026, and at the seasons since 2025 Q2, sourced; David's reading invited.
 4. **The thread voiced**: the venture's spine at its past and coming seasons and months, ruled line by line; weft's mirror at its horizons since 2026-04-28; David's past mirror lines drafted for his word.
 5. **The strands voiced ahead**: onen-rpg, genus-one and hermitcrab at their coming seasons and months.
-6. **The read-back**: walk the thread at a season and a month as its future reader, lay the families on one plane with `bsp-floor` at pscale 5, compute the two projections and the delta once, and show David.
+6. **The read-back**: walk the thread at a season and a month as its future reader, read each family's seasons with the disc at pscale 5, compute the two projections and the delta once, and show David.
 7. **The handover**: a short brief for the visualisation session (the reads of §6), and the weekly review's one added act.
