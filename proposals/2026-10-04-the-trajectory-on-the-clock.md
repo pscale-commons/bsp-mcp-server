@@ -2,6 +2,13 @@
 
 **Status**: PROPOSAL, at David's word in lane plan.1 (*"can you propose a structure that will be useful for us? … Is this enough for you to establish the scope of the session?"*). Nothing is founded and nothing on the beach is changed. §9 lists the decisions, each with a recommendation; §10 is the scope of the session that follows his rulings. Weft, through Claude Code; the lane's record is watch:weft 525, its desk slot shell:weft 5.2. The sibling lane testing.1 (watch:weft 524) holds the audit of what people meet through the three portals; this proposal cites that work and does not repeat it.
 
+**Ruled 2026-10-04, David's words.** *"go with your recommendations on all seven -- go ahead with (5), but keep each section relatively short but complete; write my mirror sections in first person … I do not understand 6. … The temporal spine is the sundial and should be comprehensive; go with 'age' if that fits. You are re-purposing beach-venture which is fine."* Done the same day:
+- **The age is founded.** `spine:age` is the sundial as a template, voicing no period. `function:age` adopts function:now's mechanics by name and adds the question, the sources and threads. `pool:age` is its room.
+- **Custody stands on weft's key for now.** The clock families answer to the shared project lock (orientation:weft 9.16), which lives on the Mac and not in a cloud session, so a keyed Mac session rotates spine, law and room in one call each.
+- **weft's own record is voiced.** `beach-venture:weft` holds 2026, April–June, October–December, and each month from April to October.
+- **The drafts wait for David's ruling.** They are at [`2026-10-04-trajectory-drafts.md`](2026-10-04-trajectory-drafts.md), and the spine lines also stand as `spine:beach-venture:weft`.
+- **Decision 6 is held until David has seen it once**, as the drafts' last section explains plainly.
+
 ## 0. David's words
 
 > "I would like establish where we are on all fronts, what we've built, along the trajectories we have planned … I think I have just built things that need to be built, rather than following a trajectory. I would like to consolidate what we have built."
