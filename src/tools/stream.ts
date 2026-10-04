@@ -73,7 +73,7 @@
 import { z } from 'zod';
 import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
 import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
-import { formatBorn } from '../bsp-fn.js';
+import { formatBorn, fullWidthAddress } from '../bsp-fn.js';
 import { momentToAddress, voiceAddress, TEMPORAL_FLOOR } from '../temporal.js';
 import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLOCK_FIELD } from './clock.js';
 import { publishPlay } from '../flow-play.js';
@@ -312,9 +312,13 @@ export async function handleStreamEngage(params: StreamEngageParams) {
     const rows: string[] = [];
     const root = voiceOf(spine);
     if (root) rows.push(`  [root] ${clip(root, 300)}`);
+    // Each position is labelled as the address it is dialled by: on a floor-3
+    // spine the top positions are 100…900, and a bare "1" copied back pads to
+    // 001, inside the root's underscore chain (fixit 443.11). A spine with no
+    // root underscore reads as floor 0 and keeps the bare digit.
     for (const k of Object.keys(spine).filter((k) => /^[1-9]$/.test(k)).sort()) {
       const t = voiceOf((spine as Record<string, unknown>)[k]);
-      rows.push(`  [${k}] ${t ? clip(t, 160) : '(unvoiced)'}`);
+      rows.push(`  [${fullWidthAddress([k], Math.max(1, spineFloor))}] ${t ? clip(t, 160) : '(unvoiced)'}`);
     }
     return out(
       `stream:${field} @ ${origin} — the map (no address attended)\n\n` +
