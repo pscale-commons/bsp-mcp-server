@@ -2,8 +2,19 @@
 
 **Status: built at David's word** (*"go ahead, build it"*), 2026-10-05, as
 [happyseaurchin-home #372](https://github.com/happyseaurchin/happyseaurchin-home/pull/372) (branch
-`claude/a-clock-per-card`, `9252480`). It waits on his review and merge. Lane cards.1, through Claude
-Code, as weft; the record is at `watch:weft 543`.
+`claude/a-clock-per-card`, `9252480`). **Merged and live the same day** (`8260827`). Lane cards.1,
+through Claude Code, as weft; the record is at `watch:weft 543`.
+
+**Seen working in David's own use, 2026-10-05.** He ran three clocks at once on his tomorrow pile
+(2.1, 2.3 and 2.5). He finished 2.6, "user switching on o-pages", at 13:57Z, and it landed in
+`now:happyseaurchin` at `2026411561` with `37m` at field 6: its own clock, from 13:21Z, unaffected by
+the two still running.
+
+**The first live use surfaced a separate fault: emptied pile slots counted as taken.** Tomorrow
+refused a card with only five showing. Every put-down writes `{_: ''}`, and all five copies of the
+pile law freed only the empty string. That was fixed at
+[happyseaurchin-home #377](https://github.com/happyseaurchin/happyseaurchin-home/pull/377)
+(`3de6f24`), also merged and live: the next card David added landed in one of the emptied slots.
 
 The investigation read `next.html` in `happyseaurchin-home` at `24b98f5`. The prototype,
 [`next.patch`](next.patch) (one file, +182 −53), was written against a copy of it and is what the PR
