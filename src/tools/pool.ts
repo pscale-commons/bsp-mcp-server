@@ -36,7 +36,7 @@
  */
 
 import { z } from 'zod';
-import { reflect, nameAtTheDoor } from '../looks.js';
+import { reflect, nameAtTheDoor, noteLook } from '../looks.js';
 import { createHash } from 'node:crypto';
 import { Block, writeAt, readAt, floorDepth, formatAddress, parseSpindle } from '../bsp.js';
 import { isLocationAddress, ancestorsOf, contains, pscaleOf, walkedOf } from '../grain-address.js';
@@ -1789,6 +1789,12 @@ export async function handlePoolEngage(
   // session's looks. This is how a person at the mirror is seen by name.
   nameAtTheDoor(extra?.sessionId, params.agent_id);
   const res = await handlePoolEngageInner(params);
+  // A TIER CALL IS A COMPOSED PROMPT another mind runs word for word: the look
+  // is noted, and nothing is appended to it.
+  if ((params as any).tier) {
+    noteLook(extra?.sessionId, String(params.pool_url ?? ''), `pool:${params.pool_name}`, (params as any).at ?? null, false);
+    return res;
+  }
   const wrote = params.contribution !== undefined || params.submit !== undefined || params.clear === true;
   return reflect(res, extra?.sessionId, String(params.pool_url ?? ''), `pool:${params.pool_name}`, (params as any).at ?? null, wrote);
 }
