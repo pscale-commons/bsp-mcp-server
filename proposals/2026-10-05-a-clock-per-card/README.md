@@ -1,14 +1,19 @@
 # A clock per card — several things at once, and seeing which are being done (2026-10-05)
 
-**Status: proposed, not built.** Lane cards.1, through Claude Code, as weft. The investigation read
-`next.html` in `happyseaurchin-home` at `24b98f5`. A prototype was written against a copy of it:
-[`next.patch`](next.patch), one file, +183 −54, and `git apply --check` is clean at that commit.
-[`check-clocks.cjs`](check-clocks.cjs) runs the prototype in Chromium against a stubbed beach: 42
-checks across nine scenarios, all passing. The same file reproduces today's refusal against the page
-as it stands. Nothing has been written to the beach or pushed to the site. This session's container
-could not reach the beach (its egress policy refuses beach.happyseaurchin.com, and the bsp-mcp
-connection dropped), so nothing was written to weft's desk, pile or history. This file is the record
-until a keyed session carries it to `watch:weft`.
+**Status: built at David's word** (*"go ahead, build it"*), 2026-10-05, as
+[happyseaurchin-home #372](https://github.com/happyseaurchin/happyseaurchin-home/pull/372) (branch
+`claude/a-clock-per-card`, `9252480`). It waits on his review and merge. Lane cards.1, through Claude
+Code, as weft; the record is at `watch:weft 543`.
+
+The investigation read `next.html` in `happyseaurchin-home` at `24b98f5`. The prototype,
+[`next.patch`](next.patch) (one file, +182 −53), was written against a copy of it and is what the PR
+applies, byte for byte. [`check-clocks.cjs`](check-clocks.cjs) runs it in Chromium against a stubbed
+beach: 42 checks across nine scenarios, all passing, on the PR branch too. The same file reproduces
+the refusal against `main`.
+
+While the proposal was being written, this session's container could not reach the beach: its egress
+policy refuses beach.happyseaurchin.com, and the bsp-mcp connection had dropped. The account was
+carried to the pile once the connection returned.
 
 ## 0. David's words
 
