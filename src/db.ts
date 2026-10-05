@@ -381,6 +381,9 @@ export interface BeachIndex {
    *  lets an agent see what a browser has seen since the listing landed
    *  (proposals/2026-09-20-tables-are-listed-where-they-are-played.md). */
   tables?: wire.PlayedTable[];
+  /** The beach's own record of each block's last write, block name → ISO, on a
+   *  beach that serves it: who moved, read without reading anyone. */
+  touched?: Record<string, string>;
 }
 
 /**
@@ -410,12 +413,19 @@ export async function loadBeachIndex(ownerId: string): Promise<BeachIndex | null
           ),
         ) as Record<string, number>
       : undefined;
+  const touched =
+    parsed?.touched && typeof parsed.touched === 'object' && !Array.isArray(parsed.touched)
+      ? Object.fromEntries(
+          Object.entries(parsed.touched as Record<string, unknown>).filter(([, v]) => typeof v === 'string'),
+        ) as Record<string, string>
+      : undefined;
   return {
     _: typeof parsed?._ === 'string' ? parsed._ : undefined,
     origin: typeof parsed?.origin === 'string' ? parsed.origin : origin,
     blocks: Array.isArray(parsed?.blocks) ? parsed.blocks.map(String) : [],
     ...(bytes && Object.keys(bytes).length > 0 ? { bytes } : {}),
     ...(tables && tables.length > 0 ? { tables } : {}),
+    ...(touched && Object.keys(touched).length > 0 ? { touched } : {}),
   };
 }
 
