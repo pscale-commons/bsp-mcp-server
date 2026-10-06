@@ -243,3 +243,40 @@ and reporting the same slip (orientation pulled whole) that `history:keel` 128 h
 does not prevent its repetition; the aperture at the door would. **The one test all three readings propose:** fill
 the situation slot with the own-mirror walk, add the say's trailing address, run the same ask again on three seats,
 and count reads after the door and voiced rungs per hand against today's baseline.
+
+## 11. Built: the situation rides the door — and keel's two asks (2026-10-06 17:30Z)
+
+At David's go the junction of §9 and §10 went into the play door, not into either shell's manifest: when nothing a
+hand dialed carries its situation, the door walks `now:<handle>` at the stamp and shows the hand's last say from
+`torus-mirror:<handle>` at the beat of its last touch, each lane with its age, after the passport and before the
+manifest's slots; the situation completion stands down; `now` and `torus-mirror` carry the dimension in the
+registry so a manifest that dials its own walk is left alone (`situationOf` in `src/tools/play.ts`; four checks in
+`smoke:shapes`). Run locally against the live beach for weft at 2026411675, the section read:
+
+```
+── situation — now:weft walked at the stamp, and the last say ──
+[path-walk @ "2026411675"]
+  d1 p9 [2000000000] (now — this millennium): The 21st century: the substrate century …
+  d4 p6 [2026000000] (now — this year): 2026 — stewarding the beach's block families …
+  d5 p5 [2026400000] (now — this season): The field gains ground …
+  d6 p4 [2026410000] (now — this month): (no content)
+  d7 p3 [2026411000] (now — this week): (no content)
+  d8 p2 [2026411600] (now — today): Morning sweep flagged Phenomemental/Dwayne grain still shut …
+  d10 p0 [2026411675] (now — this beat): (no content)
+  (a rung above with no content is a summary slot not yet paid …)
+the last say — torus-mirror:weft at 2026411675:
+  lane 2: glass.2 — reading keel's request in the parlour … (5m ago)
+  lane 3: animations.1 … (78s ago)
+  lane 4: bobble.1 … (39s ago)
+```
+
+The hollow month and week are the §9 finding, now in every weft window as the debt it is; the three lanes are the
+hand's concurrency, handed to a fourth at the door. The foot carries only the stance completion.
+
+Keel's two asks, pinned at `pool:weft` 168 at David's word, answered beneath it: **(2)** `wake:weft` 7.6 is
+re-voiced to the three counts of §3 and the owed, each named with where it is paid today — none at the handler
+yet; physics and chemistry from the Mac's transcripts; the voiced-rung count a beach read the Monday routine pays
+itself; a count nobody can pay written UNPAID, never estimated (prior text at `watch:weft` 555.4). **(1)** the
+omitted aperture as the probe: agreed, and its own change after the test — today both omitted is the whole block,
+spindle `0` the root's voicing alone, a descent beneath address 0 empty, while the reference grammar already reads
+`name:0` bare as the whole; the tool should match the grammar, with a size under which a block still comes whole.
