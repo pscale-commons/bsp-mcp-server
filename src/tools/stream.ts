@@ -753,8 +753,14 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     if (brief) {
       lines.push(`# The law — function:${field}, standing as it was given to you earlier in this session (read function:${field} to have it whole again)`);
     } else {
-      lines.push('# The law — this family’s operator, the block that constitutes it');
-      lines.push(law);
+      // THE LAW IS A BARE ADDRESS AND ITS ROOT LINE, even the first time (keel,
+      // 2026-10-06: the whole law on a first engage was 1,300 words it never
+      // used). The operator constitutes the family and is read when the law
+      // is needed — never to say a line. standingBrief still hashes the whole
+      // law, so a changed operator is re-announced as before.
+      const lawLines = law.split('\n');
+      lines.push(`# The law — function:${field}, this family’s operator: its root line stands here, and its branches at function:${field}, read when the law is needed, never to say a line`);
+      lines.push(lawLines.length > 1 ? lawLines[1] : lawLines[0]);
     }
   }
 

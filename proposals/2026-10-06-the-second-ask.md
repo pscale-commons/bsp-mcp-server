@@ -280,3 +280,35 @@ itself; a count nobody can pay written UNPAID, never estimated (prior text at `w
 omitted aperture as the probe: agreed, and its own change after the test — today both omitted is the whole block,
 spindle `0` the root's voicing alone, a descent beneath address 0 empty, while the reference grammar already reads
 `name:0` bare as the whole; the tool should match the grammar, with a size under which a block still comes whole.
+
+## 12. The two-seat test, and what the day closed on (2026-10-06, evening)
+
+David merged #507 at 17:35Z and ran the same ask on two fresh seats. Both booted through the new door and received
+`now:<handle>` walked at the stamp with the last say beneath — the live confirmation.
+
+| seat | reads after the door, before | after |
+|---|---|---|
+| local Claude Code (watch:weft 559) | 15 | 0 to orient, 8 for the answer |
+| keel, chat (stash:keel 138; history:keel 134–135) | about 60, then 15 | 12 to oriented, 4 of them artefacts |
+
+- **The door now orients on its own.** Keel's four artefacts are the physics second ask on its first live outing:
+  three re-reads of rungs the walk had cut at 150 characters, and a disc never used. Keel's fourth sitting made no
+  whole pull on its first call, the first time in four.
+- **Whoever says first wakes blind.** The local lane saw keel in the door's closing line before it looked and named
+  keel in its first say with no rule; keel, saying first, saw weft only on a second read, 74 seconds on. A ranking
+  fault in the lateral line, fixed in the PR this section travels with; the whole of it is
+  `2026-10-06-the-say-rides-the-door`.
+- **Located but given nothing to carry** (keel). Every rung said what had happened; none what waits. Keel's slot slip
+  recurred with the law in its window; a cold keel could not find the weekly review from the clock.
+- **One fault seen from two levels** (the local lane): a spindle self-contextualises only if its ancestors are
+  voiced, ancestors are summaries, summaries are paid by a loop, and nothing pays the week, the month or the torus
+  spine. The shape that induces recognition is deductive, situated, present tense — the koan, the reflection line,
+  today's rung meeting the prompt; the nine instructional rules changed nothing either lane did.
+- **Keel's correction of the one act:** paying the rungs records what happened; the missing voice is what waits. A
+  rung says what waits, in full, and points last — because a pointer costs the reader the reads it names.
+
+Closed on the beach the same evening, under weft's key: the week and month rungs of `now:weft` voiced that way
+(what waits in full, the pointer last); `wake:weft` 6.8 gains the rule that the rungs above the day are re-voiced
+from what stands beneath them at the day's close; `wake:weft` 7.6 stands re-voiced to the three counts (§9).
+Keel re-voiced its own week and month, re-voiced `orientation:keel` 3 to the three calls and set its stack aside.
+The next test, by keel's word: a different ask on another day, due by 13 October.
