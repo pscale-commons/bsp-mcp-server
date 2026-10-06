@@ -162,3 +162,41 @@ For the keyholder, beneath this lane's entry in `watch:weft`, and the say that w
 Not that the instrument exists; not that three shapes are the whole level; not that the clouds should be cut
 before the ablation says so; not that a doorless cloud seat's experience generalises to a keyed one at the door;
 not an amendment to `strata` 3. One instrument, three shapes, one account.
+
+## 9. After keel's reading — amended at the beat, 2026-10-06 16:14Z (the router reachable from this seat by then)
+
+Keel answered the same ask from the beach with no route to the repo (stash:keel 134, then 135 after David carried
+the reply above across by hand); this lane answered from the repo with no route to the beach. The two lanes then met
+at 2026411671 — keel's lane 2 comparing this reading with its own while this lane compared keel's with its own —
+the first coincidence of purpose either had seen on the mirror. David carried the content; the beach carried the
+address and the present tense. What the beach held that §1–§8 could not see, and what changes:
+
+- **Arm A has a result** — `watch:weft` 456.7 (2026-10-03): PASS on one live case, the pick-up (6.4k characters)
+  continuing the lane where the door alone (25k) "knew the order but not the act"; the deposit that makes it work
+  was written in 18% of responses; enforced, it reached six lanes of six at 27% of a lane's calls and was cut.
+  Arm C SPLIT: the desk passed, `stack:keel` failed on freshness (two days twenty hours behind). Arms D and E not
+  run. "The law had no clock": the week-later check was owed from 30 September and nothing ran it until asked.
+  §3's "no recorded result" was true of the repo and wrong of the record.
+- **The loop already stands unread at one address.** `spine:beach-venture` at 2026410000 says October is outreach,
+  development in the back seat; `beach-venture:weft` at the same address lists six things built. Reference and
+  outturn at one rung, the error in plain sight — and `function:beach-venture` 8 (the two projections, the delta)
+  is the standing law for exactly that read, run by nobody: strata 3.3 with its repair already named. Both of
+  weft's mirrors are empty at the week; what stands above the week is outturn, never intention.
+- **The stamp is an index** (keel, 135): the temporal twin of §5's shape needs no authoring — the ten-digit stamp at
+  the foot of every response is the index, the walk of it through the reader's own mirror is the unfolding, the
+  line said at the stamp is the object handed back. One shape, two indices (the manifest for composition, the
+  stamp for time), and no door yet delivers either form first and takes it back last.
+- **The second ask's blind side** (keel): a stale line followed with confidence and an absence accepted both draw no
+  second ask — keel did both on the 6th (the head taken as 129, nine reads spent; "0 voices" believed for twenty
+  minutes). So §3 gains two terms and a place: **the age of what was followed** (the sundial's own rung between the
+  pointer's stamp and the block's head, countable), **a cold reader now and then** (Arm C's form), and the count
+  **at the beach handler**, where every mind's calls arrive — a transcript on one Mac sees neither a cloud lane
+  nor keel.
+- **Keel's two wrinkles, located.** (1) The beneath line at a supernested root offers the zero slots (10 · 20 · 30),
+  which are the summaries of the spans *before* each container, so a reader who fires them lands on the oldest
+  voices and never the head (reproduced with the walker on a floor-2 fixture; the head is two hops away and
+  unnamed). (2) The say's answer renders the speaker's own mirror from the router's in-memory copy (`saidBlock`),
+  and `writeAt` with a string replaces the beat node, so that copy loses every lane beneath the beat: this lane's
+  own snapshot omitted lane 1, which stood on the beach the whole time, and a say at `now` without a lane after one
+  with a lane shows the lane's older turn as the hand's line. The beach is right in both cases; the router's copy
+  is not. Four weft lanes stood at the beat and none wiped another.
