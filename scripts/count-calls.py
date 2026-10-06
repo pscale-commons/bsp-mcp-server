@@ -5,6 +5,7 @@
     npm run count -- 04c38e95           # a session by the start of its id
     npm run count -- /path/to/x.jsonl   # a transcript, wherever it is
     npm run count -- --all              # every session of this project, one line each
+    npm run count -- --day 2026-10-05   # one day across every project on this Mac (or --day yesterday)
 
 Reads the session's own transcript (~/.claude/projects/<project>/<id>.jsonl) and
 any sub-agent transcripts beneath it, and splits every tool call into WORK and
@@ -88,7 +89,8 @@ def is_user_turn(d):
     return isinstance(content, list) and any(isinstance(c, dict) and c.get('type') == 'text' for c in content)
 
 
-def count(paths):
+def count(paths, day=None):
+    """day: a YYYY-MM-DD (UTC) that keeps only that day's lines."""
     uses = {}        # tool_use id -> (ts, kind, name)
     results = {}     # tool_use id -> ts
     turns = []       # per user turn: Counter
@@ -97,10 +99,11 @@ def count(paths):
     first = last = None
     for path in paths:
         for d in read_lines(path):
+            if day and not str(d.get('timestamp', '')).startswith(day): continue
             t = when(d)
             if t:
-                first = first or t
-                last = t
+                first = t if first is None or t < first else first
+                last = t if last is None or t > last else last
             m = d.get('message') or {}
             content = m.get('content')
             if is_user_turn(d):
@@ -203,6 +206,14 @@ def render(label, r):
 
 def main(argv):
     pdir = project_dir()
+    if '--day' in argv:
+        day = argv[argv.index('--day') + 1]
+        if day == 'yesterday': day = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        files = glob.glob(os.path.expanduser('~/.claude/projects/*/*.jsonl')) + glob.glob(os.path.expanduser('~/.claude/projects/*/*/subagents/*.jsonl'))
+        r = count(files, day=day)
+        active = sum(1 for f in files if any(str(d.get('timestamp', '')).startswith(day) and d.get('type') == 'assistant' for d in read_lines(f)))
+        render(f'{day} — {active} sessions active across every project on this Mac', r)
+        return 0
     args = [a for a in argv if not a.startswith('--')]
     flags = {a for a in argv if a.startswith('--')}
     if '--all' in flags:
