@@ -72,7 +72,7 @@
 
 import { z } from 'zod';
 import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
-import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
+import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH, type BlockRow } from '../db.js';
 import { formatBorn, fullWidthAddress } from '../bsp-fn.js';
 import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR } from '../temporal.js';
 import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLOCK_FIELD } from './clock.js';
@@ -372,7 +372,22 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   const spineName = `spine:${field}`;
   const out = (text: string) => ({ content: [{ type: 'text' as const, text }] });
 
-  const srow = await loadBlock(origin, spineName).catch(() => null);
+  // ONE ROUND OF READS, TOGETHER. The door made its beach round trips one
+  // after another — the spine, then the index, then the mirror, then the law,
+  // each waiting on the last — and a say answered in about 2.3 s through the
+  // live router (measured 2026-10-05; David: 'yes, shorten'). Every name here
+  // is known before anything is read, so the reads are asked for at once and
+  // awaited where each is needed; only the saves keep their order. A tier
+  // call and the map read the spine alone, as before.
+  const reading = params.at !== undefined && !params.tier;
+  const mirrorName = `${field}:${handle}`;
+  const opName = `function:${field}`;
+  const saying = reading && params.say !== undefined && params.say.trim() !== '';
+  const spineP = loadBlock(origin, spineName).catch(() => null);
+  const indexP = reading ? loadBeachIndex(origin).catch(() => null) : null;
+  const mirrorP = saying ? loadBlock(origin, mirrorName).catch(() => null) : null;
+  const opP = reading ? loadBlock(origin, opName).catch(() => null) : null;
+  const srow = await spineP;
   if (!srow || !srow.block || typeof srow.block !== 'object') {
     return out(
       `No spine at ${spineName} — a stream composes over a family, it does not create one.\n\n` +
@@ -446,8 +461,21 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   const lane = laned ? laned.lane : null;
   const named = namedRungAddress(atWord, new Date());
   const rawAt = named ?? atWord;
-  const index = await loadBeachIndex(origin).catch(() => null);
+  const index = await (indexP ?? loadBeachIndex(origin).catch(() => null));
   const index0Has = (name: string) => (index?.blocks ?? []).includes(name);
+  // What the index names is read now, beside the saves below: the fold at the
+  // bare name, and every mirror but the caller's own, which this call holds in
+  // hand once it has said. None of it waits on the say.
+  const blockOf = async (p: Promise<BlockRow | null>): Promise<Block | null> => {
+    const row = await p;
+    return row && typeof row.block === 'object' && row.block !== null ? (row.block as Block) : null;
+  };
+  const foldP: Promise<Block | null> = index0Has(field) ? blockOf(loadBlock(origin, field).catch(() => null)) : Promise.resolve(null);
+  const othersP = new Map<string, Promise<Block | null>>();
+  for (const name of (index?.blocks ?? []).filter((n) => n.startsWith(`${field}:`) && !(saying && n === mirrorName))) {
+    othersP.set(name, blockOf(loadBlock(origin, name).catch(() => null)));
+  }
+  let saidBlock: Block | null = null;   // the caller's own mirror as this say left it
 
   let digits: string[];
   try {
@@ -467,8 +495,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   let saidAt: string | null = null;
   let mintedMirror: string | null = null;   // this say brought <field>:<handle> into being
   if (params.say !== undefined && params.say.trim() !== '') {
-    const mirrorName = `${field}:${handle}`;
-    let mrow = await loadBlock(origin, mirrorName).catch(() => null);
+    let mrow = await (mirrorP ?? loadBlock(origin, mirrorName).catch(() => null));
     if (!mrow || typeof mrow.block !== 'object' || mrow.block === null) {
       mintedMirror = mirrorName;
       const born =
@@ -503,10 +530,12 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
         writeAt(voiced, mAddr, params.say);
         await saveBlock(origin, mirrorName, voiced, { spindle: mAddr, secret: params.secret });
         saidAt = `${mirrorName}:${cell}`;
+        saidBlock = voiced;
       } else {
         writeAt(mblock, mAddr, voicedValue(readAt(mblock, mAddr), params.say));
         await saveBlock(origin, mirrorName, mblock, { spindle: mAddr, secret: params.secret });
         saidAt = `${mirrorName}:${mAddr}`;
+        saidBlock = mblock;
       }
     } catch (e: any) {
       return out(`Your reading was refused at ${mirrorName}:${mAddr} — ${e?.message ?? String(e)}`);
@@ -571,8 +600,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // night; a seat reading '(unvoiced)' there took a folded beat for an open one
   // (the trial, 2026-09-21). What is kept is shown, whole at the attended
   // address and marked on the ladder.
-  const frow0 = (index0Has(field) ? await loadBlock(origin, field).catch(() => null) : null);
-  const foldBlock = frow0 && typeof frow0.block === 'object' && frow0.block !== null ? (frow0.block as Block) : null;
+  const foldBlock = await foldP;
   const foldAt = (d: string[]): string | null => (foldBlock ? voiceOf(readAt(foldBlock, emitFor(d, foldBlock))) : null);
   const standingFold = foldAt(digits);
 
@@ -601,16 +629,16 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       prevDigits = momentToAddress(new Date(span.start.getTime() - 1)).split('');
     } catch { /* an address the clock refuses is read as it stands */ }
   }
-  const touched: Record<string, string> = index?.touched ?? {};
+  const touched: Record<string, string> = { ...(index?.touched ?? {}) };
+  if (saidBlock) touched[mirrorName] = new Date(nowMs).toISOString();   // the index was read before the say
 
   const readings: { who: string; text: string; lane?: string; ms?: number | null }[] = [];
   const silent: string[] = [];
   await Promise.all(
     mirrorNames.map(async (name) => {
       const who = name.slice(field.length + 1);
-      const row = await loadBlock(origin, name).catch(() => null);
-      if (!row || typeof row.block !== 'object' || row.block === null) { silent.push(who); return; }
-      const mb = row.block as Block;
+      const mb = name === mirrorName && saidBlock ? saidBlock : await (othersP.get(name) ?? blockOf(loadBlock(origin, name).catch(() => null)));
+      if (!mb) { silent.push(who); return; }
       const node = readAt(mb, emitFor(digits, mb));
       if (!atBeat) {
         const text = voiceOf(node);
@@ -655,8 +683,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     }
     return parts.length ? parts.join('\n') : null;
   };
-  const opName = `function:${field}`;
-  const oprow = await loadBlock(origin, opName).catch(() => null);
+  const oprow = await (opP ?? loadBlock(origin, opName).catch(() => null));
   if (oprow && typeof oprow.block === 'object' && oprow.block !== null) {
     const own = oprow.block as Block;
     const root = voiceOf(own);
