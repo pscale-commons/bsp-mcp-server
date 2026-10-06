@@ -74,7 +74,7 @@ import { z } from 'zod';
 import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
 import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH, type BlockRow } from '../db.js';
 import { formatBorn, fullWidthAddress } from '../bsp-fn.js';
-import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR } from '../temporal.js';
+import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR, readHumanTime, spanInPlace } from '../temporal.js';
 import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLOCK_FIELD } from './clock.js';
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
@@ -153,11 +153,16 @@ export const NAMED_RUNGS: Record<string, number> = {
   season: 5, quarter: 5, year: 4,
 };
 
-/** A named rung → the address of the moment truncated to it. Null when the
- *  word is not one we name, so an ordinary digit address falls through. */
+/** A named rung → the address of the moment truncated to it; a TIME as a
+ *  person says it ('16:00 Europe/London', '4pm tomorrow Europe/London') → the
+ *  beat it falls in (temporal.ts readHumanTime). Null when the words are
+ *  neither, so an ordinary digit address falls through. */
 export function namedRungAddress(word: string, when: Date): string | null {
   const keep = NAMED_RUNGS[word.trim().toLowerCase().replace(/^this\s+/, '')];
-  if (!keep) return null;
+  if (!keep) {
+    const t = readHumanTime(word, when);
+    return t && 'address' in t ? t.address : null;
+  }
   const full = momentToAddress(when);
   return full.slice(0, keep).padEnd(full.length, '0');
 }
@@ -325,7 +330,7 @@ export const streamEngageParamsSchema = {
   at: z
     .string()
     .optional()
-    .describe("The address attended to, in the spine's own coordinate space (digits, at most one decimal point, comma-walk accepted; multi-dot rejected). Pass a NAMED RUNG on a temporal spine — 'today' (the usual one), 'this week', 'this month', 'season', 'year', or 'now' for the current beat — and the address is COMPUTED from the clock — a human is never asked for an address (function:molequle:5). Omit entirely to receive the spine's map instead (every node's opening line at pscale 0), then dial in. ON THE MOVING NOW, WHEN YOUR HAND HAS SEVERAL SESSIONS OPEN: say at 'now.<digit>' — your own lane's digit, 1-9 — and the line lands as that lane's turn beneath the beat, so the lanes of one hand never write over one another; a read at 'now' shows every hand's lanes with how long ago each spoke, a line staying live for one beat's width wherever the beat's edge fell."),
+    .describe("The address attended to, in the spine's own coordinate space (digits, at most one decimal point, comma-walk accepted; multi-dot rejected). Pass a NAMED RUNG on a temporal spine — 'today' (the usual one), 'this week', 'this month', 'season', 'year', or 'now' for the current beat — and the address is COMPUTED from the clock — a human is never asked for an address (function:molequle:5). Or pass a TIME as the person said it, with its PLACE — '16:00 Europe/London', '4pm tomorrow Europe/London', '2026-10-09 09:30 America/New_York', or one instant with its offset, '2026-10-07T16:00+01:00' — and the address of the BEAT it falls in is computed: to book a meeting for 4pm, say it at the time. A time always names its place (an IANA zone or an offset), because the clock keeps no time zone (sundial 8.3); take the place from where the person stands, and never work out a beat address yourself. Omit entirely to receive the spine's map instead (every node's opening line at pscale 0), then dial in. ON THE MOVING NOW, WHEN YOUR HAND HAS SEVERAL SESSIONS OPEN: say at 'now.<digit>' — your own lane's digit, 1-9 — and the line lands as that lane's turn beneath the beat, so the lanes of one hand never write over one another; a read at 'now' shows every hand's lanes with how long ago each spoke, a line staying live for one beat's width wherever the beat's edge fell."),
   say: z
     .string()
     .optional()
@@ -482,6 +487,10 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     digits = parseSpindle(rawAt, spineFloor).digits;
     if (!digits.length) throw new Error('an address is needed, not the root');
   } catch (e: any) {
+    const placeless = readHumanTime(atWord, new Date());
+    if (placeless && 'needsPlace' in placeless) {
+      return out(`at="${params.at}" is a time without its place — the clock keeps no time zone (sundial 8.3), so say where it is read: '${atWord.trim()} Europe/London', or one instant with its offset, '2026-10-07T16:00+01:00'. Take the place from where the person stands.`);
+    }
     return out(`at="${params.at}" is not a usable address in the ${field} family — ${e?.message ?? String(e)}`);
   }
   const spineAddr = emitFor(digits, spine);
@@ -708,7 +717,12 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   const brief = standingBrief(session ? `${session}|${origin}|${field}` : null, law ?? '', nowMs);
   const lines: string[] = [];
   const attendedWhen = clockVoice(spineAddr, spineFloor);
-  const namedAs = named ? atWord.trim() + (lane ? `, lane ${lane}` : '') : null;
+  // A TIME says back the beat it fell in, on the wall clock of its own place,
+  // so the booking reads true or plainly wrong before anyone relies on it.
+  const asTime = named && NAMED_RUNGS[atWord.trim().toLowerCase().replace(/^this\s+/, '')] === undefined ? readHumanTime(atWord, new Date(nowMs)) : null;
+  const namedAs = named
+    ? atWord.trim() + (asTime && 'place' in asTime ? `, its beat ${spanInPlace(spineAddr, asTime.place)} there` : '') + (lane ? `, lane ${lane}` : '')
+    : null;
   const attendedLabel = [namedAs, attendedWhen].filter(Boolean).join(' — ');
   lines.push(`stream:${field} @ ${origin} — at ${spineAddr}${attendedLabel ? ` (${attendedLabel})` : ''}`);
 
