@@ -151,6 +151,7 @@ import {
   selfDecrypt,
   grainEncrypt,
   grainDecrypt,
+  grainReaderSide,
   decryptGrayNodes,
   grayMode,
   GrayEnvelope,
@@ -469,11 +470,45 @@ async function encryptGrainLeaf(
   if (!myHandle || !partnerHandle) {
     throw new Error('grain not established (no parties at position 9). Reach first via pscale_grain_reach, then curate with bsp().');
   }
-  const partnerKeys = await getPublicKeys(partnerHandle);
+  const [partnerKeys, myKeys] = await Promise.all([getPublicKeys(partnerHandle), getPublicKeys(myHandle)]);
   if (!partnerKeys) {
     throw new Error(`partner "${partnerHandle}" has not published keys — cannot curate privately. They run pscale_key_publish, or write with gray:false. (Your side secret must be the same secret you published keys with.)`);
   }
-  return grainEncrypt(plaintext, secret, myHandle, partnerHandle, partnerKeys.x25519);
+  // The partner's half of the shared key pairs their secret with YOUR published
+  // key — so before yours stands, a sealed line opens for you alone.
+  if (!myKeys) {
+    throw new Error(`you ("${myHandle}") have not published keys, so ${partnerHandle} could never open this line — nothing was written. Publish first — pscale_key_publish(handle="${myHandle}", secret=<your passport's lock>, enc_secret=<the key you seal grain lines with>) — then write again with that same enc_secret.`);
+  }
+  return grainEncrypt(plaintext, secret, myHandle, partnerHandle, partnerKeys.x25519, myKeys.x25519);
+}
+
+/**
+ * What a grain line that stays shut says in place of a bare "[encrypted]":
+ * whose key is off. A bare marker reads the same whether the reader holds the
+ * wrong secret or the writer sealed under one their passport does not carry,
+ * and the writer's own read-back opens the second either way — so only the
+ * partner's read can name it. `readerSide` is the party whose published key the
+ * reader's secret derives (grainReaderSide), null for neither. Pure, so the
+ * smoke battery reads it without a beach.
+ */
+export function grainShutLine(
+  env: GrayEnvelope,
+  h1: string,
+  h2: string,
+  k1: string | null,
+  k2: string | null,
+  readerSide: '1' | '2' | null,
+): string {
+  // The bare marker leads every line, so whatever already looks for it still finds it.
+  const bare = !k1 ? h1 : !k2 ? h2 : null;
+  if (bare) return `[encrypted] ${bare} has no keys published at passport:${bare} 9 — they run pscale_key_publish with the secret they seal with.`;
+  if (!readerSide) return `[encrypted] your key derives neither passport:${h1} 9 nor passport:${h2} 9 — read with the secret yours were published from, as enc_secret.`;
+  const me = readerSide === '1' ? h1 : h2;
+  const other = readerSide === '1' ? h2 : h1;
+  // A line is sealed TO its partner (the envelope's 9.2), so its writer is the other.
+  return env['9']['2'] === me
+    ? `[encrypted] your key is right; ${other} sealed this under a secret other than the one behind passport:${other} 9 (or to an earlier key of yours) — ${other} rewrites it with that secret.`
+    : `[encrypted] your key matches passport:${me} 9, but this line was sealed under another secret (or to an earlier key of ${other}) — rewrite it with this one.`;
 }
 
 /**
@@ -508,6 +543,9 @@ async function buildGrayDecryptor(
   if (block?.['9']?._ === GROUP_KEYRING_MARKER) {
     groupKey = await unwrapGroupKeyFromKeyring(block['9'], secret);
   }
+  // Which party the reader's secret belongs to — derived once, and only when a
+  // grain line stays shut, so that line can say whose key is off.
+  let readerSide: Promise<'1' | '2' | null> | null = null;
   return async (env: GrayEnvelope): Promise<string | null> => {
     const mode = grayMode(env);
     if (mode === 'self') return selfDecrypt(env, secret, agentId);
@@ -516,7 +554,9 @@ async function buildGrayDecryptor(
       // pairs with the OTHER party's published key.
       if (h1 && k2) { const pt = await grainDecrypt(env, secret, h1, k2); if (pt !== null) return pt; }
       if (h2 && k1) { const pt = await grainDecrypt(env, secret, h2, k1); if (pt !== null) return pt; }
-      return null;
+      if (!h1 || !h2) return null;
+      if (k1 && k2) readerSide ??= grainReaderSide(secret, h1, k1, h2, k2);
+      return grainShutLine(env, h1, h2, k1, k2, k1 && k2 ? await readerSide : null);
     }
     if (mode === 'group') return groupKey ? groupDecryptContent(env, groupKey) : null;
     return null;
@@ -560,7 +600,7 @@ export const bspParamsSchema = {
   gray: z
     .boolean()
     .optional()
-    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle: at a leaf the envelope is the entry; at a position holding entries it voices that position and every entry stays, so a gray history pays its zero-slot summaries exactly as an open one does. Degray = read with the key, then write the plaintext back at the same address with gray:false: the line takes the envelope's place, keeping its arrival stamp and anything standing in it, so a keyed reader and an open one read the same line. Grain mode needs both parties to have run pscale_key_publish."),
+    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle: at a leaf the envelope is the entry; at a position holding entries it voices that position and every entry stays, so a gray history pays its zero-slot summaries exactly as an open one does. Degray = read with the key, then write the plaintext back at the same address with gray:false: the line takes the envelope's place, keeping its arrival stamp and anything standing in it, so a keyed reader and an open one read the same line. Grain mode needs both parties to have run pscale_key_publish — each from the ONE secret they then seal and read with (enc_secret, else secret); a grain write sealed under any other secret is refused, since the partner could never open it."),
   enc_secret: z
     .string()
     .optional()
