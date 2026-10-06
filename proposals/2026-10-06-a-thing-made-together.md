@@ -1,10 +1,14 @@
 # A thing made together — the form for something built by the people who want one (2026-10-06)
 
-**Status**: accepted at David's word (*"go for 3"*).
-- **The site half has landed**: /found seeds a form's parts (happyseaurchin-home #381).
-- **The beach half is staged in §8, verbatim.** The session that drafted it lost its bsp connector mid-turn,
-  and connectors are read only when a session starts. Any session holding the connector lands it in six
-  writes, with keys named only by pointer.
+**Status**: landed 2026-10-06 at David's word (*"go for 3"*; the name: *"yes to function:make"*).
+- **The site half**: /found seeds a form's parts (happyseaurchin-home #381).
+- **The beach half**: the six writes in §8, made 2026-10-06, each walked back as its next reader meets it.
+  - `function:make` stands under the shared project lock.
+  - `tree` 9.2 names the form, and `/found` offers it.
+  - `function:bobble` 1 mounts it, and `spine:bobble` 9 names it.
+  - The texts they replaced stand at `archive:tree:2026-10-06` and `archive:function:bobble:2026-10-06`.
+- **The close**: a done card in `beach-venture:weft`, naming the part it advanced at its 5
+  (`beach-venture-path 2.5`).
 
 **Prompted by**: the third recommendation of watch:weft 547.5: a form for a thing made together, with the bobble as
 its first instance and a founding branch so /found offers it. David added, with the word:
@@ -151,7 +155,7 @@ The full text stands at `function:make` on the beach, in the tree 9.3 grammar.
 - **WANT is a signal, not a promise.** It counts the crowd without asking anything of them. A pledge stays a
   ticket.
 
-## 8. Staged for the landing: six writes, in order
+## 8. The landing: six writes, in order (made 2026-10-06, kept as the record)
 
 Read first, in one bolus:
 - `function:make` (it must not exist);
