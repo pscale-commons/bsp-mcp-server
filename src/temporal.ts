@@ -523,3 +523,139 @@ export function voiceAddress(addr: string): string {
   if (pscale === 1) return `${day}, ${part}`;
   return `${day}, ${part} (beat ${addr[9]})`;
 }
+
+// ── Layer H — a time as a person says it → the beat it falls in ─────────────
+//
+// THE INVERSE OF THE NOW-STAMP. A person books "4pm", never 2026411666, and
+// what lies between the two — a place's offset that summer time moves, then
+// ninths of a UTC day — is exactly the mixed-radix arithmetic an LLM botches
+// (sundial 4). So a door takes the WORDS and the clock does the sums, as it
+// already does for 'today'. A time always carries its PLACE, because the clock
+// keeps no time zone (sundial 8.3): the words name it — an IANA zone
+// ("Europe/London"), an offset ("+01:00"), or UTC — or a door that knows its
+// own device (the mirror, in a browser) supplies it.
+
+/** A time read off a person's words: the beat address it falls in, the
+ *  instant named, and the place it was read in. */
+export interface HumanTime { address: string; instant: Date; place: string }
+
+/** The wall clock of `place` at an instant: [y, m0, d, h, mi, s], or null when
+ *  `place` is no zone Intl knows. */
+function wallIn(place: string, ms: number): number[] | null {
+  try {
+    const f = new Intl.DateTimeFormat('en-US', {
+      timeZone: place, hourCycle: 'h23',
+      year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric',
+    });
+    const p: Record<string, number> = {};
+    for (const x of f.formatToParts(new Date(ms))) if (x.type !== 'literal') p[x.type] = Number(x.value);
+    return [p.year, p.month - 1, p.day, p.hour % 24, p.minute, p.second];
+  } catch {
+    return null;
+  }
+}
+
+/** A place → its offset east of UTC at an instant, in ms. A fixed offset
+ *  ('+01:00', 'UTC') is the same at every instant; a zone is asked. */
+function offsetAt(place: string, ms: number): number {
+  const fixed = /^([+-])(\d{2}):(\d{2})$/.exec(place);
+  if (fixed) return (fixed[1] === '-' ? -1 : 1) * (Number(fixed[2]) * 60 + Number(fixed[3])) * 60_000;
+  if (place === 'UTC') return 0;
+  const w = wallIn(place, ms)!;
+  return Date.UTC(w[0], w[1], w[2], w[3], w[4], w[5]) - Math.floor(ms / 1000) * 1000;
+}
+
+/** A place token → its canonical spelling, or null. */
+function placeOf(token: string): string | null {
+  if (/^(z|utc|gmt)$/i.test(token)) return 'UTC';
+  const off = /^(?:utc|gmt)?([+-])(\d{1,2})(?::?(\d{2}))?$/i.exec(token);
+  if (off) {
+    const h = Number(off[2]), m = Number(off[3] ?? 0);
+    return h <= 14 && m < 60 ? `${off[1]}${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` : null;
+  }
+  if (!/^[A-Za-z][A-Za-z0-9_+-]*(\/[A-Za-z0-9_+-]+)+$/.test(token)) return null;
+  try { return new Intl.DateTimeFormat('en-US', { timeZone: token }).resolvedOptions().timeZone; } catch { return null; }
+}
+
+/** Read a time as a person says it. Words come in any order — a DATE
+ *  (2026-10-07, today, tomorrow, yesterday), a TIME (16:00, 4pm, 4:30 pm,
+ *  noon, midnight) and a PLACE — or as one ISO instant with its offset
+ *  (2026-10-07T16:00+01:00). With no date it is today IN THAT PLACE. Returns
+ *  null when the words are not a time, so a digit address or a named rung
+ *  falls through untouched; { needsPlace } for a time with no place when the
+ *  door has none to supply. Pure but for Intl's zone tables. */
+export function readHumanTime(
+  words: string, now: Date = new Date(), devicePlace?: string,
+): HumanTime | { needsPlace: true } | null {
+  const said = String(words ?? '').trim().toLowerCase()
+    .replace(/(\d)\s*([ap])\.?m\.?(?=\s|,|$)/g, '$1$2m');
+  if (!said) return null;
+  let date: number[] | null = null, shift = 0, hm: number[] | null = null, place: string | null = null;
+
+  const iso = /^(\d{4})-(\d{2})-(\d{2})[t ](\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(z|[+-]\d{2}:?\d{2})?$/.exec(said);
+  if (iso) {
+    date = [Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])];
+    hm = [Number(iso[4]), Number(iso[5]), Number(iso[6] ?? 0)];
+    if (iso[7]) place = placeOf(iso[7].length === 5 ? iso[7].slice(0, 3) + ':' + iso[7].slice(3) : iso[7]);
+  } else {
+    for (const raw of said.split(/[\s,]+/)) {
+      const t = raw.trim();
+      if (!t || t === 'at' || t === 'on') continue;
+      let m: RegExpExecArray | null;
+      if ((m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t)) && !date) date = [Number(m[1]), Number(m[2]) - 1, Number(m[3])];
+      else if (t === 'today' && !date) shift = 0, date = [];
+      else if (t === 'tomorrow' && !date) shift = 1, date = [];
+      else if (t === 'yesterday' && !date) shift = -1, date = [];
+      else if ((m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(t)) && !hm) hm = [Number(m[1]), Number(m[2]), Number(m[3] ?? 0)];
+      else if ((m = /^(\d{1,2})(?::(\d{2}))?([ap])m$/.exec(t)) && !hm) {
+        const h = Number(m[1]);
+        if (h < 1 || h > 12) return null;
+        hm = [(h % 12) + (m[3] === 'p' ? 12 : 0), Number(m[2] ?? 0), 0];
+      }
+      else if (t === 'noon' && !hm) hm = [12, 0, 0];
+      else if (t === 'midnight' && !hm) hm = [0, 0, 0];
+      else if (!place && (place = placeOf(raw.trim().replace(/^(utc|gmt)$/i, 'UTC')))) continue;
+      else return null;
+    }
+  }
+  if (!hm || hm[0] > 23 || hm[1] > 59 || hm[2] > 59) return null;
+  place = place ?? (devicePlace ? placeOf(devicePlace) : null);
+  if (!place) return { needsPlace: true };
+
+  // The day: as given, or the place's own today (± a day). A day named by
+  // date must exist — 2026-02-30 is refused, never rolled into March.
+  let y: number, m0: number, d: number;
+  if (date && date.length === 3) {
+    [y, m0, d] = date;
+    const check = new Date(Date.UTC(y, m0, d));
+    if (check.getUTCFullYear() !== y || check.getUTCMonth() !== m0 || check.getUTCDate() !== d) return null;
+  } else {
+    const here = new Date(now.getTime() + offsetAt(place, now.getTime()));
+    const day = new Date(Date.UTC(here.getUTCFullYear(), here.getUTCMonth(), here.getUTCDate() + shift));
+    [y, m0, d] = [day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()];
+  }
+  // The wall time in that place → the instant: guess with the offset at the
+  // wall time read as UTC, then once more at the guess, which settles the
+  // nights summer time begins or ends.
+  const wall = Date.UTC(y, m0, d, hm[0], hm[1], hm[2]);
+  let ms = wall - offsetAt(place, wall);
+  ms = wall - offsetAt(place, ms);
+  const instant = new Date(ms);
+  try {
+    return { address: momentToAddress(instant), instant, place };
+  } catch {
+    return null;   // outside the floor-10 form (years 1000-9999)
+  }
+}
+
+/** The span of a temporal address read on the wall clock of a place —
+ *  "15:49–16:07" — each edge rounded to its nearest minute. */
+export function spanInPlace(addr: string, place: string): string {
+  const { start, end } = addressToSpan(addr);
+  const clock = (ms: number) => {
+    const r = Math.round(ms / 60_000) * 60_000;
+    const w = new Date(r + offsetAt(place, r));
+    return `${String(w.getUTCHours()).padStart(2, '0')}:${String(w.getUTCMinutes()).padStart(2, '0')}`;
+  };
+  return `${clock(start.getTime())}–${clock(end.getTime())}`;
+}
