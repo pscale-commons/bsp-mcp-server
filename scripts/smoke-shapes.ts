@@ -4,6 +4,9 @@
 import { tooLarge, spanLines, nextRef, WINDOW_CHARS } from '../src/tools/bsp';
 import { closedContainerLines } from '../src/tools/pool';
 import { formatRead, bspRead } from '../src/bsp-fn';
+import { situationOf } from '../src/tools/play';
+import { writeAt } from '../src/bsp';
+import { momentToAddress } from '../src/temporal';
 
 let fails = 0;
 const check = (name: string, ok: boolean, got?: unknown) => { console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${ok || got === undefined ? '' : `\n      got: ${JSON.stringify(got)?.slice(0, 300)}`}`); if (!ok) fails++; };
@@ -42,6 +45,24 @@ const walk = formatRead(bspRead(block, '541', null));
 check('a walk over unpaid summaries says so once', (walk.match(/summary slot not yet paid/g) ?? []).length === 1, walk);
 const flat = formatRead(bspRead({ _: 'root', 1: 'one' } as any, '1', null));
 check('a floor-1 walk says nothing of frames', !/summary slot/.test(flat), flat);
+
+// the situation rides the door — a hand's own now mirror walked at the stamp, its last say beneath
+{
+  const born = (text: string, floor: number) => { let n: any = text; for (let i = 0; i < floor; i++) n = { _: n }; return n; };
+  const at = new Date('2026-10-06T16:20:00Z');
+  const stamp = momentToAddress(at);
+  const nowMirror = born('NOW — weft', 10);
+  writeAt(nowMirror, '2026000000', '2026 — the year line');
+  writeAt(nowMirror, stamp.slice(0, 8) + '00', 'today — the day line');
+  const torus = born('TORUS — weft', 10);
+  const said = new Date(at.getTime() - 5 * 60 * 1000).toISOString();
+  writeAt(torus, `${momentToAddress(new Date(said))}.2`, { _: 'glass.2 — in the middle of the test', 6: said, 3: said });   // a say lands at the beat of its own instant
+  const sit = situationOf('weft', nowMirror, torus, said, at);
+  check('the situation walks the now mirror at the stamp: the year and the day ride above the beat', !!sit && /the year line/.test(sit!) && /the day line/.test(sit!) && /summary slot not yet paid/.test(sit!), sit);
+  check('the last say rides beneath with its lane and its age', !!sit && /lane 2: glass\.2 — in the middle of the test \(5m ago\)/.test(sit!), sit);
+  check('a hand with no now mirror and no say is handed nothing here', situationOf('nobody', null, null, null, at) === null);
+  check('a say alone, no now mirror, still rides', /lane 2/.test(situationOf('weft', null, torus, said, at) ?? ''));
+}
 
 console.log(fails === 0 ? '\nsmoke:shapes — all pass' : `\nsmoke:shapes — ${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);
