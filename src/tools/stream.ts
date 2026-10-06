@@ -75,7 +75,7 @@ import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
 import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH, type BlockRow } from '../db.js';
 import { formatBorn, fullWidthAddress } from '../bsp-fn.js';
 import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR } from '../temporal.js';
-import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLOCK_FIELD } from './clock.js';
+import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, keeperHand, foldEnds, timeKey, clockDigits, CLOCK_FIELD } from './clock.js';
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
 import { nameAtTheDoor, noteLook, reflect } from '../looks.js';
@@ -495,6 +495,15 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   let saidAt: string | null = null;
   let mintedMirror: string | null = null;   // this say brought <field>:<handle> into being
   if (params.say !== undefined && params.say.trim() !== '') {
+    // ON THE CLOCK A CHARACTER SAYS FOR THEMSELF. A lean that voiced 'hobb'
+    // while Hobb sat at the table seated a second Hobb under another key (the
+    // two-player walk, 2026-10-05): a mirror named for a character in any
+    // spelling but their own is refused.
+    if (field === CLOCK_FIELD) {
+      const twin = (index?.blocks ?? []).map((n) => (n.startsWith('passport:') ? n.slice('passport:'.length) : ''))
+        .find((h) => h && h !== handle && h.toLowerCase() === handle.toLowerCase());
+      if (twin) return out(`Nothing said — '${handle}' is ${twin}, a character at this table, who says for themself under their own key; a figure is named for its face.`);
+    }
     let mrow = await (mirrorP ?? loadBlock(origin, mirrorName).catch(() => null));
     if (!mrow || typeof mrow.block !== 'object' || mrow.block === null) {
       mintedMirror = mirrorName;
@@ -567,27 +576,63 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
         await saveBlock(origin, treeName, tblock, { spindle: tAddr, secret: params.secret });
         keptTo = `${treeName}:${tAddr}`;
       } else {
+        // THE NIGHT at a table played on the clock: one fold per address, and
+        // THE FIRST KEPT STANDS. A keeper's hand named at keeper:scene 4 keeps
+        // it alone — the night is born locked under that hand's key and the
+        // store refuses every other. At a table of players any seated hand
+        // keeps it, so the night is born open, a second fold at an address is
+        // refused here, and the write is read back: two hands pressing in the
+        // same moment both pass the check, the night holds whichever landed
+        // last, and the other is told so rather than telling a fold the record
+        // does not hold (the beach has no first-write-only act). The night
+        // locked under the first presser's key refused the second player ever
+        // after (the two-player walk, 2026-10-05). Every other family's fold is
+        // born open, as the convention prefers (tree:3, tree:4): anyone may
+        // supersede.
+        const clock = field === CLOCK_FIELD ? await clockTable(origin).catch(() => null) : null;
+        const hand = clock ? await keeperHand(clock).catch(() => null) : null;
+        if (hand && hand.toLowerCase() !== handle.toLowerCase()) {
+          return out(`The fold was not kept — ${hand} keeps the night at this table (keeper:scene 4): say, and wait to be told.`);
+        }
         let frow = await loadBlock(origin, field).catch(() => null);
         if (!frow || typeof frow.block !== 'object' || frow.block === null) {
-          // THE NIGHT IS BORN LOCKED. On a table played on the clock the bare
-          // field is the night, and one night needs one determiner: the first
-          // keep births it under the keeper's key, and that key folds it ever
-          // after (the trial's finding, 2026-09-21 — a rival keep is refused by
-          // the store, no code). Every other family's fold is born open, as the
-          // convention prefers (tree:3, tree:4): anyone may supersede.
-          const clock = field === CLOCK_FIELD && params.secret ? await clockTable(origin).catch(() => null) : null;
           const born = clock
-            ? `THE NIGHT — what has happened at this table, kept by the keeper alone at the clock's own addresses: a beat's fold at its beat, a gathering's at its gathering, a day's at its day, each coarser fold standing above the finer ones it contains. One night, under one key, born at the first fold; a line revised after its fold is visibly later than the night it was folded into.`
+            ? `THE NIGHT — what has happened at this table, kept at the clock's own addresses: a beat's fold at its beat, a gathering's at its gathering, a day's at its day, each coarser fold standing above the finer ones it contains. One fold per address, and the first kept stands — ${hand ? `kept by ${hand}'s hand alone, under its key` : 'kept by whichever seated hand folds first, so any player may make the moment happen'}; a line revised after its fold is visibly later than the night it was folded into.`
             : `${field.toUpperCase()} — the FOLD: the social product of ${spineName} and every ${field}:<handle> mirror, ` +
               `at the spine's own addresses. Computed by anyone, owned by nobody; a snapshot here is endorsed by pointer and never gates anything, ` +
               `and a better reading may always supersede it (tree:3, tree:4).`;
-          await saveBlock(origin, field, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(clock ? { new_lock: params.secret } : {}) });
+          await saveBlock(origin, field, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(clock && hand && params.secret ? { new_lock: params.secret } : {}) });
           frow = await loadBlock(origin, field).catch(() => null);
         }
         const fblock: Block = JSON.parse(JSON.stringify(frow!.block));
         const fAddr = emitFor(digits, fblock);
+        const standing = clock ? voiceOf(readAt(fblock, fAddr)) : null;
+        if (standing) {
+          const n = foldEnds(standing).next;
+          return out(`The fold was not kept — ${fAddr} is already folded, and the first fold stands. Tell it (tier='soft' at ${fAddr}) and say at its NEXT${n ? ` (${n})` : ''}.`);
+        }
+        if (clock) {
+          // NEXT IS THE CLOCK'S ONLY HAND (2.2): a fold that ends at its own
+          // address, or before it, would stop the clock — every passport would
+          // be moved to the beat just folded (the walk of 2026-10-06: "NEXT
+          // 161" at 161). Refused, with the fault named, so the hand folds again.
+          const n = foldEnds(text).next;
+          const nd = n ? clockDigits(n, clock.floor) : null;
+          const nAddr = nd ? nd.join('').padEnd(clock.floor, '0') : null;
+          if (!nAddr || timeKey(nAddr).localeCompare(timeKey(fAddr)) <= 0) {
+            return out(`The fold was not kept — it ends ${n ? `NEXT ${n}` : 'without NEXT'}, which does not move the clock past ${fAddr}: NEXT must name a later address (2.2) — the following beat while the scene runs on, the first beat of the next gathering when it has ended.`);
+          }
+        }
         writeAt(fblock, fAddr, voicedValue(readAt(fblock, fAddr), text));
         await saveBlock(origin, field, fblock, { spindle: fAddr, secret: params.secret });
+        if (clock) {
+          const again = await loadBlock(origin, field).catch(() => null);
+          const held = again && typeof again.block === 'object' && again.block !== null ? voiceOf(readAt(again.block as Block, fAddr)) : null;
+          if (held && held.trim() !== text) {
+            const n = foldEnds(held).next;
+            return out(`The fold was not kept — another hand's fold landed at ${fAddr} in the same moment, and the night holds theirs. Tell it (tier='soft' at ${fAddr}) and say at its NEXT${n ? ` (${n})` : ''}.`);
+          }
+        }
         keptTo = `${field}:${fAddr}`;
       }
     } catch (e: any) {

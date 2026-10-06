@@ -6,8 +6,9 @@
  * its keeper's hold with the placing into the scenario (keeper:scene 3), and
  * the genesis delta (char-creation) that puts the BEAT beside the LOCATION in a
  * passport's third line. The night (the bare `temporal`) is NOT founded: it is
- * born locked at the first fold, under the folder's key — the determiner is the
- * lock (proposals/2026-09-22-clock-trial-corrective-pass.md).
+ * born at the first fold — open at a table of players, where any seated hand
+ * folds and the first fold at an address stands; locked under a keeper's hand
+ * where one is named at keeper:scene 4 (proposals/2026-10-06-the-table-of-more-than-one-mind.md).
  *
  *   CLOCK_KEY=<the table's key> npx tsx scripts/clock-table.ts <table-url> <scenario-url> <arrival-address> [<first-beat>]
  *
@@ -72,7 +73,7 @@ const spine = floor3(
 const law = JSON.parse(readFileSync(fileURLToPath(new URL('../src/tools/clock-law.json', import.meta.url)), 'utf8'));
 
 const keeperScene = {
-  _: `The keeper's hold for ${tableName} — a table of ${world} played ON THE CLOCK (the second track). The place is never copied here: it is read live from the scenario through the placing at 3; a character new to the table begins at the beat named at 5. The night — the bare block temporal — is born locked at the first fold, under the folder's key, and that key folds it ever after; a keeper's hand named at 4 folds instead, and characters say and wait.`,
+  _: `The keeper's hold for ${tableName} — a table of ${world} played ON THE CLOCK (the second track). The place is never copied here: it is read live from the scenario through the placing at 3; a character new to the table begins at the beat named at 5. The night — the bare block temporal — is born at the first fold: one fold per address, the first kept stands, and any seated character's hand may fold; a keeper's hand named at 4 folds alone, and characters say and wait.`,
   '3': `PLACING: *:${master}:${spatialName}:${arrival}`,
   '5': `FIRST BEAT: *:${origin}:spine:${CLOCK_FIELD}:${firstBeat} — where a character new to this table stands: the first beat of the clock's first gathering at the arrival place named at 3.`,
 };
@@ -104,4 +105,4 @@ for (const [name, block] of writes) {
   console.log(`  founded ${name} (${JSON.stringify(block).length} chars)`);
 }
 console.log(`\n${origin} plays ${world} on the clock: arrival ${placeName} [${arrival}], first beat ${firstBeat}.`);
-console.log(`A character enters with pscale_play(world='${origin}', handle=<name>); the night is born at the first fold, locked under the folder's key.`);
+console.log(`A character enters with pscale_play(world='${origin}', handle=<name>); the night is born at the first fold, and any seated hand may fold.`);

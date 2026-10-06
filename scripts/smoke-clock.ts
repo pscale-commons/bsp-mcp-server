@@ -11,7 +11,7 @@
  */
 import assert from 'node:assert/strict';
 import {
-  timeKey, voicedAddresses, nightSoFar, foldEnds, foldBody, lineAt, passportBeat, standpointLine, clockDigits,
+  timeKey, voicedAddresses, nightSoFar, foldEnds, foldBody, wayFor, lineAt, passportBeat, standpointLine, clockDigits,
 } from '../src/tools/clock.js';
 
 let n = 0;
@@ -67,10 +67,26 @@ ok('the fold just before 100 (the day): every beat of the day is its ring; the l
 });
 
 ok('a fold\'s closing lines: NEXT and WAY, and the body without them', () => {
-  assert.deepEqual(foldEnds('They meet.\n\nWAY 220\nNEXT 212'), { next: '212', way: '220' });
-  assert.deepEqual(foldEnds('The ford empties. NEXT 161'), { next: '161', way: null });
+  assert.deepEqual(foldEnds('They meet.\n\nWAY 220\nNEXT 212'), { next: '212', way: '220', ways: [{ who: null, addr: '220' }] });
+  assert.deepEqual(foldEnds('The ford empties. NEXT 161'), { next: '161', way: null, ways: [] });
   assert.equal(foldBody('They meet.\n\nWAY 220\nNEXT 212'), 'They meet.');
   assert.equal(foldBody('The ford empties. NEXT 161'), 'The ford empties.');
+});
+
+ok('a WAY line names who goes — one per character; a bare WAY names nobody', () => {
+  const ends = foldEnds('She goes up the track; he stays with the mule.\n\nWAY Wenna 221\nNEXT 153');
+  assert.deepEqual(ends.ways, [{ who: 'Wenna', addr: '221' }]);
+  assert.equal(ends.way, null);
+  assert.equal(wayFor(ends, 'wenna', false), '221');       // named, in any spelling
+  assert.equal(wayFor(ends, 'Hobb', false), null);         // not named: he has not moved
+  const two = foldEnds('They part at the ford.\nWAY Hobb 311\nWAY Wenna 221\nNEXT 153');
+  assert.equal(wayFor(two, 'Hobb', false), '311');
+  assert.equal(wayFor(two, 'Wenna', false), '221');
+  const bare = foldEnds('He climbs.\n\nWAY 311\nNEXT 153');
+  assert.equal(wayFor(bare, 'Hobb', true), '311');         // alone at the table, a bare WAY is his
+  assert.equal(wayFor(bare, 'Hobb', false), null);         // with company, a bare WAY moves nobody
+  assert.equal(foldBody('They part at the ford.\nWAY Hobb 311\nWAY Wenna 221\nNEXT 153'), 'They part at the ford.');
+  assert.equal(foldBody('She goes. WAY Wenna 221'), 'She goes.');
 });
 
 ok('a line at an address; a missing one is null', () => {
