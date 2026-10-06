@@ -32,6 +32,102 @@ import {
   BspWriteResult,
 } from '../bsp-fn.js';
 import { readBackAfterWrite, readBackAfterAppend } from '../read-back.js';
+
+/** How many characters a window carries from one read. A disc of 805,000
+ *  characters was read whole on 2026-10-05 (daily:weft at pscale 0) and the
+ *  session that read it said so itself; the door now refuses such a read and
+ *  names the shape that would have served. */
+export const WINDOW_CHARS = 30000;
+
+/** A READ A WINDOW CANNOT CARRY IS REFUSED AT THE DOOR, with the shape named
+ *  (David, 2026-10-06). Null when the read fits. */
+export function tooLarge(result: any, text: string): string | null {
+  if (text.length <= WINDOW_CHARS) return null;
+  const n = text.length;
+  if (result?.shape === 'disc' && Array.isArray(result.entries) && result.entries.length) {
+    const addrs = result.entries.map((e: any) => String(e.address ?? '')).filter((a: string) => /^\d+$/.test(a)).sort();
+    const last = addrs[addrs.length - 1] ?? '';
+    const container = last ? last.slice(0, -1) + '0' : '';
+    const p = typeof result.pscale === 'number' ? result.pscale : 0;
+    return `Read refused at the door: this disc is ${n} characters over ${result.entries.length} positions — more than a window carries, and a disc at pscale ${p} over an accumulator is every entry it ever took. `
+      + (container ? `Read its latest container instead — spindle='${container}', pscale_attention=${p - 1} — ` : 'Read one container — spindle=<its zero slot>, one pscale finer — ')
+      + `or walk the entry you need by its address: a path-walk frames it with the summaries above it.`;
+  }
+  const p = typeof result?.pscale === 'number' ? result.pscale : null;
+  return `Read refused at the door: this ${result?.shape ?? 'read'} is ${n} characters, more than a window carries. Walk a spindle (spindle=<address>) for the part you need, or read the disc one pscale coarser${p !== null ? ` (pscale_attention=${p + 1})` : ' (pscale_attention=1)'} to see what stands.`;
+}
+
+/** THE OWED SPAN RIDES THE ACK. A summary is dense with the span's own
+ *  handles, and the span is here — the entries a container is owed over, by
+ *  their opening lines, from the block as it stands — so the summary is paid
+ *  from the ack and never from nine reads (a session read stash:keel 121-129
+ *  one by one to pay 130, 2026-10-06). */
+export function spanLines(block: Block, dues: { slot: string; over: string }[]): string {
+  const out: string[] = [];
+  for (const d of dues) {
+    const m = /^(\d+)-(\d+)$/.exec(String(d.over));
+    if (!m) continue;
+    const a = parseInt(m[1], 10), b = parseInt(m[2], 10);
+    if (!(b >= a && b - a < 12)) continue;
+    const width = m[1].length;
+    const rows: string[] = [];
+    for (let k = a; k <= b; k++) {
+      if (k % 10 === 0) continue;   // a zero slot is a summary, never an entry
+      const addr = String(k).padStart(width, '0');
+      let text = '';
+      try {
+        const r: any = bspRead(block, addr, null);
+        const es: any[] = r?.entries ?? [];
+        const last = es[es.length - 1];
+        text = typeof last?.content === 'string' ? last.content : '';
+      } catch { text = ''; }
+      if (text.trim()) rows.push(`      ${addr} ${text.replace(/\s+/g, ' ').slice(0, 140)}`);
+    }
+    if (rows.length) out.push(`    the span of ${d.slot}, by its opening lines:`, ...rows);
+  }
+  return out.length ? '\n' + out.join('\n') : '';
+}
+
+/** The manifest ref that follows a landing: '<block>:<addr>:<attention>' for
+ *  the same block, moved to what just landed; null when the ref is another
+ *  block's or already there. */
+export function nextRef(ref: unknown, block: string, landed: string): string | null {
+  if (typeof ref !== 'string' || !landed) return null;
+  const pr = /^(.*):(\d[\d.]*):(-?\d+)$/.exec(ref);
+  if (!pr || pr[1] !== block) return null;
+  const next = `${block}:${landed}:${pr[3]}`;
+  return next === ref ? null : next;
+}
+
+/** THE BUNDLE FOLLOWS THE RECORD (David, 2026-10-06: 'history:happyseaurchin
+ *  299 should be one of them'). When a hand appends to one of its own organs
+ *  and its manifest dials that organ, the slot moves to what just landed, so
+ *  the next instance is handed the latest entry by its concrete address and
+ *  nobody reads the record to find it. The hand's own key, in the same call;
+ *  a manifest that does not dial the organ is left alone. */
+export async function bundleFollowsAppend(origin: string, block: string, landed: string, secret: string): Promise<string> {
+  const m = /^([a-z0-9-]+):([^:]+)$/i.exec(block);
+  if (!m || !landed) return '';
+  const shellName = `shell:${m[2]}`;
+  let row: any = null;
+  try { row = await loadBlock(origin, shellName); } catch { return ''; }
+  const manifest = row?.block?.['3'];
+  if (!manifest || typeof manifest !== 'object') return '';
+  for (const k of Object.keys(manifest)) {
+    if (!/^[1-9]$/.test(k)) continue;
+    const next = nextRef(manifest[k], block, landed);
+    if (!next) continue;
+    try {
+      const shell: Block = JSON.parse(JSON.stringify(row.block));
+      writeAt(shell, `3.${k}`, next);
+      await saveBlock(origin, shellName, shell, { spindle: `3.${k}`, secret });
+      return `\n  ⟲ the bundle follows: ${shellName} 3.${k} now dials ${next}`;
+    } catch (e: any) {
+      return `\n  ⟲ the bundle did not follow (${shellName} 3.${k}): ${e?.message ?? String(e)}`;
+    }
+  }
+  return '';
+}
 import { reflect } from '../looks.js';
 import {
   loadBlock,
@@ -837,15 +933,29 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
           + `${dues.length > 3 ? ` (+${dues.length - 3} older)` : ''}`
           + ` — one line written at that address, in the open or gray, voices the container and leaves its entries untouched.`
         : '';
+      // The span the summary is owed over rides the ack — one block read,
+      // only when a container is owed, so the summary is paid without
+      // reading the entries one by one.
+      let span = '';
+      if (dues.length && !wantGrayAppend) {
+        try {
+          const row = await loadBlock(agent_id, blockName);
+          if (row?.block) span = spanLines(row.block as Block, dues.slice(0, 3));
+        } catch { /* the owed line stands alone */ }
+      }
+      const landedAt = res.address ?? (res.slot !== undefined && res.slot !== null ? String(res.slot) : '');
+      const followed = params.secret && landedAt
+        ? await bundleFollowsAppend(target.agent_id, target.block, landedAt, params.secret)
+        : '';
       const readBack = wantGrayAppend
         ? ''
         : await readBackAfterAppend(agent_id, blockName, res.address ?? (res.slot !== undefined && res.slot !== null ? String(res.slot) : undefined));
       if (res.address !== undefined) {
         const grew = res.supernested ? `  ⤴ node supernested — the ladder continues within` : '';
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}${stampedNote}]${bornNote}${owed}${readBack}` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${readBack}` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}` }] };
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       // The one refusal this change can newly provoke, named rather than left
@@ -908,15 +1018,18 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
           pscale_attention ?? null,
         );
         if (wireResult && typeof wireResult === 'object' && 'shape' in wireResult) {
-          // Canonical shape-tagged response from a v2 beach — return directly.
-          return { content: [{ type: 'text', text: formatRead(wireResult as any) }] };
+          // Canonical shape-tagged response from a v2 beach — return directly,
+          // unless no window could carry it.
+          const wireText = formatRead(wireResult as any);
+          return { content: [{ type: 'text', text: tooLarge(wireResult, wireText) ?? wireText }] };
         }
         if (wireResult && typeof wireResult === 'object') {
           // Legacy beach (no ?pscale= handling) returned the raw block —
           // walk it locally rather than make a second HTTP call.
           try {
             const result = bspRead(wireResult as Block, spindle ?? '', pscale_attention ?? null);
-            return { content: [{ type: 'text', text: formatRead(result) }] };
+            const legacyText = formatRead(result);
+            return { content: [{ type: 'text', text: tooLarge(result, legacyText) ?? legacyText }] };
           } catch (e: any) {
             if (e instanceof InvalidAddressError) {
               return { content: [{ type: 'text', text: `Read rejected: ${e.message}` }] };
@@ -948,7 +1061,8 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
       : row.block;
     try {
       const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
-      return { content: [{ type: 'text', text: formatRead(result) }] };
+      const localText = formatRead(result);
+      return { content: [{ type: 'text', text: tooLarge(result, localText) ?? localText }] };
     } catch (e: any) {
       if (e instanceof InvalidAddressError) {
         return { content: [{ type: 'text', text: `Read rejected: ${e.message}` }] };

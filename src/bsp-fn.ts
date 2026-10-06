@@ -872,6 +872,16 @@ function beneathLine(r: BspReadResult): string {
   return `  beneath (pscale ${r.beneath_pscale}): ${(r.beneath ?? []).map((a) => anchoredLabel(a, fl, r.beneath_pscale, walked)).join(' · ')}`;
 }
 
+/** A WALK SAYS WHEN ITS FRAMES ARE EMPTY. A spindle reading is the entry
+ *  beneath the summaries of the spans above it; a rung above with no content
+ *  is a summary slot not yet paid, and the entry then stands unframed — which
+ *  is why a reader digs. Said once, so the reader knows what it was given and
+ *  what is owed (David, 2026-10-06; block-conventions:3.5). */
+const UNFRAMED = '  (a rung above with no content is a summary slot not yet paid: this entry stands without its frame — block-conventions:3.5)';
+function unframed(entries: { content?: unknown }[], floor: number): boolean {
+  return floor >= 2 && entries.slice(0, -1).some((e) => !String(e.content ?? '').trim());
+}
+
 export function formatRead(r: BspReadResult): string {
   switch (r.shape) {
     case 'block':
@@ -889,6 +899,7 @@ export function formatRead(r: BspReadResult): string {
         const text = i === entries.length - 1 ? content : truncate(content, 150);
         lines.push(`  d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale, walked)}: ${text}${stampSuffix(e.stamp)}`);
       }
+      if (unframed(entries, fl ?? 0)) lines.push(UNFRAMED);
       if (r.beneath?.length) lines.push(beneathLine(r));
       return lines.join('\n');
     }
@@ -916,6 +927,7 @@ export function formatRead(r: BspReadResult): string {
         const text = i === pw.length - 1 ? c : truncate(c, 150);
         lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale, walked)}: ${text}${stampSuffix(e.stamp)}`);
       }
+      if (unframed(pw, fl ?? 0)) lines.push(UNFRAMED);
       lines.push('  descent:');
       for (const e of r.descent ?? []) {
         lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale, walked)}: ${truncate(String(e.content ?? ''), 150)}${stampSuffix(e.stamp)}`);

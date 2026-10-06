@@ -34,6 +34,7 @@ import { handlePoolEngage, resolveDirective, collectContributions, coveredThroug
 export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
 import { Block, readAt, floorDepth } from '../bsp.js';
+import { bspRead, formatRead } from '../bsp-fn.js';
 import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
 import { compile, orderSweep, renderCompletions, renderFramedValue, renderSweptOrders, type Completion, type FetchOrigin } from '../compile.js';
 import { toPNode, pyDumps, type Loader, type PNode, type PMap } from '../genus.js';
@@ -185,6 +186,18 @@ function branchText(node: any, digit: string, floor: number): string {
  *  scenario, and play happens in a forked table. The semantic is AUTHORED in the
  *  block; a beach with no such signage returns null and behaves exactly as before.
  *  Never an auto-fork — the copy stays the player's conventional act (lighthouse:1). */
+/** THE COMPASS RIDES THE DOOR (David, 2026-10-06: a session walked the
+ *  lighthouse five times for what its window had not given it). The beach's
+ *  own compass at a glance — the lighthouse disc at pscale 0 — for every hand
+ *  that arrives, so the first reach is never for where things are. A beach
+ *  with no lighthouse hands nothing. */
+async function compassOf(origin: string): Promise<string | null> {
+  const row = await loadBlock(origin, 'lighthouse').catch(() => null);
+  const lh: any = row?.block;
+  if (!lh || typeof lh !== 'object') return null;
+  try { return formatRead(bspRead(lh as Block, '', 0)); } catch { return null; }
+}
+
 async function canonSignage(origin: string, world: string, handle: string): Promise<string | null> {
   const row = await loadBlock(origin, 'lighthouse').catch(() => null);
   const lh: any = row?.block;
@@ -821,6 +834,12 @@ export async function handlePlay(
   out.push('═══════════ THE ROOM — operating directive + live scene ═══════════');
   out.push(env);
   for (const line of frameSection) out.push(line);
+  const compass = await compassOf(resolved);
+  if (compass) {
+    out.push('');
+    out.push('═══════════ THE COMPASS — this beach\'s lighthouse at a glance; walk a branch only when a turn needs it ═══════════');
+    out.push(compass);
+  }
   if (here.length || about.length || coarser.length || finer.length) {
     out.push('');
     out.push('═══════════ WHO IS HERE — co-present at your place (by appearance; names unearned until spoken) ═══════════');
