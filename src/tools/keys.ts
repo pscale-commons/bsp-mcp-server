@@ -112,8 +112,12 @@ export async function handleKeyPublish(params: {
       validProof = verifyKeyRotation(handle, newPubKeys, signature, existingKeys.ed25519);
       if (!validProof) proofError = 'Signature did not verify against the currently published Ed25519 key.';
     } else {
+      // Most often this call is a CHECK — does the secret I seal and read grain
+      // lines with derive my published keys? — so say the answer before the
+      // rotation recipe, or "rejected" reads as a fault in the tool.
       proofError =
-        'Key rotation requires prior_secret OR signature (Ed25519 over "pscale_key_rotation:{handle}:{new_x25519_b64}:{new_ed25519_b64}", base64).';
+        `this secret does not derive the keys published at ${blockName} 9 — nothing was written, and grain lines sealed or read with it will not open for the other party. ` +
+        'To replace the published keys, pass prior_secret (the secret they were published from) OR signature (Ed25519 over "pscale_key_rotation:{handle}:{new_x25519_b64}:{new_ed25519_b64}", base64).';
     }
 
     if (!validProof) {

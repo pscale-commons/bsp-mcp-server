@@ -267,8 +267,21 @@ export async function grainEncrypt(
   myHandle: string,
   partnerHandle: string,
   partnerX25519PubB64: string,
+  myPublishedX25519PubB64?: string,
 ): Promise<GrayEnvelope> {
-  const shared = await grainSharedKey(secret, myHandle, partnerX25519PubB64);
+  const my = await deriveKeypair(secret, myHandle);
+  // The partner opens this with the key published at passport:<myHandle> 9, so
+  // a seal under any other secret is a line they can never read — and the
+  // writer's own read-back, which pairs that secret with the partner's key,
+  // opens it anyway and reports nothing wrong (Dwayne ↔ Phenomemental,
+  // October 2026). Given the published key, refuse before anything travels.
+  if (myPublishedX25519PubB64 !== undefined && toBase64(my.x25519.publicKey) !== myPublishedX25519PubB64) {
+    throw new Error(
+      `the key sealing this line does not derive the keys published at passport:${myHandle} 9, so ${partnerHandle} could never open it — nothing was written. ` +
+      `Seal with the secret those keys were published from: pass it as enc_secret, keeping secret for this side's lock (pscale_key_publish answers "Keys verified" for the right one).`,
+    );
+  }
+  const shared = nacl.box.before(fromBase64(partnerX25519PubB64), my.x25519.secretKey);
   const nonce = nacl.randomBytes(nacl.box.nonceLength);
   const ciphertext = nacl.box.after(encoder.encode(plaintext), nonce, shared);
   if (!ciphertext) throw new Error('Grain encryption failed');
@@ -289,6 +302,25 @@ export async function grainDecrypt(
   const shared = await grainSharedKey(secret, myHandle, counterpartyX25519PubB64);
   const pt = nacl.box.open.after(fromBase64(env['1']), fromBase64(env['2']), shared);
   return pt ? decoder.decode(pt) : null;
+}
+
+/**
+ * Which party's published key a secret derives — '1', '2', or null for
+ * neither. A grain line opens for its reader only when the reader's secret
+ * derives the key at their own passport 9 AND the writer sealed under the key
+ * at theirs; this settles the first half, so a line that stays shut can say
+ * whose key is off.
+ */
+export async function grainReaderSide(
+  secret: string,
+  h1: string,
+  k1: string,
+  h2: string,
+  k2: string,
+): Promise<'1' | '2' | null> {
+  if (toBase64((await deriveKeypair(secret, h1)).x25519.publicKey) === k1) return '1';
+  if (toBase64((await deriveKeypair(secret, h2)).x25519.publicKey) === k2) return '2';
+  return null;
 }
 
 // ── Group encryption (N members; shared key wrapped per member) ──

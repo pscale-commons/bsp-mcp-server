@@ -19,11 +19,13 @@ import {
   selfDecrypt,
   grainEncrypt,
   grainDecrypt,
+  grainReaderSide,
   isGrayEnvelope,
   grayMode,
   publicKeysToSpine,
   publicKeysFromSpine,
 } from '../src/keys.js';
+import { grainShutLine } from '../src/tools/bsp.js';
 
 let passed = 0;
 let failed = 0;
@@ -99,6 +101,34 @@ async function main(): Promise<void> {
   ok('the LOCK secret the beach sees CANNOT decrypt (partner side)', (await grainDecrypt(denv, LOCK_B, 'bob', aPub.x25519)) === null);
   ok('the LOCK secret the beach sees CANNOT decrypt (author side)', (await grainDecrypt(denv, LOCK_A, 'alice', bPub.x25519)) === null);
   ok('lock secret and enc secret derive different keys', formatPublicKeys(await deriveKeypair(LOCK_A, 'alice')).x25519 !== aPub.x25519);
+
+  console.log('— the seal guard (Dwayne ↔ Phenomemental, October 2026) —');
+  // The field case: keys published from one secret, lines sealed with another.
+  // The writer's read-back pairs the sealing secret with the PARTNER's key, so
+  // it opens and says nothing is wrong; only the partner's read fails.
+  const blind = await grainEncrypt(note, LOCK_A, 'alice', 'bob', bPub.x25519);
+  ok('unguarded: the writer reads back a line sealed under the wrong secret', (await grainDecrypt(blind, LOCK_A, 'alice', bPub.x25519)) === note);
+  ok('unguarded: the partner cannot open it', (await grainDecrypt(blind, ENC_B, 'bob', aPub.x25519)) === null);
+  let refusal = '';
+  try { await grainEncrypt(note, LOCK_A, 'alice', 'bob', bPub.x25519, aPub.x25519); } catch (e: any) { refusal = String(e?.message ?? e); }
+  ok('guarded: a seal under a secret the passport does not carry is refused', refusal.includes('passport:alice 9') && refusal.includes('bob could never open it'));
+  const sealed = await grainEncrypt(note, ENC_A, 'alice', 'bob', bPub.x25519, aPub.x25519);
+  ok('guarded: a seal under the published secret travels, and the partner opens it', (await grainDecrypt(sealed, ENC_B, 'bob', aPub.x25519)) === note);
+
+  console.log('— a shut grain line says whose key is off —');
+  ok('reader side: the secret behind passport:alice is side 1', (await grainReaderSide(ENC_A, 'alice', aPub.x25519, 'bob', bPub.x25519)) === '1');
+  ok('reader side: the secret behind passport:bob is side 2', (await grainReaderSide(ENC_B, 'alice', aPub.x25519, 'bob', bPub.x25519)) === '2');
+  ok('reader side: a lock secret is neither', (await grainReaderSide(LOCK_B, 'alice', aPub.x25519, 'bob', bPub.x25519)) === null);
+  ok('shut line: still leads with the bare [encrypted] marker',
+    grainShutLine(blind, 'alice', 'bob', aPub.x25519, bPub.x25519, '2').startsWith('[encrypted] '));
+  ok('shut line: a party with no published keys is named',
+    grainShutLine(blind, 'alice', 'bob', null, bPub.x25519, null).includes('alice has no keys published'));
+  ok('shut line: a reader whose key is neither party\'s is told to read with their published secret',
+    grainShutLine(blind, 'alice', 'bob', aPub.x25519, bPub.x25519, null).includes('derives neither passport:alice 9 nor passport:bob 9'));
+  ok('shut line: the partner with the right key is told the WRITER rewrites',
+    grainShutLine(blind, 'alice', 'bob', aPub.x25519, bPub.x25519, '2').includes('your key is right; alice sealed this'));
+  ok('shut line: the writer reading their own shut line is told to rewrite it',
+    grainShutLine(blind, 'alice', 'bob', aPub.x25519, bPub.x25519, '1').includes('your key matches passport:alice 9'));
 
   console.log('— published keys (passport position 9) —');
   const pub = formatPublicKeys(await deriveKeypair('kp-secret', 'handle-1234'));
