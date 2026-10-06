@@ -5,6 +5,7 @@
 - **The beach half is staged in §8, verbatim.** The session that drafted it lost its bsp connector mid-turn,
   and connectors are read only when a session starts. Any session holding the connector lands it in six
   writes, with keys named only by pointer.
+
 **Prompted by**: the third recommendation of watch:weft 547.5: a form for a thing made together, with the bobble as
 its first instance and a founding branch so /found offers it. David added, with the word:
 
