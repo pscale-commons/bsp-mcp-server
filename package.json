@@ -31,6 +31,8 @@
     "smoke:envelope": "tsx scripts/smoke-envelope.ts",
     "habits": "python3 scripts/bsp-habits.py",
     "count": "python3 scripts/count-calls.py",
+    "redial": "python3 scripts/redial.py",
+    "review": "python3 scripts/review.py",
     "smoke:parser": "tsx scripts/smoke-parser.ts",
     "smoke:sentinel": "tsx scripts/smoke-sentinel.ts",
     "smoke:session": "tsx scripts/smoke-session.ts",
