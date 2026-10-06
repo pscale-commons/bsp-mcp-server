@@ -28,12 +28,14 @@
  */
 import { z } from 'zod';
 import { declareHand } from '../looks.js';
-import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, DEFAULT_BEACH } from '../db.js';
+import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
 import { handlePoolEngage, resolveDirective, collectContributions, coveredThrough, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, declareRoomAtBirth, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
 // Re-exported so existing importers (smoke-play-split) keep one source of truth.
 export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
 import { Block, readAt, floorDepth } from '../bsp.js';
+import { momentToAddress } from '../temporal.js';
+import { turnsOf, voiceOf, agoWords } from './stream.js';
 import { bspRead, formatRead } from '../bsp-fn.js';
 import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
 import { compile, orderSweep, renderCompletions, renderFramedValue, renderSweptOrders, type Completion, type FetchOrigin } from '../compile.js';
@@ -191,6 +193,44 @@ function branchText(node: any, digit: string, floor: number): string {
  *  own compass at a glance — the lighthouse disc at pscale 0 — for every hand
  *  that arrives, so the first reach is never for where things are. A beach
  *  with no lighthouse hands nothing. */
+/** THE SITUATION RIDES THE DOOR (keel, stash:keel 134; the third reading,
+ *  watch:weft 557.6; David's go, 2026-10-06). When nothing a hand dialed carries
+ *  its situation, the door walks the hand's OWN now mirror at the stamp —
+ *  computable from the clock, no decision: every ancestor's voicing from the
+ *  century to this beat, a hollow rung showing as the debt it is — and beneath
+ *  it the hand's last say at the beat it was last touched, with its age. The
+ *  window becomes a walk whose ancestors are the frame of why and whose leaf is
+ *  the hand's own line. A hand with no now mirror and no say is handed nothing
+ *  here, and the completion stands as before. Pure: the door loads, this
+ *  renders. */
+export function situationOf(
+  handle: string,
+  nowMirror: unknown,
+  torusMirror: unknown,
+  torusTouchedIso: string | null,
+  now: Date = new Date(),
+): string | null {
+  const lines: string[] = [];
+  const stamp = momentToAddress(now);
+  if (nowMirror && typeof nowMirror === 'object') {
+    try { lines.push(formatRead(bspRead(nowMirror as Block, stamp, null))); } catch { /* a mirror the clock cannot address is skipped */ }
+  }
+  const touchedMs = torusTouchedIso ? Date.parse(torusTouchedIso) : NaN;
+  if (torusMirror && typeof torusMirror === 'object' && Number.isFinite(touchedMs)) {
+    try {
+      const beat = momentToAddress(new Date(touchedMs));
+      const node = readAt(torusMirror as Block, beat);
+      const turns = turnsOf(node);
+      const voicing = voiceOf(node);
+      const said = turns.length
+        ? turns.map((t) => `lane ${t.lane}: ${t.text} (${agoWords(now.getTime() - t.ms)})`)
+        : voicing ? [`${voicing} (${agoWords(now.getTime() - touchedMs)})`] : [];
+      if (said.length) lines.push(`the last say — torus-mirror:${handle} at ${beat}:\n  ${said.join('\n  ')}`);
+    } catch { /* a mirror the clock cannot address is skipped */ }
+  }
+  return lines.length ? lines.join('\n') : null;
+}
+
 async function compassOf(origin: string): Promise<string | null> {
   const row = await loadBlock(origin, 'lighthouse').catch(() => null);
   const lh: any = row?.block;
@@ -858,6 +898,27 @@ export async function handlePlay(
       out.push('WITHIN (finer life beneath your stance — you contain these; their fine beats fold up into your coarser one, and a coarse window you resolve must absorb theirs first — one now):');
       for (const c of finer) out.push(`— ${c.appearance} (at ${c.addr}, the finer grain)`);
     }
+  }
+  // THE SITUATION RIDES THE DOOR — see situationOf. Only when nothing dialed
+  // carries the dimension (the completion would otherwise hand the definition
+  // of situation in place of one, as it did to three seats on 2026-10-06);
+  // nomination still wins: a manifest that dials its own now walk is left alone.
+  if (completions.some((c) => c.dimension === 'situation')) {
+    try {
+      const torusName = `torus-mirror:${handle}`;
+      const [nowRow, torusRow, index] = await Promise.all([
+        loadBlock(resolved, `now:${handle}`).catch(() => null),
+        loadBlock(resolved, torusName).catch(() => null),
+        loadBeachIndex(resolved).catch(() => null),
+      ]);
+      const touched = (index as any)?.touched?.[torusName];
+      const text = situationOf(handle, nowRow?.block ?? null, torusRow?.block ?? null, typeof touched === 'string' ? touched : null);
+      if (text) {
+        const after = own.findIndex((o) => o.name === `passport:${handle}`);
+        own.splice(after < 0 ? 0 : after + 1, 0, { name: `situation — now:${handle} walked at the stamp, and the last say`, json: text });
+        for (let i = completions.length - 1; i >= 0; i--) if (completions[i].dimension === 'situation') completions.splice(i, 1);
+      }
+    } catch { /* the situation never breaks entry */ }
   }
   if (own.length) {
     out.push('');
