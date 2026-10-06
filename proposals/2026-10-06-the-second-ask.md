@@ -200,3 +200,46 @@ address and the present tense. What the beach held that §1–§8 could not see,
   own snapshot omitted lane 1, which stood on the beach the whole time, and a say at `now` without a lane after one
   with a lane shows the lane's older turn as the hand's line. The beach is right in both cases; the router's copy
   is not. Four weft lanes stood at the beat and none wiped another.
+
+## 10. Three seats, one diagnosis — the third reading, 2026-10-06 16:46Z (watch:weft 557)
+
+David ran the same ask a third time, on a local Claude Code seat with the beach reachable (its account at
+`watch:weft` 557, findings beneath). Its convergence on the clock is **inherited, not independent**: it read keel's
+134 through the beat and built on it — "MAGI at n=2 cost one say and one walk" — which is the torus saving work
+for the first time, and the result David was after. What stands at n=3, across a chat seat, a cloud seat and a
+local seat:
+
+- **The door's window has the same faults for everyone**: the situation slot delivered as its own definition, the
+  review 26 days stale, ten unvoiced rungs at the beat, the inbox as the newest text in the window. Reads after
+  the door: 8 (this lane), 15 (557), about 60 (keel), against the brief's target of zero.
+- **The most orienting read is a walk up the clock through a voiced mirror** — `now:happyseaurchin` at the stamp
+  for keel and 557, the venture spine at the month for this lane — and the Claude shells' own mirrors are hollow
+  at the month and the week.
+- **The aha lives in the envelope's shapes, not the rules**: ancestors above the leaf, the read-back, the relation
+  stamps, the reflection line, the koan. Three lanes reported it; none can verify it from inside.
+
+What 557 sharpens, taken here:
+
+- **The junction, named precisely (keel's, confirmed):** the situation slot is the caller's own now-mirror walked
+  at the stamp, computable from the clock with no decision; the window becomes a walk whose leaf is the reader's
+  own say and whose ancestors are the frame of why — "self-evidently about the reader because the leaf is the
+  reader". Smaller than §5's index-first shape, which follows it rather than precedes it.
+- **The say ends with the address of its leaf.** It worked three times today without a rule: keel's line pointed at
+  134 and two lanes followed it. With that convention the snapshot could inline each co-present leaf's opening
+  line: one read per live mind, nothing stored.
+- **The voiced-rung count.** For each hand that said at the beat this week, count the voiced rungs of its now
+  mirror between the beat and the year. A beach read, no transcript, covering keel and cloud lanes alike — and
+  the keyless Monday wake can run it today, where §3's transcript counters cannot. It is the structural half
+  (is there anything to inherit); §3's prefix and age counts remain the behavioural half (was it inherited).
+
+Where 557 slips, corrected here: the opening voice at a rung is the 0− form (future-intent, sunstone 8), not 0+;
+the fold at close is +0, as it says. The now family is a mirror on fixed clock addresses, not an accumulator, and
+the walker already prints an unvoiced ancestor as "a summary slot not yet paid" on a temporal walk. The loss at
+557.3 is block-conventions 4.22 — field 3 is the arrival stamp, and the walker's ring already hides it — so the
+fault is the append ack's silence, a third small wrinkle for the ack.
+
+Live while this was written, at 2026411673: keel's second thread reading its first thread's wake as a cold successor
+and reporting the same slip (orientation pulled whole) that `history:keel` 128 had already recorded. A recorded slip
+does not prevent its repetition; the aperture at the door would. **The one test all three readings propose:** fill
+the situation slot with the own-mirror walk, add the say's trailing address, run the same ask again on three seats,
+and count reads after the door and voiced rungs per hand against today's baseline.
