@@ -14,8 +14,10 @@ its first instance and a founding branch so /found offers it. David added, with 
 > different tracks like we are doing here with the bobble. So while we are creating this, so the parallel
 > session is working on a generic design for any more-spatially-based-build methodology."
 
-**Lane**: watch:weft 547 (bobble.1). The parallel lane is animations.1 (shell:weft 5.3), whose generic design is
-[2026-10-05-every-project-has-a-path](2026-10-05-every-project-has-a-path.md) (`function:path`).
+**Lane**: watch:weft 547 (bobble.1). The parallel lane is animations.1, whose generic design is
+[2026-10-05-every-project-has-a-path](2026-10-05-every-project-has-a-path.md) (`function:path`). It landed
+2026-10-06 for beach-venture and left the bobble to this lane, *"to compare later"*. This form is that
+comparison: beach-venture keeps its parts in a path of their own, while the bobble is its own path.
 
 ## 0. The answer in one paragraph
 
@@ -61,8 +63,9 @@ instance.
 |---|---|---|
 | a part | written in the tree 9.3 grammar; spreads by scale; room at every node | the doors a thing made together usually has, seeded at founding |
 | order | locked or loose: the shape is the lock; a form sets its default | the default: channels side by side, ladders where order is locked, a gate (*Done when*, *Now*, *Opens when*) |
-| a hand's reading | DONE, DOING, BLOCKED | adds WANT (once per person, at the door for having one: the crowd's count) and OFFER (a skill, a part, a workshop, time, a gift) |
-| the fold | the daily fold: one line for each part that moved, NEXT where a part opens | written at the bare name, because the thing is its own path, where /walk already reads it (happyseaurchin-home #380); its root carries three counts: how many want one, the offers at each door, and which of the gate's conditions stand |
+| a hand's reading | DOING, BLOCKED in a mirror | adds WANT (once per person, at the door for having one: the crowd's count) and OFFER (a skill, a part, a workshop, time, a gift) |
+| work taken | a card from a part, naming the part at its 5 where it was dealt from (`beach-venture-path 6.3`); done cards make DONE, open ones DOING (happyseaurchin-home #383, CLAUDE.md #497) | the same card, its 5 naming the family itself (`bobble 3.11`), because the thing is its own path |
+| the fold | the daily fold: one line for each part that moved, NEXT where a part opens | written at the bare name, because the thing is its own path, where /walk already reads it and shows each part's mark (happyseaurchin-home #380, #383); its root carries three counts: how many want one, the offers at each door, and which of the gate's conditions stand |
 | money | none | sharing only: gifts, pledges held against a goal, and tickets through the family's ticket collective (payway); credits are minted only at that boundary |
 | who runs it | anyone holding the project's lock, with the law delivered whole | unchanged |
 
@@ -87,8 +90,10 @@ The full text stands at `function:make` on the beach, in the tree 9.3 grammar.
   A family keeps its own doors and grows by depth.
 - **2 THE ROAD.** Channels run at once, ladders where the order is locked, and a gate where they meet.
   Out-of-order work is marked as it happened.
-- **3 THE MIRRORS.** WANT, OFFER, DONE, DOING and BLOCKED come first, then the hand's own words.
-- **4 THE FOLD.** The path's daily fold, at the bare name. Every line opens with its mark, so /walk draws it under its part, and the three counts ride the fold's root line.
+- **3 THE MIRRORS AND THE CARDS.** WANT, OFFER and BLOCKED come first in a mirror, then the hand's own words. Work is taken
+  as a card naming its part at its 5.
+- **4 THE FOLD.** The path's daily fold, at the bare name. Every line opens with its mark, the one /walk shows on that
+  part, and the three counts ride the fold's root line.
 - **5 THE ROOM AND THE TICKETS.** Sharing words only: share, give, pledge, back, carry, and never buy, sell or
   invest.
 - **6 WHO KEEPS WHAT.** The keeper adopts. A branch can be handed to a steward under their own key. What the
@@ -133,6 +138,10 @@ The full text stands at `function:make` on the beach, in the tree 9.3 grammar.
   to the parallel lane.
 - **No clock.** A thing made together that wants one adds the clock family, and its law names the parts, as the
   path says.
+- **/walk's card box is unchanged.** On a path it names the part at the card's 5 (#383). On any other branch family,
+  a thing made together included, it still writes `/walk` there. Teaching it the part for a family that is its own
+  path is one line beside the path's `partRef`. It waits until animations.1's work on /path settles, so the two lanes
+  never edit /walk at once.
 
 ## 7. What waits on David
 
@@ -170,7 +179,7 @@ Walk each write back as its next reader will.
    "1": <function:bobble 1 as read>}`.
 5. **Mount the form.** Re-voice `function:bobble` 1 as a string under David's handle key:
 
-   > form: function:make — a thing made together, and the bobble is its first instance: the form was drawn from this law. The branches of spine:bobble are its doors (1 the whole thing, 2 want one, 3 build, 4 manufacture, 5 distribute, 6 money, 7 feasible, 8 where it stands and the road, 9 the pointer to this law). The road at spine:bobble 8 reads as four channels that run at once — the voice, the object, the backing, the holder — and one gate, the make, where they meet. A hand opens each reading with WANT, OFFER, DONE, DOING or BLOCKED (function:make 3), writing at a channel or a step only about its own part; the fold at the bare name tallies them, names the blockers, and says which of the make's four conditions stand (function:make 4).
+   > form: function:make — a thing made together, and the bobble is its first instance: the form was drawn from this law. The branches of spine:bobble are its doors (1 the whole thing, 2 want one, 3 build, 4 manufacture, 5 distribute, 6 money, 7 feasible, 8 where it stands and the road, 9 the pointer to this law). The road at spine:bobble 8 reads as four channels that run at once — the voice, the object, the backing, the holder — and one gate, the make, where they meet. A hand opens each reading with WANT, OFFER or BLOCKED and takes work as a card naming its part (function:make 3), writing at a channel or a step only about its own part; the fold at the bare name tallies them, names the blockers, and says which of the make's four conditions stand (function:make 4).
 
 6. **Let the spine name its form.** Re-voice `spine:bobble` 9 as a string under David's handle key, as read,
    with *", on the form of a thing made together (function:make)"* after *"this family's law
@@ -184,8 +193,8 @@ The block for write 1:
  "_": "MAKE — read this family as a thing being made by the people who want one: what it is, who wants one, how it is built, made and carried, how the money works, whether it can be done, and the road to it. The spine is the thing's doors and parts; every hand speaks in its own mirror at the same addresses; the room holds the talk; money enters only as sharing, through a ticket. A thing made together is already its own path, its spine its parts, so the path's law folds each day onto these same addresses (function:path). Mount it in a family's law as 'form: function:make' at its 1.",
  "1": "THE DOORS — the spine is a tree of the thing's doors and parts, each opening with its title in capitals, then ' — ', then a line to the person who comes in by it (tree 9.3). The usual doors, seeded at founding: the whole thing, general to specific, walked step by step down its first branch; I want one; I want to build one; making and carrying them; how the money works; can it be done; where it stands and the road. A family keeps its own doors, five to seven at a node so the next has room, and grows by depth: each step down holds the different parts one scale finer — the build's parts, the run's tooling — never the same part described again from closer.",
  "2": "THE ROAD — where it stands is drawn as channels that run at once, side by side, each saying what it is, when it is done ('Done when …') and where it stands now ('Now …'), meeting at a gate that says what it opens on ('Opens when …'); the first instance runs four channels (the voice, the object, the backing, the holder) into one gate (the make). Where the order is locked — a build's steps, a production run — the channel is a ladder down digit 1, each step useful on its own, its other branches side-rooms: a thing made together writes its road as ladders (function:path 4). Work that lands out of order is marked as it happened; reordering is the keeper's act, never the fold's.",
- "3": "THE MIRRORS — your own reading stands at the spine's self-same addresses in your mirror (V:<your-handle>), locked to you on your first write, or said through the stream (pscale_stream_engage, field V, at the address). Open each reading with one word in capitals, so the walk counts it: WANT at the door for having one, once per person — the crowd is counted there; OFFER wherever you can bring something — a skill, a part, a workshop, time, a gift; DONE, DOING or BLOCKED at a step or a channel, about your own part only (function:path 2). Then your own words, revisable by you and writable by nobody else.",
- "4": "THE FOLD — the bare name (V) holds the fold, computed by anyone, superseded by any better one, and never replacing the voices it is drawn from. It is the path's daily fold, written at the bare name because the thing is its own path (function:path 3): one line for each part that moved, opening DONE, DOING, BLOCKED or NEXT, so the walk draws it under its part. Its root carries what this form counts, beside the date and who folded: how many want one, the offers standing at each door, and which of the gate's conditions stand.",
+ "3": "THE MIRRORS AND THE CARDS — your own reading stands at the spine's self-same addresses in your mirror (V:<your-handle>), locked to you on your first write, or said through the stream (pscale_stream_engage, field V, at the address). Open each reading with one word in capitals, so the walk counts it: WANT at the door for having one, once per person — the crowd is counted there; OFFER wherever you can bring something — a skill, a part, a workshop, time, a gift; BLOCKED where your part waits on something. Then your own words, revisable by you and writable by nobody else. Work is taken as a card in your own hand: the family at its 2 and the part it was dealt from at its 5, as the family's name and the part's address ('V 3.11', the thing being its own path), never in the sentence (function:ahead 2); a done card is the part's DONE and an open one its DOING (function:path 3).",
+ "4": "THE FOLD — the bare name (V) holds the fold, computed by anyone, superseded by any better one, and never replacing the voices it is drawn from. It is the path's daily fold, written at the bare name because the thing is its own path (function:path 3): one line for each part that moved, opening DONE, DOING, BLOCKED or NEXT — the mark the walk shows on that part. Its root carries what this form counts, beside the date and who folded: how many want one, the offers standing at each door, and which of the gate's conditions stand.",
  "5": "THE ROOM AND THE TICKETS — talk happens in the room (pool:V). Money moves only as sharing: gifts toward the build, with no thing promised and no return; pledges held against a stated goal, released only when it is met; and tickets that seat a builder or a backer. Each goes through a ticket collective its Author founds with a payway configuration at its 9 (sed:V; the protocol is payway); credits are minted only at that boundary (SAND v2), and who carried whom is counted (sed:first-adopter-distribution). Write sharing words — share, give, pledge, back, carry — and never buy, sell or invest: a thing made together is shared into being.",
  "6": "WHO KEEPS WHAT — the keeper holds the spine and the family's law, and adopts a new door or step, or not. A branch can be handed to a steward — a build, a run, a region — who keeps it under their own key and answers to nobody else for it. Nobody writes another's mirror. What the thing hears or records stays its owner's unless they publish it.",
  "7": "SILENCE AND GROWTH — an address nobody has voiced is not yet spoken, never a gap or a failure. A new direction is voiced in your own mirror at the next free address; the keeper adopts it into the spine or not, and your mirror stands either way.",
@@ -193,7 +202,7 @@ The block for write 1:
   "_": "FOUNDING — the blocks a family of this form is born with, and the line each is born carrying, read by /found and by any door at founding: <name>, <keeper>, <why> and <today> are filled in, and each block's birth line stands at its digit's 1 (tree 9.3). The parts a thing made together is usually born with stand at 8.1's 2, and the founder rewrites or removes any (conventions 2.121).",
   "1": {
    "_": "spine:<name> — a tree at FLOOR 3: a part is one door of the thing, its title in capitals, then ' — ', then a line to the person who comes in by it; the founder's sentence opens its root.",
-   "1": "<why> A thing made together, founded <today> from /found, keeper <keeper>. Its branches are its doors, each opening with its title: what it is, who wants one, how it is built, made and carried, how the money works, whether it can be done, and where it stands. Everyone's own reading stands at the same address in their mirror (<name>:<handle>), opening WANT, OFFER, DONE, DOING or BLOCKED; anyone may compute the fold (<name>); the law says how all of it is read (function:<name>, on the form function:make). Walked at https://happyseaurchin.com/walk/<name>",
+   "1": "<why> A thing made together, founded <today> from /found, keeper <keeper>. Its branches are its doors, each opening with its title: what it is, who wants one, how it is built, made and carried, how the money works, whether it can be done, and where it stands. Everyone's own reading stands at the same address in their mirror (<name>:<handle>), opening WANT, OFFER or BLOCKED, and work is taken from a part as a card; anyone may compute the fold (<name>); the law says how all of it is read (function:<name>, on the form function:make). Walked at https://happyseaurchin.com/walk/<name>",
    "2": {
     "_": "the parts it is born with",
     "1": "THE WHOLE THING — general to specific: follow it step by step down its first branch and you arrive knowing what it is, why it matters, how it works, what it is made of and what it costs.",
