@@ -119,6 +119,14 @@ export interface BspReadResult {
    *  the trap two hands fell into on one day, both after the rule was written
    *  down (keel, pool:keel 25, 2026-09-25) — so the ack says what it did. */
   padding?: string;
+  /** THE HEAD OF AN ACCUMULATOR — the newest entry beneath the terminus when
+   *  its digit children are containers: the greatest digit at every level
+   *  down to the first stamped entry. Named beside the ring, because the zero
+   *  slots a root's ring offers are the summaries of the spans BEFORE each
+   *  container, and a reader who fires them lands on the oldest voices (keel
+   *  was sent to August by one, 2026-10-06). Absent when the children are
+   *  entries, not containers. */
+  head?: string;
 }
 
 export interface BspWriteResult {
@@ -278,13 +286,16 @@ export function bspRead(
 
   // Case 3: spindle alone → path-walk.
   if (pscaleAttention === null || pscaleAttention === undefined) {
-    const kids = ringBeneath(walk(block, digits));
+    const terminus = walk(block, digits);
+    const kids = ringBeneath(terminus);
+    const head = kids.length ? headOf(terminus, digits, floor) : null;
     return {
       shape: 'path-walk',
       floor,
       spindle: typeof spindle === 'string' ? spindle : null,
       entries: buildPathWalk(block, digits, floor),
       ...(kids.length ? { beneath: kids.map((k) => fullWidthAddress([...digits, k], floor)), beneath_pscale: pEnd - 1 } : {}),
+      ...(head ? { head } : {}),
       ...(padding ? { padding } : {}),
     };
   }
@@ -305,6 +316,7 @@ export function bspRead(
     const prefix = digits.slice(0, target);
     const node = walk(block, prefix);
     const kids = ringBeneath(node);
+    const head = kids.length ? headOf(node, prefix, floor) : null;
     return {
       shape: 'point',
       floor,
@@ -315,6 +327,7 @@ export function bspRead(
       content: semantic(node),
       stamp: entryStamp(node),
       ...(kids.length ? { beneath: kids.map((k) => fullWidthAddress([...prefix, k], floor)), beneath_pscale: (pscaleAttention as number) - 1 } : {}),
+      ...(head ? { head } : {}),
       ...(padding ? { padding } : {}),
     };
   }
@@ -365,6 +378,30 @@ function digitChildren(node: unknown): string[] {
 function ringBeneath(node: unknown): string[] {
   const kids = digitChildren(node);
   return entryStamp(node) ? kids.filter((k) => k !== '3') : kids;
+}
+
+/** THE HEAD — the newest entry beneath a node whose digit children are
+ *  containers: the greatest digit at every level, down to the first entry
+ *  (a node that carries an arrival stamp, or whose children are fields). Null
+ *  when the node's children are entries or fields themselves. */
+function headOf(node: unknown, digits: string[], floor: number): string | null {
+  if (!node || typeof node !== 'object') return null;
+  const isObj = (v: unknown) => !!v && typeof v === 'object' && !Array.isArray(v);
+  const n = node as Record<string, unknown>;
+  const containers = digitChildren(n).filter((k) => isObj(n[k]) && !entryStamp(n[k]) && digitChildren(n[k]).some((j) => isObj((n[k] as any)[j])));
+  if (!containers.length) return null;
+  let cur: any = n;
+  const path = [...digits];
+  for (;;) {
+    const ks = digitChildren(cur);
+    if (!ks.length) break;
+    const k = ks[ks.length - 1];
+    const next = cur[k];
+    path.push(k);
+    if (!isObj(next) || entryStamp(next) || !digitChildren(next).some((j) => isObj(next[j]))) break;
+    cur = next;
+  }
+  return fullWidthAddress(path, floor);
 }
 
 /** The longest digit chain through a payload; ties resolve to the lowest digit. */
@@ -865,11 +902,48 @@ function paddingLine(r: BspReadResult): string[] {
   return r.padding ? [`  [note] ${r.padding}`] : [];
 }
 
-/** The one line the muscle ahead adds: the ring beneath, fire-ready. */
+/** The one line the muscle ahead adds: the ring beneath, fire-ready — and the
+ *  head of an accumulator beside it, so the newest entry is always named. */
 function beneathLine(r: BspReadResult): string {
   const fl = floorOf(r);
   const walked = walkedDigits(r, fl);
-  return `  beneath (pscale ${r.beneath_pscale}): ${(r.beneath ?? []).map((a) => anchoredLabel(a, fl, r.beneath_pscale, walked)).join(' · ')}`;
+  return `  beneath (pscale ${r.beneath_pscale}): ${(r.beneath ?? []).map((a) => anchoredLabel(a, fl, r.beneath_pscale, walked)).join(' · ')}${r.head ? ` · head ${r.head}` : ''}`;
+}
+
+/** THE RUNGS OF A WALK, RENDERED. An ancestor rides whole when it is short
+ *  (under WHOLE_RUNG characters) and as its headline above that — the 150
+ *  characters a fold's first line is written for — and a run of ancestors with
+ *  no content collapses to one line naming its span, so a ten-rung clock walk
+ *  with two voiced rungs is a few lines, not ten. The terminus is always whole.
+ *  Keel's third sitting spent three of its twelve calls re-reading rungs the
+ *  walk had cut (2026-10-06); the collapse is the other half of the same cost. */
+export const WHOLE_RUNG = 400;
+export function walkLines(entries: PathWalkEntry[], fl: ReturnType<typeof floorOf>, walked: ReturnType<typeof walkedDigits>, indent: string): string[] {
+  const out: string[] = [];
+  let run: PathWalkEntry[] = [];
+  const label = (e: PathWalkEntry) => addrLabel(e.address, fl, e.pscale, walked);
+  const flush = () => {
+    if (!run.length) return;
+    if (run.length === 1) {
+      const e = run[0];
+      out.push(`${indent}d${e.depth} p${e.pscale} ${label(e)}: (no content)`);
+    } else {
+      const a = run[0], b = run[run.length - 1];
+      out.push(`${indent}d${a.depth}–d${b.depth} p${a.pscale}–p${b.pscale} ${label(a)} … ${label(b)}: (no content, ${run.length} rungs)`);
+    }
+    run = [];
+  };
+  for (const [i, e] of entries.entries()) {
+    const last = i === entries.length - 1;
+    const empty = e.content === null || e.content === undefined || String(e.content).trim() === '';
+    if (empty && !last) { run.push(e); continue; }
+    flush();
+    const content = empty ? '(no content)' : String(e.content);
+    const text = last || content.length <= WHOLE_RUNG ? content : truncate(content, 150);
+    out.push(`${indent}d${e.depth} p${e.pscale} ${label(e)}: ${text}${stampSuffix(e.stamp)}`);
+  }
+  flush();
+  return out;
 }
 
 /** A WALK SAYS WHEN ITS FRAMES ARE EMPTY. A spindle reading is the entry
@@ -894,11 +968,7 @@ export function formatRead(r: BspReadResult): string {
       const entries = (r.entries as PathWalkEntry[]) ?? [];
       const fl = floorOf(r);
       const walked = walkedDigits(r, fl);
-      for (const [i, e] of entries.entries()) {
-        const content = String(e.content ?? '(no content)');
-        const text = i === entries.length - 1 ? content : truncate(content, 150);
-        lines.push(`  d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale, walked)}: ${text}${stampSuffix(e.stamp)}`);
-      }
+      lines.push(...walkLines(entries, fl, walked, '  '));
       if (unframed(entries, fl ?? 0)) lines.push(UNFRAMED);
       if (r.beneath?.length) lines.push(beneathLine(r));
       return lines.join('\n');
@@ -922,11 +992,7 @@ export function formatRead(r: BspReadResult): string {
       const pw = r.path_walk ?? [];
       const fl = floorOf(r);
       const walked = walkedDigits(r, fl);
-      for (const [i, e] of pw.entries()) {
-        const c = String(e.content ?? '(no content)');
-        const text = i === pw.length - 1 ? c : truncate(c, 150);
-        lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale, walked)}: ${text}${stampSuffix(e.stamp)}`);
-      }
+      lines.push(...walkLines(pw, fl, walked, '    '));
       if (unframed(pw, fl ?? 0)) lines.push(UNFRAMED);
       lines.push('  descent:');
       for (const e of r.descent ?? []) {

@@ -50,11 +50,32 @@ export function tooLarge(result: any, text: string): string | null {
     const container = last ? last.slice(0, -1) + '0' : '';
     const p = typeof result.pscale === 'number' ? result.pscale : 0;
     return `Read refused at the door: this disc is ${n} characters over ${result.entries.length} positions — more than a window carries, and a disc at pscale ${p} over an accumulator is every entry it ever took. `
-      + (container ? `Read its latest container instead — spindle='${container}', pscale_attention=${p - 1} — ` : 'Read one container — spindle=<its zero slot>, one pscale finer — ')
+      + (container ? `Read its latest container instead — spindle='${container}', pscale_attention=${p - 1} — or walk the newest entry, spindle='${last}' — ` : 'Read one container — spindle=<its zero slot>, one pscale finer — ')
       + `or walk the entry you need by its address: a path-walk frames it with the summaries above it.`;
   }
   const p = typeof result?.pscale === 'number' ? result.pscale : null;
   return `Read refused at the door: this ${result?.shape ?? 'read'} is ${n} characters, more than a window carries. Walk a spindle (spindle=<address>) for the part you need, or read the disc one pscale coarser${p !== null ? ` (pscale_attention=${p + 1})` : ' (pscale_attention=1)'} to see what stands.`;
+}
+
+/** AN OMITTED APERTURE READS AS THE PROBE (keel's ask, pool:weft 168,
+ *  2026-10-06: three keel generations pulled their orientation whole on call
+ *  one, each after the slip was on the record). Both coordinates omitted on a
+ *  block whose whole runs past WHOLE_CHARS gives the disc at pscale 0 — the
+ *  probe the tool's own text asks for first — and the ack names the whole's
+ *  size and its spelling: spindle='0', the root named, with no attention,
+ *  matching the reference grammar where name:0 bare is the whole block. A
+ *  block under the size still comes whole, since its disc and its whole cost
+ *  the same. Reads only; writes are untouched. Null when the whole may pass. */
+export const WHOLE_CHARS = 6000;
+export function probeInsteadOfWhole(block: Block, spindle: string | null | undefined, pscale: number | null | undefined, wholeText: string): string | null {
+  const noSpindle = spindle === null || spindle === undefined || String(spindle).trim() === '';
+  if (!noSpindle || (pscale !== null && pscale !== undefined)) return null;
+  if (wholeText.length <= WHOLE_CHARS) return null;
+  const disc = bspRead(block, '', 0);
+  const discText = formatRead(disc);
+  const refused = tooLarge(disc, discText);
+  if (refused) return refused;
+  return `${discText}\n  [the whole block is ${wholeText.length} characters: both coordinates omitted gives this probe, the disc at pscale 0. To take it whole, name the root — spindle='0' with no attention; or walk a spindle for the part you need.]`;
 }
 
 /** THE OWED SPAN RIDES THE ACK. A summary is dense with the span's own
@@ -583,7 +604,7 @@ export const bspParamsSchema = {
     .int()
     .nullable()
     .optional()
-    .describe('Depth selector (P) — the aperture dial. Together with spindle, derives the selection shape (2026-05-17 canonical vocabulary): point (P == P_end), path-walk (P omitted), path-walk+descent (P < P_end — one level below the terminus is the ring of immediate children, deeper is the subtree), disc (spindle omitted, P set: every position at that pscale across the block; at P=0 the cheap probe of any unknown or accumulating block), block (both omitted — the whole tree, right only when every position is in play). Set it truly: starve neither the turn nor drown it (pscale://whetstone 2.8).'),
+    .describe('Depth selector (P) — the aperture dial. Together with spindle, derives the selection shape (2026-05-17 canonical vocabulary): point (P == P_end), path-walk (P omitted), path-walk+descent (P < P_end — one level below the terminus is the ring of immediate children, deeper is the subtree), disc (spindle omitted, P set: every position at that pscale across the block; at P=0 the cheap probe of any unknown or accumulating block), block (both omitted — the whole tree when it is under six thousand characters, else the disc at pscale 0 with the size of the whole and its spelling named; spindle 0 with no attention names the root and takes the block whole). Set it truly: starve neither the turn nor drown it (pscale://whetstone 2.8).'),
   content: z
     .any()
     .optional()
@@ -1067,9 +1088,11 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
           // Legacy beach (no ?pscale= handling) returned the raw block —
           // walk it locally rather than make a second HTTP call.
           try {
-            const result = bspRead(wireResult as Block, spindle ?? '', pscale_attention ?? null);
+            const wholeNamed = String(spindle ?? '').trim() === '0' && pscale_attention == null;
+            const result = bspRead(wireResult as Block, wholeNamed ? '' : (spindle ?? ''), pscale_attention ?? null);
             const legacyText = formatRead(result);
-            return { content: [{ type: 'text', text: tooLarge(result, legacyText) ?? legacyText }] };
+            const probe = wholeNamed ? null : probeInsteadOfWhole(wireResult as Block, spindle, pscale_attention, legacyText);
+            return { content: [{ type: 'text', text: probe ?? tooLarge(result, legacyText) ?? legacyText }] };
           } catch (e: any) {
             if (e instanceof InvalidAddressError) {
               return { content: [{ type: 'text', text: `Read rejected: ${e.message}` }] };
@@ -1100,9 +1123,13 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
         )
       : row.block;
     try {
-      const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
+      // THE ROOT NAMED IS THE WHOLE: spindle='0' with no attention takes the
+      // block whole, as name:0 bare does in a reference; nothing named is the probe.
+      const wholeNamed = String(spindle ?? '').trim() === '0' && pscale_attention == null;
+      const result = bspRead(blockForRead, wholeNamed ? '' : (spindle ?? ''), pscale_attention ?? null);
       const localText = formatRead(result);
-      return { content: [{ type: 'text', text: tooLarge(result, localText) ?? localText }] };
+      const probe = wholeNamed ? null : probeInsteadOfWhole(blockForRead, spindle, pscale_attention, localText);
+      return { content: [{ type: 'text', text: probe ?? tooLarge(result, localText) ?? localText }] };
     } catch (e: any) {
       if (e instanceof InvalidAddressError) {
         return { content: [{ type: 'text', text: `Read rejected: ${e.message}` }] };

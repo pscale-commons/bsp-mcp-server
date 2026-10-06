@@ -130,7 +130,17 @@ export function near(a: string, b: string): boolean {
   return pb.includes(pa[pa.length - 1]) || pa.includes(pb[pb.length - 1]);
 }
 
+/** A SAY AT THE MOVING NOW IS SAID FIRST. Whoever says first wakes blind
+ *  (keel, 2026-10-06: it saw weft only on a second read, 74 seconds on, while
+ *  weft had seen keel in the door's closing line). A look that WROTE at a
+ *  torus-mirror at 'now' within the window is another mind's line at this
+ *  beat; it outranks every other look and is named as what it is. */
+export function saidAtBeat(l: Look): boolean {
+  return l.wrote && /^torus-mirror:/i.test(l.block) && /^now(\.[1-9])?$/i.test(l.spindle.trim());
+}
+
 function nearness(l: Look, block: string, mine: string): number {
+  if (saidAtBeat(l)) return 3000;
   if (l.block === block) return 2000 + sharedPrefix(l.spindle, mine);
   return near(l.block, block) ? 1000 : 0;
 }
@@ -172,7 +182,9 @@ export function lateralLine(
   for (const l of shown) heard.set(l.session, { said: saying(l), at: now });
   if (session) told.set(session, heard);
   const where = (l: Look) => (l.block === block ? (l.spindle || 'the root') : (l.spindle ? `${l.block} ${l.spindle}` : l.block));
-  const lines = shown.map(l => `${handOf(l.session) ?? 'someone'} ${l.wrote ? 'wrote' : 'looked'} at ${where(l)} (${ago(now - l.ts)})`);
+  const lines = shown.map(l => saidAtBeat(l)
+    ? `${handOf(l.session) ?? 'someone'} said at your beat (${ago(now - l.ts)}) — read the beat before you say`
+    : `${handOf(l.session) ?? 'someone'} ${l.wrote ? 'wrote' : 'looked'} at ${where(l)} (${ago(now - l.ts)})`);
   const more = fresh.length > shown.length ? ` · +${fresh.length - shown.length} more` : '';
   const w = Math.round(LOOKS_WINDOW_MS / 1000);
   const partial = fresh.length < others.length ? '; new since you last looked' : '';

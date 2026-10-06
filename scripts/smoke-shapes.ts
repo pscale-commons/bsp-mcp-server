@@ -1,7 +1,8 @@
 /** smoke:shapes — the four shapes of 2026-10-06, pure: a read a window cannot
  *  carry is refused with the shape named; the owed span rides an append's
  *  ack; a manifest ref follows a landing; unvoiced containers collapse. */
-import { tooLarge, spanLines, nextRef, WINDOW_CHARS } from '../src/tools/bsp';
+import { tooLarge, spanLines, nextRef, WINDOW_CHARS, probeInsteadOfWhole, WHOLE_CHARS } from '../src/tools/bsp';
+import { noteLook, lateralLine, declareHand, resetLooks } from '../src/looks';
 import { closedContainerLines } from '../src/tools/pool';
 import { formatRead, bspRead } from '../src/bsp-fn';
 import { situationOf } from '../src/tools/play';
@@ -62,6 +63,51 @@ check('a floor-1 walk says nothing of frames', !/summary slot/.test(flat), flat)
   check('the last say rides beneath with its lane and its age', !!sit && /lane 2: glass\.2 — in the middle of the test \(5m ago\)/.test(sit!), sit);
   check('a hand with no now mirror and no say is handed nothing here', situationOf('nobody', null, null, null, at) === null);
   check('a say alone, no now mirror, still rides', /lane 2/.test(situationOf('weft', null, torus, said, at) ?? ''));
+}
+
+// rungs whole and collapsed; the head named
+{
+  const born = (text: string, floor: number) => { let n: any = text; for (let i = 0; i < floor; i++) n = { _: n }; return n; };
+  const m = born('NOW — a hand', 10);
+  writeAt(m, '2026000000', 'the year, short enough to ride whole');
+  writeAt(m, '2026411600', 'x'.repeat(700));
+  writeAt(m, '2026411672', 'the beat');
+  const w = formatRead(bspRead(m, '2026411672', null));
+  check('a run of hollow rungs collapses to one line naming its span', /\(no content, \d+ rungs\)/.test(w) && (w.match(/\(no content/g) ?? []).length <= 3, w);
+  check('a short ancestor rides whole', /the year, short enough to ride whole/.test(w), w);
+  check('a long ancestor is still its headline', !/x{400}/.test(w), w);
+  check('the terminus is whole', /the beat/.test(w));
+  const pile: any = { _: { _: { _: 'the pile' } }, 1: { _: '', 1: { _: '', 1: { _: 'e111', 3: 'ts' }, 2: { _: 'e112', 3: 'ts' } }, 2: { _: '', 1: { _: 'e121', 3: 'ts' } } }, 2: { _: '', 1: { _: '', 1: { _: 'e211', 3: 'ts' }, 4: { _: 'e214 — the head', 3: 'ts' } } } };
+  const r = bspRead(pile, '200', null);
+  check('a container walk names the head beside its ring', r.head === '214' && /head 214/.test(formatRead(r)), { head: r.head, text: formatRead(r) });
+  const leaf = bspRead(pile, '214', null);
+  check('an entry names no head', leaf.head === undefined);
+}
+
+// an omitted aperture reads as the probe
+{
+  const small: any = { _: 'small', 1: 'one', 2: 'two' };
+  check('a small block still comes whole', probeInsteadOfWhole(small, null, null, formatRead(bspRead(small, '', null))) === null);
+  const big: any = { _: 'big' };
+  for (let i = 1; i <= 9; i++) big[String(i)] = { _: `branch ${i} ` + 'y'.repeat(900), 1: 'z'.repeat(300) };
+  const wholeText = formatRead(bspRead(big, '', null));
+  const probe = probeInsteadOfWhole(big, null, null, wholeText);
+  check('a big block with both omitted gives the disc at 0 and names the whole and its spelling', !!probe && /\[disc @ pscale 0/.test(probe!) && new RegExp(`whole block is ${wholeText.length} characters`).test(probe!) && /spindle='0'/.test(probe!), probe);
+  check('a spindle or an attention leaves the gate alone', probeInsteadOfWhole(big, '1', null, wholeText) === null && probeInsteadOfWhole(big, null, 0, wholeText) === null);
+  check('the gate is six thousand characters', WHOLE_CHARS === 6000);
+}
+
+// a say at the moving now is said first
+{
+  resetLooks();
+  const beach = 'https://beach.example';
+  const t = 1_000_000_000_000;
+  noteLook('s-reader', beach, 'watch:weft', '555', false, t);
+  noteLook('s-looker', beach, 'watch:weft', '556', false, t + 1000);
+  declareHand('s-sayer', 'keel');
+  noteLook('s-sayer', beach, 'torus-mirror:keel', 'now.2', true, t + 500);
+  const line = lateralLine('s-reader', beach, 'watch:weft', '555', t + 2000);
+  check('the say at the beat is named first, as a say', /2 others[^:]*: keel said at your beat \(2s ago\)/.test(line), line);
 }
 
 console.log(fails === 0 ? '\nsmoke:shapes — all pass' : `\nsmoke:shapes — ${fails} FAILED`);
