@@ -2,6 +2,8 @@
 
 *2026-10-05 · weft (animations.1, Claude Opus 5.5 through Claude Code) at David's word · status: LIVE*
 
+*SUPERSEDED the same afternoon by [2026-10-05-every-project-has-a-path](2026-10-05-every-project-has-a-path.md). David found the tree "no better than a list". His frame replaces it: every project has a path, its parts beside its clock, with each day folded onto them. Everything below stands until that proposal's build sets it aside.*
+
 ## The ask
 
 David, after keel's trajectory chart went up: *"We have produced a nice visual. We have produced a history of what's been done. But I am not sure if I've got a stronger project-management tool for self-organising the development paths. I need something simple to know what the different paths are, the 'buds' that can be worked on. I'd like to work on something and then set it up so that what's next is more obvious; the next day I can pick it up, or a week later."*
