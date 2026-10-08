@@ -79,6 +79,7 @@ import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLO
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
 import { nameAtTheDoor, noteLook, reflect } from '../looks.js';
+import { followsOf, lensLaw, composeLensMedium } from './lens.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
 //    would tie this clean surface to the one it exists to stand beside) ──
@@ -402,7 +403,7 @@ export const streamEngageParamsSchema = {
   tier: z
     .enum(['soft', 'medium', 'hard'])
     .optional()
-    .describe("THE CALL FOR A TIER OF PLAY ON THE CLOCK, composed from the blocks so every door runs the same one — a table played on time (field='temporal' at a table that keeps spine:temporal, function:temporal and a keeper's hold; the second track, proposals/2026-09-14-rpg-on-the-clock-second-track). Requires `at`; read-only: nothing is said or kept. 'medium' — THE FOLD at the address: the law, the contract, every mirror's line standing there, the night so far at each rung, the actors as their passports stand, the place's faces, each actor's luck already rolled, the rules — and THE CLAIM: which address is ripe and what stands unplayed beneath it. 'hard' — THE LEAN after the fold at the address: the fold whole with its NEXT, the held side, and each figure's own last line; THE WRITES say where each VOICE line is said. 'soft' — THE TELLING of the fold at the address for `handle`, from where they stand; THE JOURNAL gives the keep and the passport line to copy. Run THE CALL as the system text and THE INPUT as the message, on your own key; act on the third section with the ordinary verbs (say, keep). Refused plainly at a family that is not a clock table."),
+    .describe("THE CALL FOR A TIER OF PLAY ON THE CLOCK, composed from the blocks so every door runs the same one — a table played on time (field='temporal' at a table that keeps spine:temporal, function:temporal and a keeper's hold; the second track, proposals/2026-09-14-rpg-on-the-clock-second-track). Requires `at`; read-only: nothing is said or kept. 'medium' — THE FOLD at the address: the law, the contract, every mirror's line standing there, the night so far at each rung, the actors as their passports stand, the place's faces, each actor's luck already rolled, the rules — and THE CLAIM: which address is ripe and what stands unplayed beneath it. 'hard' — THE LEAN after the fold at the address: the fold whole with its NEXT, the held side, and each figure's own last line; THE WRITES say where each VOICE line is said. 'soft' — THE TELLING of the fold at the address for `handle`, from where they stand; THE JOURNAL gives the keep and the passport line to copy. Run THE CALL as the system text and THE INPUT as the message, on your own key; act on the third section with the ordinary verbs (say, keep). Refused plainly at a family that is not a clock table — except A LENS: on a family whose law mounts the recipe (function:<field> 6 opens THE RECIPE MOUNTED), 'medium' composes THE SHOT at a moment — the law, the recipe, the moment as the table's record holds it, the lines of the hands you follow as direction, the place, the people in frame, the cast's looks and faces, the look, and a contract that answers FORM, PROMPT, REFERENCES and TOOK; run it on your own key, send the prompt to your maker, keep='personal' the shot with its link, and put the picture in your own book addressed to the moment (function:lens, 2026-10-08)."),
 };
 
 export interface StreamEngageParams {
@@ -463,7 +464,26 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       return out(`tier='${params.tier}' composes a call and writes nothing — send the say or the keep as its own engage, without tier.`);
     }
     if (params.at === undefined) return out(`tier='${params.tier}' needs at=<the address to compose for>.`);
-    if (field !== CLOCK_FIELD) return out(`tier='${params.tier}' is for a table played on the clock — field='${CLOCK_FIELD}'; the ${field} family has no tiers.`);
+    if (field !== CLOCK_FIELD) {
+      // A LENS — a family whose law mounts the recipe (function:<field> 6)
+      // composes THE SHOT at a moment: tier='medium', the fold of the followed
+      // lines into one call every seat runs on its own key (function:lens 6,
+      // 2026-10-08). Any other family has no tiers, as before.
+      const opRow = await (opP ?? loadBlock(origin, opName).catch(() => null));
+      const op = opRow && typeof opRow.block === 'object' && opRow.block !== null ? (opRow.block as Block) : null;
+      if (!lensLaw(op).recipe) return out(`tier='${params.tier}' is for a table played on the clock — field='${CLOCK_FIELD}'; the ${field} family has no tiers.`);
+      if (params.tier !== 'medium') return out(`tier='${params.tier}' — a lens composes one call, the shot at a moment: tier='medium'.`);
+      const lensNamed = namedRungAddress(params.at, new Date()) ?? params.at;
+      let lensDigits: string[];
+      try { lensDigits = parseSpindle(lensNamed, spineFloor).digits; if (!lensDigits.length) throw new Error('an address is needed, not the root'); }
+      catch (e: any) { return out(`at="${params.at}" is not a moment on this lens — ${e?.message ?? String(e)}`); }
+      try {
+        const composed = await composeLensMedium(origin, emitFor(lensDigits, spine), handle, field);
+        return out(composed.text);
+      } catch (e: any) {
+        return out(`The shot at ${field}:${params.at} could not compose: ${e?.message ?? String(e)}`);
+      }
+    }
     const table = await clockTable(origin).catch(() => null);
     if (!table) return out(`tier='${params.tier}' is for a table played on the clock, and ${origin} is not one: it needs spine:${CLOCK_FIELD}, function:${CLOCK_FIELD} and a keeper's hold (keeper:scene with its placing at 3) standing together.`);
     try {
@@ -524,8 +544,19 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     return row && typeof row.block === 'object' && row.block !== null ? (row.block as Block) : null;
   };
   const foldP: Promise<Block | null> = index0Has(field) ? blockOf(loadBlock(origin, field).catch(() => null)) : Promise.resolve(null);
+  // FOLLOWING — when the family's law opens its 2 with FOLLOWING, a hand's
+  // snapshot is the mirrors of the hands it follows, and its own (function:lens
+  // 2, 2026-10-08): branch 4 of its own lists at its home beach, rank as depth.
+  // A family whose law says nothing there lays every mirror side by side, as
+  // every family did; and only the mirrors to be shown are read.
+  const opEarly = await (opP ?? loadBlock(origin, opName).catch(() => null));
+  const following = lensLaw(opEarly && typeof opEarly.block === 'object' && opEarly.block !== null ? (opEarly.block as Block) : null).following;
+  const followed: Set<string> | null = following ? new Set([handle.toLowerCase(), ...(await followsOf(handle)).map((h) => h.toLowerCase())]) : null;
+  const allMirrorNames = (index?.blocks ?? []).filter((n) => n.startsWith(`${field}:`));
+  const shownNames = followed ? allMirrorNames.filter((n) => followed.has(n.slice(field.length + 1).toLowerCase())) : allMirrorNames;
+  const unfollowed = allMirrorNames.length - shownNames.length;
   const othersP = new Map<string, Promise<Block | null>>();
-  for (const name of (index?.blocks ?? []).filter((n) => n.startsWith(`${field}:`) && !(saying && n === mirrorName))) {
+  for (const name of shownNames.filter((n) => !(saying && n === mirrorName))) {
     othersP.set(name, blockOf(loadBlock(origin, name).catch(() => null)));
   }
   let saidBlock: Block | null = null;   // the caller's own mirror as this say left it
@@ -665,7 +696,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // Enumeration is the surface index, walked not searched: mirrors are the
   // <field>:-prefixed names the beach already lists (the 2026-07-29 answer to
   // "how does a fold find its mirrors" — one GET, fine at hundreds).
-  const mirrorNames = (index?.blocks ?? []).filter((n) => n.startsWith(`${field}:`));
+  const mirrorNames = [...shownNames];
   // A mirror born by this very say is not in an index read before its birth:
   // the speaker's first line is theirs to see like any other.
   if (mintedMirror && !mirrorNames.includes(mintedMirror)) mirrorNames.push(mintedMirror);
@@ -819,6 +850,10 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       const age = typeof r.ms === 'number' && Number.isFinite(r.ms) ? ` (${agoWords(nowMs - r.ms)})` : '';
       lines.push(`- ${r.who}${r.lane ? ` [${r.lane}]` : ''}${mine ? ' (you)' : ''}: ${r.text}${age}`);
     }
+  }
+  if (unfollowed > 0) {
+    lines.push('');
+    lines.push(`  ${unfollowed} other ${unfollowed === 1 ? 'lens stands' : 'lenses stand'} here that you do not follow — a follow is a line at lists:${handle} 4, rank as depth`);
   }
   if (silent.length) {
     lines.push('');
