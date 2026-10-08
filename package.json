@@ -23,6 +23,7 @@
     "smoke:stream": "tsx scripts/smoke-stream-engage.ts",
     "smoke:stream-born-locked": "tsx scripts/smoke-stream-born-locked.ts",
     "smoke:stream-map": "tsx scripts/smoke-stream-map.ts",
+    "smoke:lens": "tsx scripts/smoke-lens.ts",
     "smoke:unit": "tsx scripts/smoke-bsp.ts",
     "smoke:numeric": "tsx scripts/smoke-numeric-leaves.ts",
     "smoke:floor": "tsx scripts/smoke-floor-align.ts",
