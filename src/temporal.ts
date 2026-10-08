@@ -196,7 +196,7 @@ export function pscaleOfDuration(seconds: number): number {
 }
 
 /** Irregular plurals for rung names; the rest take a plain s. */
-const RUNG_PLURALS: Record<string, string> = { millennium: 'millennia', century: 'centuries' };
+export const RUNG_PLURALS: Record<string, string> = { millennium: 'millennia', century: 'centuries' };
 
 /** The CONTAINING rung — the coarsest rung not longer than the duration; null
  *  when the duration is shorter than every rung. Containing, not log-nearest:

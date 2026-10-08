@@ -32,6 +32,7 @@ import {
   BspWriteResult,
 } from '../bsp-fn.js';
 import { readBackAfterWrite, readBackAfterAppend } from '../read-back.js';
+import { TEMPORAL_FLOOR, voiceAddress, RUNGS, RUNG_PLURALS } from '../temporal.js';
 
 /** How many characters a window carries from one read. A disc of 805,000
  *  characters was read whole on 2026-10-05 (daily:weft at pscale 0) and the
@@ -45,7 +46,11 @@ export function tooLarge(result: any, text: string): string | null {
   if (text.length <= WINDOW_CHARS) return null;
   const n = text.length;
   if (result?.shape === 'disc' && Array.isArray(result.entries) && result.entries.length) {
-    const addrs = result.entries.map((e: any) => String(e.address ?? '')).filter((a: string) => /^\d+$/.test(a)).sort();
+    // In digit order, not string order: '99' sorts after '372' as text, and
+    // the refusal then named the floor-2 ring as the head of a block whose
+    // newest entry stood at 372 (daily:weft, 2026-10-08) — the pointer sent
+    // a reader to August, the very fault this line exists to remove.
+    const addrs = result.entries.map((e: any) => String(e.address ?? '')).filter((a: string) => /^\d+$/.test(a)).sort((a: string, b: string) => a.length - b.length || a.localeCompare(b));
     const last = addrs[addrs.length - 1] ?? '';
     const container = last ? last.slice(0, -1) + '0' : '';
     const p = typeof result.pscale === 'number' ? result.pscale : 0;
@@ -107,6 +112,52 @@ export function spanLines(block: Block, dues: { slot: string; over: string }[]):
     if (rows.length) out.push(`    the span of ${d.slot}, by its opening lines:`, ...rows);
   }
   return out.length ? '\n' + out.join('\n') : '';
+}
+
+/** THE FRAME RIDES THE ACK (David's 'go ahead', 2026-10-08; the finding at
+ *  watch:weft 571). A write at a rung of a clock mirror is answered with the
+ *  rung above it and the ring beneath that rung by their opening lines, so
+ *  the week is re-voiced from the ack in the sitting that voiced the day —
+ *  the owed span of an append, applied to the clock. The rule placed at
+ *  wake:weft 6.8 on 2026-10-06 ('the rungs above the day are paid at the
+ *  day's close') did not fire on its first two chances: a rule has to be
+ *  remembered, an ack is read. Empty when the block is not on the clock
+ *  (floor 10), when the landing is not a bare clock address, or when the
+ *  rung has no parent beneath the root. Pure: the block as saved, the
+ *  address as landed. */
+export function frameLines(block: Block, landed: string | null | undefined): string {
+  if (!landed || !/^\d{10}$/.test(landed)) return '';
+  try { if (floorDepth(block) !== TEMPORAL_FLOOR) return ''; } catch { return ''; }
+  const digits = landed.replace(/0+$/, '').split('');
+  if (digits.length < 2) return '';
+  const parentDigits = digits.slice(0, -1);
+  const parentAddr = parentDigits.join('').padEnd(TEMPORAL_FLOOR, '0');
+  const parentPscale = TEMPORAL_FLOOR - parentDigits.length;
+  let parent: unknown;
+  try { parent = readAt(block, parentAddr); } catch { return ''; }
+  const voice = (n: unknown): string | null => {
+    if (typeof n === 'string') return n.trim() === '' ? null : n;
+    if (n && typeof n === 'object') { const u = (n as Record<string, unknown>)['_']; if (typeof u === 'string' && u.trim() !== '') return u; }
+    return null;
+  };
+  const oneLine = (t: string, n: number) => { const s = t.replace(/\s+/g, ' ').trim(); return s.length <= n ? s : s.slice(0, n - 1).trimEnd() + '…'; };
+  const when = (addr: string) => { try { return voiceAddress(addr); } catch { return addr; } };
+  const parentVoice = voice(parent);
+  const out = [`  ⓘ the rung above "${landed}" is ${parentAddr} (${when(parentAddr)}): ${parentVoice ? oneLine(parentVoice, 180) : '(unvoiced)'}`];
+  const childName = RUNGS.find((r) => r.pscale === parentPscale - 1)?.name ?? 'rung';
+  const plural = RUNG_PLURALS[childName] ?? `${childName}s`;
+  const rows: string[] = [];
+  if (parent && typeof parent === 'object') {
+    const kids = Object.keys(parent as object).filter((k) => /^[1-9]$/.test(k)).sort();
+    for (const k of kids) {
+      const addr = [...parentDigits, k].join('').padEnd(TEMPORAL_FLOOR, '0');
+      const v = voice((parent as Record<string, unknown>)[k]);
+      rows.push(`      ${addr} ${when(addr)} — ${v ? oneLine(v, 140) : '(unvoiced)'}`);
+    }
+  }
+  if (rows.length) out.push(`    its ${plural} so far, by their opening lines:`, ...rows);
+  out.push(`    a rung is re-voiced from what stands beneath it, in the sitting that moved it — ending with what waits, the pointer last (wake:weft 6.8)`);
+  return '\n' + out.join('\n');
 }
 
 /** The manifest ref that follows a landing: '<block>:<addr>:<attention>' for
@@ -1360,7 +1411,8 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
     const readBack = wantGray && grayVoiced === undefined
       ? ''
       : await readBackAfterWrite(agent_id, blockName, writeResult.landed ?? (spindle ?? ''), content);
-    return { content: [{ type: 'text', text: formatWrite(writeResult) + voicedNote + degrayNote + bornNote + lockNote + readBack }] };
+    const frame = wantGray ? '' : frameLines(blockToSave as Block, writeResult.landed);
+    return { content: [{ type: 'text', text: formatWrite(writeResult) + voicedNote + degrayNote + bornNote + lockNote + frame + readBack }] };
   }
   return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${bornNote}${lockNote}` }] };
 }

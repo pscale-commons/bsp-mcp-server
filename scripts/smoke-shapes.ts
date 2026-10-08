@@ -1,7 +1,8 @@
 /** smoke:shapes — the four shapes of 2026-10-06, pure: a read a window cannot
  *  carry is refused with the shape named; the owed span rides an append's
  *  ack; a manifest ref follows a landing; unvoiced containers collapse. */
-import { tooLarge, spanLines, nextRef, WINDOW_CHARS, probeInsteadOfWhole, WHOLE_CHARS } from '../src/tools/bsp';
+import { tooLarge, spanLines, nextRef, WINDOW_CHARS, probeInsteadOfWhole, WHOLE_CHARS, frameLines } from '../src/tools/bsp';
+import { ladderLines } from '../src/tools/stream';
 import { noteLook, lateralLine, declareHand, resetLooks } from '../src/looks';
 import { closedContainerLines } from '../src/tools/pool';
 import { formatRead, bspRead } from '../src/bsp-fn';
@@ -17,6 +18,9 @@ check('a read that fits passes', tooLarge({ shape: 'disc', pscale: 0, entries: [
 // a disc too large names the latest container and the pscale beneath
 const big = tooLarge({ shape: 'disc', pscale: 0, entries: [{ address: '001' }, { address: '372' }, { address: '381' }] }, 'x'.repeat(WINDOW_CHARS + 1));
 check('a disc too large is refused with the latest container named', !!big && /spindle='380', pscale_attention=-1/.test(big) && /every entry it ever took/.test(big), big);
+// the head is taken in digit order: '99' is older than '372', not newer
+const mixed = tooLarge({ shape: 'disc', pscale: 0, entries: [{ address: '99' }, { address: '372' }, { address: '12' }] }, 'x'.repeat(WINDOW_CHARS + 1));
+check('a refusal names the live head, not the first full ring', !!mixed && /spindle='370'/.test(mixed) && /spindle='372'/.test(mixed) && !/'99'/.test(mixed), mixed);
 const whole = tooLarge({ shape: 'block' }, 'x'.repeat(WINDOW_CHARS + 1));
 check('a whole block too large is refused with a spindle or a coarser disc named', !!whole && /Walk a spindle/.test(whole) && /pscale_attention=1/.test(whole), whole);
 
@@ -108,6 +112,44 @@ check('a floor-1 walk says nothing of frames', !/summary slot/.test(flat), flat)
   noteLook('s-sayer', beach, 'torus-mirror:keel', 'now.2', true, t + 500);
   const line = lateralLine('s-reader', beach, 'watch:weft', '555', t + 2000);
   check('the say at the beat is named first, as a say', /2 others[^:]*: keel said at your beat \(2s ago\)/.test(line), line);
+}
+
+// the frame rides the ack — a clock write answered with the rung above and the ring beneath it
+{
+  const born = (text: string, floor: number) => { let n: any = text; for (let i = 0; i < floor; i++) n = { _: n }; return n; };
+  const m = born('NOW — a hand', 10);
+  writeAt(m, '2026412100', 'Thursday: ran the day from the beach');
+  const dayFrame = frameLines(m, '2026412100');
+  check('a day write names the week above it, unvoiced, and lists its days by their opening lines',
+    /the rung above "2026412100" is 2026412000 \(the week of 8 October 2026\): \(unvoiced\)/.test(dayFrame) && /its days so far/.test(dayFrame) && /2026412100 Thursday 8 October 2026 — Thursday: ran the day/.test(dayFrame) && /wake:weft 6\.8/.test(dayFrame), dayFrame);
+  writeAt(m, '2026412000', { _: 'The week so far: ' + 'w'.repeat(300), 1: 'Thursday: ran the day from the beach', 2: 'Friday' });   // the week voiced as one node, its days beneath
+  const dayFrame2 = frameLines(m, '2026412200');
+  check('a voiced week rides as its headline, every day beneath it listed', /the week of 8 October 2026\): The week so far: w+…/.test(dayFrame2) && /2026412100 Thursday/.test(dayFrame2) && /2026412200 Friday 9 October 2026 — Friday/.test(dayFrame2), dayFrame2);
+  const weekFrame = frameLines(m, '2026412000');
+  check('a week write names the month above it and lists the weeks', /is 2026410000 \(October 2026\): \(unvoiced\)/.test(weekFrame) && /its weeks so far/.test(weekFrame) && /2026412000 the week of 8 October 2026 — The week so far/.test(weekFrame), weekFrame);
+  check('a write at the root rung has no frame', frameLines(m, '2000000000') === '');
+  check('a landing beneath the clock has no frame', frameLines(m, '2026412100.3') === '');
+  const flat: any = { _: { _: { _: 'a pile' } }, 5: { _: '', 4: { _: '', 1: 'x' } } };
+  check('a block not on the clock has no frame', frameLines(flat, '0000000541') === '' && frameLines(flat, '541') === '');
+}
+
+// the stream ladder's hollow rungs collapse to one line
+{
+  const rungs = [
+    { pscale: 9, addr: '2000000000', text: null }, { pscale: 8, addr: '2000000000', text: null }, { pscale: 7, addr: '2020000000', text: null },
+    { pscale: 6, addr: '2026000000', text: null }, { pscale: 5, addr: '2026400000', text: null }, { pscale: 4, addr: '2026410000', text: 'October, voiced' },
+    { pscale: 3, addr: '2026412000', text: null }, { pscale: 2, addr: '2026412100', text: null }, { pscale: 1, addr: '2026412160', text: null }, { pscale: 0, addr: '2026412164', text: null },
+  ];
+  const lines = ladderLines(rungs, '2026412164', 10, false, () => false);
+  check('a run of unvoiced rungs is one line naming its span', lines.length === 4 && /^  p9–p5 \[2000000000 … 2026400000\] the 2000s … autumn-quarter 2026 — \(unvoiced on the spine, 5 rungs\)$/.test(lines[0]), lines);
+  check('a voiced rung stands on its own', /October, voiced/.test(lines[1]), lines);
+  check('the run beneath it collapses too, and the attended rung stands alone', /\(unvoiced on the spine, 3 rungs\)/.test(lines[2]) && /^  p0 \[2026412164\] .* \(unvoiced on the spine\)$/.test(lines[3]), lines);
+  const kept = ladderLines(rungs, '2026412164', 10, false, (i) => i === 7);
+  check('a FOLDED rung breaks the run and stands on its own', kept.some((l) => /p2 \[2026412100\] FOLDED/.test(l)) && kept.length === 6, kept);
+  const brief = ladderLines(rungs, '2026412164', 10, true, () => false);
+  check('under brief the unvoiced rungs are omitted as before', brief.length === 1 && /October, voiced/.test(brief[0]), brief);
+  const all = ladderLines(rungs.map((r) => ({ ...r, text: null })), '2026412164', 10, false, () => false);
+  check('a wholly unvoiced ladder is two lines: the run and the attended rung', all.length === 2 && /9 rungs/.test(all[0]), all);
 }
 
 console.log(fails === 0 ? '\nsmoke:shapes — all pass' : `\nsmoke:shapes — ${fails} FAILED`);

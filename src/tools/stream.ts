@@ -313,6 +313,54 @@ function bornAt(text: string, floor: number): Block {
  *  never authored into the spine. A spine that is not a clock, or an address
  *  the clock refuses, goes unvoiced and the ladder renders exactly as before:
  *  the attempt never breaks a read. */
+/** THE LADDER'S HOLLOW RUNGS COLLAPSE TO ONE LINE, as a walk's do (bsp-fn
+ *  walkLines, #508). spine:torus-mirror stood unvoiced at every rung in two
+ *  boots two days apart (2026-10-06, -08) and each read carried ten lines
+ *  saying so. A run of unvoiced rungs above the attended one is one line
+ *  naming its span; a voiced rung, a FOLDED one and the attended rung each
+ *  stand on their own; under `brief` (the standing parts already given this
+ *  session) an unvoiced rung that is not folded is omitted, as before. */
+export function ladderLines(
+  rungs: { pscale: number; addr: string; text: string | null }[],
+  spineAddr: string,
+  spineFloor: number,
+  brief: boolean,
+  keptAt: (i: number) => boolean,
+): string[] {
+  const out: string[] = [];
+  let run: { pscale: number; addr: string; text: string | null }[] = [];
+  const head = (r: { pscale: number; addr: string }, kept: boolean) => {
+    const when = clockVoice(r.addr, spineFloor);
+    return `  p${r.pscale} [${r.addr}]${kept ? ' FOLDED' : ''}${when ? ` ${when} —` : ''}`;
+  };
+  const flush = () => {
+    if (!run.length) return;
+    if (run.length === 1) out.push(`${head(run[0], false)} (unvoiced on the spine)`);
+    else {
+      const a = run[0], b = run[run.length - 1];
+      const wa = clockVoice(a.addr, spineFloor), wb = clockVoice(b.addr, spineFloor);
+      out.push(`  p${a.pscale}–p${b.pscale} [${a.addr} … ${b.addr}]${wa && wb ? ` ${wa} … ${wb} —` : ''} (unvoiced on the spine, ${run.length} rungs)`);
+    }
+    run = [];
+  };
+  for (let i = 0; i < rungs.length; i++) {
+    const r = rungs[i];
+    const last = r.addr === spineAddr;
+    const kept = keptAt(i);
+    if (!r.text) {
+      if (brief && !kept) continue;
+      if (!last && !kept) { run.push(r); continue; }
+      flush();
+      out.push(`${head(r, kept)} (unvoiced on the spine)`);
+      continue;
+    }
+    flush();
+    out.push(`${head(r, kept)} ${last ? r.text : clip(r.text, 180)}`);
+  }
+  flush();
+  return out;
+}
+
 function clockVoice(addr: string, floor: number): string | null {
   if (floor !== TEMPORAL_FLOOR) return null;
   try { return voiceAddress(addr); } catch { return null; }
@@ -727,16 +775,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   lines.push(`stream:${field} @ ${origin} — at ${spineAddr}${attendedLabel ? ` (${attendedLabel})` : ''}`);
 
   const rungs = ladderOf(spine, digits);
-  const rungLines: string[] = [];
-  for (let i = 0; i < rungs.length; i++) {
-    const r = rungs[i];
-    const last = r.addr === spineAddr;
-    const when = clockVoice(r.addr, spineFloor);
-    const kept = foldAt(digits.slice(0, i + 1)) ? ' FOLDED' : '';
-    const head = `  p${r.pscale} [${r.addr}]${kept}${when ? ` ${when} —` : ''}`;
-    if (!r.text) { if (!brief || kept) rungLines.push(`${head} (unvoiced on the spine)`); continue; }
-    rungLines.push(`${head} ${last ? r.text : clip(r.text, 180)}`);
-  }
+  const rungLines = ladderLines(rungs, spineAddr, spineFloor, brief, (i) => !!foldAt(digits.slice(0, i + 1)));
   if (rungLines.length) {
     lines.push('');
     lines.push('# The ladder — this address in its own context, coarse to fine' + (foldBlock ? ' (FOLDED marks a rung the fold already keeps)' : ''));
