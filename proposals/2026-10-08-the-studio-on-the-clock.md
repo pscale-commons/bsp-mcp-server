@@ -45,19 +45,19 @@ the same place or person rides as a reference, found by address in the maker's b
 by following a hand whose book they trust, not by a folder. Two renderers are two continuities over the same
 play, and nothing stops a hundred. No folder, no copy.
 
-## 3. The shape: the watch, one family per table
+## 3. The shape: the lens, one family per table
 
 | | the block | who writes it |
 |---|---|---|
-| the spine | the table's clock — `spine:watch` at the table's beach, founded on the clock as `/found` founds a venture; *a time names its beat*, nobody types an address | the clock |
-| a mirror | `watch:<handle>` — the observer's line at the moment it is about, born on their first say, latched to their key | each observer |
+| the spine | the table's clock — `spine:lens` at the table's beach, founded on the clock as `/found` founds a venture; *a time names its beat*, nobody types an address | the clock |
+| a mirror | `lens:<handle>` — the observer's line at the moment it is about, born on their first say, latched to their key | each observer |
 | a follow | a line in `lists:<handle>` — whose mirrors this hand's fold reads | each observer |
-| a fold | `tree:watch:<handle>` — the shot as this hand landed it, at the moment | each observer, their own |
-| the shared fold | `watch` — the bare tree, where a group wants one continuity: open, or latched to one hand | the dial |
-| the law | `function:watch` | the table's keeper, under the shared lock |
+| a fold | `tree:lens:<handle>` — the shot as this hand landed it, at the moment | each observer, their own |
+| the shared fold | `lens` — the bare tree, where a group wants one continuity: open, or latched to one hand | the dial |
+| the law | `function:lens` | the table's keeper, under the shared lock |
 | the pictures | `gallery:<handle>`, each entry addressed to the moment | each renderer's seat, on their own keys |
 
-`function:watch` says, in its branches: **1** what a fold makes — the forms, one per branch (1.1 a still,
+`function:lens` says, in its branches: **1** what a fold makes — the forms, one per branch (1.1 a still,
 1.2 a clip from it, 1.3 a character's own perspective); **2** FOLLOWING — a fold reads the mirrors its
 folder follows, and their own; mutual following is a team; nothing is joined; **3** references are the
 folder's own book, carried picture to picture; the maker is each person's own, named in their vault, never
@@ -65,6 +65,8 @@ here; **4** pictures land in the folder's book, addressed to the moment; **5** L
 its own; the bare tree stands open, or latched to one hand, as the table chooses — the dial; **6** the recipe
 it mounts, `ways:stills` 6, by reference; **7** the landing law the mirror already reads — PERSONAL; **8**
 NOTHING IS REMOVED — a line stands until its holder changes it, and a fold notes which lines it took.
+
+The family is named *lens* — one hand's way of seeing a table — because `watch:<handle>` is already a shell's pile.
 
 On a clock table a moment is a beat. At a table played in rooms a moment's own time is its beat, and the line
 names the moment it is about, so a fold can fetch the telling.
@@ -79,7 +81,7 @@ than they chose to. The one rung for the router is that the stream door, when it
 address side by side, shows the caller the mirrors they follow, so the snapshot never carries a thousand
 lines.
 
-Teams of teams need nothing more: a hand may follow another hand's fold (`tree:watch:<handle>`) as readily
+Teams of teams need nothing more: a hand may follow another hand's fold (`tree:lens:<handle>`) as readily
 as their line. Identity is who speaks (the handle on the mirror) and who follows (the lists line), never an
 address; mirrors are blocks, not digits, so nine does not bind anything.
 
@@ -113,7 +115,7 @@ studio family can be worked in it today. What is to build there is the chips and
 
 ## 7. What first
 
-Found `watch` at the open table — the spine on the clock and `function:watch` as §3 says, the pool form of
+Found `lens` at the open table — the spine on the clock and `function:lens` as §3 says, the pool form of
 `function:studio` archived beside it — and each of us follows the others: David, Mark, Limner. The first shot
 is folded by hand through the stream door: one say about a moment, one fold into one's own tree, one picture
 in one's own book, addressed to the moment. Then the pictures page folds the lines of the hands you follow
