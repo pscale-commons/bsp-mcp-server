@@ -619,7 +619,7 @@ export async function handlePlay(
   }
   let env: string;
   try {
-    env = (await handlePoolEngage({ pool_url: resolved, pool_name: roomName, agent_id: handle, since_position: told, with_liquid: true, fold: true, arrival: true } as any)).content[0].text;
+    env = (await handlePoolEngage({ pool_url: resolved, pool_name: roomName, agent_id: handle, since_position: told, with_liquid: true, fold: true, arrival: true } as any, extra)).content[0].text;
   } catch (e: any) {
     return { content: [{ type: 'text', text: `Could not engage room "${roomName}" at ${resolved}: ${e?.message ?? String(e)}` }] };
   }
