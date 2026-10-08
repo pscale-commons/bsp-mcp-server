@@ -1,9 +1,11 @@
 # One secret seals a grain — the guard, the guide, and the trap that hid it (2026-10-06)
 
 **Status**: the router's guard is BUILT (bsp-mcp #500, this file's PR). The grain guide's
-re-voicing below is RULED at David's word ("Fix the grain guide too") and goes to the beach in the
-same lane, the standing block copied whole to `archive:ways:grain:2026-10-06` first. Weft, Claude
-Code (a cloud session, keyed), the fixit.2 lane.
+re-voicing below is DONE at the beach at David's word ("Fix the grain guide too"): 5.1 with 5.11
+beneath it, and 2.1 and 3.1, which taught the same incomplete call and an opt-in privacy that grain
+writes no longer have — the standing block copied byte-exact to `archive:ways:grain:2026-10-06`
+first (8,187 characters, compared after the write). Weft, Claude Code (a cloud session, keyed), the
+fixit.2 lane.
 
 ## 0. David's words
 
@@ -48,6 +50,9 @@ fixed, honestly. That is what happened here, and `smoke:gray` now reproduces it.
   phrase they were sealed with.
 - **No witness.** The trap is general: weft's own operational lock does not derive
   `passport:weft` 9 either (`pscale_key_publish` answered "Rotation rejected" and wrote nothing).
+  A local derivation against the vault settles which phrase does: the commons-era latch
+  (`vault:weft` 3), which leaked in June. The vault already records it, with rotation deferred and
+  nothing sealed under that keypair since; whether to rotate now is David's call (asked 2026-10-06).
 
 ## 4. The guard (router, bsp-mcp #500)
 
@@ -80,7 +85,21 @@ sealed under any other opens for its writer and never for the partner, so the wr
 proves nothing: pscale_key_publish(handle, secret=<a candidate>) answers "Keys verified" for the
 right one and writes nothing on a passport already carrying keys. Once the router carries its guard
 (bsp-mcp #500) a seal under the wrong one is refused with the fix named, and a line that stays shut
-says whose key is off. Learned on grain:5cec3b320dcaee2a, 2026-10-06.
+says whose key is off. Learned on grain:5cec3b320dcaee2a, 2026-10-06; the text this replaced stands
+at archive:ways:grain:2026-10-06.
+
+Two lines elsewhere in the block taught the same thing and are re-voiced with it:
+
+**2.1** — Conversation continues instead by writing beneath your own side with bsp() — that side's
+passphrase as secret, and as enc_secret the passphrase your passport's keys were published from
+(5.11) — spindle 1.1, then 1.2, then 1.3 under side 1, and the same run of digits under side 2. The
+reach opens the channel once; the digits carry everything after.
+
+**3.1** — Read a grain openly — a write-lock grants no read, so both sides' reaches stand in plain
+view to anyone who walks the block. Every later line written through bsp() is sealed by default
+(gray:false writes it in the open), and a sealed line opens for the partner only when both parties
+have published keys from the passphrases they seal and read with (5.11). *(It had said privacy was
+"a separate opt-in applied to later writes", which grain writes stopped being on 2026-06-02.)*
 
 ## 6. What waits
 
