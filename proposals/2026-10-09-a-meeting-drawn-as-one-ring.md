@@ -4,8 +4,12 @@
 - **The beach half** (§6): `function:meeting` founded as the form, and `action-cycle` as its first family
   (`spine:action-cycle`, `function:action-cycle`, the fold `action-cycle`, and weft's readings at
   `action-cycle:weft`). Each was read back as its next reader meets it.
-- **The site half**: `/ring/<name>` on happyseaurchin.com, written and walked against the live beach.
-  This session could not attach the site repository, so the page is handed over to be opened there.
+- **The site half**: `/ring/<name>` on happyseaurchin.com.
+  - It was written and walked against the live beach: reads were real, and writes were intercepted.
+  - This session could not attach the site repository, so the change stands beside this proposal as
+    `2026-10-09-a-meeting-drawn-as-one-ring.site.patch`: `ring.html`, and the `/ring/:family` rewrite in
+    `vercel.json`.
+  - A session with the site checked out applies it with `git am` and opens the PR.
 - **Left for the keyholder**: move `function:meeting` under the shared project lock, and name the form in
   the library at `tree` 9.2.
 
