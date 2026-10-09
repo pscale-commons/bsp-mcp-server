@@ -4,18 +4,21 @@
 - **The beach half** (§6): `function:meeting` founded as the form, and `action-cycle` as its first family
   (`spine:action-cycle`, `function:action-cycle`, the fold `action-cycle`, and weft's readings at
   `action-cycle:weft`). Each was read back as its next reader meets it.
-- **The site half**: `/ring/<name>` on happyseaurchin.com, in happyseaurchin/happyseaurchin-home#401.
-  - That pull request carries `ring.html` and the `/ring/:family` rewrite in `vercel.json`.
-  - It was walked against the live beach: reads were real, and writes were intercepted.
-- **Left for the keyholder**: move `function:meeting` under the shared project lock, and name the form in
-  the library at `tree` 9.2.
+- **The site half**: `/ring/<name>` on happyseaurchin.com.
+  - happyseaurchin/happyseaurchin-home#401, merged the same night, carries `ring.html` and the
+    `/ring/:family` rewrite.
+  - happyseaurchin/happyseaurchin-home#402 adds a selector for the meetings the form lists (§8).
+  - Both were walked against the live beach: reads were real, and writes were intercepted.
+- **The second meeting** (§8): invest-forward, moved from `meeting-protocol` at David's word. The same night
+  `function:meeting` went under the shared project lock and was named in the library at `tree` 9.2. Both keys
+  came from weft's vault (`vault:weft` 4).
 
 **Prompted by**: David's ask for a meeting protocol people can see and answer, earlier the same evening:
 *"a design for the hour … reused for other people's design of a meeting … one complete ring"*. The prototype
 he was shown was a private claude.ai page. It drew a sample protocol from his two meetings with James as one
 ring, and could run a meeting live.
 
-**Lane**: watch:weft 562 (meeting.6, meeting.7).
+**Lane**: watch:weft 562 (meeting.6 to meeting.9).
 
 ## 0. David's words
 
@@ -190,6 +193,39 @@ together they make the hour. It stands at `action-cycle:weft` for him to correct
 ## 7. For David
 
 - **Names.** Are you happy with the form as `function:meeting` and the page as /ring?
-- **`meeting-protocol` on the ring.** Should the invest-forward design move onto the ring? That needs its law
-  to say `mode: meeting` and its items to carry minutes; both are the keyholder's writes.
-- **The plan.** Should game rules, first wow and second wow be 10, 30 and 20 minutes, or another split?
+- **`meeting-protocol` on the ring.** Answered in §8: it moved onto the ring as invest-forward.
+- **The plan.** Answered: *"Timings for different forms of meetings will differ."* Each meeting's spine
+  carries its own minutes. The action cycle keeps 10, 30 and 20 until a run's minutes say otherwise.
+
+## 8. Two meetings, and room for more (later the same night)
+
+> "There should be two forms of meeting: action cycle and invest forward now, and we might create more, like
+> open meeting. Timings for different forms of meetings will differ."
+
+- **The meetings are listed at the form's 8.**
+  - `function:meeting` 8 keeps the founding branch at its underscore, and each meeting founded under the form
+    beneath it, one per digit: `<name> — what the meeting is; read at happyseaurchin.com/ring/<name>`.
+  - It is a list, never a register of authority: a family is a meeting because its own law says
+    `mode: meeting`.
+  - /ring reads the list for its selector, so a third meeting (an open meeting, say) appears once it is
+    founded and named there.
+- **Invest-forward is the 8 October `meeting-protocol`, moved.**
+  - The spine and law carry over at the same addresses. Each phase now opens with its own minutes:
+    - the talking space, 15 (5-20);
+    - the object, 35 (30-45);
+    - the invest-forward decision, a fixed 10, kept back from the start;
+    - the carry forward, outside the hour.
+  - The law reads `mode: meeting`. Its `cards: spine` gives way to the form's runs: a run is a dated mirror,
+    and each party's decision is also laid as a card in their own hand.
+  - Weft's readings carried to `invest-forward:weft` unchanged in address, and a first fold stands at
+    `invest-forward`.
+  - The standing texts were archived first, at `archive:spine:meeting-protocol:2026-10-09` and
+    `archive:function:meeting-protocol:2026-10-09`. The old blocks open with a moved notice and keep their
+    text, so older citations still resolve.
+- **Under which key.**
+  - The invest-forward spine and law, and the form itself, stand under the shared project lock (David's hand
+    and weft's), taken from weft's vault at David's word.
+  - `tree` answers to weft's own key, which wrote the library line, archived first at
+    `archive:tree:2026-10-09`.
+- **An open meeting, when it comes**, is one founding: a spine with its own phases and minutes, a law saying
+  `mode: meeting`, and its line at `function:meeting` 8.
