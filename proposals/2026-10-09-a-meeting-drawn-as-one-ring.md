@@ -409,3 +409,8 @@ together they make the hour. It stands at `action-cycle:weft` for him to correct
 - **Page feedback has no address of its own in a meeting.** It landed in meeting mirrors because that is where the
   page offers a box. This time the fold carried it to the page. If it grows, the form's room, `pool:meeting`, is
   where talk about the page itself gathers.
+- **The key box stays the site's own** (happyseaurchin/happyseaurchin-home#407). In David's words: "I don't like the
+  'key remembered here' -- because we haven't adopted that anywhere else. Usually the browser asks and then
+  remembers." The box says "your key". The browser's password memory fills it, matched to the name that
+  `/ring/<name>/<handle>` puts in the name box. The device keeps a key per meeting, as the portal and venture pages do.
+  A page idiom no other page uses is the wrong way to save a step.
