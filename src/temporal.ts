@@ -577,63 +577,96 @@ function placeOf(token: string): string | null {
   try { return new Intl.DateTimeFormat('en-US', { timeZone: token }).resolvedOptions().timeZone; } catch { return null; }
 }
 
-/** Read a time as a person says it. Words come in any order — a DATE
- *  (2026-10-07, today, tomorrow, yesterday), a TIME (16:00, 4pm, 4:30 pm,
- *  noon, midnight) and a PLACE — or as one ISO instant with its offset
- *  (2026-10-07T16:00+01:00). With no date it is today IN THAT PLACE. Returns
- *  null when the words are not a time, so a digit address or a named rung
- *  falls through untouched; { needsPlace } for a time with no place when the
- *  door has none to supply. Pure but for Intl's zone tables. */
-export function readHumanTime(
-  words: string, now: Date = new Date(), devicePlace?: string,
-): HumanTime | { needsPlace: true } | null {
+/** The words of a time or a day, read token by token: a DATE (2026-10-07,
+ *  today, tomorrow, yesterday, a weekday — 'tuesday', 'next friday'), a TIME
+ *  (16:00, 4pm, 4:30 pm, noon, midnight) and a PLACE; or one ISO instant with
+ *  its offset (2026-10-07T16:00+01:00). Null when any token is none of these,
+ *  so prose, a digit address or a span falls through. */
+interface SaidWords { date: number[] | null; shift: number; weekday: number | null; next: boolean; hm: number[] | null; place: string | null }
+const DAY_WORDS: Record<string, number> = {
+  sunday: 0, sun: 0, monday: 1, mon: 1, tuesday: 2, tue: 2, tues: 2, wednesday: 3, wed: 3,
+  thursday: 4, thu: 4, thur: 4, thurs: 4, friday: 5, fri: 5, saturday: 6, sat: 6,
+};
+function readWords(words: string): SaidWords | null {
   const said = String(words ?? '').trim().toLowerCase()
     .replace(/(\d)\s*([ap])\.?m\.?(?=\s|,|$)/g, '$1$2m');
   if (!said) return null;
-  let date: number[] | null = null, shift = 0, hm: number[] | null = null, place: string | null = null;
+  const w: SaidWords = { date: null, shift: 0, weekday: null, next: false, hm: null, place: null };
+  let modifier = false;
 
   const iso = /^(\d{4})-(\d{2})-(\d{2})[t ](\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(z|[+-]\d{2}:?\d{2})?$/.exec(said);
   if (iso) {
-    date = [Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])];
-    hm = [Number(iso[4]), Number(iso[5]), Number(iso[6] ?? 0)];
-    if (iso[7]) place = placeOf(iso[7].length === 5 ? iso[7].slice(0, 3) + ':' + iso[7].slice(3) : iso[7]);
-  } else {
-    for (const raw of said.split(/[\s,]+/)) {
-      const t = raw.trim();
-      if (!t || t === 'at' || t === 'on') continue;
-      let m: RegExpExecArray | null;
-      if ((m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t)) && !date) date = [Number(m[1]), Number(m[2]) - 1, Number(m[3])];
-      else if (t === 'today' && !date) shift = 0, date = [];
-      else if (t === 'tomorrow' && !date) shift = 1, date = [];
-      else if (t === 'yesterday' && !date) shift = -1, date = [];
-      else if ((m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(t)) && !hm) hm = [Number(m[1]), Number(m[2]), Number(m[3] ?? 0)];
-      else if ((m = /^(\d{1,2})(?::(\d{2}))?([ap])m$/.exec(t)) && !hm) {
-        const h = Number(m[1]);
-        if (h < 1 || h > 12) return null;
-        hm = [(h % 12) + (m[3] === 'p' ? 12 : 0), Number(m[2] ?? 0), 0];
-      }
-      else if (t === 'noon' && !hm) hm = [12, 0, 0];
-      else if (t === 'midnight' && !hm) hm = [0, 0, 0];
-      else if (!place && (place = placeOf(raw.trim().replace(/^(utc|gmt)$/i, 'UTC')))) continue;
-      else return null;
-    }
+    w.date = [Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])];
+    w.hm = [Number(iso[4]), Number(iso[5]), Number(iso[6] ?? 0)];
+    if (iso[7]) w.place = placeOf(iso[7].length === 5 ? iso[7].slice(0, 3) + ':' + iso[7].slice(3) : iso[7]);
+    return w;
   }
-  if (!hm || hm[0] > 23 || hm[1] > 59 || hm[2] > 59) return null;
-  place = place ?? (devicePlace ? placeOf(devicePlace) : null);
-  if (!place) return { needsPlace: true };
+  for (const raw of said.split(/[\s,]+/)) {
+    const t = raw.trim();
+    if (!t || t === 'at' || t === 'on') continue;
+    let m: RegExpExecArray | null;
+    if ((m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t)) && !w.date) w.date = [Number(m[1]), Number(m[2]) - 1, Number(m[3])];
+    else if (t === 'today' && !w.date) w.shift = 0, w.date = [];
+    else if (t === 'tomorrow' && !w.date) w.shift = 1, w.date = [];
+    else if (t === 'yesterday' && !w.date) w.shift = -1, w.date = [];
+    else if (Object.prototype.hasOwnProperty.call(DAY_WORDS, t) && !w.date) w.weekday = DAY_WORDS[t], w.date = [];
+    else if ((t === 'next' || t === 'this') && !modifier) modifier = true, w.next = t === 'next';
+    else if ((m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(t)) && !w.hm) w.hm = [Number(m[1]), Number(m[2]), Number(m[3] ?? 0)];
+    else if ((m = /^(\d{1,2})(?::(\d{2}))?([ap])m$/.exec(t)) && !w.hm) {
+      const h = Number(m[1]);
+      if (h < 1 || h > 12) return null;
+      w.hm = [(h % 12) + (m[3] === 'p' ? 12 : 0), Number(m[2] ?? 0), 0];
+    }
+    else if (t === 'noon' && !w.hm) w.hm = [12, 0, 0];
+    else if (t === 'midnight' && !w.hm) w.hm = [0, 0, 0];
+    else if (!w.place && (w.place = placeOf(raw.trim().replace(/^(utc|gmt)$/i, 'UTC')))) continue;
+    else return null;
+  }
+  // 'next' and 'this' only ever qualify a weekday.
+  if (modifier && w.weekday === null) return null;
+  return w;
+}
 
-  // The day: as given, or the place's own today (± a day). A day named by
-  // date must exist — 2026-02-30 is refused, never rolled into March.
-  let y: number, m0: number, d: number;
-  if (date && date.length === 3) {
-    [y, m0, d] = date;
+/** The date the words name, read IN `place`: as given, or the place's own
+ *  today moved by the day words. A date named outright must exist —
+ *  2026-02-30 is refused, never rolled into March. A weekday is today when
+ *  today is that day, else the coming one; 'next' skips today. */
+function dateIn(w: SaidWords, place: string, now: Date): [number, number, number] | null {
+  if (w.date && w.date.length === 3) {
+    const [y, m0, d] = w.date;
     const check = new Date(Date.UTC(y, m0, d));
     if (check.getUTCFullYear() !== y || check.getUTCMonth() !== m0 || check.getUTCDate() !== d) return null;
-  } else {
-    const here = new Date(now.getTime() + offsetAt(place, now.getTime()));
-    const day = new Date(Date.UTC(here.getUTCFullYear(), here.getUTCMonth(), here.getUTCDate() + shift));
-    [y, m0, d] = [day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()];
+    return [y, m0, d];
   }
+  const here = new Date(now.getTime() + offsetAt(place, now.getTime()));
+  let shift = w.shift;
+  if (w.weekday !== null) {
+    shift = (w.weekday - here.getUTCDay() + 7) % 7;
+    if (shift === 0 && w.next) shift = 7;
+  }
+  const day = new Date(Date.UTC(here.getUTCFullYear(), here.getUTCMonth(), here.getUTCDate() + shift));
+  return [day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()];
+}
+
+/** Read a time as a person says it. Words come in any order — a DATE
+ *  (2026-10-07, today, tomorrow, yesterday, a weekday), a TIME (16:00, 4pm,
+ *  4:30 pm, noon, midnight) and a PLACE — or as one ISO instant with its
+ *  offset (2026-10-07T16:00+01:00). With no date it is today IN THAT PLACE.
+ *  Returns null when the words are not a time, so a digit address or a named
+ *  rung falls through untouched; { needsPlace } for a time with no place when
+ *  the door has none to supply. Pure but for Intl's zone tables. */
+export function readHumanTime(
+  words: string, now: Date = new Date(), devicePlace?: string,
+): HumanTime | { needsPlace: true } | null {
+  const w = readWords(words);
+  if (!w) return null;
+  const hm = w.hm;
+  if (!hm || hm[0] > 23 || hm[1] > 59 || hm[2] > 59) return null;
+  const place = w.place ?? (devicePlace ? placeOf(devicePlace) : null);
+  if (!place) return { needsPlace: true };
+  const day = dateIn(w, place, now);
+  if (!day) return null;
+  const [y, m0, d] = day;
   // The wall time in that place → the instant: guess with the offset at the
   // wall time read as UTC, then once more at the guess, which settles the
   // nights summer time begins or ends.
@@ -648,14 +681,111 @@ export function readHumanTime(
   }
 }
 
+/** A DAY as a person says it — 'tomorrow', 'Tuesday', 'next Friday',
+ *  '2026-10-13' — with or without its place → the clock's day of that date,
+ *  the address with the day's two trailing zeros. The date is read IN the
+ *  place when one is named (past midnight in London it is already tomorrow
+ *  there), and on the clock's own UTC day when none is, as 'today' is. Null
+ *  when the words are not a day: a time, a span, a digit address or prose
+ *  falls through untouched. */
+export function readHumanDay(words: string, now: Date = new Date(), devicePlace?: string): string | null {
+  const w = readWords(words);
+  if (!w || w.hm || !w.date) return null;
+  const place = w.place ?? (devicePlace ? placeOf(devicePlace) : null) ?? 'UTC';
+  const day = dateIn(w, place, now);
+  if (!day) return null;
+  try {
+    return momentToAddress(new Date(Date.UTC(day[0], day[1], day[2], 12))).slice(0, 8) + '00';
+  } catch {
+    return null;
+  }
+}
+
+// ── A span as a person says it → every beat it touches ──────────────────────
+//
+// A SPAN NAMES ITS BEATS (2026-10-10, the availability family): "busy
+// 14:00–15:00 tomorrow" is two times with one day and one place, and what lies
+// between them on the clock is a run of beats no LLM should count. The door
+// reads both ends as times and hands back every beat the span touches — a beat
+// touched at all is in it, the end itself is not.
+
+/** A span read off a person's words: its two instants, its place, and the
+ *  address of every beat it touches, earliest first. */
+export interface HumanSpan { start: Date; end: Date; place: string; beats: string[] }
+
+/** The longest span the door reads at once: a fortnight of beats. */
+export const SPAN_MAX_DAYS = 14;
+
+const DAY_MS = 86_400_000;
+/** Beats since the epoch: eighty-one to a UTC day, counted in whole numbers
+ *  so a beat's edge never falls to rounding. */
+function beatIndex(ms: number): number { return Math.floor((ms * 81) / DAY_MS); }
+
+/** Every beat in [startMs, endMs), each by its address, read at its middle. */
+function beatsAcross(startMs: number, endMs: number): string[] {
+  const out: string[] = [];
+  for (let k = beatIndex(startMs), last = beatIndex(endMs - 1); k <= last; k++) {
+    out.push(momentToAddress(new Date(Math.floor(((k + 0.5) * DAY_MS) / 81))));
+  }
+  return out;
+}
+
+/** Read a span as a person says it: two times joined by a dash or a word
+ *  ('14:00–15:00', '9am-5pm', '13:00 to 18:00'), with the day and the place
+ *  as a time takes them ('14:00–15:00 tomorrow Europe/London', 'Tuesday
+ *  13:00–18:00 Europe/London'), or two ISO instants joined by a slash. The
+ *  end may be 24:00 or midnight, the day's own end; an end at or before the
+ *  start falls on the next day. Null when the words are not a span;
+ *  { needsPlace } when no place is named or supplied; { tooLong } past
+ *  SPAN_MAX_DAYS. */
+export function readHumanSpan(
+  words: string, now: Date = new Date(), devicePlace?: string,
+): HumanSpan | { needsPlace: true } | { tooLong: true } | null {
+  const said = String(words ?? '').trim();
+  if (!said) return null;
+  let a: HumanTime | { needsPlace: true } | null;
+  let b: HumanTime | { needsPlace: true } | null;
+  const iso = /^(\d{4}-\d{2}-\d{2}[tT ]\S+)\s*\/\s*(\d{4}-\d{2}-\d{2}[tT ]\S+)$/.exec(said);
+  if (iso) {
+    a = readHumanTime(iso[1], now, devicePlace);
+    b = readHumanTime(iso[2], now, devicePlace);
+  } else {
+    const low = said.toLowerCase().replace(/(\d)\s*([ap])\.?m\.?(?=[\s,–—-]|$)/g, '$1$2m');
+    const T = '(?:\\d{1,2}:\\d{2}(?::\\d{2})?|\\d{1,2}(?::\\d{2})?[ap]m|noon|midnight)';
+    const m = new RegExp(`(?:^|[\\s,])(${T})\\s*(?:–|—|-|to|until|till)\\s*(${T}|24:00)(?=[\\s,]|$)`).exec(low);
+    if (!m) return null;
+    const rest = `${low.slice(0, m.index)} ${low.slice(m.index + m[0].length)}`.trim();
+    const endsTheDay = m[2] === '24:00' || m[2] === 'midnight';
+    a = readHumanTime(`${m[1]} ${rest}`, now, devicePlace);
+    b = readHumanTime(`${endsTheDay ? '23:59:59' : m[2]} ${rest}`, now, devicePlace);
+    if (b && 'instant' in b && endsTheDay) b = { ...b, instant: new Date(b.instant.getTime() + 1000) };
+  }
+  if (!a || !b) return null;
+  if ('needsPlace' in a || 'needsPlace' in b) return { needsPlace: true };
+  const start = a.instant.getTime();
+  let end = b.instant.getTime();
+  if (end <= start) end += DAY_MS;   // past midnight: the end is the next day's
+  if (end - start > SPAN_MAX_DAYS * DAY_MS) return { tooLong: true };
+  return { start: new Date(start), end: new Date(end), place: a.place, beats: beatsAcross(start, end) };
+}
+
+/** An instant on the wall clock of a place — "15:49" — rounded to its
+ *  nearest minute. */
+export function wallClock(ms: number, place: string): string {
+  const r = Math.round(ms / 60_000) * 60_000;
+  const w = new Date(r + offsetAt(place, r));
+  return `${String(w.getUTCHours()).padStart(2, '0')}:${String(w.getUTCMinutes()).padStart(2, '0')}`;
+}
+
+/** The day an instant falls on in a place — "Tuesday 13 October". */
+export function wallDay(ms: number, place: string): string {
+  const w = new Date(ms + offsetAt(place, ms));
+  return `${WEEKDAYS[w.getUTCDay()]} ${w.getUTCDate()} ${MONTHS[w.getUTCMonth()]}`;
+}
+
 /** The span of a temporal address read on the wall clock of a place —
  *  "15:49–16:07" — each edge rounded to its nearest minute. */
 export function spanInPlace(addr: string, place: string): string {
   const { start, end } = addressToSpan(addr);
-  const clock = (ms: number) => {
-    const r = Math.round(ms / 60_000) * 60_000;
-    const w = new Date(r + offsetAt(place, r));
-    return `${String(w.getUTCHours()).padStart(2, '0')}:${String(w.getUTCMinutes()).padStart(2, '0')}`;
-  };
-  return `${clock(start.getTime())}–${clock(end.getTime())}`;
+  return `${wallClock(start.getTime(), place)}–${wallClock(end.getTime(), place)}`;
 }

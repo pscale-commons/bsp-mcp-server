@@ -74,7 +74,7 @@ import { z } from 'zod';
 import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
 import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH, type BlockRow } from '../db.js';
 import { formatBorn, fullWidthAddress } from '../bsp-fn.js';
-import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR, readHumanTime, spanInPlace } from '../temporal.js';
+import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR, readHumanTime, readHumanDay, readHumanSpan, SPAN_MAX_DAYS, spanInPlace, wallClock, wallDay } from '../temporal.js';
 import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLOCK_FIELD } from './clock.js';
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
@@ -156,13 +156,16 @@ export const NAMED_RUNGS: Record<string, number> = {
 
 /** A named rung → the address of the moment truncated to it; a TIME as a
  *  person says it ('16:00 Europe/London', '4pm tomorrow Europe/London') → the
- *  beat it falls in (temporal.ts readHumanTime). Null when the words are
- *  neither, so an ordinary digit address falls through. */
+ *  beat it falls in (temporal.ts readHumanTime); a DAY as a person says it
+ *  ('tomorrow', 'Tuesday Europe/London', '2026-10-13') → that day
+ *  (readHumanDay). Null when the words are none of these, so an ordinary
+ *  digit address falls through. */
 export function namedRungAddress(word: string, when: Date): string | null {
   const keep = NAMED_RUNGS[word.trim().toLowerCase().replace(/^this\s+/, '')];
   if (!keep) {
     const t = readHumanTime(word, when);
-    return t && 'address' in t ? t.address : null;
+    if (t && 'address' in t) return t.address;
+    return readHumanDay(word, when);
   }
   const full = momentToAddress(when);
   return full.slice(0, keep).padEnd(full.length, '0');
@@ -263,6 +266,94 @@ export function mirrorAtBeat(
   }
   lanes.sort((a, b) => b.ms - a.ms);
   return { lanes, voicing, voicingMs };
+}
+
+// ── A SPAN — every beat two times touch (temporal.ts readHumanSpan) ──
+//
+// The availability family's read and write (function:availability, founded
+// 2026-10-10): a holder's own LLM says each calendar block at its span and the
+// line lands on every beat the span touches; a reader asks for a span and gets
+// every mirror's lines across it, on the asker's own clock. Any family on the
+// clock may be read this way; nothing here is particular to one.
+
+/** The finest rung holding every beat of a span — the beats' shared prefix,
+ *  padded to the floor: the day, for a span inside one day. A keep at a span
+ *  lands here. */
+export function spanRung(beats: string[]): string {
+  const a = beats[0], b = beats[beats.length - 1];
+  let i = 0;
+  while (i < a.length && a[i] === b[i]) i++;
+  return a.slice(0, i).padEnd(a.length, '0');
+}
+
+/** The clock day a beat falls on, as its own address (the day's two zeros). */
+const dayOf = (beat: string): string => `${beat.slice(0, 8)}00`;
+
+/** What one mirror holds across a span: each touched day's own line, and its
+ *  beats' lines as runs — consecutive beats saying the same thing are one
+ *  block, from the first beat's start to the last one's end. Pure. */
+export function acrossOf(mb: Block, beats: string[]): {
+  days: { addr: string; line: string | null }[];
+  runs: { start: number; end: number; text: string }[];
+} {
+  const days: { addr: string; line: string | null }[] = [];
+  const runs: { start: number; end: number; text: string }[] = [];
+  let open: { start: number; end: number; text: string } | null = null;
+  for (const beat of beats) {
+    const day = dayOf(beat);
+    if (!days.length || days[days.length - 1].addr !== day) {
+      days.push({ addr: day, line: voiceOf(readAt(mb, emitFor(day.slice(0, 8).split(''), mb))) });
+    }
+    const text = voiceOf(readAt(mb, emitFor(beat.split(''), mb)));
+    const { start, end } = addressToSpan(beat);
+    if (text && open && open.text === text) open.end = end.getTime();
+    else if (text) { open = { start: start.getTime(), end: end.getTime(), text }; runs.push(open); }
+    else open = null;
+  }
+  return { days, runs };
+}
+
+/** Say one line on every beat of a span in the holder's own mirror — or clear
+ *  them, when the line is null — and save each touched day once, as one node:
+ *  an object replaces the day beneath it, so a cleared beat is gone from the
+ *  beach and every other line of that day stands as it was. Mutates `mb` to
+ *  what was saved. Returns how many beats were written, or held a line and
+ *  were cleared. */
+export async function sayAcross(
+  origin: string, name: string, mb: Block, beats: string[], line: string | null, secret?: string,
+): Promise<number> {
+  const byDay = new Map<string, string[]>();
+  for (const beat of beats) {
+    const day = dayOf(beat);
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day)!.push(beat);
+  }
+  let touched = 0;
+  for (const [day, dayBeats] of byDay) {
+    const dayAddr = emitFor(day.slice(0, 8).split(''), mb);
+    if (line !== null) {
+      for (const beat of dayBeats) {
+        const addr = emitFor(beat.split(''), mb);
+        writeAt(mb, addr, voicedValue(readAt(mb, addr), line));
+        touched++;
+      }
+    } else {
+      const dayNode = readAt(mb, dayAddr);
+      if (!dayNode || typeof dayNode !== 'object') continue;   // a day line alone keeps no beats
+      let cleared = 0;
+      for (const beat of dayBeats) {
+        const g = dayNode[beat[8]];
+        if (!g || typeof g !== 'object' || !(beat[9] in g)) continue;
+        delete g[beat[9]];
+        cleared++;
+        if (Object.keys(g).length === 0) delete dayNode[beat[8]];
+      }
+      if (!cleared) continue;
+      touched += cleared;
+    }
+    await saveBlock(origin, name, mb, { spindle: dayAddr, secret });
+  }
+  return touched;
 }
 
 /** THE STANDING PARTS ARE GIVEN ONCE. A family's law, the unvoiced rungs of its
@@ -379,11 +470,11 @@ export const streamEngageParamsSchema = {
   at: z
     .string()
     .optional()
-    .describe("The address attended to, in the spine's own coordinate space (digits, at most one decimal point, comma-walk accepted; multi-dot rejected). Pass a NAMED RUNG on a temporal spine — 'today' (the usual one), 'this week', 'this month', 'season', 'year', or 'now' for the current beat — and the address is COMPUTED from the clock — a human is never asked for an address (function:molequle:5). Or pass a TIME as the person said it, with its PLACE — '16:00 Europe/London', '4pm tomorrow Europe/London', '2026-10-09 09:30 America/New_York', or one instant with its offset, '2026-10-07T16:00+01:00' — and the address of the BEAT it falls in is computed: to book a meeting for 4pm, say it at the time. A time always names its place (an IANA zone or an offset), because the clock keeps no time zone (sundial 8.3); take the place from where the person stands, and never work out a beat address yourself. Omit entirely to receive the spine's map instead (every node's opening line at pscale 0), then dial in. ON THE MOVING NOW, WHEN YOUR HAND HAS SEVERAL SESSIONS OPEN: say at 'now.<digit>' — your own lane's digit, 1-9 — and the line lands as that lane's turn beneath the beat, so the lanes of one hand never write over one another; a read at 'now' shows every hand's lanes with how long ago each spoke, a line staying live for one beat's width wherever the beat's edge fell."),
+    .describe("The address attended to, in the spine's own coordinate space (digits, at most one decimal point, comma-walk accepted; multi-dot rejected). Pass a NAMED RUNG on a temporal spine — 'today' (the usual one), 'this week', 'this month', 'season', 'year', or 'now' for the current beat — and the address is COMPUTED from the clock — a human is never asked for an address (function:molequle:5). Or pass a TIME as the person said it, with its PLACE — '16:00 Europe/London', '4pm tomorrow Europe/London', '2026-10-09 09:30 America/New_York', or one instant with its offset, '2026-10-07T16:00+01:00' — and the address of the BEAT it falls in is computed: to book a meeting for 4pm, say it at the time. A DAY as said — 'tomorrow', 'Tuesday', 'next Friday', '2026-10-13', with or without its place — names that day. A SPAN as said — '14:00–15:00 tomorrow Europe/London', '9am–5pm Tuesday Europe/London', or two instants joined by a slash — names every beat it touches: a say lands on each of them, an empty say clears them, and a read lays every mirror's lines across the span on that place's clock, which is how field='availability' finds when people are free. A time or a span always names its place (an IANA zone or an offset), because the clock keeps no time zone (sundial 8.3); take the place from where the person stands, and never work out a beat address yourself. Omit entirely to receive the spine's map instead (every node's opening line at pscale 0), then dial in. ON THE MOVING NOW, WHEN YOUR HAND HAS SEVERAL SESSIONS OPEN: say at 'now.<digit>' — your own lane's digit, 1-9 — and the line lands as that lane's turn beneath the beat, so the lanes of one hand never write over one another; a read at 'now' shows every hand's lanes with how long ago each spoke, a line staying live for one beat's width wherever the beat's edge fell."),
   say: z
     .string()
     .optional()
-    .describe("Your reading at this address, written into YOUR OWN mirror at <field>:<handle>. One act — there is no separate stage and commit here, because a mirror is revisable by its holder forever; saying again at the same address replaces what you said. Requires `at`. Never writes anyone else's mirror, and nothing else can write yours. The answer to a say is the snapshot: every other voice at that address, so saying what you are in the middle of at 'now' is also how you learn what every other live mind is in the middle of."),
+    .describe("Your reading at this address, written into YOUR OWN mirror at <field>:<handle>. One act — there is no separate stage and commit here, because a mirror is revisable by its holder forever; saying again at the same address replaces what you said. Requires `at`. At a span the line lands on every beat the span touches, and an empty say there clears your lines across it. Never writes anyone else's mirror, and nothing else can write yours. The answer to a say is the snapshot: every other voice at that address, so saying what you are in the middle of at 'now' is also how you learn what every other live mind is in the middle of."),
   keep: z
     .enum(['personal', 'collective'])
     .optional()
@@ -532,7 +623,23 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   }
   const atWord = laned ? laned.rung : params.at;
   const lane = laned ? laned.lane : null;
-  const named = namedRungAddress(atWord, new Date());
+  // A SPAN — two times with their day and their place, '14:00–15:00 tomorrow
+  // Europe/London' — names every beat it touches (temporal.ts readHumanSpan):
+  // a say lands its line on each, an empty say clears them, and a read lays
+  // every mirror's lines across it on that place's clock. It is attended at its
+  // own rung, the finest address holding all of it, which is where a keep lands.
+  const spanRead = lane ? null : readHumanSpan(atWord, new Date());
+  if (spanRead && 'needsPlace' in spanRead) {
+    return out(`at="${params.at}" is a span without its place — the clock keeps no time zone (sundial 8.3), so say where it is read: '${atWord.trim()} Europe/London', or two instants with their offsets joined by a slash. Take the place from where the person stands.`);
+  }
+  if (spanRead && 'tooLong' in spanRead) {
+    return out(`at="${params.at}" spans more than ${SPAN_MAX_DAYS} days — read or say it a fortnight at a time.`);
+  }
+  const span = spanRead && 'beats' in spanRead ? spanRead : null;
+  if (span && spineFloor !== TEMPORAL_FLOOR) {
+    return out(`at="${params.at}" is a span of time, which only a family on the clock keeps — the ${field} spine is not one.`);
+  }
+  const named = span ? spanRung(span.beats) : namedRungAddress(atWord, new Date());
   const rawAt = named ?? atWord;
   const index = await (indexP ?? loadBeachIndex(origin).catch(() => null));
   const index0Has = (name: string) => (index?.blocks ?? []).includes(name);
@@ -582,7 +689,24 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // ── say — the one write act, into the caller's own mirror ──
   let saidAt: string | null = null;
   let mintedMirror: string | null = null;   // this say brought <field>:<handle> into being
-  if (params.say !== undefined && params.say.trim() !== '') {
+  let spanSaid: { touched: number; cleared: boolean } | null = null;   // a span's say: beats written, or cleared
+  if (span && params.say !== undefined && params.say.trim() === '') {
+    // AN EMPTY SAY AT A SPAN CLEARS IT — the holder's own lines on every beat
+    // the span touches, so a calendar synced again leaves nothing cancelled
+    // behind (function:availability 3). A mirror not yet born holds nothing.
+    const mrow = await (mirrorP ?? loadBlock(origin, mirrorName).catch(() => null));
+    let touched = 0;
+    if (mrow && typeof mrow.block === 'object' && mrow.block !== null) {
+      const mblock: Block = JSON.parse(JSON.stringify(mrow.block));
+      try {
+        touched = await sayAcross(origin, mirrorName, mblock, span.beats, null, params.secret);
+      } catch (e: any) {
+        return out(`Your lines across ${params.at} were not cleared at ${mirrorName} — ${e?.message ?? String(e)}`);
+      }
+      saidBlock = mblock;
+    }
+    spanSaid = { touched, cleared: true };
+  } else if (params.say !== undefined && params.say.trim() !== '') {
     let mrow = await (mirrorP ?? loadBlock(origin, mirrorName).catch(() => null));
     if (!mrow || typeof mrow.block !== 'object' || mrow.block === null) {
       mintedMirror = mirrorName;
@@ -604,7 +728,13 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     const mblock: Block = JSON.parse(JSON.stringify(mrow!.block));
     const mAddr = emitFor(digits, mblock);
     try {
-      if (lane) {
+      if (span) {
+        // A LINE ACROSS A SPAN lands on every beat the span touches, each day
+        // saved once (sayAcross).
+        spanSaid = { touched: await sayAcross(origin, mirrorName, mblock, span.beats, params.say, params.secret), cleared: false };
+        saidAt = mirrorName;
+        saidBlock = mblock;
+      } else if (lane) {
         // ONE CALL, THE LAW'S OWN SHAPE (function:torus-mirror 1.2): the lane's
         // turn beneath the beat — the line, 6 its arrival, 3 its latest
         // revision — and the beat voiced with the line, so the hand's standing
@@ -722,11 +852,19 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
 
   const readings: { who: string; text: string; lane?: string; ms?: number | null }[] = [];
   const silent: string[] = [];
+  // ACROSS A SPAN a reading is each touched day's line and the runs of beats
+  // beneath it (acrossOf) — a holder with neither has said nothing there.
+  const across: ({ who: string } & ReturnType<typeof acrossOf>)[] = [];
   await Promise.all(
     mirrorNames.map(async (name) => {
       const who = name.slice(field.length + 1);
       const mb = name === mirrorName && saidBlock ? saidBlock : await (othersP.get(name) ?? blockOf(loadBlock(origin, name).catch(() => null)));
       if (!mb) { silent.push(who); return; }
+      if (span) {
+        const a = acrossOf(mb, span.beats);
+        if (a.runs.length || a.days.some((d) => d.line)) across.push({ who, ...a }); else silent.push(who);
+        return;
+      }
       const node = readAt(mb, emitFor(digits, mb));
       if (!atBeat) {
         const text = voiceOf(node);
@@ -803,7 +941,20 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     ? atWord.trim() + (asTime && 'place' in asTime ? `, its beat ${spanInPlace(spineAddr, asTime.place)} there` : '') + (lane ? `, lane ${lane}` : '')
     : null;
   const attendedLabel = [namedAs, attendedWhen].filter(Boolean).join(' — ');
-  lines.push(`stream:${field} @ ${origin} — at ${spineAddr}${attendedLabel ? ` (${attendedLabel})` : ''}`);
+  // A SPAN says back the beats it touched on its own place's clock — wider
+  // than the words by up to a beat at each end, which is the clock's grain
+  // (function:availability 1.1) — so a block reads true before it is relied on.
+  const spanFirst = span ? addressToSpan(span.beats[0]).start.getTime() : 0;
+  const spanLast = span ? addressToSpan(span.beats[span.beats.length - 1]).end.getTime() : 0;
+  const spanDays = span ? wallDay(spanFirst, span.place) !== wallDay(spanLast - 1, span.place) : false;
+  const spanExtent = span
+    ? `${wallDay(spanFirst, span.place)} ${wallClock(spanFirst, span.place)}–` +
+      `${spanDays ? `${wallDay(spanLast - 1, span.place)} ` : ''}${wallClock(spanLast, span.place)} ${span.place}`
+    : null;
+  const spanWords = span ? `${span.beats.length} ${span.beats.length === 1 ? 'beat' : 'beats'}, ${spanExtent}` : null;
+  lines.push(span
+    ? `stream:${field} @ ${origin} — across ${atWord.trim()} (${spanWords}), attended at ${spineAddr}${attendedWhen ? ` — ${attendedWhen}` : ''}`
+    : `stream:${field} @ ${origin} — at ${spineAddr}${attendedLabel ? ` (${attendedLabel})` : ''}`);
 
   const rungs = ladderOf(spine, digits);
   const rungLines = ladderLines(rungs, spineAddr, spineFloor, brief, (i) => !!foldAt(digits.slice(0, i + 1)));
@@ -836,19 +987,38 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
 
   const voices = new Set(readings.map((r) => r.who)).size;
   lines.push('');
-  lines.push(
-    `# Readings at ${spineAddr}${attendedWhen ? ` (${attendedWhen})` : ''}` +
-    ` — ${voices} ${voices === 1 ? 'voice' : 'voices'}` +
-    ` (the SNAPSHOT: every mirror concatenated, listed and never synthesised)`,
-  );
-  if (readings.length === 0) {
-    lines.push('  (nobody has read this address yet — say yours and it becomes the first)');
+  if (span) {
+    // ACROSS A SPAN, holder by holder: each touched day's own line, then the
+    // blocks on the asker's clock — the lattice a mind reads the overlap from.
+    across.sort((a, b) => a.who.localeCompare(b.who));
+    lines.push(
+      `# Across the span, on the ${span.place} clock — ${across.length} ${across.length === 1 ? 'holder' : 'holders'}` +
+      ` (the SNAPSHOT: every mirror's lines across it, a run of beats saying one thing as one block, listed and never synthesised)`,
+    );
+    if (across.length === 0) lines.push('  (nobody has given anything across this span — say yours and it becomes the first)');
+    for (const a of across) {
+      lines.push(`## ${a.who}${a.who === handle ? ' (you)' : ''}`);
+      for (const d of a.days) lines.push(`  the day, ${voiceAddress(d.addr)}: ${d.line ?? '(no line — its hours are not known)'}`);
+      if (!a.runs.length) lines.push('  (no blocks across the span)');
+      for (const r of a.runs) {
+        lines.push(`  ${spanDays ? `${wallDay(r.start, span.place)} ` : ''}${wallClock(r.start, span.place)}–${wallClock(r.end, span.place)}  ${r.text}`);
+      }
+    }
   } else {
-    for (const r of readings) {
-      // (you) marks the caller's own line: its lane if it named one, else its voicing.
-      const mine = r.who === handle && (lane ? r.lane === lane : r.lane === undefined);
-      const age = typeof r.ms === 'number' && Number.isFinite(r.ms) ? ` (${agoWords(nowMs - r.ms)})` : '';
-      lines.push(`- ${r.who}${r.lane ? ` [${r.lane}]` : ''}${mine ? ' (you)' : ''}: ${r.text}${age}`);
+    lines.push(
+      `# Readings at ${spineAddr}${attendedWhen ? ` (${attendedWhen})` : ''}` +
+      ` — ${voices} ${voices === 1 ? 'voice' : 'voices'}` +
+      ` (the SNAPSHOT: every mirror concatenated, listed and never synthesised)`,
+    );
+    if (readings.length === 0) {
+      lines.push('  (nobody has read this address yet — say yours and it becomes the first)');
+    } else {
+      for (const r of readings) {
+        // (you) marks the caller's own line: its lane if it named one, else its voicing.
+        const mine = r.who === handle && (lane ? r.lane === lane : r.lane === undefined);
+        const age = typeof r.ms === 'number' && Number.isFinite(r.ms) ? ` (${agoWords(nowMs - r.ms)})` : '';
+        lines.push(`- ${r.who}${r.lane ? ` [${r.lane}]` : ''}${mine ? ' (you)' : ''}: ${r.text}${age}`);
+      }
     }
   }
   if (unfollowed > 0) {
@@ -858,10 +1028,13 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   if (silent.length) {
     lines.push('');
     // At a beat on the moving now the roll of everyone who ever kept a mirror
-    // here is not the reading; their number is.
+    // here is not the reading; their number is. Across a span, a holder who
+    // gave nothing there is not known there — never free.
     lines.push(moving
       ? `  ${silent.length} other ${silent.length === 1 ? 'mirror stands' : 'mirrors stand'} silent at this beat`
-      : `  silent here: ${silent.join(', ')} — honest absence, not a gap to be filled (tree:5e)`);
+      : span
+        ? `  nothing given across the span: ${silent.join(', ')} — not known there, never free`
+        : `  silent here: ${silent.join(', ')} — honest absence, not a gap to be filled (tree:5e)`);
   }
 
   lines.push('');
@@ -873,9 +1046,14 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       `where anyone may supersede it with a better reading.`,
   );
 
-  if (saidAt || keptTo) {
+  if (saidAt || keptTo || spanSaid) {
     lines.push('');
-    if (saidAt) lines.push(`✓ your reading landed at ${saidAt}${mintedMirror ? formatBorn(mintedMirror) : ''}`);
+    if (spanSaid && span) {
+      const n = spanSaid.touched;
+      lines.push(spanSaid.cleared
+        ? (n ? `✓ cleared ${n} ${n === 1 ? 'line' : 'lines'} of yours across the span at ${mirrorName}` : `nothing of yours stood across the span at ${mirrorName} — nothing to clear`)
+        : `✓ your line landed at ${mirrorName} on ${n} ${n === 1 ? 'beat' : 'beats'}, ${span.beats[0]} … ${span.beats[span.beats.length - 1]} (${spanExtent})${mintedMirror ? formatBorn(mintedMirror) : ''}`);
+    } else if (saidAt) lines.push(`✓ your reading landed at ${saidAt}${mintedMirror ? formatBorn(mintedMirror) : ''}`);
     if (keptTo) lines.push(`✓ fold kept at ${keptTo}`);
   }
 
@@ -894,7 +1072,10 @@ export async function handleStreamEngage(params: StreamEngageParams, extra?: { s
   nameAtTheDoor(session, params.handle);
   const res = await streamEngage(params, session);
   const origin = (params.beach ?? DEFAULT_BEACH).replace(/\/+$/, '');
-  const said = params.say !== undefined && params.say.trim() !== '';
+  // An empty say at a span clears the holder's lines there: a write, like any say.
+  const clearedSpan = params.say !== undefined && params.say.trim() === '' && params.at !== undefined
+    && (() => { const s = readHumanSpan(params.at!, new Date()); return !!s && 'beats' in s; })();
+  const said = (params.say !== undefined && params.say.trim() !== '') || clearedSpan;
   const block = said ? `${params.field}:${params.handle}` : `spine:${params.field}`;
   if (params.tier) {
     noteLook(session, origin, block, params.at ?? null, false);
