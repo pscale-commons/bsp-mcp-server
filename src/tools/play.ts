@@ -335,17 +335,19 @@ async function unauthoredWorld(origin: string, world: string, handle: string): P
       }
     }
   } catch { /* the register is orientation, never a gate — absence skips it */ }
-  // And the TABLES played at this beach. A name that matches no register line
-  // lands here, and the commonest such name is a table someone is already
-  // playing — the register does not list tables by its own law, so without this
-  // the doorway invited an Author to build a world that already stands one
-  // letter away. The beach lists them itself, newest room write first
-  // (proposals/2026-09-20-tables-are-listed-where-they-are-played.md).
+  // And the /w/ addresses with a room written at this beach. A name that
+  // matches no register line lands here, and the commonest such name is a
+  // table someone is already playing — the register does not list tables by
+  // its own law, so without this the doorway invited an Author to build a
+  // world that already stands one letter away. The beach lists them itself,
+  // newest room write first (proposals/2026-09-20-tables-are-listed-where-
+  // they-are-played.md), and says where a room was written, never what
+  // stands there — so neither does this line.
   try {
     const tables = await loadPlayedTables(DEFAULT_BEACH);
     if (tables.length) {
       out.push('');
-      out.push(`TABLES ALREADY PLAYED at this beach (the beach's own listing, newest first — a table is not in the register, and one of these may be the name you meant; enter with pscale_play(world="<name>", handle="${handle}")):`);
+      out.push(`ADDRESSES WITH A ROOM WRITTEN at this beach (the beach's own listing, newest first — one of these may be the name you meant; read one to see what it is: bsp(agent_id="${DEFAULT_BEACH}/w/<name>")):`);
       for (const t of tables.slice(0, 12)) {
         out.push(`  ${t.name}${t.room ? ` — last voice in ${t.room}` : ''}${t.touched ? ` (${t.touched})` : ''}`);
       }
@@ -400,19 +402,21 @@ export async function handlePlay(
     // A name that matches nothing is most often a TABLE — and tables are not in
     // the register by its own law, so this refusal used to end the search with
     // "check the name" while the beach's own listing held the answer. Name the
-    // tables played here (proposals/2026-09-20-tables-are-listed-…); it is
-    // orientation, so an unreachable listing just leaves the line off.
+    // /w/ addresses with a room written (proposals/2026-09-20-tables-are-
+    // listed-…): the beach says where a room was written, never what stands
+    // there, so the line names none of them. It is orientation, so an
+    // unreachable listing just leaves the line off.
     const lines = [`No world at "${world}" (resolved to ${origin}) — it is not a federated beach. Check the world name, or pass a full beach URL.`];
     try {
       const tables = await loadPlayedTables(DEFAULT_BEACH);
       if (tables.length) {
         lines.push('');
-        lines.push(`TABLES PLAYED at ${DEFAULT_BEACH}, newest first — a table is never in the worlds register, and one of these may be the name you meant:`);
+        lines.push(`ADDRESSES WITH A ROOM WRITTEN at ${DEFAULT_BEACH}, newest first — the beach's own listing, and one of these may be the name you meant:`);
         for (const t of tables.slice(0, 12)) {
           lines.push(`  ${t.name}${t.room ? ` — last voice in ${t.room}` : ''}${t.touched ? ` (${t.touched})` : ''}`);
         }
         if (tables.length > 12) lines.push(`  (+${tables.length - 12} more)`);
-        lines.push(`Enter one with pscale_play(world="<name>", handle="${handle}").`);
+        lines.push(`Read one to see what it is: bsp(agent_id="${DEFAULT_BEACH}/w/<name>").`);
       }
     } catch { /* orientation, never a gate */ }
     return { content: [{ type: 'text', text: lines.join('\n') }] };
