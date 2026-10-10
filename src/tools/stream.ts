@@ -74,7 +74,7 @@ import { z } from 'zod';
 import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
 import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH, type BlockRow } from '../db.js';
 import { formatBorn, fullWidthAddress } from '../bsp-fn.js';
-import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR, readHumanTime, readHumanDay, readHumanSpan, SPAN_MAX_DAYS, spanInPlace, wallClock, wallDay } from '../temporal.js';
+import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR, readHumanTime, readHumanDay, readHumanSpan, SPAN_MAX_DAYS, spanInPlace, wallClock, wallDay, DAY_PARTS } from '../temporal.js';
 import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLOCK_FIELD } from './clock.js';
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
@@ -304,28 +304,43 @@ export async function oneAtATime<T>(key: string, act: (waited: boolean) => Promi
 /** The clock day a beat falls on, as its own address (the day's two zeros). */
 const dayOf = (beat: string): string => `${beat.slice(0, 8)}00`;
 
-/** What one mirror holds across a span: each touched day's own line, and its
- *  beats' lines as runs — consecutive beats saying the same thing are one
- *  block, from the first beat's start to the last one's end. Pure. */
-export function acrossOf(mb: Block, beats: string[]): {
-  days: { addr: string; line: string | null }[];
-  runs: { start: number; end: number; text: string }[];
-} {
-  const days: { addr: string; line: string | null }[] = [];
-  const runs: { start: number; end: number; text: string }[] = [];
-  let open: { start: number; end: number; text: string } | null = null;
-  for (const beat of beats) {
-    const day = dayOf(beat);
-    if (!days.length || days[days.length - 1].addr !== day) {
-      days.push({ addr: day, line: voiceOf(readAt(mb, emitFor(day.slice(0, 8).split(''), mb))) });
+/** The rung an address of the clock stands at, by its walk depth (pscale://sundial 2). */
+const RUNG_AT: Record<number, string> = { 4: 'year', 5: 'season', 6: 'month', 7: 'week', 8: 'day', 9: 'gathering', 10: 'beat' };
+
+/** A line a mirror keeps whose period touches a span: its rung, its address,
+ *  the period it covers and the holder's words. */
+export interface SpanLine { rung: string; addr: string; start: number; end: number; text: string }
+
+/** What one mirror holds across a span: EVERY LINE WHOSE PERIOD TOUCHES IT,
+ *  coarse to fine — the year, season, month, week and day the span stands in,
+ *  each gathering it crosses, and its beats as runs (consecutive beats saying
+ *  the same thing are one block, from the first beat's start to the last one's
+ *  end). A line at a rung is said at that rung's grain, so a 'busy' said at a
+ *  day covers the whole day; reading the words is the reader's. Pure. */
+export function acrossOf(mb: Block, beats: string[]): { lines: SpanLine[] } {
+  const lines: SpanLine[] = [];
+  const seen = new Set<string>();
+  for (let depth = 4; depth <= 9; depth++) {
+    for (const beat of beats) {
+      const p = beat.slice(0, depth);
+      if (seen.has(p)) continue;
+      seen.add(p);
+      const addr = p.padEnd(10, '0');
+      const text = voiceOf(readAt(mb, emitFor(p.split(''), mb)));
+      if (!text) continue;
+      const { start, end } = addressToSpan(addr);
+      lines.push({ rung: RUNG_AT[depth], addr, start: start.getTime(), end: end.getTime(), text });
     }
+  }
+  let open: SpanLine | null = null;
+  for (const beat of beats) {
     const text = voiceOf(readAt(mb, emitFor(beat.split(''), mb)));
     const { start, end } = addressToSpan(beat);
     if (text && open && open.text === text) open.end = end.getTime();
-    else if (text) { open = { start: start.getTime(), end: end.getTime(), text }; runs.push(open); }
+    else if (text) { open = { rung: 'beat', addr: beat, start: start.getTime(), end: end.getTime(), text }; lines.push(open); }
     else open = null;
   }
-  return { days, runs };
+  return { lines };
 }
 
 /** Say one line on every beat of a span in the holder's own mirror — or clear
@@ -885,7 +900,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       if (!mb) { silent.push(who); return; }
       if (span) {
         const a = acrossOf(mb, span.beats);
-        if (a.runs.length || a.days.some((d) => d.line)) across.push({ who, ...a }); else silent.push(who);
+        if (a.lines.length) across.push({ who, ...a }); else silent.push(who);
         return;
       }
       const node = readAt(mb, emitFor(digits, mb));
@@ -1011,21 +1026,24 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   const voices = new Set(readings.map((r) => r.who)).size;
   lines.push('');
   if (span) {
-    // ACROSS A SPAN, holder by holder: each touched day's own line, then the
-    // blocks on the asker's clock — the lattice a mind reads the overlap from.
+    // ACROSS A SPAN, holder by holder: every line whose period touches it,
+    // coarse to fine — the year down to the day by name, a gathering and the
+    // beats by their times on the asker's clock — the lattice a mind reads,
+    // with sense, for a time nobody's lines rule out.
     across.sort((a, b) => a.who.localeCompare(b.who));
     lines.push(
-      `# Across the span, on the ${span.place} clock — ${across.length} ${across.length === 1 ? 'holder' : 'holders'}` +
-      ` (the SNAPSHOT: every mirror's lines across it, a run of beats saying one thing as one block, listed and never synthesised)`,
+      `# Across the span, on the ${span.place} clock — ${across.length} ${across.length === 1 ? 'holder says' : 'holders say'} something here` +
+      ` (the SNAPSHOT: each holder's lines touching it, the year down to the beats, a run of beats saying one thing as one block, listed and never synthesised)`,
     );
-    if (across.length === 0) lines.push('  (nobody has given anything across this span — say yours and it becomes the first)');
+    if (across.length === 0) lines.push('  (nobody has said anything touching this span — everyone shown is available, as far as their lines go)');
+    const when = (l: SpanLine) => {
+      if (l.rung !== 'gathering' && l.rung !== 'beat') return `${voiceAddress(l.addr)} (${l.rung})`;
+      const t = `${spanDays ? `${wallDay(l.start, span.place)} ` : ''}${wallClock(l.start, span.place)}–${wallClock(l.end, span.place)}`;
+      return l.rung === 'gathering' ? `${t} (the ${DAY_PARTS[Number(l.addr[8]) - 1] ?? 'gathering'})` : t;
+    };
     for (const a of across) {
       lines.push(`## ${a.who}${a.who === handle ? ' (you)' : ''}`);
-      for (const d of a.days) lines.push(`  the day, ${voiceAddress(d.addr)}: ${d.line ?? '(no line — its hours are not known)'}`);
-      if (!a.runs.length) lines.push('  (no blocks across the span)');
-      for (const r of a.runs) {
-        lines.push(`  ${spanDays ? `${wallDay(r.start, span.place)} ` : ''}${wallClock(r.start, span.place)}–${wallClock(r.end, span.place)}  ${r.text}`);
-      }
+      for (const l of a.lines) lines.push(`  ${when(l)}  ${l.text}`);
     }
   } else {
     lines.push(
@@ -1051,12 +1069,12 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   if (silent.length) {
     lines.push('');
     // At a beat on the moving now the roll of everyone who ever kept a mirror
-    // here is not the reading; their number is. Across a span, a holder who
-    // gave nothing there is not known there — never free.
+    // here is not the reading; their number is. Across a span, a holder whose
+    // lines touch none of it has said nothing there.
     lines.push(moving
       ? `  ${silent.length} other ${silent.length === 1 ? 'mirror stands' : 'mirrors stand'} silent at this beat`
       : span
-        ? `  nothing given across the span: ${silent.join(', ')} — not known there, never free`
+        ? `  nothing said across the span: ${silent.join(', ')}`
         : `  silent here: ${silent.join(', ')} — honest absence, not a gap to be filled (tree:5e)`);
   }
 
