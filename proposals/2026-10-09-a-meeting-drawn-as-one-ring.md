@@ -379,3 +379,33 @@ together they make the hour. It stands at `action-cycle:weft` for him to correct
 - **Meetings are in the go menu** (happyseaurchin/happyseaurchin-home#405). The site's own list carries `/ring` as
   "meetings", and a person's catalogue offers it beside projects.
 - **This record goes to main when availability is done**, with the pointer at `function:meeting` 3 written then.
+
+## 13. The first readings, folded and then acted on (10 October)
+
+> "I've left two comments in the meetings … If there were a lot of comments/voices would you do a synthesis first
+> before actioning, or is your actioning now 'the synthesis'?"
+
+- **Acting is not the synthesis.** The order is the form's own (`function:meeting` 7):
+  - readings stand in each reader's own mirror;
+  - the fold at the bare name says what they say together, and stays readable beside each part on the ring;
+  - the keeper changes the design from the fold, the standing text archived first.
+  With many voices the fold weighs them (agreements, differences, the minutes each would give) before anything
+  moves. With one voice it is short, but it is still written first, so the case for a change stands where the next
+  reader looks, apart from the change itself.
+- **The two readings**, `action-cycle:happyseaurchin` 1 and `invest-forward:happyseaurchin` at its root, were mostly
+  about the page rather than a meeting's design.
+  - **Folded first** at `invest-forward`'s root: the design case (the titles are too long to read along the ring)
+    kept apart from the page requests.
+  - **The page**, happyseaurchin/happyseaurchin-home#406:
+    - the reading box comes first in the panel, then the readings, the runs and the synthesis, and the list of parts
+      last, since the ring already shows them;
+    - `/ring/<name>/<handle>` fills in the reader's name and uses the key the device remembers;
+    - the lede takes the page's width.
+- **Invest-forward's titles** became one word each: Talking, Moment, Listening, Field, History; Object, Machine,
+  Blocks, Beach; Decision, Offer, Trust, Next; and Post-meeting, Record, Answer. Each old phrase is kept as its line's
+  opening words. The standing spine was archived first at `archive:spine:invest-forward:2026-10-10-3`.
+- **For every meeting**, `function:meeting` 3 now says a title is short, a word or two and never a phrase, since it
+  is drawn along its arc on the ring (`archive:function:meeting:2026-10-10-4`).
+- **Page feedback has no address of its own in a meeting.** It landed in meeting mirrors because that is where the
+  page offers a box. This time the fold carried it to the page. If it grows, the form's room, `pool:meeting`, is
+  where talk about the page itself gathers.
