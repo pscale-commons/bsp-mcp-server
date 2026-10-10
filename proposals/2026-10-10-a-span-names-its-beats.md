@@ -37,6 +37,10 @@ Nothing is particular to availability in the code: any family on the clock reads
 - The same path against the **real beach handler** offline (the clone's `origin/main`, FileRedis): 11 checks, including a wrong key refused at a locked mirror for both the say and the clear.
 - `smoke:human-time` 44, `smoke:stream` 50, `smoke:lens` 22, `smoke:parser` 104 unchanged.
 
-## 6. What it does not do
+## 6. One hand's says, one after another (the same day, #2)
+
+Playing it before handing it showed a fault the offline checks had not asked about. A say rebuilds the node it lands in from the mirror as its call read it, and the beach keeps a block whole, so two says at once to one mirror kept only the later — and an LLM syncing a calendar fires a day's blocks together, as two lanes of one hand say at the same beat. The door now holds one mirror's says in line (`oneAtATime` in `src/tools/stream.ts`, per router process, which is where one session's calls arrive); a say that waited reads the mirror afresh. `smoke:span` fires three blocks and three clears at once (66 checks; without the line the three-at-once check fails), and the real-handler rig the same (12).
+
+## 7. What it does not do
 
 It computes no overlap: the read lays the blocks out, and the calling mind finds the times everyone keeps open under the law (`function:availability` 4 and 5) — no central resolver. It parses no line: the hours a day keeps open are words the mind reads and the page draws. Place and project frames, writing from the page and an availability sealed to a group are the scope's *later*.

@@ -171,5 +171,17 @@ ok(tooLong.includes('spans more than 14 days'), 'a span past a fortnight is refu
 const notClock = text(await handleStreamEngage({ field: 'venture', handle: 'ann', beach: ORIGIN, at: HOUR, say: 'x' } as any));
 ok(notClock.includes('only a family on the clock keeps') && !('venture:ann' in store), 'a family not on the clock refuses a span');
 
+console.log('\nTHREE SAYS AT ONCE TO ONE MIRROR');
+{
+  const nodeAt = (block: any, addr: string) => { let n = block; for (const d of addr) n = n?.[d === '0' ? '_' : d]; return n; };
+  const three = ['09:00–09:30 tomorrow Europe/London', '11:00–11:30 tomorrow Europe/London', '12:00–12:30 tomorrow Europe/London'];
+  await Promise.all(three.map((at, i) => engage('eve', { at, say: `block ${i + 1}`, secret: 'e' })));
+  const eve = store['availability:eve'];
+  ok(!!eve && three.every((at, i) => span(at, new Date())!.beats.every((b) => nodeAt(eve, b) === `block ${i + 1}`)),
+    'an LLM firing a day\'s blocks together keeps every one: the door holds one mirror\'s says in line');
+  await Promise.all(three.map((at) => engage('eve', { at, say: '', secret: 'e' })));
+  ok(three.every((at) => span(at, new Date())!.beats.every((b) => nodeAt(store['availability:eve'], b) === undefined)), 'and three clears at once clear all three');
+}
+
 console.log(`\nspan: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -286,6 +286,21 @@ export function spanRung(beats: string[]): string {
   return a.slice(0, i).padEnd(a.length, '0');
 }
 
+/** ONE HAND'S SAYS TO ONE MIRROR, ONE AFTER ANOTHER. A say rebuilds the node it
+ *  lands in from the mirror as its call read it, and the beach keeps a block
+ *  whole, so two says at once to one mirror kept only the later — and an LLM
+ *  syncing a calendar fires its blocks together, as two lanes of one hand say
+ *  at the same beat. The door holds them in line, per mirror; a say that
+ *  waited reads the mirror afresh once the one before it has landed. Per
+ *  router process, which is where one session's calls arrive. */
+const inLine = new Map<string, Promise<unknown>>();
+export async function oneAtATime<T>(key: string, act: (waited: boolean) => Promise<T>): Promise<T> {
+  const prior = inLine.get(key);
+  const run = (prior ?? Promise.resolve()).catch(() => undefined).then(() => act(!!prior));
+  inLine.set(key, run);
+  try { return await run; } finally { if (inLine.get(key) === run) inLine.delete(key); }
+}
+
 /** The clock day a beat falls on, as its own address (the day's two zeros). */
 const dayOf = (beat: string): string => `${beat.slice(0, 8)}00`;
 
@@ -687,78 +702,86 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   const moving = atBeat && named !== null && NAMED_RUNGS[atWord.trim().toLowerCase().replace(/^this\s+/, '')] === TEMPORAL_FLOOR;
 
   // ── say — the one write act, into the caller's own mirror ──
-  let saidAt: string | null = null;
-  let mintedMirror: string | null = null;   // this say brought <field>:<handle> into being
-  let spanSaid: { touched: number; cleared: boolean } | null = null;   // a span's say: beats written, or cleared
-  if (span && params.say !== undefined && params.say.trim() === '') {
-    // AN EMPTY SAY AT A SPAN CLEARS IT — the holder's own lines on every beat
-    // the span touches, so a calendar synced again leaves nothing cancelled
-    // behind (function:availability 3). A mirror not yet born holds nothing.
-    const mrow = await (mirrorP ?? loadBlock(origin, mirrorName).catch(() => null));
-    let touched = 0;
-    if (mrow && typeof mrow.block === 'object' && mrow.block !== null) {
-      const mblock: Block = JSON.parse(JSON.stringify(mrow.block));
-      try {
-        touched = await sayAcross(origin, mirrorName, mblock, span.beats, null, params.secret);
-      } catch (e: any) {
-        return out(`Your lines across ${params.at} were not cleared at ${mirrorName} — ${e?.message ?? String(e)}`);
-      }
-      saidBlock = mblock;
-    }
-    spanSaid = { touched, cleared: true };
-  } else if (params.say !== undefined && params.say.trim() !== '') {
-    let mrow = await (mirrorP ?? loadBlock(origin, mirrorName).catch(() => null));
-    if (!mrow || typeof mrow.block !== 'object' || mrow.block === null) {
-      mintedMirror = mirrorName;
-      const born =
-        `MIRROR — ${handle}'s readings on the ${field} field (${spineName}), at the spine's own addresses. ` +
-        `Sovereign to its holder; nobody else writes here. Silence at an address is honest absence, not a gap to be filled.`;
-      try {
-        // BORN LOCKED to the holder's key when a key rides the say, as the born
-        // text promises and as the /now page founds a mirror (new_lock on the
-        // create, R1): without it a mirror said through any bsp door was born
-        // open, and anyone could overwrite a person's reading. A keyless say
-        // still births an open mirror, which its holder may homestead later.
-        await saveBlock(origin, mirrorName, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(params.secret ? { new_lock: params.secret } : {}) });
-        mrow = await loadBlock(origin, mirrorName).catch(() => null);
-      } catch (e: any) {
-        return out(`Could not create your mirror at ${mirrorName} — ${e?.message ?? String(e)}`);
-      }
-    }
-    const mblock: Block = JSON.parse(JSON.stringify(mrow!.block));
-    const mAddr = emitFor(digits, mblock);
-    try {
-      if (span) {
-        // A LINE ACROSS A SPAN lands on every beat the span touches, each day
-        // saved once (sayAcross).
-        spanSaid = { touched: await sayAcross(origin, mirrorName, mblock, span.beats, params.say, params.secret), cleared: false };
-        saidAt = mirrorName;
-        saidBlock = mblock;
-      } else if (lane) {
-        // ONE CALL, THE LAW'S OWN SHAPE (function:torus-mirror 1.2): the lane's
-        // turn beneath the beat — the line, 6 its arrival, 3 its latest
-        // revision — and the beat voiced with the line, so the hand's standing
-        // line is whichever lane spoke last. Two narrow writes, never the beat
-        // node whole: the turn touches this lane's cell alone, and a string at
-        // the beat voices it and keeps every other lane standing beneath.
-        const cell = `${mAddr}.${lane}`;
-        writeAt(mblock, cell, turnValue(readAt(mblock, cell), params.say, new Date().toISOString()));
-        await saveBlock(origin, mirrorName, mblock, { spindle: cell, secret: params.secret });
-        const voiced: Block = JSON.parse(JSON.stringify(mblock));
-        writeAt(voiced, mAddr, params.say);
-        await saveBlock(origin, mirrorName, voiced, { spindle: mAddr, secret: params.secret });
-        saidAt = `${mirrorName}:${cell}`;
-        saidBlock = voiced;
-      } else {
-        writeAt(mblock, mAddr, voicedValue(readAt(mblock, mAddr), params.say));
-        await saveBlock(origin, mirrorName, mblock, { spindle: mAddr, secret: params.secret });
-        saidAt = `${mirrorName}:${mAddr}`;
+  let saidAt = null as string | null;
+  let mintedMirror = null as string | null;   // this say brought <field>:<handle> into being
+  let spanSaid = null as { touched: number; cleared: boolean } | null;   // a span's say: beats written, or cleared (set inside the line below)
+  // One hand's says to one mirror land one after another (oneAtATime); a say
+  // that waited for another reads the mirror afresh.
+  const writing = params.say !== undefined && (params.say.trim() !== '' || !!span);
+  const refused = !writing ? null : await oneAtATime(`${origin}|${mirrorName}`, async (waited) => {
+    const mirrorNow = () => waited ? loadBlock(origin, mirrorName).catch(() => null) : (mirrorP ?? loadBlock(origin, mirrorName).catch(() => null));
+    if (span && params.say !== undefined && params.say.trim() === '') {
+      // AN EMPTY SAY AT A SPAN CLEARS IT — the holder's own lines on every beat
+      // the span touches, so a calendar synced again leaves nothing cancelled
+      // behind (function:availability 3). A mirror not yet born holds nothing.
+      const mrow = await mirrorNow();
+      let touched = 0;
+      if (mrow && typeof mrow.block === 'object' && mrow.block !== null) {
+        const mblock: Block = JSON.parse(JSON.stringify(mrow.block));
+        try {
+          touched = await sayAcross(origin, mirrorName, mblock, span.beats, null, params.secret);
+        } catch (e: any) {
+          return out(`Your lines across ${params.at} were not cleared at ${mirrorName} — ${e?.message ?? String(e)}`);
+        }
         saidBlock = mblock;
       }
-    } catch (e: any) {
-      return out(`Your reading was refused at ${mirrorName}:${mAddr} — ${e?.message ?? String(e)}`);
+      spanSaid = { touched, cleared: true };
+    } else if (params.say !== undefined && params.say.trim() !== '') {
+      let mrow = await mirrorNow();
+      if (!mrow || typeof mrow.block !== 'object' || mrow.block === null) {
+        mintedMirror = mirrorName;
+        const born =
+          `MIRROR — ${handle}'s readings on the ${field} field (${spineName}), at the spine's own addresses. ` +
+          `Sovereign to its holder; nobody else writes here. Silence at an address is honest absence, not a gap to be filled.`;
+        try {
+          // BORN LOCKED to the holder's key when a key rides the say, as the born
+          // text promises and as the /now page founds a mirror (new_lock on the
+          // create, R1): without it a mirror said through any bsp door was born
+          // open, and anyone could overwrite a person's reading. A keyless say
+          // still births an open mirror, which its holder may homestead later.
+          await saveBlock(origin, mirrorName, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(params.secret ? { new_lock: params.secret } : {}) });
+          mrow = await loadBlock(origin, mirrorName).catch(() => null);
+        } catch (e: any) {
+          return out(`Could not create your mirror at ${mirrorName} — ${e?.message ?? String(e)}`);
+        }
+      }
+      const mblock: Block = JSON.parse(JSON.stringify(mrow!.block));
+      const mAddr = emitFor(digits, mblock);
+      try {
+        if (span) {
+          // A LINE ACROSS A SPAN lands on every beat the span touches, each day
+          // saved once (sayAcross).
+          spanSaid = { touched: await sayAcross(origin, mirrorName, mblock, span.beats, params.say, params.secret), cleared: false };
+          saidAt = mirrorName;
+          saidBlock = mblock;
+        } else if (lane) {
+          // ONE CALL, THE LAW'S OWN SHAPE (function:torus-mirror 1.2): the lane's
+          // turn beneath the beat — the line, 6 its arrival, 3 its latest
+          // revision — and the beat voiced with the line, so the hand's standing
+          // line is whichever lane spoke last. Two narrow writes, never the beat
+          // node whole: the turn touches this lane's cell alone, and a string at
+          // the beat voices it and keeps every other lane standing beneath.
+          const cell = `${mAddr}.${lane}`;
+          writeAt(mblock, cell, turnValue(readAt(mblock, cell), params.say, new Date().toISOString()));
+          await saveBlock(origin, mirrorName, mblock, { spindle: cell, secret: params.secret });
+          const voiced: Block = JSON.parse(JSON.stringify(mblock));
+          writeAt(voiced, mAddr, params.say);
+          await saveBlock(origin, mirrorName, voiced, { spindle: mAddr, secret: params.secret });
+          saidAt = `${mirrorName}:${cell}`;
+          saidBlock = voiced;
+        } else {
+          writeAt(mblock, mAddr, voicedValue(readAt(mblock, mAddr), params.say));
+          await saveBlock(origin, mirrorName, mblock, { spindle: mAddr, secret: params.secret });
+          saidAt = `${mirrorName}:${mAddr}`;
+          saidBlock = mblock;
+        }
+      } catch (e: any) {
+        return out(`Your reading was refused at ${mirrorName}:${mAddr} — ${e?.message ?? String(e)}`);
+      }
     }
-  }
+    return null;
+  });
+  if (refused) return refused;
 
   // ── keep — persist a synthesis the caller has already made ──
   let keptTo: string | null = null;
