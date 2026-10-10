@@ -300,3 +300,54 @@ together they make the hour. It stands at `action-cycle:weft` for him to correct
   - The role-playing game had both from the start.
 - **The page** is happyseaurchin/happyseaurchin-home#402.
 
+
+## 11. A copy is just a meeting under its maker's key (10 October)
+
+> "the one that you set up is effectively under your key is the design one. And then when anybody else copies it,
+> duplicates it under their own key, they're creating a specific instance of it with their own name … There's no
+> actual coded version which is different. It is just your use of it … the one locked under Weft's key is
+> effectively the designer one. But if I create one under Happy Sea Urchin, it's just one that I'm playing with …
+> it is referring to itself the weft version as being the original"
+
+- **This replaces §9 and the by-reference half of §10.** A meeting made from another is a copy, not a family
+  drawing a spine by reference. No code tells an original from a copy: a meeting is what its own words say it
+  is, and it is kept by whoever's key it is under.
+- **The originals** are the action cycle, invest-forward and the role-playing game.
+  - Their spines and laws moved under weft's key: the action cycle and the role-playing game from David's key,
+    invest-forward from the shared project lock.
+  - Each spine's root now ends "This is the original, kept by weft". The sentence also says how a copy is made,
+    and that what a copy teaches comes back as readings in the original's mirrors.
+  - Each law's 9 records the move in David's words.
+  - Archives: `archive:spine:action-cycle:2026-10-10-2`, `archive:function:action-cycle:2026-10-10`,
+    `archive:spine:role-playing-game:2026-10-10`, `archive:function:role-playing-game:2026-10-10`,
+    `archive:spine:invest-forward:2026-10-10-2`, `archive:function:invest-forward:2026-10-10-2`.
+- **A copy.** Create your own meeting writes the meeting again under the maker's own key and the name they give
+  it:
+  - the spine whole, its root re-voiced: the maker's name for it, what it is for or where, the source's
+    purpose, then "A copy of <source> (spine:<source>), made <date> by <who> … only its keeper changes them";
+  - the law whole: its `_` says the lines are the source's law as it stood then, to be read with the new name,
+    and its 9 opens `PROVENANCE: copied from: <source>`;
+  - a line in `pool:meeting`: `COPIED — <name> — <title>; from: <source>; by <handle>`.
+- **After a copy is made:**
+  - its keeper changes it, with Claude for now;
+  - anyone can copy it again;
+  - what it teaches goes back as readings in its source's mirrors, and the original's keeper changes the
+    original from those.
+- **First Online Test** is now a copy of the role-playing game, under David's key.
+  - `spine:first-online-test` was made from the role-playing game's spine as it stood that day.
+  - Its law's 9 says `copied from: role-playing-game` (archive: `archive:function:first-online-test:2026-10-10`).
+  - A COPIED line was appended to the room. The ARRANGED line before it is read the same way, and the latest
+    line for a name stands.
+- **`function:meeting`** (archive: `archive:function:meeting:2026-10-10-3`):
+  - 8 lists the originals weft keeps and describes copies and their room line. The entry at 8,3,1 (First Online
+    Test as a meeting arranged under its design) is gone: copies are listed in the room, so the form's own list
+    names only the originals.
+  - 5 says a run is never a copy, and that a copy is a meeting of its own.
+  - 9 records the ruling.
+- **The page** (happyseaurchin/happyseaurchin-home#402) reads all of this from the blocks, and the by-reference
+  path is gone:
+  - a copy's header says "A copy of <source>";
+  - every page lists the copies made from it, next to its own link;
+  - the selector puts each copy under its source, with copies of copies beneath those.
+- **A run is unchanged**: the record of one meeting on the day, a dated mirror under that meeting's own name,
+  whether it is an original or a copy.
