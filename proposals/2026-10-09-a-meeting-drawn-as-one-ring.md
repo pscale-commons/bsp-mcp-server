@@ -267,3 +267,36 @@ together they make the hour. It stands at `action-cycle:weft` for him to correct
   arranger's key and a line at `function:meeting` 8 under the shared project lock. Until the list can take a
   line without that lock, a session holding it makes the founding.
 
+## 10. Create your own meeting, and every type with a pre-meeting and a post-meeting (10 October)
+
+> "it's easy for a person to create their own meeting … a button … at the top, which says create your own or
+> duplicate … puts in a new title and it will be based on that particular form … create your own meeting type …
+> probably has to go through Claude Code … make sure that in each of the meetings, there is a pre-meeting section
+> and there is a post-meeting section … how we're differentiating between the original design one and then a
+> specific run one?"
+
+- **Three levels, named the way the page now says them.**
+  - **A meeting type** is the form itself (`spine:<type>`): the action cycle, invest-forward, the role-playing
+    game. Readings on a type's page are about the type.
+  - **A meeting** is one occasion made from a type with "Create your own meeting": a new name and the same form,
+    by reference and never a copy. Its readings (when, who and where before; what people think after), its
+    synthesis and its runs are its own, and it has its own link.
+  - **A run** is the record of a meeting as it happened on the day: the minutes each part took, whether it was
+    done, and notes, kept as a dated mirror under the meeting's name.
+- **Create your own meeting** is a prominent button on every meeting page.
+  - Its window takes a name and, optionally, what the meeting is for or where.
+  - It founds `function:<name>` under the maker's own key, with `mode: meeting` at 1 and `design: <type>` at 2.
+  - It announces the meeting with a line in the form's open room, `pool:meeting`:
+    `ARRANGED — <name> — <title>; design: <type>; by <handle>`.
+  - A type's page lists the meetings of its type from that room and from `function:meeting` 8.
+  - A taken name takes a numbered suffix.
+  - A new meeting *type* is still made with Claude, and the window says so.
+- **Every type opens with a pre-meeting at 1 and closes with a post-meeting at its last digit**, both outside the
+  hour (`function:meeting` 3).
+  - The action cycle's pre-meeting gained When, Who and Where.
+  - Invest-forward gained a pre-meeting, and its items moved one place on. The law's and weft's item
+    references moved with them, the archives are at `archive:*:invest-forward:2026-10-10`, and the moved
+    notices on meeting-protocol say so.
+  - The role-playing game had both from the start.
+- **The page** is happyseaurchin/happyseaurchin-home#402.
+
