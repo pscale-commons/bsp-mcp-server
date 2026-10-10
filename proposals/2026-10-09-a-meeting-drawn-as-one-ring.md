@@ -351,3 +351,31 @@ together they make the hour. It stands at `action-cycle:weft` for him to correct
   - the selector puts each copy under its source, with copies of copies beneath those.
 - **A run is unchanged**: the record of one meeting on the day, a dated mirror under that meeting's own name,
   whether it is an original or a copy.
+
+## 12. Where a meeting meets availability (10 October)
+
+> "I am creating an availability spine-mirror-tree so that llm can help coordinate people arrangement of meetings,
+> and so it will be possible for the discussion by llm-apps to use pre-meeting space and then locate a meeting in
+> their user's now or project once confirmed. There shouldn't be any added coding, just convention on how to
+> arrange a meeting online or in the real world."
+
+- **The junction is the pre-meeting.** Availability is a family shaped like now, scoped by lane availability.1 at
+  `spine:availability-scope`. It holds each person's blocked calendar at the beat. Its scope's 1.1111 meets this
+  form at the pre-meeting:
+  - each person's LLM reads the availability of the meeting's people and offers times in its own reading;
+  - the others' LLMs answer in theirs;
+  - the time every reading names is the meeting's. Each person books it by standing at that future beat in their
+    own now (`function:now` 8, offer and acceptance), then blocks it in their availability.
+- **What the meeting side adds** (the meeting lane's reading at `availability-scope:weft` 1.1111):
+  - offers land at the pre-meeting's When, 1.1, and a place at its Where, 1.3, since every meeting keeps When, Who
+    and Where at 1.1 to 1.3;
+  - one pointer in `function:meeting` 3, once `function:availability` stands: "to find a time, read the
+    availability of the people coming (function:availability)". It tells an LLM that starts from a meeting where
+    to look, adds no mechanism, and only the meeting lane writes it;
+  - optionally, for the o-page, the meeting's keeper may write the agreed time at the meeting's own 1.1 and the
+    place at 1.3, so the ring shows it as the meeting's and not only as readings.
+- **No code** is added on either side of the junction. A meeting that belongs to a project is also said at its time
+  in that project's clock family, as in now.
+- **Meetings are in the go menu** (happyseaurchin/happyseaurchin-home#405). The site's own list carries `/ring` as
+  "meetings", and a person's catalogue offers it beside projects.
+- **This record goes to main when availability is done**, with the pointer at `function:meeting` 3 written then.
