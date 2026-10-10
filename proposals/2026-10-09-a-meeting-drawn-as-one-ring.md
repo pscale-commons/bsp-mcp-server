@@ -378,7 +378,12 @@ together they make the hour. It stands at `action-cycle:weft` for him to correct
   in that project's clock family, as in now.
 - **Meetings are in the go menu** (happyseaurchin/happyseaurchin-home#405). The site's own list carries `/ring` as
   "meetings", and a person's catalogue offers it beside projects.
-- **This record goes to main when availability is done**, with the pointer at `function:meeting` 3 written then.
+- **The pointer is written** (10 October). `function:availability` now stands, with its meeting junction at 8, so
+  `function:meeting` 3 ends: "To find the meeting's time, the LLMs of the people coming read their availability
+  (function:availability 8) and offer times at the pre-meeting's When, its 1.1, the place at its Where, 1.3; the
+  time every reading names is the meeting's, and each books it in their own now." The standing text was archived
+  first at `archive:function:meeting:2026-10-10-5`. With the pointer in, this record went to main at David's word:
+  "Yes, merge the decision record once the pointer's in."
 
 ## 13. The first readings, folded and then acted on (10 October)
 
@@ -414,3 +419,40 @@ together they make the hour. It stands at `action-cycle:weft` for him to correct
   remembers." The box says "your key". The browser's password memory fills it, matched to the name that
   `/ring/<name>/<handle>` puts in the name box. The device keeps a key per meeting, as the portal and venture pages do.
   A page idiom no other page uses is the wrong way to save a step.
+
+## 14. A design names itself, and the browser keeps the key (10 October)
+
+> "There are a bunch of links saying 'this is the link' and then there are two -- and they are different to the
+> url I am actually at. We need to be clear -- the design version is purely self-described -- perhaps in title.
+> When someone duplicates it, it could be self-described as another design version, or it could be an actual
+> operational meeting (default). I am not sure if we need design/run toggle. And the list of duplicates … at the
+> bottom of the page as an optional drop-down listing … if I duplicate yours and then someone duplicates mine --
+> will they both show in yours? And move the create your own to the right of the title. And change to
+> 'Duplicate'."
+
+- **A design names itself in its title.** No field or code marks it: a design's root opens "<NAME> (DESIGN):",
+  and the page reads that word.
+  - The three originals weft keeps now say it, and each root ends by calling itself the original design, kept by
+    weft, which Duplicate copies.
+  - The standing roots were archived first: `archive:spine:action-cycle:2026-10-10-3`,
+    `archive:spine:role-playing-game:2026-10-10-2` and `archive:spine:invest-forward:2026-10-10-4`.
+- **A duplicate is a meeting to hold, unless its maker says otherwise.**
+  - The dialog asks which it is: a meeting (the default), or a design of one's own, which gets "(design)" in
+    its title.
+  - The copy's law 9 says "as a meeting to hold" or "as a design of its own".
+  - `function:meeting` 8 says the same for every reader (`archive:function:meeting:2026-10-10-5`).
+- **The page** (happyseaurchin/happyseaurchin-home#409):
+  - Duplicate stands to the right of the title, with Copy link beside it. The lines that each said "this is the
+    link" are gone; Copy link gives the meeting's own address, without the reader's handle.
+  - One Run button replaces the Design/Run toggle.
+  - The duplicates are listed at the foot, closed until opened.
+- **A duplicate of a duplicate shows in the original's list.** Each copy's room line names what it was copied
+  from, so the list is a tree. A copy of a copy stands beneath the copy it came from, both in the original's list
+  and in the selector.
+- **The key box is gone** (happyseaurchin/happyseaurchin-home#413). This corrects the last bullet of §13. In
+  David's words: "You still have the 'passphrase' entry beside the handle -- I thought I said we should leave it
+  to the browser to check and remember -- that's how all the other o-pages work."
+  - As on /now and /walk, the page asks only for a name.
+  - When a write needs a key this device does not keep, the browser's own prompt asks for it, and the device
+    keeps it once a write lands.
+  - A refused key is asked for once more; for a name bound to a passport, the prompt asks for the passport's key.
