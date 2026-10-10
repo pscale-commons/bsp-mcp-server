@@ -75,9 +75,16 @@ console.log('\nWHAT ONE MIRROR HOLDS ACROSS A SPAN');
   writeAt(mb, '2026412663', 'busy');
   readAt(mb, '2026412600')._ = '09:00–17:30 Europe/London — Birmingham';
   const a = acrossOf(mb, tue!.beats);
-  ok(a.days.length === 1 && a.days[0].addr === '2026412600' && a.days[0].line === '09:00–17:30 Europe/London — Birmingham', "the day's own line rides beside the beats");
-  ok(a.runs.length === 2 && a.runs[0].text === 'call' && a.runs[1].text === 'busy', 'three beats saying one thing are one block; a gap parts two');
-  ok(a.runs[0].end - a.runs[0].start === Math.round(3 * 86_400_000 / 81) || Math.abs(a.runs[0].end - a.runs[0].start - 3 * 86_400_000 / 81) < 2, 'the first block is three beats long');
+  const days = a.lines.filter((l) => l.rung === 'day'), runs = a.lines.filter((l) => l.rung === 'beat');
+  ok(days.length === 1 && days[0].addr === '2026412600' && days[0].text === '09:00–17:30 Europe/London — Birmingham', "the day's own line rides above the beats");
+  ok(runs.length === 2 && runs[0].text === 'call' && runs[1].text === 'busy', 'three beats saying one thing are one block; a gap parts two');
+  ok(Math.abs(runs[0].end - runs[0].start - 3 * 86_400_000 / 81) < 2, 'the first block is three beats long');
+  ok(a.lines.map((l) => l.rung).join(' ') === 'day beat beat', 'coarse to fine: the day, then its beats');
+  readAt(mb, '2026410000')._ = 'away the week of the 19th';   // voiced as the door voices a node: its children kept
+  readAt(mb, '2026412650')._ = 'school run';
+  const b2 = acrossOf(mb, tue!.beats);
+  ok(b2.lines.map((l) => l.rung).join(' ') === 'month day gathering beat beat', "the month's line and a gathering's join, coarse to fine");
+  ok(b2.lines.find((l) => l.rung === 'gathering')!.end - b2.lines.find((l) => l.rung === 'gathering')!.start === 9_600_000, 'a gathering covers its 2h40m');
 }
 
 // ── the door ──
@@ -144,9 +151,9 @@ ok(want.beats.every((b) => { let n: any = store['availability:ann']; for (const 
 await engage('bob', { at: '13:00–14:00 tomorrow Europe/London', say: 'busy', secret: 'j' });
 const read = text(await engage('cat', { at: '12:00–18:00 tomorrow Europe/London' }));
 ok(read.includes('across 12:00–18:00 tomorrow Europe/London (') && read.includes(`attended at ${day}`), 'a read across a span is attended at its day');
-ok(read.includes('# Across the span, on the Europe/London clock — 2 holders'), 'both holders are laid side by side');
-ok(/## ann\n  the day, [^:]+: 09:00–17:30 Europe\/London — Birmingham\n  \d\d:\d\d–\d\d:\d\d  virtual — call about the venture/.test(read), "ann's day line, then her block on London's clock");
-ok(/## bob\n  the day, [^:]+: \(no line — its hours are not known\)\n  \d\d:\d\d–\d\d:\d\d  busy/.test(read), "bob's day is not known; his block stands");
+ok(read.includes('# Across the span, on the Europe/London clock — 2 holders say something here'), 'both holders are laid side by side');
+ok(/## ann\n  \w+day \d+ \w+ 2026 \(day\)  09:00–17:30 Europe\/London — Birmingham\n  \d\d:\d\d–\d\d:\d\d  virtual — call about the venture/.test(read), "ann's day line, then her block on London's clock");
+ok(/## bob\n  \d\d:\d\d–\d\d:\d\d  busy/.test(read), "bob says only his block; nothing stands for his day");
 ok(read.includes('The law of the availability family'), "the family's law rides the envelope");
 
 const before = posts.length;
@@ -157,7 +164,7 @@ ok(want.beats.every((b) => { let n: any = store['availability:ann']; for (const 
 const dayNode = (() => { let n: any = store['availability:ann']; for (const d of day.slice(0, 8)) n = n?.[d === '0' ? '_' : d]; return n; })();
 ok(dayNode && dayNode._ === '09:00–17:30 Europe/London — Birmingham', "the day's own line stands");
 const reread = text(await engage('cat', { at: '12:00–18:00 tomorrow Europe/London' }));
-ok(/## ann\n  the day, [^:]+: 09:00–17:30 Europe\/London — Birmingham\n  \(no blocks across the span\)/.test(reread), 'read again, ann keeps her hours and no blocks');
+ok(/## ann\n  \w+day \d+ \w+ 2026 \(day\)  09:00–17:30 Europe\/London — Birmingham\n(##|\n|$)/.test(reread), 'read again, ann keeps her day line and no blocks');
 const none = text(await engage('dan', { at: HOUR, say: '' }));
 ok(none.includes('nothing of yours stood across the span at availability:dan — nothing to clear') && !('availability:dan' in store), 'clearing where nothing stands writes nothing');
 
