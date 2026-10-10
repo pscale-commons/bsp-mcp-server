@@ -18,7 +18,7 @@
 he was shown was a private claude.ai page. It drew a sample protocol from his two meetings with James as one
 ring, and could run a meeting live.
 
-**Lane**: watch:weft 562 (meeting.6 to meeting.9).
+**Lane**: watch:weft 562 (meeting.6 to meeting.8), then 587 (meeting.9) and the next root entry (meeting.10).
 
 ## 0. David's words
 
@@ -229,3 +229,41 @@ together they make the hour. It stands at `action-cycle:weft` for him to correct
     `archive:tree:2026-10-09`.
 - **An open meeting, when it comes**, is one founding: a spine with its own phases and minutes, a law saying
   `mode: meeting`, and its line at `function:meeting` 8.
+
+## 9. A meeting arranged from a design (10 October)
+
+> "a bunch of people are trying to arrange a meeting and it's actually just to play the role-playing game … 10
+> minutes of creating a character and landing, and then half an hour of playing. And then 20 minutes of review …
+> the aspect of pre-meeting is basically when is this going to happen … people write down when the meeting
+> actually is going to occur as mirrors … how do we create a specific meeting of the RPG type? … so that I can
+> share that with other people … this RPG … would be a specific RPG called First Test. First Online Test."
+
+- **A design and an arranged meeting are different things.**
+  - A design is how a kind of meeting runs: the action cycle, invest-forward, the role-playing game.
+  - An arranged meeting is one occasion of a design: First Online Test, or an action cycle at one building or
+    company. It has its own people, its own time and its own record.
+- **An arranged meeting is a family with no spine of its own.** Its law says `mode: meeting` at 1 and
+  `design: <design>` at 2, and the ring draws the design's spine by reference, so nothing is copied.
+  - Its readings stand in each person's own mirror, `<meeting>:<handle>`, at the design's addresses. The
+    pre-meeting is where people first say when they can come and who is coming, as readings, so no room is
+    needed.
+  - Its fold says where things stand, for example the time most can make, and its runs are dated mirrors at its
+    own name.
+  - It is shared by its own link, happyseaurchin.com/ring/<meeting>.
+  - Its line stands at `function:meeting` 8 beneath its design's line, so the ring's selector offers it and the
+    design's page lists it.
+- **The role-playing game** (`spine:role-playing-game`, `function:role-playing-game`, under David's key) is
+  David's design:
+  - character and landing, 10;
+  - play, 30;
+  - review, 20;
+  - a pre-meeting before the hour (when, who, where) and a post-meeting after it.
+- **First Online Test** (`function:first-online-test`, under David's key) is the first arranged meeting, drawn
+  from the role-playing game. The table it plays at is named in its pre-meeting.
+- **The page** (happyseaurchin/happyseaurchin-home#402) draws an arranged meeting from its design's spine and
+  heads it with its own name and the design it comes from. The selector lists each design with the meetings
+  arranged from it.
+- **What it does not do yet.** It cannot arrange a meeting from the page. Founding one writes a law under the
+  arranger's key and a line at `function:meeting` 8 under the shared project lock. Until the list can take a
+  line without that lock, a session holding it makes the founding.
+
