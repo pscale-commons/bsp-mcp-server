@@ -159,15 +159,20 @@ export function divergencePscale(since: string, now: string): number | null {
 }
 
 /** The rungs of a clock walk the reader does not already hold: those at or
- *  below the divergence. `from` is the coarsest pscale delivered (-1 when none). */
+ *  below the divergence. `from` is the coarsest pscale delivered (-1 when none).
+ *  `touched` says the block moved since the reader was last told: the same
+ *  beat then delivers the beat itself (`within`) rather than nothing, because
+ *  what landed within the beat is the one place the clock cannot point to. */
 export function cutClockWalk(
   entries: PathWalkEntry[],
   since: string,
   now: string,
-): { entries: PathWalkEntry[]; from: number; same: boolean } {
+  touched = false,
+): { entries: PathWalkEntry[]; from: number; same: boolean; within: boolean } {
   const d = divergencePscale(since, now);
-  if (d === null) return { entries: [], from: -1, same: true };
-  return { entries: entries.filter((e) => (e.pscale ?? -1) <= d), from: d, same: false };
+  if (d === null && !touched) return { entries: [], from: -1, same: true, within: false };
+  const from = d ?? 0;
+  return { entries: entries.filter((e) => (e.pscale ?? -1) <= from), from, same: false, within: d === null };
 }
 
 const RUNG_NAMES = ['beat', 'gathering', 'day', 'week', 'month', 'season', 'year', 'decade', 'century', 'millennium'];
@@ -198,6 +203,10 @@ export interface BundleContext {
   now?: Date;
   /** The reader's last ten-digit stamp; absent or null means never here — the whole. */
   since?: string | null;
+  /** The member's block moved since the reader was last told (the beach's
+   *  touched map): a clock member then descends one rung beneath the beat —
+   *  the lanes — and the same beat delivers the beat rather than nothing. */
+  touched?: boolean;
 }
 
 export interface Member {
@@ -211,7 +220,7 @@ export interface Member {
   address: string | null;
   result: BspReadResult | null;
   /** The clock cut applied, when a last stamp was given. */
-  cut: { from: number; since: string; same: boolean } | null;
+  cut: { from: number; since: string; same: boolean; within: boolean } | null;
   note: string | null;
   absent: boolean;
 }
@@ -244,12 +253,16 @@ export async function resolveMember(s: BundleSlot, ctx: BundleContext): Promise<
         return { ...base, name, note: `'now' names a beat on the clock, and ${name} is not on the clock (floor ${floor}) — dial a digit address instead` };
       }
       const stamp = momentToAddress(now);
-      let result = bspRead(block, stamp, att);
+      // A touched clock block descends one rung beneath the beat — the lanes —
+      // unless the dial already descends deeper.
+      const descend = ctx.touched && (att === null || att >= 0) ? -1 : att;
+      let result = bspRead(block, stamp, descend);
       let cut: Member['cut'] = null;
-      if (ctx.since && result.shape === 'path-walk') {
-        const c = cutClockWalk((result.entries as PathWalkEntry[]) ?? [], ctx.since, stamp);
-        result = { ...result, entries: c.entries };
-        cut = { from: c.from, since: TEN(ctx.since), same: c.same };
+      if (ctx.since && (result.shape === 'path-walk' || result.shape === 'path-walk+descent')) {
+        const walk = ((result.shape === 'path-walk' ? result.entries : result.path_walk) as PathWalkEntry[]) ?? [];
+        const c = cutClockWalk(walk, ctx.since, stamp, !!ctx.touched);
+        result = result.shape === 'path-walk' ? { ...result, entries: c.entries } : { ...result, path_walk: c.entries };
+        cut = { from: c.from, since: TEN(ctx.since), same: c.same, within: c.within };
       }
       return { ...base, name, address: stamp, result, cut };
     }
@@ -318,7 +331,8 @@ export function renderMemberBody(m: Member): string {
       lines.push(`(same beat as your last stamp ${m.cut.since} — nothing new on the clock)`);
       return lines.join('\n');
     }
-    lines.push(`(from the ${rungName(m.cut.from)} down — the rungs above unchanged since your last stamp ${m.cut.since}, ${voiceAddress(m.cut.since)})`);
+    if (m.cut.within) lines.push(`(within this beat ${m.address} — ${m.name} moved since you were last told: the beat and what stands beneath it)`);
+    else lines.push(`(from the ${rungName(m.cut.from)} down — the rungs above unchanged since your last stamp ${m.cut.since}, ${voiceAddress(m.cut.since)})`);
   }
   lines.push(renderResult(m.result));
   return lines.join('\n');

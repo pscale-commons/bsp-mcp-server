@@ -5,8 +5,9 @@
  *  an accumulator at its newest entry; a reader's last stamp cuts a clock walk
  *  at the rung where the two addresses diverge — the period elapsed, read as a
  *  pscale — and the touched map decides which other members ride; a seated
- *  session's acks carry only what moved. The real handlers run against a small
- *  fake beach. Run: npm run smoke:bundle */
+ *  session's acks carry only what moved, and a clock block touched within the
+ *  same beat delivers the beat and its lanes. The real handlers run against a
+ *  small fake beach. Run: npm run smoke:bundle */
 
 const ORIGIN = 'https://smoke-bundle.test';
 process.env.DEFAULT_BEACH = ORIGIN;
@@ -110,6 +111,9 @@ const c1 = cutClockWalk(walk, '2026412371', STAMP);
 ok(!c1.same && c1.from === 2 && c1.entries.map((e) => e.pscale).join(',') === '2,1,0', 'the cut keeps today, the gathering and the beat');
 const c2 = cutClockWalk(walk, '2026412446', STAMP);
 ok(c2.same && c2.entries.length === 0, 'the same beat keeps nothing');
+const c3 = cutClockWalk(walk, '2026412446', STAMP, true);
+ok(!c3.same && c3.within && c3.from === 0 && c3.entries.length === 1 && c3.entries[0].pscale === 0, 'the same beat, touched: the beat itself and nothing above');
+ok(!cutClockWalk(walk, '2026412371', STAMP, true).within, 'touched across a beat change is the ordinary cut');
 ok(cutClockWalk(walk, '2026411446', STAMP).entries.length === 4, 'a week ago keeps four rungs');
 ok(rungName(2) === 'day' && rungName(0) === 'beat' && rungName(6) === 'year', 'rungs by name');
 
@@ -137,6 +141,9 @@ const ncb = renderMemberBody(nc);
 ok(!!nc.cut && nc.cut.from === 2 && ncb.includes('from the day down') && ncb.includes('swept at first light') && !ncb.includes('the year the substrate grew'), 'with a last stamp from Saturday evening, the walk starts at today');
 const same = await compileBundle(store['shell:weft']['3'], { load: memLoad, handle: 'weft', now: NOW, since: STAMP });
 ok(by(same, '5').cut?.same === true && renderMemberBody(by(same, '5')).includes('same beat'), 'with the same beat, the clock member says so and delivers nothing');
+const within = await compileBundle(store['shell:weft']['3'], { load: memLoad, handle: 'weft', now: NOW, since: STAMP, touched: true });
+const wb = renderMemberBody(by(within, '5'));
+ok(by(within, '5').cut?.within === true && wb.includes('within this beat 2026412446') && wb.includes('the beat line — lane 6 orienting') && !wb.includes('swept at first light'), 'the same beat, touched: the beat itself rides, the rungs above do not', wb);
 ok((await compileBundle(store['shell:weft']['7'], { load: memLoad, handle: 'weft', now: NOW })) === null, 'a list of words resolves nothing and is not a bundle');
 const egg = await compileBundle(store['reflexive:egg-one']['9'], { load: memLoad, handle: 'egg-one', now: NOW });
 ok(!!egg && by(egg, '1').name === 'sunstone' && by(egg, '2').name === 'purpose:egg-one' && by(egg, '3').name === 'conditions:egg-one', "a genus current's bare names resolve as the instance's own organs, sentinels first");
@@ -173,6 +180,12 @@ store['shell:weft']['3']['6'] = 'purpose:weft:1:0';
 touched = { 'shell:weft': new Date(t1 + 25_000).toISOString(), 'purpose:weft': new Date(t1 + 25_000).toISOString() };
 const g3 = await orientationRider('S', t1 + 30_000, io);
 ok(g3.includes('purpose:weft:1:0') && seatOf('S')!.node === store['shell:weft']['3'], 'a re-dialed bundle is re-read from its block, and its new member rides');
+const beatOfT1 = momentToAddress(new Date(t1 + 30_000));
+beachWrite(nowWeft, `${beatOfT1}.6`, 'lane 6 — said within the beat');
+touched = { 'now:weft': new Date(t1 + 35_000).toISOString() };
+const g4 = await orientationRider('S', t1 + 40_000, io);
+ok(momentToAddress(new Date(t1 + 40_000)) === beatOfT1 && g4.includes('── 5 · now:weft:now ──') && g4.includes('within this beat') && g4.includes('lane 6 — said within the beat') && !g4.includes('the year the substrate grew'), 'the clock member touched within the same beat rides: the beat and the lanes beneath it, nothing above', g4);
+ok((await orientationRider('S', t1 + 45_000, io)) === '', 'and once told, the beat is quiet again');
 ok((await orientationRider('nobody', t1, io)) === '', 'a session with no seat gets nothing');
 seatTold('S', t1 + 60_000);
 ok(seatOf('S')!.lastMs === t1 + 60_000, 'seatTold advances the stamp');
