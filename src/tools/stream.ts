@@ -79,6 +79,7 @@ import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLO
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
 import { nameAtTheDoor, noteLook, reflect } from '../looks.js';
+import { rideOrientation } from '../orientation.js';
 import { followsOf, lensLaw, composeLensMedium } from './lens.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
@@ -1122,6 +1123,6 @@ export async function handleStreamEngage(params: StreamEngageParams, extra?: { s
     noteLook(session, origin, block, params.at ?? null, false);
     return res;
   }
-  return reflect(res, session, origin, block, params.at ?? null, said || params.keep !== undefined);
+  return rideOrientation(reflect(res, session, origin, block, params.at ?? null, said || params.keep !== undefined), session);
 }
 

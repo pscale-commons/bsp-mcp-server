@@ -201,6 +201,8 @@ export async function bundleFollowsAppend(origin: string, block: string, landed:
   return '';
 }
 import { reflect } from '../looks.js';
+import { compileBundle, handleOfBlock, looksLikeBundle, renderBundle } from '../bundle.js';
+import { rideOrientation, seatOf, seatTold, surfaceLoader } from '../orientation.js';
 import {
   loadBlock,
   loadBspShape,
@@ -896,14 +898,43 @@ export async function handleBsp(
   params: BspToolParams,
   extra?: { sessionId?: string },
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const res = await handleBspInner(params);
+  const res = await handleBspInner(params, extra?.sessionId);
   const target = translateAddress(params.agent_id, params.block ?? '');
   if (isSentinelOwner(target.agent_id)) return res;
   const wrote = params.content !== undefined || params.new_lock !== undefined;
-  return reflect(res, extra?.sessionId, target.agent_id, target.block, params.spindle, wrote);
+  const reflected = reflect(res, extra?.sessionId, target.agent_id, target.block, params.spindle, wrote);
+  // THE ORIENTATION RIDES EVERY ACK OF A SEATED SESSION — what moved since it was
+  // last told, cut by the clock and the touched map; nothing when nothing did.
+  return rideOrientation(reflected, extra?.sessionId);
 }
 
-async function handleBspInner(params: BspToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
+/** THE BUNDLE IS A SHAPE (2026-10-11, src/bundle.ts). A path-walk whose terminus
+ *  is a node of references compiles that node: the index first, then each
+ *  member at its own aperture, a clock member at the current beat. Read off the
+ *  node's form and settled by resolution — null for any other node, so every
+ *  other read is exactly as it was. A seated session reading its own bundle has
+ *  just been handed the whole: nothing is owed to it before now. */
+async function bundleWindow(
+  block: Block,
+  spindle: string | null | undefined,
+  target: { agent_id: string; block: string },
+  sessionId?: string,
+): Promise<string | null> {
+  let node: unknown;
+  try { node = readAt(block, spindle); } catch { return null; }
+  if (!looksLikeBundle(node)) return null;
+  const load = isSentinelOwner(target.agent_id)
+    ? async (name: string) => (await loadBlock('pscale', name).catch(() => null))?.block ?? null
+    : surfaceLoader(target.agent_id);
+  const members = await compileBundle(node, { load, handle: handleOfBlock(target.block), now: new Date() });
+  if (!members) return null;
+  const at = String(spindle ?? '').trim();
+  const seat = seatOf(sessionId);
+  if (seat && seat.block === target.block && at === seat.spindle) seatTold(sessionId);
+  return renderBundle(members, { label: `"${target.agent_id}/${target.block}" ${at}` });
+}
+
+async function handleBspInner(params: BspToolParams, sessionId?: string): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { agent_id, spindle, pscale_attention, content: rawContent, secret, new_lock, enc_secret, face, tier } = params;
   // Block may be omitted (or "") to request a surface index — normalise to a
   // string for the downstream translate/load/save calls, which expect one.
@@ -1180,7 +1211,12 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
       const result = bspRead(blockForRead, wholeNamed ? '' : (spindle ?? ''), pscale_attention ?? null);
       const localText = formatRead(result);
       const probe = wholeNamed ? null : probeInsteadOfWhole(blockForRead, spindle, pscale_attention, localText);
-      return { content: [{ type: 'text', text: probe ?? tooLarge(result, localText) ?? localText }] };
+      let text = probe ?? tooLarge(result, localText) ?? localText;
+      if (!probe && result.shape === 'path-walk') {
+        const window = await bundleWindow(blockForRead, spindle, target, sessionId);
+        if (window) text = `${localText}\n${window}`;
+      }
+      return { content: [{ type: 'text', text }] };
     } catch (e: any) {
       if (e instanceof InvalidAddressError) {
         return { content: [{ type: 'text', text: `Read rejected: ${e.message}` }] };
