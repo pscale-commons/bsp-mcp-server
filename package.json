@@ -82,7 +82,8 @@
     "smoke:tiers": "tsx scripts/smoke-tiers.ts",
     "smoke:clock": "tsx scripts/smoke-clock.ts",
     "smoke:looks": "tsx scripts/smoke-looks.ts",
-    "smoke:shapes": "tsx scripts/smoke-shapes.ts"
+    "smoke:shapes": "tsx scripts/smoke-shapes.ts",
+    "smoke:bundle": "tsx scripts/smoke-bundle.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",

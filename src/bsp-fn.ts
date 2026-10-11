@@ -384,7 +384,7 @@ function ringBeneath(node: unknown): string[] {
  *  containers: the greatest digit at every level, down to the first entry
  *  (a node that carries an arrival stamp, or whose children are fields). Null
  *  when the node's children are entries or fields themselves. */
-function headOf(node: unknown, digits: string[], floor: number): string | null {
+export function headOf(node: unknown, digits: string[], floor: number): string | null {
   if (!node || typeof node !== 'object') return null;
   const isObj = (v: unknown) => !!v && typeof v === 'object' && !Array.isArray(v);
   const n = node as Record<string, unknown>;

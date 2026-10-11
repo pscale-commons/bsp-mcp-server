@@ -28,6 +28,8 @@
  */
 import { z } from 'zod';
 import { declareHand } from '../looks.js';
+import { compileBundle, looksLikeBundle, renderMemberBody } from '../bundle.js';
+import { declareSeat, surfaceLoader } from '../orientation.js';
 import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
 import { handlePoolEngage, resolveDirective, collectContributions, coveredThrough, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, declareRoomAtBirth, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
 // Re-exported so existing importers (smoke-play-split) keep one source of truth.
@@ -38,7 +40,7 @@ import { momentToAddress } from '../temporal.js';
 import { turnsOf, voiceOf, agoWords } from './stream.js';
 import { bspRead, formatRead } from '../bsp-fn.js';
 import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
-import { compile, orderSweep, renderCompletions, renderFramedValue, renderSweptOrders, type Completion, type FetchOrigin } from '../compile.js';
+import { compile, completeDialed, orderSweep, renderCompletions, renderFramedValue, renderSweptOrders, type Completion, type FetchOrigin } from '../compile.js';
 import { toPNode, pyDumps, type Loader, type PNode, type PMap } from '../genus.js';
 import { SENTINELS } from '../sentinels.js';
 import { clockTable, composeClockDoor } from './clock.js';
@@ -203,6 +205,14 @@ function branchText(node: any, digit: string, floor: number): string {
  *  the hand's own line. A hand with no now mirror and no say is handed nothing
  *  here, and the completion stands as before. Pure: the door loads, this
  *  renders. */
+/** Where a shell keeps its bundle: position 3 by convention, else the first
+ *  digit position that reads as a bundle by form. Null when none does. */
+export function pickBundleSlot(shell: Record<string, unknown>): string | null {
+  if (looksLikeBundle(shell['3'])) return '3';
+  for (const d of '123456789') if (looksLikeBundle(shell[d])) return d;
+  return null;
+}
+
 export function situationOf(
   handle: string,
   nowMirror: unknown,
@@ -692,17 +702,12 @@ export async function handlePlay(
   // whole BENEATH a manifest that had already dialed their dashboards — the
   // whole-block trap sitting inside the door itself. A manifest-bearing shell
   // that wants a block whole says so in the manifest; nomination is the law.
-  const refOf = (v: unknown): string | null =>
-    typeof v === 'string' ? v
-    : v && typeof v === 'object' ? (typeof (v as any)._ === 'string' ? (v as any)._ : null)
-    : null;
-  const manifestNode = shellBlock ? (shellBlock as any)['3'] : null;
-  const manifestNominates = !!manifestNode && typeof manifestNode === 'object'
-    && Object.keys(manifestNode).some((k) => {
-      if (k === '_') return false;
-      const ref = refOf((manifestNode as any)[k]);
-      return typeof ref === 'string' && ref.includes(':') && !/\s/.test(ref);
-    });
+  // THE MANIFEST IS FOUND BY ITS FORM (src/bundle.ts, 2026-10-11): position 3
+  // by convention, else the first digit position whose children are references
+  // — keel keeps its bundle at 1, egg-one at reflexive 9; the shell says where.
+  const manifestSlot = shellBlock ? pickBundleSlot(shellBlock) : null;
+  const manifestNode = manifestSlot ? (shellBlock as any)[manifestSlot] : null;
+  const manifestNominates = !!manifestNode && looksLikeBundle(manifestNode);
   for (const entry of legacy) {
     if (manifestNominates && !entry.name.startsWith('passport:')) continue;
     own.push(entry);
@@ -725,30 +730,29 @@ export async function handlePlay(
   // shell-less handle still works; entries the default set already loaded are
   // skipped; a manifest that fails to compile degrades to a note, never a
   // broken entry.
-  const manifest = manifestNode;
-  if (manifest && typeof manifest === 'object') {
+  // THE BUNDLE IS A SHAPE (2026-10-11): the manifest compiles through the same
+  // functions a bare bsp() read of the node uses — a clock member (now:<handle>:now)
+  // walked at the stamp, an accumulator member (history:<handle>:head) at its
+  // newest entry — so the door and the read cannot diverge; the registry's
+  // completion pass still runs over what was dialed. The session is then
+  // SEATED: every later bsp() and stream ack carries what moved since.
+  if (manifestNode && manifestNominates && manifestSlot) {
     try {
-      const bundle: PMap = new Map();
-      for (const k of Object.keys(manifest)) {
-        if (k === '_') continue;
-        const ref = refOf((manifest as any)[k]);
-        if (typeof ref === 'string' && ref.includes(':') && !/\s/.test(ref) && !seen.has(ref)) {
-          seen.add(ref);
-          bundle.set(k, ref);
+      const members = await compileBundle(manifestNode, { load: surfaceLoader(resolved), handle, now: new Date() });
+      if (members) {
+        const dialed = members
+          .filter((m) => m.ref && !m.absent)
+          .map((m) => ({ ref: m.leaf!, name: m.name!, address: m.address || null, attention: m.ref!.attention }));
+        completions.push(...await completeDialed(dialed, load, carried));
+        for (const m of members) {
+          if (!m.ref || !m.leaf || seen.has(m.leaf)) continue;
+          seen.add(m.leaf);
+          own.push({ name: m.leaf, json: renderMemberBody(m) });
         }
-      }
-      if (bundle.size > 0) {
-        const r = await compile(bundle, load, { carried, fetchOrigin });
-        completions.push(...r.completions);
-        const w = r.window as PMap;
-        for (const [k, v] of w) {
-          if (v === null || v === undefined) continue;
-          const ref = bundle.get(k);
-          own.push({ name: typeof ref === 'string' ? ref : `shell:3.${k}`, json: renderFramedValue(v) });
-        }
+        declareSeat(extra?.sessionId, resolved, handle, `shell:${handle}`, manifestSlot, manifestNode);
       }
     } catch (e: any) {
-      own.push({ name: `shell:${handle} 3 (manifest)`, json: JSON.stringify(`did not compile: ${String(e?.message ?? e).slice(0, 120)} — read its addresses directly via bsp`) });
+      own.push({ name: `shell:${handle} ${manifestSlot} (manifest)`, json: JSON.stringify(`did not compile: ${String(e?.message ?? e).slice(0, 120)} — read its addresses directly via bsp`) });
     }
   }
   // 4a. THE FRAME — the world-authored scene bundle, compiled with the full
