@@ -1,6 +1,11 @@
 # Alarms and wake-ups — when a booked time comes round
 
-> **Status.** PROPOSAL, PARKED 2026-10-12 (weft, through Claude Code, lane availability.1), at David's word once the availability lane had closed: *"write up alarms and wake-up job as a proposal which we can return to in the future."* Nothing is built, and nothing on the beach changes until he returns to it. It starts where a meeting's time has been fixed and booked (`function:meeting` 3, `function:availability` 8, `function:now` 8). It ends where someone, a person or an agent, is awake at that time.
+> **Status.** PROPOSED, PARKED, THEN BUILT, all on 2026-10-12 (weft, through Claude Code, lane availability.1).
+> - **Parked** at David's word once the availability lane had closed: *"write up alarms and wake-up job as a proposal which we can return to in the future."*
+> - **Built** at his next word: *"merge it — If it is small, let's do the cron alarm and wake up!"* That built the beach's clock of §6B, with the changes §10 records.
+> - **Not built:** §5 (the calendar) and §6A (a routine) stand as written. Neither needs code, and nothing was added for them.
+>
+> It starts where a meeting's time has been fixed and booked (`function:meeting` 3, `function:availability` 8, `function:now` 8). It ends where someone, a person or an agent, is awake at that time.
 
 ## 1. The ask
 
@@ -209,3 +214,69 @@ Taking part needs an agent with its own key:
 - **Agents in meetings.** Which agents take part first: neptune, egg-one, weft or Waer? On whose key do their wakes run?
 - **Staying present.** How does an agent stay present through a meeting: one long run, or a wake at each beat the booking covers?
 - **"Fixed".** How the ring marks a time as fixed belongs to the meeting lanes. This proposal begins once the time is booked.
+
+## 10. Built, 2026-10-12
+
+David's word: *"If it is small, let's do the cron alarm and wake up!"* He asked where an alarm is set: in one block or spread across blocks, from the meeting or from a person's own item, and whose parlour it writes to. Those answers shaped what was built.
+
+**Where an alarm is set: a family of its own on the clock.**
+
+- `alarm:<handle>` is each person's own block. A line at a beat is their alarm, in their own words.
+- It is not a field on the item it serves. It is a separate line at the same clock address as the booking, card or meeting, or earlier for a warning ahead. So anything on the clock can have an alarm without that item changing.
+- Setting one needs no new door. `pscale_stream_engage(field='alarm', at='<a time with its place>', say='<words>')` already turns the time into its beat. The first line founds the block, locked to its holder.
+
+**Whose parlour: always the setter's own.**
+
+- An alarm rings only `pool:<handle>` of the block it stands in. Nobody is pinged who did not ask.
+- A meeting rings nobody. Each person who wants telling sets their own.
+- This answers David's worry about everyone being pinged for the same meeting.
+
+**On the beach** (shared project lock):
+
+- `spine:alarm`.
+- `function:alarm`:
+  1. what a line means — it rings once, within about five minutes of its beat starting, and coarser rungs never ring;
+  2. whose parlour;
+  3. what the ring reaches;
+  4. an agent's alarm — its words are its wake's brief;
+  5. the clock;
+  9. provenance.
+- `function:now` 8.5, THE ALARM, so every mind that books a meeting is told. The earlier text was archived first at `archive:function:now:2026-10-12`.
+
+**The clock** is happyseaurchin-home #429, `api/alarm-clock.js`, a Vercel cron that runs every five minutes beside the genus clock.
+
+- It is active code on the site's server. It is not on the beach, not in any block, and not in the beach's store.
+- It reads the `alarm:*` blocks the beach lists.
+- It rings each line whose beat began in the five minutes before the run's slot, committing it into the holder's parlour as a voice from `alarm`.
+- From there the beach's existing doorbell does the rest:
+  - the push engine carries the line to the person through their ear;
+  - the waker wakes their agent, if it is enrolled with its dial on.
+
+**What changed from §6B while building, and which questions in §9 that settles:**
+
+- **No enrolment.** Having an alarm block is the asking, and the clock reads nothing else. That answers *asking for the clock*.
+- **No record and no key.**
+  - The first design kept a record of what had rung, under a key of its own. The harness declined to store that key, so the design changed.
+  - Now the run's slot alone decides which beat is due, so each line rings once and the clock holds no key at all. Its only guard is Vercel's cron secret.
+  - The cost: if the scheduler skips a run, that window's alarms do not ring. `?slot=<instant>` re-runs a missed window, and `?dry=1` reports without posting.
+- **Whose voice.** The line arrives from `alarm`, never as the holder speaking, so the waker never refuses it as a self-ring. The law tells the woken agent that it answers to the record (`function:alarm` 4).
+- **Lead time.** Set the alarm ahead. Its beat is when it rings.
+
+**Still open:** which agents take part in meetings, how an agent stays present through one, and how a time is marked "fixed".
+
+**Played.**
+
+1. **Locally, against the live beach.**
+   - A throwaway probe's line at beat 3 rang into its parlour as a voice from `alarm`.
+   - The next window did not ring it again.
+   - A probe with no parlour was passed by.
+2. **Live, after #429 merged at 16:56Z.**
+   - A probe's line at 17:12 UTC (beat 5, which began at 17:11:07) rang into its parlour at 17:15:17Z, on the clock's 17:15 run.
+   - The 17:20 run rang nothing more.
+   - The probe with no parlour was passed by, and no parlour was created for it.
+3. **Set aside.** The probes stand at `archive:alarm:probe-alarm-a:2026-10-12`, `archive:alarm:probe-alarm-b:2026-10-12` and `archive:pool:probe-alarm-a:2026-10-12` (beach-log 57–59).
+
+**Not yet played:**
+
+- **A real person's push.** It follows the doorbell's existing path to the ear. David's own ear already watches his parlour.
+- **A real agent's wake.** It follows the doorbell's existing path to the waker, and it spends a pulse.
