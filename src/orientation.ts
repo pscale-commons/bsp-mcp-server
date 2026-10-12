@@ -8,7 +8,9 @@
  * bsp() and stream ack after the door, the rider compiles the seat's bundle
  * relative to that stamp and appends only what moved:
  *   - a clock member (name:now) is read at the current beat and cut at the
- *     divergence rung (bundle.ts) — when the beat has not turned, nothing;
+ *     divergence rung (bundle.ts) — when the beat has not turned, nothing,
+ *     unless its block was touched: then the beat itself and the lanes
+ *     beneath it, the one place the clock cannot point to;
  *   - any other member rides only when the beach's touched map says its block
  *     changed after the seat was last told;
  * then the stamp advances. On most calls nothing rides and nothing is loaded
@@ -143,10 +145,11 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
     const touched = names.some(touchedAfter);
     const changed = s.ref.word === 'now' ? beatChanged || touched : touched;
     if (!changed) { quiet.push(s.leaf!); continue; }
-    const m = await resolveMember(s, ctx);
+    const m = await resolveMember(s, { ...ctx, touched });
     // An absent or unreadable member cannot have moved; the same beat with
-    // nothing touched moved nothing either.
-    if (m.absent || !m.result || (m.cut?.same && !touched)) { quiet.push(s.leaf!); continue; }
+    // nothing touched moved nothing either. A touched clock member in the same
+    // beat delivers the beat and what stands beneath it — the lanes.
+    if (m.absent || !m.result || m.cut?.same) { quiet.push(s.leaf!); continue; }
     moved.push(m);
   }
   seat.lastMs = nowMs;
