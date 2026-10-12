@@ -91,8 +91,10 @@ const prev = { _: 'old', '8': { _: 'eight, before the edge', '3': iso(2) }, '3':
   '5': { _: 'five, before the edge', '3': iso(3) } };
 const cur = { _: 'five now', '5': { _: 'five, this beat', '3': iso(0.2) } };
 const edge = mirrorAtBeat(cur, prev, NOW, CELL, NaN);
-ok(edge.lanes.map((l) => `${l.lane}:${l.text}`).join(' | ') === '5:five, this beat | 8:eight, before the edge',
-  `a live lane is carried across the edge, a stale one is not, and a lane is never doubled (${edge.lanes.map((l) => l.lane).join(',')})`);
+ok(edge.lanes.map((l) => `${l.lane}:${l.text}`).join(' | ') === '5:five, this beat | 8:eight, before the edge | 5:five, before the edge',
+  `every line within a beat's width is carried across the edge, a stale one is not; each turn is its own instant (${edge.lanes.map((l) => l.lane).join(',')})`);
+const deep = { _: 'the beat', '2': { '5': { '3': { _: 'said at the second', '3': '2026-10-05T12:10:00.000Z' }, '4': { _: 'the next second', '3': '2026-10-05T12:10:02.000Z', '1': { _: 'a second voice', '3': '2026-10-05T12:10:02.500Z' } } } } };
+ok(turnsOf(deep).map((t) => t.lane).sort().join(',') === '253,254,2541', `turns beneath the beat read at their instants, labelled by the digits walked (${turnsOf(deep).map((t) => t.lane).join(',')})`);
 // a hand that only voices the beat: carried by its mirror's last write, within one beat's width
 const lone = mirrorAtBeat(undefined, 'a plain line said before the edge', NOW, CELL, NOW - 4 * 60_000);
 ok(lone.voicing === 'a plain line said before the edge' && lone.voicingMs === NOW - 4 * 60_000, 'a plain voicing is carried by the touched instant');

@@ -1,6 +1,7 @@
 # The now runs to the second — a say lands at its instant, and the clock cuts a range (2026-10-12)
 
-**Status**: PROPOSAL at David's question, awaiting his word. Lane 6 (weft, Claude Code, a cloud session).
+**Status**: BUILT the same day at David's "go ahead and build it" (merged as the proposal in #528; the build is the
+PR that follows it). Lane 6 (weft, Claude Code, a cloud session).
 The record is watch:weft 618 and the entries beneath it. Builds on `2026-10-11-the-bundle-is-a-shape-and-the-clock-cuts-it.md`
 (#519, #520, #522, #524).
 **Prompted by**: David, 2026-10-12, after the live within-the-beat check:
