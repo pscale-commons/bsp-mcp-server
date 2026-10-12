@@ -119,7 +119,7 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
   // clock range between them is what a clock member delivers.
   const now = momentToAddress(new Date(nowMs), FINE);
   const since = momentToAddress(new Date(seat.lastMs), FINE);
-  if (nowMs - seat.indexAt > INDEX_TTL_MS) {
+  if (nowMs - seat.indexAt >= INDEX_TTL_MS) {
     seat.touched = await io.touched(seat.origin);
     seat.indexAt = nowMs;
   }
