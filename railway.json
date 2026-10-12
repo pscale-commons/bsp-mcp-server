@@ -1,0 +1,19 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "watchPatterns": [
+      "/src/**",
+      "/docs/**",
+      "/package.json",
+      "/package-lock.json",
+      "/tsconfig.json",
+      "/railway.json",
+      "/Dockerfile",
+      "/nixpacks.toml",
+      "/railpack.json",
+      "/Procfile",
+      "/.nvmrc",
+      "/.node-version"
+    ]
+  }
+}

@@ -84,7 +84,42 @@ smoked.
 `-3`, `-4`, `clock-two-walk`, `clock-two-walk-b`) keep their nights as they stand, for a tidying
 lane to set aside.
 
-## 6. Not done here
+## 6. Walked by another hand, and what this revision adds (8–12 October)
+
+Lane F of tasks.1 walked the open builds on 8 October (`/w/brackenfoot-clock-walk-20261008`, Tobin
+and Brin, Sonnet 4.6; the record at `~/Projects/weft/engagements/2026-10-08-tasks-1/f-trackb-walk.md`).
+The turn-taking held, four of four: any seated hand folds, the first fold stands, the others catch up,
+no character voiced, a twin say refused. Four things broke, and this revision answers each:
+
+- **The WAY line moved the wrong people** (three folds of eight: a knock moved a character indoors;
+  both moved to the Green while their tellings left them at the ford). Now the fold's WAY is an OFFER
+  and the telling confirms it: the teller, reading the moment from where the character stands, ends
+  with `WHERE <address>` or `WHERE here`; THE JOURNAL gives two standpoint lines and the WHERE line
+  chooses; the Location moves only when the fold offered the way AND the teller says the moment
+  left them there. The WHERE line never reaches the thread.
+- **Nobody waited for the other player**: a press folded the beat under her, and her line, said
+  after, landed at a folded beat with no word. Now a say at a folded beat is refused, naming the beat
+  to say at; and the moment WAITS for a seated character at this beat who is here (a live presence
+  mark) and has not said — one who is away is not waited for, and catches up.
+- **A newcomer could not sit down**: the interview claimed a role at a gate that does not exist, and
+  the roster and rules it reads lived only at the scenario. The founding script now copies the kit
+  (`roster:<world>`, `rules:nomad`, `rules:<world>`) and re-voices the passage's lobby line for the
+  clock; `/w/brackenfoot-clock` was given both. The mirror still makes no character at a clock table:
+  a character is made through the Claude-app door (walked below), then played in the mirror.
+- **Any hand, seated or not, kept the open night**: now the keep needs a passport at the table and the
+  key proven against it (a byte-identical write-back of the standpoint).
+
+Also from that walk: a companion out of sight is named to the teller with their place (the whole
+indoor exchange had been told to a character outside); the fold's WAY and NEXT lines are not shown on
+the glass; the plain read at a clock table no longer says anyone may supersede the fold; a way landing
+at an address already listed is listed once; the mirror's router address can be pointed at a local
+router for a two-tab walk.
+
+The branch was merged with main (the lens, availability, the span reads, the bundle — #491 to #519):
+the say path's new one-at-a-time shape carries the guards; nothing on main touches the clock door's
+design. **Walked again on 12 October** (`/w/clock-two-walk-c`, founded by the new script with the kit; Sonnet 5; sixteen model calls): a fresh seat with only the real tools made a character through the door — four blocks at the table, Location and Beat on the passport, the roles already taken read off the passports (it refused to double the hedge-wife, and took the woodsman); a keyless passer-by's keep and a seated name with the wrong key were refused; a say as `wenna` refused; a press while the other player was here and silent waited, with no model call; after she said, the fold was kept, the lean voiced `the-watch` and `the-day` only, and she caught up; her say at the folded beat was refused, naming the next; a going offered to her (`WAY Wenna 111`) was confirmed by her telling's `WHERE 111` and moved her alone; a second going (`WAY Wenna 131`) likewise, the woodswoman's Location unchanged. One more fault found and fixed on the way: a fold that names its characters by their look was told to the wrong one of them — the telling's close now names the look that means *you*.
+
+## 7. Not done here
 
 - **The lean on the world's keeper.** It still runs on the presser's key and reads the held side; the
   ruling gives the world's next move to the world's keeper. Moving it there — the waker's clock pass,
@@ -96,3 +131,6 @@ lane to set aside.
   where it names an offered way, the record moves them — the fold said so.
 - `smoke:tools` in xstream fails on untouched main ("an anonymous visitor has no ladder"); not this
   work's.
+- **The mirror makes no character at a clock table.** Its sign-up writes a passport at the apex; a
+  character on the clock is born at the table, through the door. A sign-up at the table is the
+  mirror's next step.

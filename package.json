@@ -23,6 +23,7 @@
     "smoke:stream": "tsx scripts/smoke-stream-engage.ts",
     "smoke:stream-born-locked": "tsx scripts/smoke-stream-born-locked.ts",
     "smoke:stream-map": "tsx scripts/smoke-stream-map.ts",
+    "smoke:lens": "tsx scripts/smoke-lens.ts",
     "smoke:unit": "tsx scripts/smoke-bsp.ts",
     "smoke:numeric": "tsx scripts/smoke-numeric-leaves.ts",
     "smoke:floor": "tsx scripts/smoke-floor-align.ts",
@@ -30,6 +31,9 @@
     "smoke:hollow-ack": "tsx scripts/smoke-hollow-ack.ts",
     "smoke:envelope": "tsx scripts/smoke-envelope.ts",
     "habits": "python3 scripts/bsp-habits.py",
+    "count": "python3 scripts/count-calls.py",
+    "redial": "python3 scripts/redial.py",
+    "review": "python3 scripts/review.py",
     "smoke:parser": "tsx scripts/smoke-parser.ts",
     "smoke:sentinel": "tsx scripts/smoke-sentinel.ts",
     "smoke:session": "tsx scripts/smoke-session.ts",
@@ -67,6 +71,8 @@
     "smoke:temporal": "tsx scripts/smoke-temporal.ts",
     "smoke:temporal-envelope": "tsx scripts/smoke-temporal-envelope.ts",
     "smoke:temporal-address": "tsx scripts/smoke-temporal-address.ts",
+    "smoke:human-time": "tsx scripts/smoke-human-time.ts",
+    "smoke:span": "tsx scripts/smoke-span.ts",
     "smoke:here": "tsx scripts/smoke-here.ts",
     "smoke:wellformed": "tsx scripts/smoke-wellformed.ts",
     "smoke:compile": "tsx scripts/smoke-compile.ts",
@@ -75,7 +81,9 @@
     "smoke:room-fold": "tsx scripts/smoke-room-fold.ts",
     "smoke:tiers": "tsx scripts/smoke-tiers.ts",
     "smoke:clock": "tsx scripts/smoke-clock.ts",
-    "smoke:looks": "tsx scripts/smoke-looks.ts"
+    "smoke:looks": "tsx scripts/smoke-looks.ts",
+    "smoke:shapes": "tsx scripts/smoke-shapes.ts",
+    "smoke:bundle": "tsx scripts/smoke-bundle.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",

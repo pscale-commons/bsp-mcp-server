@@ -30,6 +30,9 @@ This takes about an hour and costs about £2 a month, plus the talk.
 2. **A host.**
    - Deploy this repository as a second service, on Railway or any Node 22 host.
    - Its start command is `npm run gateway`, and its environment is set as below.
+   - On Railway, give it a config file of its own (an absolute path such as `/gateway/railway.json`)
+     with its own watch patterns, at least `/gateway/**` and `/src/**`. The repository's root
+     `railway.json` belongs to the router, and its patterns leave the gateway out.
    - Its public URL plus `/webhook` is the endpoint from step 1.
 3. **A number.**
    - In Twilio, buy a UK number (about £1 a month).

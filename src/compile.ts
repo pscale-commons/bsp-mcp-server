@@ -39,6 +39,9 @@
  *     cannot reach the surface gets no completion — nothing is hardcoded.
  */
 
+import { parseBundleRef, headAddress } from './bundle.js';
+import { momentToAddress } from './temporal.js';
+import type { Block } from './bsp.js';
 import {
   scoop,
   indexNode,
@@ -95,7 +98,7 @@ export interface CompletionRule {
 
 const RELATION_BLOCKS = new Set(['relationships', 'surface', 'task', 'marks', 'liquid', 'pool', 'between']);
 const IDENTITY_BLOCKS = new Set(['passport', 'shell', 'reflexive', 'history', 'stash', 'witnessed', 'knows', 'identity']);
-const SITUATION_BLOCKS = new Set(['located', 'sundial', 'conditions', 'state-of-play']);
+const SITUATION_BLOCKS = new Set(['located', 'sundial', 'conditions', 'state-of-play', 'now', 'torus-mirror']);
 const STANCE_BLOCKS = new Set(['grips', 'reflective-compass']);
 
 /**
@@ -231,6 +234,24 @@ export function collectRefs(node: PNode, out: DialedRef[] = []): DialedRef[] {
   return out;
 }
 
+/** THE TWO ADDRESS WORDS, resolved before a scoop (src/bundle.ts, 2026-10-11):
+ *  `now` to the clock's current beat, `head` to an accumulator's newest entry
+ *  — computed by the host, never by the mind. Any other leaf passes untouched. */
+async function resolveWords(leaf: string, load: Loader): Promise<string> {
+  const r = parseBundleRef(leaf);
+  if (!r || !r.word) return leaf;
+  const att = r.attention === null ? '' : `:${r.attention}`;
+  if (r.word === 'now') return `${r.name}:${momentToAddress(new Date())}${att}`;
+  const block = await load(r.name);
+  if (block === null || block === undefined) return leaf;
+  try {
+    const head = headAddress(JSON.parse(pyDumps(block)) as Block);
+    return head ? `${r.name}:${head}${att}` : leaf;
+  } catch {
+    return leaf;
+  }
+}
+
 /** Hydrate a bundle node: local refs via scoop at the door's surface; star-refs
  *  with the same scoop semantics bound to their origin's loader. A star leaf
  *  that cannot resolve (no factory, fetch error, absent block) rides through
@@ -249,7 +270,7 @@ async function hydrateFrame(node: PNode, load: Loader, fetchOrigin?: FetchOrigin
         return node; // frames degrade, never break an entry
       }
     }
-    return scoop(node, load);
+    return scoop(await resolveWords(node, load), load);
   }
   if (node instanceof Map) {
     const out: PMap = new Map();
@@ -309,21 +330,28 @@ export async function compile(
   node = indexNode(node as PNode, true);
   const dialed = collectRefs(node);
   const window = await hydrateFrame(node, load, opts.fetchOrigin);
+  const completions = opts.complete === false ? [] : await completeDialed(dialed, load, opts.carried ?? []);
+  return { window, dialed, completions };
+}
+
+/** The completion pass alone — for a door that unfolded its bundle another way
+ *  (the play door's manifest, compiled through src/bundle.ts) and still owes
+ *  the registry its check: every uncarried dimension's shallow point, scooped
+ *  live from the surface, never a fallback text. */
+export async function completeDialed(dialed: DialedRef[], load: Loader, carriedRefs: string[] = []): Promise<Completion[]> {
   const carried: DialedRef[] = [...dialed];
-  for (const ref of opts.carried ?? []) {
+  for (const ref of carriedRefs) {
     const parsed = parseReference(ref);
     if (parsed) carried.push({ ref, ...parsed });
   }
   const completions: Completion[] = [];
-  if (opts.complete !== false) {
-    for (const rule of COMPLETION_REGISTRY) {
-      if (carried.some((d) => rule.carries(d.name, d.address))) continue;
-      const line = shallowLine(await scoop(rule.shallowPoint, load));
-      if (line === null) continue; // the surface must carry it — no fallback text lives here
-      completions.push({ dimension: rule.dimension, address: rule.shallowPoint, line, reason: rule.admittedBy });
-    }
+  for (const rule of COMPLETION_REGISTRY) {
+    if (carried.some((d) => rule.carries(d.name, d.address))) continue;
+    const line = shallowLine(await scoop(rule.shallowPoint, load));
+    if (line === null) continue; // the surface must carry it — no fallback text lives here
+    completions.push({ dimension: rule.dimension, address: rule.shallowPoint, line, reason: rule.admittedBy });
   }
-  return { window, dialed, completions };
+  return completions;
 }
 
 /** Render one hydrated frame value as the FRAMED APERTURE (frames-on-the-spine

@@ -32,7 +32,177 @@ import {
   BspWriteResult,
 } from '../bsp-fn.js';
 import { readBackAfterWrite, readBackAfterAppend } from '../read-back.js';
+import { TEMPORAL_FLOOR, voiceAddress, RUNGS, RUNG_PLURALS } from '../temporal.js';
+
+/** How many characters a window carries from one read. A disc of 805,000
+ *  characters was read whole on 2026-10-05 (daily:weft at pscale 0) and the
+ *  session that read it said so itself; the door now refuses such a read and
+ *  names the shape that would have served. */
+export const WINDOW_CHARS = 30000;
+
+/** A READ A WINDOW CANNOT CARRY IS REFUSED AT THE DOOR, with the shape named
+ *  (David, 2026-10-06). Null when the read fits. */
+export function tooLarge(result: any, text: string): string | null {
+  if (text.length <= WINDOW_CHARS) return null;
+  const n = text.length;
+  if (result?.shape === 'disc' && Array.isArray(result.entries) && result.entries.length) {
+    // In digit order, not string order: '99' sorts after '372' as text, and
+    // the refusal then named the floor-2 ring as the head of a block whose
+    // newest entry stood at 372 (daily:weft, 2026-10-08) — the pointer sent
+    // a reader to August, the very fault this line exists to remove.
+    const addrs = result.entries.map((e: any) => String(e.address ?? '')).filter((a: string) => /^\d+$/.test(a)).sort((a: string, b: string) => a.length - b.length || a.localeCompare(b));
+    const last = addrs[addrs.length - 1] ?? '';
+    const container = last ? last.slice(0, -1) + '0' : '';
+    const p = typeof result.pscale === 'number' ? result.pscale : 0;
+    return `Read refused at the door: this disc is ${n} characters over ${result.entries.length} positions — more than a window carries, and a disc at pscale ${p} over an accumulator is every entry it ever took. `
+      + (container ? `Read its latest container instead — spindle='${container}', pscale_attention=${p - 1} — or walk the newest entry, spindle='${last}' — ` : 'Read one container — spindle=<its zero slot>, one pscale finer — ')
+      + `or walk the entry you need by its address: a path-walk frames it with the summaries above it.`;
+  }
+  const p = typeof result?.pscale === 'number' ? result.pscale : null;
+  return `Read refused at the door: this ${result?.shape ?? 'read'} is ${n} characters, more than a window carries. Walk a spindle (spindle=<address>) for the part you need, or read the disc one pscale coarser${p !== null ? ` (pscale_attention=${p + 1})` : ' (pscale_attention=1)'} to see what stands.`;
+}
+
+/** AN OMITTED APERTURE READS AS THE PROBE (keel's ask, pool:weft 168,
+ *  2026-10-06: three keel generations pulled their orientation whole on call
+ *  one, each after the slip was on the record). Both coordinates omitted on a
+ *  block whose whole runs past WHOLE_CHARS gives the disc at pscale 0 — the
+ *  probe the tool's own text asks for first — and the ack names the whole's
+ *  size and its spelling: spindle='0', the root named, with no attention,
+ *  matching the reference grammar where name:0 bare is the whole block. A
+ *  block under the size still comes whole, since its disc and its whole cost
+ *  the same. Reads only; writes are untouched. Null when the whole may pass. */
+export const WHOLE_CHARS = 6000;
+export function probeInsteadOfWhole(block: Block, spindle: string | null | undefined, pscale: number | null | undefined, wholeText: string): string | null {
+  const noSpindle = spindle === null || spindle === undefined || String(spindle).trim() === '';
+  if (!noSpindle || (pscale !== null && pscale !== undefined)) return null;
+  if (wholeText.length <= WHOLE_CHARS) return null;
+  const disc = bspRead(block, '', 0);
+  const discText = formatRead(disc);
+  const refused = tooLarge(disc, discText);
+  if (refused) return refused;
+  return `${discText}\n  [the whole block is ${wholeText.length} characters: both coordinates omitted gives this probe, the disc at pscale 0. To take it whole, name the root — spindle='0' with no attention; or walk a spindle for the part you need.]`;
+}
+
+/** THE OWED SPAN RIDES THE ACK. A summary is dense with the span's own
+ *  handles, and the span is here — the entries a container is owed over, by
+ *  their opening lines, from the block as it stands — so the summary is paid
+ *  from the ack and never from nine reads (a session read stash:keel 121-129
+ *  one by one to pay 130, 2026-10-06). */
+export function spanLines(block: Block, dues: { slot: string; over: string }[]): string {
+  const out: string[] = [];
+  for (const d of dues) {
+    const m = /^(\d+)-(\d+)$/.exec(String(d.over));
+    if (!m) continue;
+    const a = parseInt(m[1], 10), b = parseInt(m[2], 10);
+    if (!(b >= a && b - a < 12)) continue;
+    const width = m[1].length;
+    const rows: string[] = [];
+    for (let k = a; k <= b; k++) {
+      if (k % 10 === 0) continue;   // a zero slot is a summary, never an entry
+      const addr = String(k).padStart(width, '0');
+      let text = '';
+      try {
+        const r: any = bspRead(block, addr, null);
+        const es: any[] = r?.entries ?? [];
+        const last = es[es.length - 1];
+        text = typeof last?.content === 'string' ? last.content : '';
+      } catch { text = ''; }
+      if (text.trim()) rows.push(`      ${addr} ${text.replace(/\s+/g, ' ').slice(0, 140)}`);
+    }
+    if (rows.length) out.push(`    the span of ${d.slot}, by its opening lines:`, ...rows);
+  }
+  return out.length ? '\n' + out.join('\n') : '';
+}
+
+/** THE FRAME RIDES THE ACK (David's 'go ahead', 2026-10-08; the finding at
+ *  watch:weft 571). A write at a rung of a clock mirror is answered with the
+ *  rung above it and the ring beneath that rung by their opening lines, so
+ *  the week is re-voiced from the ack in the sitting that voiced the day —
+ *  the owed span of an append, applied to the clock. The rule placed at
+ *  wake:weft 6.8 on 2026-10-06 ('the rungs above the day are paid at the
+ *  day's close') did not fire on its first two chances: a rule has to be
+ *  remembered, an ack is read. Empty when the block is not on the clock
+ *  (floor 10), when the landing is not a bare clock address, or when the
+ *  rung has no parent beneath the root. Pure: the block as saved, the
+ *  address as landed. */
+export function frameLines(block: Block, landed: string | null | undefined): string {
+  if (!landed || !/^\d{10}$/.test(landed)) return '';
+  try { if (floorDepth(block) !== TEMPORAL_FLOOR) return ''; } catch { return ''; }
+  const digits = landed.replace(/0+$/, '').split('');
+  if (digits.length < 2) return '';
+  const parentDigits = digits.slice(0, -1);
+  const parentAddr = parentDigits.join('').padEnd(TEMPORAL_FLOOR, '0');
+  const parentPscale = TEMPORAL_FLOOR - parentDigits.length;
+  let parent: unknown;
+  try { parent = readAt(block, parentAddr); } catch { return ''; }
+  const voice = (n: unknown): string | null => {
+    if (typeof n === 'string') return n.trim() === '' ? null : n;
+    if (n && typeof n === 'object') { const u = (n as Record<string, unknown>)['_']; if (typeof u === 'string' && u.trim() !== '') return u; }
+    return null;
+  };
+  const oneLine = (t: string, n: number) => { const s = t.replace(/\s+/g, ' ').trim(); return s.length <= n ? s : s.slice(0, n - 1).trimEnd() + '…'; };
+  const when = (addr: string) => { try { return voiceAddress(addr); } catch { return addr; } };
+  const parentVoice = voice(parent);
+  const out = [`  ⓘ the rung above "${landed}" is ${parentAddr} (${when(parentAddr)}): ${parentVoice ? oneLine(parentVoice, 180) : '(unvoiced)'}`];
+  const childName = RUNGS.find((r) => r.pscale === parentPscale - 1)?.name ?? 'rung';
+  const plural = RUNG_PLURALS[childName] ?? `${childName}s`;
+  const rows: string[] = [];
+  if (parent && typeof parent === 'object') {
+    const kids = Object.keys(parent as object).filter((k) => /^[1-9]$/.test(k)).sort();
+    for (const k of kids) {
+      const addr = [...parentDigits, k].join('').padEnd(TEMPORAL_FLOOR, '0');
+      const v = voice((parent as Record<string, unknown>)[k]);
+      rows.push(`      ${addr} ${when(addr)} — ${v ? oneLine(v, 140) : '(unvoiced)'}`);
+    }
+  }
+  if (rows.length) out.push(`    its ${plural} so far, by their opening lines:`, ...rows);
+  out.push(`    a rung is re-voiced from what stands beneath it, in the sitting that moved it — ending with what waits, the pointer last (wake:weft 6.8)`);
+  return '\n' + out.join('\n');
+}
+
+/** The manifest ref that follows a landing: '<block>:<addr>:<attention>' for
+ *  the same block, moved to what just landed; null when the ref is another
+ *  block's or already there. */
+export function nextRef(ref: unknown, block: string, landed: string): string | null {
+  if (typeof ref !== 'string' || !landed) return null;
+  const pr = /^(.*):(\d[\d.]*):(-?\d+)$/.exec(ref);
+  if (!pr || pr[1] !== block) return null;
+  const next = `${block}:${landed}:${pr[3]}`;
+  return next === ref ? null : next;
+}
+
+/** THE BUNDLE FOLLOWS THE RECORD (David, 2026-10-06: 'history:happyseaurchin
+ *  299 should be one of them'). When a hand appends to one of its own organs
+ *  and its manifest dials that organ, the slot moves to what just landed, so
+ *  the next instance is handed the latest entry by its concrete address and
+ *  nobody reads the record to find it. The hand's own key, in the same call;
+ *  a manifest that does not dial the organ is left alone. */
+export async function bundleFollowsAppend(origin: string, block: string, landed: string, secret: string): Promise<string> {
+  const m = /^([a-z0-9-]+):([^:]+)$/i.exec(block);
+  if (!m || !landed) return '';
+  const shellName = `shell:${m[2]}`;
+  let row: any = null;
+  try { row = await loadBlock(origin, shellName); } catch { return ''; }
+  const manifest = row?.block?.['3'];
+  if (!manifest || typeof manifest !== 'object') return '';
+  for (const k of Object.keys(manifest)) {
+    if (!/^[1-9]$/.test(k)) continue;
+    const next = nextRef(manifest[k], block, landed);
+    if (!next) continue;
+    try {
+      const shell: Block = JSON.parse(JSON.stringify(row.block));
+      writeAt(shell, `3.${k}`, next);
+      await saveBlock(origin, shellName, shell, { spindle: `3.${k}`, secret });
+      return `\n  ⟲ the bundle follows: ${shellName} 3.${k} now dials ${next}`;
+    } catch (e: any) {
+      return `\n  ⟲ the bundle did not follow (${shellName} 3.${k}): ${e?.message ?? String(e)}`;
+    }
+  }
+  return '';
+}
 import { reflect } from '../looks.js';
+import { compileBundle, handleOfBlock, looksLikeBundle, renderBundle } from '../bundle.js';
+import { rideOrientation, seatOf, seatTold, surfaceLoader } from '../orientation.js';
 import {
   loadBlock,
   loadBspShape,
@@ -55,6 +225,7 @@ import {
   selfDecrypt,
   grainEncrypt,
   grainDecrypt,
+  grainReaderSide,
   decryptGrayNodes,
   grayMode,
   GrayEnvelope,
@@ -373,11 +544,45 @@ async function encryptGrainLeaf(
   if (!myHandle || !partnerHandle) {
     throw new Error('grain not established (no parties at position 9). Reach first via pscale_grain_reach, then curate with bsp().');
   }
-  const partnerKeys = await getPublicKeys(partnerHandle);
+  const [partnerKeys, myKeys] = await Promise.all([getPublicKeys(partnerHandle), getPublicKeys(myHandle)]);
   if (!partnerKeys) {
     throw new Error(`partner "${partnerHandle}" has not published keys — cannot curate privately. They run pscale_key_publish, or write with gray:false. (Your side secret must be the same secret you published keys with.)`);
   }
-  return grainEncrypt(plaintext, secret, myHandle, partnerHandle, partnerKeys.x25519);
+  // The partner's half of the shared key pairs their secret with YOUR published
+  // key — so before yours stands, a sealed line opens for you alone.
+  if (!myKeys) {
+    throw new Error(`you ("${myHandle}") have not published keys, so ${partnerHandle} could never open this line — nothing was written. Publish first — pscale_key_publish(handle="${myHandle}", secret=<your passport's lock>, enc_secret=<the key you seal grain lines with>) — then write again with that same enc_secret.`);
+  }
+  return grainEncrypt(plaintext, secret, myHandle, partnerHandle, partnerKeys.x25519, myKeys.x25519);
+}
+
+/**
+ * What a grain line that stays shut says in place of a bare "[encrypted]":
+ * whose key is off. A bare marker reads the same whether the reader holds the
+ * wrong secret or the writer sealed under one their passport does not carry,
+ * and the writer's own read-back opens the second either way — so only the
+ * partner's read can name it. `readerSide` is the party whose published key the
+ * reader's secret derives (grainReaderSide), null for neither. Pure, so the
+ * smoke battery reads it without a beach.
+ */
+export function grainShutLine(
+  env: GrayEnvelope,
+  h1: string,
+  h2: string,
+  k1: string | null,
+  k2: string | null,
+  readerSide: '1' | '2' | null,
+): string {
+  // The bare marker leads every line, so whatever already looks for it still finds it.
+  const bare = !k1 ? h1 : !k2 ? h2 : null;
+  if (bare) return `[encrypted] ${bare} has no keys published at passport:${bare} 9 — they run pscale_key_publish with the secret they seal with.`;
+  if (!readerSide) return `[encrypted] your key derives neither passport:${h1} 9 nor passport:${h2} 9 — read with the secret yours were published from, as enc_secret.`;
+  const me = readerSide === '1' ? h1 : h2;
+  const other = readerSide === '1' ? h2 : h1;
+  // A line is sealed TO its partner (the envelope's 9.2), so its writer is the other.
+  return env['9']['2'] === me
+    ? `[encrypted] your key is right; ${other} sealed this under a secret other than the one behind passport:${other} 9 (or to an earlier key of yours) — ${other} rewrites it with that secret.`
+    : `[encrypted] your key matches passport:${me} 9, but this line was sealed under another secret (or to an earlier key of ${other}) — rewrite it with this one.`;
 }
 
 /**
@@ -412,6 +617,9 @@ async function buildGrayDecryptor(
   if (block?.['9']?._ === GROUP_KEYRING_MARKER) {
     groupKey = await unwrapGroupKeyFromKeyring(block['9'], secret);
   }
+  // Which party the reader's secret belongs to — derived once, and only when a
+  // grain line stays shut, so that line can say whose key is off.
+  let readerSide: Promise<'1' | '2' | null> | null = null;
   return async (env: GrayEnvelope): Promise<string | null> => {
     const mode = grayMode(env);
     if (mode === 'self') return selfDecrypt(env, secret, agentId);
@@ -420,7 +628,9 @@ async function buildGrayDecryptor(
       // pairs with the OTHER party's published key.
       if (h1 && k2) { const pt = await grainDecrypt(env, secret, h1, k2); if (pt !== null) return pt; }
       if (h2 && k1) { const pt = await grainDecrypt(env, secret, h2, k1); if (pt !== null) return pt; }
-      return null;
+      if (!h1 || !h2) return null;
+      if (k1 && k2) readerSide ??= grainReaderSide(secret, h1, k1, h2, k2);
+      return grainShutLine(env, h1, h2, k1, k2, k1 && k2 ? await readerSide : null);
     }
     if (mode === 'group') return groupKey ? groupDecryptContent(env, groupKey) : null;
     return null;
@@ -447,7 +657,7 @@ export const bspParamsSchema = {
     .int()
     .nullable()
     .optional()
-    .describe('Depth selector (P) — the aperture dial. Together with spindle, derives the selection shape (2026-05-17 canonical vocabulary): point (P == P_end), path-walk (P omitted), path-walk+descent (P < P_end — one level below the terminus is the ring of immediate children, deeper is the subtree), disc (spindle omitted, P set: every position at that pscale across the block; at P=0 the cheap probe of any unknown or accumulating block), block (both omitted — the whole tree, right only when every position is in play). Set it truly: starve neither the turn nor drown it (pscale://whetstone 2.8).'),
+    .describe('Depth selector (P) — the aperture dial. Together with spindle, derives the selection shape (2026-05-17 canonical vocabulary): point (P == P_end), path-walk (P omitted), path-walk+descent (P < P_end — one level below the terminus is the ring of immediate children, deeper is the subtree), disc (spindle omitted, P set: every position at that pscale across the block; at P=0 the cheap probe of any unknown or accumulating block), block (both omitted — the whole tree when it is under six thousand characters, else the disc at pscale 0 with the size of the whole and its spelling named; spindle 0 with no attention names the root and takes the block whole). Set it truly: starve neither the turn nor drown it (pscale://whetstone 2.8).'),
   content: z
     .any()
     .optional()
@@ -464,7 +674,7 @@ export const bspParamsSchema = {
   gray: z
     .boolean()
     .optional()
-    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle: at a leaf the envelope is the entry; at a position holding entries it voices that position and every entry stays, so a gray history pays its zero-slot summaries exactly as an open one does. Degray = read with the key, then write the plaintext back at the same address with gray:false: the line takes the envelope's place, keeping its arrival stamp and anything standing in it, so a keyed reader and an open one read the same line. Grain mode needs both parties to have run pscale_key_publish."),
+    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle: at a leaf the envelope is the entry; at a position holding entries it voices that position and every entry stays, so a gray history pays its zero-slot summaries exactly as an open one does. Degray = read with the key, then write the plaintext back at the same address with gray:false: the line takes the envelope's place, keeping its arrival stamp and anything standing in it, so a keyed reader and an open one read the same line. Grain mode needs both parties to have run pscale_key_publish — each from the ONE secret they then seal and read with (enc_secret, else secret); a grain write sealed under any other secret is refused, since the partner could never open it."),
   enc_secret: z
     .string()
     .optional()
@@ -688,14 +898,43 @@ export async function handleBsp(
   params: BspToolParams,
   extra?: { sessionId?: string },
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const res = await handleBspInner(params);
+  const res = await handleBspInner(params, extra?.sessionId);
   const target = translateAddress(params.agent_id, params.block ?? '');
   if (isSentinelOwner(target.agent_id)) return res;
   const wrote = params.content !== undefined || params.new_lock !== undefined;
-  return reflect(res, extra?.sessionId, target.agent_id, target.block, params.spindle, wrote);
+  const reflected = reflect(res, extra?.sessionId, target.agent_id, target.block, params.spindle, wrote);
+  // THE ORIENTATION RIDES EVERY ACK OF A SEATED SESSION — what moved since it was
+  // last told, cut by the clock and the touched map; nothing when nothing did.
+  return rideOrientation(reflected, extra?.sessionId);
 }
 
-async function handleBspInner(params: BspToolParams): Promise<{ content: { type: 'text'; text: string }[] }> {
+/** THE BUNDLE IS A SHAPE (2026-10-11, src/bundle.ts). A path-walk whose terminus
+ *  is a node of references compiles that node: the index first, then each
+ *  member at its own aperture, a clock member at the current beat. Read off the
+ *  node's form and settled by resolution — null for any other node, so every
+ *  other read is exactly as it was. A seated session reading its own bundle has
+ *  just been handed the whole: nothing is owed to it before now. */
+async function bundleWindow(
+  block: Block,
+  spindle: string | null | undefined,
+  target: { agent_id: string; block: string },
+  sessionId?: string,
+): Promise<string | null> {
+  let node: unknown;
+  try { node = readAt(block, spindle); } catch { return null; }
+  if (!looksLikeBundle(node)) return null;
+  const load = isSentinelOwner(target.agent_id)
+    ? async (name: string) => (await loadBlock('pscale', name).catch(() => null))?.block ?? null
+    : surfaceLoader(target.agent_id);
+  const members = await compileBundle(node, { load, handle: handleOfBlock(target.block), now: new Date() });
+  if (!members) return null;
+  const at = String(spindle ?? '').trim();
+  const seat = seatOf(sessionId);
+  if (seat && seat.block === target.block && at === seat.spindle) seatTold(sessionId);
+  return renderBundle(members, { label: `"${target.agent_id}/${target.block}" ${at}` });
+}
+
+async function handleBspInner(params: BspToolParams, sessionId?: string): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { agent_id, spindle, pscale_attention, content: rawContent, secret, new_lock, enc_secret, face, tier } = params;
   // Block may be omitted (or "") to request a surface index — normalise to a
   // string for the downstream translate/load/save calls, which expect one.
@@ -837,15 +1076,29 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
           + `${dues.length > 3 ? ` (+${dues.length - 3} older)` : ''}`
           + ` — one line written at that address, in the open or gray, voices the container and leaves its entries untouched.`
         : '';
+      // The span the summary is owed over rides the ack — one block read,
+      // only when a container is owed, so the summary is paid without
+      // reading the entries one by one.
+      let span = '';
+      if (dues.length && !wantGrayAppend) {
+        try {
+          const row = await loadBlock(agent_id, blockName);
+          if (row?.block) span = spanLines(row.block as Block, dues.slice(0, 3));
+        } catch { /* the owed line stands alone */ }
+      }
+      const landedAt = res.address ?? (res.slot !== undefined && res.slot !== null ? String(res.slot) : '');
+      const followed = params.secret && landedAt
+        ? await bundleFollowsAppend(target.agent_id, target.block, landedAt, params.secret)
+        : '';
       const readBack = wantGrayAppend
         ? ''
         : await readBackAfterAppend(agent_id, blockName, res.address ?? (res.slot !== undefined && res.slot !== null ? String(res.slot) : undefined));
       if (res.address !== undefined) {
         const grew = res.supernested ? `  ⤴ node supernested — the ladder continues within` : '';
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}${stampedNote}]${bornNote}${owed}${readBack}` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${readBack}` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}` }] };
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       // The one refusal this change can newly provoke, named rather than left
@@ -908,15 +1161,20 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
           pscale_attention ?? null,
         );
         if (wireResult && typeof wireResult === 'object' && 'shape' in wireResult) {
-          // Canonical shape-tagged response from a v2 beach — return directly.
-          return { content: [{ type: 'text', text: formatRead(wireResult as any) }] };
+          // Canonical shape-tagged response from a v2 beach — return directly,
+          // unless no window could carry it.
+          const wireText = formatRead(wireResult as any);
+          return { content: [{ type: 'text', text: tooLarge(wireResult, wireText) ?? wireText }] };
         }
         if (wireResult && typeof wireResult === 'object') {
           // Legacy beach (no ?pscale= handling) returned the raw block —
           // walk it locally rather than make a second HTTP call.
           try {
-            const result = bspRead(wireResult as Block, spindle ?? '', pscale_attention ?? null);
-            return { content: [{ type: 'text', text: formatRead(result) }] };
+            const wholeNamed = String(spindle ?? '').trim() === '0' && pscale_attention == null;
+            const result = bspRead(wireResult as Block, wholeNamed ? '' : (spindle ?? ''), pscale_attention ?? null);
+            const legacyText = formatRead(result);
+            const probe = wholeNamed ? null : probeInsteadOfWhole(wireResult as Block, spindle, pscale_attention, legacyText);
+            return { content: [{ type: 'text', text: probe ?? tooLarge(result, legacyText) ?? legacyText }] };
           } catch (e: any) {
             if (e instanceof InvalidAddressError) {
               return { content: [{ type: 'text', text: `Read rejected: ${e.message}` }] };
@@ -947,8 +1205,18 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
         )
       : row.block;
     try {
-      const result = bspRead(blockForRead, spindle ?? '', pscale_attention ?? null);
-      return { content: [{ type: 'text', text: formatRead(result) }] };
+      // THE ROOT NAMED IS THE WHOLE: spindle='0' with no attention takes the
+      // block whole, as name:0 bare does in a reference; nothing named is the probe.
+      const wholeNamed = String(spindle ?? '').trim() === '0' && pscale_attention == null;
+      const result = bspRead(blockForRead, wholeNamed ? '' : (spindle ?? ''), pscale_attention ?? null);
+      const localText = formatRead(result);
+      const probe = wholeNamed ? null : probeInsteadOfWhole(blockForRead, spindle, pscale_attention, localText);
+      let text = probe ?? tooLarge(result, localText) ?? localText;
+      if (!probe && result.shape === 'path-walk') {
+        const window = await bundleWindow(blockForRead, spindle, target, sessionId);
+        if (window) text = `${localText}\n${window}`;
+      }
+      return { content: [{ type: 'text', text }] };
     } catch (e: any) {
       if (e instanceof InvalidAddressError) {
         return { content: [{ type: 'text', text: `Read rejected: ${e.message}` }] };
@@ -1179,7 +1447,8 @@ async function handleBspInner(params: BspToolParams): Promise<{ content: { type:
     const readBack = wantGray && grayVoiced === undefined
       ? ''
       : await readBackAfterWrite(agent_id, blockName, writeResult.landed ?? (spindle ?? ''), content);
-    return { content: [{ type: 'text', text: formatWrite(writeResult) + voicedNote + degrayNote + bornNote + lockNote + readBack }] };
+    const frame = wantGray ? '' : frameLines(blockToSave as Block, writeResult.landed);
+    return { content: [{ type: 'text', text: formatWrite(writeResult) + voicedNote + degrayNote + bornNote + lockNote + frame + readBack }] };
   }
   return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${bornNote}${lockNote}` }] };
 }

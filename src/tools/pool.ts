@@ -343,6 +343,31 @@ function nodeAtPadded(block: Block, digits: string): any {
   return cur;
 }
 
+/** CLOSED CONTAINERS, each as its summary — and the unvoiced ones collapsed
+ *  into one line, never a litany (David, 2026-10-06: the door printed fifteen
+ *  'SUMMARY OWED' blocks for one room, each saying the same thing). */
+export function closedContainerLines(closed: { span: string; entries: number; summary?: string | null }[]): string[] {
+  const lines: string[] = [];
+  let run: typeof closed = [];
+  const flush = () => {
+    if (!run.length) return;
+    const first = run[0].span.split('-')[0];
+    const last = run[run.length - 1].span.split('-').pop();
+    const entries = run.reduce((n, c) => n + c.entries, 0);
+    lines.push(run.length === 1
+      ? `## ${run[0].span} (${run[0].entries}) — unvoiced: its summary is owed at its zero slot (block-conventions:3.5)`
+      : `## ${first}-${last} — ${run.length} closed containers unvoiced, ${entries} entries: their summaries are owed at their zero slots (block-conventions:3.5)`);
+    lines.push('');
+    run = [];
+  };
+  for (const c of closed) {
+    if (c.summary) { flush(); lines.push(`## ${c.span} (${c.entries})`); lines.push(c.summary); lines.push(''); }
+    else run.push(c);
+  }
+  flush();
+  return lines;
+}
+
 /**
  * THE FOLD — a pool delivered the way the mirror folds it: closed containers as
  * their summary lines, the open container whole.
@@ -438,15 +463,7 @@ export function foldedAccountText(block: Block, name: string, tailShown = 0): st
       ? `(your account — ${total} entries: each closed span stands as its summary; the last ${shown} ride whole above, at "Your account"; the open span before them stands by its opening lines — a telling whole is a spindle read of ${name} at its position, never a whole-block one)`
       : `(your account, folded — ${total} entries: each closed span stands as its summary, the open span is whole; an older telling is a spindle read of ${name}, never a whole-block one)`,
   ];
-  for (const c of fold.closed) {
-    if (c.summary) {
-      lines.push(`## ${c.span} (${c.entries})`);
-      lines.push(c.summary);
-    } else {
-      lines.push(`## ${c.span} (${c.entries}) — SUMMARY OWED`);
-      lines.push('no voicing stands at this container, so its span cannot be read here; pay it by writing the container whole (block-conventions:3.5)');
-    }
-  }
+  lines.push(...closedContainerLines(fold.closed));
   lines.push(!shown
     ? `# The open span (${fold.open.length})`
     : earlier.length
@@ -2609,16 +2626,7 @@ async function handlePoolEngageInner(
   if (fold?.folded) {
     lines.push('');
     lines.push(`# Before this — ${fold.closed.length} closed ${fold.closed.length === 1 ? 'container' : 'containers'}, each standing for its span`);
-    for (const c of fold.closed) {
-      if (c.summary) {
-        lines.push(`## ${c.span} (${c.entries})`);
-        lines.push(c.summary);
-      } else {
-        lines.push(`## ${c.span} (${c.entries}) — SUMMARY OWED`);
-        lines.push(`no voicing stands at this container, so its span cannot be read here; pay it by writing the container whole (block-conventions:3.5)`);
-      }
-      lines.push('');
-    }
+    lines.push(...closedContainerLines(fold.closed));
     lines.push(`(the room is folded: closed spans stand as their summaries, the open one is whole below — pass since_position to read forward from your own marker instead)`);
     lines.push('');
     lines.push(`# The open container (count: ${shown.length})`);

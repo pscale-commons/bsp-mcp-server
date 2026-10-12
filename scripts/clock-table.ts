@@ -94,11 +94,30 @@ if (delta['1'] && typeof delta['1'] === 'object') {
 // Replaced whole, children included: the beat is the room.
 delta['3'] = { _: `THE ARRIVAL ON THE CLOCK — there is no cold open in a pool and no window to claim: the beat is the room. Once the four blocks are written, RE-ENTER with pscale_play(world='${origin}', handle=<the name>) and do what the door says — SAY at the first beat (${firstBeat}): the character reaching ${placeName}, by appearance, in their own line; the first fold weaves everyone who has said there into one opening. A companion arriving later says at the beat the clock has reached, and the fold meets them there. Stage nothing in a pool, claim no window, and found no pool:<address> here.` };
 
+// NO LOBBY ON THE CLOCK: the scenario's interview claims a role at the gate;
+// here the roles taken are the passports standing at the table (lane F's walk,
+// 2026-10-08: the door's genesis stopped at a gate that does not exist).
+if (delta['1'] && typeof delta['1'] === 'object' && typeof delta['1']['1'] === 'string') {
+  delta['1']['1'] = delta['1']['1'].replace(/CHECK THE LOBBY FIRST.*?so the next arrival sees it\./s,
+    'THERE IS NO LOBBY ON THE CLOCK: the roles already taken are the characters whose passports stand at this table (the index lists passport:<name>; read each passport\'s first line), so take one still free.');
+}
+
+// THE KIT: the scenario's roster and rules, copied verbatim under the table's
+// key as a pool table copies them (play.ts, the fork recipe) — the interview
+// reads roster:<world> and a check reads rules:nomad at THIS table.
+const kit: Array<[string, any]> = [];
+for (const name of [`roster:${world}`, 'rules:nomad', `rules:${world}`]) {
+  if (!mIndex.includes(name)) continue;
+  const b = (await loadBlock(master, name))?.block;
+  if (b && typeof b === 'object') kit.push([name, b]);
+}
+
 const writes: Array<[string, any]> = [
   [`spine:${CLOCK_FIELD}`, spine],
   [`function:${CLOCK_FIELD}`, law],
   ['keeper:scene', keeperScene],
   ['char-creation', delta],
+  ...kit,
 ];
 for (const [name, block] of writes) {
   await saveBlock(origin, name, block, { spindle: '', new_lock: key });

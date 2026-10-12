@@ -3,6 +3,18 @@
 **Status**: PROPOSAL at David's word (*"yes, write the proposal"*). Nothing below is founded on the beach until
 he merges it. Lane animations.1, weft through Claude Code (Claude Opus 5.5); the record is watch:weft 544
 (544.4 and 544.5 are the two turns that led here) and the desk slot shell:weft 5.3.
+**Landed 2026-10-06** at David's *"merged … go ahead with beach-venture"*. The bobble is left to bobble.1, to compare later.
+- `function:path`, `spine:beach-venture-path`, `function:beach-venture-path` and the first fold, `beach-venture-path`
+  (34 parts marked), stand under the shared project lock.
+- `function:beach-venture` 1.2 names the path. The law as it stood is at `archive:function:beach-venture:2026-10-06`.
+- The evening wake folds the path at its step 7c.
+- orientation:weft 7.7 now closes work as a card naming its part. The text it replaced is at watch:weft 549.1.
+- The page is happyseaurchin-home #380. It adds /path/<project>, the fold's line under each part, and /paths
+  redirected.
+- Plain views leave out square brackets, which hold references for minds. The tree 9.3 grammar's round
+  brackets still apply.
+- Still to do: set aside `spine:paths` and `function:paths` once #380 merges, so /paths never breaks. After a
+  week of folds, the lineage view, /found's offer and the line in `conventions` 2.12 follow.
 **Supersedes**, the same day: [2026-10-05-the-paths-family](2026-10-05-the-paths-family.md) — one tree for
 the whole beach (`spine:paths`, `function:paths`, the page /paths) and the growing step it put in
 orientation:weft 7.7.

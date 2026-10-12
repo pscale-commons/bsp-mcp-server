@@ -63,7 +63,7 @@ console.log('\nTHE FOLD — a handle\'s account at the play door');
   ok('a grown account folds', owed.length > 0);
   ok('the open span rides whole, each telling with the beat it tells', owed.includes('[11 · pool:211:10] telling 10') && owed.includes('[13 · pool:211:12] telling 12'), owed);
   ok('a closed span\'s tellings do not ride', !owed.includes('telling 3'));
-  ok('an unpaid summary is said, never hidden', owed.includes('## 01-09 (9) — SUMMARY OWED'));
+  ok('an unpaid summary is said, never hidden', owed.includes('## 01-09 (9) — unvoiced: its summary is owed'));
   ok('the reader is told where the rest is', owed.includes('a spindle read of history:probe'));
 
   const paid: Block = JSON.parse(JSON.stringify(grown));
