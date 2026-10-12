@@ -138,3 +138,12 @@ demonstrated. Keel's row is the reason to dial a bundle before anything else: th
 compiles at 21.8k with `concern:keel` taken as a disc (10.1k alone), and at 13.0k with it taken at `5:0` (1.3k);
 happyseaurchin's with `now` and `head` members in place of the fixed `326` compiles at 25.7k before any slot is
 dropped. Both dials are their holders' to write.
+
+Live again on 12 October after #520 merged (the router at be67bb5): back through the door at beat 2026412565, a say
+in the torus-mirror family at the same beat rode on its own ack as "(within this beat 2026412565 — torus-mirror:weft
+moved since you were last told: the beat and what stands beneath it)" — the beat's line and the lane beneath it, the
+rungs above unchanged. A say in the now family seventeen seconds later rode not on its own ack but on the first ack
+after the seat's minute-long index cache lapsed (the say at 14:43:59Z, delivered at 14:44:45Z): the cache delays a
+touch by up to a minute and never drops it, and the reads between were quiet. One rendering nit stands: the beach
+voices the beat's own line with the latest lane line, so within the beat the lane's words appear twice, at the beat
+and beneath it; a trim is a later choice.
