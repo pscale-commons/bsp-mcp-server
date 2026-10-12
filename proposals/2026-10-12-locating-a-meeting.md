@@ -1,7 +1,13 @@
 # Locating a meeting — a cell on the lattice, fixed in the pre-meeting's fold, carried in each person's own clock (2026-10-12)
 
-**Status**: PROPOSAL. Builds nothing until David's word. Written at David's ask on 12 October, after lane
-availability.1 finished its part of the availability family.
+**Status**: AGREED 12 October. David's answers to §7: *"The summary, public links fine, yes show it in the header."*
+- The fix lives in the fold, the meeting's shared summary.
+- A public link at the Where is fine.
+- The ring shows the fix under the meeting's title (happyseaurchin/happyseaurchin-home#428).
+- `function:meeting` 7.1 and 7.2 are written as §6 says, the standing text archived first.
+
+§8 answers availability.1's question about alarms. Written at David's ask on 12 October, after lane availability.1
+finished its part of the availability family.
 
 **Companions**:
 - `2026-10-09-a-meeting-drawn-as-one-ring` §12: where a meeting meets availability.
@@ -180,3 +186,53 @@ machinery. The meeting is the first instance.
    as well.
 2. **Is a public link at 1.3 acceptable for calls**, with private links kept off the beach?
 3. **Should the ring's header show the fixed time and place?**
+
+## 8. The alarm belongs to each person, not to the meeting
+
+> "I'm setting up the alarm in availability.1 and there's a question as to whether an alarm is set to the meeting or
+> to an individual's mirror; because if an LLM is woken -- does it ping all participants by writing into their
+> parlours or just their own? Based on how we are setting up these meetings here, which is preferable?"
+
+**Each person's own booking is their alarm.** Lane availability.1's parked proposal says this from the other side
+(`proposals/2026-10-12-alarms-and-wake-ups.md` §2): once a meeting is booked, its time stands at a future address in
+each person's own now, and *that line is the alarm*. The meeting holds the fixed cell as data, in its fold at 1.1
+and 1.3. It holds no alarm, and it rings nobody.
+
+**A woken AI tells its own person only.** It reads its own now at the beat, finds the meeting by name, reads the
+fold, and tells its person through their own channel: their parlour, their ear, or the calendar the person already
+keeps. If it takes part, it goes to the meeting's own room. It never writes into the other people's parlours.
+
+Why each person and not the meeting:
+1. **The grain of the family.** Every act in `function:now` 8 is a voicing in the actor's own mirror; "nobody's block
+   is ever written by another hand". The appointment *is* the people standing at one cell. There is no meeting
+   object to hang an alarm on, and none is wanted ("no shared object, no invite, no calendar").
+2. **Pull is the law.** A nudge is "a word in a room, never machinery" (8.21). A meeting-wide alarm that wrote into
+   everyone's parlour would be machinery speaking in other people's rooms.
+3. **Who pays.**
+   - A line in someone's parlour rings the doorbell. Their agent then wakes on whoever's key the order finds
+     (`ways:doorbell` 3).
+   - With one alarm per meeting, one hand spends for everyone's wake, and the agents of people who never asked
+     wake too.
+   - With an alarm per person, each wake is on the person's own plan, or on the clock they asked for, whose reads
+     are "bounded by who asked" (§6B of the alarm proposal). The cost federates with the people, which is the
+     design principle.
+4. **It follows the person when things change.** If a person moves or drops their booking, their own line moves
+   with them. The wake finds nothing at the old beat and ends (§6A). An alarm kept on the meeting would need its
+   own state, and that state could drift from the people's.
+5. **No single point of failure.** If one person's AI is absent or out of fuel, everyone else is still woken. A
+   meeting alarm held by one hand fails for everyone at once.
+
+**The one line an AI leaves in another person's parlour is the lattice check's nudge** (§5).
+- It is left once, for a named gap: someone coming who has not booked, or whose line clashes.
+- It uses `function:availability` 6.1's words, staged and not committed, so it rings nothing.
+- An AI that sees the same nudge already standing there leaves no second one.
+
+This happens before the meeting, as part of arranging it. It is not an alarm. At the hour, nobody pings anybody:
+each person is woken by their own booking.
+
+**Wanting to hear from the meeting itself stays opt-in.** A person who wants the meeting's room to reach them puts
+a room watch on `pool:<name>` in their own ear. Any line committed there, including "starting now" from whoever
+opens the room, then reaches them, because they asked.
+
+`function:meeting` 7.2 says this in one clause, and the parked alarm proposal's §9 "Whose voice" can lean on it when
+it is unparked.
