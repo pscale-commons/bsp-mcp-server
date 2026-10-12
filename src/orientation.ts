@@ -14,7 +14,8 @@
  *   - any other member rides only when the beach's touched map says its block
  *     changed after the seat was last told;
  * then the stamp advances. On most calls nothing rides and nothing is loaded
- * beyond the beach index, cached per seat for a minute. A seat that was never
+ * beyond the beach index, cached per seat for five seconds (ORIENTATION_INDEX_TTL_MS;
+ * about 90 KB a fetch, so a touch rides within seconds). A seat that was never
  * declared gets nothing — a visitor's calls stay exactly as they were. The
  * whole form is always one bundle read away (bsp on the node itself).
  *
@@ -64,7 +65,7 @@ export interface Seat {
 
 const seats = new Map<string, Seat>();
 
-export const INDEX_TTL_MS = Number(process.env.ORIENTATION_INDEX_TTL_MS ?? 60_000);
+export const INDEX_TTL_MS = Number(process.env.ORIENTATION_INDEX_TTL_MS ?? 5_000);
 
 /** The play door: this session's shell dialed this node as its bundle. */
 export function declareSeat(
