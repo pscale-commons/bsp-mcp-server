@@ -91,14 +91,14 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
  *  digits ARE the Gregorian year. Years outside 1000..9999 are out of the
  *  floor-10 form (year 476 would left-pad into the root underscore chain, and
  *  year 10000 grows the floor — both correct, neither this century's problem). */
-export function momentToAddress(when: Date): string {
+export function momentToAddress(when: Date, fine: number = 0): string {
   const y = when.getUTCFullYear();
   if (y < 1000 || y > 9999) {
     throw new RangeError(`temporal: year ${y} is outside the floor-10 form (1000..9999)`);
   }
   const month = when.getUTCMonth();           // 0..11
   const dom = when.getUTCDate();              // 1..31
-  const secOfDay = when.getUTCHours() * 3600 + when.getUTCMinutes() * 60 + when.getUTCSeconds();
+  const secOfDay = when.getUTCHours() * 3600 + when.getUTCMinutes() * 60 + when.getUTCSeconds() + when.getUTCMilliseconds() / 1000;
 
   const partS = 86400 / 9;                    // 9600 — the gathering
   const beatS = partS / 9;                    // 1066.67 — the beat
@@ -117,7 +117,21 @@ export function momentToAddress(when: Date): string {
     part + 1,                           // pscale 1 — gathering 1..9
     beat + 1,                           // pscale 0 — beat      1..9
   ];
-  return digits.join('');
+  const ten = digits.join('');
+  if (fine <= 0) return ten;
+  // BENEATH THE BEAT — the decimals after the ten-digit form (sundial 2): the
+  // minute, the breath and the second, nine-fold like the rungs above, each a
+  // digit 1..9. A moment names its own second; nothing coarser needs them.
+  let rem = secOfDay - part * partS - beat * beatS;
+  let w = beatS;
+  const fd: number[] = [];
+  for (let i = 0; i < Math.min(fine, FINE_RUNGS.length); i++) {
+    w /= 9;
+    const d = Math.min(8, Math.max(0, Math.floor(rem / w)));
+    fd.push(d + 1);
+    rem -= d * w;
+  }
+  return `${ten}.${fd.join('')}`;
 }
 
 /** The address → the span it names, [start, end) in UTC. A temporal address
@@ -126,6 +140,22 @@ export function momentToAddress(when: Date): string {
  *  ("2026000000" the year, "2026313179" the beat); trailing zeros are
  *  floor-width padding and stop the walk, exactly as the parser reads them. */
 export function addressToSpan(addr: string): { start: Date; end: Date; pscale: number } {
+  // A fine address — the decimals after the ten digits — names a minute, a
+  // breath or a second inside its beat: each digit narrows the span nine-fold.
+  const fine = /^(\d{10})\.([1-9]{1,3})$/.exec(addr);
+  if (fine) {
+    const beat = addressToSpan(fine[1]);
+    if (beat.pscale !== 0) throw new RangeError(`temporal: "${addr}" has decimals beneath a rung coarser than the beat`);
+    let start = beat.start.getTime();
+    let width = beat.end.getTime() - start;
+    let pscale = 0;
+    for (const ch of fine[2]) {
+      width /= 9;
+      start += (Number(ch) - 1) * width;
+      pscale--;
+    }
+    return { start: new Date(start), end: new Date(start + width), pscale };
+  }
   if (!/^\d{10}$/.test(addr)) {
     throw new RangeError(`temporal: "${addr}" is not a canonical full-width floor-10 address`);
   }
@@ -254,6 +284,17 @@ function rungAt(pscale: number): Rung | null {
 export function parseTemporalLabel(
   token: string,
 ): { addr: string; start: Date; end: Date; pscale: number } | null {
+  const fineTail = /^(\d{10})\.([1-9]{1,3})$/.exec(token);
+  if (fineTail) {
+    const beat = parseTemporalLabel(fineTail[1]);
+    if (!beat || beat.pscale !== 0) return null;
+    try {
+      const { start, end, pscale } = addressToSpan(token);
+      return { addr: token, start, end, pscale };
+    } catch {
+      return null;
+    }
+  }
   if (!/^\d{4,10}$/.test(token)) return null;
   const addr = token.padEnd(10, '0');
   if (addr[0] === '0') return null;
@@ -357,6 +398,7 @@ function presentLabel(pscale: number, addr: string): string {
   }
   if (pscale === 2) return 'today';
   if (pscale === 1) return `this ${DAY_PARTS[Number(addr[8]) - 1] ?? 'gathering'}`;
+  if (pscale < 0) return `this ${rungAt(pscale)?.name ?? 'moment'}`;
   return 'this beat';
 }
 
@@ -510,6 +552,11 @@ export function groundResult<T>(res: T, now: Date = new Date(), here: string | n
 /** The human voicing of an address — the block's job, done in code because
  *  the ladder is law, not content. "Tuesday 15 July 2026, late afternoon". */
 export function voiceAddress(addr: string): string {
+  const fine = /^(\d{10})\.([1-9]{1,3})$/.exec(addr);
+  if (fine) {
+    const tail = [...fine[2]].map((ch, i) => `${FINE_RUNGS[i].name} ${ch}`).join(', ');
+    return `${voiceAddress(fine[1])}, ${tail}`;
+  }
   const { start, pscale } = addressToSpan(addr);
   const y = start.getUTCFullYear();
   if (pscale >= 7) return `the ${y}s`;

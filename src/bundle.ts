@@ -34,7 +34,7 @@
  * proposals/2026-10-11-the-bundle-is-a-shape-and-the-clock-cuts-it.md
  */
 
-import { type Block, floorDepth } from './bsp.js';
+import { type Block, floorDepth, readAt } from './bsp.js';
 import {
   bspRead,
   formatRead,
@@ -148,14 +148,127 @@ export function sharedDigits(a: string, b: string): number {
   return n;
 }
 
-const TEN = (s: string) => s.replace(/[^0-9]/g, '').padEnd(TEMPORAL_FLOOR, '0').slice(0, TEMPORAL_FLOOR);
+/** The fine digits a clock stamp carries beneath the beat: the minute, the
+ *  breath and the second (sundial 2; temporal.ts FINE_RUNGS). */
+export const FINE = 3;
+
+/** A stamp in the clock's canonical form: ten digits, a point, three fine
+ *  digits. A stamp with no fine part reads as the START of its beat — 0 stands
+ *  before every fine digit, which run 1-9 — so an old ten-digit stamp, or a
+ *  beat given as a since, means "everything in that beat". */
+export function clockStamp(s: string): string {
+  const [ten = '', fine = ''] = s.replace(/[^0-9.]/g, '').split('.');
+  const f = fine.slice(0, FINE).replace(/0+$/, '');
+  return ten.padEnd(TEMPORAL_FLOOR, '0').slice(0, TEMPORAL_FLOOR) + (f ? `.${f}` : '');
+}
+const clockDigits = (s: string): number[] => {
+  const [ten = '', fine = ''] = s.replace(/[^0-9.]/g, '').split('.');
+  return (ten.padEnd(TEMPORAL_FLOOR, '0').slice(0, TEMPORAL_FLOOR) + fine.padEnd(FINE, '0').slice(0, FINE)).split('').map(Number);
+};
 
 /** The coarsest pscale that changed between two stamps — the period elapsed
- *  read as a rung: 9 minus the digits shared. Null when the stamps name the
- *  same beat, so nothing on the clock changed. */
+ *  read as a rung: 9 minus the digits shared, down to −3 the second. Null when
+ *  the stamps name the same second, so nothing on the clock changed. */
 export function divergencePscale(since: string, now: string): number | null {
-  const n = sharedDigits(TEN(since), TEN(now));
-  return n >= TEMPORAL_FLOOR ? null : TEMPORAL_FLOOR - 1 - n;
+  const n = sharedDigits(clockDigits(since).join(''), clockDigits(now).join(''));
+  return n >= TEMPORAL_FLOOR + FINE ? null : TEMPORAL_FLOOR - 1 - n;
+}
+
+/** One thing standing on a clock block: a rung's voicing or a line said at its
+ *  instant, with its address in the canonical form and its stamp if it has one. */
+export interface ClockLine { address: string; pscale: number; text: string; stamp: string | null }
+
+const sayOf = (n: unknown): string | null => {
+  if (typeof n === 'string') return n.trim() === '' ? null : n;
+  if (n && typeof n === 'object' && !Array.isArray(n)) {
+    const u = (n as Record<string, unknown>)['_'];
+    if (typeof u === 'string' && u.trim() !== '') return u;
+  }
+  return null;
+};
+const stampOf = (n: unknown): string | null =>
+  n && typeof n === 'object' && typeof (n as Record<string, unknown>)['3'] === 'string' ? ((n as Record<string, unknown>)['3'] as string) : null;
+const digitsOf = (n: unknown): number[] =>
+  n && typeof n === 'object' && !Array.isArray(n) ? Object.keys(n as object).filter((k) => /^[1-9]$/.test(k)).map(Number).sort((a, b) => a - b) : [];
+const clockAddress = (ds: number[]): string => {
+  const ten = ds.slice(0, TEMPORAL_FLOOR).join('').padEnd(TEMPORAL_FLOOR, '0');
+  return ds.length > TEMPORAL_FLOOR ? `${ten}.${ds.slice(TEMPORAL_FLOOR).join('')}` : ten;
+};
+
+/** THE RANGE — everything on a clock block strictly after `since` up to and
+ *  including `now`, in clock order, to the second: at each rung beneath the
+ *  divergence, the tail of since's own container (deepest first), then the
+ *  whole containers between, then now's own path with the containers before it
+ *  at each rung. Only what says something is delivered. Pure address
+ *  arithmetic over the block: the two stamps decide it and nothing else, so a
+ *  reader receives what landed while it was away and nothing twice
+ *  (proposals/2026-10-12-the-now-at-the-second). */
+export function clockRange(block: Block, since: string, now: string): ClockLine[] {
+  const S = clockDigits(since);
+  const N = clockDigits(now);
+  const W = S.length;
+  let k = 0;
+  while (k < W && S[k] === N[k]) k++;
+  if (k >= W || S[k] > N[k]) return [];          // the same second, or a clock run backwards
+  const out: ClockLine[] = [];
+  // The walker resolves a path: a 0 digit is the underscore step (the clock's
+  // century digit), trailing zeros are padding — so nodes are read by address,
+  // never by raw keys. A node reached twice through a 0 step is voiced once.
+  const nodeAt = (ds: number[]): unknown => {
+    try { return readAt(block, clockAddress(ds)); } catch { return undefined; }
+  };
+  const seen = new Set<unknown>();
+  const push = (ds: number[], node: unknown) => {
+    if (node === undefined || node === null || seen.has(node)) return;
+    seen.add(node);
+    const text = sayOf(node);
+    if (text) out.push({ address: clockAddress(ds), pscale: TEMPORAL_FLOOR - ds.length, text, stamp: stampOf(node) });
+  };
+  // A scalar beneath an entry (one with its stamp at 3) is a field of the entry,
+  // never a line; beneath a container a scalar is a line said there.
+  const whole = (ds: number[], node: unknown) => {
+    if (node === undefined || node === null) return;
+    push(ds, node);
+    const entry = stampOf(node) !== null;
+    for (const d of digitsOf(node)) {
+      const c = (node as Record<string, unknown>)[String(d)];
+      if (entry && (c === null || typeof c !== 'object')) continue;
+      whole([...ds, d], c);
+    }
+  };
+  // Since's significant digits: trailing zeros are padding, so a ten-digit
+  // stamp stands at the start of its beat and a beat given as since means the
+  // whole of it.
+  let s = W;
+  while (s > 0 && S[s - 1] === 0) s--;
+  // The tail of since's containers, deepest first: what landed after since
+  // inside each container it stood in.
+  for (let j = Math.min(W - 1, s - 1); j > k; j--) {
+    const parent = nodeAt(S.slice(0, j));
+    for (const d of digitsOf(parent)) if (d > S[j]) whole([...S.slice(0, j), d], (parent as Record<string, unknown>)[String(d)]);
+  }
+  // The containers strictly between, whole.
+  const parentK = nodeAt(S.slice(0, k));
+  for (const d of digitsOf(parentK)) if (d > S[k] && d < N[k]) whole([...S.slice(0, k), d], (parentK as Record<string, unknown>)[String(d)]);
+  // Now's own path from the divergence down: at each rung the containers before
+  // now, whole, then the rung's own voicing; the second itself whole.
+  for (let j = k; j < W; j++) {
+    const parent = nodeAt(N.slice(0, j));
+    if (!parent || typeof parent !== 'object') break;
+    if (j > k) for (const d of digitsOf(parent)) if (d < N[j]) whole([...N.slice(0, j), d], (parent as Record<string, unknown>)[String(d)]);
+    const node = nodeAt(N.slice(0, j + 1));
+    if (node === undefined || node === null) break;
+    if (j === W - 1) whole(N, node); else push(N.slice(0, j + 1), node);
+  }
+  return out;
+}
+
+/** The lines a range delivers, each at its address; past the cap the rest are
+ *  counted and the address to read on from is named, never silently dropped. */
+export function renderClockLines(lines: ClockLine[], cap = 40): string {
+  const shown = lines.slice(0, cap).map((l) => `  [${l.address}] ${l.text}${l.stamp ? ` · ${l.stamp}` : ''}`);
+  if (lines.length > cap) shown.push(`  (… and ${lines.length - cap} more on the clock after ${lines[cap - 1].address} — read the block on from there)`);
+  return shown.join('\n');
 }
 
 /** The rungs of a clock walk the reader does not already hold: those at or
@@ -176,7 +289,9 @@ export function cutClockWalk(
 }
 
 const RUNG_NAMES = ['beat', 'gathering', 'day', 'week', 'month', 'season', 'year', 'decade', 'century', 'millennium'];
+const FINE_NAMES = ['minute', 'breath', 'second'];
 export function rungName(pscale: number): string {
+  if (pscale < 0) return FINE_NAMES[-pscale - 1] ?? `p${pscale}`;
   return RUNG_NAMES[pscale] ?? `p${pscale}`;
 }
 
@@ -219,6 +334,9 @@ export interface Member {
   /** The address read: the stamp for `now`, the head for `head`, '' for the root. */
   address: string | null;
   result: BspReadResult | null;
+  /** On a clock member: the lines said this beat (cold), or everything that
+   *  landed since the reader's last stamp (the range). */
+  lines?: ClockLine[];
   /** The clock cut applied, when a last stamp was given. */
   cut: { from: number; since: string; same: boolean; within: boolean } | null;
   note: string | null;
@@ -252,19 +370,17 @@ export async function resolveMember(s: BundleSlot, ctx: BundleContext): Promise<
       if (floor !== TEMPORAL_FLOOR) {
         return { ...base, name, note: `'now' names a beat on the clock, and ${name} is not on the clock (floor ${floor}) — dial a digit address instead` };
       }
-      const stamp = momentToAddress(now);
-      // A touched clock block descends one rung beneath the beat — the lanes —
-      // unless the dial already descends deeper.
-      const descend = ctx.touched && (att === null || att >= 0) ? -1 : att;
-      let result = bspRead(block, stamp, descend);
-      let cut: Member['cut'] = null;
-      if (ctx.since && (result.shape === 'path-walk' || result.shape === 'path-walk+descent')) {
-        const walk = ((result.shape === 'path-walk' ? result.entries : result.path_walk) as PathWalkEntry[]) ?? [];
-        const c = cutClockWalk(walk, ctx.since, stamp, !!ctx.touched);
-        result = result.shape === 'path-walk' ? { ...result, entries: c.entries } : { ...result, path_walk: c.entries };
-        cut = { from: c.from, since: TEN(ctx.since), same: c.same, within: c.within };
+      const stamp = momentToAddress(now, FINE);
+      const beat = stamp.slice(0, TEMPORAL_FLOOR);
+      if (ctx.since) {
+        // THE RANGE: everything on the clock after the reader's last stamp, to
+        // the second — the two stamps decide it; no walk is cut, no map consulted.
+        const d = divergencePscale(ctx.since, stamp);
+        const lines = d === null ? [] : clockRange(block, ctx.since, stamp);
+        return { ...base, name, address: stamp, result: null, lines, cut: { from: d ?? -FINE, since: clockStamp(ctx.since), same: d === null, within: d !== null && d < 0 } };
       }
-      return { ...base, name, address: stamp, result, cut };
+      // Cold: the ladder down to the beat, and what was said in this beat so far.
+      return { ...base, name, address: stamp, result: bspRead(block, beat, att), lines: clockRange(block, beat, stamp) };
     }
     if (s.ref.word === 'head') {
       const head = headAddress(block);
@@ -323,19 +439,26 @@ function renderResult(r: BspReadResult): string {
 export function renderMemberBody(m: Member): string {
   if (!m.ref) return m.leaf ?? '(empty)';
   if (m.absent) return `(absent at this surface: ${m.name})`;
-  if (!m.result) return `(${m.note ?? 'did not resolve'})`;
-  const lines: string[] = [];
-  if (m.note) lines.push(`ⓘ ${m.note}`);
+  if (!m.result && !m.lines) return `(${m.note ?? 'did not resolve'})`;
+  const out: string[] = [];
+  if (m.note) out.push(`ⓘ ${m.note}`);
   if (m.cut) {
     if (m.cut.same) {
-      lines.push(`(same beat as your last stamp ${m.cut.since} — nothing new on the clock)`);
-      return lines.join('\n');
+      out.push(`(the same second as your last stamp ${m.cut.since} — nothing new on the clock)`);
+      return out.join('\n');
     }
-    if (m.cut.within) lines.push(`(within this beat ${m.address} — ${m.name} moved since you were last told: the beat and what stands beneath it)`);
-    else lines.push(`(from the ${rungName(m.cut.from)} down — the rungs above unchanged since your last stamp ${m.cut.since}, ${voiceAddress(m.cut.since)})`);
+    out.push(m.cut.within
+      ? `(within this beat — what landed on the clock since your last stamp ${m.cut.since}, ${voiceAddress(m.cut.since)})`
+      : `(from the ${rungName(m.cut.from)} down — what landed on the clock since your last stamp ${m.cut.since}, ${voiceAddress(m.cut.since)})`);
   }
-  lines.push(renderResult(m.result));
-  return lines.join('\n');
+  if (m.result) out.push(renderResult(m.result));
+  if (m.lines && m.lines.length) {
+    if (m.result) out.push('said this beat:');
+    out.push(renderClockLines(m.lines));
+  } else if (m.cut) {
+    out.push('(nothing landed)');
+  }
+  return out.join('\n');
 }
 
 export function renderMember(m: Member, indent = '  '): string {
@@ -357,7 +480,7 @@ export function renderBundle(
   const refs = members.filter((m) => m.ref);
   const lines = [
     `[bundle @ ${opts.label} — ${refs.length} reference${refs.length === 1 ? '' : 's'} compiled at ${stamp} (${voiceAddress(stamp)})` +
-      `${opts.since ? `; what moved since ${TEN(opts.since)}` : ''}; the index first, then each at its own aperture]`,
+      `${opts.since ? `; what moved since ${clockStamp(opts.since)}` : ''}; the index first, then each at its own aperture]`,
     `  index: ${members.map((m) => `${m.slot} ${m.ref ? m.leaf : '(prose)'}`).join(' · ')}`,
   ];
   const cap = opts.cap ?? BUNDLE_WINDOW_CHARS;

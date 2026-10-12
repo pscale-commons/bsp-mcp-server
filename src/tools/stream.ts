@@ -191,11 +191,13 @@ export function voicedValue(existing: unknown, text: string): unknown {
 }
 
 /** THE LANE — a hand that runs several sessions at once keeps ONE mirror, and
- *  each lane speaks at its own digit beneath the beat: at='now.8'. The word is
+ *  each lane spoke at its own digit beneath the beat: at='now.8'. The word is
  *  the beat (a named rung that reaches the floor) and the digit after the point
- *  is the lane, so the spelling IS the address of the lane's cell, with the one
- *  decimal point an address has. Null for anything else — a digit address with
- *  a fraction keeps its own meaning. */
+ *  is the lane. Since 2026-10-12 (proposals/2026-10-12-the-now-at-the-second) a
+ *  line on the moving now lands at ITS INSTANT beneath the beat — the minute,
+ *  the breath, the second — so sessions never share a cell; the lane form is
+ *  still accepted, and its digit no longer addresses anything. Null for
+ *  anything else — a digit address with a fraction keeps its own meaning. */
 export function laneOf(at: string): { rung: string; lane: string } | null {
   const m = /^\s*(.+?)\.([1-9])\s*$/.exec(at);
   if (!m) return null;
@@ -215,7 +217,7 @@ export function turnValue(existing: unknown, text: string, iso: string): Record<
 /** The stamped turns standing beneath a node: digit children that speak and
  *  carry an instant at 3. A scalar child is a field of an entry, never a lane,
  *  and an unstamped child is ordinary substructure — neither is read as a turn. */
-export function turnsOf(node: unknown): { lane: string; text: string; ms: number }[] {
+export function turnsOf(node: unknown, prefix = ''): { lane: string; text: string; ms: number }[] {
   if (!node || typeof node !== 'object' || Array.isArray(node)) return [];
   const found: { lane: string; text: string; ms: number }[] = [];
   for (const k of Object.keys(node as object)) {
@@ -224,7 +226,11 @@ export function turnsOf(node: unknown): { lane: string; text: string; ms: number
     if (!c || typeof c !== 'object' || Array.isArray(c)) continue;
     const text = voiceOf(c);
     const ms = Date.parse(String((c as Record<string, unknown>)['3'] ?? ''));
-    if (text && Number.isFinite(ms)) found.push({ lane: k, text, ms });
+    if (text && Number.isFinite(ms)) found.push({ lane: prefix + k, text, ms });
+    // Beneath the beat the turns stand at their instants — a minute, a breath,
+    // a second deep — and two sessions in one second stand one beneath the
+    // other; the label is the digits walked to the turn.
+    found.push(...turnsOf(c, prefix + k));
   }
   return found;
 }
@@ -237,14 +243,14 @@ export function agoWords(ms: number): string {
   return `${Math.round(sec / 60)}m ago`;
 }
 
-/** What one mirror says at a beat: its lanes, if it keeps stamped turns there,
+/** What one mirror says at a beat: its turns, if it keeps stamped ones there,
  *  else its voicing. On the MOVING now (prevNode given) a line is live for one
- *  beat's width from its own instant, so a lane that last spoke in the beat
- *  before, and a voicing in a mirror last written within that width, are
- *  carried across the edge — two minds a minute apart are not parted by where
- *  the clock's cell fell (function:torus-mirror 2: each live mirror is read at
- *  the beat of its own last touch). A lane that has spoken in this beat is not
- *  doubled by its turn in the last. Pure. */
+ *  beat's width from its own instant, so a turn said in the beat before, and a
+ *  voicing in a mirror last written within that width, are carried across the
+ *  edge — two minds a minute apart are not parted by where the clock's cell
+ *  fell (function:torus-mirror 2: each live mirror is read at the beat of its
+ *  own last touch). Every turn is its own utterance at its own instant, so
+ *  none is dropped as a double. Pure. */
 export function mirrorAtBeat(
   node: unknown,
   prevNode: unknown,
@@ -258,7 +264,7 @@ export function mirrorAtBeat(
   let voicingMs: number | null = voicing && fresh ? touchedMs : null;
   if (prevNode !== undefined && prevNode !== null && cellMs > 0) {
     for (const t of turnsOf(prevNode)) {
-      if (nowMs - t.ms < cellMs && !lanes.some((l) => l.lane === t.lane)) lanes.push(t);
+      if (nowMs - t.ms < cellMs) lanes.push(t);
     }
     if (!voicing && lanes.length === 0 && fresh) {
       const pv = voiceOf(prevNode);
@@ -719,6 +725,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
 
   // ── say — the one write act, into the caller's own mirror ──
   let saidAt = null as string | null;
+  let saidCell = null as string | null;       // the fine digits beneath the beat this say landed at
   let mintedMirror = null as string | null;   // this say brought <field>:<handle> into being
   let spanSaid = null as { touched: number; cleared: boolean } | null;   // a span's say: beats written, or cleared (set inside the line below)
   // One hand's says to one mirror land one after another (oneAtATime); a say
@@ -770,20 +777,30 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
           spanSaid = { touched: await sayAcross(origin, mirrorName, mblock, span.beats, params.say, params.secret), cleared: false };
           saidAt = mirrorName;
           saidBlock = mblock;
-        } else if (lane) {
-          // ONE CALL, THE LAW'S OWN SHAPE (function:torus-mirror 1.2): the lane's
-          // turn beneath the beat — the line, 6 its arrival, 3 its latest
-          // revision — and the beat voiced with the line, so the hand's standing
-          // line is whichever lane spoke last. Two narrow writes, never the beat
-          // node whole: the turn touches this lane's cell alone, and a string at
-          // the beat voices it and keeps every other lane standing beneath.
-          const cell = `${mAddr}.${lane}`;
-          writeAt(mblock, cell, turnValue(readAt(mblock, cell), params.say, new Date().toISOString()));
+        } else if (moving) {
+          // THE MOVING NOW LANDS AT ITS INSTANT (proposals/2026-10-12-the-now-at-
+          // the-second; function:torus-mirror 1.2): the turn beneath the beat at
+          // the minute, breath and second it was said — the line, 6 its arrival,
+          // 3 its latest revision — and the beat voiced with the line, so the
+          // hand's standing line is whichever session spoke last. Two narrow
+          // writes, never the beat node whole. Two sessions inside one second
+          // land one beneath the other; a lane digit, if given, is accepted and
+          // no longer addresses the cell.
+          const instant = new Date();
+          let cell = momentToAddress(instant, 3);
+          const standing = readAt(mblock, cell);
+          if (standing && typeof standing === 'object' && typeof (standing as Record<string, unknown>)['3'] === 'string') {
+            const taken = new Set(Object.keys(standing as object));
+            cell += ['1', '2', '3', '4', '5', '6', '7', '8', '9'].find((d) => !taken.has(d)) ?? '9';
+          }
+          const beatAddr = cell.slice(0, TEMPORAL_FLOOR);
+          writeAt(mblock, cell, turnValue(readAt(mblock, cell), params.say, instant.toISOString()));
           await saveBlock(origin, mirrorName, mblock, { spindle: cell, secret: params.secret });
           const voiced: Block = JSON.parse(JSON.stringify(mblock));
-          writeAt(voiced, mAddr, params.say);
-          await saveBlock(origin, mirrorName, voiced, { spindle: mAddr, secret: params.secret });
+          writeAt(voiced, beatAddr, params.say);
+          await saveBlock(origin, mirrorName, voiced, { spindle: beatAddr, secret: params.secret });
           saidAt = `${mirrorName}:${cell}`;
+          saidCell = cell.slice(TEMPORAL_FLOOR + 1);
           saidBlock = voiced;
         } else {
           writeAt(mblock, mAddr, voicedValue(readAt(mblock, mAddr), params.say));
@@ -1057,7 +1074,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     } else {
       for (const r of readings) {
         // (you) marks the caller's own line: its lane if it named one, else its voicing.
-        const mine = r.who === handle && (lane ? r.lane === lane : r.lane === undefined);
+        const mine = r.who === handle && (saidCell ? r.lane === saidCell : lane ? r.lane === lane : r.lane === undefined);
         const age = typeof r.ms === 'number' && Number.isFinite(r.ms) ? ` (${agoWords(nowMs - r.ms)})` : '';
         lines.push(`- ${r.who}${r.lane ? ` [${r.lane}]` : ''}${mine ? ' (you)' : ''}: ${r.text}${age}`);
       }

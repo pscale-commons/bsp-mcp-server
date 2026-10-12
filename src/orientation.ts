@@ -27,8 +27,8 @@
 
 import { type Block, readAt } from './bsp.js';
 import { listSentinelNames, loadBeachIndex, loadBlock } from './db.js';
-import { momentToAddress, voiceAddress } from './temporal.js';
-import { bundleSlots, candidateNames, renderMember, resolveMember, type BlockLoader, type Member } from './bundle.js';
+import { momentToAddress, voiceAddress, TEMPORAL_FLOOR } from './temporal.js';
+import { bundleSlots, candidateNames, renderMember, resolveMember, FINE, type BlockLoader, type Member } from './bundle.js';
 
 /** A loader over one surface: the bundled sentinels first (the teaching is the
  *  same at every beach), then the beach's named blocks, cached per call. */
@@ -115,8 +115,10 @@ const liveIO: RiderIO = {
 export async function orientationRider(session: string | undefined, nowMs: number = Date.now(), io: RiderIO = liveIO): Promise<string> {
   const seat = seatOf(session);
   if (!seat) return '';
-  const now = momentToAddress(new Date(nowMs));
-  const since = momentToAddress(new Date(seat.lastMs));
+  // Stamps to the second (proposals/2026-10-12-the-now-at-the-second): the
+  // clock range between them is what a clock member delivers.
+  const now = momentToAddress(new Date(nowMs), FINE);
+  const since = momentToAddress(new Date(seat.lastMs), FINE);
   if (nowMs - seat.indexAt > INDEX_TTL_MS) {
     seat.touched = await io.touched(seat.origin);
     seat.indexAt = nowMs;
@@ -136,7 +138,7 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
       seat.nodeStamp = bundleStamp;
     }
   }
-  const beatChanged = now !== since;
+  const beatChanged = now.slice(0, TEMPORAL_FLOOR) !== since.slice(0, TEMPORAL_FLOOR);
   const ctx = { load, handle: seat.handle, now: new Date(nowMs), since };
   const moved: Member[] = [];
   const quiet: string[] = [];
@@ -147,10 +149,9 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
     const changed = s.ref.word === 'now' ? beatChanged || touched : touched;
     if (!changed) { quiet.push(s.leaf!); continue; }
     const m = await resolveMember(s, { ...ctx, touched });
-    // An absent or unreadable member cannot have moved; the same beat with
-    // nothing touched moved nothing either. A touched clock member in the same
-    // beat delivers the beat and what stands beneath it — the lanes.
-    if (m.absent || !m.result || m.cut?.same) { quiet.push(s.leaf!); continue; }
+    // An absent or unreadable member cannot have moved; a clock member whose
+    // range is empty moved nothing either — the clock turned and nothing landed.
+    if (m.absent || m.cut?.same || (!m.result && !(m.lines && m.lines.length))) { quiet.push(s.leaf!); continue; }
     moved.push(m);
   }
   seat.lastMs = nowMs;
