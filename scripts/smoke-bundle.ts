@@ -208,6 +208,9 @@ const text = (res: any) => res.content.map((c: any) => c.text).join('\n');
 resetSeats();
 touched = {};
 const read = (spindle: string, sessionId?: string) => handleBsp({ agent_id: ORIGIN, block: 'shell:weft', spindle } as any, { sessionId });
+// The handlers read at the REAL clock: the fixture's day line must stand at the
+// real clock's day, or the suite holds only on the day it was written.
+beachWrite(nowWeft, momentToAddress(new Date()).slice(0, 8) + '00', 'today, as the real clock stands — swept at first light');
 const w = text(await read('3'));
 ok(w.startsWith('[path-walk @ "3"]') && w.includes('[bundle @ "' + ORIGIN + '/shell:weft" 3 — 5 references'), 'a walk to the manifest compiles it beneath the walk', w);
 ok(w.includes('── 1 · orientation:weft:0:0 ──') && w.includes(ruleTwo) && w.includes('── 5 · now:weft:now ──') && w.includes('swept at first light'), 'every member unfolds, the disc whole and the clock at the stamp');
