@@ -147,3 +147,9 @@ after the seat's minute-long index cache lapsed (the say at 14:43:59Z, delivered
 touch by up to a minute and never drops it, and the reads between were quiet. One rendering nit stands: the beach
 voices the beat's own line with the latest lane line, so within the beat the lane's words appear twice, at the beat
 and beneath it; a trim is a later choice.
+
+At David's word the same afternoon the seat's index cache came down from a minute to five seconds
+(`ORIENTATION_INDEX_TTL_MS`, `src/orientation.ts`): a touch now rides within seconds of landing, and the index — about
+90 KB a fetch — is read at most once per seat per five seconds. Observed on the way, with four weft lanes live: a lane's
+say three beats on carried the other lanes' lines beneath the beat and a sibling lane's new history entry at the head,
+with no coordination between the sessions.
