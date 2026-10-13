@@ -1,7 +1,9 @@
 # Invites and doors — a public invite page per meeting, and a door that is discretion, never a wall (2026-10-13)
 
-**Status**: PROPOSAL. Builds nothing until David's word. Written at David's ask on 13 October, after the first
-invite, for Beach Session, was made as a claude.ai page and turned out private by default.
+**Status**: AGREED and BUILT, 13 October 2026. David: "yes build it, with the door word too, and let's experiment
+with the standing group -- i may use it as a filter for eg now and project mirrors". §7 says what was built and
+where it differs from what is proposed here. Written at David's ask the same day, after the first invite, for Beach
+Session, was made as a claude.ai page and turned out private by default.
 
 **Companions**:
 - `2026-10-12-locating-a-meeting`: the pre-meeting, the fix, and the lattice check.
@@ -104,3 +106,28 @@ every page. It is etiquette, not security, and the page says so.
 1. **The invite page as §3:** yes?
 2. **The door:** the name door only, or a door word as well?
 3. **A standing group:** should the five of you become one, as a sed?
+
+## 7. Built, 13 October
+
+David answered all three questions with yes: the page, a door word as well, and the five as a standing group.
+
+- **The page.** `happyseaurchin.com/invite/<meeting>` was built as §3, in happyseaurchin-home #431. The ring has an
+  **Invite** link beside Copy link, for a meeting to hold and never for a design.
+- **The law.** `function:meeting` 2.1 THE INVITE, under the shared lock, sits beneath 2, the reader, so a walk to it
+  arrives with the ring above it. The standing text is at `archive:function:meeting:2026-10-13`, locked.
+- **The door.** The door lives in the invite page alone, for now. The `theme.js` helper §4 describes waits for a
+  second page that wants a door; one page doesn't earn a shared helper.
+  - The word is trimmed and lower-cased before it is hashed, because phones capitalise it.
+  - The keeper sets or removes the door from the page, under the meeting's key. Its line goes at the first free
+    digit of the meeting's law from 8 down.
+- **The group.** `sed:beach-session` was founded under happyseaurchin's own key, and David's seat is at 11.
+  - Its root says what §2 says: it gates nothing at write, and it is a lens on read. A view through it says what it
+    set aside and how many; while nobody is seated, it sets nobody aside.
+  - A seat opens with its holder's name on the beach ("happyhedgehog — …"), so a page can read who sits there.
+  - Where §2 has a group named *instead of* five handles, the build names both. Beach Session's Who, 1.2, names the
+    five and "the group sed:beach-session", and every seat in a named group is invited beside the names written
+    there. The invite's full prompt asks each person's AI to take a seat.
+- **Next, not built.** The group as a filter on `/now` and on a project's mirrors: a reader follows `sed:<group>`
+  and sees only the seated people's readings, with the count of what was set aside. David's own reason: too much of
+  what fills those pages is LLM-written.
+
