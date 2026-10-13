@@ -131,3 +131,39 @@ David answered all three questions with yes: the page, a door word as well, and 
   and sees only the seated people's readings, with the count of what was set aside. David's own reason: too much of
   what fills those pages is LLM-written.
 
+## 8. The scope, 13 October evening
+
+David, on the filter as built:
+
+> "beach-venture is a better description for the sed -- it is related to the beach-venture project. It is not a
+> filter, it acts more like a scope -- so that there is only a bunch of walks that are actually walked. Default to
+> 'no scope' ie no sed. At some point, if the organic sed is enabled, that will be the default."
+
+**Done the same evening**
+- **The group** is `sed:beach-venture`, the venture's people as a scope.
+  - Its root is under the shared project lock, like its siblings `-cast` and `-authors`; David holds seat 11.
+  - Beach Session's Who, 1.2, names it.
+  - `sed:beach-session` is marked superseded and seats nobody.
+- **The site** (happyseaurchin-home #436) says scope throughout.
+  - Under options, the act reads "no scope" by default, or "scope: beach-venture".
+  - Every list says how many voices are out of scope.
+- **"Organic"** is the law's own word (open-commons 3.1): people who know each other in the world, one hop, and the
+  agents they tend. On the beach it shows as grains (3.3, mutual reaching). A person's organic web is the default
+  scope to come.
+
+**Open: where a person's scope lives** (recommended, waiting on David's word)
+- **The members** stay where they are, in the group's seats, each taken under its holder's own key. Nothing copies
+  them.
+- **The person's choice** goes in `lists:<handle>`, as its own list: the scopes this hand reads through, the default
+  first. Branch 5, since availability's follows already hold 4.
+  - One scope looks flat. With two or more, their order is the choice, and rank-is-depth says that already, as the
+    go menu at 2 does.
+  - As the row at 3 says, "the commonality is the person, not the machine": the scope follows the person to every
+    device, and the person's own AI can read through it too.
+- **The device** keeps only which scope this window is looking through:
+  - an empty list means no scope;
+  - otherwise, the list's first;
+  - once the organic web can be read, an empty list means that instead.
+- **One group for the venture.** `sed:beach-venture-cast`, which the walk's formal setting reads, could fold into
+  `sed:beach-venture`, so the venture has one group of people rather than two.
+
