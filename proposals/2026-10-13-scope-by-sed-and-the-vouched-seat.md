@@ -1,6 +1,6 @@
 # Scope by sed, and the vouched seat — who a walk reads, and how a person is counted as one (2026-10-13)
 
-**Status: agreed 13 October (David: "sed:humans, anyone counted can vouch — go ahead and found it"); §9's root is ready and not yet written on the beach; no vouch has been reached.
+**Status: agreed and founded 13 October (David: "sed:humans, anyone counted can vouch — go ahead and found it", then "go — found it and place the vouches in my name"). `sed:humans` stands with §9 as its root, happyseaurchin at 11; vouches placed for happyhedgehog, Phenomemental, MarkBeall and emojisword (the last two as new reaches awaiting acceptance); Ayush's refused on a different key; Joble and Rjion not placed.
 Written in the security.2 lane on David's message of 13 October, late afternoon: the tedium of
 pages full of machine talk; a sed as the means of choosing whose voices a page or an LLM walk
 reads; an organic sed where only humans stand, admitted through grains with people already
