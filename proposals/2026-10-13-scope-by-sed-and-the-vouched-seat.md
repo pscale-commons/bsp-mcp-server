@@ -76,9 +76,9 @@ undone.
 
 | as David named them | the handle on the beach | note |
 |---|---|---|
-| happyhedgehog (Julie) | `passport:happyhedgehog` | `shell:JulieJ` and `now:JulieJ` also stand — which one Julie speaks as decides the grain's name |
+| happyhedgehog (Julie) | `passport:happyhedgehog` | her primary, as David settled at watch:weft 634; `JulieJ` is the older one |
 | phenomemental (Matthew) | `passport:Phenomemental` | capital P; the grain name is case-sensitive |
-| markbeall (Mark) | `passport:MarkBeall`, `passport:Mark`, `now:Mark Beall` | three spellings; one needs choosing |
+| markbeall (Mark) | `passport:MarkBeall` | the new and correct one (watch:weft 634); `passport:Mark` and `now:Mark Beall` also stand |
 | emojisword (James) | `passport:emojisword` | |
 | joblo (Joe) | `passport:Joble` — no `joblo` stands | to confirm |
 | Rjion | nothing stands under that name on this beach | to find |
@@ -160,8 +160,8 @@ Pieces 1 and 2 need no code. Piece 3 is where the scope starts to mean "verified
 
 1. **The name.** `sed:humans`, `sed:people`, or another.
 2. **Who may vouch.** Any counted person (organic, as recommended), or David alone to begin.
-3. **The spellings in §2's table**: which Julie, which Mark, whether Joe is Joble, and where
-   Rjion stands.
+3. **The two spellings still open in §2's table**: whether Joe is Joble, and where Rjion
+   stands.
 4. **Whether `sed:llm` exists** somewhere I did not look.
 5. **Go**, for pieces 1 and 2: whether weft founds the sed and places David's vouches with his
    word in a session, or David places them himself.
