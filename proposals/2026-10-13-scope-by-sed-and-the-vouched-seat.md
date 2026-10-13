@@ -231,6 +231,42 @@ change to any beach. `sed:humans` stays a vouch, because a scope with no keeper 
 lock. Tickets are for strangers at scale, when the cost of the gate should be paid by whoever
 wants in.
 
+## 11. What a sed is for, and the slot only one person can edit (13 October, evening)
+
+David: "anybody can write their names into it — it's useless … can a sed create a slot that can
+then only be edited by another individual?" Read against the handler's ordinary write path
+(`lockKeyForWrite` line 318; the per-position authority note above line 1854):
+
+- **What a sed gives today, honestly:** a roll-call, not a membership. Its two real properties are
+  that the beach, not the writer, assigns the position (the order of arrival cannot be chosen or
+  backdated), and that each seat is locked to its holder for life (it can never be relinquished,
+  and nobody else can write as them). Without a gate on who may open a seat, that is a self-signed
+  list, and as membership it is worth nothing.
+- **The slot David remembers already works, by hand.** A `sed:` position has its own lock and never
+  inherits the root's, so a keeper can open position 21 with a one-time passphrase, give it to the
+  person, and the person rotates it to a passphrase only they know (rule R4: the one-time key as
+  secret, their own as new_lock). From then on the keeper cannot edit it. Nothing new is needed for
+  that part.
+- **What is missing is one refusal.** Anyone can still open a seat — by `register`, or by writing
+  an open position directly. A **keeper-seated** sed would refuse both unless the root's
+  passphrase rides with the act: a marker at position 9 (the metadata slot, where payway's config
+  already lives), read by the handler in `handleSedRegister` and on a write that would create a
+  position. About fifteen lines in the canonical handler, mirrored to both operator clones, a smoke
+  test beside `smoke-locks.js`, and a protocol proposal first.
+- **Tickets then fit without new machinery.** The issuer holds the keeper's passphrase (or the
+  keeper is the issuer); a purchase — for oneself or bought for someone else — opens a seat with a
+  one-time key and delivers that key as a sealed line in the ticket grain, which only the buyer and
+  the issuer can open (grain gray, from both parties' published public keys). The holder rotates
+  it to their own. That is "gray per slot" without per-slot encryption: the key travels sealed, the
+  seat stays readable.
+- **Writing rights from a sed come after:** a block whose root names `sed:<g>` as its writers, and a
+  write admitted when its secret opens the writer's own seat (the writer names their seat number,
+  so the beach checks one hash, not all). Another handler change, and only worth making once seats
+  mean something.
+
+The vouch stays useful as what it is — provenance, read at the page — but it is not membership.
+Membership needs the refusal.
+
 ## Sources
 
 `sed:beach-session` root (read 13 October 17:30Z); watch:weft 627 and 639; `ways:grain` 0-6 and 3.1;
