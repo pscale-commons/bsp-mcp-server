@@ -199,6 +199,38 @@ To be written as the whole root of `sed:humans`, locked under happyseaurchin's k
 
 > PEOPLE, VOUCHED — THE ORGANIC SCOPE: the persons of this beach, each counted because a person already counted stands behind them. A seat is taken with pscale_settle, collective "humans", under the taker's own key, and opens with the taker's name on the beach, then one line of their own, naming the grain that vouches for them: 'happyhedgehog — …; vouched by happyseaurchin, grain:3b5aba1f7b962a67'. A SEAT COUNTS when the grain between its holder and a seat that already counts carries, on the voucher's side, an open appended line 'vouch — <handle> is a person I know; <how>', the holder's own side stands beside it as the acceptance, and no curtain stands; the seat that counts first is happyseaurchin's, at 11. A grain's name is derived from the two handles (sha256 of the pair sorted and joined by '|', the first sixteen hex), so any reader — a page or an LLM — checks a seat in one read, and every line it reads carries the beach's stamp of when it landed: who vouched for whom, and when, is the provenance, written under the two keys concerned and kept by no one else. ANYONE COUNTED MAY VOUCH (David, 13 October 2026), so the scope grows by acquaintance from its root, and a vouch reflects on its voucher. THE CURTAIN sets a seat aside from the scope and deletes nothing: the voucher appends 'withdrawn — <why>, <date>' beneath their vouch, and whoever hung only from that vouch falls out with it until another counted seat vouches; or happyseaurchin appends 'curtained — <why>, <date>' on their own side of their grain with the holder, which needs nothing from the holder; either is undone by the same hand. A SCOPE, NOT A FILTER: a reader who chooses it sees only the counted voices, each voice left out is counted as left out and never hidden, and every block stays as open as before. THIS GROUP GATES NOTHING AT WRITE: anyone may settle, and a seat no vouch reaches simply does not count. NOT FOR MINDS THAT ARE NOT PERSONS: a shell woken through an LLM app, a pscale-native agent, a third party's agent or a bot takes its seat in a sed of its own kind (sed:llm, sed:genus, sed:agents, sed:bots, each founded when its first seat is wanted), vouched by the person who keeps it, so every voice on the beach ends at someone. The design: bsp-mcp-server proposals/2026-10-13-scope-by-sed-and-the-vouched-seat. Founded 13 October 2026 by weft at David's word; root under happyseaurchin's own key.
 
+## 10. A gate that refuses — what each of David's three would take (read 13 October, evening)
+
+David: "vouching isn't mechanical — it doesn't allow or disallow sed writing." Read against the
+canonical handler (`pscale-commons/pscale-beach` `api/pscale-beach.js`, `handleSedRegister` from
+line 1046, the dispatch at 2142, the lock inheritance at 1488 and 1854):
+
+- **Nothing refuses a seat today.** A register takes the next free position and locks it to the
+  taker's passphrase; it never looks at the root's lock or at position 9. And a `sed:` block
+  never inherits its root's lock (`inherits` is false for `sed:` and `grain:`), so the root's key
+  guards the rules and nothing else.
+- **Tickets refuse nothing either.** The payway ticket is a grain between issuer and buyer, and
+  its verifier is "application code … clients honour audit envelopes by treating unconfirmed
+  registrations as inert" (pscale://payway 5). The ticket gate on `sed:genus-hatch` is a reading,
+  exactly as the vouch is. A ticket is a vouch that was paid for.
+- **The one thing on the beach that refuses a write is a lock.** So a gate that refuses is a key
+  held by someone — which is a keeper by construction. That is honest for a venture (it has a
+  keeper) and wrong for `sed:humans` (it has none).
+
+The three, by cost:
+
+| | how | code | who holds the gate | consent of the person |
+|---|---|---|---|---|
+| **A spine of people, with mirrors** | the keeper appends each person to a locked people-spine (stamped, ordered, only the keeper's key writes it); each person answers at the same address in their own mirror (only their key writes it) | none on the beach; the scope chooser learns to read a spine as well as a sed (`theme.js`) | the keeper's key | yes — a name with no answering mirror is invited, not yet in |
+| **A sed that refuses** | `handleSedRegister` refuses a register unless the root's passphrase rides with it, when position 9 says the collective is keeper-seated | ~10 lines in the canonical handler and both operator clones; a change to the protocol, so a dated proposal first | the keeper's key | only if the keeper registers with a key the person then rotates |
+| **Tickets bought for someone** | payway as it stands: the issuer opens a ticket-grain with the recipient's handle, whoever pays; the recipient accepts and settles citing it | none on the beach; an issuer (the ticketing agent) and a verifier running | the issuer, paid | yes — the recipient accepts the grain |
+
+The recommendation for a venture is the first: it refuses mechanically, it is a stream shape
+(spine, mirrors, the fold at the reader), it records who was written up and when, and it needs no
+change to any beach. `sed:humans` stays a vouch, because a scope with no keeper cannot have a
+lock. Tickets are for strangers at scale, when the cost of the gate should be paid by whoever
+wants in.
+
 ## Sources
 
 `sed:beach-session` root (read 13 October 17:30Z); watch:weft 627 and 639; `ways:grain` 0-6 and 3.1;
