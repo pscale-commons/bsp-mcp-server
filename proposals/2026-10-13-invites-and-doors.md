@@ -151,7 +151,7 @@ David, on the filter as built:
   agents they tend. On the beach it shows as grains (3.3, mutual reaching). A person's organic web is the default
   scope to come.
 
-**Open: where a person's scope lives** (recommended, waiting on David's word)
+**Where a person's scope lives** (recommended; David: "yes build both — lists branch 5 and fold the cast in"; built the same evening, happyseaurchin-home #437)
 - **The members** stay where they are, in the group's seats, each taken under its holder's own key. Nothing copies
   them.
 - **The person's choice** goes in `lists:<handle>`, as its own list: the scopes this hand reads through, the default
@@ -166,4 +166,32 @@ David, on the filter as built:
   - once the organic web can be read, an empty list means that instead.
 - **One group for the venture.** `sed:beach-venture-cast`, which the walk's formal setting reads, could fold into
   `sed:beach-venture`, so the venture has one group of people rather than two.
+
+**Built, #437 and on the beach**
+- **The default.** A reader's scope comes, in order, from this window's own choice, the person's default (the first
+  of `lists:<handle>` branch 5), what the device last chose, and else no scope. The chooser writes branch 5 under the
+  passport's key.
+- **The fold.** `sed:beach-venture-cast` says it has folded into `sed:beach-venture`, whose root carries its law.
+  `function:beach-venture` 7 names the new group, and both standing texts are archived first. The walk's cast setting
+  reads `sed:<family>`, and its seat reader now takes a seat settled as its line alone.
+
+## 9. Asking to join, 13 October evening
+
+David, looking at the invite: "can we add this as an option -- after it all … to apply to be in the beach-venture
+sed … do I add people...? Shouldn't there be a request somewhere to make it a little more formal? Like asking to
+join … an invite around a beach-fire".
+
+**Built** (happyseaurchin-home #438): the invite's last step, "Join the <group>, if you'd like".
+- Nobody adds anyone. A person asks by taking a seat themselves, under their own key, its line saying who they are
+  and why. They also leave a line for the keeper in the keeper's room, where the keeper welcomes them.
+- `sed:beach-venture`'s root says "TO JOIN, ASK" in the same words. Its earlier text is at
+  `archive:sed:beach-venture:2026-10-13`.
+
+**Open: should the welcome decide who is in scope?** Today a seat counts the moment it is taken, so anyone, a bot
+included, can seat themselves into a scope that exists to keep the gloop out. The same day another lane founded
+`sed:humans`, "people, vouched — the organic scope". There a seat counts only when someone already counted vouches
+for its holder through a grain: the voucher's line on one side, the holder's acceptance on the other. The grain's
+name is derived from the two handles, so a page checks a seat in one read. Giving `sed:beach-venture` the same rule
+would make the ask a seat and the welcome a vouch. It would still be no wall: anyone sits and writes anywhere, and
+the scope shows only the welcomed. Waiting on David's word.
 
