@@ -1,6 +1,6 @@
 # Scope by sed, and the vouched seat — who a walk reads, and how a person is counted as one (2026-10-13)
 
-**Status: proposed — design only. Nothing has been founded, reached or built.
+**Status: agreed 13 October (David: "sed:humans, anyone counted can vouch — go ahead and found it"); §9's root is ready and not yet written on the beach; no vouch has been reached.
 Written in the security.2 lane on David's message of 13 October, late afternoon: the tedium of
 pages full of machine talk; a sed as the means of choosing whose voices a page or an LLM walk
 reads; an organic sed where only humans stand, admitted through grains with people already
@@ -90,10 +90,10 @@ A curtain takes someone out of the scope. It never deletes what they wrote and n
 their key: their own blocks still write, and "everyone" still shows them. Three hands can draw
 it, each with authority it already has:
 
-1. **The voucher withdraws.** They re-voice their open vouch line: "withdrawn — <why>, <date>".
+1. **The voucher withdraws.** They append beneath their open vouch line: "withdrawn — <why>, <date>".
    The person falls out of scope unless another counted seat vouches for them, and so does
    anyone whose only vouch ran through them.
-2. **The founder curtains.** happyseaurchin writes one open line on their own side of their
+2. **The founder curtains.** happyseaurchin appends one open line on their own side of their
    grain with that person: "curtained — <why>, <date>". A reach is one-sided until accepted,
    so this needs nothing from the person. The reader checks that one derivable grain for each
    seat.
@@ -165,6 +165,39 @@ Pieces 1 and 2 need no code. Piece 3 is where the scope starts to mean "verified
 4. **Whether `sed:llm` exists** somewhere I did not look.
 5. **Go**, for pieces 1 and 2: whether weft founds the sed and places David's vouches with his
    word in a session, or David places them himself.
+
+## 8. Provenance in time — what the beach already keeps
+
+David asked whether an accidental vouch, say for an LLM, would be tracked, and whether the growth
+could be replayed as a film. Read on 13 October against all 58 grain blocks at the apex:
+
+- **Every line in a grain carries the beach's stamp.** A reach and every line appended to a side
+  land with the time at their `3` (happyseaurchin's side of the grain with happyhedgehog opens
+  `2026-09-09T09:11:00.565Z`). The index adds `born` for every block born since that stamp
+  shipped (15 of the 58 grains). Together, 46 of the 58 grains can be dated; the 12 that cannot
+  are the oldest, written before lines carried stamps (among them happyseaurchin's grains with
+  Ayush and egg-one, and keel's with weft). About half of the 58 are test or probe grains.
+- **A sed is an order by construction.** Its positions are assigned in arrival order, so 11, 12,
+  13 … is the sequence of seats, with no clock needed.
+- **So every vouch is dated and signed.** Who vouched (the voucher's key, on their side), for whom
+  (the holder's key, accepting), when (the stamp), in what order (the seat). An accidental vouch
+  for an LLM shows exactly who made it and when; curtaining it is one line; reviewing that
+  voucher's other vouches is a walk of their grains. A seat that claims a vouch it does not have
+  fails at the first read, because the reader checks the grain, not the claim.
+- **/social-brain already reads the stamps** (`happyseaurchin-home` `social-brain.html`): it orders
+  each grain's lines by time and shows "last word" and "since". It does not yet order the network
+  itself by time. A film of the growth, each synapse lit at its first stamp, needs nothing new on
+  the beach; for `sed:humans` every link carries its date from the first vouch.
+- **The gap.** A grain's `9`, which says the grain is complete, carries no stamp, so the time a
+  grain was *accepted* is known only through the accepting side's first stamped line. A vouch and
+  its acceptance written as appended lines, never as bare underscores, close that gap here.
+
+## 9. The root, ready to write
+
+To be written as the whole root of `sed:humans`, locked under happyseaurchin's key (as
+`sed:beach-session` was), with happyseaurchin then seated at 11:
+
+> PEOPLE, VOUCHED — THE ORGANIC SCOPE: the persons of this beach, each counted because a person already counted stands behind them. A seat is taken with pscale_settle, collective "humans", under the taker's own key, and opens with the taker's name on the beach, then one line of their own, naming the grain that vouches for them: 'happyhedgehog — …; vouched by happyseaurchin, grain:3b5aba1f7b962a67'. A SEAT COUNTS when the grain between its holder and a seat that already counts carries, on the voucher's side, an open appended line 'vouch — <handle> is a person I know; <how>', the holder's own side stands beside it as the acceptance, and no curtain stands; the seat that counts first is happyseaurchin's, at 11. A grain's name is derived from the two handles (sha256 of the pair sorted and joined by '|', the first sixteen hex), so any reader — a page or an LLM — checks a seat in one read, and every line it reads carries the beach's stamp of when it landed: who vouched for whom, and when, is the provenance, written under the two keys concerned and kept by no one else. ANYONE COUNTED MAY VOUCH (David, 13 October 2026), so the scope grows by acquaintance from its root, and a vouch reflects on its voucher. THE CURTAIN sets a seat aside from the scope and deletes nothing: the voucher appends 'withdrawn — <why>, <date>' beneath their vouch, and whoever hung only from that vouch falls out with it until another counted seat vouches; or happyseaurchin appends 'curtained — <why>, <date>' on their own side of their grain with the holder, which needs nothing from the holder; either is undone by the same hand. A SCOPE, NOT A FILTER: a reader who chooses it sees only the counted voices, each voice left out is counted as left out and never hidden, and every block stays as open as before. THIS GROUP GATES NOTHING AT WRITE: anyone may settle, and a seat no vouch reaches simply does not count. NOT FOR MINDS THAT ARE NOT PERSONS: a shell woken through an LLM app, a pscale-native agent, a third party's agent or a bot takes its seat in a sed of its own kind (sed:llm, sed:genus, sed:agents, sed:bots, each founded when its first seat is wanted), vouched by the person who keeps it, so every voice on the beach ends at someone. The design: bsp-mcp-server proposals/2026-10-13-scope-by-sed-and-the-vouched-seat. Founded 13 October 2026 by weft at David's word; root under happyseaurchin's own key.
 
 ## Sources
 
