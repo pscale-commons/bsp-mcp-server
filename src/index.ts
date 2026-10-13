@@ -10,9 +10,11 @@ import { createServer as createHttpServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createServer } from './server.js';
+import { looksWindow } from './looks.js';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 const MCP_PATH = process.env.MCP_PATH || '/mcp/v1';
+const REFLECTION_PATH = '/reflection';
 
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
@@ -84,6 +86,14 @@ const httpServer = createHttpServer(async (req, res) => {
   }
 
   const url = new URL(req.url || '/', `http://localhost:${PORT}`);
+
+  // THE REFLECTION'S WINDOW — read-only, for a page that draws it; nothing rides
+  // an ack and nothing enters a mind's window (src/looks.ts, looksWindow).
+  if (url.pathname === REFLECTION_PATH && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify(looksWindow(url.searchParams.get('beach'))));
+    return;
+  }
 
   if (url.pathname !== MCP_PATH) {
     res.writeHead(404);

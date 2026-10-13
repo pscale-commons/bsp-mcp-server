@@ -4,7 +4,7 @@
  *  last told. Another beach, a table, or the window's end shows nothing. A door
  *  that is given a name keeps it. Sentinels are the caller's business (bsp.ts
  *  skips them). */
-import { declareHand, lateralLine, nameAtTheDoor, near, noteLook, resetLooks, sharedPrefix, reflect, LOOKS_WINDOW_MS } from '../src/looks.js';
+import { declareHand, lateralLine, looksWindow, nameAtTheDoor, near, noteLook, resetLooks, sharedPrefix, reflect, LOOKS_WINDOW_MS } from '../src/looks.js';
 
 let fails = 0;
 function check(name: string, ok: boolean, got?: string): void {
@@ -93,6 +93,23 @@ const res = reflect({ content: [{ type: 'text', text: 'ack' }] }, 'Y', B, 'pool:
 check('reflect appends the line to the ack', res.content[0].text.startsWith('ack\n[here now — 1 other on this beach'), res.content[0].text);
 const quiet = reflect({ content: [{ type: 'text', text: 'ack' }] }, 'Y', 'https://beach.idiothuman.com', 'pool:nobody', null, false);
 check('reflect leaves a quiet ack alone', quiet.content[0].text === 'ack', quiet.content[0].text);
+
+// ── the window: the same looks laid out as data for a page, never a session id ──
+resetLooks();
+declareHand('sess-weft-1', 'weft');
+noteLook('sess-weft-1', B, 'spine:turn', '1', false, t0);
+noteLook('sess-weft-1', B + '/', 'turn:weft', '3', true, t0 + 500);
+noteLook('sess-anon-2', B, 'marks', null, false, t0 + 1_000);
+noteLook('sess-other-3', 'https://beach.idiothuman.com', 'marks', null, false, t0 + 1_500);
+const win = looksWindow(B, t0 + 2_000);
+const raw = JSON.stringify(win);
+check('the window holds this beach only, oldest first', win.looks.length === 3 && win.looks[0].block === 'spine:turn' && win.looks[2].block === 'marks', raw);
+check('never a session id', !/sess-/.test(raw), raw);
+check('a lane is stable for a session and distinct across sessions', win.looks[0].lane === win.looks[1].lane && win.looks[0].lane !== win.looks[2].lane, raw);
+check('a name only where one was given at a door', win.looks[0].hand === 'weft' && win.looks[2].hand === null, raw);
+check('reads and writes kept as such, the address as said', win.looks[0].wrote === false && win.looks[1].wrote === true && win.looks[1].spindle === '3', raw);
+check('every beach when none is named', looksWindow(null, t0 + 2_000).looks.length === 4);
+check('the window closes', looksWindow(B, t0 + LOOKS_WINDOW_MS + 5_000).looks.length === 0);
 
 console.log(fails === 0 ? '\nsmoke:looks — all pass' : `\nsmoke:looks — ${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);
