@@ -575,6 +575,17 @@ def enrolment_room(handle):
     return (enrolment(handle) or {}).get("room") or handle
 
 
+def seated_away(handle):
+    """A doorman sitting in a room that is not its own parlour at the pinned
+    beach — a place's meeting room. It answers only when a voice lands in that
+    room, as a character's doorman answers only where it stands: never to a
+    poke, whose voice lands at the apex, and never at the private door, which
+    would spend its holder's fuel on anyone who asks."""
+    return (wake_mode(handle) == "lite"
+            and (enrolment_room(handle) != handle
+                 or host_of(enrolment_beach(handle)) != host_of(WAKER_BEACH)))
+
+
 def enrolled_handles():
     return sorted(set(WAKER_EGGS) | set(_store_load().keys()))
 
@@ -1473,6 +1484,9 @@ def private_answer(handle, turns, visitor):
     detail a person can act on; nothing of the conversation is logged."""
     if handle not in enrolled_handles() or wake_mode(handle) != "lite":
         return 404, {"ok": False, "detail": "%s has no private door here" % handle}
+    if seated_away(handle):
+        return 404, {"ok": False, "detail": "%s has no private door: it answers only in pool:%s at %s"
+                     % (handle, enrolment_room(handle), enrolment_beach(handle))}
     dial = Dial(handle)
     if not dial.on:
         return 503, {"ok": False, "detail": "%s is not answering just now" % handle}
@@ -3040,6 +3054,13 @@ class Handler(BaseHTTPRequestHandler):
         room = (str(b["room"] or "").strip() if "room" in b else str(prior.get("room", ""))).removeprefix("pool:")
         if room and not ROOM_RE.match(room):
             return self._send(400, {"ok": False, "detail": "a room is a bare name, like meeting-room"})
+        # ONE DOORMAN TO A ROOM. The first enrolled into a named room holds it, and
+        # a later hand is told so here rather than enrolled into a room that would
+        # never ring it.
+        if room and not remove and mode == "lite" and \
+                [h for h in doormen_in(beach or WAKER_BEACH, room) if h != handle]:
+            return self._send(409, {"ok": False, "detail": "pool:%s%s already has a doorman sitting in it"
+                                    % (room, (" at " + beach) if beach else "")})
         consent = bool(b.get("consent"))
         answer = str(b.get("answer", "")).strip().lower()
         behaviours = " ".join(w for w in str(b.get("behaviours", "") or "").lower().split() if w in dt.BEHAVIOUR_WORDS)
@@ -3217,6 +3238,10 @@ class Handler(BaseHTTPRequestHandler):
         if not passphrase and (handle not in enrolled_handles() or not egg_secret(handle)):
             return self._send(200, {"ok": True, "woke": False,
                                     "detail": "no holder has enrolled %s — its pen is not here" % handle})
+        if seated_away(handle):
+            return self._send(200, {"ok": True, "woke": False,
+                                    "detail": "%s answers only when a voice lands in pool:%s at %s"
+                                    % (handle, enrolment_room(handle), enrolment_beach(handle))})
         as_holder = False
         if passphrase:
             if _throttled(handle):

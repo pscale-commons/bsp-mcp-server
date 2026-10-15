@@ -364,6 +364,34 @@ check(out.get("code") == 200 and rec.get("room") == "" and proofs == [None]
       and "a landed voice in pool:apex-door rings it" in out["obj"]["detail"],
       "an apex doorman enrols as it always did: no room, proven at the apex, its own room said back")
 
+# ── (g) one doorman to a room: a later hand is refused, the holder re-keys freely ──
+out, rec, proofs = enrol({"handle": "squatter", "passphrase": "s-key", "mode": "lite", "beach": PLACE,
+                          "room": "meeting-room"}, PRIOR)
+check(out.get("code") == 409 and not rec and not proofs,
+      "a second doorman into a held room is refused, before any proof")
+out, rec, proofs = enrol({"handle": "squatter", "passphrase": "s-key", "mode": "lite",
+                          "beach": APEX + "/w/elsewhere", "room": "meeting-room"}, PRIOR)
+check(out.get("code") == 200 and rec.get("room") == "meeting-room",
+      "the same room name at another place is a room of its own")
+out, rec, proofs = enrol(dict(FIRST), PRIOR)
+check(out.get("code") == 200 and rec.get("room") == "meeting-room", "the holder itself re-enrols into its own room")
+
+# ── (h) a doorman seated at a place answers only in its room: no poke, no private door ──
+waker._store_load = lambda: STORE
+check(waker.seated_away(HOLDER) and not waker.seated_away("apex-door") and not waker.seated_away("egg"),
+      "the place holder is seated away; the apex doorman and the genus egg are not")
+code, body = waker.private_answer(HOLDER, [{"role": "user", "content": "hello"}], "203.0.113.9")
+check(code == 404 and "pool:meeting-room" in body.get("detail", ""),
+      "the private door is closed to a doorman seated at a place, before any read or spend")
+APPENDS, POKED = [], {}
+waker.beach_append = lambda *a, **k: APPENDS.append(a) or {"slot": "1"}
+hd = waker.Handler.__new__(waker.Handler)
+hd._body = lambda: {"handle": HOLDER, "asker_id": "bob", "text": "speak", "asker_key": "sk-bob"}
+hd._send = lambda code, obj: POKED.update(code=code, obj=obj)
+hd._poke()
+check(POKED.get("code") == 200 and POKED["obj"].get("woke") is False and not APPENDS,
+      "a poke never wakes a doorman seated at a place, and lands nothing")
+
 waker.urllib.request.urlopen = _real_urlopen
 print("test_place_doorman: %d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
