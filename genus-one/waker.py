@@ -564,6 +564,28 @@ def enrolment_beach(handle):
     return ((enrolment(handle) or {}).get("beach") or WAKER_BEACH).rstrip("/")
 
 
+#: A room is named by one block-name segment: 'meeting-room', '211', '111.1'.
+ROOM_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+
+
+def enrolment_room(handle):
+    """The room a doorman answers in, as a bare name: the one its enrolment
+    names — a doorman sitting in a place's meeting room, whose name is not its
+    own — else the handle's own, pool:<handle>."""
+    return (enrolment(handle) or {}).get("room") or handle
+
+
+def seated_away(handle):
+    """A doorman sitting in a room that is not its own parlour at the pinned
+    beach — a place's meeting room. It answers only when a voice lands in that
+    room, as a character's doorman answers only where it stands: never to a
+    poke, whose voice lands at the apex, and never at the private door, which
+    would spend its holder's fuel on anyone who asks."""
+    return (wake_mode(handle) == "lite"
+            and (enrolment_room(handle) != handle
+                 or host_of(enrolment_beach(handle)) != host_of(WAKER_BEACH)))
+
+
 def enrolled_handles():
     return sorted(set(WAKER_EGGS) | set(_store_load().keys()))
 
@@ -1110,9 +1132,11 @@ def orientation_window(handle):
     """The handle's own orientation, compiled the way every other door compiles
     it — pscale_play over the router, which reads shell:<handle> position 3 and
     delivers what the manifest nominates (a shell with no manifest degrades to
-    the legacy six rather than failing). Returns (text, degraded)."""
+    the legacy six rather than failing) — at the beach the handle is enrolled
+    at, with the room it answers in folded. Returns (text, degraded)."""
     try:
-        text = router_call("pscale_play", {"world": WAKER_BEACH, "handle": handle, "room": handle})
+        text = router_call("pscale_play", {"world": enrolment_beach(handle), "handle": handle,
+                                           "room": enrolment_room(handle)})
         return (text, False) if text.strip() else ("", True)
     except Exception as e:
         log("orientation compile failed for %s: %s" % (handle, str(e)[:90]))
@@ -1225,10 +1249,10 @@ def thin_brief(handle):
     """The fallback when the router cannot be reached: the handle's own passport
     and the room's purpose, which is all the beach hands over without a
     compiler. Degraded on purpose, and the answer is told to say so."""
-    lines = []
-    for name in ("passport:%s" % handle, "pool:%s" % handle):
+    lines, beach = [], enrolment_beach(handle)
+    for name in ("passport:%s" % handle, "pool:%s" % enrolment_room(handle)):
         try:
-            b = beach_get(name)
+            b = beach_get(name, beach=beach)
         except Exception:
             continue
         u = b.get("_") if isinstance(b, dict) else b
@@ -1245,8 +1269,11 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
     literal "poke" — and the genus pulse never read it, so nothing caught that
     until a doorman did and reported "room unreadable: 404" to a holder who then
     went looking at their own passphrase. A handle's room is pool:<handle> by
-    convention; that is what gets read."""
-    room_name = pool if str(pool).startswith("pool:") else "pool:%s" % handle
+    convention, or the room its enrolment names, at the beach its enrolment
+    names (a doorman in a place's meeting room); that is what gets read, and
+    answered."""
+    beach = enrolment_beach(handle)
+    room_name = "pool:%s" % enrolment_room(handle)
     model, max_tokens = Dial(handle).answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS)
     window, degraded = orientation_window(handle)
     if degraded:
@@ -1254,7 +1281,7 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
     if not window.strip():
         return "failed", "nothing to orient from — %s has no readable shell" % handle
     try:
-        room = beach_get(room_name)
+        room = beach_get(room_name, beach=beach)
     except Exception as e:
         return "failed", "room %s unreadable: %s" % (room_name, str(e)[:70])
     entries = _room_entries(room)[-DOORMAN_ROOM_ENTRIES:]
@@ -1329,9 +1356,14 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
         err = d.get("error") or {}
         why = str(err.get("message") or d.get("stop_reason") or "no text and no reason given")
         return "failed", "the model returned nothing (%s)" % why[:110]
+    # A SINGLE EM DASH IS SILENCE. A handle whose own law has it speak only when
+    # asked or when it has something to add (a meeting's doorman) answers with the
+    # dash, and nothing lands; the wake is still logged, since the call was made.
+    if text == "\u2014":
+        return "declined", "kept silent: nothing to add"
     ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     try:
-        beach_append(room_name, {"_": text, "1": handle, "3": ts}, secret)
+        beach_append(room_name, {"_": text, "1": handle, "3": ts}, secret, beach=beach)
     except Exception as e:
         return "failed", "the answer could not land: %s" % str(e)[:90]
     return "done", "answered by %s%s" % (model, " (degraded orientation)" if degraded else "")
@@ -1452,6 +1484,9 @@ def private_answer(handle, turns, visitor):
     detail a person can act on; nothing of the conversation is logged."""
     if handle not in enrolled_handles() or wake_mode(handle) != "lite":
         return 404, {"ok": False, "detail": "%s has no private door here" % handle}
+    if seated_away(handle):
+        return 404, {"ok": False, "detail": "%s has no private door: it answers only in pool:%s at %s"
+                     % (handle, enrolment_room(handle), enrolment_beach(handle))}
     dial = Dial(handle)
     if not dial.on:
         return 503, {"ok": False, "detail": "%s is not answering just now" % handle}
@@ -1650,6 +1685,17 @@ def character_candidates(origin, room):
         if dt.standpoint_room(pp) == room:
             out.append((h, eb))
     return out
+
+
+def doormen_in(origin, room):
+    """The doormen enrolled at this origin whose room this is — the room the
+    enrolment names, else the handle's own — in the order they were enrolled,
+    so the first holds the room and a later hand cannot take it by its name (a
+    re-key keeps its place). The store decides; no beach is read."""
+    return [h for h, e in _store_load().items()
+            if str(e.get("mode", "")).strip().lower() == "lite"
+            and dt.origin_matches(origin or WAKER_BEACH, e.get("beach") or WAKER_BEACH)
+            and (e.get("room") or h) == room]
 
 
 def room_slips(pool, beach):
@@ -2741,15 +2787,20 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=Non
     scheduled pulse never inherits a stale ring."""
     global _last_pulse_end
     started = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    status, note = "failed", ""
+    status, note, home = "failed", "", None
     try:
+        # A DOORMAN WAKES WHERE IT LIVES: the voice is read, and the wake logged
+        # and announced, at its enrolment's beach — a place, for one sitting in a
+        # place's room. The genus pulse keeps the pinned beach.
+        if wake_mode(handle) == "lite":
+            home = enrolment_beach(handle)
         os.environ["GENUS_BEACH"] = WAKER_BEACH
         os.environ["GENUS_HANDLE"] = handle
         os.environ["GENUS_SECRET"] = pen or egg_secret(handle)
         os.environ["GENUS_AGENT"] = ensure_nest(handle)
         os.environ["GENUS_THINK"] = os.environ.get("WAKER_THINK", "off")
         if voice is None:
-            voice = landed_voice(pool, slot)
+            voice = landed_voice(pool, slot, beach=home)
         if voice:
             os.environ["GENUS_RING"] = json.dumps(
                 {"ringer": ringer or "", "pool": pool, "slot": str(slot),
@@ -2791,7 +2842,7 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=Non
                     (": " + note[:160]) if note else ""),
             "1": "waker", "3": started, "4": ringer or "", "5": status, "6": funder,
         }
-        beach_append("daily:%s" % handle, entry, pen or egg_secret(handle))
+        beach_append("daily:%s" % handle, entry, pen or egg_secret(handle), beach=home)
     except Exception as e:
         log("daily log append failed for %s: %s" % (handle, str(e)[:80]))
     notify_holder(handle, ringer, pool, slot, status, note)
@@ -2799,7 +2850,7 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=Non
     # service event to the push engine, matched there against wake watches
     # (ways:push) and delivered on whatever channels each hearer chose. The
     # legacy notify email above retires once enrolments migrate to this path.
-    forward_event({"origin": WAKER_BEACH, "kind": "wake", "agent": handle,
+    forward_event({"origin": home or WAKER_BEACH, "kind": "wake", "agent": handle,
                    "ringer": ringer or "", "status": status,
                    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
     return status, note
@@ -2816,24 +2867,41 @@ def ring(payload):
     if not pool.startswith("pool:"):
         return False, "not a pool"
     room = pool[len("pool:"):]
+    # A DOORMAN ANSWERS WHERE ITS ENROLMENT PUTS IT: in its room (the one the
+    # enrolment names, else its own) at its beach (a place, else this one).
+    doormen = doormen_in(origin, room)
     if origin and host_of(origin) != host_of(WAKER_BEACH):
-        # Not the pinned beach: a table or a world. The world's keeper follows
-        # every beat; only a character enrolled AT that origin and standing in
-        # this room can answer.
+        # Not the pinned beach: a table, a world or a place. The world's keeper
+        # follows every beat; a character enrolled AT that origin and standing in
+        # this room answers first, else a doorman sitting in this room there.
         cands = character_candidates(origin, room)
         keeper_on_bell(cands, payload)
-        if not cands:
-            return False, "origin %s is not the pinned beach, and no character enrolled there stands in %s" % (origin, pool)
-        return ring_character(cands, payload)
+        if cands:
+            return ring_character(cands, payload)
+        if doormen:
+            return ring_pulse(doormen[0], ringer, pool, slot)
+        return False, "origin %s is not the pinned beach, and no character or doorman enrolled there answers in %s" % (origin, pool)
     handle = room
     if handle not in enrolled_handles():
         cands = character_candidates(origin or WAKER_BEACH, room)
         keeper_on_bell(cands, payload)
         if cands:
             return ring_character(cands, payload)
+        if doormen:
+            return ring_pulse(doormen[0], ringer, pool, slot)
         return False, "%s is not a genus room here (no holder has enrolled it)" % pool
     if wake_mode(handle) == "character":
         return False, "%s is a character's doorman — it answers in the room it stands in, never a parlour" % handle
+    if wake_mode(handle) == "lite" and handle not in doormen:
+        return False, "%s answers in pool:%s at %s, never from here" % (handle, enrolment_room(handle), enrolment_beach(handle))
+    return ring_pulse(handle, ringer, pool, slot)
+
+
+def ring_pulse(handle, ringer, pool, slot):
+    """The gates one handle's rung pulse passes — its own answer, its key, its
+    dial, the pacing, the fuel, the cap and the pen — the same for a genus room,
+    a doorman's own room and a doorman sitting in a place's room; the pulse is
+    started when all pass. Returns (granted, reason)."""
     if ringer == handle:
         return False, "self-ring (the instance's own room answer)"
     if not egg_secret(handle):
@@ -2980,6 +3048,19 @@ class Handler(BaseHTTPRequestHandler):
         beach = (str(b["beach"]).strip().rstrip("/") if "beach" in b else str(prior.get("beach", "")))
         if beach and not (beach.startswith("https://") or beach.startswith("http://")):
             beach = "https://" + beach
+        # room: where a doorman answers when it is not its own pool:<handle> — one
+        # sitting in its place's meeting room. A bare name, 'pool:' shed; empty is
+        # its own. Kept when the caller did not mention it.
+        room = (str(b["room"] or "").strip() if "room" in b else str(prior.get("room", ""))).removeprefix("pool:")
+        if room and not ROOM_RE.match(room):
+            return self._send(400, {"ok": False, "detail": "a room is a bare name, like meeting-room"})
+        # ONE DOORMAN TO A ROOM. The first enrolled into a named room holds it, and
+        # a later hand is told so here rather than enrolled into a room that would
+        # never ring it.
+        if room and not remove and mode == "lite" and \
+                [h for h in doormen_in(beach or WAKER_BEACH, room) if h != handle]:
+            return self._send(409, {"ok": False, "detail": "pool:%s%s already has a doorman sitting in it"
+                                    % (room, (" at " + beach) if beach else "")})
         consent = bool(b.get("consent"))
         answer = str(b.get("answer", "")).strip().lower()
         behaviours = " ".join(w for w in str(b.get("behaviours", "") or "").lower().split() if w in dt.BEHAVIOUR_WORDS)
@@ -3017,7 +3098,7 @@ class Handler(BaseHTTPRequestHandler):
         # positions and the characters' own — so it is not kept. Its journal
         # (keeper_journal) is latched to a key this service makes once and keeps.
         store[handle] = {"secret": "" if mode == "keeper" else passphrase, "notify": notify, "fuel": fuel,
-                         "mode": mode, "dial": dial, "beach": beach,
+                         "mode": mode, "dial": dial, "beach": beach, "room": room,
                          "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
         if mode == "keeper":
             store[handle]["journal"] = str(prior.get("journal") or "") or secrets.token_urlsafe(24)
@@ -3045,6 +3126,7 @@ class Handler(BaseHTTPRequestHandler):
                      "the genus PULSE — it composes from this handle's genome")
         rings = ("the room %s stands in" % handle if mode == "character" else
                  "any table placed in %s" % handle[len("keeper:"):] if mode == "keeper" else
+                 "pool:%s%s" % (room or handle, (" at " + beach) if beach else "") if mode == "lite" else
                  "pool:%s" % handle)
         return self._send(200, {"ok": True, "mode": mode or "genus", "dial": where,
                                 "consent": "on" if d.on else "off",
@@ -3156,6 +3238,10 @@ class Handler(BaseHTTPRequestHandler):
         if not passphrase and (handle not in enrolled_handles() or not egg_secret(handle)):
             return self._send(200, {"ok": True, "woke": False,
                                     "detail": "no holder has enrolled %s — its pen is not here" % handle})
+        if seated_away(handle):
+            return self._send(200, {"ok": True, "woke": False,
+                                    "detail": "%s answers only when a voice lands in pool:%s at %s"
+                                    % (handle, enrolment_room(handle), enrolment_beach(handle))})
         as_holder = False
         if passphrase:
             if _throttled(handle):
