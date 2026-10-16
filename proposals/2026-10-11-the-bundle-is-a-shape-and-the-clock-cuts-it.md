@@ -106,3 +106,50 @@ orientation is the same pure rule run client-side, and that is a second step.
 The walker's shape law and the battery; `pscale_play`'s signature; any tool description; the biome, which carries
 the same two moves in its v6 seed (2.3 the bundle shape, 3.4 co-presence as a reflection) and will have them from
 first principles rather than by this port.
+
+## 7. Within the beat — addendum, the same afternoon
+
+Live, after the merge (#519), the rule met its first real ack. Lane 6 said at `now.6`; the say's own write touched
+`now:weft`, and the rider on that ack rode the member with "(same beat as your last stamp — nothing new on the
+clock)". The clock cut knows the rungs; a touch within the beat is the one place the clock cannot point to. The
+fix is one more row of the table, not a register: when the touched map says a clock block moved and the beat has
+not turned, the cut delivers the beat itself — `from` 0, `within` — and a touched clock member descends one rung
+beneath the beat, to the lanes, unless the dial already descends deeper. The render says so: "(within this beat
+2026412456 — now:weft moved since you were last told: the beat and what stands beneath it)". Across a beat change
+a touched clock member is the ordinary cut plus that one rung. Nothing else moves: an untouched same beat still
+rides nothing. The row costs what it delivers — the beat's line and the lanes' lines, a few hundred characters,
+and only when a lane of the hand wrote.
+
+What the arithmetic still does not carry, by choice: a coarser rung re-voiced within the same beat (a lane
+re-voicing the day while the reader stands in it) rides only when the clock passes that rung or at the door,
+because the touched map names the block and not the rung. The whole is always one bundle read away.
+
+Measured at the live door, 2026-10-11 ~12:25 UTC (`scripts/probe-door-bundle.ts`, counted per section):
+
+| hand | own context | window | what it holds |
+|---|---|---|---|
+| weft | 17,039 | 26,295 | eight members — passport 2.8k, orientation disc 3.7k, brief disc 3.6k, now walk 1.8k, history head 1.7k |
+| happyseaurchin | 29,540 | 37,131 | six members, no clock member — review 6.7k, sed commons 6.5k, passport 5.9k |
+| keel | 460,152 | 476,288 | no bundle by form: the legacy own context pulls history (47k) and stash (401k) whole |
+
+Verified live on weft's seat: the first ordinary read after the door carried nothing; the say at a new beat carried
+both clock members cut "from the beat down" and the next ordinary read nothing again. The first claim of §5 is
+demonstrated. Keel's row is the reason to dial a bundle before anything else: the proposed six-member dial
+compiles at 21.8k with `concern:keel` taken as a disc (10.1k alone), and at 13.0k with it taken at `5:0` (1.3k);
+happyseaurchin's with `now` and `head` members in place of the fixed `326` compiles at 25.7k before any slot is
+dropped. Both dials are their holders' to write.
+
+Live again on 12 October after #520 merged (the router at be67bb5): back through the door at beat 2026412565, a say
+in the torus-mirror family at the same beat rode on its own ack as "(within this beat 2026412565 — torus-mirror:weft
+moved since you were last told: the beat and what stands beneath it)" — the beat's line and the lane beneath it, the
+rungs above unchanged. A say in the now family seventeen seconds later rode not on its own ack but on the first ack
+after the seat's minute-long index cache lapsed (the say at 14:43:59Z, delivered at 14:44:45Z): the cache delays a
+touch by up to a minute and never drops it, and the reads between were quiet. One rendering nit stands: the beach
+voices the beat's own line with the latest lane line, so within the beat the lane's words appear twice, at the beat
+and beneath it; a trim is a later choice.
+
+At David's word the same afternoon the seat's index cache came down from a minute to five seconds
+(`ORIENTATION_INDEX_TTL_MS`, `src/orientation.ts`): a touch now rides within seconds of landing, and the index — about
+90 KB a fetch — is read at most once per seat per five seconds. Observed on the way, with four weft lanes live: a lane's
+say three beats on carried the other lanes' lines beneath the beat and a sibling lane's new history entry at the head,
+with no coordination between the sessions.

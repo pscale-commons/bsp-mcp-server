@@ -29,6 +29,8 @@
  *  proposals/2026-09-28-the-torus-is-a-reflection.md
  */
 
+import { createHash, randomBytes } from 'node:crypto';
+
 export const LOOKS_WINDOW_MS = Number(process.env.LOOKS_WINDOW_MS ?? 120_000);
 const CAP = 2000;
 const SHOW = 5;
@@ -210,6 +212,62 @@ export function reflect(
     /* the reflection never breaks the ack it rides on */
   }
   return res;
+}
+
+/** THE WINDOW — the reflection laid out as data, for a page that draws it (David,
+ *  2026-10-13: "a live visualisation of your processing — the bundles of calls",
+ *  done "mechanically on the railway side"). The same looks every ack's lateral
+ *  line already tells, in the same window, given whole so a browser can draw each
+ *  session as a ribbon and each bundle of calls as a knot in it. It adds nothing
+ *  to any ack and nothing to any mind's window: a page polls it, and keeps what it
+ *  saw in its own tab. For a page, not a mind — so JSON, unlike every tool.
+ *  What it never says: a session id. Each session is a LANE, a tag salted per
+ *  process, stable while this process lives and unlinkable across restarts; a
+ *  name rides only where the session gave one at a door, exactly as in the line.
+ *  proposals/2026-10-13-the-reflection-has-a-window.md */
+const LANE_SALT = randomBytes(16).toString('hex');
+const WINDOW_SHOW = 600;
+
+export function laneOf(session: string): string {
+  return createHash('sha256').update(LANE_SALT + session).digest('hex').slice(0, 8);
+}
+
+export interface WindowLook {
+  lane: string;
+  hand: string | null;
+  beach: string;
+  block: string;
+  spindle: string;
+  wrote: boolean;
+  at: string;
+}
+
+export function looksWindow(
+  beach?: string | null,
+  now: number = Date.now(),
+): { _: string; now: string; window_s: number; beach: string | null; looks: WindowLook[] } {
+  prune(now);
+  const key = beach ? beachKey(beach) : null;
+  const w = Math.round(LOOKS_WINDOW_MS / 1000);
+  const looks = ring
+    .filter(l => !key || l.beach === key)
+    .slice(-WINDOW_SHOW)
+    .map(l => ({
+      lane: laneOf(l.session),
+      hand: handOf(l.session),
+      beach: l.beach,
+      block: l.block,
+      spindle: l.spindle,
+      wrote: l.wrote,
+      at: new Date(l.ts).toISOString(),
+    }));
+  return {
+    _: `The reflection's window: every call through this router in the last ${w}s, oldest first — a lane per session, never its id; a hand only where one was given at a door; stored nowhere.`,
+    now: new Date(now).toISOString(),
+    window_s: w,
+    beach: key,
+    looks,
+  };
 }
 
 /** For tests: forget everything. */

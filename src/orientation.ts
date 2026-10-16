@@ -8,11 +8,14 @@
  * bsp() and stream ack after the door, the rider compiles the seat's bundle
  * relative to that stamp and appends only what moved:
  *   - a clock member (name:now) is read at the current beat and cut at the
- *     divergence rung (bundle.ts) — when the beat has not turned, nothing;
+ *     divergence rung (bundle.ts) — when the beat has not turned, nothing,
+ *     unless its block was touched: then the beat itself and the lanes
+ *     beneath it, the one place the clock cannot point to;
  *   - any other member rides only when the beach's touched map says its block
  *     changed after the seat was last told;
  * then the stamp advances. On most calls nothing rides and nothing is loaded
- * beyond the beach index, cached per seat for a minute. A seat that was never
+ * beyond the beach index, cached per seat for five seconds (ORIENTATION_INDEX_TTL_MS;
+ * about 90 KB a fetch, so a touch rides within seconds). A seat that was never
  * declared gets nothing — a visitor's calls stay exactly as they were. The
  * whole form is always one bundle read away (bsp on the node itself).
  *
@@ -24,8 +27,8 @@
 
 import { type Block, readAt } from './bsp.js';
 import { listSentinelNames, loadBeachIndex, loadBlock } from './db.js';
-import { momentToAddress, voiceAddress } from './temporal.js';
-import { bundleSlots, candidateNames, renderMember, resolveMember, type BlockLoader, type Member } from './bundle.js';
+import { momentToAddress, voiceAddress, TEMPORAL_FLOOR } from './temporal.js';
+import { bundleSlots, candidateNames, renderMember, resolveMember, FINE, type BlockLoader, type Member } from './bundle.js';
 
 /** A loader over one surface: the bundled sentinels first (the teaching is the
  *  same at every beach), then the beach's named blocks, cached per call. */
@@ -62,7 +65,7 @@ export interface Seat {
 
 const seats = new Map<string, Seat>();
 
-export const INDEX_TTL_MS = Number(process.env.ORIENTATION_INDEX_TTL_MS ?? 60_000);
+export const INDEX_TTL_MS = Number(process.env.ORIENTATION_INDEX_TTL_MS ?? 5_000);
 
 /** The play door: this session's shell dialed this node as its bundle. */
 export function declareSeat(
@@ -112,9 +115,11 @@ const liveIO: RiderIO = {
 export async function orientationRider(session: string | undefined, nowMs: number = Date.now(), io: RiderIO = liveIO): Promise<string> {
   const seat = seatOf(session);
   if (!seat) return '';
-  const now = momentToAddress(new Date(nowMs));
-  const since = momentToAddress(new Date(seat.lastMs));
-  if (nowMs - seat.indexAt > INDEX_TTL_MS) {
+  // Stamps to the second (proposals/2026-10-12-the-now-at-the-second): the
+  // clock range between them is what a clock member delivers.
+  const now = momentToAddress(new Date(nowMs), FINE);
+  const since = momentToAddress(new Date(seat.lastMs), FINE);
+  if (nowMs - seat.indexAt >= INDEX_TTL_MS) {
     seat.touched = await io.touched(seat.origin);
     seat.indexAt = nowMs;
   }
@@ -133,7 +138,7 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
       seat.nodeStamp = bundleStamp;
     }
   }
-  const beatChanged = now !== since;
+  const beatChanged = now.slice(0, TEMPORAL_FLOOR) !== since.slice(0, TEMPORAL_FLOOR);
   const ctx = { load, handle: seat.handle, now: new Date(nowMs), since };
   const moved: Member[] = [];
   const quiet: string[] = [];
@@ -143,10 +148,10 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
     const touched = names.some(touchedAfter);
     const changed = s.ref.word === 'now' ? beatChanged || touched : touched;
     if (!changed) { quiet.push(s.leaf!); continue; }
-    const m = await resolveMember(s, ctx);
-    // An absent or unreadable member cannot have moved; the same beat with
-    // nothing touched moved nothing either.
-    if (m.absent || !m.result || (m.cut?.same && !touched)) { quiet.push(s.leaf!); continue; }
+    const m = await resolveMember(s, { ...ctx, touched });
+    // An absent or unreadable member cannot have moved; a clock member whose
+    // range is empty moved nothing either — the clock turned and nothing landed.
+    if (m.absent || m.cut?.same || (!m.result && !(m.lines && m.lines.length))) { quiet.push(s.leaf!); continue; }
     moved.push(m);
   }
   seat.lastMs = nowMs;
