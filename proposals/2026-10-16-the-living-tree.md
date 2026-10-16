@@ -55,6 +55,18 @@ For beach-venture the parts are held by happyseaurchin, under his own key (`func
 he is its keeper unless he names another. One possibility is neptune, the caretaker at the head of beach-venture.
 That choice is his.
 
+**Beside the one-tree proposal (#531, open since 14 October).** #531 settles that there is one tree, that a
+branch becomes a project by founding its own path, and that a genus-one bird sits at the head of each live limb,
+perched where it writes (its mirror `beach-venture-path:<bird>`). It asks for no `keeper:` key and no change to
+`function:path`. This proposal agrees and takes the next step.
+
+- "A keeper per project" is read per path: the hand that holds a path's spine keeps it. That is happyseaurchin
+  for beach-venture today, and a limb's bird for the path its limb founds.
+- The keeper is named in the founding's own words (8.2), never as a field.
+- #531's picture (its 2.5, the fold drawn as a tree with a bird on each limb) is what the second version draws
+  (§7). #531 would redraw /tracks/<project> as that tree. When David chooses between the versions, the chosen
+  tree can move there.
+
 ## 3. Three ways to add, each in the writer's own place
 
 | What a hand adds | Where it lands | Law |
