@@ -395,7 +395,7 @@ console.log('\n=== renderWays — every way lands in a room, and the rooms of yo
 console.log(`\n=== summary (a way lands in a room) ===\n  pass: ${pass}\n  fail: ${fail}`);
 
 // ── Located engagement — at= writes/filters the address-of-attention (2026-07-29) ──
-import { digitsOfAddress } from '../src/tools/pool.js';
+import { digitsOfAddress, atOrUnder } from '../src/tools/pool.js';
 import { readFileSync } from 'node:fs';
 
 console.log('\n=== digitsOfAddress — one decimal, comma-walk, junk rejected ===');
@@ -426,10 +426,46 @@ console.log('\n=== collectContributions — located view (block-conventions:4.52
   const at3 = collectContributions(located, 0, '3');
   assert(at3.contributions.length === 2, "at '3' returns the stage-3 subtree only (unlocated + junk excluded)");
   assert(at3.contributions.map((c) => c.position).join(',') === '1,2', "notation-cross: stored '3.1' meets filter '3'");
-  const at31 = collectContributions(located, 0, '31');
-  assert(at31.contributions.length === 1 && at31.contributions[0].agent_id === 'bob', "filter '3.1' (digit-walk '31') narrows to the sub-stage");
+  const at31 = collectContributions(located, 0, '3.1');
+  assert(at31.contributions.length === 1 && at31.contributions[0].agent_id === 'bob', "filter '3.1' narrows to the sub-stage");
+  const at31run = collectContributions(located, 0, '31');
+  assert(at31run.contributions.length === 1 && at31run.contributions[0].agent_id === 'bob', "and '31' meets it too: the stamp's decimal declares floor 1, where both walk 3, 1");
   const at9 = collectContributions(located, 0, '9');
   assert(at9.contributions.length === 0, 'an unvoiced address returns silence, not an error');
+}
+
+console.log('\n=== atOrUnder — a located view reads addresses as the walker does (2026-10-17) ===');
+{
+  // The clock: a horizon is read at its own full-width address. Comparing the
+  // bare digit runs matched each horizon to itself alone (pool:house-2027).
+  assert(atOrUnder('2027310000', '2027300000') && atOrUnder('2027322000', '2027300000'), 'the season gathers its month and a week inside it');
+  assert(atOrUnder('2027300000', '2027300000'), 'and what was said at the season itself');
+  assert(!atOrUnder('2027000000', '2027300000') && atOrUnder('2027300000', '2027000000'), 'the year is above the season, and gathers it');
+  assert(!atOrUnder('2027310000', '20273'), "a shortened '20273' reads as 0000020273, down the root's underscore chain, as bsp() reads it");
+  assert(!atOrUnder('2027310000', '2027.3'), "and '2027.3' as 0000002027.3 — the decimal anchors the floor");
+  // Floor 1: a stamp's decimal declares the floor, and the filter is read there.
+  assert(atOrUnder('9.85', '98') && atOrUnder('9.85', '9.8') && atOrUnder('9.85', '9,8'), "a stamp at 9.85 sits under 98, 9.8 and 9,8 alike");
+  assert(atOrUnder('3.1', '3') && !atOrUnder('3', '3.1'), 'the stage gathers its sub-stage, never the reverse');
+  // Supernest: a stamp written before the room's floor rose pads, as the walker pads it.
+  assert(atOrUnder('94', '090'), "a reply stamped '94' at floor 2 sits under the container 090 at floor 3");
+  assert(atOrUnder('211', '210') && !atOrUnder('211', '21'), "the container of 211 is 210; '21' reads as 021");
+  assert(atOrUnder('441.2', '400') && !atOrUnder('441.2', '4'), "at a floor-3 place, 400 holds 441.2 and '4' reads as 004");
+  assert(!atOrUnder('', '3') && !atOrUnder(null, '3') && !atOrUnder('pool:x', '3') && !atOrUnder('2026-10-17T18:00:00Z', '2'), 'an unlocated or junk stamp sits under nothing');
+
+  const room: Block = {
+    _: 'a room on the clock',
+    '1': { _: 'at the season', '1': 'a', '2': '2027300000', '3': 't1' },
+    '2': { _: 'at its month', '1': 'b', '2': '2027310000', '3': 't2' },
+    '3': { _: 'at a week in it', '1': 'c', '2': '2027322000', '3': 't3' },
+    '4': { _: 'at the year', '1': 'd', '2': '2027000000', '3': 't4' },
+    '5': { _: 'at the year before', '1': 'e', '2': '2026000000', '3': 't5' },
+    '6': { _: 'no date', '1': 'f', '2': '', '3': 't6' },
+  } as any;
+  const positions = (at: string) => collectContributions(room, 0, at).contributions.map((c) => c.position).join(',');
+  assert(positions('2027300000') === '1,2,3', 'a read at the season gathers the season, its month and its week');
+  assert(positions('2027000000') === '1,2,3,4', 'a read at the year gathers all four in 2027');
+  assert(positions('2020000000') === '1,2,3,4,5', 'a read at the decade gathers both years');
+  assert(positions('20273') === '', 'the shortened form gathers nothing');
 }
 
 console.log('\n=== liquid slot: where at 2, arrival at 6 (block-conventions:4.51, settled 2026-08-02) ===');
@@ -652,6 +688,55 @@ console.log('\n=== a room declares at birth — founding-by-purpose, through the
     const half = await found('120', 'pscale:grit/1');
     assert(store['pool:120']?._ === 'pscale:grit/1', 'a founding never fails on its declaration: the room stands');
     assert(/^NOT declared: .*convention:120/m.test(half) && /bsp\(agent_id="https:\/\/born\.test", block="convention:120"/.test(half), 'and the ack hands over the one line to write by hand');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
+
+console.log('\n=== a located read at a horizon — through the router door (2026-10-17) ===');
+{
+  // The house room as it stood: cans at a season and beneath it, liquid staged
+  // at a month and at the next year. A read at the season's own address
+  // gathers the season's cans and only the liquid inside it; the shortened
+  // form gathers nothing and says why, in the walker's own words.
+  const ORIGIN = 'https://horizon.test';
+  const TS = '2026-10-17T17:15:03.308Z';
+  const store: Record<string, any> = {
+    'pool:house': {
+      _: 'House room — talk about the house as a whole, and the can at its address.',
+      '1': { _: 'RUNS OVER at the season', '1': 'planner', '2': '2027300000', '3': TS },
+      '2': { _: 'RUNS OVER at July', '1': 'planner', '2': '2027310000', '3': TS },
+      '3': { _: 'NEEDS in a week of August', '1': 'planner', '2': '2027322000', '3': TS },
+      '4': { _: 'RUNS OVER at 2026', '1': 'planner', '2': '2026000000', '3': TS },
+    },
+    'liquid:pool:house': {
+      _: 'liquid',
+      '1': { _: 'staged at July', '1': 'joiner', '2': '2027310000', '3': TS, '6': TS },
+      '2': { _: 'staged at 2028', '1': 'other', '2': '2028000000', '3': TS, '6': TS },
+    },
+  };
+  const answer = (v: unknown, status = 200) =>
+    new Response(JSON.stringify(v), { status, headers: { 'Content-Type': 'application/json' } });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: any, init?: any) => {
+    const url = new URL(typeof input === 'string' ? input : input.url);
+    if (url.origin !== ORIGIN || (init?.method ?? 'GET') !== 'GET') return answer({ error: 'a read-only fixture' }, 404);
+    const name = url.searchParams.get('block');
+    if (!name) return answer({ _: 'fixture beach', origin: ORIGIN, blocks: Object.keys(store) });
+    return name in store ? answer(store[name]) : answer({ error: 'not found' }, 404);
+  }) as typeof fetch;
+  const engage = async (p: Record<string, unknown>) =>
+    (await handlePoolEngage({ pool_url: ORIGIN, pool_name: 'house', agent_id: 'reader', ...p } as any)).content.map((c) => c.text).join('\n');
+  try {
+    const season = await engage({ at: '2027300000' });
+    assert(/\(count: 3\)/.test(season), 'a read at the season gathers its three cans');
+    assert(/RUNS OVER at the season/.test(season) && /RUNS OVER at July/.test(season) && /NEEDS in a week of August/.test(season) && !/RUNS OVER at 2026/.test(season), 'the season, July and the August week — and not 2026');
+    assert(/- joiner \(arrived [^)]*\) @ 2027310000: staged at July/.test(season) && !/staged at 2028/.test(season), 'the liquid mirror narrows the same way: July stands, 2028 does not');
+    const short = await engage({ at: '20273' });
+    assert(/\(count: 0\)/.test(short), 'the shortened form gathers nothing');
+    assert(short.includes(`"20273" is shorter than this room's addresses (10 digits) and was read as 0000020273, down the root's underscore chain — the container of the 202730s is 2027300000`), "and says so in the walker's own words");
+    const july = await engage({ at: '2027310000' });
+    assert(/\(count: 1\)/.test(july) && !/is shorter than this room/.test(july), 'a read at July gathers its one can, with no note');
   } finally {
     globalThis.fetch = realFetch;
   }
