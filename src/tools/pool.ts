@@ -39,7 +39,7 @@ import { z } from 'zod';
 import { reflect, nameAtTheDoor, noteLook } from '../looks.js';
 import { createHash } from 'node:crypto';
 import { Block, writeAt, readAt, floorDepth, formatAddress, parseSpindle } from '../bsp.js';
-import { isLocationAddress, ancestorsOf, contains, pscaleOf, walkedOf } from '../grain-address.js';
+import { isLocationAddress, ancestorsOf, contains, pscaleOf, walkedOf, floorOf } from '../grain-address.js';
 import {
   loadBlock,
   saveBlock,
@@ -308,17 +308,37 @@ export function arrivalOf(slot: Record<string, unknown> | null | undefined): str
  * that, more_available is true and the caller pages by passing the last
  * returned position as the next since_position.
  */
-/** Canonical digit-walk of an address-of-attention value: strips the single
- *  decimal point (or comma-walk separators) and returns the bare digit run, or
- *  null when the value is not an address at all (empty, prose, a block name, a
- *  timestamp). The digit run is the floor-free invariant — "3.1" and "31" at
- *  floor 1 walk the same digits — so prefix comparison works across notations
- *  within one family. Multi-dot is not an address (sunstone:1.5). */
+/** The bare digit run of an address-of-attention value — its single decimal
+ *  point (or the one comma standing for it) stripped — or null when the value
+ *  is not an address at all (empty, prose, a block name, a timestamp).
+ *  Multi-dot is not an address (sunstone:1.5). This is the gate a located view
+ *  admits a value through; the run is never what is compared, because it has
+ *  dropped the floor the address was written at (atOrUnder). */
 export function digitsOfAddress(v: unknown): string | null {
   if (typeof v !== 'string') return null;
   const s = v.trim();
   if (!/^[0-9]+(?:[.,][0-9]+)?$/.test(s)) return null;
   return s.replace(/[.,]/g, '');
+}
+
+/** Does the address stamped at field 2 sit at or under `at`? The located view's
+ *  one test (block-conventions:4.52), read the way the walker reads an address
+ *  (sunstone:1.5): padded on the left to the floor, trailing zeros stripped as
+ *  the terminus's own underscore, and then one walk must open with the other.
+ *  The two are read at the floor they share. A stamp written with a decimal
+ *  declares its space's floor, and `at` is read there as the walker reads any
+ *  spindle at a block's floor, so '31' meets '3.1'. Otherwise the wider of the
+ *  two is floor width and the shorter pads, as an address written before a
+ *  supernest does. So on the clock 2027300000 gathers 2027310000, and 20273
+ *  reads as 0000020273, down the root's underscore chain, exactly as bsp()
+ *  reads it. Comparing the bare digit runs instead matched each horizon to
+ *  itself alone (pool:house-2027, 2026-10-17). */
+export function atOrUnder(stamp: unknown, at: string): boolean {
+  if (digitsOfAddress(stamp) === null || digitsOfAddress(at) === null) return false;
+  const s = (stamp as string).trim().replace(',', '.');
+  const a = at.trim().replace(',', '.');
+  const floor = s.includes('.') && !a.includes('.') ? floorOf(s) : Math.max(floorOf(s), floorOf(a));
+  return parseSpindle(s, floor).digits.join('').startsWith(parseSpindle(a, floor).digits.join(''));
 }
 
 /** One closed container in a folded read: the span it covers and the summary
@@ -494,7 +514,7 @@ export function coveredThrough(account: Block | null, room: string): number {
 export function collectContributions(
   block: Block,
   sincePosition: number,
-  atDigits?: string,
+  at?: string,
 ): { contributions: PoolContribution[]; more_available: boolean } {
   const out: PoolContribution[] = [];
   let more = false;
@@ -560,13 +580,10 @@ export function collectContributions(
     }
 
     // A located view (block-conventions:4.52): only entries whose stored
-    // address-of-attention (field 2) sits at-or-under the filter — compared as
-    // bare digit-walks so "3.1" and "31" meet. Unlocated entries (and legacy
-    // junk in field 2) are excluded; a skip does not count toward the page cap.
-    if (atDigits !== undefined) {
-      const d = digitsOfAddress(entry.address);
-      if (!d || !d.startsWith(atDigits)) continue;
-    }
+    // address-of-attention (field 2) sits at-or-under the filter, read as the
+    // walker reads addresses (atOrUnder). Unlocated entries (and legacy junk in
+    // field 2) are excluded; a skip does not count toward the page cap.
+    if (at !== undefined && !atOrUnder(entry.address, at)) continue;
 
     if (out.length >= READ_PAGE_LIMIT) {
       more = true;
@@ -1717,7 +1734,7 @@ export const poolEngageParamsSchema = {
   at: z
     .string()
     .optional()
-    .describe("Optional address-of-attention — the coordinate this engage is located at, within the structure the pool gathers around (a tree's spine address: '3', '3.1', a temporal '2026315100'; digits, at most one decimal point, comma-walk accepted, multi-dot rejected). ON COMMIT: stamped into field 2 of the contribution (block-conventions:4.22) so the voice is located against the spine. ON SUBMIT: stamped into field 2 of your liquid slot — the same position, because where sits at 2 across the whole accumulator family (4.51; liquid's first-staged arrival stamp rides 6, the one field it needs beyond the shared five). ON READ: narrows the returned slice AND the liquid mirror to entries at-or-under the address (prefix on the digit-walk, 4.52); unlocated entries are excluded from a located view. A located read is a VIEW — keep a separate since_position marker per view, or entries outside it are skipped past. This is the pool↔tree correlation: one pool serves every node of a tree; 'what is live at stage 3' is a single engage with at='3'."),
+    .describe("Optional address-of-attention — the coordinate this engage is located at, within the structure the pool gathers around (a tree's spine address: '3', '3.1', a temporal '2026315100'; digits, at most one decimal point, comma-walk accepted, multi-dot rejected). ON COMMIT: stamped into field 2 of the contribution (block-conventions:4.22) so the voice is located against the spine. ON SUBMIT: stamped into field 2 of your liquid slot — the same position, because where sits at 2 across the whole accumulator family (4.51; liquid's first-staged arrival stamp rides 6, the one field it needs beyond the shared five). ON READ: narrows the returned slice AND the liquid mirror to entries at-or-under the address, each read as the walker reads addresses (4.52), so a horizon is read at its own full-width address: at='2027300000' gathers everything in that season, and a shortened '20273' reads as 0000020273, as it does in bsp(); unlocated entries are excluded from a located view. A located read is a VIEW — keep a separate since_position marker per view, or entries outside it are skipped past. This is the pool↔tree correlation: one pool serves every node of a tree; 'what is live at stage 3' is a single engage with at='3'."),
   contribution: z
     .string()
     .optional()
@@ -1834,21 +1851,18 @@ async function handlePoolEngageInner(
     (params.with_liquid !== undefined ? params.with_liquid === true : true);
 
   // Address-of-attention — validated BEFORE any write lands (a malformed
-  // address must never enter the record). The compared form is the bare
-  // digit-walk; the single decimal (or a comma-walk) is accepted and stripped.
-  let atDigits: string | undefined;
-  if (params.at !== undefined) {
-    const d = digitsOfAddress(params.at);
-    if (!d) {
-      return {
-        content: [{
-          type: 'text',
-          text: `at="${params.at}" is not a pscale address — digits with at most one decimal point (or a comma-walk): "3", "3.1", "2026315100". Multi-dot never (sunstone:1.5).`,
-        }],
-      };
-    }
-    atDigits = d;
+  // address must never enter the record). A located read compares it the way
+  // the walker reads addresses (atOrUnder); the single decimal, or the one
+  // comma standing for it, is accepted.
+  if (params.at !== undefined && digitsOfAddress(params.at) === null) {
+    return {
+      content: [{
+        type: 'text',
+        text: `at="${params.at}" is not a pscale address — digits with at most one decimal point (or a comma-walk): "3", "3.1", "2026315100". Multi-dot never (sunstone:1.5).`,
+      }],
+    };
   }
+  const atAddress = params.at?.trim();
 
   if (!isFederatedOwner(pool_url)) {
     return {
@@ -2311,7 +2325,7 @@ async function handlePoolEngageInner(
   // inline (the read is the beach's — no extra tool call for the caller).
   const directiveText = isDirectiveRef(purpose) ? await resolveDirective(pool_url, purpose) : null;
   const { hint: synthesisHint, source: hintSource } = extractSynthesisHint(row.block);
-  const { contributions, more_available } = collectContributions(row.block, sincePosition, atDigits);
+  const { contributions, more_available } = collectContributions(row.block, sincePosition, atAddress);
 
   // THE FOLD (2026-09-08). A door that inlines a grown room replays it from its
   // first slot at every arrival — 108,665 of weft's 132,836 characters, 82%,
@@ -2321,7 +2335,7 @@ async function handlePoolEngageInner(
   // the delta, and their marker is honoured untouched. A located view is left
   // alone too: its slice is narrow by construction and its containers are not
   // the fold's.
-  const wantsFold = (params as any).fold === true && sincePosition === 0 && atDigits === undefined;
+  const wantsFold = (params as any).fold === true && sincePosition === 0 && atAddress === undefined;
   const fold = wantsFold ? foldContributions(row.block, sincePosition) : null;
 
   const markerNew = contributions.length > 0
@@ -2351,11 +2365,8 @@ async function handlePoolEngageInner(
       // read the liquid block itself via bsp() — the raw board is one call
       // away and always was. The committed record is untouched: voices at a
       // root read stay whole, because the record is for reading and folding.
-      if (atDigits !== undefined) {
-        liquidSlots = liquidSlots.filter((s) => {
-          const d = digitsOfAddress(s.address);
-          return d !== null && d.startsWith(atDigits);
-        });
+      if (atAddress !== undefined) {
+        liquidSlots = liquidSlots.filter((s) => atOrUnder(s.address, atAddress));
       } else {
         locatedElsewhere = liquidSlots.filter((s) => digitsOfAddress(s.address) !== null && s.text !== '').length;
         liquidSlots = liquidSlots.filter((s) => digitsOfAddress(s.address) === null);
@@ -2601,9 +2612,18 @@ async function handlePoolEngageInner(
   // 2026-08-03: the seat re-read the whole pool to reassure itself). The
   // outside count is the same in-memory pass without the address filter.
   let outsideView = 0;
-  if (atDigits !== undefined) {
+  let shortNote = '';
+  if (atAddress !== undefined) {
     const whole = collectContributions(row.block, sincePosition);
     outsideView = Math.max(0, whole.contributions.length - contributions.length);
+    // A short address reads where the walker reads it, down the root's
+    // underscore chain, so an empty view says so in the walker's own words
+    // (bsp()'s padding note) rather than as silence.
+    const width = Math.max(0, ...whole.contributions.map((c) =>
+      digitsOfAddress(c.address) === null ? 0 : floorOf(c.address!.trim().replace(',', '.'))));
+    if (contributions.length === 0 && /^[0-9]+$/.test(atAddress) && atAddress.length < width) {
+      shortNote = `"${atAddress}" is shorter than this room's addresses (${width} digits) and was read as ${atAddress.padStart(width, '0')}, down the root's underscore chain — the container of the ${atAddress}0s is ${atAddress.padEnd(width, '0')}`;
+    }
   }
   const outsideNote = outsideView > 0
     ? `; ${outsideView} ${outsideView === 1 ? 'entry stands' : 'entries stand'} outside this view since your marker — drop at= to see the whole pool`
@@ -2611,6 +2631,7 @@ async function handlePoolEngageInner(
   const atView = params.at !== undefined ? ` at ${params.at} (located view — unlocated entries excluded; keep a marker per view${outsideNote})` : '';
   const foldNote = fold?.folded ? `, folded to ${fold.closed.length} + ${fold.open.length}` : '';
   lines.push(`# Contributions since position ${sincePosition}${atView} (count: ${contributions.length}${foldNote}${more_available ? ', more available' : ''})`);
+  if (shortNote) lines.push(`(${shortNote})`);
   if (arrival && sincePosition > 0) {
     lines.push(`(your account has told this room through slot ${sincePosition}, so the record rides from what it has not: the beats before stand in your account above, and in pool:${pool_name} at their slots)`);
   }
