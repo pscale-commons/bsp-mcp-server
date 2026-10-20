@@ -1,5 +1,7 @@
 # The deck — cards between hands: suit, whom, and the card it answers (2026-10-19)
 
+> **Superseded 2026-10-20** by [the thread — a family whose spine is a ladder of knots](2026-10-20-the-thread-a-ladder-of-knots.md): depth is the role, no suit stored, the fray across the mirrors, a keeper who ties. Kept as the record of the first cut.
+
 **Status**: PROPOSAL at David's word (*"Yes, write the card molecule up as a dated proposal: the
 three positions on the card, the eight suits, the moves between hands, the rules block, and the
 beach button's window as the door"*). Lane need-offer.1, weft through Claude Code (Claude Fable
