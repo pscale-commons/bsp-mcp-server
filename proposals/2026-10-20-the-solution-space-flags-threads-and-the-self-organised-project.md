@@ -357,7 +357,52 @@ build, and it is a wake with a rules block, not a page.
 
 ---
 
-## 6. The words, in plain terms
+## 6. Experiments run on 20 October, while David was away
+
+**Experiment 1 — a second mind continues a thread from the spindle alone.** A session was started in
+neptune's own seat, handed nothing but `spine:beacon` and the rules. It walked the three addresses,
+composed its reading, and left one line in its own mirror, `beacon:neptune` 1.11, under its own key:
+*"Matthew asked to be asked, and David has: keep going, and introduce him to people working on AI.
+The beacon now waits on Matthew, not David; in my morning glance I'll say just that, until Matthew
+answers."* It wrote nothing else. The keeper tied that address as the thread's fourth rung. **Passed.**
+
+**Experiment 2 — the match as a wake.** Neptune's task gained one direction (task:neptune 6): read the
+loose ends (David's week and hand, the NEED lines in two rooms, Julie's week, the RPG room's fortnight
+of trying to meet) and the offers (every passport's first place), find at most three fits, and for
+each: found a thread under your own key if none stands, write one plain line in your own mirror at
+rung 1, tie rung 1 as that line's address, and tell David in one line in his room where to say yes.
+Tell nobody else. A session in neptune's seat ran it once. It founded two threads:
+
+| thread | root (the loose end's address) | rung 1 | the fit |
+|---|---|---|---|
+| `rpg-hour` | `ahead:happyseaurchin 3.6` — David's ask for an hour of the RPG with Mark, Matthew and Julie | `rpg-hour:neptune 1` | David's ask fits weft's standing offer to find the hour; Matthew's calendar on the beach gives three windows David is open for; Mark and Julie have no calendar yet and would be asked once |
+| `three-sessions` | `pool:beach-venture 61` — the venture's need of dates for the three sessions agreed on 16 October | `three-sessions:neptune 1` | Wednesday 28 October 11–12 UK, the first hour David and Matthew can both make, for the first session |
+
+One line to David at pool:happyseaurchin 88 with the two walk links. A third fit (James's list of
+people to meet) was looked for and not found, and not forced. Both walk pages render. The spines hold
+addresses only; each mirror holds one line; nobody else was told. **Passed on form.** The content test,
+whether David recognises the fits as right, waits on his two taps. One note: the proposal lines run to
+seventy words, which is at the long edge of "read standing up".
+
+**Experiment 3 — a mind with no key and no memory reads the state from the shape.** A fresh mind was
+handed only `spine:rpg-hour` and the rules, read-only. It reported: the deepest voiced rung is 1,
+neptune's proposal; rung 1.1 is unvoiced; the thread waits on David; the next act is David's line in
+his own block, after which the keeper ties by appending that address; nothing was its to do; five
+reads, no writes. **Passed.** (It ran as a subagent rather than in a seat, because the app does not
+start a seat session on a turn no person began; the test is of reading, so no key was needed.)
+
+**Pending.** A validation by a third: keel's line at `beacon:keel` 1, asked at pool:keel 52, waits for
+David to open keel. Matthew's line at the beacon's next rung, on his return on 26 October. David's
+two taps.
+
+**What the three runs showed.** The three rules held every time: no bank of text, nothing on a spine
+but an address, nothing in any block but the actor's own. A thread's state was read correctly from
+its shape by a mind with no history, twice. The matcher found real fits from real places, using
+Matthew's availability on the beach rather than a guess. The cost of each run was one wake. What
+remains unproven is the person's side: whether the fit is right, and whether a tap on a walk page is
+a door a person will use.
+
+## 7. The words, in plain terms
 
 | the beach says | it means |
 |---|---|
