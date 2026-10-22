@@ -63,7 +63,7 @@ const server = createServer(async (req, res) => {
     // {_, origin, blocks:[…]} response. With ?block=, return the block itself.
     const params = new URL(req.url, 'http://localhost').searchParams;
     const blockName = params.get('block');
-    // The tables played here (?tables) — every /w/ world with a room written,
+    // What the beach lists at ?tables — every /w/ address with a room written,
     // newest first. `servesTables` off makes this mock a beach from before the
     // listing existed: it answers with the ordinary index, which carries no
     // `tables` key, and the reader must treat that as "none", never an error.
@@ -73,7 +73,7 @@ const server = createServer(async (req, res) => {
         return;
       }
       res.writeHead(200).end(JSON.stringify({
-        _: `Tables played at ${beachOrigin}.`,
+        _: `Every /w/<name> address at ${beachOrigin} with a room written.`,
         origin: beachOrigin,
         tables: [
           { name: 'brackenfoot-david-julie', room: 'pool:211', touched: '2026-09-20T16:38:21.563Z' },
@@ -199,17 +199,23 @@ try {
   assert(getText(rIdx).includes('passport:weft'), 'index lists the named blocks');
   assert(getText(rIdx).includes(beachOrigin), 'index names the origin');
 
-  console.log('\n=== bsp() beach INDEX — the tables played here ===');
-  // A surface is what it hosts AND what is being played on it. The beach has
-  // listed its tables since pscale-beach #69 and the o-pages have read them;
-  // no LLM door did, so an agent asked where a character plays concluded the
-  // table was private while a public listing sat one read away.
-  assert(getText(rIdx).includes('tables played here'), 'the index names the tables played at this beach');
-  assert(getText(rIdx).includes('brackenfoot-david-julie'), 'each table is listed by name');
+  console.log('\n=== bsp() beach INDEX — the /w/ addresses with a room written ===');
+  // A surface is what it hosts AND where rooms have been written beneath it.
+  // The beach has listed these since pscale-beach #69 and the o-pages have read
+  // them; no LLM door did, so an agent asked where a character plays concluded
+  // the table was private while a public listing sat one read away. The beach
+  // says where a room was written, never what stands there — an address that
+  // is no game stands on the same list — so the line names none of them.
+  assert(getText(rIdx).includes('with a room written here'), 'the index names the addresses with a room written at this beach');
+  assert(
+    !/tables? played/i.test(getText(rIdx)) && !getText(rIdx).includes('enter it with pscale_play'),
+    'and calls none of them a table played, nor says to enter one',
+  );
+  assert(getText(rIdx).includes('brackenfoot-david-julie'), 'each address is listed by name');
   assert(getText(rIdx).includes('pool:211'), 'with the room its latest voice landed in');
   assert(
     getText(rIdx).indexOf('passport:weft') < getText(rIdx).indexOf('brackenfoot-david-julie'),
-    'blocks first, then the tables — the surface, then what is played on it',
+    'blocks first, then the addresses — the surface, then where rooms were written beneath it',
   );
   {
     // A beach from before the listing answers ?tables with its ordinary index:
@@ -218,7 +224,7 @@ try {
     servesTables = false;
     const rOld = await handleBsp({ agent_id: beachOrigin, pscale_attention: null });
     assert(getText(rOld).includes('beach index'), 'a beach without the listing still indexes');
-    assert(!getText(rOld).includes('tables played here'), 'and claims no tables section');
+    assert(!getText(rOld).includes('with a room written here'), 'and claims no such section');
     servesTables = true;
   }
 

@@ -83,12 +83,12 @@ globalThis.fetch = (async (input: any, _init?: any) => {
   const beach = beaches[surface];
   if (!beach) return new Response('no beach', { status: 404 });
   const name = url.searchParams.get('block');
-  // The tables played at this beach — what the doorway reads when a world name
-  // matches nothing, since a table is never in the worlds register.
+  // What the beach lists at ?tables — the /w/ addresses with a room written,
+  // which the doorway reads when a world name matches nothing.
   if (url.searchParams.has('tables')) {
     return new Response(
       JSON.stringify({
-        _: `Tables played at ${surface}.`,
+        _: `Every /w/<name> address at ${surface} with a room written.`,
         origin: surface,
         tables: surface === 'https://apex.test'
           ? [{ name: 'brackentest-kin', room: 'pool:211', touched: '2026-09-20T16:00:00.000Z' }]
@@ -162,16 +162,17 @@ console.log('\n=== identity/keeper only (a spine mid-authoring) → NOT empty ==
   check('author passage does NOT fire', !/is EMPTY — there is nowhere here/.test(text));
 }
 
-console.log('\n=== a world name that matches nothing → the tables played here ===');
+console.log('\n=== a world name that matches nothing → the addresses with a room written ===');
 {
   // The commonest miss is a TABLE, and tables are never in the register by its
   // own law. The refusal used to end at "check the world name" while the
   // beach's own listing held the answer one read away.
   const text = await door('https://nowhere.test', 'someone');
   check('the refusal still says there is no world there', /No world at/.test(text));
-  check('and names the tables played at the default beach', /TABLES PLAYED at/.test(text));
+  check('and names the addresses with a room written at the default beach', /ADDRESSES WITH A ROOM WRITTEN at/.test(text));
+  check('calling none of them a table played', !/TABLES? PLAYED/i.test(text));
   check('each with its live room', /brackentest-kin — last voice in pool:211/.test(text));
-  check('and how to enter one', /pscale_play\(world="<name>", handle="someone"\)/.test(text));
+  check('and how to read one', /bsp\(agent_id="https:\/\/apex\.test\/w\/<name>"\)/.test(text));
 }
 
 console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);
