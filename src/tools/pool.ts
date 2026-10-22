@@ -280,6 +280,10 @@ export interface PoolContribution {
    *  contribution, which appends rather than overwrites and needs no second
    *  stamp. Legacy slots carry it at 2 — `arrivalOf` resolves either. */
   arrival: string | null;
+  /** Entries nested beneath this one — a reply appended under an entry lands
+   *  at its first free digit, so the room door counts them rather than letting
+   *  them stand invisible (pool:weft 248.4 went unseen a week, 2026-10-22). */
+  replies?: number;
 }
 
 /** An ISO-8601 stamp, told apart from a pscale address by shape alone. The
@@ -414,7 +418,11 @@ export function foldContributions(
   sincePosition: number,
 ): { closed: FoldedContainer[]; open: PoolContribution[]; folded: boolean } {
   const floor = Math.max(floorDepth(block), 1);
-  const { contributions } = collectContributions(block, sincePosition);
+  // Uncapped: a closed span costs one line however long the room, so the fold
+  // reads every entry. Through the page cap it folded only the first 200 and
+  // called the 200th entry's container the open one — pool:weft's door stood
+  // at 241-248 for a week while 249-284 went unseen (2026-10-22).
+  const { contributions } = collectContributions(block, sincePosition, undefined, Infinity);
   if (floor < 2 || contributions.length === 0) return { closed: [], open: contributions, folded: false };
 
   const byContainer = new Map<string, PoolContribution[]>();
@@ -515,6 +523,7 @@ export function collectContributions(
   block: Block,
   sincePosition: number,
   at?: string,
+  limit: number = READ_PAGE_LIMIT,
 ): { contributions: PoolContribution[]; more_available: boolean } {
   const out: PoolContribution[] = [];
   let more = false;
@@ -574,6 +583,8 @@ export function collectContributions(
         face: typeof obj['4'] === 'string' ? obj['4'] : null,
         woven: typeof obj['5'] === 'string' ? obj['5'] : null,
         arrival: arrivalOf(obj),
+        replies: Object.keys(obj).filter((k) => /^[1-9]$/.test(k)
+          && obj[k] !== null && typeof obj[k] === 'object' && !Array.isArray(obj[k]) && typeof obj[k]._ === 'string').length,
       };
     } else {
       continue;
@@ -585,7 +596,7 @@ export function collectContributions(
     // field 2) are excluded; a skip does not count toward the page cap.
     if (at !== undefined && !atOrUnder(entry.address, at)) continue;
 
-    if (out.length >= READ_PAGE_LIMIT) {
+    if (out.length >= limit) {
       more = true;
       break;
     }
@@ -2337,10 +2348,17 @@ async function handlePoolEngageInner(
   // the fold's.
   const wantsFold = (params as any).fold === true && sincePosition === 0 && atAddress === undefined;
   const fold = wantsFold ? foldContributions(row.block, sincePosition) : null;
+  // A folded read covers the whole room — closed spans by their summaries, the
+  // open one whole — so its count and marker are the room's newest entry, never
+  // the end of a page.
+  const folded = fold?.folded ? fold : null;
+  const foldTotal = folded ? folded.closed.reduce((n, c) => n + c.entries, 0) + folded.open.length : 0;
 
-  const markerNew = contributions.length > 0
-    ? contributions[contributions.length - 1].position
-    : sincePosition;
+  const markerNew = folded && folded.open.length > 0
+    ? folded.open[folded.open.length - 1].position
+    : contributions.length > 0
+      ? contributions[contributions.length - 1].position
+      : sincePosition;
 
   // Liquid mirror — co-present pending intentions, not yet committed. Fetched
   // when you submitted (you want to see the room) or when with_liquid is set.
@@ -2630,7 +2648,7 @@ async function handlePoolEngageInner(
     : '';
   const atView = params.at !== undefined ? ` at ${params.at} (located view — unlocated entries excluded; keep a marker per view${outsideNote})` : '';
   const foldNote = fold?.folded ? `, folded to ${fold.closed.length} + ${fold.open.length}` : '';
-  lines.push(`# Contributions since position ${sincePosition}${atView} (count: ${contributions.length}${foldNote}${more_available ? ', more available' : ''})`);
+  lines.push(`# Contributions since position ${sincePosition}${atView} (count: ${folded ? foldTotal : contributions.length}${foldNote}${!folded && more_available ? ', more available' : ''})`);
   if (shortNote) lines.push(`(${shortNote})`);
   if (arrival && sincePosition > 0) {
     lines.push(`(your account has told this room through slot ${sincePosition}, so the record rides from what it has not: the beats before stand in your account above, and in pool:${pool_name} at their slots)`);
@@ -2660,9 +2678,13 @@ async function handlePoolEngageInner(
       const when = c.ts ?? '';
       const faceTag = c.face ? ` [${c.face}]` : '';
       const located = digitsOfAddress(c.address) !== null ? ` @ ${c.address}` : '';
-      lines.push(`## slot ${c.position} — ${who}${faceTag} ${when}${located}`);
+      const beneath = c.replies ? ` · ${c.replies} ${c.replies === 1 ? 'reply' : 'replies'} beneath` : '';
+      lines.push(`## slot ${c.position} — ${who}${faceTag} ${when}${located}${beneath}`);
       lines.push(c.text || '(empty)');
       lines.push('');
+    }
+    if (shown.some((c) => c.replies)) {
+      lines.push(`(a slot with replies beneath carries them nested under it — read one with descent: bsp(block="pool:${pool_name}", spindle=<the slot>, pscale_attention=<one rung below it>))`);
     }
   }
   lines.push(`# Marker`);

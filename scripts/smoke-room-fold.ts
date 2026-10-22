@@ -85,5 +85,32 @@ console.log('\nTHE FOLD — a handle\'s account at the play door');
   ok('an account too young to fold is delivered the same way, never as its JSON', youngOnce.includes('[1 · pool:211:1] telling 1') && youngOnce.includes('[2 · pool:211:2] telling 2') && !youngOnce.includes('telling 3'));
 }
 
+console.log('\nTHE FOLD — past the page: a long room folds whole, its newest container open');
+{
+  // pool:weft stood at 241-248 at every weft door for a week while 249-284 went
+  // unseen: the fold read through the 200-entry page and opened the 200th
+  // entry's container (2026-10-22).
+  let big: Block = { _: 'a long room' } as Block;
+  for (let i = 1; i <= 230; i++) big = appendWithSupernest(big, { _: `entry ${i}`, 1: 'someone', 3: '2026-10-22T00:00:00Z' }).block;
+  const page = collectContributions(big, 0);
+  ok('a plain read still pages at 200, and says more stands', page.contributions.length === 200 && page.more_available);
+  const f = foldContributions(big, 0);
+  const total = f.closed.reduce((n, c) => n + c.entries, 0) + f.open.length;
+  ok('the fold reads every entry, past the page', total === 230, `got ${total}`);
+  ok('the open container is the newest — it ends at the 230th entry', f.open[f.open.length - 1]?.text === 'entry 230', f.open.map((c) => c.text).join(', '));
+}
+
+console.log('\nTHE FOLD — replies nested beneath an entry are counted, never invisible');
+{
+  const withReply: Block = JSON.parse(JSON.stringify(room));
+  // entry 12 stands at 13 (floor 2: node 1, digit 3); a reply appended beneath
+  // it takes the entry's first free digit.
+  (withReply as any)['1']['3']['5'] = { _: 'a reply beneath entry 12', 1: 'someone else', 3: '2026-09-09T00:00:00Z' };
+  const f = foldContributions(withReply, 0);
+  const last = f.open[f.open.length - 1];
+  ok('the entry carries its reply count', last.replies === 1, JSON.stringify(last));
+  ok('an entry with none counts none', f.open[0].replies === 0, JSON.stringify(f.open[0]));
+}
+
 console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);
 if (fail > 0) process.exit(1);

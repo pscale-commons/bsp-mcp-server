@@ -28,7 +28,7 @@
  */
 import { z } from 'zod';
 import { declareHand } from '../looks.js';
-import { compileBundle, looksLikeBundle, renderMemberBody } from '../bundle.js';
+import { compileBundle, looksLikeBundle, memberLabel, renderMemberBody } from '../bundle.js';
 import { declareSeat, surfaceLoader } from '../orientation.js';
 import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
 import { handlePoolEngage, resolveDirective, collectContributions, coveredThrough, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, declareRoomAtBirth, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
@@ -747,7 +747,7 @@ export async function handlePlay(
         for (const m of members) {
           if (!m.ref || !m.leaf || seen.has(m.leaf)) continue;
           seen.add(m.leaf);
-          own.push({ name: m.leaf, json: renderMemberBody(m) });
+          own.push({ name: memberLabel(m), json: renderMemberBody(m) });
         }
         declareSeat(extra?.sessionId, resolved, handle, `shell:${handle}`, manifestSlot, manifestNode);
       }

@@ -18,7 +18,7 @@ import { momentToAddress, addressToSpan, voiceAddress } from '../src/temporal.js
 import { SENTINELS } from '../src/sentinels.js';
 import {
   parseBundleRef, looksLikeBundle, isEntryNode, divergencePscale, cutClockWalk, headAddress,
-  compileBundle, renderBundle, renderMemberBody, handleOfBlock, rungName, clockRange,
+  compileBundle, renderBundle, renderMemberBody, memberLabel, handleOfBlock, rungName, clockRange,
   type BlockLoader, type Member, type ClockLine,
 } from '../src/bundle.js';
 import type { PathWalkEntry } from '../src/bsp-fn.js';
@@ -183,7 +183,11 @@ const win = renderBundle(whole!, { label: '"shell:weft" 3', now: NOW });
 const firstLines = win.split('\n').slice(0, 2).join('\n');
 ok(/^\[bundle @ "shell:weft" 3 — 5 references compiled at 2026412446/.test(win), 'the header names the node, the count and the stamp');
 ok(firstLines.includes('index: 1 orientation:weft:0:0 · 2 history:weft:head · 3 purpose:weft:0:0 · 5 now:weft:now · 7 (prose) · 8 torus-mirror:weft:now'), 'the index comes first, the bare addresses as dialed');
-ok(win.indexOf('── 1 · orientation:weft:0:0 ──') < win.indexOf('── 2 · history:weft:head ──'), 'members unfold in slot order');
+ok(win.indexOf('── 1 · orientation:weft:0:0 ──') >= 0 && win.indexOf('── 1 · orientation:weft:0:0 ──') < win.indexOf('── 2 · history:weft:head → history:weft 22 ──'), 'members unfold in slot order', win.slice(0, 600));
+ok(memberLabel(o) === 'orientation:weft:0:0', 'a reference that names its block and address is labelled as dialed', memberLabel(o));
+ok(memberLabel(h) === 'history:weft:head → history:weft 22', 'head is labelled with the block and address bsp() takes', memberLabel(h));
+ok(memberLabel(n) === `now:weft:now → now:weft ${STAMP3.slice(0, 10)}`, 'now is labelled with its block and the beat', memberLabel(n));
+ok(memberLabel(by(egg, '2')).startsWith('purpose → purpose:egg-one'), "a bare name is labelled with the hand's block it resolved to", memberLabel(by(egg, '2')));
 const capped = renderBundle(whole!, { label: 'x', now: NOW, cap: 900 });
 ok(capped.includes('the window is full at 900 characters') && capped.includes('not unfolded:'), 'past the cap the remaining members are named, never dropped');
 
@@ -214,7 +218,7 @@ const cellW = momentToAddress(new Date(t1 + 35_000), 3);
 beachWrite(nowWeft, cellW, { _: 'said within the beat, at its instant', '3': new Date(t1 + 35_000).toISOString() });
 touched = { 'now:weft': new Date(t1 + 35_000).toISOString() };
 const g4 = await orientationRider('S', t1 + 40_000, io);
-ok(g4.includes('── 5 · now:weft:now ──') && g4.includes('within this beat') && g4.includes(`[${cellW}] said within the beat, at its instant`) && !g4.includes('the year the substrate grew'), 'a line said within the beat rides at its own second, nothing above it', g4);
+ok(g4.includes('── 5 · now:weft:now → now:weft ') &&g4.includes('within this beat') && g4.includes(`[${cellW}] said within the beat, at its instant`) && !g4.includes('the year the substrate grew'), 'a line said within the beat rides at its own second, nothing above it', g4);
 ok((await orientationRider('S', t1 + 45_000, io)) === '', 'and once told, the beat is quiet again');
 ok((await orientationRider('nobody', t1, io)) === '', 'a session with no seat gets nothing');
 seatTold('S', t1 + 60_000);
@@ -243,11 +247,11 @@ const read = (spindle: string, sessionId?: string) => handleBsp({ agent_id: ORIG
 beachWrite(nowWeft, momentToAddress(new Date()).slice(0, 8) + '00', 'today, as the real clock stands — swept at first light');
 const w = text(await read('3'));
 ok(w.startsWith('[path-walk @ "3"]') && w.includes('[bundle @ "' + ORIGIN + '/shell:weft" 3 — 5 references'), 'a walk to the manifest compiles it beneath the walk', w);
-ok(w.includes('── 1 · orientation:weft:0:0 ──') && w.includes(ruleTwo) && w.includes('── 5 · now:weft:now ──') && w.includes('swept at first light'), 'every member unfolds, the disc whole and the clock at the stamp');
+ok(w.includes('── 1 · orientation:weft:0:0 ──') && w.includes(ruleTwo) && w.includes('── 5 · now:weft:now → now:weft ') && w.includes('swept at first light'), 'every member unfolds, the disc whole and the clock at the stamp');
 ok(!text(await read('9')).includes('[bundle @'), 'a node that is not a bundle reads exactly as before');
 ok(!text(await read('7')).includes('[bundle @'), 'a list of words reads as a list');
 const egg1 = text(await handleBsp({ agent_id: ORIGIN, block: 'reflexive:egg-one', spindle: '9' } as any, {}));
-ok(egg1.includes('── 2 · purpose ──') && egg1.includes("egg-one's purpose") && egg1.includes('── 1 · sunstone ──'), "a genus current compiles through the same door, its organs resolved by the hand");
+ok(egg1.includes('── 2 · purpose → purpose:egg-one') &&egg1.includes("egg-one's purpose") && egg1.includes('── 1 · sunstone ──'), "a genus current compiles through the same door, its organs resolved by the hand");
 declareSeat('T', ORIGIN, 'weft', 'shell:weft', '3', store['shell:weft']['3'], Date.now() - 36 * 3600_000);
 const own = text(await read('3', 'T'));
 ok(own.includes('[bundle @') && Date.now() - seatOf('T')!.lastMs < 5_000, "a seat reading its own bundle is told: the stamp advances to now");
