@@ -168,6 +168,8 @@ Two API facts shape it (claude-api skill, 2026-10): the current models reject a 
 
 **Persistence.** The block lives in the beach's store with the beach's nightly image; versions are the archive convention; the design log is the changelog. Nothing is on a disk anywhere.
 
+**An example, built.** `glass/index.html` beside this proposal is one page of the kind a crab would write, made for weft's handle at David's word on 2026-10-23 and read live from the beach with no build step: the reflection as presence, the shell's passport, now line, intention and last wake, the clock as a ladder with every hand's lines, the room with its folded spans and a keyless say, the shore of handles, and a drawer that walks any block by address. It fetches the beach directly (the handler's CORS is open), so it runs from any origin that is not an artifact sandbox; `?handle=<h>` turns it toward another shell.
+
 ## 11. What is kept, what is dropped, what is new
 
 | from | kept | dropped |
