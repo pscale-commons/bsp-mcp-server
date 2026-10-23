@@ -875,9 +875,9 @@ function walkedDigits(r: BspReadResult, floor: number | null): string[] {
  *  behind is record, AHEAD is intention, (now — …) is present at the
  *  address's own grain. Wire labels arrive with trailing zeros stripped;
  *  renderAddressRelation right-pads them itself. */
-function addrLabel(address: string, floor: number | null, entryPscale?: number | null, walked?: string[]): string {
+function addrLabel(address: string, floor: number | null, entryPscale?: number | null, walked?: string[], onClock = true): string {
   address = anchoredLabel(address, floor, entryPscale, walked);
-  if (floor === 10) {
+  if (floor === 10 && onClock) {
     // A walked interior-zero ancestor's label strips to a coarser address
     // than the rung it stands at (d2 p8 prints the millennium's own label),
     // so the relation anchors to the entry's OWN pscale where one rides —
@@ -918,10 +918,10 @@ function beneathLine(r: BspReadResult): string {
  *  Keel's third sitting spent three of its twelve calls re-reading rungs the
  *  walk had cut (2026-10-06); the collapse is the other half of the same cost. */
 export const WHOLE_RUNG = 400;
-export function walkLines(entries: PathWalkEntry[], fl: ReturnType<typeof floorOf>, walked: ReturnType<typeof walkedDigits>, indent: string): string[] {
+export function walkLines(entries: PathWalkEntry[], fl: ReturnType<typeof floorOf>, walked: ReturnType<typeof walkedDigits>, indent: string, onClock = true): string[] {
   const out: string[] = [];
   let run: PathWalkEntry[] = [];
-  const label = (e: PathWalkEntry) => addrLabel(e.address, fl, e.pscale, walked);
+  const label = (e: PathWalkEntry) => addrLabel(e.address, fl, e.pscale, walked, onClock);
   const flush = () => {
     if (!run.length) return;
     if (run.length === 1) {
@@ -956,7 +956,18 @@ function unframed(entries: { content?: unknown }[], floor: number): boolean {
   return floor >= 2 && entries.slice(0, -1).some((e) => !String(e.content ?? '').trim());
 }
 
-export function formatRead(r: BspReadResult): string {
+/** A WORLD'S COORDINATES ARE NEVER THE REAL CLOCK'S. A world's three public
+ *  registers — spatial, temporal, identity (world-genome 2) — and every hand's
+ *  mirror of them are addressed in that world's own space: a place on urb's map
+ *  is ten digits like a day on the sundial, and read as one it came back tagged
+ *  'AHEAD — in 30750 days' (Brackenfoot, rpg.2, 2026-10-23). Their labels ride
+ *  bare; the real clock's relations stay with the families that live on it. */
+export function onRealClock(blockName: string): boolean {
+  return !/^(spatial|temporal|identity):/.test(blockName);
+}
+
+export function formatRead(r: BspReadResult, opts: { onClock?: boolean } = {}): string {
+  const onClock = opts.onClock !== false;
   switch (r.shape) {
     case 'block':
       return `[whole block]\n${JSON.stringify(r.block, null, 2)}`;
@@ -968,7 +979,7 @@ export function formatRead(r: BspReadResult): string {
       const entries = (r.entries as PathWalkEntry[]) ?? [];
       const fl = floorOf(r);
       const walked = walkedDigits(r, fl);
-      lines.push(...walkLines(entries, fl, walked, '  '));
+      lines.push(...walkLines(entries, fl, walked, '  ', onClock));
       if (unframed(entries, fl ?? 0)) lines.push(UNFRAMED);
       if (r.beneath?.length) lines.push(beneathLine(r));
       return lines.join('\n');
@@ -977,13 +988,13 @@ export function formatRead(r: BspReadResult): string {
       const lines = [`[disc @ pscale ${r.pscale} (depth ${r.target_depth})]`];
       const fl = floorOf(r);
       for (const e of (r.entries as DiscEntry[]) ?? []) {
-        lines.push(`  ${addrLabel(e.address, fl, r.pscale)}: ${truncate(String(e.content ?? '(no content)'), 150)}${stampSuffix(e.stamp)}${e.beneath ? ` · ${e.beneath} beneath` : ''}`);
+        lines.push(`  ${addrLabel(e.address, fl, r.pscale, undefined, onClock)}: ${truncate(String(e.content ?? '(no content)'), 150)}${stampSuffix(e.stamp)}${e.beneath ? ` · ${e.beneath} beneath` : ''}`);
       }
       return lines.join('\n');
     }
     case 'point':
       if (r.note) return `[point @ pscale ${r.pscale}] ${r.note}`;
-      return `[point @ pscale ${r.pscale} depth ${r.depth} ${addrLabel(String(r.address), floorOf(r), r.pscale, walkedDigits(r, floorOf(r)))}]${paddingLine(r).map((l) => `\n${l}`).join('')}\n  ${r.content ?? '(no content)'}${stampSuffix(r.stamp)}${r.beneath?.length ? `\n${beneathLine(r)}` : ''}`;
+      return `[point @ pscale ${r.pscale} depth ${r.depth} ${addrLabel(String(r.address), floorOf(r), r.pscale, walkedDigits(r, floorOf(r)), onClock)}]${paddingLine(r).map((l) => `\n${l}`).join('')}\n  ${r.content ?? '(no content)'}${stampSuffix(r.stamp)}${r.beneath?.length ? `\n${beneathLine(r)}` : ''}`;
     case 'path-walk+descent': {
       const lines = [`[path-walk+descent @ "${r.spindle}" pscale ${r.pscale}]`, ...paddingLine(r)];
       lines.push('  path-walk:');
@@ -992,11 +1003,11 @@ export function formatRead(r: BspReadResult): string {
       const pw = r.path_walk ?? [];
       const fl = floorOf(r);
       const walked = walkedDigits(r, fl);
-      lines.push(...walkLines(pw, fl, walked, '    '));
+      lines.push(...walkLines(pw, fl, walked, '    ', onClock));
       if (unframed(pw, fl ?? 0)) lines.push(UNFRAMED);
       lines.push('  descent:');
       for (const e of r.descent ?? []) {
-        lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale, walked)}: ${truncate(String(e.content ?? ''), 150)}${stampSuffix(e.stamp)}`);
+        lines.push(`    d${e.depth} p${e.pscale} ${addrLabel(e.address, fl, e.pscale, walked, onClock)}: ${truncate(String(e.content ?? ''), 150)}${stampSuffix(e.stamp)}`);
       }
       return lines.join('\n');
     }
@@ -1005,7 +1016,7 @@ export function formatRead(r: BspReadResult): string {
       if (r.semantic) lines.push(`  semantic: ${truncate(r.semantic, 200)}`);
       if (r.inner) {
         lines.push(`  inner shape: ${r.inner.shape}`);
-        const innerText = formatRead(r.inner);
+        const innerText = formatRead(r.inner, opts);
         for (const line of innerText.split('\n')) lines.push(`    ${line}`);
       } else {
         lines.push('  (no hidden directory)');

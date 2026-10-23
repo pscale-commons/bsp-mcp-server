@@ -50,6 +50,7 @@ const beaches: Record<string, Record<string, AnyBlock>> = {
     'spatial:thornlea': spatial,
     'keeper:thornlea': {
       _: 'THE AUTHOR\'S HOLD — never a stranger\'s envelope.',
+      '3': 'PLACING: Thornlea stands in Fern Fold — *:https://world.test:spatial:world:211 — and its story begins on the world\'s clock at *:https://world.test:temporal:world:311151 — the first day, dusk.',
       '4': { _: 'THE ARC — what breaks the day strangers arrive.', '1': 'THE SQUEEZE — the doubled quota comes down and the crew takes the seed-corn.' },
       '5': { _: 'THE WAYS THROUGH — seven pressure points, found and never offered.', '1': 'PEEL OFF THE BOY — the Store\'s day-watch is sixteen and sick about it.' },
       '9': { _: 'PROVENANCE — the authoring record for this seed.', '2': { _: 'THE REPAIRS LOG — where the source crossed the fence.', '1': 'a repair recorded three levels down, for authors.' } },
@@ -69,13 +70,54 @@ const beaches: Record<string, Record<string, AnyBlock>> = {
     },
     'rules:nomad': { _: 'NOMAD — outcome = CF + SF + dice − difficulty.', '1': 'The formula.', '2': 'The dice — exploding d10.' },
   },
+  // The world the scenario stands in: its map, its clock, its who-is-who — the
+  // three spindles every character is placed on (rpg.2, 2026-10-23).
+  'https://world.test': {
+    'spatial:world': {
+      _: { _: { _: 'THE WORLD entire — the world rung, true everywhere beneath it.' } },
+      '2': { _: 'The Thousand Folds — valley country under tribute.', '1': { _: 'Fern Fold — reed-waters, and a fog that does not lift before noon.', '1': { _: 'Thornlea — a poor holding under six of the lord\'s men.' } } },
+    },
+    'temporal:world': {
+      _: { _: { _: { _: { _: { _: 'THE CLOCK OF THE WORLD — its one clock.' } } } } },
+      '3': {
+        _: 'The third season — the storm-turn: fog in the folds until noon, thunder up the valleys in the afternoons.',
+        '1': {
+          _: 'The harvest month — the tithe come for what the folds brought in.',
+          '1': {
+            _: 'The first week of it.',
+            '1': { _: 'The first day — low cloud and no wind; strangers come to the ford.', '5': 'Dusk — the light failing early under the cloud.', '6': 'Dark — full night, no moon through the cloud.', '7': 'Deep night — the cold coming down off the slopes.' },
+            '2': { _: 'The second day — a thin cold rain through the afternoon.', '1': 'First light — grey, the fog lying on the water.', '2': 'Morning — the fog lifting off the reed-waters.', '4': 'Afternoon — the rain setting in.' },
+          },
+        },
+      },
+    },
+    'almanac:world': {
+      _: 'Who is who in the world — the peoples, and what each is held to be.',
+      '3': { _: 'The fold-folk — the twin-toned valley people.', '1': { _: 'The Fern-folk — of the reed-waters and the fern terraces.', '1': 'Pedlars and carriers who walk the fold roads.' } },
+    },
+  },
+  // A table begun since the clock stood: nothing has happened yet.
+  'https://table.test/w/thornlea-fresh': {
+    'keeper:scene': { _: "The keeper's hold for this table.", '3': 'PLACING: *:https://master.test/w/thornlea:spatial:thornlea:120' },
+    'passport:sef': {
+      _: 'Sef — a carrier on the fold roads.',
+      '1': 'Character Force ~7; peak in endurance, weak in a fight.',
+      '3': 'Lean and road-browned, a carrier\'s frame on her back. Location: *:https://master.test/w/thornlea:spatial:thornlea:120 Who: *:https://world.test:almanac:world:3.11',
+    },
+    'pool:120': { _: 'pscale:grit/1' },
+    'liquid:pool:120': {
+      _: 'Liquid pre-commit buffer. window opened 2026-10-23T10:00:00.000Z',
+      '1': { _: 'I set my frame down by the fire and ask for a bed.', '1': 'sef', '3': '2026-10-23T10:00:00.000Z', '6': '2026-10-23T10:00:00.000Z' },
+      '2': { _: 'looks up from the trestle', '1': 'the alewife', '3': '2026-10-23T10:00:10.000Z', '6': '2026-10-23T10:00:10.000Z' },
+    },
+  },
   // The table: characters, pools, the keeper placing — no spatial of its own.
   'https://table.test/w/thornlea-grp': {
     'keeper:scene': { _: "The keeper's hold for this table.", '3': 'PLACING: *:https://master.test/w/thornlea:spatial:thornlea:120' },
     'passport:mara': {
       _: 'Mara — a pedlar with a quick tongue.',
       '1': 'Character Force ~8; peak in warm talk, weak in a straight fight.',
-      '3': 'Quick-eyed and easy, a pedlar\'s pack, a blue glass bead on a cord at her throat. Location: *:https://master.test/w/thornlea:spatial:thornlea:120',
+      '3': 'Quick-eyed and easy, a pedlar\'s pack, a blue glass bead on a cord at her throat. Location: *:https://master.test/w/thornlea:spatial:thornlea:120 Who: *:https://world.test:almanac:world:3.11',
       '4': { _: 'HOLDS — what Mara carries.', '1': 'the blue bead on its cord · hers from the start · stowed in her pack since the ford' },
     },
     'passport:dorn': {
@@ -172,6 +214,13 @@ console.log('=== medium — the resolution composes actions and intentions ===')
   check('the world\'s rules ride at their framing only', /Rules constraining action at Thornlea/.test(input) && !/THE OCCUPATION/.test(input));
   check('the story crosses rooms — the ford beat rides here', /At the ford, Mara lifts the bead/.test(input));
   check('the resolution\'s story headings carry no handle — a handle in a heading is a name it would carry into the record', !/voiced by/.test(input) && /At the ford, Mara lifts the bead/.test(input));
+  // THE STORY KEEPS ITS OWN HOUR (rpg.2, 2026-10-23): a beat's stamp is when it was
+  // played, and printed in a heading it set the story's hour to the player's — Ugarth
+  // left the Green in the late afternoon and, played the next morning, reached the
+  // Long House in a grey morning.
+  check('the story so far carries no beat\'s stamp — the order is its clock, the hour the beats\' own',
+    !/\d{4}-\d\d-\d\dT\d\d:\d\d/.test(input) && /At the ford, Mara lifts the bead/.test(input));
+  check('and the resolution is told the hour is the story\'s, never the hour it is read at', /never the hour you read this at/.test(call));
   check('each actor says, as a fact the record holds, whether their name has been said aloud', /- Mara — this name has NOT been said aloud here: the record calls them by how they look/.test(input));
   check('a stranger\'s beat in another room stays out', !/A carter passes/.test(input));
   check('the actors carry their sheets', /Mara/.test(input) && /stowed in her pack since the ford/.test(input));
@@ -218,6 +267,8 @@ console.log('\n=== hard — the keeper holds what nobody else is given ===');
   check('the writes name the places a voice may wait at — every room of the place, and the room they stand in', /place: \[121\]/.test(section(text, 'THE WRITES')) && /place: \[120\]/.test(section(text, 'THE WRITES')));
   check('and never a table room at no room of the place — news left there would wait where no way leads', !/place: \[110\]/.test(section(text, 'THE WRITES')));
   check('the writes say who stands in which window, for a DROP to reach and one person to keep one window', /^stands: \[120\] the alewife$/m.test(section(text, 'THE WRITES')));
+  check('the keeper\'s story carries no beat\'s stamp either — the light goes by the story\'s hour',
+    !/\d{4}-\d\d-\d\dT\d\d:\d\d/.test(input) && /never the hour you read this at/.test(call));
   check('the writes name each character whose name no one has said here, so no line the characters read carries it', /^unsaid: Mara$/m.test(section(text, 'THE WRITES')) && /^unsaid: Dorn$/m.test(section(text, 'THE WRITES')));
   check('the keeper is shown who speaks for themselves next here, so one person is never seated twice', /\[WHO SPEAKS FOR THEMSELVES NEXT, HERE[^\]]*\]\n- the alewife/.test(input));
   const sheets = text.split(/^# THE SHEET INPUT — /m).slice(1).map((s) => s.split('\n')[0]);
@@ -386,6 +437,64 @@ console.log('\n=== a tier engage writes nothing ===');
   check('a stage riding with a tier is refused, whole', /composes a call and writes nothing/.test(r.content[0].text));
   const named = await handlePoolEngage({ pool_url: TABLE, pool_name: 'gate', agent_id: 'mara', tier: 'medium' } as any);
   check('a named pool is not a room of a table', /is not a place's address/.test(named.content[0].text));
+}
+
+console.log('\n=== where, when, who — the world\'s three spindles in every frame (rpg.2, 2026-10-23) ===');
+{
+  const { beatMoment, whenOf } = await import('../src/tools/tiers.js');
+  const FRESH = 'https://table.test/w/thornlea-fresh';
+  // A story begun before the clock stood: the place in the world and the season
+  // ride, and the hour stays the story's own until its keeper names one.
+  const old = section(await tier('medium', '120', 'dorn'), 'THE INPUT');
+  check('WHERE IN THE WORLD walks the world\'s map from its root down to the scenario',
+    /\[WHERE IN THE WORLD — spatial:world/.test(old) && /THE WORLD entire/.test(old) && /Fern Fold — reed-waters, and a fog/.test(old) && /Thornlea — a poor holding/.test(old));
+  check('the world comes before the place, the place before the clock',
+    old.indexOf('[WHERE IN THE WORLD') < old.indexOf('[THE PLACE') && old.indexOf('[THE PLACE') < old.indexOf('[WHEN'));
+  check('a story under way before the clock keeps its own hour: the season rides, and says so',
+    /\[WHEN — the world's own clock/.test(old) && /The third season — the storm-turn/.test(old) && /the hour stands where the story's own words left it/.test(old) && !/\[THE HOURS AHEAD/.test(old));
+  check('who a character is in the world rides with their sheet, walked in the who-is-who',
+    /who, in the world:\n {4}The fold-folk — the twin-toned valley people\.\n {4}The Fern-folk/.test(old) && /Pedlars and carriers/.test(old));
+  check('only the placing crosses the fence: the scenario keeper\'s own register still never reaches the resolution', !/THE ARC/.test(old) && !/PEEL OFF THE BOY/.test(old));
+  const oldMoment = await beatMoment(TABLE, '120', ['mara', 'dorn'], null);
+  check('and a beat committed there carries no moment yet', oldMoment === null);
+
+  // A table begun since: the story starts at the scenario's moment on the clock.
+  const freshText = await handlePoolEngage({ pool_url: FRESH, pool_name: '120', agent_id: 'sef', tier: 'medium' } as any);
+  const fresh = section(freshText.content[0].text, 'THE INPUT');
+  check('a fresh table stands at its placing\'s moment: the clock walked from the season down to the part of the day',
+    /The third season/.test(fresh) && /The harvest month/.test(fresh) && /The first day — low cloud/.test(fresh) && /Dusk — the light failing/.test(fresh) && !/the hour stands where/.test(fresh));
+  check('the clock\'s root and its zero rungs say nothing the rungs below do not', !/THE CLOCK OF THE WORLD/.test(fresh));
+  check('THE HOURS AHEAD offer the rest of the day and the next day\'s, each with its address',
+    /\[THE HOURS AHEAD/.test(fresh) && /\[311161\] Dark — full night/.test(fresh) && /\[311171\] Deep night/.test(fresh) && /\[311211\] First light — grey, the fog lying on the water\. — the next day/.test(fresh) && !/\[311151\]/.test(fresh));
+  check('the resolution is told what WHEN is and how a WHEN line names an hour ahead',
+    /\[WHEN\] \(the world's own clock at this moment/.test(section(freshText.content[0].text, 'THE CALL')) && /end with a line WHEN <address>/.test(section(freshText.content[0].text, 'THE CALL')));
+  check('the first beat there carries the placing\'s moment', JSON.stringify(await beatMoment(FRESH, '120', ['sef'], null)) === JSON.stringify({ stamp: '*:https://world.test:temporal:world:311151', label: 'The first day, dusk' }));
+
+  // A beat stamped: the clock stands where it left them, and moves one beat.
+  const freshPool = beaches[FRESH]['pool:120'] as any;
+  freshPool['1'] = { _: 'The carrier sets her frame down by the fire and asks for a bed; the alewife looks up from the trestle.', '1': 'sef', '2': '*:https://world.test:temporal:world:311151', '3': '2026-10-23T10:01:00.000Z', '5': 'sef' };
+  check('the next beat is one later', (await beatMoment(FRESH, '120', ['sef'], null))?.stamp === '*:https://world.test:temporal:world:311152');
+  check('a WHEN line naming an hour ahead moves the clock there', JSON.stringify(await beatMoment(FRESH, '120', ['sef'], '311211')) === JSON.stringify({ stamp: '*:https://world.test:temporal:world:311211', label: 'The second day, first light' }));
+  check('and never backwards', (await beatMoment(FRESH, '120', ['sef'], '311141'))?.stamp === '*:https://world.test:temporal:world:311152');
+  const { momentFrom } = await import('../src/tools/tiers.js');
+  const clockAt = (addr: string) => ({ ref: { origin: 'https://world.test', block: 'temporal:world', addr }, spine: beaches['https://world.test']['temporal:world'] as any, floor: 6 });
+  check('a placing that names a part of the day whole begins at its first beat, a day whole at its first light',
+    momentFrom(clockAt('311150'), []).next === '311151' && momentFrom(clockAt('311100'), []).next === '311111' && momentFrom(clockAt('311151'), []).next === '311151');
+  const said = whenOf('They bed down by the fire and the night goes over them.\nWHEN 311211\nWAY 200');
+  check('a WHEN line leaves the beat\'s text, and names its hour', said.jump === '311211' && said.text === 'They bed down by the fire and the night goes over them.\nWAY 200');
+  const stamped = section((await handlePoolEngage({ pool_url: FRESH, pool_name: '120', agent_id: 'sef', tier: 'medium' } as any)).content[0].text, 'THE INPUT');
+  check('a stamped beat is headed by its own moment in the story so far', /— at The Alehouse \[pool:120, slot 1\], The first day, dusk:/.test(stamped));
+  check('and the moment made now is the next beat of the same dusk', /Dusk — the light failing/.test(stamped) && /\[311161\] Dark/.test(stamped));
+  const keeper = section((await handlePoolEngage({ pool_url: FRESH, pool_name: '120', agent_id: 'sef', tier: 'hard' } as any)).content[0].text, 'THE INPUT');
+  const { KEEPER_TABLE_MARK, KEEPER_ROOM_MARK } = await import('../src/tools/tiers.js');
+  check('the keeper holds the world\'s map above the table mark and the clock below the room mark',
+    keeper.indexOf('[WHERE IN THE WORLD') < keeper.indexOf(KEEPER_TABLE_MARK) && keeper.indexOf('[WHEN') > keeper.indexOf(KEEPER_ROOM_MARK) && /at the moment just resolved/.test(keeper) && /Dusk — the light failing/.test(keeper));
+  const figure = section((await handlePoolEngage({ pool_url: FRESH, pool_name: '120', agent_id: 'the alewife', tier: 'figure' } as any)).content[0].text, 'THE INPUT');
+  check('one of the place\'s people knows the hour it is living in', /\[WHEN — the world's own clock where you stand, now/.test(figure) && /Dusk — the light failing/.test(figure));
+  const telling = section((await handlePoolEngage({ pool_url: FRESH, pool_name: '120', agent_id: 'sef', tier: 'soft' } as any)).content[0].text, 'THE INPUT');
+  check('the telling is given the world, the hour of the moment told, and who the character is',
+    /\[WHERE IN THE WORLD/.test(telling) && /\[WHEN — the world's own clock at the moment told/.test(telling) && /Dusk — the light failing/.test(telling) && /\[WHO YOU ARE IN THE WORLD\]\nThe fold-folk/.test(telling));
+  check('and still no wall-clock instant anywhere in what the voices read', ![fresh, stamped, keeper, figure, telling].some((t) => /\d{4}-\d\d-\d\dT\d\d:\d\d/.test(t)));
 }
 
 console.log(`\nsmoke-tiers: ${pass} passed, ${fail} failed`);

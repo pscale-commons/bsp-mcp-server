@@ -48,7 +48,7 @@ import {
   DEFAULT_BEACH,
 } from '../db.js';
 import { readBackAfterAppend } from '../read-back.js';
-import { composeTierParts, type Tier } from './tiers.js';
+import { beatMoment, composeTierParts, whenOf, type Tier } from './tiers.js';
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
 
@@ -905,7 +905,7 @@ export function parsePlacingRef(placing: unknown): { origin: string; block: stri
  *  the location ref), so a co-present character is perceived without leaking the name
  *  they have not yet earned. */
 export function passportAppearance(passportBlock: any, handle: string): string {
-  let s = String(passportBlock?.['3'] ?? '').split(/\s*Location:/)[0].trim();
+  let s = String(passportBlock?.['3'] ?? '').split(/\s*(?:Location|Who):/)[0].trim();
   if (handle) {
     const cap = handle[0].toUpperCase() + handle.slice(1);
     s = s.replace(new RegExp(`\\b${cap}\\b`, 'g'), 'A figure').replace(new RegExp(`\\b${handle}\\b`, 'gi'), 'a figure');
@@ -2036,9 +2036,13 @@ async function handlePoolEngageInner(
   let postedSupernested = false;
   let foldCleared: Block | null = null;
   let stagedConsumed = false;
+  let postedMoment: string | null = null;
   if (contribution !== undefined && contribution.trim() !== '') {
+    // A closing WHEN line is the resolution's word that time passed: it leaves
+    // the beat's text and moves the moment the beat carries (below).
+    const { text: said, jump } = whenOf(contribution);
     const entry: Record<string, any> = {
-      _: contribution,
+      _: said,
       '1': agent_id,
       // Field 2 — address-of-attention (block-conventions:4.22): the coordinate
       // this voice is located at within the structure the pool gathers around
@@ -2069,6 +2073,19 @@ async function handlePoolEngageInner(
         const unique = [...new Set(staged)];
         if (unique.length) entry['5'] = unique.join(',');
       } catch { /* best-effort: a fold still lands without its woven record */ }
+    }
+
+    // A TABLE BEAT CARRIES ITS MOMENT on the world's clock at field 2 — the
+    // time-twin of the room it lands in — so the next frame reads the hour off
+    // the record instead of guessing it from the last telling (rpg.2,
+    // 2026-10-23). One beat after the latest these characters lived, or the hour
+    // a closing WHEN line named; a table whose story's hour is still its own
+    // carries none, and so does every room that is not a table's.
+    if (!params.at && !destination && /^pscale:grit\b/.test(floorUnderscore(row?.block as Block).trim())) {
+      try {
+        const moment = await beatMoment(pool_url, pool_name, [agent_id, ...wovenHandles(entry['5'])], jump);
+        if (moment) { entry['2'] = moment.stamp; postedMoment = moment.label; }
+      } catch { /* best-effort: a beat lands unstamped rather than not at all */ }
     }
 
     // ── FACE PICKS THE BLOCK, `at` PICKS THE POSITION ──
@@ -2213,7 +2230,7 @@ async function handlePoolEngageInner(
     if (destBlock === blockName && row?.block && typeof row.block === 'object') {
       const nowMs = Date.now();
       for (const c of collectContributions(row.block as Block, 0).contributions) {
-        if (c.agent_id !== agent_id || c.text !== contribution) continue;
+        if (c.agent_id !== agent_id || c.text !== said) continue;
         const ms = c.ts ? Date.parse(c.ts) : NaN;
         if (Number.isFinite(ms) && nowMs - ms <= DUPLICATE_WINDOW_MS) { duplicateOf = c.position; break; }
       }
@@ -2413,7 +2430,7 @@ async function handlePoolEngageInner(
     if (duplicateOf !== null) {
       lines.push(`ALREADY LANDED at slot ${postedPosition} → ${where} — this exact beat from you is already in the record, so nothing was appended a second time. A timeout is not a failure here: the write lands and only the reply is lost. Read the slot before rewording and retrying.`);
     } else {
-      lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}${stagedConsumed ? ' — your staged intention graduated into this entry, so your liquid slot cleared itself' : ''}`);
+      lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}${stagedConsumed ? ' — your staged intention graduated into this entry, so your liquid slot cleared itself' : ''}${postedMoment ? ` — on the world's clock: ${postedMoment}` : ''}`);
       // THE MUSCLE BEHIND, at the door: the commit walks back to its landed slot
       // as the next reader receives it — the containers above it in view, an
       // unvoiced one showing as the debt it is (src/read-back.ts).

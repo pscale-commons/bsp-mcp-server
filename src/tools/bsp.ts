@@ -27,6 +27,7 @@ import {
   bspRead,
   bspWrite,
   formatRead,
+  onRealClock,
   formatWrite,
   formatBorn,
   BspWriteResult,
@@ -72,12 +73,12 @@ export function tooLarge(result: any, text: string): string | null {
  *  block under the size still comes whole, since its disc and its whole cost
  *  the same. Reads only; writes are untouched. Null when the whole may pass. */
 export const WHOLE_CHARS = 6000;
-export function probeInsteadOfWhole(block: Block, spindle: string | null | undefined, pscale: number | null | undefined, wholeText: string): string | null {
+export function probeInsteadOfWhole(block: Block, spindle: string | null | undefined, pscale: number | null | undefined, wholeText: string, onClock = true): string | null {
   const noSpindle = spindle === null || spindle === undefined || String(spindle).trim() === '';
   if (!noSpindle || (pscale !== null && pscale !== undefined)) return null;
   if (wholeText.length <= WHOLE_CHARS) return null;
   const disc = bspRead(block, '', 0);
-  const discText = formatRead(disc);
+  const discText = formatRead(disc, { onClock });
   const refused = tooLarge(disc, discText);
   if (refused) return refused;
   return `${discText}\n  [the whole block is ${wholeText.length} characters: both coordinates omitted gives this probe, the disc at pscale 0. To take it whole, name the root — spindle='0' with no attention; or walk a spindle for the part you need.]`;
@@ -1152,6 +1153,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
     // Contract-drift fix 2026-05-30 — see proposals/2026-05-30-wire-read-gate.md.
     const hasStar = typeof spindle === 'string' && spindle.includes('*');
     const wireEligible = pscale_attention != null && !hasStar;
+    const onClock = onRealClock(target.block);
     if (wireEligible && !isSentinel && !encSecret && isFederatedOwner(target.agent_id)) {
       try {
         const wireResult = await loadBspShape(
@@ -1163,7 +1165,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
         if (wireResult && typeof wireResult === 'object' && 'shape' in wireResult) {
           // Canonical shape-tagged response from a v2 beach — return directly,
           // unless no window could carry it.
-          const wireText = formatRead(wireResult as any);
+          const wireText = formatRead(wireResult as any, { onClock });
           return { content: [{ type: 'text', text: tooLarge(wireResult, wireText) ?? wireText }] };
         }
         if (wireResult && typeof wireResult === 'object') {
@@ -1172,8 +1174,8 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
           try {
             const wholeNamed = String(spindle ?? '').trim() === '0' && pscale_attention == null;
             const result = bspRead(wireResult as Block, wholeNamed ? '' : (spindle ?? ''), pscale_attention ?? null);
-            const legacyText = formatRead(result);
-            const probe = wholeNamed ? null : probeInsteadOfWhole(wireResult as Block, spindle, pscale_attention, legacyText);
+            const legacyText = formatRead(result, { onClock });
+            const probe = wholeNamed ? null : probeInsteadOfWhole(wireResult as Block, spindle, pscale_attention, legacyText, onClock);
             return { content: [{ type: 'text', text: probe ?? tooLarge(result, legacyText) ?? legacyText }] };
           } catch (e: any) {
             if (e instanceof InvalidAddressError) {
@@ -1209,8 +1211,8 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       // block whole, as name:0 bare does in a reference; nothing named is the probe.
       const wholeNamed = String(spindle ?? '').trim() === '0' && pscale_attention == null;
       const result = bspRead(blockForRead, wholeNamed ? '' : (spindle ?? ''), pscale_attention ?? null);
-      const localText = formatRead(result);
-      const probe = wholeNamed ? null : probeInsteadOfWhole(blockForRead, spindle, pscale_attention, localText);
+      const localText = formatRead(result, { onClock });
+      const probe = wholeNamed ? null : probeInsteadOfWhole(blockForRead, spindle, pscale_attention, localText, onClock);
       let text = probe ?? tooLarge(result, localText) ?? localText;
       if (!probe && result.shape === 'path-walk') {
         const window = await bundleWindow(blockForRead, spindle, target, sessionId);
