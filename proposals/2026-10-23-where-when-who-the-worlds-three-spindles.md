@@ -39,3 +39,21 @@ David, the same afternoon (lane rpg.2): characters operate in game-world time, w
 2. Existing characters carry no `Who:` line; their holders add it under their own keys.
 3. The turns' counts below the season follow the sundial where `almanac:urb` 8 is silent (seven days, five weeks, three months, four seasons), and Brackenfoot's dating is weft's Author voicing — both his to re-voice.
 4. One week of Fern Valley days is voiced; a table that plays past it meets days not yet dated, and the hour then shows only to the week.
+
+## The breath step — the same evening, after the merge
+
+**The fault.** As merged, every committed line stepped the clock one beat, about twenty minutes on urb's sundial. David: *"If people speak to one another and 20 mins passes between each statement... we've just broken the game!"* — and the ask: *"words and blows step a breath by default, the resolver names a minute, a beat or a part of the day when more passes, and play a conversation and a fight on the throwaway table before you hand it."* The real clock stays where it was: field 3's timestamp runs the beach, the game moment at field 2 tracks only the characters, and a second-by-second fight played over an evening is a minute of the world's time.
+
+**What changes (in the router).**
+
+1. *The clock reads to the breath.* A stamp carries the clock's two finer rungs past the floor — the beat, then minute and breath (`12000311221.23`). A commit that names nothing steps one breath; nine breaths fill a minute, nine minutes a beat, and the last breath of deep night turns to the next first light. A stamp written before reads as its first breath (`…211` is `…211.11`).
+2. *THE HOURS AHEAD lists a breath first* — what is said, what is struck, no WHEN line — then a minute on, a beat on, and hours: the parts of the day to come, each with its address.
+3. *The players' characters set the step* — the finest grain among their acts (grit 6.3); what the place's people do keeps to it. Words and blows are breaths, however much is told around them. A going takes the time of its way; a search, a wait or a sleep names the nearest step that holds it, a wait running to the hour it waits for. In doubt, the nearer: a later moment can carry the clock on, and nothing carries it back.
+4. *The close is at most two lines, WHEN then WAY.* The WAY rule's old "ONE LINE MORE" predates WHEN: a going kept its WAY and dropped its time, or wrote the clock's address into the WAY line.
+
+**Played** (`/w/urb-hours-walk-1023`, Sonnet 4.6 on the rig key). Committed through the first cut: three exchanges of talk and two of a fight at the ford stepped one breath each (`…211.12` to `.16`), first light holding throughout; then a ford crossing jumped to Morning — the fault that shaped 2–4. Sampled on one frame, nothing committed, the final wording four times an act: talk, a breath 4/4; blows 4/4; a search, a minute on 4/4; a wait until the afternoon, the afternoon 4/4; a sleep until dark, dark 4/4; a going, a breath or a minute, never a part of the day. The first cut had made talk a minute 3/5 when one of the place's people strolled in the same moment — hence 3. Committed through the final wording: talk `…221.22`, blows `.23`, then a wait to midday — the nearer of the hour it asked for, the telling "all morning". No frame held a wall-clock instant.
+
+**Seen, not caused here.**
+
+1. A going to the next place mostly moves a breath where its way takes a minute — short, and harmless. The way's own time could come from the map (grit 6: the room and the beat), the lattice's correspondence of place and time, whose rulings wait at task:weft 22.
+2. The opening race in the liquid buffer. A stage that opens a window rebuilds the whole buffer (`stageLiquid`: "two simultaneous openers can race this whole-block write — last wins … revisit if observed"). Observed: the doorman's figure, staged as it answered a fold's bell, won the opening over a player's stage made at the same moment, and the player's act was missing from the next resolution. From a harness in London the window is about a second; through the router on Railway, tens of milliseconds. Left for its own lane.
