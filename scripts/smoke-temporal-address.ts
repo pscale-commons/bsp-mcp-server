@@ -18,7 +18,7 @@ import {
   renderAddressRelation,
   annotateAges,
 } from '../src/temporal.js';
-import { bspRead, formatRead } from '../src/bsp-fn.js';
+import { bspRead, formatRead, onRealClock } from '../src/bsp-fn.js';
 import { writeAt } from '../src/bsp.js';
 import { stampPlainAppend } from '../src/tools/bsp.js';
 
@@ -161,6 +161,17 @@ ok(
 );
 const tmrwRead = formatRead(bspRead(clock, tomorrowAddr, null) as any);
 ok('floor-10 ahead label tagged AHEAD', tmrwRead.includes('(AHEAD — tomorrow)'), tmrwRead);
+
+// A WORLD'S MAP IS NOT THE REAL CLOCK (rpg.2, 2026-10-23): spatial:urb is floor
+// 10 too, and Brackenfoot at 2111111100 read back 'AHEAD — in 30750 days'.
+const map: any = chain(10, 'URB entire — the world rung');
+writeAt(map, '2111111100', 'Brackenfoot — a poor holding at the foot of the bracken slopes');
+const mapRead = formatRead(bspRead(map, '2111111100', null) as any, { onClock: onRealClock('spatial:urb') });
+ok('a world register\'s labels ride bare', mapRead.includes('Brackenfoot') && !/\((AHEAD|now) —/.test(mapRead), mapRead);
+ok('the three registers and their mirrors are off the clock; a clock family is on it',
+  !onRealClock('spatial:urb') && !onRealClock('temporal:urb') && !onRealClock('identity:urb') && !onRealClock('spatial:Ugarth')
+  && onRealClock('now:weft') && onRealClock('spine:beach-venture') && onRealClock('torus-mirror:weft'));
+ok('the clock family still tags its own labels', formatRead(bspRead(clock, dayAddr, null) as any, { onClock: onRealClock('now:weft') }).includes('(now — today)'));
 
 const pool: any = {
   _: { _: 'a pool' },

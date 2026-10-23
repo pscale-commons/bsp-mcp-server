@@ -23,7 +23,7 @@
 
 import { z } from 'zod';
 import { Block, floorDepth } from '../bsp.js';
-import { formatRead } from '../bsp-fn.js';
+import { formatRead, onRealClock } from '../bsp-fn.js';
 import { floorAlign, AlignedLevel, PscaleNode } from '../floor-align.js';
 import { loadBlock, translateAddress } from '../db.js';
 
@@ -78,7 +78,7 @@ function formatLevel(level: AlignedLevel, labels: string[], floors: number[]): s
       pscale: level.pscale,
       target_depth: floors[i] - level.pscale,
       entries: nodes.map((n) => ({ address: n.address, content: n.text, stamp: n.stamp, beneath: n.beneath })),
-    }).split('\n').slice(1).map((l) => l.trimStart());
+    }, { onClock: onRealClock(label.slice(label.lastIndexOf('/') + 1)) }).split('\n').slice(1).map((l) => l.trimStart());
     disc.forEach((l, j) => lines.push(`${j === 0 ? `  ${label}:` : `  ${' '.repeat(label.length)} `} ${l}`));
   });
   return lines.join('\n');

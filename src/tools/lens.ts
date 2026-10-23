@@ -23,7 +23,7 @@ import { Block, readAt } from '../bsp.js';
 import { loadBlock, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
 import { addressToSpan } from '../temporal.js';
 import { collectContributions } from './pool.js';
-import { tableWorld, worldBlock, blockOf, passportsAt, sheetOf, placeWalk, P, joinParts, type Composed, type Part } from './tiers.js';
+import { tableWorld, worldBlock, blockOf, passportsAt, sheetOf, placeWalk, P, joinParts, worldFrame, whereSection, whenSection, stampOn, momentLabel, type Composed, type Part } from './tiers.js';
 
 // ── small readers, local by intent (stream.ts imports this file) ─────────────
 
@@ -64,7 +64,7 @@ export async function followsOf(handle: string): Promise<string[]> {
 
 // ── the moment ──────────────────────────────────────────────────────────────
 
-export interface Moment { room: string; slot: number; who: string; text: string; ts: string; woven: string[] }
+export interface Moment { room: string; slot: number; who: string; text: string; ts: string; at: string; woven: string[] }
 
 /** THE MOMENTS AT A BEAT — every telling the table's rooms recorded within the
  *  beat's span. A room's record is public and timestamped, so the clock finds a
@@ -75,8 +75,9 @@ export function momentsIn(pool: Block, room: string, start: Date, end: Date): Mo
     .filter((c) => { const t = Date.parse(c.ts as string); return Number.isFinite(t) && t >= start.getTime() && t < end.getTime(); })
     .map((c) => ({
       room, slot: c.position, who: c.agent_id ?? 'someone',
-      text: c.text.split('\n').filter((l) => !/^\s*WAY\b/.test(l)).join('\n').trim(),
+      text: c.text.split('\n').filter((l) => !/^\s*(WAY|WHEN)\b/.test(l)).join('\n').trim(),
       ts: c.ts as string,
+      at: c.address ?? '',
       woven: c.woven ? c.woven.split(',').map((w) => w.trim()).filter(Boolean) : [],
     }));
 }
@@ -194,6 +195,13 @@ export async function composeLensMedium(origin: string, atAddr: string, handle: 
     if (night) fold = lensVoice(readAt(night, atAddr));
   }
 
+  // the world around the place, and the hour on the world's clock — so the light
+  // and the weather of a picture are the moment's own, not the look's default
+  const wf = await worldFrame(origin, tw, index);
+  const stamps = moments.map((m) => stampOn(wf.clock, m.at)).filter((a): a is string => !!a).sort();
+  const nowAt = stamps.length ? stamps[stamps.length - 1] : null;
+  const label = (m: Moment) => { const a = stampOn(wf.clock, m.at); return a ? momentLabel(wf.clock!, a) : m.ts; };
+
   // the place, the people, the cast
   const roomsHere = [...new Set(moments.map((m) => m.room))];
   const places = roomsHere.map((r) => (tw.spatial ? placeWalk(tw.spatial, r, false) : null)).filter((s): s is string => !!s);
@@ -235,9 +243,12 @@ export async function composeLensMedium(origin: string, atAddr: string, handle: 
     P(1, 'biology', '1.4', `function:${field}:1,3,4,6`, "the lens law — what a fold makes, the references, where it lands, the recipe mounted", `[THE LAW — the lens at this table, and the library's branches it mounts]\n${lawText || '(no law stands)'}`),
     P(1, 'biology', '1.4', 'ways:stills:6', 'THE RECIPE every seat follows, verbatim', `[THE RECIPE — ways:stills 6]\n${recipeText}`),
     P(1, 'biology', '1.4', 'tier:medium:contract', 'THIS CALL — the role worn and the shape of the reply', SHOT_CONTRACT),
-    P(2, 'chemistry', '6.1', `${field}:${handle}:${atAddr}`, 'for whom, and the moment', `# THE INPUT\n\nfor: ${handle} · at ${atAddr} (${span.start.toISOString().slice(0, 16)}Z – ${span.end.toISOString().slice(11, 16)}Z)\n\n[THE MOMENT — as the table's record holds it]\n${fold ? `the fold at ${atAddr}: ${fold}\n` : ''}${moments.length ? moments.map((m) => `pool:${m.room}:${m.slot} · ${m.who}${m.woven.length ? ` · wove ${m.woven.join(', ')}` : ''} · ${m.ts}\n${m.text}`).join('\n\n') : fold ? '' : '(no telling landed in this beat; compose from the direction and the place alone)'}`),
+    P(2, 'chemistry', '6.1', `${field}:${handle}:${atAddr}`, 'for whom, and the moment', `# THE INPUT\n\nfor: ${handle} · at ${atAddr} (${span.start.toISOString().slice(0, 16)}Z – ${span.end.toISOString().slice(11, 16)}Z)\n\n[THE MOMENT — as the table's record holds it]\n${fold ? `the fold at ${atAddr}: ${fold}\n` : ''}${moments.length ? moments.map((m) => `pool:${m.room}:${m.slot} · ${m.who}${m.woven.length ? ` · wove ${m.woven.join(', ')}` : ''} · ${label(m)}\n${m.text}`).join('\n\n') : fold ? '' : '(no telling landed in this beat; compose from the direction and the place alone)'}`),
     P(2, 'chemistry', '6.1', `${field}:*:${atAddr}`, 'THE DIRECTION — the followed lines at this moment', `[THE DIRECTION — the lines of the hands ${handle} follows at this moment, and ${handle}'s own]\n${direction.length ? direction.map((d) => `- ${d.who}: ${d.text}`).join('\n') : '(nobody followed has said anything of this moment)'}`),
+    P(2, 'chemistry', '4.2', wf.placing.where ? `${wf.placing.where.block}:${wf.placing.where.addr}:walk` : 'no world placing', 'where in the world', whereSection(wf)),
     P(2, 'chemistry', '4.2', `spatial:${world}:walk`, 'the place, in its own words', `[THE PLACE]\n${places.join('\n\n') || '(no place register reaches this room)'}`),
+    P(2, 'chemistry', '4.2', wf.clock ? `${wf.clock.ref.block}:${nowAt ?? 'season'}:walk` : 'no world clock', 'when: the hour and weather of the moment',
+      wf.clock ? whenSection(wf, nowAt, 'at this moment — its light and weather are the picture\'s') : ''),
     P(2, 'chemistry', '4.2', `people:${world}`, 'the people in frame, by scale', `[THE PEOPLE WHO KEEP THIS PLACE — draw only those the moment shows]\n${principals || '(no people register)'}`),
     P(2, 'chemistry', '1', 'passport:*:3', 'the cast: looks and faces', `[THE CAST — the characters in the moment, their looks, and the link to each face when one stands]\n${sheets.length ? sheets.map((s) => `- ${s.handle}${s.name !== s.handle ? ` (${s.name})` : ''}: ${s.look || 'as described'}${faces.get(s.handle) ? `\n  face: ${faces.get(s.handle)}` : '\n  face: none given — drawn from the words alone'}`).join('\n') : '(no character of this table is in the moment)'}`),
     P(2, 'chemistry', '2', `style:${world}`, 'the look', `[THE LOOK]\n${styleText || '(no look register — the line at ways:stills 6.1 stands)'}`),
