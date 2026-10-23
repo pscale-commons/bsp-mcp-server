@@ -457,6 +457,15 @@ console.log('\n=== where, when, who — the world\'s three spindles in every fra
   check('only the placing crosses the fence: the scenario keeper\'s own register still never reaches the resolution', !/THE ARC/.test(old) && !/PEEL OFF THE BOY/.test(old));
   const oldMoment = await beatMoment(TABLE, '120', ['mara', 'dorn'], null);
   check('and a beat committed there carries no moment yet', oldMoment === null);
+  // A table already in play names its present at keeper:scene 5 — never at 3,
+  // whose placing line the pictures page reads from its end.
+  const grpKeeper = beaches[TABLE]['keeper:scene'] as any;
+  grpKeeper['5'] = 'WHEN: *:https://world.test:temporal:world:311200 — the second day, the present this table resumes at.';
+  check('a table\'s keeper names its present at position 5, and its next beat starts at its first light',
+    (await beatMoment(TABLE, '120', ['mara', 'dorn'], null))?.stamp === '*:https://world.test:temporal:world:311211' && /^PLACING: \*:\S+:spatial:thornlea:120$/.test(grpKeeper['3']));
+  const named = section(await tier('medium', '120', 'dorn'), 'THE INPUT');
+  check('and the frame walks the clock to that present', /The second day — a thin cold rain/.test(named) && /First light — grey, the fog lying on the water/.test(named) && !/the hour stands where/.test(named));
+  delete grpKeeper['5'];
 
   // A table begun since: the story starts at the scenario's moment on the clock.
   const freshText = await handlePoolEngage({ pool_url: FRESH, pool_name: '120', agent_id: 'sef', tier: 'medium' } as any);

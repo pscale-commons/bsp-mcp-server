@@ -236,13 +236,16 @@ export interface WorldPlacing {
 /** Where a table stands in its world, and from when its story runs: the
  *  scenario's keeper placing names the place on the world's map and the moment
  *  its story begins on the world's clock; a table's own keeper may name a later
- *  moment for a story already under way. */
+ *  moment for a story already under way — at its position 5, where a character
+ *  new to the table stands in time (the clock tables' FIRST BEAT is the same
+ *  position). Never at 3: the table's placing line must end with the place's
+ *  star-ref, for the readers that take it from the end (the pictures page). */
 export async function worldPlacing(origin: string, tw: TableWorld, index: string[]): Promise<WorldPlacing> {
   const scenarioKeeper = tw.world ? await worldBlock(origin, tw, `keeper:${tw.world}`, index) : null;
   const tableKeeperName = index.find((b) => b.startsWith('keeper:') && b !== `keeper:${tw.world}`);
   const tableKeeper = tableKeeperName ? blockOf(await loadBlock(origin, tableKeeperName)) : null;
   const scenario = starRefs(faceOf((scenarioKeeper as any)?.['3']));
-  const own = starRefs(faceOf((tableKeeper as any)?.['3']));
+  const own = starRefs(faceOf((tableKeeper as any)?.['5']));
   const time = (r: Ref) => r.block.startsWith('temporal:');
   const ownWhen = own.find(time) ?? null;
   return {
