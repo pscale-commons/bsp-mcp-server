@@ -75,7 +75,7 @@ import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
 import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH, type BlockRow } from '../db.js';
 import { formatBorn, fullWidthAddress } from '../bsp-fn.js';
 import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR, readHumanTime, readHumanDay, readHumanSpan, SPAN_MAX_DAYS, spanInPlace, wallClock, wallDay, DAY_PARTS } from '../temporal.js';
-import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLOCK_FIELD } from './clock.js';
+import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, keeperHand, foldEnds, timeKey, clockDigits, CLOCK_FIELD } from './clock.js';
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
 import { nameAtTheDoor, noteLook, reflect } from '../looks.js';
@@ -750,6 +750,27 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       }
       spanSaid = { touched, cleared: true };
     } else if (params.say !== undefined && params.say.trim() !== '') {
+      if (field === CLOCK_FIELD) {
+        // ON THE CLOCK A CHARACTER SAYS FOR THEMSELF. A lean that voiced 'hobb'
+        // while Hobb sat at the table seated a second Hobb under another key (the
+        // two-player walk, 2026-10-05): a mirror named for a character in any
+        // spelling but their own is refused.
+        const twin = (index?.blocks ?? []).map((n) => (n.startsWith('passport:') ? n.slice('passport:'.length) : ''))
+          .find((h) => h && h !== handle && h.toLowerCase() === handle.toLowerCase());
+        if (twin) return out(`Nothing said — '${handle}' is ${twin}, a character at this table, who says for themself under their own key; a figure is named for its face.`);
+        // A FOLDED BEAT TAKES NO LINE. The slow player's line landed at a beat
+        // another hand had folded, with no word, and was never told (lane F's
+        // walk, 2026-10-08): it is refused here, naming the beat to say at.
+        if ((index?.blocks ?? []).includes(CLOCK_FIELD)) {
+          const nrow = await loadBlock(origin, CLOCK_FIELD).catch(() => null);
+          const night = nrow && typeof nrow.block === 'object' && nrow.block !== null ? (nrow.block as Block) : null;
+          const folded = night ? voiceOf(readAt(night, emitFor(digits, night))) : null;
+          if (folded) {
+            const n = foldEnds(folded).next;
+            return out(`Nothing said — ${params.at} is already folded, and a folded beat takes no line${n ? `: say at its NEXT (${n})` : ''}.`);
+          }
+        }
+      }
       let mrow = await mirrorNow();
       if (!mrow || typeof mrow.block !== 'object' || mrow.block === null) {
         mintedMirror = mirrorName;
@@ -841,27 +862,77 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
         await saveBlock(origin, treeName, tblock, { spindle: tAddr, secret: params.secret });
         keptTo = `${treeName}:${tAddr}`;
       } else {
+        // THE NIGHT at a table played on the clock: one fold per address, and
+        // THE FIRST KEPT STANDS. A keeper's hand named at keeper:scene 4 keeps
+        // it alone — the night is born locked under that hand's key and the
+        // store refuses every other. At a table of players any seated hand
+        // keeps it, so the night is born open, a second fold at an address is
+        // refused here, and the write is read back: two hands pressing in the
+        // same moment both pass the check, the night holds whichever landed
+        // last, and the other is told so rather than telling a fold the record
+        // does not hold (the beach has no first-write-only act). The night
+        // locked under the first presser's key refused the second player ever
+        // after (the two-player walk, 2026-10-05). Every other family's fold is
+        // born open, as the convention prefers (tree:3, tree:4): anyone may
+        // supersede.
+        const clock = field === CLOCK_FIELD ? await clockTable(origin).catch(() => null) : null;
+        const hand = clock ? await keeperHand(clock).catch(() => null) : null;
+        if (hand && hand.toLowerCase() !== handle.toLowerCase()) {
+          return out(`The fold was not kept — ${hand} keeps the night at this table (keeper:scene 4): say, and wait to be told.`);
+        }
+        if (clock && !hand) {
+          // THE HAND IS SEATED AND KEYED: a passport at this table, and the key
+          // proven against it by a byte-identical write-back of its standpoint
+          // (the proof every enrolment uses). A passer-by with no passport and
+          // no key kept a fold at an open night (lane F's probe, 2026-10-08).
+          const prow = (index?.blocks ?? []).includes(`passport:${handle}`) ? await loadBlock(origin, `passport:${handle}`).catch(() => null) : null;
+          if (!prow || typeof prow.block !== 'object' || prow.block === null) {
+            return out(`The fold was not kept — ${handle} has no passport at this table; only a seated character's hand folds.`);
+          }
+          if (typeof (prow.block as any)['3'] === 'string') {
+            try { await saveBlock(origin, `passport:${handle}`, prow.block as Block, { spindle: '3', secret: params.secret }); }
+            catch { return out(`The fold was not kept — the key given is not ${handle}'s; only a seated character's own hand folds.`); }
+          }
+        }
         let frow = await loadBlock(origin, field).catch(() => null);
         if (!frow || typeof frow.block !== 'object' || frow.block === null) {
-          // THE NIGHT IS BORN LOCKED. On a table played on the clock the bare
-          // field is the night, and one night needs one determiner: the first
-          // keep births it under the keeper's key, and that key folds it ever
-          // after (the trial's finding, 2026-09-21 — a rival keep is refused by
-          // the store, no code). Every other family's fold is born open, as the
-          // convention prefers (tree:3, tree:4): anyone may supersede.
-          const clock = field === CLOCK_FIELD && params.secret ? await clockTable(origin).catch(() => null) : null;
           const born = clock
-            ? `THE NIGHT — what has happened at this table, kept by the keeper alone at the clock's own addresses: a beat's fold at its beat, a gathering's at its gathering, a day's at its day, each coarser fold standing above the finer ones it contains. One night, under one key, born at the first fold; a line revised after its fold is visibly later than the night it was folded into.`
+            ? `THE NIGHT — what has happened at this table, kept at the clock's own addresses: a beat's fold at its beat, a gathering's at its gathering, a day's at its day, each coarser fold standing above the finer ones it contains. One fold per address, and the first kept stands — ${hand ? `kept by ${hand}'s hand alone, under its key` : 'kept by whichever seated hand folds first, so any player may make the moment happen'}; a line revised after its fold is visibly later than the night it was folded into.`
             : `${field.toUpperCase()} — the FOLD: the social product of ${spineName} and every ${field}:<handle> mirror, ` +
               `at the spine's own addresses. Computed by anyone, owned by nobody; a snapshot here is endorsed by pointer and never gates anything, ` +
               `and a better reading may always supersede it (tree:3, tree:4).`;
-          await saveBlock(origin, field, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(clock ? { new_lock: params.secret } : {}) });
+          await saveBlock(origin, field, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(clock && hand && params.secret ? { new_lock: params.secret } : {}) });
           frow = await loadBlock(origin, field).catch(() => null);
         }
         const fblock: Block = JSON.parse(JSON.stringify(frow!.block));
         const fAddr = emitFor(digits, fblock);
+        const standing = clock ? voiceOf(readAt(fblock, fAddr)) : null;
+        if (standing) {
+          const n = foldEnds(standing).next;
+          return out(`The fold was not kept — ${fAddr} is already folded, and the first fold stands. Tell it (tier='soft' at ${fAddr}) and say at its NEXT${n ? ` (${n})` : ''}.`);
+        }
+        if (clock) {
+          // NEXT IS THE CLOCK'S ONLY HAND (2.2): a fold that ends at its own
+          // address, or before it, would stop the clock — every passport would
+          // be moved to the beat just folded (the walk of 2026-10-06: "NEXT
+          // 161" at 161). Refused, with the fault named, so the hand folds again.
+          const n = foldEnds(text).next;
+          const nd = n ? clockDigits(n, clock.floor) : null;
+          const nAddr = nd ? nd.join('').padEnd(clock.floor, '0') : null;
+          if (!nAddr || timeKey(nAddr).localeCompare(timeKey(fAddr)) <= 0) {
+            return out(`The fold was not kept — it ends ${n ? `NEXT ${n}` : 'without NEXT'}, which does not move the clock past ${fAddr}: NEXT must name a later address (2.2) — the following beat while the scene runs on, the first beat of the next gathering when it has ended.`);
+          }
+        }
         writeAt(fblock, fAddr, voicedValue(readAt(fblock, fAddr), text));
         await saveBlock(origin, field, fblock, { spindle: fAddr, secret: params.secret });
+        if (clock) {
+          const again = await loadBlock(origin, field).catch(() => null);
+          const held = again && typeof again.block === 'object' && again.block !== null ? voiceOf(readAt(again.block as Block, fAddr)) : null;
+          if (held && held.trim() !== text) {
+            const n = foldEnds(held).next;
+            return out(`The fold was not kept — another hand's fold landed at ${fAddr} in the same moment, and the night holds theirs. Tell it (tier='soft' at ${fAddr}) and say at its NEXT${n ? ` (${n})` : ''}.`);
+          }
+        }
         keptTo = `${field}:${fAddr}`;
       }
     } catch (e: any) {
@@ -1102,7 +1173,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     : `# The fold — yours to make, not the primitive's` +
       `\nSynthesise the snapshot above under the law${law ? '' : ` (no function:${field} at this beach, so integrate plainly)`}. ` +
       `Keep it only if it should outlast this turn: keep='personal' lands it at tree:${field}:${handle}:${spineAddr}, your own latest reading of this point; keep='collective' lands it at ${field}:${spineAddr}, ` +
-      `where anyone may supersede it with a better reading.`,
+      ((index?.blocks ?? []).includes(`function:${CLOCK_FIELD}`) && field === CLOCK_FIELD ? `where the first fold kept stands.` : `where anyone may supersede it with a better reading.`),
   );
 
   if (saidAt || keptTo || spanSaid) {
