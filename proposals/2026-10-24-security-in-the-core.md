@@ -89,5 +89,6 @@ No one centrally. The guard is a string scan of each payload in whichever router
 
 - `npm run build` is clean.
 - `npm run smoke:key-guard` passes 21 of 21. It covers keys refused in a sentence, at a deep leaf, as a `new_lock`, in a settle declaration, in a grain side, as a phrase of several words, and with regex characters taken literally. It also covers what passes: pointers, short keys, a key inside a longer word, a case variant, and a gray envelope. And it checks that the refusal never repeats the key.
-- The existing batteries pass: smoke:parser (104), unit, dots, envelope, gray-guard (63), wire (42), compile (66), sentinel, wellformed, hollow-ack.
+- The whole offline suite CI runs passes, with key-guard now added to it: among them smoke:parser (104), unit, dots, envelope, gray-guard (63), wire (42), compile (66), sentinel, wellformed, hollow-ack, and genus (57).
+- The genus window carries sunstone's branch underscores, so the parity snapshot (`scripts/fixtures/genus-parity/expected.json`) was regenerated from `kernel.py --compose-only` on the same fixture and clock. The live kernel already agreed, and the change is exactly the two sunstone sentences.
 - Read-back: whetstone 9.43, walked as a future session meets it, arrives with 9 and 9.4 above it. whetstone 9 at pscale 0 lists 9.1 to 9.5 beneath. sunstone 3.5 and 6.6 each ride their branch's underscore, and shell-genome 8 reads whole.
