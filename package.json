@@ -29,6 +29,7 @@
     "smoke:floor": "tsx scripts/smoke-floor-align.ts",
     "smoke:dots": "tsx scripts/smoke-dots.ts",
     "smoke:hollow-ack": "tsx scripts/smoke-hollow-ack.ts",
+    "smoke:key-guard": "tsx scripts/smoke-key-guard.ts",
     "smoke:envelope": "tsx scripts/smoke-envelope.ts",
     "habits": "python3 scripts/bsp-habits.py",
     "count": "python3 scripts/count-calls.py",

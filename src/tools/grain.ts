@@ -23,7 +23,7 @@
  */
 
 import { z } from 'zod';
-import { isFederatedOwner, loadBlock, loadBeachIndex, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
+import { isFederatedOwner, loadBlock, loadBeachIndex, resolveFederationOrigin, refuseKeyInPayload, DEFAULT_BEACH } from '../db.js';
 import { pairId, determineSide } from '../locks.js';
 // The reach body belongs to the WIRE — grainReach computes pid and side
 // itself (side typed '1' | '2', the string the handler compares) and returns
@@ -217,6 +217,7 @@ A second call with these args would be rejected as "your side already exists".`,
   if (!origin) {
     return { content: [{ type: 'text', text: `Federated grain reach failed: No beach at ${beach} (also tried beach.<host>). Site is not federated.` }] };
   }
+  refuseKeyInPayload({ description, my_side_content }, [my_passphrase]);
   const result = await grainReach(origin, {
     handle,
     partner: partner_handle,
