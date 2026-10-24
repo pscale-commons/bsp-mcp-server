@@ -37,6 +37,14 @@ A room is an accumulator and reads as one (block-conventions 3.5). Its summaries
 3. **Both halves at every door.** With a marker, the door delivers the spindle above the entries after the marker: first the summaries of the closed containers over the span already read, then the new entries whole. Without a marker, the fold works as it does now. `wantsFold` no longer requires `sincePosition === 0` at the door. A plain `pscale_pool_engage` with `since_position` keeps its slice unchanged unless `fold` is asked for.
 4. **Nothing else.** There is no new block, no new field and no stored state in the router. The marker is the reader's located account entry, which the door already reads, and the summaries are the room's own zero slots.
 
+## In the mirror (observed, xstream-bsp's to change)
+
+The mirror already reads a room by its spindle. Looked at on 24 October, mirror.onen.ai/?pool=weft opens its archive as three hundreds, each a dropdown that opens on its containers, and every dropdown is headed by a zero-slot voice. The new summaries are those headings.
+
+They are one step out. A dropdown is headed by the voice at its own zero slot, and under +0 inductive that voice summarises the nine entries before it. So the group headed "Summary of 191–199" opens on 211–219. The group headed "Summary of 271–279" opens on 281–284. The hundred headed by the line 110–190 opens on 211 onward.
+
+A heading that describes what it opens on is the voice at the next zero slot: container N takes the voice at the zero slot of container N+1, and a hundred takes the next hundred's. The open container has no summary yet, so it is headed by its count. The fix sits in the mirror's grouping and asks nothing of the block. The spindle itself is unchanged, since a walk to an entry still rides the voice of everything before it.
+
 ## Who pays
 
 Each reader pays for its own reads, and the room stores nothing about who read it. A summary is paid in the act of the append that earns it (block-conventions 3.5). The door names an owed summary at every arrival, so the reader who opened a span pays for it.
