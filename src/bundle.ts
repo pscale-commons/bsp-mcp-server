@@ -461,8 +461,20 @@ export function renderMemberBody(m: Member): string {
   return out.join('\n');
 }
 
+/** A member's label: the reference as dialed, and — where it used a word or a
+ *  bare name — the block and address it resolved to, which is what bsp() takes.
+ *  'turn:head' alone sent a reader to a block that does not exist (seat.2,
+ *  2026-10-22); 'turn:head → turn:weft 3.9' is one read. */
+export function memberLabel(m: Member): string {
+  const leaf = m.leaf ?? '(empty)';
+  if (!m.ref || m.absent || !m.name) return leaf;
+  if (!m.ref.word && m.name === m.ref.name) return leaf;
+  const addr = m.ref.word === 'now' && m.address ? m.address.slice(0, TEMPORAL_FLOOR) : (m.address ?? '');
+  return `${leaf} → ${m.name}${addr ? ` ${addr}` : ''}`;
+}
+
 export function renderMember(m: Member, indent = '  '): string {
-  const head = `── ${m.slot} · ${m.leaf ?? '(empty)'} ──`;
+  const head = `── ${m.slot} · ${memberLabel(m)} ──`;
   const body = renderMemberBody(m).split('\n').map((l) => indent + l).join('\n');
   return `${head}\n${body}`;
 }
