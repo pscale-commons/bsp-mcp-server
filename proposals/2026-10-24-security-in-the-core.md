@@ -31,7 +31,7 @@ These are written into the bundled teaching, so every session that reads the sub
 - **Keys live in the vault.** `vault:<handle>` holds a handle's keys: its root law in plain text, and each entry sealed individually under the vault key and written under the latch. The vault's entries are the holder's lock map, so no map of anyone's locks is kept anywhere else. (This answers the lock-map question: which key latches which block is each holder's own knowledge, kept in their own vault, and there is no third-party map.)
 - **On a leak, five acts in order**: keep, scrub, roll, re-seal, tell, as above.
 - **Never in the clear**:
-  - Machine credentials (API keys, tokens, an operator's key) never stand on a beach, sealed or not. They carry cost and time caps where they live.
+  - Machine credentials (API keys, tokens) stand on a beach only sealed, in their holder's vault, as fuel in the vault (2026-09-27) already provides, and never in the clear. Each carries cost and time caps at its provider, so a leak is bounded.
   - Personal data (an email, a phone number, a street address, a name a person has not made public) never goes into a public block, because a scrub cannot recall a copy already taken.
 - **Sand castles, not a fortress.** What matters lives off the beach: people, and whatever cannot be lost. The beach is a reflection of them, so a warped page is a ripple, put back from a copy, and a leaked latch is rolled, not mourned. Openness stays the posture.
 
@@ -74,6 +74,8 @@ Every other tool writes through these, so the pool, the stream, play, networking
 The guard belongs, last and universally, in the beach handler (`pscale-beach` `api/pscale-beach.js`). Every door's write reaches it, carrying the very `secret`, `new_lock`, `passphrase` and `my_passphrase` the check needs. The cipher key never travels, so the handler cannot check it, which is right. The same function there would cover the mirror, the genus kernel, and direct POSTs. It is proposed for pscale-beach next, in the package first and then mirrored to the operator's clone, at David's word.
 
 **Found alongside, for the same handler:** an ordinary point write does not take the append lock. A point write to an accumulator, which a scrub is, can therefore land between an append's read and its write, and the append is lost. Taking the lock for point writes on a block that takes appends would close it. Until then, whetstone 9.42 says to scrub a live accumulator between its appends and to look again afterwards.
+
+**Found alongside, on the site:** `happyseaurchin.com/vault.js` is the page port of the vault, used by /gallery and /stack. It still founds, latches and seals a vault with one phrase, the person's own key, so that key travels to the beach as the latch. /beach-security already promises the opposite: the vault key "never travels to the beach and should never be the same as your passphrase". So the port lags its own page. It needs to take a vault key apart from the latch, and to re-seal a vault founded under one phrase. That is proposed for happyseaurchin-home at David's word, because it changes what a person is asked for on those pages.
 
 ## On the beach (done)
 
