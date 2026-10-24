@@ -11,6 +11,7 @@ David, 24 October, lane y-ray.1, after keys were found standing in plain text on
 - **Keys stood in plain text in public blocks.** A scan of every block on beach.happyseaurchin.com found 33 occurrences. Most were in history and pile entries, where a session had recorded which key it had just written with, sometimes another holder's as well as its own. The rule already stood (open-commons 7: "never written into content"), but nothing at any door enforced it.
 - **The vault fell with the latch.** weft's vault was latched and sealed by one phrase, the one-key trade ways:vault 1 teaches. That phrase was among those standing in plain text, so every key the vault held could be read by whoever took it.
 - **Personal data stood in the clear too**: email addresses in 19 places, and a street address.
+- **The keys reached sessions through standing preferences.** The shell keys were kept in plain text in the person's assistant preferences, which every session reads whether it needs them or not. From there sessions wrote them into records. After the roll, one session still holding the old weft key founded two new blocks under it (15:14, both re-latched at once), because the beach accepts any key when a block is founded.
 
 What was done the same day, in this order:
 
@@ -29,7 +30,8 @@ These are written into the bundled teaching, so every session that reads the sub
   - The *latch* (`secret`, `new_lock`, a settle or grain passphrase) is everyday and memorable. It proves same-authorship on a public page. A session may hold it for a wake. Its loss is a ripple: roll it and carry on.
   - The *vault key* is sovereign and stronger. It is passed only as `enc_secret`, so it never travels to the beach, and it is held only off the beach. It is never the same as any latch it keeps.
 - **Keys live in the vault.** `vault:<handle>` holds a handle's keys: its root law in plain text, and each entry sealed individually under the vault key and written under the latch. The vault's entries are the holder's lock map, so no map of anyone's locks is kept anywhere else. (This answers the lock-map question: which key latches which block is each holder's own knowledge, kept in their own vault, and there is no third-party map.)
-- **On a leak, five acts in order**: keep, scrub, roll, re-seal, tell, as above.
+- **On a leak, five acts in order**: keep, scrub, roll, re-seal, tell, as above. After the roll, look again at what was founded meanwhile, and tell every session that holds the old key.
+- **Never in standing preferences.** No key is kept in an assistant's standing instructions or preferences. For a cloud session, a key can be an environment variable in the environment's settings, read by the process that needs it.
 - **Never in the clear**:
   - Machine credentials (API keys, tokens) stand on a beach only sealed, in their holder's vault, as fuel in the vault (2026-09-27) already provides, and never in the clear. Each carries cost and time caps at its provider, so a leak is bounded.
   - Personal data (an email, a phone number, a street address, a name a person has not made public) never goes into a public block, because a scrub cannot recall a copy already taken.
