@@ -519,6 +519,36 @@ export function deriveSurgicalValue(block: Block, spindle: string, hasContent: b
   return value;
 }
 
+/**
+ * THE KEY GUARD: a key is a pointer, never a value (whetstone 9). On
+ * 2026-10-24 keys were found standing in plain text in public blocks, written
+ * there mostly by the sessions that had just used them, and every one had to
+ * be scrubbed and rolled. The router cannot know anyone else's key, but it
+ * holds the keys THIS call presents, so it refuses any payload that carries
+ * one of them as a whole word before anything is sent. It reads the payload
+ * as it leaves for the beach: a gray write is sealed by then, so a key kept
+ * in a vault entry passes. Keys shorter than six characters are not checked
+ * (they would match ordinary words). The refusal never repeats the key.
+ *
+ * Exported for the smoke battery (scripts/smoke-key-guard.ts); pure.
+ */
+export function refuseKeyInPayload(payload: unknown, keys: Array<string | null | undefined>): void {
+  const held = [...new Set(keys.filter((k): k is string => typeof k === 'string' && k.length >= 6))];
+  if (held.length === 0 || payload == null) return;
+  const words = held.map((k) => new RegExp(`(?<![A-Za-z0-9])${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9])`));
+  const carries = (n: unknown): boolean =>
+    typeof n === 'string' ? words.some((w) => w.test(n))
+      : typeof n === 'object' && n !== null ? Object.values(n).some(carries) : false;
+  if (!carries(payload)) return;
+  throw new Error(
+    `refused before sending: this write carries its own key in plain text (the secret, new_lock or ` +
+      `passphrase the call presents). A key is a pointer, never a value: name it (whose key, kept where) ` +
+      `and never quote it. If the text already stood on the beach, scrub it first; if the key is simply a ` +
+      `word the text needs, it is too easy to guess, so change it. The law: ` +
+      `bsp(agent_id="pscale", block="whetstone", spindle="9").`,
+  );
+}
+
 async function saveBlockToBeach(
   ownerId: string,
   blockName: string,
@@ -542,12 +572,14 @@ async function saveBlockToBeach(
     // Whole-block replace, read-back confirmed by the wire — the discipline
     // the seat has carried since wake-1 ("a lost write is a lost wake") now
     // holds at this door too; this path previously fired and trusted.
+    refuseKeyInPayload(block, [opts.secret, opts.new_lock]);
     const r = await wire.saveWhole(origin, blockName, block, wireOpts);
     if (!r.ok) throw beachRejection('save', r);
     born = r.born === true;
   } else {
     const cleanedSpindle = userSpindle.replace(/\*$/, '');
     const value = deriveSurgicalValue(block, cleanedSpindle, opts.hasContent === true);
+    refuseKeyInPayload(value, [opts.secret, opts.new_lock]);
     const r = await wire.writeAt(origin, blockName, cleanedSpindle, value, {
       ...wireOpts,
       pscaleAttention: opts.pscale_attention ?? null,
@@ -646,6 +678,7 @@ export async function appendToBeach(
   if (isSentinelOwner(t.agent_id)) {
     throw new Error(`"${t.agent_id}" is a read-only sentinel; cannot append.`);
   }
+  refuseKeyInPayload(entry, [secret]);
   const origin = await resolveFederationOrigin(t.agent_id);
   if (!origin) {
     throw new Error(`No beach at ${ownerId} (also tried beach.<host>). Site is not federated; cannot append.`);

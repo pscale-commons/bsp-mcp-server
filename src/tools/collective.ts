@@ -28,7 +28,7 @@
  */
 
 import { z } from 'zod';
-import { isFederatedOwner, resolveFederationOrigin, DEFAULT_BEACH } from '../db.js';
+import { isFederatedOwner, resolveFederationOrigin, refuseKeyInPayload, DEFAULT_BEACH } from '../db.js';
 // The register body belongs to the WIRE — sedRegister owns the action shape
 // and returns the handler's {position, address} verbatim.
 import { sedRegister } from '../pscale-wire.js';
@@ -66,6 +66,7 @@ export async function handleSettle(params: {
   if (!origin) {
     return { content: [{ type: 'text', text: `Federated registration failed: No beach at ${beach} (also tried beach.<host>). Site is not federated.` }] };
   }
+  refuseKeyInPayload({ declaration, shell_ref }, [passphrase]);
   const result = await sedRegister(origin, { collective, declaration, passphrase, shellRef: shell_ref });
   if (!result.ok) {
     return { content: [{ type: 'text', text: `Federated registration rejected: ${result.error ?? 'unknown reason'}` }] };
