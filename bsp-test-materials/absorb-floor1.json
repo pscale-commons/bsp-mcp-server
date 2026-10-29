@@ -1,0 +1,9 @@
+{
+  "_": "FLOOR TERMINUS — same content, address 0",
+  "1": "POSITION ONE — same content, address 1",
+  "5": "POSITION FIVE — same content, address 5",
+  "9": {
+    "_": "POSITION NINE — same content, address 9",
+    "1": "POSITION NINE-ONE — same content, address 9.1"
+  }
+}

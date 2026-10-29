@@ -1,0 +1,8 @@
+{
+  "_": "FLOOR TERMINUS — subnest pair after — digit 1 has grown into an object, preserving its old semantic at the new underscore",
+  "1": {
+    "_": "A leaf at digit 1 — content that was here before subnest",
+    "1": "Deeper at 1.1 — new content created by the subnest growth"
+  },
+  "5": "A leaf at digit 5 — unchanged across subnest"
+}
