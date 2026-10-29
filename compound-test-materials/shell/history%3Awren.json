@@ -1,0 +1,26 @@
+{
+  "_": {
+    "_": "history:wren — wren's record, appended, newest last"
+  },
+  "1": {
+    "_": "entries 11 to 19 — the first nine sittings, summarised when the tenth arrived",
+    "1": {
+      "_": "entry 11 — wren woke for the first time",
+      "3": "2026-10-01T09:00:00Z"
+    },
+    "9": {
+      "_": "entry 19 — the ninth sitting",
+      "3": "2026-10-05T09:00:00Z"
+    }
+  },
+  "2": {
+    "1": {
+      "_": "entry 21 — the shelves re-ordered",
+      "3": "2026-10-09T09:00:00Z"
+    },
+    "2": {
+      "_": "entry 22 — the newest sitting: a reader asked for the old maps",
+      "3": "2026-10-10T12:08:00Z"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # A chemistry battery: the composition contract as a block, and a check compounds have never had
 
-**Date**: 2026-10-29 · **Status**: PROPOSED · **Asks for**: one decision, David's — GO, CHANGE or NOT YET (§7) · **Companions**: `strata` 2 (the level), `whetstone` 8 (composition's operations), `block-conventions` 8.8 (the association discipline), `grips` 7 (the four chemistry faults), `proposals/2026-08-09-chemistry-level-faults.md`, and `bsp-test-materials/` (#552, the physics battery whose form this copies).
+**Date**: 2026-10-29 · **Status**: BUILT — David's GO on 29 October; what was built, and where it departs from this text, is §8 · **Companions**: `strata` 2 (the level), `whetstone` 8 (composition's operations), `block-conventions` 8.8 (the association discipline), `grips` 7 (the four chemistry faults), `proposals/2026-08-09-chemistry-level-faults.md`, and `bsp-test-materials/` (#552, the physics battery whose form this copies).
 
 ## 0. The question first: is it a formalisation of the smoke tests?
 
@@ -94,3 +94,24 @@ When biology's battery comes, it takes the same form: the loop's operations and 
 ## 7. The decision
 
 **GO**: build it as above, as a sentinel named `compound-test`, with its materials at `compound-test-materials/`. **CHANGE**: say what to change (the name, the split or the scope). **NOT YET**.
+
+## 8. As built (29 October)
+
+GO was given on the day. The battery is the sentinel `compound-test`, with its materials in `compound-test-materials/`. It has 33 cases: three batteries of nine, and six form cases. It departs from §§3–6 in four places. The law decided the first, and the code found the other three.
+
+1. **A mirror line at an unvoiced address is a proposal, not a fault.** §4 said every mirror position must stand at a coordinate the spine names. The tree convention says otherwise (tree 5.1, and 5(b)): a mirror is written freely at any address, and a line where the spine is silent is a proposal awaiting adoption, which the fold surfaces. The form checker reports such lines as proposals, and case 4.4 holds it to that. The form pass keeps three predicates: resolves, direction and law.
+2. **bsp-mcp has two compilers, so it is tested at two doors.** §1 named `src/compile.ts` as bsp-mcp's composition. The bsp() read of a bundle node and the play door's shell manifest compile through `src/bundle.ts` instead, and the two disagree. The runner therefore takes two targets, `mcp` (the bundle door) and `mcp-frame` (the frame door).
+3. **A reference compositor, `compound-alt.py`, stands beside the runner**, as `bsp-alt.py` does for physics. It uses only `bsp-alt.py`'s walk, so chemistry is shown to be physics in company. It passes 33/33 and is what the runner tests by default. The CLI has four verbs, not three: `law` was added for the operator's single hop.
+4. **The smokes lost 29 checks, not about 84.** These left them: 17 from smoke:floor, 6 from smoke:compile and 6 from smoke:bundle. The last six are now under the CI gate for the first time, because smoke:bundle never was. What remains in the smokes is bsp-mcp's own: the clock word `now` and the cut, the completion registry, the order sweep and the rendering. The `now` word can't be tested offline, because the frame compiler reads the wall clock.
+
+Run against bsp-mcp, the battery found five divergences. The law judges three of them bugs. Branch 6.4 of the block records each one, and `npm run smoke:compound` names each one, so it fails once a fix lands until its name is dropped.
+
+- **The kernel's star-follow has no bound** (2.4), so a reference cycle never returns. The fix belongs in pscale-biome's kernel, and then gets re-based here.
+- **The bundle door drops a nested slot's companions** (3.5).
+- **The bundle door does not resolve the star form** (3.6).
+
+The frame door's 3.8 and 3.9 are not bugs. That door is only handed bundles.
+
+The mutation check planted 22 faults: 14 in the reference, 2 in the form checker and 6 in bsp-mcp. It caught all 21 that changed behaviour; the 22nd was an equivalent mutant that changed nothing.
+
+The checker's first live run read five families on the beach. It found 16 contribution nodes in weft's own `beach-venture:weft` that carry no arrival stamp. The bundle door's shape rule reads them as bundles.

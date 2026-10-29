@@ -98,7 +98,6 @@ ok(looksLikeBundle(store['shell:weft']['3']), 'a manifest: four refs and one pro
 ok(looksLikeBundle(store['reflexive:egg-one']['9']), 'a genus current: bare names');
 ok(looksLikeBundle(store['shell:weft']['7']), 'a list of bare words LOOKS like one (resolution settles it)');
 ok(!looksLikeBundle(store['shell:weft']['8']) && isEntryNode(store['shell:weft']['8']), 'an accumulator entry never is, whatever its fields');
-ok(!looksLikeBundle(store['orientation:weft']), 'a block of prose rules is not');
 ok(!looksLikeBundle('a string') && !looksLikeBundle(null), 'a leaf is not');
 ok(handleOfBlock('shell:weft') === 'weft' && handleOfBlock('reflexive:egg-one') === 'egg-one' && handleOfBlock('sed:commons') === null && handleOfBlock('sunstone') === null, 'the hand is read off the block name');
 
@@ -154,15 +153,12 @@ console.log('\nE. the manifest compiled, whole and cut');
 const whole = await compileBundle(store['shell:weft']['3'], { load: memLoad, handle: 'weft', now: NOW });
 ok(!!whole && whole.length === 6, 'six slots, in order');
 const by = (ms: Member[] | null, slot: string) => ms!.find((m) => m.slot === slot)!;
-const o = by(whole, '1');
-ok(o.result?.shape === 'disc' && renderMemberBody(o).includes(ruleTwo), 'the orientation disc delivers its rules WHOLE, never truncated');
-const h = by(whole, '2');
-ok(h.address === '22' && h.result?.shape === 'path-walk' && renderMemberBody(h).includes('entry 22 — the newest'), 'history:head walks to the newest entry');
+// A disc delivered whole, the head, prose riding through, an absent member, a
+// prose node and a list of words are pscale://compound-test 3.4, 3.3, 3.1,
+// 3.7, 3.8 and 3.9 (npm run smoke:compound); the clock's members stay here.
 const n = by(whole, '5');
 const nb = renderMemberBody(n);
 ok(n.address === STAMP3 && n.result?.shape === 'path-walk' && nb.includes('2026412400') && nb.includes('swept at first light') && nb.includes('the year the substrate grew its doors'), 'now:now walks the clock at the stamp, every rung above the beat');
-ok(by(whole, '7').ref === null && renderMemberBody(by(whole, '7')) === 'The organs, every one a :weft block', 'prose rides through as written');
-ok(by(whole, '8').absent && renderMemberBody(by(whole, '8')).includes('absent at this surface: torus-mirror:weft'), 'an absent block is named, never dropped');
 const cut = await compileBundle(store['shell:weft']['3'], { load: memLoad, handle: 'weft', now: NOW, since: '2026412371' });
 const nc = by(cut, '5');
 const ncb = renderMemberBody(nc);
@@ -174,7 +170,6 @@ const wb = renderMemberBody(by(within, '5'));
 ok(by(within, '5').cut?.within === true && wb.includes('within this beat') && wb.includes('the line at the instant') && !wb.includes('the beat line — lane 6 orienting') && !wb.includes('swept at first light'), 'with the beat as the last stamp: what landed within it, and nothing above', wb);
 const nbw = renderMemberBody(by(whole, '5'));
 ok(nbw.includes('said this beat:') && nbw.includes(`[${STAMP3}] the line at the instant`), 'cold, the clock member carries the ladder and what was said this beat', nbw);
-ok((await compileBundle(store['shell:weft']['7'], { load: memLoad, handle: 'weft', now: NOW })) === null, 'a list of words resolves nothing and is not a bundle');
 const egg = await compileBundle(store['reflexive:egg-one']['9'], { load: memLoad, handle: 'egg-one', now: NOW });
 ok(!!egg && by(egg, '1').name === 'sunstone' && by(egg, '2').name === 'purpose:egg-one' && by(egg, '3').name === 'conditions:egg-one', "a genus current's bare names resolve as the instance's own organs, sentinels first");
 

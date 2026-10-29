@@ -1,0 +1,18 @@
+{
+  "_": {
+    "_": {
+      "_": "PILE — an accumulator grown twice: each supernest wrapped the entries before it beneath the root chain",
+      "1": "entry 001",
+      "2": "entry 002"
+    },
+    "1": {
+      "_": "entries 011 to 019, summarised when the tenth arrived",
+      "1": "entry 011"
+    }
+  },
+  "1": {
+    "5": {
+      "1": "entry 151 — the newest"
+    }
+  }
+}

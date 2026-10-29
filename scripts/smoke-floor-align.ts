@@ -1,9 +1,14 @@
 /**
  * smoke-floor-align.ts — floor-alignment module + bsp-floor tool acceptance.
  *
- * Verifies the law: cross-block correspondence is by PSCALE (floor-anchored),
- * not walk depth. A floor-1 block and a floor-2 block must meet at the floor
- * plane (pscale 0), with the deeper block's top branches sitting ABOVE (coarser).
+ * The law — cross-block correspondence is by PSCALE (floor-anchored), never
+ * walk depth — is held as a contract by pscale://compound-test battery 1,
+ * which npm run smoke:compound runs against bsp-mcp: floors meeting at the
+ * decimal, a deeper floor reaching higher, the plane shared by every block,
+ * digit 0 a position, each block's side its own disc, the levels coarse to
+ * fine. This smoke keeps what is bsp-mcp's own: the scalar floorProduct, the
+ * clock's geometry, ground never carved, the frame against bsp()'s own disc on
+ * the clock and on sunstone, every label copying back, and the printed form.
  */
 
 import { indexByPscale, floorAlign, floorPlane, floorProduct } from '../src/floor-align.js';
@@ -18,62 +23,16 @@ function ok(cond: boolean, msg: string) {
   if (cond) { pass++; } else { fail++; console.error(`  ✗ ${msg}`); }
 }
 
-// ── Fixtures: a floor-1 block and a floor-2 block ──
-// A (floor 1): root + two top branches at pscale 0; one child at pscale -1.
+// ── Fixtures for the scalar product: a floor-1 block and a floor-2 block ──
 const A = {
   _: 'A floor identity',
   1: 'A one',
   2: { _: 'A two', 1: 'A two-one' },
 };
-// B (floor 2): root chain reaches a string in two steps; one top branch above.
 const B = {
   _: { _: 'B floor identity', 1: 'B above-rung child' },
   1: 'B top (coarser)',
 };
-
-ok(floorDepth(A) === 1, `A floor is 1 (got ${floorDepth(A)})`);
-ok(floorDepth(B) === 2, `B floor is 2 (got ${floorDepth(B)})`);
-
-// ── indexByPscale ──
-const ia = indexByPscale(A);
-const ib = indexByPscale(B);
-
-const aFloor = ia.filter((n) => n.pscale === 0);
-ok(aFloor.some((n) => n.text === 'A floor identity' && n.address === '0'), 'A floor identity at pscale 0, address "0"');
-ok(aFloor.some((n) => n.text === 'A one'), 'A branch 1 sits at pscale 0 (floor-1 block)');
-ok(ia.some((n) => n.pscale === -1 && n.text === 'A two-one' && n.address === '2.1'), 'A 2,1 at pscale -1, address "2.1"');
-
-ok(ib.some((n) => n.pscale === 0 && n.text === 'B floor identity'), 'B floor identity at pscale 0');
-ok(ib.some((n) => n.pscale === 1 && n.text === 'B top (coarser)'), 'B top branch sits ABOVE the floor at pscale +1 (floor-2 block)');
-
-// ── floorAlign: the floors coincide ──
-const aligned = floorAlign(A, B);
-const lvl0 = aligned.find((l) => l.pscale === 0)!;
-ok(!!lvl0, 'an aligned level exists at pscale 0 (the floor plane)');
-ok(lvl0.perBlock[0].some((n) => n.text === 'A floor identity') &&
-   lvl0.perBlock[1].some((n) => n.text === 'B floor identity'),
-   'both floor identities meet at pscale 0 — alignment is at the decimal, not the leftmost digit');
-
-const lvlPlus = aligned.find((l) => l.pscale === 1)!;
-ok(lvlPlus.perBlock[0].length === 0 && lvlPlus.perBlock[1].length === 1,
-   'pscale +1: A is empty (zero-padded), B carries its coarser top — deeper block reaches higher');
-
-const lvlMinus = aligned.find((l) => l.pscale === -1)!;
-ok(lvlMinus.perBlock[0].length === 1 && lvlMinus.perBlock[1].length === 0,
-   'pscale -1: A carries fine detail, B empty');
-
-// coarse -> fine ordering
-const order = aligned.map((l) => l.pscale);
-ok(JSON.stringify(order) === JSON.stringify([...order].sort((x, y) => y - x)), 'levels ordered coarse -> fine');
-
-// ── floorPlane: the root-definition index (n-ary) ──
-const C = { _: 'C floor identity', 1: 'C one' };
-const plane0 = floorPlane([A, B, C], 0);
-ok(plane0.length === 3, 'floorPlane spans all three blocks');
-ok(plane0[0].some((n) => n.text === 'A floor identity') &&
-   plane0[1].some((n) => n.text === 'B floor identity') &&
-   plane0[2].some((n) => n.text === 'C floor identity'),
-   'pscale-0 plane across 3 blocks = an index of their root definitions');
 
 // ── floorProduct: scalar contraction ──
 const lexicalSim = (x: string, y: string) => {
@@ -88,13 +47,10 @@ ok(selfProduct > crossProduct, `A resonates with itself more than with B (self=$
 // ── digit 0 is a position (2026-10-04, watch:weft 525-527) ──
 // bsp-floor read nothing beneath a zero digit: on the floor-10 clock that is
 // every date from 2000 to 2999 (the century digit of 2026 is 0), on every
-// accumulator everything under its root chain — and B's own above-rung child
-// (0,1), which sat in this file's fixture unread. A block's side of the frame
-// is now its own disc at that pscale, so the frame cannot drift from bsp().
+// accumulator everything under its root chain. A block's side of the frame is
+// now its own disc at that pscale, so the frame cannot drift from bsp(); the
+// accumulator's case is compound-test 1.8, and the clock's stays here.
 const chain = (n: number, s: string): any => (n === 1 ? s : { _: chain(n - 1, s) });
-
-ok(ib.some((n) => n.pscale === 0 && n.address === '01' && n.text === 'B above-rung child'),
-   "B's above-rung child (0,1) aligns at pscale 0, address 01");
 
 // The clock (floor 10): the 2000s are millennium 2's zero-position, and the
 // seasons stand beneath the years as beach-venture's mirrors hold them.
@@ -114,13 +70,12 @@ const lvl5 = floorAlign(spine, seasons).find((l) => l.pscale === 5);
 ok(!!lvl5 && lvl5.perBlock.every((side) => side.length > 0), 'a spine and its mirror both stand at pscale 5 — neither zero-padded');
 
 // An accumulator after two supernests (floor 3): 001-009 under the root
-// chain's second rung, the container 010 voicing them, 1xx at the root.
+// chain's second rung, the container 010 voicing them, 1xx at the root. Its
+// wrapped entries aligning beside its newest is compound-test 1.8.
 const pile = {
   _: { _: { _: 'a pile', 1: 'entry 001', 2: 'entry 002' }, 1: { _: 'summary of 001-009', 1: 'entry 011' } },
   1: { 5: { 1: 'entry 151' } },
 };
-const p0 = floorPlane([pile], 0)[0].map((n) => n.address);
-ok(['001', '002', '011', '151'].every((a) => p0.includes(a)), `a pile's wrapped entries align beside its newest (got ${p0.join(' ')})`);
 ok(floorPlane([pile], 1)[0].some((n) => n.address === '010' && n.text === 'summary of 001-009'), "a wrapped container's summary aligns at 010");
 
 // Ground never carved (sunstone:1.72): a room whose middle rung was never
@@ -142,7 +97,7 @@ ok(floorPlane([down], -5)[0].some((n) => n.address === '2026411467.11105' && n.t
 // The frame IS the disc: at every pscale each block's side is exactly what
 // bsp(B, P) returns, on every fixture here and on sunstone, whose branches
 // each carry a hidden directory.
-const fixtures: Record<string, any> = { A, B, C, seasons, spine, pile, ground, up, down, sunstone };
+const fixtures: Record<string, any> = { A, B, seasons, spine, pile, ground, up, down, sunstone };
 for (const [name, blk] of Object.entries(fixtures)) {
   const F = floorDepth(blk);
   const idx = indexByPscale(blk);

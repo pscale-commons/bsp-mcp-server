@@ -93,6 +93,43 @@ export function isBareRef(s: unknown): s is string {
   return typeof s === 'string' && s.trim() !== '' && !/\s/.test(s.trim()) && s.trim().length < 120;
 }
 
+/** A law as a reader receives it: the root line, then each branch's own line. */
+function renderLaw(target: unknown): string | null {
+  const parts: string[] = [];
+  const head = voiceOf(target);
+  if (head) parts.push(head);
+  if (target && typeof target === 'object') {
+    for (const k of Object.keys(target as object).filter((k) => /^[1-9]$/.test(k)).sort()) {
+      const t = voiceOf((target as Record<string, unknown>)[k]);
+      if (t) parts.push(`[${k}] ${t}`);
+    }
+  }
+  return parts.length ? parts.join('\n') : null;
+}
+
+/** THE LAW A FAMILY'S READER RECEIVES — the operator's own, or the generic law
+ *  its underscore names as a bare reference, followed one hop and no further
+ *  (strata 2.21). `load` reads a block at the family's beach. The stream door
+ *  delivers this, and pscale://compound-test holds any door to it. */
+export async function operatorLaw(
+  opName: string,
+  own: Block,
+  load: (name: string) => Promise<unknown>,
+): Promise<{ mounted: string | null; resolved: boolean; text: string }> {
+  const root = voiceOf(own);
+  if (root && isBareRef(root)) {
+    // Delegation to a generic operator, one hop, no further.
+    const mounted = root.trim();
+    const [refBlock, refBranch] = mounted.split('/');
+    const g = await load(refBlock).catch(() => null);
+    const generic = g && typeof g === 'object' ? renderLaw(refBranch ? (g as Record<string, unknown>)[refBranch] : g) : null;
+    return generic
+      ? { mounted, resolved: true, text: `${opName} → ${mounted} —\n${generic}` }
+      : { mounted, resolved: false, text: `${opName} names ${mounted} as its law, and that block did not resolve at this beach` };
+  }
+  return { mounted: null, resolved: true, text: `${opName} —\n${renderLaw(own) ?? '(the operator stands empty)'}` };
+}
+
 /** The text a node presents: a leaf string is itself, an object speaks through
  *  its underscore. Null when the position is unvoiced — which is SILENCE, and
  *  silence at an address is honest absence (tree:5e), never a gap to fill. */
@@ -953,35 +990,9 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // follows a single hop. The family's law stays the thing named; the generic
   // law stays reusable; neither has to know the other's addresses.
   let law: string | null = null;
-  const render = (target: unknown): string | null => {
-    const parts: string[] = [];
-    const head = voiceOf(target);
-    if (head) parts.push(head);
-    if (target && typeof target === 'object') {
-      for (const k of Object.keys(target as object).filter((k) => /^[1-9]$/.test(k)).sort()) {
-        const t = voiceOf((target as Record<string, unknown>)[k]);
-        if (t) parts.push(`[${k}] ${t}`);
-      }
-    }
-    return parts.length ? parts.join('\n') : null;
-  };
   const oprow = await (opP ?? loadBlock(origin, opName).catch(() => null));
   if (oprow && typeof oprow.block === 'object' && oprow.block !== null) {
-    const own = oprow.block as Block;
-    const root = voiceOf(own);
-    if (root && isBareRef(root)) {
-      // Delegation to a generic operator, one hop, no further.
-      const [refBlock, refBranch] = root.trim().split('/');
-      const grow = await loadBlock(origin, refBlock).catch(() => null);
-      const generic = grow && typeof grow.block === 'object' && grow.block !== null
-        ? render(refBranch ? (grow.block as Record<string, unknown>)[refBranch] : grow.block)
-        : null;
-      law = generic
-        ? `${opName} → ${root.trim()} —\n${generic}`
-        : `${opName} names ${root.trim()} as its law, and that block did not resolve at this beach`;
-    } else {
-      law = `${opName} —\n${render(own) ?? '(the operator stands empty)'}`;
-    }
+    law = (await operatorLaw(opName, oprow.block as Block, async (name) => (await loadBlock(origin, name).catch(() => null))?.block ?? null)).text;
   }
 
   // ── Render ──

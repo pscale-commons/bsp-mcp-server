@@ -1,0 +1,9 @@
+{
+  "_": "spine:tide — the coordinate space of the tide family, one line a rung and owned by nobody; each holder reads a rung in their own mirror at the rung's own address",
+  "1": "the morning",
+  "2": "the noon",
+  "3": {
+    "_": "the evening",
+    "1": "the last light"
+  }
+}

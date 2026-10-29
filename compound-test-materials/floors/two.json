@@ -1,0 +1,10 @@
+{
+  "_": {
+    "_": "TWO — a block at floor 2: its root definition stands at pscale 0, one rung beneath its top branch",
+    "1": "two 01 — beside the root definition, at pscale 0"
+  },
+  "1": {
+    "_": "two 10 — a top branch, coarser, at pscale +1",
+    "2": "two 12 — at the floor"
+  }
+}
