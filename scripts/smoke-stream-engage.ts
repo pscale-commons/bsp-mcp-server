@@ -1,10 +1,23 @@
 /** Smoke — pscale_stream_engage. Pure helpers asserted offline; one LIVE read
  *  against the beach-venture family (read-only, writes nothing). */
-import { voiceOf, emitFor, ladderOf, isBareRef, namedRungAddress, voicedValue, handleStreamEngage, laneOf, turnValue, turnsOf, mirrorAtBeat, agoWords, standingBrief, resetStanding } from '../src/tools/stream.js';
+import { voiceOf, emitFor, ladderOf, isBareRef, namedRungAddress, voicedValue, handleStreamEngage, laneOf, turnValue, turnsOf, mirrorAtBeat, agoWords, standingBrief, resetStanding, mirrorBorn, standingLaw, standingWordOf } from '../src/tools/stream.js';
 import { Block } from '../src/bsp.js';
 
 let pass = 0, fail = 0;
 const ok = (c: boolean, m: string) => { if (c) { pass++; } else { fail++; console.error('  FAIL', m); } };
+
+// the standing word — a family's law keeps one at a position opening THE STANDING WORD; a holder's is their
+// mirror's root voice, the birth label (the door's, or the beach's '<name> at <host>.') never theirs
+const rooted = (s: string): Block => { let n: unknown = s; for (let i = 0; i < 10; i++) n = { _: n }; return n as Block; };
+const ORIGIN = 'https://beach.happyseaurchin.com';
+ok(standingLaw({ _: 'law', '1': { _: 'WHAT A LINE MEANS', '2': 'THE STANDING WORD — the root voice' } } as any), 'law keeps a standing word at 1.2');
+ok(!standingLaw({ _: 'law', '2': 'FOLLOWING — the hands you follow' } as any), 'a law that says nothing of it keeps none');
+ok(!standingLaw(null), 'no law, no standing word');
+const label = mirrorBorn('happyseaurchin', 'availability', 'spine:availability');
+ok(standingWordOf(rooted(label + ' WEDNESDAYS ARE OPEN.'), 'availability:happyseaurchin', 'availability', 'spine:availability', ORIGIN) === 'WEDNESDAYS ARE OPEN.', 'the words after the label are the holder\'s');
+ok(standingWordOf(rooted(label), 'availability:happyseaurchin', 'availability', 'spine:availability', ORIGIN) === null, 'a label alone says nothing');
+ok(standingWordOf(rooted('availability:happyhedgehog at beach.happyseaurchin.com.'), 'availability:happyhedgehog', 'availability', 'spine:availability', ORIGIN) === null, 'the beach\'s birth line says nothing');
+ok(standingWordOf(rooted('Never before 10.'), 'availability:keel', 'availability', 'spine:availability', ORIGIN) === 'Never before 10.', 'a root of the holder\'s own is the word');
 
 // voiceOf — a leaf speaks as itself, an object through its underscore, silence is null
 ok(voiceOf('hello') === 'hello', 'leaf string');
