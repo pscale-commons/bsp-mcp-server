@@ -1,0 +1,1 @@
+{"tied_at": "1.11", "line": "dana publishes the page at dana's word · complete · read: tides:live", "options": [], "handed_on": {"to": null, "text": null}, "why": "Dana's \"Publish it.\" matches the option \"dana publishes the page\" that wren offered at 1.11 beneath the open act at 1.1 that waits on dana, so the choice is recorded at that option's address."}

@@ -1,0 +1,12 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "moorings:draft", "1"], "chars": 44}
+{"cmd": ["room", "wren"], "chars": 28}
+{"cmd": ["room", "dana"], "chars": 28}
+{"cmd": ["room", "rook"], "chars": 28}
+{"cmd": ["read", "1"], "chars": 831}
+{"cmd": ["read", "2"], "chars": 723}
+{"cmd": ["open", "the harbour moorings list, draft 1 at moorings:draft 1 \u00b7 opened by rook"], "chars": 102}
+{"cmd": ["say", "3", "built the harbour moorings list's first draft, 48 moorings by pontoon and berth, saved at moorings:draft 1 \u00b7 waits on wren \u00b7 read: moorings:draft 1, spine:thread, thread:1, thread:2", "--option", "wren checks the moorings list against the harbour's register first", "--option", "dana decides it is good enough to publish as it is"], "chars": 386}
+{"cmd": ["read", "3"], "chars": 1008}
+{"cmd": ["post", "wren", "thread:3 is waiting on you. It holds the harbour moorings list (48 moorings by pontoon and berth, draft 1 at moorings:draft 1). Option 3.1 is your check against the harbour's register; option 3.2 is dana's, to publish it as it is. Take it up from thread:3."], "chars": 29}
+{"cmd": ["room", "wren"], "chars": 293}

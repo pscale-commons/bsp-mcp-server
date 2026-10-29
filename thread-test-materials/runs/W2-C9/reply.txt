@@ -1,0 +1,3 @@
+1.1 | kestrel fetches this month's tide times from the harbour feed: it returned 62 tide times for November (today is 29 October), saved at tides:feed 11 · waits on rook · read: tides:feed 11 | options: 1 rebuild the page now from tides:feed 11 as November's table; 2 hold the rebuild, and kestrel fetches October's tide times first
+
+I tie at 1.1 because that is option 1 beneath line 1, the fetch the waker completed, so the knot goes at its own address; option 2 (feed down) is not taken, since the feed did return data.

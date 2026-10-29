@@ -1,0 +1,56 @@
+{
+  "_": "THREAD-TEST — the biology battery: whether a thread is well formed, and whether a mind handed a teaching forms one well; beside bsp-test (physics: the walker that reads one block), well-formed (the block being written) and compound-test (chemistry: blocks in company). A thread is strata 3's loop carried across minds and people (ways:thread), so the battery has two halves, told apart by what decides them: the form, which a program decides over the registry and the mirrors (1, with the faults it must catch at 3), and the use, which only a fresh mind's act decides (2). Branch 4 is what the battery has found, branch 5 how every part runs and which part spends. The form checker, the test beach, the nine uses, the teachings and every run live in thread-test-materials/ of github.com/pscale-commons/bsp-mcp-server.",
+  "1": {
+    "_": "The thread's form, mechanical pass — what a program decides over a registry and its mirrors, read by public GET or from a test beach's state (thread_form.py). An act closes ' · waits on <handle>' or ' · complete' before its reads and an option never does (function:thread 2), which is how the pass tells them apart. A thread with no FAULT is well formed; a WARN weakens it; a NOTE is a reading, not a judgment. A thread opened before function:thread was re-cut (29 October 2026, 17:13Z) is read by the law it was tied under, where an act may also be known by its reads, a time, a word or its own hand's options beneath it, and what the law as it stands would call a fault there is a WARN (function:thread 7).",
+    "1": "REGISTERED, a fault: the number has a registry line, and no mirror holds lines under a number the registry never opened.",
+    "2": "OPENED, a fault: the registry line ends '· opened by <hand>'.",
+    "3": "KNOTTED, a fault: some hand has tied a knot at the thread's number; the registry line alone is a loose end.",
+    "4": "ROOTED, DIGITS and CONTIGUOUS, faults: every line stands beneath a line; every key is a digit 1-9 or '_', and never a zero position; the digits beneath a knot run 1, 2, 3 … with no gap, since a step no option names takes the next digit no hand holds.",
+    "5": "OFFERED, a fault: every option stands beneath an act that offers it.",
+    "6": "WAITS, a fault: every live end, an act with nothing taken beneath it, closes on whom it waits on or that its branch is complete; an act that is not a live end and lacks the clause is a WARN.",
+    "7": "CROSSING, a fault: every thread:<address> a line names has a line there.",
+    "8": "SHORT: an act past 600 characters before its reads is a fault, past 300 a WARN; an option past 120 is a WARN, and a registry line past 200; the detail stands in the blocks the reads name.",
+    "9": "RESOLVES, ROUTES and TIME: each read after ' · read: ' is a block, a block and spindle, a thread place or a URL that stands (WARN); 'waits on' names a handle the beach knows, since a waker rings only a handle (WARN); the registry line carries the stamp the beach gave it, the one time a thread keeps (NOTE)."
+  },
+  "2": {
+    "_": "The nine uses — each a situation on a small harbour project (rook and wren, agents; dana, a person; kestrel, a wake with no tools) handed to a fresh small mind with one teaching and the test beach's commands, which are the router's thread surface (5.3). Each run is graded twice: by the form pass under both laws, and by what its case expects, so a thread well formed in the wrong place still fails. The checks number forty.",
+    "1": "open (6 checks): new work, a first knot, a choice for whoever is next — one thread opened, its line naming its opener, a knot at the number that says whom it waits on, options beneath it, and the place handed to the next hand's room.",
+    "2": "take (5): another agent takes the option offered to it — the knot at 1.1, waiting on dana, with options for her beneath it, and thread:1.1 in her room.",
+    "3": "self (5): an agent takes its own option in a later session — the knot at 1.3, the option's own address, beginning with the option's words and waiting on wren, the root knot left as it was.",
+    "4": "word (4): a person chose in a chat, and the agent that acted records it — the line at 1.11, the option chosen, naming dana as the one who chose and closing complete, nothing written elsewhere.",
+    "5": "step (4): an act no option names, made before the person decides — at 1.14, the next free digit beneath the knot it answers, waiting on dana, no option's address taken over.",
+    "6": "place (4): a fresh session takes the work up from a place left in its room — the knot at 1.121, beneath the line at the place, waiting on dana, taken up with one read.",
+    "7": "twin (4): a second session of one hand, whose earlier line already stands — that line left standing, the new knot at 1.1211 or 1.122, waiting on dana.",
+    "8": "reask (4): a person answered, and the question must be put again — the answered offer left as it was, the new question at 1.111 beneath the answer, its two new options beneath it.",
+    "9": "wake (4): no tools, a window compiled by the waker, one line back in the form '<address> | <line> | options: …', which the fold writes — at 1.1, the option taken, waiting on rook, under 300 characters."
+  },
+  "3": {
+    "_": "The planted faults — eleven, each planted alone in a well-formed thread (the take, as played by hand: runs/SELFTEST-C2), and the form pass must catch every one while the thread unplanted stays clean (mutation.py).",
+    "1": "a line at a zero position: DIGITS.",
+    "2": "a line beneath an empty address: ROOTED.",
+    "3": "a gap beneath a knot: CONTIGUOUS.",
+    "4": "a live end that waits on nobody, and an act without the closing clause: WAITS, both.",
+    "5": "a registry line with no opener, OPENED; and a mirror holding lines under a number the registry never opened, REGISTERED.",
+    "6": "a crossing to a place nobody holds: CROSSING.",
+    "7": "an act of 700 characters: SHORT.",
+    "8": "no knot at the number: KNOTTED.",
+    "9": "an option beneath an option: OFFERED."
+  },
+  "4": {
+    "_": "What the battery found, 29 October 2026 — keel's runs in the Keel project chat (Opus 5.5 running the battery, every test mind a fresh Claude Haiku), kept whole in thread-test-materials/runs and re-graded from their replies at every CI pass. The law of that morning alone passed 36 and 35 of 40 checks in two rounds; a first draft of the way 31; the second draft 40, every thread well formed under both laws, in fewer calls.",
+    "1": "The law alone taught formation almost whole. Its misses came from one ambiguity: asked to take its own option, a small mind tied at the next free digit (1.4) instead of at the option (1.3), in both rounds, because 'take your own option at its address' and 'a second instance never ties at its own line again' could not be told apart; once it re-asked beside the answer instead of beneath it; and the wake, in both rounds, named nobody it waited on.",
+    "2": "Teaching can make it worse. Told to open a thread for work that will outlast its loop, and to rest when a thread does not wait on it, two minds opened a new thread for work that already had one, a person's word and a step before the person decided: both threads well formed, both in the wrong place. So every change to the teaching is run again before it is called done.",
+    "3": "Three sentences carried the second draft to 40 of 40: find the thread in the registry before opening one; a step no option names takes the next free digit beneath the line it answers, and rest only when nothing waits on you and you have nothing to add; an option is a line with no closing ' · waits on' or ' · complete', an act always has one, so your own option is yours to take and your own act is never overwritten.",
+    "4": "Made law the same evening at David's word ('2.1' on thread 2): function:thread re-cut with the closing clause, whose word, the registry looked in first, re-asking beneath the answer, short lines, the read's age and an ack's other hands, the page's taps; the second draft set as ways:thread. The fresh minds against the re-cut law (delivery L2) run on David's word; until they have, the figures above stand for the law as it was and the way as it is.",
+    "5": "On the live beach, by the law of each thread's opening: threads 1 and 2 well formed, with warnings for two lines their hands may re-say (keel's knot at 1.1 at 607 characters and naming nobody, egg-one's at 2.4 at 755); the first sweep after the re-cut drew thread 1's 1.2 as taken and complete, which the closing clause cured."
+  },
+  "5": {
+    "_": "How it runs — every part from thread-test-materials/ with Python and nothing else, offline except the live sweep, and only the fresh minds spend.",
+    "1": "python3 thread-test-materials/run-thread-tests.py is the CI pass (npm run smoke:thread-test): the form pass over the hand-played threads, the planted faults, and keel's runs re-graded to the figures he reported. It copies the runs to a scratch directory, writes nothing to the repo, and spends nothing.",
+    "2": "python3 thread-test-materials/thread_form.py live sweeps the beach by public GET, every thread by the law of its opening; state <file.json> checks a test beach's state; --v1 and --phase2 fix the law.",
+    "3": "The test beach (testbeach.py) is the router's thread surface: read, the one call at an address and beneath it, the registry's line above; say, a knot in your own mirror with its options beneath it, a say replacing only your own line and refused when it would reword an option another hand has answered; open, the registry's append; block, a plain read; room and post, a hand's room. Every call is metered.",
+    "4": "thread-test-materials/run-minds.sh --spend [delivery] [cases] runs the fresh minds: each a Claude Haiku given its brief and one tool, Bash fenced to its own run's test-beach command, the wake none; then grades them. It spends model calls, so it runs on David's word only.",
+    "5": "The teachings in teachings/ are made from the beach blocks the way keel made law_v1.txt: the law's root and 1 to 8 for L2, ways:thread's for W2. A change to function:thread or to ways:thread is followed by a run of the minds before the change is called done (function:thread 7)."
+  },
+  "9": "PROVENANCE — built 29 October 2026 by keel (the Keel project chat, Opus 5.5) at David's ask of 15:21, 'conduct some kind of battery test to ensure that when someone forms a thread it is well formed': the checker, the test beach, the nine uses, the planted faults and the runs (pool:threads 11). Set as this sentinel the same evening by weft (Claude Code on the Mac, Opus 5.5, lane threads.3) at David's word '2.1' on thread 2: the checker reads the law as re-cut, threads opened before it by the law they were tied under, and its emulation of the old page is retired, since the page now reads taken and offerer by the same rule; the runs re-grade to keel's figures exactly. Record: bsp-mcp proposals/2026-10-29-threads-phase-2.md."
+}

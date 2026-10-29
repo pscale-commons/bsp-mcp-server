@@ -1,0 +1,421 @@
+[
+ {
+  "run": "W1-C1",
+  "kind": "open",
+  "calls": 12,
+  "reads": 9,
+  "thread_reads": [
+   "3",
+   "3"
+  ],
+  "wrote": [
+   "3"
+  ],
+  "changed_own": {},
+  "opened": {
+   "3": "harbour moorings page for dana: first part built, but its draft block does not stand on this beach · opened by rook"
+  },
+  "posted": {
+   "rook": [
+    "rook: thread:3 — waits on you, rook: the moorings list is not on this beach, because the block I saved it to (moorings:draft 1) does not stand here. Re-save the list from the chat with dana, or ask her to paste it if the chat is out of reach; read it back; then tie your next knot at 3.1 with the choice for dana: wren checks the list against the harbour register first, or dana publishes it as it is."
+   ]
+  },
+  "form_v1": "WELL FORMED",
+  "form_p2": "WELL FORMED",
+  "warns_v1": [],
+  "expect": [
+   "ok opened one thread",
+   "ok the registry line names its opener",
+   "ok a knot at the number 3",
+   "ok the knot says whom it waits on",
+   "MISS options offered beneath the knot",
+   "MISS the place handed on to the next hand's room"
+  ],
+  "score": "4/6",
+  "tied": {
+   "3": "looked for the moorings draft I saved: no block of that name stands on this beach, so the list cannot be checked or published yet; it must be saved again first · waits on rook · read: spine:thread, pool:dana, pool:rook"
+  },
+  "reply_json": {
+   "tied_at": "3",
+   "line": "looked for the moorings draft I saved: no block of that name stands on this beach, so the list cannot be checked or published yet; it must be saved again first · waits on rook · read: spine:thread, pool:dana, pool:rook",
+   "options": [],
+   "handed_on": {
+    "to": "rook",
+    "text": "thread:3 — waits on you, rook: the moorings list is not on this beach"
+   },
+   "why": "I tied at 3 because spine:thread gave this thread that number, the first knot goes at the opener's number, and a read showed only my root line standing there."
+  }
+ },
+ {
+  "run": "W1-C2",
+  "kind": "take",
+  "calls": 10,
+  "reads": 8,
+  "thread_reads": [
+   "1"
+  ],
+  "wrote": [
+   "1.1",
+   "1.11",
+   "1.12"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "dana": [
+    "wren: thread:1.1 — the tide-table page waits on your decision: publish the page, or ask for another pass. The draft's blocks did not stand on this beach when wren checked, so confirm where the corrected draft lives before you publish."
+   ]
+  },
+  "form_v1": "WELL FORMED",
+  "form_p2": "WELL FORMED",
+  "warns_v1": [],
+  "expect": [
+   "ok the knot at 1.1, the option taken",
+   "ok it says whom it waits on",
+   "ok it waits on dana",
+   "ok options for dana beneath it",
+   "ok thread:1.1 handed to dana's room"
+  ],
+  "score": "5/5",
+  "tied": {
+   "1.1": "reviewed the tide-table draft against the harbour's data: two tide times were wrong and have been corrected, but the corrected draft does not stand on this beach, so it is unverified here · waits on dana · read: thread:1, pool:wren",
+   "1.11": "publish the page",
+   "1.12": "ask for another pass"
+  },
+  "reply_json": {
+   "tied_at": "1.1",
+   "line": "reviewed the tide-table draft against the harbour's data: two tide times were wrong and have been corrected, but the corrected draft does not stand on this beach, so it is unverified here · waits on dana · read: thread:1, pool:wren",
+   "options": [
+    "publish the page",
+    "ask for another pass"
+   ],
+   "handed_on": {
+    "to": "dana",
+    "text": "thread:1.1 — the tide-table page waits on your decision"
+   },
+   "why": "Rook's root line at thread 1 waits on wren and offers the review as option 1, so my knot goes at 1.1, which holds no line of mine (rook is the only other voice at 1)."
+  }
+ },
+ {
+  "run": "W1-C3",
+  "kind": "self",
+  "calls": 4,
+  "reads": 2,
+  "thread_reads": [
+   "1"
+  ],
+  "wrote": [
+   "1.3",
+   "1.31",
+   "1.32"
+  ],
+  "changed_own": {
+   "1.3": [
+    "rook adds the spring tides before anyone reviews",
+    "rook adds the spring tides before anyone reviews: they are on the page as tides:draft 2 · waits on wren · read: pool:rook, thread:1, tides:draft 2"
+   ]
+  },
+  "opened": {},
+  "posted": {
+   "wren": [
+    "rook: thread:1.3 — wren reviews tides:draft 2, which now carries the spring tides"
+   ]
+  },
+  "form_v1": "WELL FORMED",
+  "form_p2": "WELL FORMED",
+  "warns_v1": [],
+  "expect": [
+   "ok the knot at 1.3, its own option taken",
+   "ok it begins with the option's words",
+   "ok it waits on wren",
+   "ok thread:1.3 handed to wren's room",
+   "ok the root knot left as it was"
+  ],
+  "score": "5/5",
+  "tied": {
+   "1.3": "rook adds the spring tides before anyone reviews: they are on the page as tides:draft 2 · waits on wren · read: pool:rook, thread:1, tides:draft 2",
+   "1.31": "wren approves tides:draft 2 as it stands",
+   "1.32": "wren returns tides:draft 2 with changes"
+  },
+  "reply_json": {
+   "tied_at": "1.3",
+   "line": "rook adds the spring tides before anyone reviews: they are on the page as tides:draft 2 · waits on wren · read: pool:rook, thread:1, tides:draft 2",
+   "options": [
+    "wren approves tides:draft 2 as it stands",
+    "wren returns tides:draft 2 with changes"
+   ],
+   "handed_on": {
+    "to": "wren",
+    "text": "thread:1.3 — wren reviews tides:draft 2, which now carries the spring tides"
+   },
+   "why": "I took the spring-tides option I had offered beneath knot 1, and that option is digit 3, so my knot goes at 1.3."
+  }
+ },
+ {
+  "run": "W1-C4",
+  "kind": "word",
+  "calls": 3,
+  "reads": 1,
+  "thread_reads": [
+   "3"
+  ],
+  "wrote": [
+   "3"
+  ],
+  "changed_own": {},
+  "opened": {
+   "3": "tide-table page: dana said 'Publish it.' in chat, off the beach; published and live at tides:live, nothing more needed · opened by rook"
+  },
+  "posted": {},
+  "form_v1": "WELL FORMED",
+  "form_p2": "WELL FORMED",
+  "warns_v1": [],
+  "expect": [
+   "MISS the line at 1.11, the option dana chose",
+   "MISS it names dana as the one who chose",
+   "MISS it closes the branch: complete",
+   "MISS nothing written elsewhere"
+  ],
+  "score": "0/4",
+  "tied": {
+   "3": "Publish it at dana's word: tide-table page published live at tides:live; nothing more needed · complete · read: tides:live, spine:thread"
+  },
+  "reply_json": {
+   "tied_at": "3",
+   "line": "Publish it at dana's word: tide-table page published live at tides:live; nothing more needed · complete · read: tides:live, spine:thread",
+   "options": [],
+   "handed_on": {
+    "to": null,
+    "text": null
+   },
+   "why": "The beach numbered the opened thread 3, and that is where the first knot belongs because only my own opener stood there when I checked."
+  }
+ },
+ {
+  "run": "W1-C5",
+  "kind": "step",
+  "calls": 8,
+  "reads": 5,
+  "thread_reads": [
+   "1.1"
+  ],
+  "wrote": [
+   "3"
+  ],
+  "changed_own": {},
+  "opened": {
+   "3": "phone break in the tide-table page, and rook's phone-width fix (a third draft, not yet on this beach), for dana's decision on thread:1.1 · opened by rook"
+  },
+  "posted": {
+   "dana": [
+    "rook: thread:3 — dana's decision on thread:1.1 waits on you: the draft it is about still breaks on phones, and rook's phone fix is a third draft not yet on this beach, so ask rook for it before you choose"
+   ]
+  },
+  "form_v1": "WELL FORMED",
+  "form_p2": "WELL FORMED",
+  "warns_v1": [
+   "ROUTES 3"
+  ],
+  "expect": [
+   "MISS the step at 1.14, the next free digit beneath the knot it answers",
+   "MISS it waits on dana",
+   "ok no option's address taken over",
+   "MISS thread:1.14 handed to dana's room"
+  ],
+  "score": "1/4",
+  "tied": {
+   "3": "Found the tide-table page breaks on phones; fixed the phone layout in my third draft, which is not on this beach, so the draft that thread:1.1 waits on still breaks on phones · waits on dana · read: thread:1.1, pool:rook, spine:thread"
+  },
+  "reply_json": {
+   "tied_at": "3",
+   "line": "Found the tide-table page breaks on phones; fixed the phone layout in my third draft, which is not on this beach, so the draft that thread:1.1 waits on still breaks on phones · waits on dana · read: thread:1.1, pool:rook, spine:thread",
+   "options": [],
+   "handed_on": {
+    "to": "dana",
+    "text": "thread:3 — dana's decision on thread:1.1 waits on you"
+   },
+   "why": "I rested on thread 1.1 because it waits on dana rather than on me, so the record opened its own thread and was tied at its number 3, which dana meets through her room."
+  }
+ },
+ {
+  "run": "W1-C6",
+  "kind": "place",
+  "calls": 8,
+  "reads": 5,
+  "thread_reads": [
+   "1.12"
+  ],
+  "wrote": [
+   "1.121",
+   "1.1211",
+   "1.1212"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "dana": [
+    "rook: thread:1.121 — the low-water marks shown on the page (draft 3) wait on your decision: accept them as shown, or ask for another pass. I could not read the page back on this beach, so please look at it yourself."
+   ]
+  },
+  "form_v1": "WELL FORMED",
+  "form_p2": "WELL FORMED",
+  "warns_v1": [],
+  "expect": [
+   "ok the knot at 1.121, beneath dana's line at the place handed on",
+   "ok it waits on dana",
+   "ok taken up with one read",
+   "ok thread:1.121 handed to dana's room"
+  ],
+  "score": "4/4",
+  "tied": {
+   "1.121": "did the pass dana asked for at thread:1.12: the low-water marks are shown on the page (draft 3); this beach holds no tides block to read the page back, and pool:tides is empty · waits on dana · read: thread:1.12, pool:rook, pool:tides",
+   "1.1211": "accept the low-water marks as shown on the page",
+   "1.1212": "ask for another pass on the low-water marks"
+  },
+  "reply_json": {
+   "tied_at": "1.121",
+   "line": "did the pass dana asked for at thread:1.12: the low-water marks are shown on the page (draft 3); this beach holds no tides block to read the page back, and pool:tides is empty · waits on dana · read: thread:1.12, pool:rook, pool:tides",
+   "options": [
+    "accept the low-water marks as shown on the page",
+    "ask for another pass on the low-water marks"
+   ],
+   "handed_on": {
+    "to": "dana",
+    "text": "thread:1.121 — the low-water marks shown on the page (draft 3) wait on your decision"
+   },
+   "why": "Dana's line at 1.12 waits on rook and no option stands beneath 1.12, so my knot takes the first free digit beneath it, 1.121, which no hand holds."
+  }
+ },
+ {
+  "run": "W1-C7",
+  "kind": "twin",
+  "calls": 8,
+  "reads": 6,
+  "thread_reads": [
+   "1.12",
+   "1.122"
+  ],
+  "wrote": [
+   "1.122",
+   "1.1221",
+   "1.1222"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "dana": [
+    "rook: thread:1.122 — the page's low-water marks are checked against the harbour master's table and one is corrected in draft 4; decide whether draft 4 stands or goes back for another pass"
+   ]
+  },
+  "form_v1": "WELL FORMED",
+  "form_p2": "WELL FORMED",
+  "warns_v1": [],
+  "expect": [
+   "ok the other session's line at 1.121 left standing",
+   "ok the new knot at 1.1211 or 1.122",
+   "ok it waits on dana",
+   "ok the new place handed to dana's room"
+  ],
+  "score": "4/4",
+  "tied": {
+   "1.122": "checked the page's low-water marks against the harbour master's table and corrected one of them, in draft 4 · waits on dana · read: pool:rook, pool:tides, thread:1.12",
+   "1.1221": "accept draft 4 of the page's low-water marks as they stand",
+   "1.1222": "send it back to rook for another pass against the harbour master's table"
+  },
+  "reply_json": {
+   "tied_at": "1.122",
+   "line": "checked the page's low-water marks against the harbour master's table and corrected one of them, in draft 4 · waits on dana · read: pool:rook, pool:tides, thread:1.12",
+   "options": [
+    "accept draft 4 of the page's low-water marks as they stand",
+    "send it back to rook for another pass against the harbour master's table"
+   ],
+   "handed_on": {
+    "to": "dana",
+    "text": "thread:1.122 — the page's low-water marks are checked"
+   },
+   "why": "dana's knot at 1.12 waits on rook and 1.121 is my other session's earlier pass, so my knot takes the next free digit beneath 1.12, which is 1.122."
+  }
+ },
+ {
+  "run": "W1-C8",
+  "kind": "reask",
+  "calls": 7,
+  "reads": 5,
+  "thread_reads": [
+   "1.1"
+  ],
+  "wrote": [
+   "1.111",
+   "1.1111",
+   "1.1112"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "dana": [
+    "wren: thread:1.111 — the tide-table page waits on your decision again: the harbour changes its tide chart next week (not confirmed on the beach), so publish now and update the page after the change, or wait a week and publish on the new chart"
+   ]
+  },
+  "form_v1": "WELL FORMED",
+  "form_p2": "WELL FORMED",
+  "warns_v1": [
+   "RESOLVES 1.111"
+  ],
+  "expect": [
+   "ok the answered offer left as it was",
+   "ok the new question at 1.111, beneath dana's answer",
+   "ok the two new options beneath it",
+   "ok the new place handed to dana's room"
+  ],
+  "score": "4/4",
+  "tied": {
+   "1.111": "Put the publish choice to dana again, beneath her answer: I learned the harbour changes its tide chart next week, so the choice is reopened with two new options (no harbour chart block stands on the beach to confirm it) · waits on dana · read: 1.1, pool:wren, pool:dana",
+   "1.1111": "publish now and update the page after the chart changes",
+   "1.1112": "wait a week and publish on the new chart"
+  },
+  "reply_json": {
+   "tied_at": "1.111",
+   "line": "Put the publish choice to dana again, beneath her answer: I learned the harbour changes its tide chart next week, so the choice is reopened with two new options (no harbour chart block stands on the beach to confirm it) · waits on dana · read: 1.1, pool:wren, pool:dana",
+   "options": [
+    "publish now and update the page after the chart changes",
+    "wait a week and publish on the new chart"
+   ],
+   "handed_on": {
+    "to": "dana",
+    "text": "thread:1.111 — the tide-table page waits on your decision again"
+   },
+   "why": "Dana's publish answer already stands at 1.11 and must not be re-asked there, and a line of wren's already stands at 1.11, so the new knot takes the next free digit beneath that answer, 1.111."
+  }
+ },
+ {
+  "run": "W1-C9",
+  "kind": "wake",
+  "calls": 1,
+  "reads": 0,
+  "thread_reads": [],
+  "wrote": [
+   "1.1"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {},
+  "form_v1": "WELL FORMED",
+  "form_p2": "WELL FORMED",
+  "warns_v1": [],
+  "expect": [
+   "ok an answer line in the form",
+   "ok at 1.1, the option taken",
+   "ok it waits on rook",
+   "ok under 300 characters"
+  ],
+  "score": "4/4",
+  "tied": {
+   "1.1": "kestrel fetches this month's tide times from the harbour feed: the feed returned 62 tide times, for November rather than October, saved at tides:feed 11 · waits on rook · read: tides:feed 11"
+  },
+  "reply_json": {
+   "tied_at": "1.1",
+   "line": "kestrel fetches this month's tide times from the harbour feed: the feed returned 62 tide times, for November rather than October, saved at tides:feed 11 · waits on rook · read: tides:feed 11",
+   "options": []
+  }
+ }
+]

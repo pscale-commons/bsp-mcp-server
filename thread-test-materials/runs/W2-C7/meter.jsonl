@@ -1,0 +1,5 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["read", "1.12"], "chars": 897}
+{"cmd": ["say", "1.1211", "checked the page's low-water marks against the harbour master's table and corrected one (tides:draft 4) \u00b7 waits on dana \u00b7 read: tides:draft 4", "--option", "accept tides:draft 4 as the page's low-water marks", "--option", "send back for another pass on the low-water marks"], "chars": 355}
+{"cmd": ["post", "dana", "thread:1.1211 \u2014 the low-water marks are checked against the harbour master's table and one is corrected (tides:draft 4); your decision is next: accept it, or send it back for another pass"], "chars": 29}
+{"cmd": ["read", "1.12"], "chars": 1193}

@@ -1,0 +1,67 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft · waits on wren · read: tides:draft 1",
+    "1": "wren reviews the draft against the harbour's data",
+    "2": "dana decides without a review"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register",
+   "1": {
+    "1": {
+     "_": "reviewed the draft: two tide times were wrong, corrected in tides:draft 2 · waits on dana · read: tides:draft 1",
+     "1": {
+      "_": "dana publishes the page",
+      "1": {
+       "_": "Put the publish choice to dana again, beneath her answer: I learned the harbour changes its tide chart next week, so the choice is reopened with two new options (no harbour chart block stands on the beach to confirm it) · waits on dana · read: 1.1, pool:wren, pool:dana",
+       "1": "publish now and update the page after the chart changes",
+       "2": "wait a week and publish on the new chart"
+      }
+     },
+     "2": "dana asks for another pass, said in pool:tides",
+     "3": "rook rebuilds it on the new chart first"
+    }
+   }
+  },
+  "dana": {
+   "1": {
+    "1": {
+     "1": "dana publishes the page · waits on rook"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [],
+  "dana": [
+   "wren: thread:1.1 — the reviewed draft waits on your decision",
+   "wren: thread:1.111 — the tide-table page waits on your decision again: the harbour changes its tide chart next week (not confirmed on the beach), so publish now and update the page after the change, or wait a week and publish on the new chart"
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "tides:draft",
+  "tides:live",
+  "tides:feed",
+  "moorings:draft",
+  "harbour:chart",
+  "harbour:register",
+  "pool:tides"
+ ],
+ "floor": 1,
+ "me": "wren"
+}

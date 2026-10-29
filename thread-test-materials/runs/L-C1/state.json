@@ -1,0 +1,50 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren",
+  "3": "harbour moorings page for dana, the choice between wren's check and publishing as it is · opened by rook"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft · waits on wren · read: tides:draft 1",
+    "1": "wren reviews the draft against the harbour's data",
+    "2": "dana decides without a review"
+   },
+   "3": {
+    "_": "built the first part of dana's harbour moorings page, the moorings list, recorded as moorings:draft 1; that block does not read back on this beach, so the list is not on the beach yet and has to be saved again before either option can be carried out; it now waits for dana's choice · read: spine:thread, moorings:draft 1, pool:dana, pool:wren",
+    "1": "wren checks the list against the harbour's register first",
+    "2": "dana decides it is good enough and publishes it as it is"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register"
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [],
+  "dana": [
+   "rook: thread:3 — the harbour moorings page is waiting on a choice. Two options stand at thread:3: 3.1 wren checks the list against the harbour's register first; 3.2 you decide it is good enough and publish it as it is. One thing to know before either: the list is not on the beach yet, because moorings:draft 1 did not read back when I checked, so it needs saving again first."
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "tides:draft",
+  "tides:live",
+  "tides:feed",
+  "moorings:draft",
+  "harbour:chart",
+  "harbour:register",
+  "pool:tides"
+ ],
+ "floor": 1,
+ "me": "rook"
+}

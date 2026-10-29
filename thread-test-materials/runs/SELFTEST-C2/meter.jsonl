@@ -1,0 +1,3 @@
+{"cmd": ["read", "1"], "chars": 831}
+{"cmd": ["say", "1.1", "reviewed the draft: two tide times were wrong, corrected in tides:draft 2 \u00b7 waits on dana \u00b7 read: tides:draft 1, tides:draft 2", "--option", "dana publishes the page", "--option", "dana asks for another pass"], "chars": 336}
+{"cmd": ["post", "dana", "thread:1.1 \u2014 the reviewed draft waits on your decision"], "chars": 29}

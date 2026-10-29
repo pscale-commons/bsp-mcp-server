@@ -1,0 +1,1 @@
+{"tied_at": "1.1", "line": "kestrel fetches this month's tide times from the harbour feed: it returned 62 tide times for November (today is 29 October), saved at tides:feed 11 \u00b7 waits on rook \u00b7 read: tides:feed 11", "options": ["rebuild the page now from tides:feed 11 as November's table", "hold the rebuild, and kestrel fetches October's tide times first"]}

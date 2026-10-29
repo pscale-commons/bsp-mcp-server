@@ -1620,6 +1620,39 @@ def report_failures(failed, parse_failed=False, summary_due=None):
         save_block("conditions", cond)
 
 
+# ── the ring, as the given carries it ─────────────────────────────────────
+
+RING_LEAD = ("Rung awake — this wake's assignment is the landed voice below "
+             "(ways:doorbell): answer it in its room by append, naming the "
+             "asker, and act on what it asks where the acting is yours this "
+             "wake; the standing work follows after. A voice that asks "
+             "nothing is still owed its hearing — say so in the room.")
+THREAD_LEAD = (" The voice names a thread's place, and its live end rides at thread: "
+               "the registry's line and every hand's knots there and beneath it, read "
+               "at the door for you, since a wake cannot fetch. Read it before you tie "
+               "your knot in your own mirror (ways:thread).")
+
+
+def ring_given(ring):
+    """The ring as the given carries it: the assignment, who rang, where, the
+    voice, and — when the voice names a thread's place — that thread's live end
+    as a field of its own, so a long thread is never clipped into the voice
+    (function:thread 5; proposals/2026-10-29-threads-phase-2.md). The waker
+    reads the place at the door and hands it as GENUS_RING's `thread`.
+    Upstream-owed to pscale-biome src/agent (parked; noted per the port discipline)."""
+    thread = str(ring.get("thread", "") or "")
+    out = {
+        "_": RING_LEAD + (THREAD_LEAD if thread else ""),
+        "ringer": ring.get("ringer", ""),
+        "room": ring.get("pool", ""),
+        "slot": ring.get("slot", ""),
+        "voice": str(ring.get("voice", ""))[:2000],
+    }
+    if thread:
+        out["thread"] = thread[:6000]
+    return out
+
+
 # ── pulse ──────────────────────────────────────────────────────────────────
 
 def pulse(compose_only=False, now=None):
@@ -1689,17 +1722,7 @@ def pulse(compose_only=False, now=None):
         frame["ring"] = ring
         try:
             given = json.loads(message)
-            given["ring"] = {
-                "_": ("Rung awake — this wake's assignment is the landed voice below "
-                      "(ways:doorbell): answer it in its room by append, naming the "
-                      "asker, and act on what it asks where the acting is yours this "
-                      "wake; the standing work follows after. A voice that asks "
-                      "nothing is still owed its hearing — say so in the room."),
-                "ringer": ring.get("ringer", ""),
-                "room": ring.get("pool", ""),
-                "slot": ring.get("slot", ""),
-                "voice": str(ring.get("voice", ""))[:2000],
-            }
+            given["ring"] = ring_given(ring)
             message = json.dumps(given, ensure_ascii=False, indent=2)
             frame["message"] = message
         except Exception:

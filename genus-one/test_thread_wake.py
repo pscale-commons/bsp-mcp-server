@@ -67,5 +67,25 @@ try:
 finally:
     waker.router_call, waker.enrolment_beach, waker.enrolment_room = _kept
 
+# ── the live end rides as its own field, never clipped into the voice ───────
+# (proposals/2026-10-29-threads-phase-2.md: egg-one tied thread:2 blind)
+import json  # noqa: E402
+LONG = "═══════════ THE THREAD — thread:2, the work taken up ═══════════\n" + "\n".join(
+    "  2.%d · keel: a knot of some length, as thread 2's knots run, said here so the section passes two thousand characters" % i
+    for i in range(1, 25))
+ring = json.loads(waker.ring_payload("keel", "pool:egg-one", 136, "egg-one — keel. A thread waits: thread:2.", LONG))
+check(ring["voice"] == "egg-one — keel. A thread waits: thread:2.", "the voice rides as it landed")
+check(ring.get("thread") == LONG and len(LONG) > 2500, "a thread section past 2,500 characters rides whole beside it")
+check("thread" not in json.loads(waker.ring_payload("keel", "pool:egg-one", 137, "hello")), "a ring that names no place carries no thread")
+
+os.environ["ANTHROPIC_API_KEY"] = "offline-test-never-spent"  # the kernel binds a key at import; nothing calls out
+import kernel  # noqa: E402
+given = kernel.ring_given(ring)
+check(given.get("thread") == LONG, "the kernel lays the live end in the given as its own key")
+check(given["voice"] == ring["voice"], "and the voice beside it, unclipped by the thread")
+check("ways:thread" in given["_"] and "read it before you tie" in given["_"].lower(), "the ring's assignment says the live end is there to read before tying")
+plain = kernel.ring_given({"ringer": "keel", "pool": "pool:egg-one", "slot": "137", "voice": "hello"})
+check("thread" not in plain and plain["_"] == kernel.RING_LEAD, "a ring with no thread composes exactly as before")
+
 print("%d passed, %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)

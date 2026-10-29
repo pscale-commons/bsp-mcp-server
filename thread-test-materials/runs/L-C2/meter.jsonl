@@ -1,0 +1,8 @@
+{"cmd": ["room", "wren"], "chars": 89}
+{"cmd": ["read", "1"], "chars": 831}
+{"cmd": ["block", "tides:draft", "2"], "chars": 26}
+{"cmd": ["block", "tides:draft 2"], "chars": 28}
+{"cmd": ["block", "tides:draft 1"], "chars": 28}
+{"cmd": ["room", "rook"], "chars": 28}
+{"cmd": ["say", "1.1", "reviewed the tide-table draft against the harbour's data: two tide times in tides:draft 1 were wrong, and are corrected in tides:draft 2. It now waits on dana, who decides between the options below. \u00b7 read: tides:draft 1", "--option", "publish the page", "--option", "ask for another pass"], "chars": 417}
+{"cmd": ["post", "dana", "thread:1.1 \u2014 the tide-table page waits on your decision. The two options beneath it are publish the page (thread:1.11) and ask for another pass (thread:1.12). I checked the draft against the harbour's data: two tide times in tides:draft 1 were wrong, and I corrected them in tides:draft 2. When I tried to read the drafts back from the beach in this pass, the blocks did not come up, so please look at tides:draft 2 yourself before you publish."], "chars": 29}

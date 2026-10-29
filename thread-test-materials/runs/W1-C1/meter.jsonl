@@ -1,0 +1,12 @@
+{"cmd": ["block", "moorings:draft", "1"], "chars": 29}
+{"cmd": ["room", "dana"], "chars": 28}
+{"cmd": ["block", "moorings:draft 1"], "chars": 31}
+{"cmd": ["block", "moorings"], "chars": 23}
+{"cmd": ["room", "rook"], "chars": 28}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["open", "harbour moorings page for dana: first part built, but its draft block does not stand on this beach \u00b7 opened by rook"], "chars": 146}
+{"cmd": ["read", "3"], "chars": 762}
+{"cmd": ["say", "3", "looked for the moorings draft I saved: no block of that name stands on this beach, so the list cannot be checked or published yet; it must be saved again first \u00b7 waits on rook \u00b7 read: spine:thread, pool:dana, pool:rook"], "chars": 256}
+{"cmd": ["read", "3"], "chars": 943}
+{"cmd": ["post", "rook", "thread:3 \u2014 waits on you, rook: the moorings list is not on this beach, because the block I saved it to (moorings:draft 1) does not stand here. Re-save the list from the chat with dana, or ask her to paste it if the chat is out of reach; read it back; then tie your next knot at 3.1 with the choice for dana: wren checks the list against the harbour register first, or dana publishes it as it is."], "chars": 29}
+{"cmd": ["room", "rook"], "chars": 432}

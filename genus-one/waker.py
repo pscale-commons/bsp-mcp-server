@@ -1145,6 +1145,17 @@ def thread_section(window):
     return next((p.strip() for p in parts if p.startswith("═") and "THE THREAD" in p.split("\n", 1)[0]), "")
 
 
+def ring_payload(ringer, pool, slot, voice, thread=""):
+    """GENUS_RING for a pulse: the landed voice, and the live end of the thread
+    it names as a field of its own. Appended to the voice, a thread of more
+    than a few knots was clipped by the kernel's own cut of the voice
+    (proposals/2026-10-29-threads-phase-2.md); kernel.ring_given lays it in."""
+    ring = {"ringer": ringer or "", "pool": pool, "slot": str(slot), "voice": (voice or "")[:3500]}
+    if thread:
+        ring["thread"] = thread[:6000]
+    return json.dumps(ring, ensure_ascii=False)
+
+
 def orientation_window(handle, thread=None):
     """The handle's own orientation, compiled the way every other door compiles
     it — pscale_play over the router, which reads shell:<handle> position 3 and
@@ -2823,18 +2834,15 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=Non
         if voice is None:
             voice = landed_voice(pool, slot, beach=home)
         place = thread_place(voice)
+        live = ""
         if voice and place and wake_mode(handle) == "genus":
             # THE WAKER COMPILES THE LIVE END (function:thread 5; keel,
             # pool:threads 7): the place the ring names, read at the door,
             # rides beside the voice — the kernel cannot fetch once awake.
             live, _ = orientation_window(handle, place)
             live = thread_section(live)
-            if live:
-                voice = voice[:2000] + "\n\n" + live[:1500]
         if voice:
-            os.environ["GENUS_RING"] = json.dumps(
-                {"ringer": ringer or "", "pool": pool, "slot": str(slot),
-                 "voice": voice[:3500]}, ensure_ascii=False)
+            os.environ["GENUS_RING"] = ring_payload(ringer, pool, slot, voice, live)
         else:
             os.environ.pop("GENUS_RING", None)
         os.environ["ANTHROPIC_API_KEY"] = fuel_key or _STANDING_KEY

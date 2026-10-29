@@ -1,0 +1,8 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 1168}
+{"cmd": ["read", "1.11"], "chars": 733}
+{"cmd": ["block", "harbour:chart", "2"], "chars": 28}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["block", "harbour:chart"], "chars": 28}
+{"cmd": ["say", "1.111", "wren: the harbour changes its tide chart next week (harbour:chart 2, not readable on the beach when I looked), before anyone has published; so the choice to publish at 1.11 is put to dana again with two new options \u00b7 waits on dana \u00b7 read: 1, 1.11", "--option", "publish now and update the page after the chart changes", "--option", "wait a week and publish on the new chart"], "chars": 450}
+{"cmd": ["post", "dana", "thread:1.111 \u2014 your choice to publish the tide-table page is put to you again. The harbour changes its tide chart next week (harbour:chart 2, which I could not read on the beach, so that part rests on my report). Two options stand at the place: publish now and update the page after the chart changes, or wait a week and publish on the new chart."], "chars": 29}

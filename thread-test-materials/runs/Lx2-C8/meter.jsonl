@@ -1,0 +1,8 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 1168}
+{"cmd": ["block", "harbour:chart", "2"], "chars": 40}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["say", "1.14", "put to dana again on the new chart: the harbour changes its tide chart next week (harbour:chart 2), so the publish choice made at 1.11 is asked afresh, with two new options beneath this line; 1.11 to 1.13 stand as they were \u00b7 waits on dana \u00b7 read: 1, spine:thread, harbour:chart 2", "--option", "publish now and update the page after the chart changes", "--option", "wait a week and publish on the new chart"], "chars": 478}
+{"cmd": ["read", "1.14"], "chars": 1064}
+{"cmd": ["post", "dana", "thread:1.14 \u2014 the publish choice waits on you again, now on the new chart: 1.141 publish now and update the page after the chart changes, or 1.142 wait a week and publish on the new chart."], "chars": 29}
+{"cmd": ["room", "dana"], "chars": 289}

@@ -1,0 +1,5 @@
+{"cmd": ["room", "wren"], "chars": 89}
+{"cmd": ["read", "1"], "chars": 831}
+{"cmd": ["block", "tides:draft", "2"], "chars": 75}
+{"cmd": ["say", "1.1", "reviewed the tide-table draft against the harbour's data: two tide times in tides:draft 1 were wrong, corrected in tides:draft 2 \u00b7 waits on dana \u00b7 read: pool:wren, 1, tides:draft 2", "--option", "publish the page", "--option", "ask for another pass"], "chars": 377}
+{"cmd": ["post", "dana", "thread:1.1 \u2014 the tide-table page is reviewed against the harbour's data: two tide times in tides:draft 1 were wrong and are corrected in tides:draft 2. It waits on you: publish the page, or ask for another pass. Your choice is one of the two options beneath thread:1.1."], "chars": 29}

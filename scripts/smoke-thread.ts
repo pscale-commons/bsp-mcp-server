@@ -12,7 +12,11 @@
  *    - a say's options land at the digits beneath its line;
  *    - an option another hand has answered keeps its words;
  *    - a line of one's own replaced is named in the ack;
- *    - a seat that took a thread up at the door is told only the knots tied since. */
+ *    - a seat that took a thread up at the door is told only the knots OTHER hands
+ *      tied since, its own coming back in its own say's answer;
+ *    - off the clock the address is said as written (11.2, never 112), and the
+ *      registry's line rides with the stamp the beach gave it as it landed
+ *      (proposals/2026-10-29-threads-phase-2.md). */
 import { writeAt, readAt, floorDepth } from '../src/bsp.js';
 
 const ORIGIN = 'https://smoke-thread.test';
@@ -22,7 +26,7 @@ process.env.DEFAULT_BEACH = ORIGIN;
 const store: Record<string, any> = {
   'spine:thread': {
     _: { _: 'THE REGISTRY — one line per thread, in the order threads are opened.', '5': 'thread five · opened by ada' },
-    '1': { _: 'Summary of 1–9', '1': 'redraw the quipu · opened by ada', '2': 'a second thread · opened by ben' },
+    '1': { _: 'Summary of 1–9', '1': { _: 'redraw the quipu · opened by ada', '1': 'ada', '3': '2026-10-29T13:53:55Z' }, '2': 'a second thread · opened by ben' },
   },
   'function:thread': { _: 'THE THREAD — the law of this smoke.' },
   // ada's mirror was born when the registry stood at floor 1, and holds thread 5's knots there.
@@ -90,6 +94,8 @@ const order = ['- 11 · ada:', '- 11.1 · ada: accept the drawing', '- 11.2 · a
 ok(order.every((i) => i >= 0), 'the whole thread in one read: the offer, its options, the option taken, and the next offer');
 ok(order.every((i, n) => n === 0 || i > order[n - 1]), 'in address order, a parent before its children');
 ok(r.includes('11 in the registry') || r.includes('redraw the quipu'), 'the registry\'s line rides above it');
+ok(r.includes('redraw the quipu · opened by ada · 2026-10-29T13:53:55Z'), 'with the stamp the beach gave it, the one time a thread keeps');
+ok(!r.includes('- 11.3 ·'), 'and its stamp at field 3 is never a knot at option 3');
 
 // ── an option another hand has answered keeps its words ──
 r = await engage({ handle: 'ada', at: '11', say: 'drew the band live from the beach', options: ['accept the drawing', 'something else'], secret: 'ada-key' });
@@ -113,6 +119,23 @@ await pause();
 const told = await orientationRider('s1', Date.now() + 10_000);
 ok(told.includes('11.211 · ada: fixed the overlap and resubmitted'), 'the next ack carries the knot tied since');
 ok(!told.includes('11.2 · ben'), 'and nothing it had already told');
+ok(renderPlace('thread', '11', cs!).includes('11 in the registry: redraw the quipu · opened by ada · 2026-10-29T13:53:55Z'), 'the door\'s place carries the registry line\'s stamp');
+
+// ── a seat is told other hands' knots, never its own ──
+const cs2 = await crossSection(ORIGIN, 'thread', '11');
+seatThread('s2', ORIGIN, 'ada', 'thread', '11', cs2!.lines.map((l) => toldKey(l.who, l.addr, l.text)));
+await pause();
+r = await engage({ handle: 'ada', at: '11.2111', say: 'checked it at phone width · waits on ben', secret: 'ada-key' });
+await engage({ handle: 'ben', at: '11.22', say: 'asked for one more change: the legend wraps · waits on ada', secret: 'ben-key' });
+await pause();
+const toldAda = await orientationRider('s2', Date.now() + 20_000);
+ok(toldAda.includes('11.22 · ben: asked for one more change'), 'ada\'s seat hears ben\'s knot');
+ok(!toldAda.includes('11.2111 · ada'), 'and not her own, which her say already answered');
+
+// ── off the clock the address is said as written ──
+ok(r.startsWith('stream:thread @ https://smoke-thread.test — at 11.2111'), 'a say at 11.2111 heads its reply at 11.2111, never 112111');
+r = await engage({ handle: 'cy', at: '11.2' });
+ok(r.startsWith('stream:thread @ https://smoke-thread.test — at 11.2') && r.includes('# Readings at 11.2 '), 'a read at 11.2 says 11.2 in its header and its readings');
 
 console.log(`\nthread: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

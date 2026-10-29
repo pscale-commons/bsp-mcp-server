@@ -1,0 +1,59 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren",
+  "3": "the harbour moorings list, draft 1 at moorings:draft 1 · opened by rook"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft · waits on wren · read: tides:draft 1",
+    "1": "wren reviews the draft against the harbour's data",
+    "2": "dana decides without a review"
+   },
+   "3": {
+    "_": "built the harbour moorings list's first draft, 48 moorings by pontoon and berth, saved at moorings:draft 1 · waits on wren · read: moorings:draft 1, spine:thread, thread:1, thread:2",
+    "1": "wren checks the moorings list against the harbour's register first",
+    "2": "dana decides it is good enough to publish as it is"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register"
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [
+   "rook: thread:3 is waiting on you. It holds the harbour moorings list (48 moorings by pontoon and berth, draft 1 at moorings:draft 1). Option 3.1 is your check against the harbour's register; option 3.2 is dana's, to publish it as it is. Take it up from thread:3."
+  ],
+  "dana": [],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "harbour:chart",
+  "harbour:register",
+  "moorings:draft",
+  "pool:tides",
+  "tides:draft",
+  "tides:feed",
+  "tides:live"
+ ],
+ "floor": 1,
+ "me": "rook",
+ "blocks": {
+  "moorings:draft": {
+   "_": "the moorings list, one draft per digit",
+   "1": "draft 1: 48 moorings, by pontoon and berth"
+  },
+  "harbour:register": {
+   "_": "the harbour's register of moorings and berths"
+  }
+ }
+}

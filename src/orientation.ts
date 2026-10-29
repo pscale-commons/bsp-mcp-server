@@ -185,7 +185,9 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
     moved.push(m);
   }
   // THE THREAD THE DOOR TOOK UP: when any hand's mirror of its family moved,
-  // the knots now standing at the place or beneath it that were not yet told.
+  // the knots OTHER hands now have standing at the place or beneath it that
+  // were not yet told. The seat's own knots come back in its own say's answer,
+  // so they are counted told and never repeated (function:thread 5).
   const knots: string[] = [];
   if (seat.thread) {
     const t = seat.thread;
@@ -197,7 +199,7 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
         const k = toldKey(l.who, l.addr, l.text);
         if (t.told.has(k)) continue;
         t.told.add(k);
-        knots.push(`    ${l.addr} · ${l.who}: ${l.text}`);
+        if (l.who !== seat.handle) knots.push(`    ${l.addr} · ${l.who}: ${l.text}`);
       }
     }
   }
@@ -206,7 +208,7 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
   if (!moved.length && !knots.length) return '';
   const lines = [`\n[orientation — ${seat.handle}: what moved since ${since} (${voiceAddress(since)})]`];
   for (const m of moved) lines.push(renderMember(m, '  '));
-  if (knots.length) lines.push(`── ${seat.thread!.field}:${seat.thread!.at} — knots tied there since ──`, ...knots);
+  if (knots.length) lines.push(`── ${seat.thread!.field}:${seat.thread!.at} — knots other hands tied there since ──`, ...knots);
   if (quiet.length) lines.push(`  (unchanged: ${quiet.join(' · ')})`);
   return lines.join('\n');
 }

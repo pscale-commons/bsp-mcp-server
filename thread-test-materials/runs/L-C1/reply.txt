@@ -1,0 +1,2 @@
+{"tied_at": "3", "line": "built the first part of dana's harbour moorings page ...", "options": ["wren checks the list against the harbour's register first", "dana decides it is good enough and publishes it as it is"], "handed_on": {"to": "dana", "text": "thread:3 — ..."}, "why": "I tied the offer at 3, the thread's own number, because it is the thread's first knot, so its two options stand beneath it at 3.1 and 3.2 where the choice can be read."}
+NOTE: moorings:draft 1 did not read back on the test beach (the battery's own gap), and the mind wrote that into its knot.

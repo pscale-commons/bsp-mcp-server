@@ -1,0 +1,2 @@
+{"tied_at": "1.11", "line": "published the tide-table page on dana's word ('Publish it.', said to rook in chat); it is live at tides:live. Waits on no one: the branch is complete. · read: spine:thread, 1", "options": [], "handed_on": {"to": null, "text": null}, "why": "I chose 1.11 because it is the option beneath wren's waiting-on-dana choice that matches dana's 'Publish it.', so the record sits at the digit she took."}
+NOTE: this run made one stray call to a GitHub file-contents tool, which failed input validation.

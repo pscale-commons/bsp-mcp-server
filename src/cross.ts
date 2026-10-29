@@ -95,6 +95,7 @@ export async function crossSection(origin: string, field: string, address: strin
   floor: number;
   digits: string[];
   spineLine: string | null;
+  spineStamp: string | null;
   lines: CrossLine[];
 } | null> {
   const [srow, index] = await Promise.all([
@@ -107,14 +108,19 @@ export async function crossSection(origin: string, field: string, address: strin
   const digits = parseSpindle(address, floor).digits;
   // The spine's line for the whole the address belongs to: a thread's registry
   // line stands at its number, whatever depth of the thread is asked for.
-  const spineLine = voiceOf(readAt(spine, digits.slice(0, Math.max(floor, 1)).join('')));
+  const spineNode = readAt(spine, digits.slice(0, Math.max(floor, 1)).join(''));
+  const spineLine = voiceOf(spineNode);
+  // The registry line is appended, so the beach stamped it as it landed (its
+  // field 3): the one time a thread's lines keep (function:thread 4).
+  const stamp = spineNode && typeof spineNode === 'object' ? (spineNode as Record<string, unknown>)['3'] : null;
+  const spineStamp = typeof stamp === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(stamp) ? stamp : null;
   const names = (index?.blocks ?? []).filter((n) => n.startsWith(`${field}:`) && n.indexOf(':', field.length + 1) < 0);
   const per = await Promise.all(names.map(async (name) => {
     const row = await loadBlock(origin, name).catch(() => null);
     if (!row || !row.block || typeof row.block !== 'object') return [];
     return linesAt(nodeAt(row.block as Block, digits, floor), digits, floor, name.slice(field.length + 1));
   }));
-  return { floor, digits, spineLine, lines: per.flat().sort(byAddress) };
+  return { floor, digits, spineLine, spineStamp, lines: per.flat().sort(byAddress) };
 }
 
 /** A thread's place as one short block of text: the registry's line, then each
@@ -122,7 +128,7 @@ export async function crossSection(origin: string, field: string, address: strin
  *  mind taking the work up (function:thread 5). */
 export function renderPlace(field: string, address: string, cs: NonNullable<Awaited<ReturnType<typeof crossSection>>>): string {
   const head = dotted(cs.digits.slice(0, cs.floor), cs.floor);
-  const out = [`${field}:${address} — ${cs.spineLine ? `${head} in the registry: ${cs.spineLine}` : `no line at ${head} in spine:${field}`}`];
+  const out = [`${field}:${address} — ${cs.spineLine ? `${head} in the registry: ${cs.spineLine}${cs.spineStamp ? ` · ${cs.spineStamp}` : ''}` : `no line at ${head} in spine:${field}`}`];
   if (!cs.lines.length) out.push(`  (no hand has tied a knot at ${address} or beneath it yet)`);
   for (const l of cs.lines) out.push(`  ${l.addr} · ${l.who}: ${l.text}`);
   return out.join('\n');

@@ -1,0 +1,4 @@
+{"cmd": ["read", "1.1"], "chars": 1038}
+{"cmd": ["say", "1.1", "reviewed the draft: two tide times were wrong, corrected in tides:draft 2 \u00b7 waits on dana \u00b7 read: tides:draft 1", "--option", "publish now and update after the chart changes", "--option", "wait a week"], "chars": 108}
+{"cmd": ["say", "1.111", "the harbour changes its chart next week (harbour:chart 2), so the choice is asked again \u00b7 waits on dana \u00b7 read: harbour:chart 2", "--option", "dana publishes now and the page is updated after the chart changes", "--option", "dana waits a week and publishes on the new chart"], "chars": 350}
+{"cmd": ["post", "dana", "thread:1.111 \u2014 the choice, asked again"], "chars": 29}

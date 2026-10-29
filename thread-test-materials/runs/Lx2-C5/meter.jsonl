@@ -1,0 +1,5 @@
+{"cmd": ["read", "1"], "chars": 1113}
+{"cmd": ["block", "tides:draft", "3"], "chars": 51}
+{"cmd": ["say", "1.14", "the tide-table page broke on phones, so its layout was fixed in tides:draft 3, which is draft 2 with that layout fix; draft 2's two tide corrections stand; none of the options on the thread names this; recorded here before dana decides \u00b7 waits on dana \u00b7 read: thread:1, tides:draft 3"], "chars": 327}
+{"cmd": ["read", "1.1"], "chars": 1282}
+{"cmd": ["post", "dana", "thread:1.14 (my step), read with thread:1.1 before you decide. The tide-table page broke on phones, so I fixed its layout in tides:draft 3, which is draft 2 with that layout fix; draft 2's two tide corrections stand. None of the options on the thread names this. Your decision is still open at thread:1.1."], "chars": 29}

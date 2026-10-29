@@ -1,0 +1,3 @@
+1.1 | fetched for me by my waker: the harbour feed answered with 62 tide times for November, saved at tides:feed 11. The feed is not down, so 1.2 stays a strand not taken. November is not this month (today is 29 October), so the page's month needs settling before rook rebuilds it | options: 1 rook rebuilds the page from tides:feed 11 as November's tide table; 2 kestrel fetches October's tide times from the harbour feed and rook rebuilds from those
+
+I tie it at 1.1 because the fetch is option 1 of rook's knot at 1, the branch the feed's answer took, while 1.2 (the feed is down) stays a strand not taken.
