@@ -343,10 +343,31 @@ async function reachingUnits() {
   check('room/liquid are DORMANT when the recipe does not name them', !given2.has('room') && !given2.has('liquid'));
 }
 
+// THE WINDOW READ AS bsp() READS IT (pool:weft 358) — a door's selfOf unfolds
+// the bundle with compile.ts: a qualified name reaches that block, `head`
+// resolves; without selfOf the kernel's own hydrate leaves both null.
+async function selfOfUnits() {
+  const bundle = new Map<string, PNode>([['1', 'family:holder:1'], ['2', 'task:head']]);
+  const blocks: Record<string, PNode> = {
+    reflexive: new Map([['9', bundle]]) as PNode,
+    'family:holder': toPNode({ _: 'the family', 1: 'one heart' }),
+    task: toPNode({ _: 'tasks', 1: 'first', 2: 'newest' }),
+  };
+  const loader: Loader = async (name) => blocks[name] ?? null;
+  const { compile } = await import('../src/compile.js');
+  const selfIn = (system: string) => (parseOrdered(system) as PMap).get('self') as PMap;
+  const plain = selfIn((await genusCompose(loader, 1000, new Map(), 'egg-one')).system);
+  const read = selfIn((await genusCompose(loader, 1000, new Map(), 'egg-one', async (b) => (await compile(b, loader, { complete: false })).window)).system);
+  check('without selfOf the word head stays null (the kernel, byte for byte)', plain.get('2') === null, JSON.stringify(plain.get('2')));
+  check('with selfOf head resolves to the newest entry', JSON.stringify(read.get('2')) === '["newest"]', JSON.stringify(read.get('2')));
+  check('with selfOf a reference the kernel reads comes back the same', JSON.stringify(read.get('1')) === JSON.stringify(plain.get('1')), JSON.stringify(read.get('1')));
+}
+
 (async () => {
   await parity();
   await foldUnits();
   await reachingUnits();
+  await selfOfUnits();
   console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);
   if (fail > 0) process.exit(1);
 })();
