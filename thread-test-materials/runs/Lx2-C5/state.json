@@ -1,0 +1,64 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft · waits on wren · read: tides:draft 1",
+    "1": {
+     "_": "wren reviews the draft against the harbour's data",
+     "4": "the tide-table page broke on phones, so its layout was fixed in tides:draft 3, which is draft 2 with that layout fix; draft 2's two tide corrections stand; none of the options on the thread names this; recorded here before dana decides · waits on dana · read: thread:1, tides:draft 3"
+    },
+    "2": "dana decides without a review"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register",
+   "1": {
+    "1": {
+     "_": "reviewed the draft: two tide times were wrong, corrected in tides:draft 2 · waits on dana · read: tides:draft 1",
+     "1": "dana publishes the page",
+     "2": "dana asks for another pass, said in pool:tides",
+     "3": "rook rebuilds it on the new chart first"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [],
+  "dana": [
+   "wren: thread:1.1 — the reviewed draft waits on your decision",
+   "rook: thread:1.14 (my step), read with thread:1.1 before you decide. The tide-table page broke on phones, so I fixed its layout in tides:draft 3, which is draft 2 with that layout fix; draft 2's two tide corrections stand. None of the options on the thread names this. Your decision is still open at thread:1.1."
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "harbour:chart",
+  "harbour:register",
+  "moorings:draft",
+  "pool:tides",
+  "tides:draft",
+  "tides:feed",
+  "tides:live"
+ ],
+ "floor": 1,
+ "me": "rook",
+ "blocks": {
+  "tides:draft": {
+   "_": "the tide-table page, one draft per digit",
+   "1": "draft 1: the tide-table page from last year's tables, laid out by day",
+   "2": "draft 2: two tide times corrected",
+   "3": "draft 3: draft 2 with the layout fixed for phones"
+  }
+ }
+}

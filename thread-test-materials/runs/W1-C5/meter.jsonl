@@ -1,0 +1,8 @@
+{"cmd": ["read", "1.1"], "chars": 983}
+{"cmd": ["block", "tides:draft", "3"], "chars": 26}
+{"cmd": ["block", "tides:draft", "2"], "chars": 26}
+{"cmd": ["block", "tides"], "chars": 20}
+{"cmd": ["room", "rook"], "chars": 28}
+{"cmd": ["open", "phone break in the tide-table page, and rook's phone-width fix (a third draft, not yet on this beach), for dana's decision on thread:1.1 \u00b7 opened by rook"], "chars": 184}
+{"cmd": ["say", "3", "Found the tide-table page breaks on phones; fixed the phone layout in my third draft, which is not on this beach, so the draft that thread:1.1 waits on still breaks on phones \u00b7 waits on dana \u00b7 read: thread:1.1, pool:rook, spine:thread"], "chars": 272}
+{"cmd": ["post", "dana", "thread:3 \u2014 dana's decision on thread:1.1 waits on you: the draft it is about still breaks on phones, and rook's phone fix is a third draft not yet on this beach, so ask rook for it before you choose"], "chars": 29}

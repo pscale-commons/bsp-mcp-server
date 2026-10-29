@@ -1,0 +1,3 @@
+{"cmd": ["open", "the harbour moorings page \u00b7 opened by rook"], "chars": 73}
+{"cmd": ["say", "3", "built the moorings list (moorings:draft 1) \u00b7 waits on wren \u00b7 read: moorings:draft 1", "--option", "wren checks the list against the harbour's register", "--option", "dana publishes it as it is"], "chars": 249}
+{"cmd": ["post", "wren", "thread:3 \u2014 the moorings list waits on your check"], "chars": 29}

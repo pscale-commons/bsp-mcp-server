@@ -1,0 +1,5 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["read", "1.12"], "chars": 805}
+{"cmd": ["block", "tides:draft", "3"], "chars": 49}
+{"cmd": ["say", "1.121", "Made the pass dana asked for: the low-water marks are now shown on the tide-table page at tides:draft 3, ready for dana's decision \u00b7 waits on dana \u00b7 read: pool:rook, stream:thread 1.12, tides:draft 3", "--option", "accept the low-water marks on tides:draft 3 as they stand", "--option", "ask for another pass on the low-water marks"], "chars": 408}
+{"cmd": ["post", "dana", "thread:1.121 \u2014 dana's decision on the low-water marks at tides:draft 3: accept them as they stand, or ask for another pass"], "chars": 29}

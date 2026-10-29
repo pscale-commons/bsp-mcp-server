@@ -1,0 +1,56 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft · waits on wren · read: tides:draft 1",
+    "1": {
+     "_": "wren reviews the draft against the harbour's data",
+     "4": "fixed the page breaking on phones (tides:draft 3), before dana decides · waits on dana · read: tides:draft 3"
+    },
+    "2": "dana decides without a review"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register",
+   "1": {
+    "1": {
+     "_": "reviewed the draft: two tide times were wrong, corrected in tides:draft 2 · waits on dana · read: tides:draft 1",
+     "1": "dana publishes the page",
+     "2": "dana asks for another pass, said in pool:tides",
+     "3": "rook rebuilds it on the new chart first"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [],
+  "dana": [
+   "wren: thread:1.1 — the reviewed draft waits on your decision",
+   "rook: thread:1.14 — the phone fix, before you decide"
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "tides:draft",
+  "tides:live",
+  "tides:feed",
+  "moorings:draft",
+  "harbour:chart",
+  "harbour:register",
+  "pool:tides"
+ ],
+ "floor": 1,
+ "me": "rook"
+}

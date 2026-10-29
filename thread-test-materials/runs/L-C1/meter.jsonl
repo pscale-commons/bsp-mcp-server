@@ -1,0 +1,11 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "moorings:draft", "1"], "chars": 29}
+{"cmd": ["room", "dana"], "chars": 28}
+{"cmd": ["room", "wren"], "chars": 28}
+{"cmd": ["block", "moorings:draft 1"], "chars": 31}
+{"cmd": ["block", "moorings:draft"], "chars": 29}
+{"cmd": ["open", "harbour moorings page for dana, the choice between wren's check and publishing as it is \u00b7 opened by rook"], "chars": 135}
+{"cmd": ["say", "3", "built the first part of dana's harbour moorings page, the moorings list, recorded as moorings:draft 1; that block does not read back on this beach, so the list is not on the beach yet and has to be saved again before either option can be carried out; it now waits for dana's choice \u00b7 read: spine:thread, moorings:draft 1, pool:dana, pool:wren", "--option", "wren checks the list against the harbour's register first", "--option", "dana decides it is good enough and publishes it as it is"], "chars": 544}
+{"cmd": ["read", "3"], "chars": 1199}
+{"cmd": ["post", "dana", "thread:3 \u2014 the harbour moorings page is waiting on a choice. Two options stand at thread:3: 3.1 wren checks the list against the harbour's register first; 3.2 you decide it is good enough and publish it as it is. One thing to know before either: the list is not on the beach yet, because moorings:draft 1 did not read back when I checked, so it needs saving again first."], "chars": 29}
+{"cmd": ["room", "dana"], "chars": 407}

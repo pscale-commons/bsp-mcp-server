@@ -1,0 +1,55 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren",
+  "3": "phone break in the tide-table page, and rook's phone-width fix (a third draft, not yet on this beach), for dana's decision on thread:1.1 · opened by rook"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft · waits on wren · read: tides:draft 1",
+    "1": "wren reviews the draft against the harbour's data",
+    "2": "dana decides without a review"
+   },
+   "3": "Found the tide-table page breaks on phones; fixed the phone layout in my third draft, which is not on this beach, so the draft that thread:1.1 waits on still breaks on phones · waits on dana · read: thread:1.1, pool:rook, spine:thread"
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register",
+   "1": {
+    "1": {
+     "_": "reviewed the draft: two tide times were wrong, corrected in tides:draft 2 · waits on dana · read: tides:draft 1",
+     "1": "dana publishes the page",
+     "2": "dana asks for another pass, said in pool:tides",
+     "3": "rook rebuilds it on the new chart first"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [],
+  "dana": [
+   "wren: thread:1.1 — the reviewed draft waits on your decision",
+   "rook: thread:3 — dana's decision on thread:1.1 waits on you: the draft it is about still breaks on phones, and rook's phone fix is a third draft not yet on this beach, so ask rook for it before you choose"
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "tides:draft",
+  "tides:live",
+  "tides:feed",
+  "moorings:draft",
+  "harbour:chart",
+  "harbour:register",
+  "pool:tides"
+ ],
+ "floor": 1,
+ "me": "rook"
+}

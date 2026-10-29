@@ -1,0 +1,3 @@
+{"cmd": ["read", "1.12"], "chars": 805}
+{"cmd": ["say", "1.121", "added the low-water marks (tides:draft 3) \u00b7 waits on dana \u00b7 read: tides:draft 3", "--option", "dana publishes the page", "--option", "dana asks for another pass"], "chars": 237}
+{"cmd": ["post", "dana", "thread:1.121 \u2014 the low-water marks are in"], "chars": 29}

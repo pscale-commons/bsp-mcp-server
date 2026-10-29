@@ -1,0 +1,5 @@
+{"cmd": ["room", "rook"], "chars": 104}
+{"cmd": ["read", "1"], "chars": 894}
+{"cmd": ["say", "1.4", "rook adds the spring tides before anyone reviews. Taken at 1.4, not 1.3, because 1.3 already holds rook's own line from the last session. The spring tides are on the page as tides:draft 2, and this now waits on wren's review of draft 2; the review named at 1.1 was of draft 1. \u00b7 read: 1", "--option", "wren reviews tides:draft 2 against the harbour's data, and accepts it as it stands", "--option", "wren reviews tides:draft 2 against the harbour's data, and returns it to rook with the changes named", "--option", "wren hands tides:draft 2 to dana to decide without a review"], "chars": 646}
+{"cmd": ["read", "1.4"], "chars": 1227}
+{"cmd": ["post", "wren", "thread:1.4 - tides:draft 2 is on the page with the spring tides added, and it waits on your review. Read thread 1 from the place thread:1.4 and answer with one of the options beneath it (1.41, 1.42, 1.43). From rook."], "chars": 29}

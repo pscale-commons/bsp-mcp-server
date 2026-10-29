@@ -1,0 +1,8 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["read", "1.12"], "chars": 805}
+{"cmd": ["block", "tides:draft", "3"], "chars": 26}
+{"cmd": ["block", "tides"], "chars": 20}
+{"cmd": ["room", "tides"], "chars": 29}
+{"cmd": ["say", "1.12.1", "did the pass dana asked for at thread:1.12: the low-water marks are shown on the page (draft 3); this beach holds no tides block to read the page back, and pool:tides is empty \u00b7 waits on dana \u00b7 read: thread:1.12, pool:rook, pool:tides", "--option", "accept the low-water marks as shown on the page", "--option", "ask for another pass on the low-water marks"], "chars": 75}
+{"cmd": ["say", "1.121", "did the pass dana asked for at thread:1.12: the low-water marks are shown on the page (draft 3); this beach holds no tides block to read the page back, and pool:tides is empty \u00b7 waits on dana \u00b7 read: thread:1.12, pool:rook, pool:tides", "--option", "accept the low-water marks as shown on the page", "--option", "ask for another pass on the low-water marks"], "chars": 433}
+{"cmd": ["post", "dana", "thread:1.121 \u2014 the low-water marks shown on the page (draft 3) wait on your decision: accept them as shown, or ask for another pass. I could not read the page back on this beach, so please look at it yourself."], "chars": 29}

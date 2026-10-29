@@ -79,6 +79,7 @@
     "smoke:wellformed": "tsx scripts/smoke-wellformed.ts",
     "smoke:compile": "tsx scripts/smoke-compile.ts",
     "smoke:compound": "python3 compound-test-materials/run-compound-tests.py && python3 compound-test-materials/run-compound-tests.py mcp --known 3.6 && python3 compound-test-materials/run-compound-tests.py mcp-frame --known 3.8,3.9",
+    "smoke:thread-test": "python3 thread-test-materials/run-thread-tests.py",
     "smoke:play-hands": "tsx scripts/smoke-play-hands.ts",
     "lint:block": "tsx scripts/lint-block.ts",
     "smoke:room-fold": "tsx scripts/smoke-room-fold.ts",

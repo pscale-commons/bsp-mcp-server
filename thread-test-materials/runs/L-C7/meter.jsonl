@@ -1,0 +1,6 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["read", "1.12"], "chars": 897}
+{"cmd": ["block", "tides:draft", "4"], "chars": 26}
+{"cmd": ["block", "tides:draft"], "chars": 26}
+{"cmd": ["say", "1.1211", "checked the low-water marks against the harbour master's table and corrected one (tides:draft 4) \u00b7 waits on dana \u00b7 read: 1.12, 1.121", "--option", "accept draft 4 as the tide-table page", "--option", "hold draft 4 until the harbour master has checked the corrected mark", "--option", "keep draft 3 and drop the correction"], "chars": 416}
+{"cmd": ["post", "dana", "thread:1.1211 \u00b7 the low-water marks are checked against the harbour master's table and one is corrected (tides:draft 4). Your decision is waiting at that place: accept draft 4, hold it until the harbour master has checked the corrected mark, or keep draft 3 and drop the correction."], "chars": 29}

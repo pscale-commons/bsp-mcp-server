@@ -1,0 +1,6 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["open", "the harbour moorings page for dana: moorings list drafted at moorings:draft 1, awaiting a check by wren or publication by dana \u00b7 opened by rook"], "chars": 174}
+{"cmd": ["read", "3"], "chars": 790}
+{"cmd": ["block", "moorings:draft 1"], "chars": 44}
+{"cmd": ["say", "3", "built the first part of the harbour moorings page, the list of 48 moorings by pontoon and berth, saved as moorings:draft 1 for dana; the next step is a choice \u00b7 waits on dana \u00b7 read: spine:thread, moorings:draft 1, thread:3", "--option", "wren checks the moorings list against the harbour's register first", "--option", "dana decides it is good enough and publishes it as it is"], "chars": 434}
+{"cmd": ["post", "dana", "thread:3 \u2014 waits on you, dana: wren checks the moorings list against the harbour's register first, or you decide it is good enough and publish it as it is"], "chars": 29}

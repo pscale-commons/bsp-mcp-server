@@ -1,0 +1,77 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft · waits on wren · read: tides:draft 1",
+    "1": "wren reviews the draft against the harbour's data",
+    "2": "dana decides without a review"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register",
+   "1": {
+    "1": {
+     "_": "reviewed the draft: two tide times were wrong, corrected in tides:draft 2 · waits on dana · read: tides:draft 1",
+     "1": "dana publishes the page",
+     "2": "dana asks for another pass, said in pool:tides",
+     "3": "rook rebuilds it on the new chart first",
+     "4": {
+      "_": "put to dana again on the new chart: the harbour changes its tide chart next week (harbour:chart 2), so the publish choice made at 1.11 is asked afresh, with two new options beneath this line; 1.11 to 1.13 stand as they were · waits on dana · read: 1, spine:thread, harbour:chart 2",
+      "1": "publish now and update the page after the chart changes",
+      "2": "wait a week and publish on the new chart"
+     }
+    }
+   }
+  },
+  "dana": {
+   "1": {
+    "1": {
+     "1": "dana publishes the page · waits on rook"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [],
+  "dana": [
+   "wren: thread:1.1 — the reviewed draft waits on your decision",
+   "wren: thread:1.14 — the publish choice waits on you again, now on the new chart: 1.141 publish now and update the page after the chart changes, or 1.142 wait a week and publish on the new chart."
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "harbour:chart",
+  "harbour:register",
+  "moorings:draft",
+  "pool:tides",
+  "tides:draft",
+  "tides:feed",
+  "tides:live"
+ ],
+ "floor": 1,
+ "me": "wren",
+ "blocks": {
+  "tides:draft": {
+   "_": "the tide-table page, one draft per digit",
+   "1": "draft 1: the tide-table page from last year's tables, laid out by day",
+   "2": "draft 2: two tide times corrected"
+  },
+  "harbour:chart": {
+   "_": "the harbour's tide charts",
+   "1": "the chart in force now",
+   "2": "the new chart, in force from next week"
+  }
+ }
+}

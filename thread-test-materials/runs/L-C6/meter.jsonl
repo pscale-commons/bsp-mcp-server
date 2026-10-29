@@ -1,0 +1,7 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["read", "1.12"], "chars": 805}
+{"cmd": ["block", "tides:draft", "3"], "chars": 26}
+{"cmd": ["block", "tides"], "chars": 20}
+{"cmd": ["say", "1.121", "I made the pass: the low-water marks are now shown on the page (tides:draft 3). I could not read that block back on the beach, so this stands as I made it. It waits on dana to choose one option beneath.", "--option", "Accept: the marks stand as shown, and the page stands for the harbour master.", "--option", "One more change: dana names it here, and rook makes it.", "--option", "Hold: the page waits until its marks have been read back on the beach."], "chars": 539}
+{"cmd": ["read", "1.12"], "chars": 1280}
+{"cmd": ["post", "dana", "thread:1.121 - another pass made: the low-water marks are shown on the page (tides:draft 3), though I could not read that block back on the beach. Three options wait beneath it at 1.1211 to 1.1213 for your choice."], "chars": 29}

@@ -1,0 +1,70 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft · waits on wren · read: tides:draft 1",
+    "1": {
+     "_": "wren reviews the draft against the harbour's data",
+     "2": {
+      "1": {
+       "_": "added the low-water marks to the page · waits on dana · read: tides:draft 3",
+       "1": "checked the low-water marks against the harbour master's table, corrected one (tides:draft 4) · waits on dana · read: tides:draft 4"
+      }
+     }
+    },
+    "2": "dana decides without a review"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register",
+   "1": {
+    "1": {
+     "_": "reviewed the draft: two tide times were wrong, corrected in tides:draft 2 · waits on dana · read: tides:draft 1",
+     "1": "dana publishes the page",
+     "2": "dana asks for another pass, said in pool:tides",
+     "3": "rook rebuilds it on the new chart first"
+    }
+   }
+  },
+  "dana": {
+   "1": {
+    "1": {
+     "2": "another pass, please: the harbour master wants the low-water marks shown · waits on rook"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [
+   "dana: thread:1.12 — one more pass, please: the low-water marks"
+  ],
+  "wren": [],
+  "dana": [
+   "wren: thread:1.1 — the reviewed draft waits on your decision",
+   "rook: thread:1.1211 — one mark corrected"
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "tides:draft",
+  "tides:live",
+  "tides:feed",
+  "moorings:draft",
+  "harbour:chart",
+  "harbour:register",
+  "pool:tides"
+ ],
+ "floor": 1,
+ "me": "rook"
+}

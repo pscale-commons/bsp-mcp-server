@@ -1,0 +1,6 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1.12"], "chars": 805}
+{"cmd": ["block", "tides:draft", "3"], "chars": 49}
+{"cmd": ["say", "1.121", "Draft 3 is up (tides:draft 3): draft 2 with the low-water marks shown, as dana asked for the harbour master. It now waits on dana, who picks one of the options beneath. \u00b7 read: 1.12", "--option", "accept draft 3 as the tide-table page", "--option", "another pass on the low-water marks", "--option", "hold draft 3 until the harbour master has looked at it"], "chars": 442}
+{"cmd": ["post", "dana", "thread:1.121 \u2014 draft 3 of the tide-table page is up (tides:draft 3): draft 2 with the low-water marks shown, for the harbour master. Your decision waits there: accept it, another pass, or hold it until the harbour master has looked."], "chars": 29}

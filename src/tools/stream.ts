@@ -171,25 +171,35 @@ async function atSpineFloor(origin: string, name: string, block: Block, digits: 
  *  the reader arrives already holding why this address matters. This is the
  *  line-of-sight view, and on a temporal spine it is literally today at the
  *  bottom and the decade at the top. */
-export function ladderOf(spine: Block, digits: string[]): { pscale: number; addr: string; text: string | null }[] {
+export function ladderOf(spine: Block, digits: string[]): { pscale: number; addr: string; text: string | null; stamp?: string }[] {
   const floor = floorDepth(spine);
-  const rungs: { pscale: number; addr: string; text: string | null }[] = [];
+  const rungs: { pscale: number; addr: string; text: string | null; stamp?: string }[] = [];
   let node: unknown = spine;
   for (let i = 0; i < digits.length; i++) {
     const key = digits[i] === '0' ? '_' : digits[i];
     // An appended entry's digits are its fields — its arrival stamp at 3 —
     // never rungs: beneath a thread's registry line the knots are in the
     // mirrors, and the stamp is not a line at option 3.
-    const entry = !!node && typeof node === 'object' && /^\d{4}-\d{2}-\d{2}T/.test(String((node as Record<string, unknown>)['3'] ?? ''));
+    const entry = !!entryStamp(node);
     if (!node || typeof node !== 'object' || entry) { node = null; }
     else { node = (node as Record<string, unknown>)[key]; }
+    // THE AGE WHERE THE BEACH KEEPS A TIME (function:thread 4): an appended
+    // entry, as a thread's registry line is, carries the stamp it landed with.
+    const stamp = entryStamp(node);
     rungs.push({
       pscale: floor - (i + 1),
       addr: digits.slice(0, i + 1).join('').padEnd(floor, '0'),
       text: voiceOf(node),
+      ...(stamp ? { stamp } : {}),
     });
   }
   return rungs;
+}
+
+/** The arrival stamp an appended entry carries at its field 3, or null. */
+function entryStamp(node: unknown): string | null {
+  const s = node && typeof node === 'object' ? (node as Record<string, unknown>)['3'] : null;
+  return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(s) ? s : null;
 }
 
 /** Trim for the ladder's upper rungs — the ancestors are context, not the
@@ -536,7 +546,7 @@ function bornAt(text: string, floor: number): Block {
  *  stand on their own; under `brief` (the standing parts already given this
  *  session) an unvoiced rung that is not folded is omitted, as before. */
 export function ladderLines(
-  rungs: { pscale: number; addr: string; text: string | null }[],
+  rungs: { pscale: number; addr: string; text: string | null; stamp?: string }[],
   spineAddr: string,
   spineFloor: number,
   brief: boolean,
@@ -570,7 +580,7 @@ export function ladderLines(
       continue;
     }
     flush();
-    out.push(`${head(r, kept)} ${last ? r.text : clip(r.text, 180)}`);
+    out.push(`${head(r, kept)} ${last ? r.text : clip(r.text, 180)}${r.stamp ? ` · ${r.stamp}` : ''}`);
   }
   flush();
   return out;
@@ -814,6 +824,9 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     return out(`at="${params.at}" is not a usable address in the ${field} family — ${e?.message ?? String(e)}`);
   }
   const spineAddr = emitFor(digits, spine);
+  // OFF THE CLOCK THE ADDRESS IS SAID AS IT IS WRITTEN: a thread's 1.2 is said
+  // 1.2, never the emitted 12 (the read said 'at 12', and a say at 2.41 'at 241').
+  const shownAddr = spineFloor !== TEMPORAL_FLOOR ? dotted(digits, spineFloor) : spineAddr;
   // AT A BEAT on a clock a mirror may keep lanes; THE MOVING NOW is that beat
   // asked for by name — the one read where a line's own instant matters more
   // than the cell it fell in.
@@ -1132,7 +1145,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   const spanWords = span ? `${span.beats.length} ${span.beats.length === 1 ? 'beat' : 'beats'}, ${spanExtent}` : null;
   lines.push(span
     ? `stream:${field} @ ${origin} — across ${atWord.trim()} (${spanWords}), attended at ${spineAddr}${attendedWhen ? ` — ${attendedWhen}` : ''}`
-    : `stream:${field} @ ${origin} — at ${spineAddr}${attendedLabel ? ` (${attendedLabel})` : ''}`);
+    : `stream:${field} @ ${origin} — at ${shownAddr}${attendedLabel ? ` (${attendedLabel})` : ''}`);
 
   const rungs = ladderOf(spine, digits);
   const rungLines = ladderLines(rungs, spineAddr, spineFloor, brief, (i) => !!foldAt(digits.slice(0, i + 1)));
@@ -1143,7 +1156,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   }
   if (standingFold) {
     lines.push('');
-    lines.push(`# The fold standing at ${spineAddr} — kept in ${field}; saying here now is saying into a folded address`);
+    lines.push(`# The fold standing at ${shownAddr} — kept in ${field}; saying here now is saying into a folded address`);
     lines.push(standingFold);
   }
 
@@ -1194,7 +1207,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     }
   } else {
     lines.push(
-      `# Readings at ${spineAddr}${attendedWhen ? ` (${attendedWhen})` : ''}` +
+      `# Readings at ${shownAddr}${attendedWhen ? ` (${attendedWhen})` : ''}` +
       ` — ${voices} ${voices === 1 ? 'voice' : 'voices'}` +
       ` (the SNAPSHOT: every mirror concatenated, listed and never synthesised)`,
     );
@@ -1238,7 +1251,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     ? `# The fold is yours to make, as before (keep='personal' or 'collective', with keep_text)`
     : `# The fold — yours to make, not the primitive's` +
       `\nSynthesise the snapshot above under the law${law ? '' : ` (no function:${field} at this beach, so integrate plainly)`}. ` +
-      `Keep it only if it should outlast this turn: keep='personal' lands it at tree:${field}:${handle}:${spineAddr}, your own latest reading of this point; keep='collective' lands it at ${field}:${spineAddr}, ` +
+      `Keep it only if it should outlast this turn: keep='personal' lands it at tree:${field}:${handle}:${shownAddr}, your own latest reading of this point; keep='collective' lands it at ${field}:${shownAddr}, ` +
       `where anyone may supersede it with a better reading.`,
   );
 

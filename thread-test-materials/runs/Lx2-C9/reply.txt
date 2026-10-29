@@ -1,0 +1,3 @@
+1.1 | fetched the harbour feed: 62 tide times for November, saved at tides:feed 11; the times are unread here, and 62 is about half of what a semidiurnal month gives (near 120 high and low waters), so whether the feed covers the whole month is open · read: thread:1 | options: 1 rook rebuilds the tide-table page from tides:feed 11 as it stands; 2 rook checks the 62 against the November in last year's tables (tides:draft 1) before rebuilding
+
+1.1, because kestrel took option 1 of rook's knot at thread 1 (the feed fetch), so the choice belongs at that option's address, and 1.2 (report the feed down) stays a strand not taken, since the feed returned times.

@@ -1,0 +1,53 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft · waits on wren · read: tides:draft 1",
+    "1": "wren reviews the draft against the harbour's data",
+    "2": "dana decides without a review"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register",
+   "1": {
+    "1": {
+     "_": "reviewed the tide-table draft against the harbour's data: two tide times in tides:draft 1 were wrong, and are corrected in tides:draft 2. It now waits on dana, who decides between the options below. · read: tides:draft 1",
+     "1": "publish the page",
+     "2": "ask for another pass"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [
+   "rook: thread:1 — the tide-table draft waits on your review"
+  ],
+  "dana": [
+   "wren: thread:1.1 — the tide-table page waits on your decision. The two options beneath it are publish the page (thread:1.11) and ask for another pass (thread:1.12). I checked the draft against the harbour's data: two tide times in tides:draft 1 were wrong, and I corrected them in tides:draft 2. When I tried to read the drafts back from the beach in this pass, the blocks did not come up, so please look at tides:draft 2 yourself before you publish."
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "tides:draft",
+  "tides:live",
+  "tides:feed",
+  "moorings:draft",
+  "harbour:chart",
+  "harbour:register",
+  "pool:tides"
+ ],
+ "floor": 1,
+ "me": "wren"
+}

@@ -53,6 +53,7 @@ import directory from './directory.json' with { type: 'json' };
 import bspTest from './bsp-test.json' with { type: 'json' };
 import wellFormed from './well-formed.json' with { type: 'json' };
 import compoundTest from './compound-test.json' with { type: 'json' };
+import threadTest from './thread-test.json' with { type: 'json' };
 import shellGenome from './shell-genome.json' with { type: 'json' };
 import worldGenome from './world-genome.json' with { type: 'json' };
 
@@ -231,6 +232,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: compoundTest as unknown as Block,
     description:
       'Compound-test — the chemistry battery, companion to bsp-test (the walker that reads one block) and well-formed (the block being written): the composition contract as cases any implementation answers, and the form a compound must hold. Three batteries of nine at digits 1-3 — alignment (blocks laid against the common floor, each side its own disc), reference (resolved in the walk, a cycle that returns, a family\'s law and the generic law it mounts followed one hop, the star form across origins, the unreachable riding through visible) and bundle to window (slot order, prose, walk, head, disc, nesting, origin, absence, a node that is not a bundle). Branch 4 is the mechanical pass over a compound — every reference resolves, references run one way, a family stands when its law stands, a mirror line at an unvoiced address a proposal and never a fault — and branch 5 the interpretive pass, a bundle of whetstone 8.4 and grips 7. Branch 6 is the CLI shape every implementation answers and what each answers today. Fixture compounds, the reference compositor compound-alt.py, the form checker compound-form.py and the runner live in compound-test-materials/ of github.com/pscale-commons/bsp-mcp-server.',
+  },
+  {
+    name: 'thread-test',
+    json: threadTest as unknown as Block,
+    description:
+      'Thread-test — the biology battery, beside bsp-test (the walker that reads one block), well-formed (the block being written) and compound-test (blocks in company): whether a thread is well formed, and whether a mind handed a teaching forms one well. Branch 1 is the form pass a program decides over the registry and the mirrors (registered, opened, knotted, rooted, every act closing on whom it waits on or complete and an option never, contiguous digits, short lines, crossings and reads that stand), a thread opened before the law of 29 October read by the law it was tied under; 2 the nine uses a fresh small mind runs on a test beach (open, take, self, word, step, place, twin, reask, wake), graded by the form and by what each case expects; 3 the eleven planted faults the form pass must catch; 4 what it found (the law alone 36 and 35 of 40, the way 40 of 40); 5 how each part runs, and that only the fresh minds spend. The checker, the test beach, the uses, the teachings and every run live in thread-test-materials/ of github.com/pscale-commons/bsp-mcp-server; the way it tests is ways:thread, the law function:thread.',
   },
   {
     name: 'shell-genome',

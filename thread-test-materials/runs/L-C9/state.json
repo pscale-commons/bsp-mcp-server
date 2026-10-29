@@ -1,0 +1,51 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft from last year's tables · waits on kestrel · read: tides:draft 1",
+    "1": "kestrel fetches this month's tide times from the harbour feed",
+    "2": "kestrel reports the feed is down"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register"
+  },
+  "kestrel": {
+   "1": {
+    "1": {
+     "_": "fetched for me by my waker: the harbour feed answered with 62 tide times for November, saved at tides:feed 11. The feed is not down, so 1.2 stays a strand not taken. November is not this month (today is 29 October), so the page's month needs settling before rook rebuilds it",
+     "1": "rook rebuilds the page from tides:feed 11 as November's tide table",
+     "2": "kestrel fetches October's tide times from the harbour feed and rook rebuilds from those"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [],
+  "dana": [],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "tides:draft",
+  "tides:live",
+  "tides:feed",
+  "moorings:draft",
+  "harbour:chart",
+  "harbour:register",
+  "pool:tides"
+ ],
+ "floor": 1,
+ "me": "kestrel"
+}

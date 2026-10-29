@@ -1,0 +1,8 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["read", "1.12"], "chars": 897}
+{"cmd": ["block", "tides:draft", "4"], "chars": 26}
+{"cmd": ["block", "tides"], "chars": 20}
+{"cmd": ["room", "tides"], "chars": 29}
+{"cmd": ["say", "1.122", "checked the page's low-water marks against the harbour master's table and corrected one of them, in draft 4 \u00b7 waits on dana \u00b7 read: pool:rook, pool:tides, thread:1.12", "--option", "accept draft 4 of the page's low-water marks as they stand", "--option", "send it back to rook for another pass against the harbour master's table"], "chars": 405}
+{"cmd": ["post", "dana", "thread:1.122 \u2014 the page's low-water marks are checked against the harbour master's table and one is corrected in draft 4; decide whether draft 4 stands or goes back for another pass"], "chars": 29}
+{"cmd": ["read", "1.122"], "chars": 990}
