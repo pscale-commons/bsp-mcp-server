@@ -635,9 +635,10 @@ export async function saveBlock(
  * Returns the server-assigned slot. Mirrors saveBlock's translate-then-dispatch.
  *
  * With `spindle`, the append is NODE-SCOPED (ways:grain branch 5): the beach
- * walks to the named node, allocates the next free slot BENEATH it, and
- * supernests THAT NODE when its 1-9 fill — the grain-side conversation (side
- * 2's holder at 2.1, then 2.2, onward) is the named case. The ack then also
+ * walks to the named node and allocates the next free slot BENEATH it; a node
+ * holds nine and the tenth is refused (node_full — only a root wraps). The
+ * grain-side conversation (side 2's holder at 2.1, then 2.2, onward to 2.9)
+ * is the named case. The ack then also
  * carries `address` (the landed slot's full address from the block root,
  * single-decimal — "2.3") and `node` (the node's address).
  */
