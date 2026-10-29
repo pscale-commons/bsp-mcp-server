@@ -310,13 +310,15 @@ interface SparkResult {
   [k: string]: any;
 }
 
-async function resolveRef(text: PNode | undefined, loader: Loader | null): Promise<SparkResult | null> {
-  if (!loader || typeof text !== 'string') return null;
+/** A reference this walk has already followed stays verbatim, so a chain is
+ *  read to its end and a loop returns (spark.py parity). */
+async function resolveRef(text: PNode | undefined, loader: Loader | null, seen: string[] = []): Promise<SparkResult | null> {
+  if (!loader || typeof text !== 'string' || seen.includes(text)) return null;
   const ref = parseReference(text);
   if (!ref) return null;
   const target = await loader(ref.name);
   if (target === null) return null;
-  return spark(target, ref.address, ref.attention, { star: true, loader });
+  return spark(target, ref.address, ref.attention, { star: true, loader, seen: [...seen, text] });
 }
 
 /** The read function (write is sparkWrite). Mirrors spark.spark. */
@@ -324,7 +326,7 @@ export async function spark(
   block: PNode,
   number: string | null,
   attention: number | null,
-  opts: { star?: boolean; loader?: Loader | null } = {},
+  opts: { star?: boolean; loader?: Loader | null; seen?: string[] } = {},
 ): Promise<SparkResult> {
   const flr = floorOf(block);
   if (number === null || String(number) === '') {
@@ -337,7 +339,7 @@ export async function spark(
   if (attention === term) {
     const res = point(block, walk, term);
     if (opts.star && res.status === 'voiced') {
-      const followed = await resolveRef(res.text, opts.loader ?? null);
+      const followed = await resolveRef(res.text, opts.loader ?? null, opts.seen ?? []);
       if (followed !== null) return followed;
     }
     return res;

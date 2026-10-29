@@ -75,6 +75,9 @@ const store: Record<string, any> = {
   'purpose:egg-one': { _: 'egg-one\'s purpose', '1': 'reach' },
   'conditions:egg-one': { _: 'egg-one\'s conditions' },
   'reflexive:egg-one': { _: 'the mechanism', '9': { _: 'the current', '1': 'sunstone', '2': 'purpose', '3': 'conditions' } },
+  'purpose:egg-two': { _: 'egg-two\'s purpose' },
+  'conditions:egg-two': { _: 'egg-two\'s conditions, riding beside its purpose' },
+  'reflexive:egg-two': { _: 'the mechanism', '9': { _: 'the current', '1': { _: 'purpose', '1': 'conditions' }, '2': 'sunstone' } },
 };
 const teaching = new Map<string, Block>();
 for (const s of SENTINELS) teaching.set(s.name, s.json as Block);
@@ -181,6 +184,13 @@ ok(firstLines.includes('index: 1 orientation:weft:0:0 · 2 history:weft:head · 
 ok(win.indexOf('── 1 · orientation:weft:0:0 ──') < win.indexOf('── 2 · history:weft:head ──'), 'members unfold in slot order');
 const capped = renderBundle(whole!, { label: 'x', now: NOW, cap: 900 });
 ok(capped.includes('the window is full at 900 characters') && capped.includes('not unfolded:'), 'past the cap the remaining members are named, never dropped');
+// A slot that is itself a small bundle (compound-test 3.5 holds its delivery):
+// the window's index names the companion, since the index is what a reader
+// re-dials, and the companion unfolds beside its primary under its own header.
+const nested = await compileBundle(store['reflexive:egg-two']['9'], { load: memLoad, handle: 'egg-two', now: NOW });
+const nwin = renderBundle(nested!, { label: 'x', now: NOW });
+ok(nwin.includes('— 3 references compiled') && nwin.includes('index: 1 purpose (1,1 conditions) · 2 sunstone'), 'the index names the companion beside its primary, and the count includes it', nwin.split('\n').slice(0, 2).join('\n'));
+ok(nwin.includes('── 1,1 · conditions ──') && nwin.includes('riding beside its purpose') && nwin.indexOf('── 1,1 · conditions ──') < nwin.indexOf('── 2 · sunstone ──'), 'the companion unfolds beside its primary, before the next slot', nwin);
 
 console.log('\nG. the seat and the rider, offline');
 const { declareSeat, orientationRider, resetSeats, seatOf, seatTold } = await import('../src/orientation.js');

@@ -115,7 +115,7 @@
     }
   },
   "2": {
-    "_": "Reference — an address written inside a block's own content and resolved in the walk (whetstone 8.11, strata 2.12, sunstone 5.2). It is written name, name:address or name:address:attention, with the attention as absolute pscale; the words head and now are computed by the host; and the origin-qualified star form is *:<origin>:<name>:<address>[:<attention>]. A reference that resolves delivers its aperture. A point whose line is itself a reference is followed, and the walk still returns. A family's law is its operator, and a generic law the operator names is followed a single hop (strata 2.21). What cannot be reached rides through as written, visible, so an assembly degrades and an entry never breaks. The calls are resolve(<compound>: <reference>) and law(<compound>: <family>), against the shell and family compounds.",
+    "_": "Reference — an address written inside a block's own content and resolved in the walk (whetstone 8.11, strata 2.12, sunstone 5.2). It is written name, name:address or name:address:attention, with the attention as absolute pscale; the words head and now are computed by the host; and the origin-qualified star form is *:<origin>:<name>:<address>[:<attention>]. A reference that resolves delivers its aperture. A point whose line is itself a reference is followed to the end of its chain, and a loop is caught, so the walk returns. A family's law is its operator, and a generic law the operator names is followed a single hop (strata 2.21). What cannot be reached rides through as written, visible, so an assembly degrades and an entry never breaks. The calls are resolve(<compound>: <reference>) and law(<compound>: <family>), against the shell and family compounds.",
     "1": {
       "_": "A reference names a block, an address and an absolute attention, and an attention at the terminus delivers the point — one line.",
       "1": "resolve(shell: purpose:wren:2.1:-1)",
@@ -139,9 +139,9 @@
       "5": 3
     },
     "3": {
-      "_": "A point whose line is itself a reference is followed to what it names — the star in the walk (sunstone 5.2) — so the reader receives the line the reference points at.",
+      "_": "A point whose line is itself a reference is followed to what it names, as far as the chain goes — the star in the walk (sunstone 5.2) — so the reader receives the line at its end.",
       "1": "resolve(shell: notes:wren:3:0)",
-      "2": "notes:wren holds purpose:wren:1:0 at its 3. Followed, it delivers purpose:wren's point at 1: tend the reading room and answer whoever comes. Shape: point.",
+      "2": "notes:wren holds notes:wren:4:0 at its 3, and notes:wren:4:0 holds purpose:wren:1:0. Followed to the end of the chain, it delivers purpose:wren's point at 1: tend the reading room and answer whoever comes. Shape: point.",
       "3": [
         "tend the reading room and answer whoever comes"
       ],
@@ -149,9 +149,9 @@
       "5": null
     },
     "4": {
-      "_": "A cycle of references returns: following is bounded, so a reference that leads back to itself rides through visible, and the call answers.",
+      "_": "A loop of references returns: a reference the walk has already followed stays as written, so the loop rides through visible and the call answers.",
       "1": "resolve(shell: notes:wren:1:0)",
-      "2": "notes:wren's 1 names notes:wren:2:0, whose line names notes:wren:1:0 again. The answer is a point whose line is a reference into the cycle, visible as written. The runner allows any call ten seconds, and a walk that never returns fails. Shape: point.",
+      "2": "notes:wren's 1 names notes:wren:2:0, whose line names notes:wren:1:0 again. The walk follows each once, and when a reference comes round a second time it stays as written, so the answer is a point whose line is a reference into the loop, visible. The runner allows any call ten seconds, and a walk that never returns fails. Shape: point.",
       "3": [
         "notes:wren:"
       ],
@@ -414,11 +414,11 @@
     },
     "3": "python3 compound-test-materials/run-compound-tests.py reads these cases from this block's source and runs them against compound-alt.py, the reference, by default. Given mcp, it runs bsp-mcp through scripts/compound-cli.ts, compiling bundles at the bundle door (src/bundle.ts — how bsp() reads a bundle node and how the play door compiles a shell's manifest). Given mcp-frame, it compiles at the frame door (src/compile.ts — frames and the order sweep). Given a path, it runs any program that shares the CLI. Each call has ten seconds. A case expected to fail is named with --known <case,…>, and the run fails if a known case starts passing, so the list never outlives its fault.",
     "4": {
-      "_": "What each implementation answers today, 29 October 2026: compound-alt.py passes all 33 cases by construction. bsp-mcp passes alignment and the law's delivery whole at both doors, and diverges at five cases, each judged by the law: three are bugs, and two are a door whose input is a bundle by construction.",
-      "1": "2.4, at both bsp-mcp doors: the frame compiler's resolution is the kernel's scoop (src/genus.ts, a port of pscale-biome's kernel), whose star-follow has no bound, so a cycle of references never returns. A bug — an entry must never break (whetstone 8.11). The fix belongs in the kernel, re-based here.",
-      "2": "3.5, at the bundle door: a slot that is itself a small bundle delivers its primary and drops its companions. A bug — nesting is preserved end to end (whetstone 8.12). A bsp() read of a genus current, reflexive:neptune 9, loses three companions this way today.",
-      "3": "3.6, at the bundle door: the star form is not in its grammar, so a member at another origin rides through as prose — visible, never resolved. A bug — the compiling door resolves the star form (whetstone 8.11).",
-      "4": "3.8 and 3.9, at the frame door: the frame compiler composes whatever node it is handed, because its doors hand it frames and orders, which are bundles by authoring. Not a bug — the law of 3.8 and 3.9 binds a door that reads any node."
+      "_": "What each implementation answers, 29 October 2026, after David asked whether the battery's first findings were bugs or misreadings: compound-alt.py passes all 33 cases by construction, and bsp-mcp passes 32 at the bundle door and 31 at the frame door. Each divergence the battery has found is judged here by the law, the fixed ones with what fixed them.",
+      "1": "2.4 — a defect, fixed. The kernel's star-follow (spark, in pscale-biome, ported as genus-one/spark.py and src/genus.ts) read a chain of references to its end with no record of where it had been, so a loop never returned: Python raised a recursion error, and the TypeScript port exhausted the heap, which on the router would end every live session. No live frame, current or order dialed one. Each walk now keeps the references it has followed, and one met again stays verbatim; a chain is still read to its end, and no read without a loop changes. The bundle door never follows, so a loop never reached it — the battery first listed this at both doors only because its CLI resolves through the frame compiler for both.",
+      "2": "3.5 — a bug, fixed. The bundle door delivered a small bundle's primary and dropped its companions, so a bsp() read of a genus current showed fewer currents than the wake receives: reflexive:neptune 9 lost four, in three slots. Companions now compile beside their primary, nested end to end, for every reader of the door — the window, the play door's manifest and its completions, and the orientation rider — and the window's index names them, so a re-dial keeps them.",
+      "3": "3.6 — a gap, not a fault. The bundle door's grammar does not include the star form, so a member at another origin rides through as written, visible, which is the degradation the law allows; no live manifest dials one, and resolving it means a bsp() read reaching other beaches, a design choice. The same door does not follow a point whose line is itself a reference, where the frame door does; no case holds that yet, and no live point is one.",
+      "4": "3.8 and 3.9, at the frame door — not faults. The frame compiler composes whatever node it is handed, because its doors hand it frames and orders, which are bundles by authoring."
     }
   }
 }

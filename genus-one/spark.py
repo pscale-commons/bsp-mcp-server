@@ -167,10 +167,12 @@ def parse_reference(leaf):
     return (name, address, attention) if i == len(parts) else None
 
 
-def _resolve(text, loader):
+def _resolve(text, loader, seen=()):
     """If text is a reference and its block loads, read it there with star on.
-    Returns the resolved shape, or None to keep the leaf verbatim."""
-    if loader is None or not isinstance(text, str):
+    Returns the resolved shape, or None to keep the leaf verbatim — as it is for
+    a reference this walk has already followed, so a chain is read to its end
+    and a loop returns."""
+    if loader is None or not isinstance(text, str) or text in seen:
         return None
     ref = parse_reference(text)
     if ref is None:
@@ -179,12 +181,12 @@ def _resolve(text, loader):
     target = loader(name)
     if target is None:
         return None
-    return spark(target, address, attention, star=True, loader=loader)
+    return spark(target, address, attention, star=True, loader=loader, _seen=seen + (text,))
 
 
 # --- the function -----------------------------------------------------------
 
-def spark(block, number=None, attention=None, content=None, star=False, loader=None):
+def spark(block, number=None, attention=None, content=None, star=False, loader=None, _seen=()):
     flr = floor(block)
     if content is not None:
         return _write(block, number, attention, content, flr)
@@ -199,7 +201,7 @@ def spark(block, number=None, attention=None, content=None, star=False, loader=N
     if attention == term:
         res = _point(block, walk, term)
         if star and res["status"] == "voiced":
-            followed = _resolve(res["text"], loader)
+            followed = _resolve(res["text"], loader, _seen)
             if followed is not None:
                 return followed
         return res

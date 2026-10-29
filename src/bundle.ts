@@ -87,27 +87,39 @@ export function parseBundleRef(leaf: unknown): BundleRef | null {
 }
 
 export interface BundleSlot {
+  /** The slot's digit, or for a companion its walk from the node ('5,1'). */
   slot: string;
   /** The string at the slot, or the voicing of an object there; null when neither. */
   leaf: string | null;
   ref: BundleRef | null;
+  /** A slot that is itself a small bundle: the companions riding beside its
+   *  primary, nesting preserved end to end (whetstone 8.12). */
+  companions: BundleSlot[];
 }
 
 /** The digit children of a node as bundle slots, in address order. A string
  *  child is a candidate; an object child whose voicing is a reference is one
- *  too (the genus dialect: {_: 'purpose', 1: 'conditions'}). */
-export function bundleSlots(node: unknown): BundleSlot[] {
+ *  too, and its own digits are its companions (the genus dialect:
+ *  {_: 'purpose', 1: 'conditions'}). An entry's fields are never companions. */
+export function bundleSlots(node: unknown, at = ''): BundleSlot[] {
   if (!node || typeof node !== 'object' || Array.isArray(node)) return [];
   const n = node as Record<string, unknown>;
   const out: BundleSlot[] = [];
   for (const k of Object.keys(n).filter((k) => /^[1-9]$/.test(k)).sort()) {
     const v = n[k];
+    const slot = at ? `${at},${k}` : k;
     const leaf = typeof v === 'string' ? v
       : v && typeof v === 'object' && !Array.isArray(v) && typeof (v as any)._ === 'string' ? ((v as any)._ as string)
       : null;
-    out.push({ slot: k, leaf, ref: leaf ? parseBundleRef(leaf) : null });
+    const companions = v && typeof v === 'object' && !Array.isArray(v) && !isEntryNode(v) ? bundleSlots(v, slot) : [];
+    out.push({ slot, leaf, ref: leaf ? parseBundleRef(leaf) : null, companions });
   }
   return out;
+}
+
+/** Every reference a slot dials, its companions' included. */
+export function slotRefs(s: BundleSlot): BundleRef[] {
+  return [...(s.ref ? [s.ref] : []), ...s.companions.flatMap(slotRefs)];
 }
 
 /** An accumulator's entry carries its arrival stamp at field 3; an entry is
@@ -341,6 +353,13 @@ export interface Member {
   cut: { from: number; since: string; same: boolean; within: boolean } | null;
   note: string | null;
   absent: boolean;
+  /** The companions riding beside this member, resolved as it is. */
+  companions: Member[];
+}
+
+/** Every member of a window, each companion included, in slot order. */
+export function allMembers(members: Member[]): Member[] {
+  return members.flatMap((m) => [m, ...allMembers(m.companions)]);
 }
 
 /** A whole-block member larger than this is delivered as its disc at pscale 0. */
@@ -351,8 +370,14 @@ export function candidateNames(ref: BundleRef, handle?: string | null): string[]
   return ref.name.includes(':') || !handle ? [ref.name] : [`${ref.name}:${handle}`, ref.name];
 }
 
+/** A slot resolved: its primary at its aperture, and its companions beside it. */
 export async function resolveMember(s: BundleSlot, ctx: BundleContext): Promise<Member> {
-  const base: Member = { slot: s.slot, leaf: s.leaf, ref: s.ref, name: null, address: null, result: null, cut: null, note: null, absent: false };
+  const [primary, companions] = await Promise.all([resolvePrimary(s, ctx), Promise.all(s.companions.map((c) => resolveMember(c, ctx)))]);
+  return { ...primary, companions };
+}
+
+async function resolvePrimary(s: BundleSlot, ctx: BundleContext): Promise<Member> {
+  const base: Member = { slot: s.slot, leaf: s.leaf, ref: s.ref, name: null, address: null, result: null, cut: null, note: null, absent: false, companions: [] };
   if (!s.ref) return base;
   const names = candidateNames(s.ref, ctx.handle);
   let block: Block | null = null;
@@ -435,8 +460,13 @@ function renderResult(r: BspReadResult): string {
   }
 }
 
-/** The body of a member — what stands beneath its header. */
+/** The body of a member — what stands beneath its header: its own reading,
+ *  then each companion beside it under a header of its own. */
 export function renderMemberBody(m: Member): string {
+  return [renderPrimaryBody(m), ...m.companions.map((c) => renderMember(c))].join('\n');
+}
+
+function renderPrimaryBody(m: Member): string {
   if (!m.ref) return m.leaf ?? '(empty)';
   if (m.absent) return `(absent at this surface: ${m.name})`;
   if (!m.result && !m.lines) return `(${m.note ?? 'did not resolve'})`;
@@ -477,11 +507,15 @@ export function renderBundle(
   opts: { label: string; now?: Date; since?: string | null; cap?: number },
 ): string {
   const stamp = momentToAddress(opts.now ?? new Date());
-  const refs = members.filter((m) => m.ref);
+  const refs = allMembers(members).filter((m) => m.ref);
+  // The index names every companion beside its primary: it is what a reader
+  // hands forward and re-dials, and a companion missing here is dropped there.
+  const indexOf = (m: Member): string =>
+    `${m.slot} ${m.ref ? m.leaf : '(prose)'}${m.companions.length ? ` (${m.companions.map(indexOf).join(' · ')})` : ''}`;
   const lines = [
     `[bundle @ ${opts.label} — ${refs.length} reference${refs.length === 1 ? '' : 's'} compiled at ${stamp} (${voiceAddress(stamp)})` +
       `${opts.since ? `; what moved since ${clockStamp(opts.since)}` : ''}; the index first, then each at its own aperture]`,
-    `  index: ${members.map((m) => `${m.slot} ${m.ref ? m.leaf : '(prose)'}`).join(' · ')}`,
+    `  index: ${members.map(indexOf).join(' · ')}`,
   ];
   const cap = opts.cap ?? BUNDLE_WINDOW_CHARS;
   let used = lines.join('\n').length;
