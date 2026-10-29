@@ -747,7 +747,10 @@ function reaching(block: PNode, handle: string | undefined, limit = 5): PNode[] 
   return out;
 }
 
-export async function genusCompose(load: Loader, now: number, peers: Map<string, PNode> = new Map(), handle?: string): Promise<GenusWindow> {
+/** `selfOf`, when a door gives one, unfolds the bundle as that door reads it
+ *  (pscale_genus passes compile.ts, so the window reads as bsp() does at the
+ *  door); without it, the kernel's own hydrate, byte for byte. */
+export async function genusCompose(load: Loader, now: number, peers: Map<string, PNode> = new Map(), handle?: string, selfOf?: (bundle: PNode) => Promise<PNode>): Promise<GenusWindow> {
   // F — structural gaps only (kernel.run_F with use_llm=False)
   const purpose = await load('purpose');
   const conditions = await load('conditions');
@@ -763,7 +766,7 @@ export async function genusCompose(load: Loader, now: number, peers: Map<string,
   const bundle = indexNode(nine instanceof Map ? nine : new Map(), true);
   const builders: Record<string, () => Promise<PNode> | PNode> = {
     index: () => bundle,
-    self: () => hydrate(bundle, load),
+    self: () => (selfOf ? selfOf(bundle) : hydrate(bundle, load)),
     gap: () => gamma as unknown as PNode,
     between: () => {
       const m: PMap = new Map();

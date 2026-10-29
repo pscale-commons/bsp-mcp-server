@@ -33,6 +33,8 @@ import { z } from 'zod';
 import { genusCompose, genusFold, wireStore, toPNode, ZK, descend, deepEq, sparkWrite, type PMap, type PNode } from '../genus.js';
 import { SENTINELS } from '../sentinels.js';
 import { publishCompose, publishFold } from '../flow.js';
+import { compile } from '../compile.js';
+import { loadBlock } from '../db.js';
 
 const DEFAULT_BEACH = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
@@ -311,7 +313,21 @@ export async function handleGenus(params: {
 
   // ── compose — the window, byte-parity with kernel.py --compose-only ──
   const now = Date.now() / 1000;
-  const w = await genusCompose(store.load, now, new Map(), handle);
+  // THE WINDOW IS A BSP READ OF A BUNDLE: a bare name is the shell's own organ,
+  // as the kernel reads it; a qualified name (family:<holder>, spine:weft,
+  // task:<handle>) is that block at the beach, and `now` and `head` resolve, as
+  // bsp() compiles the same bundle at the door (sandpiper, pool:weft 358).
+  // Writes still land only in the shell's own organs (genusFold).
+  const named = new Map<string, PNode | null>();
+  const load = async (name: string): Promise<PNode | null> => {
+    if (!name.includes(':')) return store.load(name);
+    if (!named.has(name)) {
+      const row = await loadBlock(beach, name).catch(() => null);
+      named.set(name, row && typeof row.block === 'object' && row.block !== null ? toPNode(row.block) : null);
+    }
+    return named.get(name)!;
+  };
+  const w = await genusCompose(load, now, new Map(), handle, async (bundle) => (await compile(bundle, load, { complete: false })).window);
   // The flow producer — a side-effect BESIDE compose, never a change to it:
   // the composed window, as labels, addresses and sizes, lands at flow:<handle>
   // while the holder's switch (wake:<handle>:7) reads on. Only a keyed wake can
