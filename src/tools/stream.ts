@@ -81,6 +81,7 @@ import { wireStore } from '../genus.js';
 import { nameAtTheDoor, noteLook, reflect } from '../looks.js';
 import { rideOrientation } from '../orientation.js';
 import { followsOf, lensLaw, lensVoice, composeLensMedium } from './lens.js';
+import { raised, nodeAt, linesAt, dotted, type CrossLine } from '../cross.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
 //    would tie this clean surface to the one it exists to stand beside) ──
@@ -152,6 +153,19 @@ export function emitFor(digits: string[], block: Block): string {
   return digits.join('').padEnd(floorDepth(block), '0');
 }
 
+/** A block a keep writes into, off the clock: raised to the spine's floor on the
+ *  beach first when it was born lower (src/cross.ts), and the address it takes. */
+async function atSpineFloor(origin: string, name: string, block: Block, digits: string[], spineFloor: number, secret?: string): Promise<{ block: Block; addr: string }> {
+  if (spineFloor === TEMPORAL_FLOOR) return { block, addr: emitFor(digits, block) };
+  let b = block;
+  if (floorDepth(b) < spineFloor) {
+    b = raised(b, spineFloor);
+    await saveBlock(origin, name, b, { spindle: '', secret });
+  }
+  const extra = floorDepth(b) - spineFloor;
+  return { block: b, addr: extra > 0 ? Array(extra).fill('0').concat(digits).join('') : emitFor(digits, b) };
+}
+
 /** The ladder: every ancestor's voicing from the coarsest rung down to the
  *  attended one, which is what makes a located read self-contextualising —
  *  the reader arrives already holding why this address matters. This is the
@@ -163,7 +177,11 @@ export function ladderOf(spine: Block, digits: string[]): { pscale: number; addr
   let node: unknown = spine;
   for (let i = 0; i < digits.length; i++) {
     const key = digits[i] === '0' ? '_' : digits[i];
-    if (!node || typeof node !== 'object') { node = null; }
+    // An appended entry's digits are its fields — its arrival stamp at 3 —
+    // never rungs: beneath a thread's registry line the knots are in the
+    // mirrors, and the stamp is not a line at option 3.
+    const entry = !!node && typeof node === 'object' && /^\d{4}-\d{2}-\d{2}T/.test(String((node as Record<string, unknown>)['3'] ?? ''));
+    if (!node || typeof node !== 'object' || entry) { node = null; }
     else { node = (node as Record<string, unknown>)[key]; }
     rungs.push({
       pscale: floor - (i + 1),
@@ -580,6 +598,11 @@ export const streamEngageParamsSchema = {
     .string()
     .optional()
     .describe("Your reading at this address, written into YOUR OWN mirror at <field>:<handle>. One act — there is no separate stage and commit here, because a mirror is revisable by its holder forever; saying again at the same address replaces what you said. Requires `at`. At a span the line lands on every beat the span touches, and an empty say there clears your lines across it. Never writes anyone else's mirror, and nothing else can write yours. The answer to a say is the snapshot: every other voice at that address, so saying what you are in the middle of at 'now' is also how you learn what every other live mind is in the middle of."),
+  options: z
+    .array(z.string())
+    .max(9)
+    .optional()
+    .describe("With `say`, on a family that is not on the clock: the choices your line offers, each landing in your own mirror at its digit beneath your line — option 1 at <at>.1, option 2 at <at>.2 — so whoever takes one says at its address, and every option nobody takes stays readable as a strand not taken (function:thread 2). An option keeps its digit once offered: one another hand has taken cannot be reworded or dropped."),
   keep: z
     .enum(['personal', 'collective'])
     .optional()
@@ -607,6 +630,7 @@ export interface StreamEngageParams {
   handle: string;
   at?: string;
   say?: string;
+  options?: string[];
   keep?: 'personal' | 'collective';
   keep_text?: string;
   beach?: string;
@@ -801,6 +825,8 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   let saidCell = null as string | null;       // the fine digits beneath the beat this say landed at
   let mintedMirror = null as string | null;   // this say brought <field>:<handle> into being
   let spanSaid = null as { touched: number; cleared: boolean } | null;   // a span's say: beats written, or cleared (set inside the line below)
+  let optionsSaid = 0;                         // the options a say off the clock offered beneath its line
+  let replacedLine = null as string | null;    // the caller's own line a say off the clock replaced
   // One hand's says to one mirror land one after another (oneAtATime); a say
   // that waited for another reads the mirror afresh.
   const writing = params.say !== undefined && (params.say.trim() !== '' || !!span);
@@ -839,8 +865,22 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
           return out(`Could not create your mirror at ${mirrorName} — ${e?.message ?? String(e)}`);
         }
       }
-      const mblock: Block = JSON.parse(JSON.stringify(mrow!.block));
-      const mAddr = emitFor(digits, mblock);
+      let mblock: Block = JSON.parse(JSON.stringify(mrow!.block));
+      // A MIRROR KEEPS ITS SPINE'S FLOOR (src/cross.ts): off the clock a spine
+      // can grow — a thread's registry nests at its tenth entry — and a mirror
+      // born before that refuses the wider address. It is raised first, one
+      // rewrite of the whole mirror (a supernest keeps every number), never a
+      // write at a zero position (keel, pool:threads 7).
+      if (spineFloor !== TEMPORAL_FLOOR && floorDepth(mblock) < spineFloor) {
+        mblock = raised(mblock, spineFloor);
+        try {
+          await saveBlock(origin, mirrorName, mblock, { spindle: '', secret: params.secret });
+        } catch (e: any) {
+          return out(`Your mirror ${mirrorName} could not be raised to the floor of ${spineName} (${spineFloor}) before your line — ${e?.message ?? String(e)}`);
+        }
+      }
+      const mExtra = spineFloor !== TEMPORAL_FLOOR ? floorDepth(mblock) - spineFloor : 0;
+      const mAddr = mExtra > 0 ? Array(mExtra).fill('0').concat(digits).join('') : emitFor(digits, mblock);
       try {
         if (span) {
           // A LINE ACROSS A SPAN lands on every beat the span touches, each day
@@ -874,9 +914,36 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
           saidCell = cell.slice(TEMPORAL_FLOOR + 1);
           saidBlock = voiced;
         } else {
-          writeAt(mblock, mAddr, voicedValue(readAt(mblock, mAddr), params.say));
+          const standing = readAt(mblock, mAddr);
+          const before = voiceOf(standing);
+          let value = voicedValue(standing, params.say);
+          const offered = spineFloor !== TEMPORAL_FLOOR ? (params.options ?? []).map((o) => o.trim()).filter(Boolean) : [];
+          if (offered.length) {
+            // AN OPTION KEEPS ITS DIGIT ONCE OFFERED (function:thread 3): an
+            // option another hand has answered at its address is not reworded.
+            const others = await Promise.all([...othersP.entries()].map(async ([n, p]) => [n.slice(field.length + 1), await p] as const));
+            for (let i = 0; i < offered.length; i++) {
+              const k = String(i + 1);
+              const was = standing && typeof standing === 'object' ? voiceOf((standing as Record<string, unknown>)[k]) : null;
+              if (!was || was.trim() === offered[i]) continue;
+              const takers = others.filter(([, b]) => b && voiceOf(nodeAt(b, digits.concat(k), spineFloor))).map(([w]) => w);
+              if (takers.length) {
+                return out(`Option ${k} at ${dotted(digits, spineFloor)} has been answered by ${takers.join(', ')} at ${dotted(digits.concat(k), spineFloor)}, so it keeps its words: '${clip(was, 140)}'. Offer what is new at a digit no one holds (function:thread 3).`);
+              }
+            }
+            const node: Record<string, unknown> = value && typeof value === 'object' ? { ...(value as Record<string, unknown>) } : { _: value };
+            offered.forEach((o, i) => {
+              const k = String(i + 1);
+              const child = node[k];
+              node[k] = child && typeof child === 'object' ? { ...(child as Record<string, unknown>), _: o } : o;
+            });
+            value = node;
+            optionsSaid = offered.length;
+          }
+          writeAt(mblock, mAddr, value);
           await saveBlock(origin, mirrorName, mblock, { spindle: mAddr, secret: params.secret });
-          saidAt = `${mirrorName}:${mAddr}`;
+          saidAt = spineFloor !== TEMPORAL_FLOOR ? `${mirrorName} at ${dotted(digits, spineFloor)}` : `${mirrorName}:${mAddr}`;
+          if (spineFloor !== TEMPORAL_FLOOR && before && before.trim() !== params.say.trim()) replacedLine = before;
           saidBlock = mblock;
         }
       } catch (e: any) {
@@ -906,8 +973,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
           await saveBlock(origin, treeName, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(params.secret ? { new_lock: params.secret } : {}) });
           trow = await loadBlock(origin, treeName).catch(() => null);
         }
-        const tblock: Block = JSON.parse(JSON.stringify(trow!.block));
-        const tAddr = emitFor(digits, tblock);
+        const { block: tblock, addr: tAddr } = await atSpineFloor(origin, treeName, JSON.parse(JSON.stringify(trow!.block)), digits, spineFloor, params.secret);
         writeAt(tblock, tAddr, voicedValue(readAt(tblock, tAddr), text));
         await saveBlock(origin, treeName, tblock, { spindle: tAddr, secret: params.secret });
         keptTo = `${treeName}:${tAddr}`;
@@ -929,8 +995,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
           await saveBlock(origin, field, bornAt(born, spineFloor), { spindle: '', secret: params.secret, ...(clock ? { new_lock: params.secret } : {}) });
           frow = await loadBlock(origin, field).catch(() => null);
         }
-        const fblock: Block = JSON.parse(JSON.stringify(frow!.block));
-        const fAddr = emitFor(digits, fblock);
+        const { block: fblock, addr: fAddr } = await atSpineFloor(origin, field, JSON.parse(JSON.stringify(frow!.block)), digits, spineFloor, params.secret);
         writeAt(fblock, fAddr, voicedValue(readAt(fblock, fAddr), text));
         await saveBlock(origin, field, fblock, { spindle: fAddr, secret: params.secret });
         keptTo = `${field}:${fAddr}`;
@@ -946,7 +1011,9 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // (the trial, 2026-09-21). What is kept is shown, whole at the attended
   // address and marked on the ladder.
   const foldBlock = await foldP;
-  const foldAt = (d: string[]): string | null => (foldBlock ? voiceOf(readAt(foldBlock, emitFor(d, foldBlock))) : null);
+  const foldAt = (d: string[]): string | null => (foldBlock
+    ? voiceOf(spineFloor !== TEMPORAL_FLOOR ? nodeAt(foldBlock, d, spineFloor) : readAt(foldBlock, emitFor(d, foldBlock)))
+    : null);
   const standingFold = foldAt(digits);
 
   // ── L — every mirror's reading at this address ──
@@ -979,6 +1046,10 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
 
   const readings: { who: string; text: string; lane?: string; ms?: number | null }[] = [];
   const silent: string[] = [];
+  // OFF THE CLOCK A READING IS THE ADDRESS AND WHAT STANDS BENEATH IT (src/cross.ts):
+  // a knot a hand tied at an option nobody asked for is otherwise invisible
+  // (pool:threads 5), and a thread is read whole, or from its live end, in one call.
+  const crossed: CrossLine[] = [];
   // ACROSS A SPAN a reading is each touched day's line and the runs of beats
   // beneath it (acrossOf) — a holder with neither has said nothing there.
   const across: ({ who: string; word: string | null } & ReturnType<typeof acrossOf>)[] = [];
@@ -991,6 +1062,11 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
         const a = acrossOf(mb, span.beats);
         const word = standing ? standingWordOf(mb, name, field, spineName, origin) : null;
         if (a.lines.length || word) across.push({ who, word, ...a }); else silent.push(who);
+        return;
+      }
+      if (spineFloor !== TEMPORAL_FLOOR) {
+        const got = linesAt(nodeAt(mb, digits, spineFloor), digits, spineFloor, who);
+        if (got.length) crossed.push(...got); else silent.push(who);
         return;
       }
       const node = readAt(mb, emitFor(digits, mb));
@@ -1087,7 +1163,12 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     }
   }
 
-  const voices = new Set(readings.map((r) => r.who)).size;
+  crossed.sort((a, b) => {
+    const ka = a.addr.replace('.', ''), kb = b.addr.replace('.', '');
+    return ka < kb ? -1 : ka > kb ? 1 : a.who.localeCompare(b.who);
+  });
+  const CROSS_MAX = 160;
+  const voices = new Set([...readings.map((r) => r.who), ...crossed.map((c) => c.who)]).size;
   lines.push('');
   if (span) {
     // ACROSS A SPAN, holder by holder: every line whose period touches it,
@@ -1117,7 +1198,15 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       ` — ${voices} ${voices === 1 ? 'voice' : 'voices'}` +
       ` (the SNAPSHOT: every mirror concatenated, listed and never synthesised)`,
     );
-    if (readings.length === 0) {
+    if (crossed.length) {
+      // Off the clock: every line at the address and beneath it, in address
+      // order, each with the hand that holds it (src/cross.ts).
+      for (const c of crossed.slice(0, CROSS_MAX)) {
+        const mine = c.who === handle && saidAt !== null && c.addr === dotted(digits, spineFloor);
+        lines.push(`- ${c.addr} · ${c.who}${mine ? ' (you)' : ''}: ${c.text}`);
+      }
+      if (crossed.length > CROSS_MAX) lines.push(`  (+${crossed.length - CROSS_MAX} more beneath — read a deeper address for them)`);
+    } else if (readings.length === 0) {
       lines.push('  (nobody has read this address yet — say yours and it becomes the first)');
     } else {
       for (const r of readings) {
@@ -1160,7 +1249,11 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       lines.push(spanSaid.cleared
         ? (n ? `✓ cleared ${n} ${n === 1 ? 'line' : 'lines'} of yours across the span at ${mirrorName}` : `nothing of yours stood across the span at ${mirrorName} — nothing to clear`)
         : `✓ your line landed at ${mirrorName} on ${n} ${n === 1 ? 'beat' : 'beats'}, ${span.beats[0]} … ${span.beats[span.beats.length - 1]} (${spanExtent})${mintedMirror ? formatBorn(mintedMirror) : ''}`);
-    } else if (saidAt) lines.push(`✓ your reading landed at ${saidAt}${mintedMirror ? formatBorn(mintedMirror) : ''}`);
+    } else if (saidAt) {
+      lines.push(`✓ your reading landed at ${saidAt}${mintedMirror ? formatBorn(mintedMirror) : ''}`);
+      if (optionsSaid) lines.push(`✓ ${optionsSaid} ${optionsSaid === 1 ? 'option' : 'options'} beneath it, at ${Array.from({ length: optionsSaid }, (_, i) => dotted(digits.concat(String(i + 1)), spineFloor)).join(', ')} — whoever takes one says at its address`);
+      if (replacedLine) lines.push(`  it replaced your own line there: '${clip(replacedLine, 160)}' — if another instance of you wrote that, say it back, and tie yours at a digit no one holds (function:thread 3)`);
+    }
     if (keptTo) lines.push(`✓ fold kept at ${keptTo}`);
     // A holder saying in a family that keeps a standing word is handed theirs
     // back, so a calendar synced by their AI meets it at every line it says.

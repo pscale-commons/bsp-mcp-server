@@ -8,9 +8,10 @@
  * scripts/smoke-genus-parity.ts against the frozen fixture at
  * scripts/fixtures/genus-parity/.
  *
- * PORT DISCIPLINE (CLAUDE.md genus-one rules): pscale-biome src/agent is the
- * canonical upstream; genus-one/kernel.py is its federated port; this file
- * follows kernel.py — re-base when it moves, never fork. The window is a bsp
+ * PORT DISCIPLINE (CLAUDE.md genus-one rules): genus-one/kernel.py is the
+ * kernel's home (it began as the federated port of pscale-biome src/agent,
+ * parked since 18 August 2026); this file follows kernel.py — re-base when it
+ * moves, never fork. The window is a bsp
  * read of a bundle (plus F's computed γ), nothing more; no composition parts
  * are added here that the kernel does not have.
  *
@@ -310,13 +311,15 @@ interface SparkResult {
   [k: string]: any;
 }
 
-async function resolveRef(text: PNode | undefined, loader: Loader | null): Promise<SparkResult | null> {
-  if (!loader || typeof text !== 'string') return null;
+/** A reference this walk has already followed stays verbatim, so a chain is
+ *  read to its end and a loop returns (spark.py parity). */
+async function resolveRef(text: PNode | undefined, loader: Loader | null, seen: string[] = []): Promise<SparkResult | null> {
+  if (!loader || typeof text !== 'string' || seen.includes(text)) return null;
   const ref = parseReference(text);
   if (!ref) return null;
   const target = await loader(ref.name);
   if (target === null) return null;
-  return spark(target, ref.address, ref.attention, { star: true, loader });
+  return spark(target, ref.address, ref.attention, { star: true, loader, seen: [...seen, text] });
 }
 
 /** The read function (write is sparkWrite). Mirrors spark.spark. */
@@ -324,7 +327,7 @@ export async function spark(
   block: PNode,
   number: string | null,
   attention: number | null,
-  opts: { star?: boolean; loader?: Loader | null } = {},
+  opts: { star?: boolean; loader?: Loader | null; seen?: string[] } = {},
 ): Promise<SparkResult> {
   const flr = floorOf(block);
   if (number === null || String(number) === '') {
@@ -337,7 +340,7 @@ export async function spark(
   if (attention === term) {
     const res = point(block, walk, term);
     if (opts.star && res.status === 'voiced') {
-      const followed = await resolveRef(res.text, opts.loader ?? null);
+      const followed = await resolveRef(res.text, opts.loader ?? null, opts.seen ?? []);
       if (followed !== null) return followed;
     }
     return res;

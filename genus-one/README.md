@@ -10,8 +10,10 @@ directions. Same genome, one version on.
 
 One genome, two dialects. The mobius/genus-one architecture — a shell of
 pscale blocks pulsed by a loopless kernel — was grown on the biome (0-9
-blocks, local files; canonical home `pscale-biome/src/agent/`, this port
-taken at the v009 run, source commit `71344f5`). This directory is that
+blocks, local files; first home `pscale-biome/src/agent/`, this port
+taken at the v009 run, source commit `71344f5`). The biome has been parked
+since 18 August 2026, so this directory is now the kernel's home: a change
+lands here and is noted upstream-owed, never carried back. This directory is that
 genome on the federated beach substrate: the zero fundamental is the underscore key `_` instead of
 `"0"`, blocks can live at a beach behind a lock, and the constant teaching is
 sunstone + whetstone instead of slate + flint. Nothing else changed — the

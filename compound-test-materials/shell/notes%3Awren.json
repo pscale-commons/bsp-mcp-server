@@ -2,5 +2,6 @@
   "_": "notes:wren — wren's cross-references, each line pointing at another",
   "1": "notes:wren:2:0",
   "2": "notes:wren:1:0",
-  "3": "purpose:wren:1:0"
+  "3": "notes:wren:4:0",
+  "4": "purpose:wren:1:0"
 }

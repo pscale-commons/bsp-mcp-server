@@ -1128,15 +1128,36 @@ def router_call(tool, arguments, timeout=45):
     return "\n".join(p.get("text", "") for p in parts if isinstance(p, dict))
 
 
-def orientation_window(handle):
+THREAD_PLACE = re.compile(r"\bthread:(\d+(?:\.\d+)?)\b")
+
+
+def thread_place(voice):
+    """The place a ring hands this wake, written thread:<address> (thread:14.12,
+    function:thread 5) — the work it takes up — or None."""
+    m = THREAD_PLACE.search(voice or "")
+    return m.group(1) if m else None
+
+
+def thread_section(window):
+    """The door's THREAD section of a compiled window — the registry's line and
+    every hand's knots at the place and beneath it — or '' when it has none."""
+    parts = re.split(r"\n(?=═{5,} )", window or "")
+    return next((p.strip() for p in parts if p.startswith("═") and "THE THREAD" in p.split("\n", 1)[0]), "")
+
+
+def orientation_window(handle, thread=None):
     """The handle's own orientation, compiled the way every other door compiles
     it — pscale_play over the router, which reads shell:<handle> position 3 and
     delivers what the manifest nominates (a shell with no manifest degrades to
     the legacy six rather than failing) — at the beach the handle is enrolled
-    at, with the room it answers in folded. Returns (text, degraded)."""
+    at, with the room it answers in folded. A ring that names a thread's place
+    takes it up at the same door, so its live end rides the window (a wake
+    cannot fetch once awake). Returns (text, degraded)."""
+    args = {"world": enrolment_beach(handle), "handle": handle, "room": enrolment_room(handle)}
+    if thread:
+        args["thread"] = thread
     try:
-        text = router_call("pscale_play", {"world": enrolment_beach(handle), "handle": handle,
-                                           "room": enrolment_room(handle)})
+        text = router_call("pscale_play", args)
         return (text, False) if text.strip() else ("", True)
     except Exception as e:
         log("orientation compile failed for %s: %s" % (handle, str(e)[:90]))
@@ -1261,7 +1282,7 @@ def thin_brief(handle):
     return "\n\n".join(lines)
 
 
-def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
+def lite_answer(handle, ringer, pool, slot, fuel_key, secret, thread=None):
     """One doorman turn. Returns (status, note) in run_pulse's own shape.
 
     THE ROOM IS DERIVED, NEVER TAKEN ON TRUST. `pool` is a LABEL for the daily
@@ -1275,7 +1296,7 @@ def lite_answer(handle, ringer, pool, slot, fuel_key, secret):
     beach = enrolment_beach(handle)
     room_name = "pool:%s" % enrolment_room(handle)
     model, max_tokens = Dial(handle).answer_with(DOORMAN_MODEL, DOORMAN_MAX_TOKENS)
-    window, degraded = orientation_window(handle)
+    window, degraded = orientation_window(handle, thread)
     if degraded:
         window = thin_brief(handle)
     if not window.strip():
@@ -2801,10 +2822,19 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=Non
         os.environ["GENUS_THINK"] = os.environ.get("WAKER_THINK", "off")
         if voice is None:
             voice = landed_voice(pool, slot, beach=home)
+        place = thread_place(voice)
+        if voice and place and wake_mode(handle) == "genus":
+            # THE WAKER COMPILES THE LIVE END (function:thread 5; keel,
+            # pool:threads 7): the place the ring names, read at the door,
+            # rides beside the voice — the kernel cannot fetch once awake.
+            live, _ = orientation_window(handle, place)
+            live = thread_section(live)
+            if live:
+                voice = voice[:2000] + "\n\n" + live[:1500]
         if voice:
             os.environ["GENUS_RING"] = json.dumps(
                 {"ringer": ringer or "", "pool": pool, "slot": str(slot),
-                 "voice": voice[:2000]}, ensure_ascii=False)
+                 "voice": voice[:3500]}, ensure_ascii=False)
         else:
             os.environ.pop("GENUS_RING", None)
         os.environ["ANTHROPIC_API_KEY"] = fuel_key or _STANDING_KEY
@@ -2820,7 +2850,7 @@ def run_pulse(handle, ringer, pool, slot, fuel_key=None, funder="beach", pen=Non
         elif wake_mode(handle) == "lite":
             status, note = lite_answer(handle, ringer, pool, slot,
                                        os.environ["ANTHROPIC_API_KEY"],
-                                       pen or egg_secret(handle))
+                                       pen or egg_secret(handle), thread=place)
             log("doorman answer for %s: status=%s funder=%s" % (handle, status, funder))
         else:
             res = kernel.pulse() or {}

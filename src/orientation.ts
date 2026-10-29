@@ -28,7 +28,8 @@
 import { type Block, readAt } from './bsp.js';
 import { listSentinelNames, loadBeachIndex, loadBlock } from './db.js';
 import { momentToAddress, voiceAddress, TEMPORAL_FLOOR } from './temporal.js';
-import { bundleSlots, candidateNames, renderMember, resolveMember, FINE, type BlockLoader, type Member } from './bundle.js';
+import { bundleSlots, candidateNames, renderMember, resolveMember, slotRefs, FINE, type BlockLoader, type Member } from './bundle.js';
+import { crossSection } from './cross.js';
 
 /** A loader over one surface: the bundled sentinels first (the teaching is the
  *  same at every beach), then the beach's named blocks, cached per call. */
@@ -61,6 +62,10 @@ export interface Seat {
   touched: Record<string, string> | null;
   /** The bundle block's touched stamp when `node` was read. */
   nodeStamp: string | null;
+  /** A THREAD TAKEN UP AT THE DOOR (function:thread 5): its family, the place,
+   *  and every line at or beneath it already told, so an ack carries only the
+   *  knots tied there since. */
+  thread?: { field: string; at: string; told: Set<string> };
 }
 
 const seats = new Map<string, Seat>();
@@ -79,6 +84,28 @@ export function declareSeat(
 ): void {
   if (!session || !handle) return;
   seats.set(session, { origin, handle, block, spindle, node, lastMs: nowMs, indexAt: 0, toldAt: nowMs, touched: null, nodeStamp: null });
+}
+
+/** The door took a thread up at a place: the seat follows it from here, the
+ *  lines the door already showed counted as told. A session without a shell
+ *  manifest is seated on the thread alone. */
+export function seatThread(
+  session: string | undefined,
+  origin: string,
+  handle: string,
+  field: string,
+  at: string,
+  told: string[],
+  nowMs: number = Date.now(),
+): void {
+  if (!session || !handle) return;
+  if (!seats.has(session)) declareSeat(session, origin, handle, '', '', null, nowMs);
+  seats.get(session)!.thread = { field, at, told: new Set(told) };
+}
+
+/** A line's key in a seat's told set: who holds it, where, and what it says. */
+export function toldKey(who: string, addr: string, text: string): string {
+  return `${who}|${addr}|${text}`;
 }
 
 /** The whole was just delivered to this session (the door, or a bundle read of
@@ -142,23 +169,44 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
   const ctx = { load, handle: seat.handle, now: new Date(nowMs), since };
   const moved: Member[] = [];
   const quiet: string[] = [];
+  // An absent or unreadable member cannot have moved; a clock member whose
+  // range is empty moved nothing either — the clock turned and nothing landed.
+  // A slot moved when its primary did or any companion beside it did.
+  const stood = (m: Member): boolean =>
+    !(m.absent || m.cut?.same || (!m.result && !(m.lines && m.lines.length))) || m.companions.some(stood);
   for (const s of bundleSlots(seat.node)) {
-    if (!s.ref) continue;
-    const names = candidateNames(s.ref, seat.handle);
-    const touched = names.some(touchedAfter);
-    const changed = s.ref.word === 'now' ? beatChanged || touched : touched;
-    if (!changed) { quiet.push(s.leaf!); continue; }
+    const refs = slotRefs(s);
+    if (!refs.length) continue;
+    const touched = refs.some((r) => candidateNames(r, seat.handle).some(touchedAfter));
+    const changed = refs.some((r) => r.word === 'now') ? beatChanged || touched : touched;
+    if (!changed) { quiet.push(s.leaf ?? s.slot); continue; }
     const m = await resolveMember(s, { ...ctx, touched });
-    // An absent or unreadable member cannot have moved; a clock member whose
-    // range is empty moved nothing either — the clock turned and nothing landed.
-    if (m.absent || m.cut?.same || (!m.result && !(m.lines && m.lines.length))) { quiet.push(s.leaf!); continue; }
+    if (!stood(m)) { quiet.push(s.leaf ?? s.slot); continue; }
     moved.push(m);
+  }
+  // THE THREAD THE DOOR TOOK UP: when any hand's mirror of its family moved,
+  // the knots now standing at the place or beneath it that were not yet told.
+  const knots: string[] = [];
+  if (seat.thread) {
+    const t = seat.thread;
+    const prefix = `${t.field}:`;
+    const stirred = Object.keys(seat.touched ?? {}).some((n) => n.startsWith(prefix) && touchedAfter(n));
+    if (stirred) {
+      const cs = await crossSection(seat.origin, t.field, t.at).catch(() => null);
+      for (const l of cs?.lines ?? []) {
+        const k = toldKey(l.who, l.addr, l.text);
+        if (t.told.has(k)) continue;
+        t.told.add(k);
+        knots.push(`    ${l.addr} · ${l.who}: ${l.text}`);
+      }
+    }
   }
   seat.lastMs = nowMs;
   seat.toldAt = seat.indexAt;
-  if (!moved.length) return '';
+  if (!moved.length && !knots.length) return '';
   const lines = [`\n[orientation — ${seat.handle}: what moved since ${since} (${voiceAddress(since)})]`];
   for (const m of moved) lines.push(renderMember(m, '  '));
+  if (knots.length) lines.push(`── ${seat.thread!.field}:${seat.thread!.at} — knots tied there since ──`, ...knots);
   if (quiet.length) lines.push(`  (unchanged: ${quiet.join(' · ')})`);
   return lines.join('\n');
 }

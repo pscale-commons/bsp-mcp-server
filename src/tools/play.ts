@@ -28,8 +28,9 @@
  */
 import { z } from 'zod';
 import { declareHand } from '../looks.js';
-import { compileBundle, looksLikeBundle, renderMemberBody } from '../bundle.js';
-import { declareSeat, surfaceLoader } from '../orientation.js';
+import { allMembers, compileBundle, looksLikeBundle, renderMemberBody } from '../bundle.js';
+import { declareSeat, seatThread, surfaceLoader, toldKey } from '../orientation.js';
+import { crossSection, renderPlace, THREAD_FIELD } from '../cross.js';
 import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
 import { handlePoolEngage, resolveDirective, collectContributions, coveredThrough, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, declareRoomAtBirth, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
 // Re-exported so existing importers (smoke-play-split) keep one source of truth.
@@ -390,9 +391,13 @@ export const playParamsSchema = {
     .string()
     .optional()
     .describe("Optional gathering-point (a pool name, without the 'pool:' prefix). Omit and play resolves it from your location, which is the ordinary case. The substrate's term for pscale 0 is the SCENE SCALE (block-conventions:4.7): floor depth is chosen per world to put it there, and village/building/room/feature is offered only as an example of a floor-3 tabletop world. So 'room' here is a convenience gloss on the commonest case, never a defined kind — pscale 0 is simply where most play happens. Coarser rungs still play, more slowly and with less interaction. Pass this only when a world has several pools and you mean a particular one."),
+  thread: z
+    .string()
+    .optional()
+    .describe("Optional: a thread to take up, by its place — the number from spine:thread, or the address of its live end as it was handed to you ('14', '14.12' or 'thread:14.12'). The window then carries the registry's line and every hand's knots at that place and beneath it, and every later ack says what was tied there since (function:thread 5)."),
 };
 
-export type PlayParams = { world: string; handle: string; secret?: string; room?: string };
+export type PlayParams = { world: string; handle: string; secret?: string; room?: string; thread?: string };
 
 export async function handlePlay(
   params: PlayParams,
@@ -740,7 +745,7 @@ export async function handlePlay(
     try {
       const members = await compileBundle(manifestNode, { load: surfaceLoader(resolved), handle, now: new Date() });
       if (members) {
-        const dialed = members
+        const dialed = allMembers(members)
           .filter((m) => m.ref && !m.absent)
           .map((m) => ({ ref: m.leaf!, name: m.name!, address: m.address || null, attention: m.ref!.attention }));
         completions.push(...await completeDialed(dialed, load, carried));
@@ -878,6 +883,21 @@ export async function handlePlay(
   out.push('═══════════ THE ROOM — operating directive + live scene ═══════════');
   out.push(env);
   for (const line of frameSection) out.push(line);
+  // THE THREAD TAKEN UP AT THE DOOR (function:thread 5): the registry's line and
+  // every hand's knots at the place and beneath it — the live end a mind takes
+  // the work up from — and the seat follows the place from here.
+  const threadAt = params.thread ? params.thread.trim().replace(new RegExp(`^${THREAD_FIELD}:`), '') : '';
+  if (threadAt) {
+    const cs = await crossSection(resolved, THREAD_FIELD, threadAt).catch((e) => ({ error: String(e?.message ?? e) }));
+    out.push('');
+    out.push(`═══════════ THE THREAD — ${THREAD_FIELD}:${threadAt}, the work taken up; tie your knot in your own mirror (function:thread 2) ═══════════`);
+    if (!cs) out.push(`(no spine:${THREAD_FIELD} at this beach — no thread to take up)`);
+    else if ('error' in cs) out.push(`(the place ${threadAt} could not be read: ${cs.error})`);
+    else {
+      out.push(renderPlace(THREAD_FIELD, threadAt, cs));
+      seatThread(extra?.sessionId, resolved, handle, THREAD_FIELD, threadAt, cs.lines.map((l) => toldKey(l.who, l.addr, l.text)));
+    }
+  }
   const compass = await compassOf(resolved);
   if (compass) {
     out.push('');
