@@ -62,7 +62,7 @@ Read when `content` and `new_lock` are omitted; write when `content` is given; *
 - Law-class blocks (operators, conventions, the genome) move by **proposal and version**: a dated file in `proposals/` first, the standing text copied to `archive:<block>:<date>` before replacement. Ordinary writes need neither.
 - An accumulator's tenth entry opens a container, and the nine before it are owed a **summary at its underscore** (`10` voices 1-9, `100` the line 10-90), paid in the append that earned it: a summary is a spindle ancestor, never a stub (block-conventions 3.5).
 - **The play** — what every RPG and mirror change is checked against: a player types what their character intends; two verbs, **say** (vapour → liquid) and **make it happen** (liquid → solid); the mechanics run on the resolution with no confirmation; the mirror stays clean and the player is never sent notes. A change that makes a player confirm, read notices, or describe this again is the wrong change.
-- **Genus-one** (`genus-one/`; the door is `pscale_genus`): the kernel is a PORT of pscale-biome `src/agent` (re-base, never fork); the window is a bsp read of a bundle and nothing more; a real pulse costs an API call — never spend without David; no session whose instructions name weft is ever an instance; an agent wakes as a fresh API call or in a seat of its own (neptune's is `~/Projects/neptune`); never write a living agent's shell under its key.
+- **Genus-one** (`genus-one/`; the door is `pscale_genus`): `genus-one/` is the kernel's home — it began as a port of pscale-biome `src/agent`, which is parked (David, 18 August and 29 October 2026), so a kernel change lands here, noted upstream-owed, and never in the biome; `src/genus.ts` follows `genus-one/kernel.py` (re-base, never fork); the window is a bsp read of a bundle and nothing more; a real pulse costs an API call — never spend without David; no session whose instructions name weft is ever an instance; an agent wakes as a fresh API call or in a seat of its own (neptune's is `~/Projects/neptune`); never write a living agent's shell under its key.
 
 ## Working here
 
@@ -86,7 +86,7 @@ src/
   server.ts, index.ts   MCP server + HTTP entry
   *.json          the sentinels (sunstone, whetstone, strata, block-conventions, shell-genome, grit, … and bsp-test, the 72-case battery)
   tools/          bsp bsp-floor collective(settle) grain keys verify pool networking stream invite play genus
-genus-one/        the pulse agent (a PORT of pscale-biome src/agent)
+genus-one/        the pulse agent and the kernel's home (it began as a port of pscale-biome src/agent, now parked)
 scripts/          smoke tests (npm run smoke:parser · smoke:sand · …)
 docs/             protocols (pscale-beach v2, xstream-frame, vapour), payway, shore philosophy
 proposals/        every dated decision, RFC-style — the design log lives here

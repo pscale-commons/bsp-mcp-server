@@ -28,7 +28,7 @@
  */
 import { z } from 'zod';
 import { declareHand } from '../looks.js';
-import { compileBundle, looksLikeBundle, renderMemberBody } from '../bundle.js';
+import { allMembers, compileBundle, looksLikeBundle, renderMemberBody } from '../bundle.js';
 import { declareSeat, seatThread, surfaceLoader, toldKey } from '../orientation.js';
 import { crossSection, renderPlace, THREAD_FIELD } from '../cross.js';
 import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
@@ -745,7 +745,7 @@ export async function handlePlay(
     try {
       const members = await compileBundle(manifestNode, { load: surfaceLoader(resolved), handle, now: new Date() });
       if (members) {
-        const dialed = members
+        const dialed = allMembers(members)
           .filter((m) => m.ref && !m.absent)
           .map((m) => ({ ref: m.leaf!, name: m.name!, address: m.address || null, attention: m.ref!.attention }));
         completions.push(...await completeDialed(dialed, load, carried));

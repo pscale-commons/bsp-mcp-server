@@ -81,7 +81,13 @@ function classify(leaf: string, v: PNode | undefined, blocks: (name: string, ori
 
 // ── compile, at the bundle door ──
 function memberOf(m: Member): Record<string, unknown> {
-  const base = { slot: m.slot, leaf: m.leaf };
+  const own = primaryOf(m);
+  return m.companions.length ? { ...own, members: m.companions.map(memberOf) } : own;
+}
+
+function primaryOf(m: Member): Record<string, unknown> {
+  // A companion's slot is its own digit, as compound-alt.py prints it.
+  const base = { slot: m.slot.split(',').pop(), leaf: m.leaf };
   if (!m.ref) return { ...base, kind: 'prose', shape: 'prose', content: m.leaf };
   if (m.absent) return { ...base, kind: 'reference', name: m.name, shape: 'absent', content: null, note: `absent at this surface: ${m.name}` };
   const r = m.result;

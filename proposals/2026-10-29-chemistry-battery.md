@@ -115,3 +115,27 @@ The frame door's 3.8 and 3.9 are not bugs. That door is only handed bundles.
 The mutation check planted 22 faults: 14 in the reference, 2 in the form checker and 6 in bsp-mcp. It caught all 21 that changed behaviour; the 22nd was an equivalent mutant that changed nothing.
 
 The checker's first live run read five families on the beach. It found 16 contribution nodes in weft's own `beach-venture:weft` that carry no arrival stamp. The bundle door's shape rule reads them as bundles.
+
+## 9. Checked, then fixed (29 October)
+
+Once #555 merged, David asked whether its three bugs were bugs or misreadings. Each one was checked against the law it rests on, the code and its history, the deployed server, and the kernel's Python original. The verdicts:
+
+- **3.5 was a bug, and it was live.** A bsp() read of `reflexive:neptune` 9 dropped four companions that the genus door delivers, and that node states the law at its own underscore. whetstone 8.12 (3 August) predates the bundle door (11 October), and #519 neither chose nor mentioned the omission.
+- **2.4 was a real defect, but latent.** It was the kernel's follow, which pscale-biome's `spark.py` shares: Python raised a recursion error, and the TypeScript port exhausted the heap. No live frame, current or order dialed a point whose line is a reference.
+- **3.6 was a gap, not a fault.** The door degrades as the law allows, and nothing live dials the star form. Resolving it is a design choice.
+- **A fourth finding of the same kind as 3.6:** the bundle door never follows a point whose line is itself a reference. No case holds it.
+
+Physics was untouched in every case. bsp() and bsp-test were not involved.
+
+Four misreadings were mine. I listed 2.4 at both doors, when the CLI's resolve ran the frame compiler for both. I wrote "following is bounded", when the law asks only that an entry never breaks, and pscale-biome's own spark battery requires a chain to be read to its end. I counted three companions where there are four. And I made the reference compositor stop after one hop, which was my choice and not the law.
+
+At David's word ("Correct the verdicts, and go ahead with the changes"), the following changed:
+
+- **The loop guard.** A walk now keeps the references it has followed, and one met again stays as written. It lives in bsp-mcp's two copies of the kernel, `genus-one/spark.py` and `src/genus.ts`, which are the ones that run.
+- **Companions at the bundle door.** They now compile beside their primary for every reader: the window, the play door and its completions, and the orientation rider. The window's index names them.
+- **The record.** It was corrected in compound-test 2.3, 2.4 and 6.4, and in the README. 2.3 now pins a chain of two.
+- **The reference compositor** now follows a chain to its end and catches a loop.
+
+bsp-mcp now passes 32 of 33 at the bundle door and 31 of 33 at the frame door. What remains are the gap (3.6) and the frame door's two by-construction cases.
+
+**Where the kernel lives.** §8 said the loop's fix belonged in pscale-biome's kernel first, then re-based here, because CLAUDE.md named pscale-biome `src/agent` as genus-one's upstream. But David parked the biome on 18 August, and said it again on 29 October: "I am not developing biome." So the guard was not carried into pscale-biome. genus-one is the kernel's home now. Its spark notes the guard as upstream-owed to the parked biome, the convention `genus-one/kernel.py` already keeps, and CLAUDE.md and genus-one's README say so.

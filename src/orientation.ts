@@ -28,7 +28,7 @@
 import { type Block, readAt } from './bsp.js';
 import { listSentinelNames, loadBeachIndex, loadBlock } from './db.js';
 import { momentToAddress, voiceAddress, TEMPORAL_FLOOR } from './temporal.js';
-import { bundleSlots, candidateNames, renderMember, resolveMember, FINE, type BlockLoader, type Member } from './bundle.js';
+import { bundleSlots, candidateNames, renderMember, resolveMember, slotRefs, FINE, type BlockLoader, type Member } from './bundle.js';
 import { crossSection } from './cross.js';
 
 /** A loader over one surface: the bundled sentinels first (the teaching is the
@@ -169,16 +169,19 @@ export async function orientationRider(session: string | undefined, nowMs: numbe
   const ctx = { load, handle: seat.handle, now: new Date(nowMs), since };
   const moved: Member[] = [];
   const quiet: string[] = [];
+  // An absent or unreadable member cannot have moved; a clock member whose
+  // range is empty moved nothing either — the clock turned and nothing landed.
+  // A slot moved when its primary did or any companion beside it did.
+  const stood = (m: Member): boolean =>
+    !(m.absent || m.cut?.same || (!m.result && !(m.lines && m.lines.length))) || m.companions.some(stood);
   for (const s of bundleSlots(seat.node)) {
-    if (!s.ref) continue;
-    const names = candidateNames(s.ref, seat.handle);
-    const touched = names.some(touchedAfter);
-    const changed = s.ref.word === 'now' ? beatChanged || touched : touched;
-    if (!changed) { quiet.push(s.leaf!); continue; }
+    const refs = slotRefs(s);
+    if (!refs.length) continue;
+    const touched = refs.some((r) => candidateNames(r, seat.handle).some(touchedAfter));
+    const changed = refs.some((r) => r.word === 'now') ? beatChanged || touched : touched;
+    if (!changed) { quiet.push(s.leaf ?? s.slot); continue; }
     const m = await resolveMember(s, { ...ctx, touched });
-    // An absent or unreadable member cannot have moved; a clock member whose
-    // range is empty moved nothing either — the clock turned and nothing landed.
-    if (m.absent || m.cut?.same || (!m.result && !(m.lines && m.lines.length))) { quiet.push(s.leaf!); continue; }
+    if (!stood(m)) { quiet.push(s.leaf ?? s.slot); continue; }
     moved.push(m);
   }
   // THE THREAD THE DOOR TOOK UP: when any hand's mirror of its family moved,

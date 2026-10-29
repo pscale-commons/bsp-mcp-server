@@ -157,11 +157,12 @@ def head_address(block):
     return full_width(digits, floor) if digits else None
 
 
-def resolve(surface, leaf, follow=True):
+def resolve(surface, leaf, seen=()):
     """What a reference delivers — the star in the walk (sunstone 5.2): a point
-    whose line is itself a reference is followed, one hop, so a cycle returns.
-    What cannot be reached is named, never dropped; an unreachable star-ref
-    rides through as written (whetstone 8.11)."""
+    whose line is itself a reference is followed, as the kernel's spark follows
+    it, to the end of the chain; a reference this walk has already followed
+    stays verbatim, so a loop returns. What cannot be reached is named, never
+    dropped; an unreachable star-ref rides through as written (whetstone 8.11)."""
     home, origins = surface
     star = parse_star(leaf)
     if star:
@@ -191,10 +192,11 @@ def resolve(surface, leaf, follow=True):
                 "note": "the clock word is the host's to compute and is not exercised by this battery"}
     res = deliver(block, address, ref["attention"])
     res.update(ref=leaf, name=ref["name"])
-    if follow and res["shape"] == "point" and (parse_star(res["content"]) or parse_reference(res["content"])):
-        onward = resolve(surface, res["content"], follow=False)
+    line = res["content"] if res["shape"] == "point" else None
+    if line is not None and line not in seen and (parse_star(line) or parse_reference(line)):
+        onward = resolve(surface, line, seen + (line,))
         if onward["shape"] not in ("absent", "unresolved", "prose"):
-            onward.update(ref=leaf, followed=res["content"])
+            onward.update(ref=leaf, followed=line)
             return onward
     return res
 
