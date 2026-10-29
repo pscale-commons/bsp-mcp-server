@@ -1,0 +1,39 @@
+{
+  "_": {
+    "_": {
+      "_": "FLOOR TERMINUS — pscale 0 — block description, at root._._._",
+      "8": "AT-FLOOR-VIA-UNDERSCORE — pscale 0 — spindle 8 pads to 008 and walks _,_,8"
+    }
+  },
+  "1": {
+    "_": "THORNKEEP — pscale 2 — spindle 100",
+    "2": {
+      "_": "TAVERN — pscale 1 — spindle 120",
+      "3": {
+        "_": "KITCHEN — pscale 0 — at the floor — spindle 123",
+        "4": {
+          "_": "HEARTH — pscale -1 — below the floor — spindle 123.4",
+          "1": "BELLOWS — pscale -2 — spindle 123.41",
+          "2": "ASH PIT — pscale -2 — spindle 123.42",
+          "7": {
+            "_": "POT-HOOK — pscale -2 — spindle 123.47",
+            "3": "IRON CHAIN — pscale -3 — spindle 123.473"
+          }
+        },
+        "5": "STOVE — pscale -1 — spindle 123.5"
+      },
+      "7": "COMMON ROOM — pscale 0 — at the floor — spindle 127"
+    },
+    "5": {
+      "_": "MARKET — pscale 1 — spindle 150",
+      "8": "FISHMONGER — pscale 0 — at the floor — spindle 158"
+    }
+  },
+  "3": {
+    "_": "HEADLAND — pscale 2 — spindle 300",
+    "1": {
+      "_": "LIGHTHOUSE — pscale 1 — spindle 310",
+      "5": "LAMP ROOM — pscale 0 — at the floor — spindle 315"
+    }
+  }
+}
