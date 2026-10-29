@@ -1,0 +1,17 @@
+{
+  "_": {
+    "_": {
+      "_": "THREE — a block at floor 3: its root definition stands at pscale 0, two rungs beneath its top branch"
+    }
+  },
+  "1": {
+    "_": "three 100 — a top branch, coarsest, at pscale +2",
+    "2": {
+      "_": "three 120 — at pscale +1",
+      "3": {
+        "_": "three 123 — at the floor",
+        "4": "three 123.4 — finer, at pscale -1"
+      }
+    }
+  }
+}

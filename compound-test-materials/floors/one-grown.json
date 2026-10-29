@@ -1,0 +1,10 @@
+{
+  "_": {
+    "_": "ONE — a block at floor 1: its root definition and its top branches stand at pscale 0",
+    "1": "one 1 — at the floor",
+    "2": {
+      "_": "one 2 — at the floor, with detail beneath",
+      "1": "one 2.1 — finer, at pscale -1"
+    }
+  }
+}

@@ -77,8 +77,7 @@ console.log('\nDEREFERENCE — the bundle unfolds in one call');
   ok('window is a map of the bundle slots', w instanceof Map && w.size === 6);
   ok('teaching block concentrated to skeleton', w.get('1') instanceof Map && (w.get('1') as PMap).has('_'));
   ok('whole block hydrated at slot 2', w.get('2') instanceof Map && (w.get('2') as PMap).has('1'));
-  const nested = w.get('5') as PMap;
-  ok('nested slot-bundle hydrated, nesting preserved', nested instanceof Map && nested.get('_') instanceof Map && nested.get('1') instanceof Map);
+  // A nested slot-bundle keeping its companions is compound-test 3.5.
   ok('dialed refs collected', r.dialed.some((d) => d.ref === 'sunstone:1') && r.dialed.length >= 7);
   ok('a well-authored bundle carries all its dimensions → no completions', r.completions.length === 0);
 }
@@ -189,8 +188,8 @@ console.log('\nSTAR-REFS — the origin-qualified grammar crosses beaches (frame
   const fetchOrigin: FetchOrigin = (o) =>
     o === 'https://world.example' ? async (name) => world.get(name) ?? null : async () => null;
 
-  const p = parseStarRef('*:https://world.example:spatial:urb:3.2:0');
-  ok('parse: colon-bearing name splits at the final digit run', p?.name === 'spatial:urb' && p?.address === '3.2' && p?.attention === 0);
+  // A colon-bearing name resolving across origins, and an unreachable one riding
+  // through raw, are compound-test 2.8 and 2.9; what follows is this compiler's own.
   ok('parse: attention optional', parseStarRef('*:https://world.example:spatial:urb:3')?.attention === null);
   ok('parse: prose never parses', parseStarRef('a sentence with spaces *: not a ref') === null);
 
@@ -198,7 +197,6 @@ console.log('\nSTAR-REFS — the origin-qualified grammar crosses beaches (frame
   // 3.2 sits at −1 (floor − walk length), the way open-commons:3 points at :0.
   const frame = toPNode({ _: 'a placed frame', 1: 'relationships', 2: '*:https://world.example:spatial:urb:3.2:-1' });
   const r1 = await compile(frame, load, { fetchOrigin });
-  ok('star point resolves cross-origin', (r1.window as PMap).get('2') === 'The Gal edge — the fringe valleys of the encounter kit.');
   ok('dialed records the origin', r1.dialed.some((d) => d.origin === 'https://world.example' && d.name === 'spatial:urb'));
 
   const spindleRef = toPNode({ _: 'walk form', 1: 'relationships', 2: '*:https://world.example:spatial:urb:3.2' });
@@ -208,8 +206,6 @@ console.log('\nSTAR-REFS — the origin-qualified grammar crosses beaches (frame
 
   const r3 = await compile(frame, load); // no factory
   ok('no fetchOrigin → the leaf rides through raw, visible', (r3.window as PMap).get('2') === '*:https://world.example:spatial:urb:3.2:-1');
-  const r4 = await compile(toPNode({ _: 'x', 1: 'relationships', 2: '*:https://elsewhere.example:spatial:urb:3.2:0' }), load, { fetchOrigin });
-  ok('unknown origin / absent block → raw leaf, never a silent drop', (r4.window as PMap).get('2') === '*:https://elsewhere.example:spatial:urb:3.2:0');
 }
 
 console.log('\nORDER AND COLLECT — the v1 sweep (proposal 2026-07-25)');
@@ -262,12 +258,9 @@ console.log('\nADDRESS 0 IN A REFERENCE — the root, spindle omitted (ways:orie
   // The fault this closes, measured 2026-09-08: six of weft's seven manifest
   // slots arrived as the block's opening LABEL, because a literal '0' left-pads
   // to floor width and walks the underscore chain to the root voicing.
+  // name:0:0 as the DISC at pscale 0, never the label, is compound-test 2.2.
   const board = toPNode({ _: 'THE BOARD — its own voicing', 1: 'first entry', 2: 'second entry', 5: { _: 'fifth' } });
   const bLoad: Loader = async (n) => (n === 'board' ? (board as PNode) : load(n));
-  const dash = await compile(toPNode({ _: 'a bundle dialing a dashboard', 1: 'board:0:0' }), bLoad, { complete: false });
-  const cell = (dash.window as PMap).get('1') as PNode;
-  ok('name:0:0 is the DISC at pscale 0, not the label', cell instanceof Map && (cell as PMap).size === 4);
-  ok('the disc carries the positions, not just the voicing', renderFramedValue(cell).includes('first entry'));
 
   const root = await compile(toPNode({ _: 'a bundle dialing the root line', 1: 'board:0:1' }), bLoad, { complete: false });
   const line = (root.window as PMap).get('1') as PNode;

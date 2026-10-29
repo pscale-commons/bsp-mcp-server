@@ -36,5 +36,5 @@ The battery covers reads only. It does not cover writes, locks, gray, multi-leve
 ## The other levels
 
 - **Physics, the block as written:** [`src/well-formed.json`](../src/well-formed.json) (`pscale://well-formed`). `npm run lint:block` and `npm run smoke:wellformed` check its mechanical half. `npm run smoke:parser` checks the address parser.
-- **Chemistry, blocks in company:** `npm run smoke:floor` checks how bsp-floor lays blocks on the floor plane. `npm run smoke:compile` and `npm run smoke:bundle` check that a window composes from a bundle. There is no portable battery at this level yet; the faults are named in [`proposals/2026-08-09-chemistry-level-faults.md`](../proposals/2026-08-09-chemistry-level-faults.md).
+- **Chemistry, blocks in company:** [`src/compound-test.json`](../src/compound-test.json) (`pscale://compound-test`), with its fixtures, reference compositor, form checker and runner in [`compound-test-materials/`](../compound-test-materials/). `npm run smoke:compound` runs it. Its reference battery covers following a star reference across blocks, which this battery leaves out.
 - **Biology, the loop:** `npm run smoke:genus` checks that genus-one's window matches its kernel byte for byte.

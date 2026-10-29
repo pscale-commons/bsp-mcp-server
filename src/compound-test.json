@@ -1,0 +1,424 @@
+{
+  "_": "COMPOUND-TEST — the chemistry battery: the composition contract stated as cases any implementation answers, and the form a compound must hold, beside bsp-test (the walker that reads one block) and well-formed (the block being written). Blocks in company are operated by three acts, each a battery of nine cases: laying blocks against the common floor (1), resolving a reference (2) and compiling a bundle into a window (3). Branch 4 is the mechanical pass over a compound's form, which a program decides; branch 5 is the interpretive pass, which a reader decides; branch 6 is how every case runs and what each implementation answers today. Each case carries its description at X.Y._, the call at X.Y.1, the canonical answer at X.Y.2, markers at X.Y.3 (substrings the result must hold, as a JSON array), the shape at X.Y.4, the count at X.Y.5 (null when none is asserted) and, where silence is the point, absent markers at X.Y.6 (substrings it must never hold). The answers are semantic — shape, members and markers, never a renderer's text — so bsp-mcp's TypeScript, the kernel's Python and the pocket's Kotlin answer the same cases. The fixtures are compound folders in compound-test-materials/ of github.com/pscale-commons/bsp-mcp-server, beside the reference compositor compound-alt.py, the form checker compound-form.py and the runner run-compound-tests.py.",
+  "1": {
+    "_": "Alignment — blocks laid against the common floor and read across at one pscale (whetstone 7, sunstone 5.6, strata 2.111). The floor is the one coordinate every block shares, so a block of any floor meets every other at its decimal point, with coarser context above and finer detail below; nothing is merged, and the differences that appear are the content. The call is align(<compound>: <block>, <block>, …[, pscale=N]). Beyond each case's own markers, the runner holds every call to the alignment's own law: each block's side at a pscale is exactly that block's disc there, as the physics walker bsp-alt.py reads it, with addresses printed full width from the floor; the levels run coarse to fine, each once; and nothing the blocks hold at those levels is added or dropped. The fixtures are the floors compound — one (floor 1), two (floor 2), three (floor 3), one-grown (one supernested to floor 2) and pile (an accumulator grown twice) — and the family compound's spine and mirrors.",
+    "1": {
+      "_": "Floors meet at the decimal, never at the leftmost digit — a floor-1 block and a floor-2 block laid together at pscale 0.",
+      "1": "align(floors: one, two, pscale=0)",
+      "2": "One level, pscale 0. one carries its root definition (ONE — a block at floor 1) and its two top branches (one 1, one 2). two carries its root definition (TWO — a block at floor 2), the child beside it at 01 (two 01) and its floor position 12 (two 12). Both root definitions stand at the same pscale although one is reached in one step and the other in two. Shape: aligned. Count: 1 level.",
+      "3": [
+        "ONE — a block at floor 1",
+        "TWO — a block at floor 2",
+        "two 01 — beside the root definition",
+        "two 12 — at the floor"
+      ],
+      "4": "aligned",
+      "5": 1
+    },
+    "2": {
+      "_": "A deeper floor reaches higher, and the shallower block's side above its floor stands empty — the structural image of zero-padding, never content invented.",
+      "1": "align(floors: one, two)",
+      "2": "Three levels, coarse to fine. At pscale +1, two's top branch (two 10 — a top branch, coarser), with one's side empty. At pscale 0, both floors as in 1.1. At pscale -1, one's finer detail (one 2.1 — finer), with two's side empty. Shape: aligned. Count: 3 levels.",
+      "3": [
+        "two 10 — a top branch, coarser",
+        "one 2.1 — finer, at pscale -1"
+      ],
+      "4": "aligned",
+      "5": 3
+    },
+    "3": {
+      "_": "The plane is shared by every block, not only two: pscale 0 across a set of blocks is an index of their root definitions.",
+      "1": "align(floors: one, two, three, pscale=0)",
+      "2": "One level, pscale 0, with three sides: one's, two's and three's root definitions with their floor positions, three's at 000 with its floor position 123 (three 123 — at the floor). Shape: aligned. Count: 1 level.",
+      "3": [
+        "ONE — a block at floor 1",
+        "TWO — a block at floor 2",
+        "THREE — a block at floor 3",
+        "three 123 — at the floor"
+      ],
+      "4": "aligned",
+      "5": 1
+    },
+    "4": {
+      "_": "Every level any block holds appears once, coarse to fine, with each block's side at it — three floors laid together whole.",
+      "1": "align(floors: one, two, three)",
+      "2": "Four levels. At pscale +2, three 100 alone. At pscale +1, two 10 and three 120. At pscale 0, all three floors. At pscale -1, one 2.1 and three 123.4. A level a block does not reach shows that block's side empty. Shape: aligned. Count: 4 levels.",
+      "3": [
+        "three 100 — a top branch, coarsest",
+        "three 120 — at pscale +1",
+        "two 10 — a top branch",
+        "three 123.4 — finer",
+        "one 2.1 — finer"
+      ],
+      "4": "aligned",
+      "5": 4
+    },
+    "5": {
+      "_": "A spine and its mirrors are read across at one address, and their differences come back as content: each mirror's line stands beside the spine's rung, attributed, and nothing is merged.",
+      "1": "align(family: spine:tide, tide:ash, tide:bram, pscale=0)",
+      "2": "One level, pscale 0. At address 1 the spine's rung (the morning) stands beside ash's reading (ash: the morning came cold) and bram's (bram: the morning was warm): two readings that disagree, both delivered whole. At 2 only bram voices, at 3 only ash. Shape: aligned. Count: 1 level.",
+      "3": [
+        "the morning",
+        "ash: the morning came cold",
+        "bram: the morning was warm",
+        "bram: noon, and nothing to say but the heat",
+        "ash: the evening held"
+      ],
+      "4": "aligned",
+      "5": 1
+    },
+    "6": {
+      "_": "Silence is honest absence: where one mirror has voiced finer detail and another has not, the silent side stays empty and is never filled from the spine or from the other mirror.",
+      "1": "align(family: spine:tide, tide:ash, tide:bram, pscale=-1)",
+      "2": "One level, pscale -1: the spine's rung at 3.1 (the last light) and ash's reading of it (ash: the last light went green). bram's side is empty, because bram never voiced there. Shape: aligned. Count: 1 level.",
+      "3": [
+        "the last light",
+        "ash: the last light went green"
+      ],
+      "4": "aligned",
+      "5": 1
+    },
+    "7": {
+      "_": "A supernested block aligns behind its leading zero: the same content at the same pscale, its addresses one zero wider, because pscale is invariant under supernest.",
+      "1": "align(floors: one, one-grown)",
+      "2": "Two levels. At pscale 0, one's three lines stand at 0, 1 and 2, and one-grown's same three lines at 00, 01 and 02. At pscale -1, one 2.1 stands at 2.1 in one and at 02.1 in one-grown. No level above the floor appears, since the grown block's top rung is its root chain, which is never a position. Shape: aligned. Count: 2 levels.",
+      "3": [
+        "one 1 — at the floor",
+        "one 2.1 — finer",
+        "\"address\": \"02.1\""
+      ],
+      "4": "aligned",
+      "5": 2
+    },
+    "8": {
+      "_": "Digit 0 is a position: the entries each supernest wrapped beneath an accumulator's root chain align beside its newest, and none is skipped.",
+      "1": "align(floors: pile, one, pscale=0)",
+      "2": "One level, pscale 0. pile's side carries its root definition at 000, the entries its supernests wrapped at 001, 002 and 011, and its newest entry at 151, with one's side beside them. Shape: aligned. Count: 1 level.",
+      "3": [
+        "entry 001",
+        "entry 002",
+        "entry 011",
+        "entry 151 — the newest"
+      ],
+      "4": "aligned",
+      "5": 1
+    },
+    "9": {
+      "_": "A block that does not stand is named and never dropped in silence: the blocks that stand are aligned, and the missing one is listed.",
+      "1": "align(floors: one, two, ghost, pscale=0)",
+      "2": "One level, pscale 0, with one's and two's sides as in 1.1, and ghost named as missing. With fewer than two standing blocks the alignment is refused, and the missing ones are named. Shape: aligned. Count: 1 level.",
+      "3": [
+        "\"missing\": [\"ghost\"]"
+      ],
+      "4": "aligned",
+      "5": 1
+    }
+  },
+  "2": {
+    "_": "Reference — an address written inside a block's own content and resolved in the walk (whetstone 8.11, strata 2.12, sunstone 5.2). It is written name, name:address or name:address:attention, with the attention as absolute pscale; the words head and now are computed by the host; and the origin-qualified star form is *:<origin>:<name>:<address>[:<attention>]. A reference that resolves delivers its aperture. A point whose line is itself a reference is followed, and the walk still returns. A family's law is its operator, and a generic law the operator names is followed a single hop (strata 2.21). What cannot be reached rides through as written, visible, so an assembly degrades and an entry never breaks. The calls are resolve(<compound>: <reference>) and law(<compound>: <family>), against the shell and family compounds.",
+    "1": {
+      "_": "A reference names a block, an address and an absolute attention, and an attention at the terminus delivers the point — one line.",
+      "1": "resolve(shell: purpose:wren:2.1:-1)",
+      "2": "The point at 2.1 of purpose:wren, a floor-1 block, where the two-digit walk ends at pscale -1: an account at every close. Shape: point.",
+      "3": [
+        "an account at every close"
+      ],
+      "4": "point",
+      "5": null
+    },
+    "2": {
+      "_": "Address 0 in a reference is the root with the spindle omitted, so name:0:<attention> delivers the disc at that pscale — the dashboard, never the root's label alone.",
+      "1": "resolve(shell: rules:wren:0:0)",
+      "2": "The disc of rules:wren at pscale 0: its root definition and both rules (a book returns to the shelf it came from; a question is answered in the voice of the room). Shape: disc. Count: 3 entries.",
+      "3": [
+        "rules:wren — the house rules",
+        "a book returns to the shelf it came from",
+        "a question is answered in the voice of the room"
+      ],
+      "4": "disc",
+      "5": 3
+    },
+    "3": {
+      "_": "A point whose line is itself a reference is followed to what it names — the star in the walk (sunstone 5.2) — so the reader receives the line the reference points at.",
+      "1": "resolve(shell: notes:wren:3:0)",
+      "2": "notes:wren holds purpose:wren:1:0 at its 3. Followed, it delivers purpose:wren's point at 1: tend the reading room and answer whoever comes. Shape: point.",
+      "3": [
+        "tend the reading room and answer whoever comes"
+      ],
+      "4": "point",
+      "5": null
+    },
+    "4": {
+      "_": "A cycle of references returns: following is bounded, so a reference that leads back to itself rides through visible, and the call answers.",
+      "1": "resolve(shell: notes:wren:1:0)",
+      "2": "notes:wren's 1 names notes:wren:2:0, whose line names notes:wren:1:0 again. The answer is a point whose line is a reference into the cycle, visible as written. The runner allows any call ten seconds, and a walk that never returns fails. Shape: point.",
+      "3": [
+        "notes:wren:"
+      ],
+      "4": "point",
+      "5": null
+    },
+    "5": {
+      "_": "A family's law is its operator, delivered whole, because law is the one whole-block delivery (whetstone 8.2).",
+      "1": "law(family: tide)",
+      "2": "function:tide, with its root line (function:tide — the law of the tide family) and every branch: a mirror line is the holder's own reading, the fold lays the mirrors side by side, and the room is pool:tide. Shape: law.",
+      "3": [
+        "function:tide — the law of the tide family",
+        "A mirror line is the holder's own reading of the rung",
+        "The fold lays the mirrors side by side at one address",
+        "The room is pool:tide"
+      ],
+      "4": "law",
+      "5": null
+    },
+    "6": {
+      "_": "A family running a generic law says so in a bare reference at its own law's underscore, and the reader receives the generic law, followed a single hop.",
+      "1": "law(family: reed)",
+      "2": "function:reed's underscore is function:ledger, so the law delivered is function:ledger's: read the tree as stages, a holder records their own passage leading with one status word, and the fold counts the status words and names who is stuck. Shape: law.",
+      "3": [
+        "function:ledger",
+        "a generic law of passage",
+        "leading with one status word",
+        "names who is stuck"
+      ],
+      "4": "law",
+      "5": null
+    },
+    "7": {
+      "_": "One hop and no further: when the law a family mounts itself mounts another, the second is not followed, and its name rides through visible in the law delivered.",
+      "1": "law(shell: marsh)",
+      "2": "function:marsh mounts function:sieve, whose own underscore is function:mesh. The law delivered is function:sieve's: its line naming function:mesh as written, and its branch (sieve: every passage is recorded at its stage's own address). mesh's law never arrives. Shape: law.",
+      "3": [
+        "function:mesh",
+        "sieve: every passage is recorded at its stage's own address"
+      ],
+      "4": "law",
+      "5": null,
+      "6": [
+        "two hops from marsh"
+      ]
+    },
+    "8": {
+      "_": "A reference resolves across origins in its star form, and a name carrying colons splits from its address at the final digit run.",
+      "1": "resolve(shell: *:https://far.test:spatial:shore:1.1:-1)",
+      "2": "spatial:shore at https://far.test, walked to 1.1 at pscale -1: the map of the reading room, drawn before wren came. Shape: point.",
+      "3": [
+        "the map of the reading room, drawn before wren came"
+      ],
+      "4": "point",
+      "5": null
+    },
+    "9": {
+      "_": "A reference that cannot be reached rides through as its raw string, visible — never dropped, never a silent misroute.",
+      "1": "resolve(shell: *:https://nowhere.test:spatial:shore:1:0)",
+      "2": "No block answers at https://nowhere.test, so the reference comes back unresolved, its content the reference exactly as written. Shape: unresolved.",
+      "3": [
+        "*:https://nowhere.test:spatial:shore:1:0"
+      ],
+      "4": "unresolved",
+      "5": null
+    }
+  },
+  "3": {
+    "_": "Bundle to window — a bundle is a node whose digit positions hold references, and a door compiles it into one window (whetstone 8.12, 8.2, strata 2.3). Every slot answers in slot order, each reference resolved at its stated dilation; prose rides through as written; a slot that is itself a small bundle keeps its companions beside it; a member that cannot be delivered is named; and a node that is not a bundle reads as it always did. The call is compile(<compound>: <block>:<address>[, slot=N]) against the shell compound's manifest at shell:wren 3; with slot=N, the shape, the count and the markers are those of the member at that slot. Beyond each case's own markers, the runner holds every window to two laws: its members stand in slot order, and a member is a reference exactly when its leaf parses in the reference grammar, a prose member's content being its leaf as written.",
+    "1": {
+      "_": "A bundle compiles in one call: every slot answers, in slot order, each reference resolved where it stands and each line of prose delivered as itself.",
+      "1": "compile(shell: shell:wren:3)",
+      "2": "A window of eight members, slots 1 to 8 in order: the orientation disc, the history's newest entry, the purpose point, a prose line (The organs, every one a :wren block at the beach where wren lives), the passport walk with its companion, an absent member, a member from another origin, and the house rules whole. Shape: window. Count: 8 members.",
+      "3": [
+        "TWO: say the line before the work",
+        "entry 22 — the newest sitting",
+        "tend the reading room and answer whoever comes",
+        "The organs, every one a :wren block at the beach where wren lives",
+        "ask wren for a book and wren finds it",
+        "a book returns to the shelf it came from"
+      ],
+      "4": "window",
+      "5": 8
+    },
+    "2": {
+      "_": "A member dialed without an attention arrives as its walk — every ancestor's line above the terminus — so it lands self-contextualised.",
+      "1": "compile(shell: shell:wren:3, slot=5)",
+      "2": "Slot 5's primary is passport:wren:1.1, delivered as the walk: wren tends a reading room at the far end of the beach, then ask wren for a book and wren finds it. Shape: path-walk. Count: 2 entries.",
+      "3": [
+        "wren tends a reading room at the far end of the beach",
+        "ask wren for a book and wren finds it"
+      ],
+      "4": "path-walk",
+      "5": 2
+    },
+    "3": {
+      "_": "The host computes the head: a member dialed at history:wren:head walks to the accumulator's newest entry, and the mind is never asked for its address.",
+      "1": "compile(shell: shell:wren:3, slot=2)",
+      "2": "history:wren holds entries 11 to 19 summarised, and entries 21 and 22 beneath its 2. The head is 22, so the member is the walk ending there: entry 22 — the newest sitting: a reader asked for the old maps. Shape: path-walk.",
+      "3": [
+        "entry 22 — the newest sitting: a reader asked for the old maps"
+      ],
+      "4": "path-walk",
+      "5": null,
+      "6": [
+        "entry 21 — the shelves re-ordered",
+        "entry 11 — wren woke"
+      ]
+    },
+    "4": {
+      "_": "A disc member arrives whole, every line of it, never truncated: name:0:0 is the dashboard the reader boots by.",
+      "1": "compile(shell: shell:wren:3, slot=1)",
+      "2": "orientation:wren at pscale 0: its root definition and its three rules, each line whole — ONE, TWO and THREE. Shape: disc. Count: 4 entries.",
+      "3": [
+        "orientation:wren — the rules wren boots by",
+        "ONE: continuity lives in blocks, never in a session; what is not written down did not happen",
+        "TWO: say the line before the work, and close the work with an account of what was done and what was left",
+        "THREE: read the record before writing to it"
+      ],
+      "4": "disc",
+      "5": 4
+    },
+    "5": {
+      "_": "Nesting is preserved end to end: a slot that is itself a small bundle delivers its primary from its underscore and its companions beside it.",
+      "1": "compile(shell: shell:wren:3, slot=5)",
+      "2": "Slot 5 holds passport:wren:1.1 at its underscore and purpose:wren:2:0 at its 1. The passport walk arrives as the primary, and purpose:wren's point at 2 (keep the record honest) arrives beside it as the slot's companion. Shape: path-walk, with one companion member.",
+      "3": [
+        "ask wren for a book and wren finds it",
+        "keep the record honest"
+      ],
+      "4": "path-walk",
+      "5": null
+    },
+    "6": {
+      "_": "A member at another origin is resolved by the compiling door, as the walk resolves it (whetstone 8.11).",
+      "1": "compile(shell: shell:wren:3, slot=7)",
+      "2": "Slot 7 is *:https://far.test:spatial:shore:1.1:-1, so the member is the far shore's point: the map of the reading room, drawn before wren came. Shape: point.",
+      "3": [
+        "the map of the reading room, drawn before wren came"
+      ],
+      "4": "point",
+      "5": null
+    },
+    "7": {
+      "_": "A member that cannot be delivered is named, and the window still opens with every other member.",
+      "1": "compile(shell: shell:wren:3, slot=6)",
+      "2": "Slot 6 names ghost:wren, which does not stand. The member is absent and carries the name it dialed. Shape: absent.",
+      "3": [
+        "ghost:wren"
+      ],
+      "4": "absent",
+      "5": null
+    },
+    "8": {
+      "_": "A node of prose stays prose though a reference stands among its lines: a bundle by form needs more than half its slots to be references, so a rule that cites a block is never compiled as a window.",
+      "1": "compile(shell: shell:wren:5)",
+      "2": "shell:wren's 5 holds two sentences and one reference (rules:wren, which stands). One reference in three slots is not a bundle by form, so the node reads as it always did and no window is composed. Shape: not-a-bundle.",
+      "3": [
+        "what wren tells a newcomer at the door"
+      ],
+      "4": "not-a-bundle",
+      "5": null
+    },
+    "9": {
+      "_": "A node that looks like a bundle is not one until a member resolves: a list of words in the reference grammar that names no standing block is a list, never a window.",
+      "1": "compile(shell: shell:wren:7)",
+      "2": "shell:wren's 7 holds Monday and Tuesday: words in the reference grammar that name nothing standing. So the node is not a bundle, and no window is composed. Shape: not-a-bundle.",
+      "3": [
+        "the days wren keeps the reading room open"
+      ],
+      "4": "not-a-bundle",
+      "5": null
+    }
+  },
+  "4": {
+    "_": "The compound's form, mechanical pass — what a program decides over a compound. A compound has no walker, so nothing rejects a malformed molecule (grips 7): the doors degrade past a bad bond by law, and the fault lands silently unless this pass names it. There are three predicates. RESOLVES: every reference resolves. A leaf is a reference by its position — an operator's bare underscore, a pool's directive, a slot of a node that is a bundle, a leaf carrying an address, an attention, a word or the star form, or a bare name that stands at the surface; an accumulator entry's fields are data, and prose is prose. It resolves when its block stands at its origin and its address walks to something. DIRECTION: content carries no operator pointer, so no reference in a family's spine, mirrors, fold or contributions names a function: block; and a generic law carries no content address, so a law that another family's law mounts names no spine, mirror, fold or pool (block-conventions 8.81, whetstone 8.3). The fused form, a pool's underscore holding its directive (block-conventions 4.26), is honoured. LAW: a family stands when its law stands, so spine:V has function:V (block-conventions 8.83). A mirror line at an address its spine does not voice is reported as a PROPOSAL, never a fault, because a mirror is written freely at any address and the fold surfaces it, awaiting adoption (tree 5.1). The call is form(<compound>), which compound-form.py answers; the count is the number of faults, and the markers name each fault's leaf or block.",
+    "1": {
+      "_": "Every reference resolves: a manifest slot that walks nowhere and one that names a block that does not stand are two faults the doors would carry in silence.",
+      "1": "form(form/dangling)",
+      "2": "Two faults of RESOLVES at shell:moss. Its 3.1 dials history:moss:2.5, which walks nowhere: history:moss stands at floor 2 and holds the message at 25 (the August fault — an address written at the wrong floor). Its 3.3 names passport:moss, which does not stand. Shape: form. Count: 2 faults.",
+      "3": [
+        "history:moss:2.5",
+        "walks nowhere",
+        "passport:moss"
+      ],
+      "4": "form",
+      "5": 2
+    },
+    "2": {
+      "_": "References run one way: the law names its family and never the reverse, and a generic law names no family's content.",
+      "1": "form(form/inverted)",
+      "2": "Two faults of DIRECTION. spine:fern carries function:fern at its 9, which is content pointing at its operator. function:census, the generic law function:fern mounts, carries spine:fern:1:0 at its 2, which is a content address in a law meant to serve every family. Shape: form. Count: 2 faults.",
+      "3": [
+        "content carries an operator pointer",
+        "a generic law carries a content address"
+      ],
+      "4": "form",
+      "5": 2
+    },
+    "3": {
+      "_": "A family stands when its law stands: a spine with no operator is a family running on nobody's words.",
+      "1": "form(form/lawless)",
+      "2": "One fault of LAW: spine:sedge stands and function:sedge does not. Shape: form. Count: 1 fault.",
+      "3": [
+        "function:sedge does not stand"
+      ],
+      "4": "form",
+      "5": 1
+    },
+    "4": {
+      "_": "A mirror line at an address its spine does not voice is a proposal awaiting adoption, never a fault (tree 5.1).",
+      "1": "form(form/proposed)",
+      "2": "No faults, and one proposal: kelp:ash voices 7 (the drying took four days), an address spine:kelp does not name. Shape: form. Count: 0 faults.",
+      "3": [
+        "the drying took four days",
+        "\"proposals\": [{"
+      ],
+      "4": "form",
+      "5": 0
+    },
+    "5": {
+      "_": "A well-formed family compound reports nothing: its references resolve and run one way, and every family's law stands, the fused pool and the mounted generic law included.",
+      "1": "form(family)",
+      "2": "No faults and no proposals across the tide and reed families. pool:tide's directive (*function:tide/2) and function:reed's mount (function:ledger) both resolve, and neither inverts. Shape: form. Count: 0 faults.",
+      "3": [
+        "\"faults\": []",
+        "\"proposals\": []"
+      ],
+      "4": "form",
+      "5": 0
+    },
+    "6": {
+      "_": "A shell that compiles cleanly can still carry a malformed bond: the door names the absent member and opens anyway, so only this pass reports the fault.",
+      "1": "form(shell)",
+      "2": "One fault of RESOLVES: shell:wren's manifest at 3.6 names ghost:wren, which does not stand. The cycle at notes:wren resolves at every step, the star-ref reaches its origin, and the list of words at shell:wren 7 is not a bundle, so none of them is a fault. Shape: form. Count: 1 fault.",
+      "3": [
+        "ghost:wren",
+        "\"at\": \"3.6\""
+      ],
+      "4": "form",
+      "5": 1
+    }
+  },
+  "5": {
+    "_": "The compound's form, interpretive pass — what no program decides. A compound is well-formed when a reader handed nothing but its delivery can act lawfully: the law as law(<family>) delivers it and the window as compile delivers it. Run the pass by handing a fresh instance that delivery alone and watching where it stumbles; each stumble marks a position whose framing under-teaches, and the four faults name what each stumble is. This branch is itself a bundle of the three passages that hold the pass — the test (whetstone 8.4), the read-back at bundle scale (strata 2.3111) and the four faults (grips 7, at the beach) — so reading it delivers them rather than a copy. The pass costs a model call, so it runs when a family's law changes, never on every change.",
+    "1": "whetstone:8.4",
+    "2": "strata:2.3111",
+    "3": "*:https://beach.happyseaurchin.com:grips:7:-1"
+  },
+  "6": {
+    "_": "Every case runs through one command shape, so any implementation that answers it is held to the same cases: <impl> <verb> <compound> <args…> [--pscale N], printing one JSON object. The verb is align, resolve, law or compile, and the compound is a folder of blocks; the form cases run compound-form.py whatever the implementation, because no other program decides a compound's form yet.",
+    "1": "A compound is a folder of blocks. Each file is its block's name URI-encoded with .json — spine:tide is spine%3Atide.json, the naming pscale-beach's folder-backed store uses — and another origin's blocks sit in a subfolder named by the encoded origin (https%3A%2F%2Ffar.test). The floors, family and shell compounds serve batteries 1 to 3, and the negative compounds of branch 4 sit under form/.",
+    "2": {
+      "_": "Each verb prints the contract's shapes, and the runner reads them and nothing else: the shape at shape, the delivered value at content, the members of a window at members.",
+      "1": "align prints shape aligned, the blocks with their floors, the missing names, and the levels coarse to fine; each level holds its pscale and each block's side as a list of positions, each with its address (full width from the floor, as the block's own disc prints it), its walk (the same position in comma form) and its text. With fewer than two standing blocks it prints shape refused, with the missing names.",
+      "2": "resolve prints the shape and the content, with the reference, the block's name, the origin for a star form, and a note on any degradation. A point's content is its line; a path-walk's, the lines from the coarsest ancestor down; a disc's, its positions with address, walk and text; a block's, the block whole. absent means the block or the address does not stand, and unresolved means the content is the reference as written.",
+      "3": "law prints shape law, the family, its operator, the mount (the bare reference at the operator's underscore, or null) and the content, which is the law as delivered: the operator itself, or the generic law it mounts. absent means no operator stands; unresolved means the mount names nothing standing.",
+      "4": "compile prints shape window and the members in slot order. Each member carries its slot, its leaf as written, its kind (reference or prose), its shape and content as resolve's, and, for a slot that is itself a small bundle, its companions as members. not-a-bundle means the node is not a bundle; absent means nothing stands at the address.",
+      "5": "form prints shape form, the families read, the faults (each with its predicate, block, address, leaf and why) and the proposals (each with its family, block, address and text). compound-form.py runs it over a compound folder, or, given --beach <origin> and one --family <V> per family, over a live family's blocks by public GET."
+    },
+    "3": "python3 compound-test-materials/run-compound-tests.py reads these cases from this block's source and runs them against compound-alt.py, the reference, by default. Given mcp, it runs bsp-mcp through scripts/compound-cli.ts, compiling bundles at the bundle door (src/bundle.ts — how bsp() reads a bundle node and how the play door compiles a shell's manifest). Given mcp-frame, it compiles at the frame door (src/compile.ts — frames and the order sweep). Given a path, it runs any program that shares the CLI. Each call has ten seconds. A case expected to fail is named with --known <case,…>, and the run fails if a known case starts passing, so the list never outlives its fault.",
+    "4": {
+      "_": "What each implementation answers today, 29 October 2026: compound-alt.py passes all 33 cases by construction. bsp-mcp passes alignment and the law's delivery whole at both doors, and diverges at five cases, each judged by the law: three are bugs, and two are a door whose input is a bundle by construction.",
+      "1": "2.4, at both bsp-mcp doors: the frame compiler's resolution is the kernel's scoop (src/genus.ts, a port of pscale-biome's kernel), whose star-follow has no bound, so a cycle of references never returns. A bug — an entry must never break (whetstone 8.11). The fix belongs in the kernel, re-based here.",
+      "2": "3.5, at the bundle door: a slot that is itself a small bundle delivers its primary and drops its companions. A bug — nesting is preserved end to end (whetstone 8.12). A bsp() read of a genus current, reflexive:neptune 9, loses three companions this way today.",
+      "3": "3.6, at the bundle door: the star form is not in its grammar, so a member at another origin rides through as prose — visible, never resolved. A bug — the compiling door resolves the star form (whetstone 8.11).",
+      "4": "3.8 and 3.9, at the frame door: the frame compiler composes whatever node it is handed, because its doors hand it frames and orders, which are bundles by authoring. Not a bug — the law of 3.8 and 3.9 binds a door that reads any node."
+    }
+  }
+}
