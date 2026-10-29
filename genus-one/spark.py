@@ -171,7 +171,8 @@ def _resolve(text, loader, seen=()):
     """If text is a reference and its block loads, read it there with star on.
     Returns the resolved shape, or None to keep the leaf verbatim — as it is for
     a reference this walk has already followed, so a chain is read to its end
-    and a loop returns."""
+    and a loop returns. Upstream-owed to pscale-biome src/spark (parked; noted
+    per the port discipline)."""
     if loader is None or not isinstance(text, str) or text in seen:
         return None
     ref = parse_reference(text)

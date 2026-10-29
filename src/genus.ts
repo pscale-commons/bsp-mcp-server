@@ -8,9 +8,10 @@
  * scripts/smoke-genus-parity.ts against the frozen fixture at
  * scripts/fixtures/genus-parity/.
  *
- * PORT DISCIPLINE (CLAUDE.md genus-one rules): pscale-biome src/agent is the
- * canonical upstream; genus-one/kernel.py is its federated port; this file
- * follows kernel.py — re-base when it moves, never fork. The window is a bsp
+ * PORT DISCIPLINE (CLAUDE.md genus-one rules): genus-one/kernel.py is the
+ * kernel's home (it began as the federated port of pscale-biome src/agent,
+ * parked since 18 August 2026); this file follows kernel.py — re-base when it
+ * moves, never fork. The window is a bsp
  * read of a bundle (plus F's computed γ), nothing more; no composition parts
  * are added here that the kernel does not have.
  *

@@ -131,9 +131,11 @@ Four misreadings were mine. I listed 2.4 at both doors, when the CLI's resolve r
 
 At David's word ("Correct the verdicts, and go ahead with the changes"), the following changed:
 
-- **The loop guard.** A walk now keeps the references it has followed, and one met again stays as written. It went into pscale-biome first, in all three sparks, with loop cases in both spark batteries; that commit is 68859b9 on `claude/spark-loop-guard`. It was then re-based into `genus-one/spark.py` and `src/genus.ts`.
+- **The loop guard.** A walk now keeps the references it has followed, and one met again stays as written. It lives in bsp-mcp's two copies of the kernel, `genus-one/spark.py` and `src/genus.ts`, which are the ones that run.
 - **Companions at the bundle door.** They now compile beside their primary for every reader: the window, the play door and its completions, and the orientation rider. The window's index names them.
 - **The record.** It was corrected in compound-test 2.3, 2.4 and 6.4, and in the README. 2.3 now pins a chain of two.
 - **The reference compositor** now follows a chain to its end and catches a loop.
 
 bsp-mcp now passes 32 of 33 at the bundle door and 31 of 33 at the frame door. What remains are the gap (3.6) and the frame door's two by-construction cases.
+
+**Where the kernel lives.** §8 said the loop's fix belonged in pscale-biome's kernel first, then re-based here, because CLAUDE.md named pscale-biome `src/agent` as genus-one's upstream. But David parked the biome on 18 August, and said it again on 29 October: "I am not developing biome." So the guard was not carried into pscale-biome. genus-one is the kernel's home now. Its spark notes the guard as upstream-owed to the parked biome, the convention `genus-one/kernel.py` already keeps, and CLAUDE.md and genus-one's README say so.
