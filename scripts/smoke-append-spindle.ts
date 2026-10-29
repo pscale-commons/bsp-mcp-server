@@ -17,7 +17,7 @@
  *
  * Offline: a local mock beach records every POST body and answers canned
  * acks, so this proves the request shape and the ack rendering without a
- * real beach. The beach-side mechanics (allocation, node supernest, lock
+ * real beach. The beach-side mechanics (allocation, the nine-slot refusal, lock
  * resolution) are proven by pscale-beach's own smoke:append-spindle; the gray
  * append end-to-end (ten entries, the tenth supernesting, all ten still
  * decrypting) by smoke:gray-append-live against the real beach. Anything
@@ -111,11 +111,11 @@ assert(
 assert(b?.resolve_window === undefined && b?.resolve_seen === undefined, 'no resolver fields on a plain side append');
 assert(getText(r).includes('2.1') && getText(r).includes('beneath node 2'), 'ack renders the full landed address', getText(r));
 
-console.log('\n=== node supernest: the ack says the SIDE wrapped, ladder within ===');
-ackFor = () => ({ status: 200, json: { ok: true, slot: '11', address: '2.11', node: '2', supernested: true } });
+console.log('\n=== a full node: the tenth is refused, in the beach\'s own words ===');
+ackFor = () => ({ status: 409, json: { error: '"2" of "grain:cafe" is full: nine slots, all taken (2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9). A digit position holds nine and does not grow — accumulation belongs at a block root, where a supernest can raise the floor.', code: 'node_full', node: '2' } });
 r = await handleBsp({ agent_id: BEACH, block: 'grain:cafe', append: true, spindle: '2', content: 'tenth message', secret: 'key-two', gray: false });
-assert(getText(r).includes('2.11'), 'tenth renders address 2.11', getText(r));
-assert(getText(r).includes('node supernested'), 'node-scoped supernest named as such (never a block-floor claim)', getText(r));
+assert(getText(r).startsWith('Append rejected'), 'the tenth beneath a node is refused, never shown as landed', getText(r));
+assert(getText(r).includes('is full: nine slots') && getText(r).includes('holds nine'), 'the refusal carries the beach\'s own words: which slots stand, and why a node does not grow', getText(r));
 
 console.log('\n=== root append byte-unchanged on the wire ===');
 ackFor = () => ({ status: 200, json: { ok: true, slot: '3', supernested: false, floor: 1 } });

@@ -695,7 +695,7 @@ export const bspParamsSchema = {
   append: z
     .boolean()
     .optional()
-    .describe('Accumulator append — marks / history / pools / grain sides. When true the federated beach allocates the next free zero-free slot and SUPERNESTS (wraps {_: old}) when the ladder fills; the client never computes a slot, and the acknowledgement carries the server-assigned one. Without a spindle this grows the BLOCK at its root, exactly as before. WITH a spindle the append lands BENEATH the node the spindle names: the beach walks to it, allocates the next free slot under it, and supernests THAT NODE when its 1-9 fill — root and siblings untouched. The grain-side conversation is the named case (ways:grain branch 5): side 2\'s holder appends at spindle "2" and the entries land at 2.1, then 2.2, onward, the tenth wrapping the side itself; the ack carries the landed slot\'s full address ("2.3"). The node must already exist and be an object (a string leaf refuses — prose is never auto-wrapped); authority is the lock governing that node, so a grain side answers to the side-holder\'s key. `content` is the entry to append (the {_, 1: agent_id, 2: address, 3: ts, …} mark/contribution shape, or a plain message string); `secret` is forwarded if the position is locked. Omit pscale_attention. Atomic server-side — concurrent appends never race on slot allocation. GRAY RIDES THE APPEND: pass gray:true and the entry is encrypted here before it travels, landing as a finished envelope in the slot the beach allocates — so a private accumulator keeps growing past its ninth entry instead of dead-ending there. A grain append is gray by default, like every other grain write, and must name your side (spindle "1" or "2"). Group accumulators are not supported yet.'),
+    .describe('Accumulator append — marks / history / pools / grain sides. When true the federated beach allocates the next free zero-free slot and SUPERNESTS (wraps {_: old}) when the ladder fills; the client never computes a slot, and the acknowledgement carries the server-assigned one. Without a spindle this grows the BLOCK at its root, exactly as before. WITH a spindle the append lands BENEATH the node the spindle names: the beach walks to it and allocates the next free slot under it, root and siblings untouched. A node holds NINE and never wraps (only a root supernest re-pads every address at once): when its 1-9 are taken the beach refuses the tenth (node_full) and names the nine — overwrite one with an ordinary write, or keep the thing in a block of your own and put its address in the slot. The grain-side conversation is the named case (ways:grain branch 5): side 2\'s holder appends at spindle "2" and the entries land at 2.1, then 2.2, onward to 2.9; the ack carries the landed slot\'s full address ("2.3"). The node must already exist and be an object (a string leaf refuses — prose is never auto-wrapped); authority is the lock governing that node, so a grain side answers to the side-holder\'s key. `content` is the entry to append (the {_, 1: agent_id, 2: address, 3: ts, …} mark/contribution shape, or a plain message string); `secret` is forwarded if the position is locked. Omit pscale_attention. Atomic server-side — concurrent appends never race on slot allocation. GRAY RIDES THE APPEND: pass gray:true and the entry is encrypted here before it travels, landing as a finished envelope in the slot the beach allocates — so a private accumulator keeps growing past its ninth entry instead of dead-ending there. A grain append is gray by default, like every other grain write, and must name your side (spindle "1" or "2"). Group accumulators are not supported yet.'),
 };
 
 export type BspToolParams = {
@@ -978,9 +978,10 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
   // the floor fills, so the client never computes a slot and concurrent appends
   // never race. `content` is the entry; pscale_attention does not apply. A
   // spindle scopes the append to the NODE it names (ways:grain branch 5): the
-  // beach allocates beneath that node and supernests IT when its 1-9 fill —
-  // the grain-side conversation (side 2's holder at 2.1, then 2.2, onward) is
-  // the named case, and the ack carries the landed slot's full address.
+  // beach allocates beneath that node, which holds nine and refuses a tenth
+  // (node_full — only a root wraps); the grain-side conversation (side 2's
+  // holder at 2.1, then 2.2, onward to 2.9) is the named case, and the ack
+  // carries the landed slot's full address.
   if (params.append === true) {
     if (content === undefined) {
       return { content: [{ type: 'text', text: 'Append rejected: append needs `content` (the entry to append).' }] };
@@ -1095,8 +1096,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
         ? ''
         : await readBackAfterAppend(agent_id, blockName, res.address ?? (res.slot !== undefined && res.slot !== null ? String(res.slot) : undefined));
       if (res.address !== undefined) {
-        const grew = res.supernested ? `  ⤴ node supernested — the ladder continues within` : '';
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
       return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}` }] };
