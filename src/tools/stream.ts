@@ -80,7 +80,7 @@ import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
 import { nameAtTheDoor, noteLook, reflect } from '../looks.js';
 import { rideOrientation } from '../orientation.js';
-import { followsOf, lensLaw, composeLensMedium } from './lens.js';
+import { followsOf, lensLaw, lensVoice, composeLensMedium } from './lens.js';
 import { raised, nodeAt, linesAt, dotted, type CrossLine } from '../cross.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
@@ -403,6 +403,37 @@ export function acrossOf(mb: Block, beats: string[]): { lines: SpanLine[] } {
     else open = null;
   }
   return { lines };
+}
+
+/** The label a door writes at a mirror's birth — the door's words, never the
+ *  holder's (availability.html founds a mirror with the same). */
+export const mirrorBorn = (handle: string, field: string, spineName: string): string =>
+  `MIRROR — ${handle}'s readings on the ${field} field (${spineName}), at the spine's own addresses. ` +
+  `Sovereign to its holder; nobody else writes here. Silence at an address is honest absence, not a gap to be filled.`;
+
+/** Does this family's law keep a STANDING WORD? A position of its law, to the
+ *  second rung, opening THE STANDING WORD (function:availability 1.2); a family
+ *  whose law says nothing of it is read as every family was. Pure. */
+export function standingLaw(op: Block | null): boolean {
+  const walk = (n: unknown, depth: number): boolean => {
+    if (/^\s*THE STANDING WORD\b/.test(voiceOf(n) ?? '')) return true;
+    return depth < 2 && !!n && typeof n === 'object' && '123456789'.split('').some((d) => walk((n as Record<string, unknown>)[d], depth + 1));
+  };
+  return '123456789'.split('').some((d) => walk((op as Record<string, unknown> | null)?.[d], 1));
+}
+
+/** A HOLDER'S STANDING WORD — what holds at every time, which no cell of the
+ *  clock can carry ('Wednesdays are open'): their mirror's own root voice, the
+ *  rung above every address and so true of each. A label a door or the beach
+ *  wrote at the birth is not the holder's word, so a root that says only that
+ *  says nothing, and what follows it is theirs. Pure. */
+export function standingWordOf(mb: Block, name: string, field: string, spineName: string, origin: string): string | null {
+  let word = (lensVoice(mb) ?? '').trim();
+  const who = name.slice(field.length + 1);
+  for (const label of [mirrorBorn(who, field, spineName), `${name} at ${new URL(origin).host}.`]) {
+    if (word.startsWith(label)) word = word.slice(label.length).trim();
+  }
+  return word || null;
 }
 
 /** Say one line on every beat of a span in the holder's own mirror — or clear
@@ -755,7 +786,12 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // A family whose law says nothing there lays every mirror side by side, as
   // every family did; and only the mirrors to be shown are read.
   const opEarly = await (opP ?? loadBlock(origin, opName).catch(() => null));
-  const following = lensLaw(opEarly && typeof opEarly.block === 'object' && opEarly.block !== null ? (opEarly.block as Block) : null).following;
+  const opBlock = opEarly && typeof opEarly.block === 'object' && opEarly.block !== null ? (opEarly.block as Block) : null;
+  const following = lensLaw(opBlock).following;
+  // THE STANDING WORD — a family whose law keeps one lays each holder's root
+  // voice beside their lines across a span, and hands a holder theirs back at
+  // every say (standingLaw, standingWordOf).
+  const standing = standingLaw(opBlock);
   const followed: Set<string> | null = following ? new Set([handle.toLowerCase(), ...(await followsOf(handle)).map((h) => h.toLowerCase())]) : null;
   const allMirrorNames = (index?.blocks ?? []).filter((n) => n.startsWith(`${field}:`));
   const shownNames = followed ? allMirrorNames.filter((n) => followed.has(n.slice(field.length + 1).toLowerCase())) : allMirrorNames;
@@ -816,9 +852,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       let mrow = await mirrorNow();
       if (!mrow || typeof mrow.block !== 'object' || mrow.block === null) {
         mintedMirror = mirrorName;
-        const born =
-          `MIRROR — ${handle}'s readings on the ${field} field (${spineName}), at the spine's own addresses. ` +
-          `Sovereign to its holder; nobody else writes here. Silence at an address is honest absence, not a gap to be filled.`;
+        const born = mirrorBorn(handle, field, spineName);
         try {
           // BORN LOCKED to the holder's key when a key rides the say, as the born
           // text promises and as the /now page founds a mirror (new_lock on the
@@ -1018,7 +1052,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   const crossed: CrossLine[] = [];
   // ACROSS A SPAN a reading is each touched day's line and the runs of beats
   // beneath it (acrossOf) — a holder with neither has said nothing there.
-  const across: ({ who: string } & ReturnType<typeof acrossOf>)[] = [];
+  const across: ({ who: string; word: string | null } & ReturnType<typeof acrossOf>)[] = [];
   await Promise.all(
     mirrorNames.map(async (name) => {
       const who = name.slice(field.length + 1);
@@ -1026,7 +1060,8 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       if (!mb) { silent.push(who); return; }
       if (span) {
         const a = acrossOf(mb, span.beats);
-        if (a.lines.length) across.push({ who, ...a }); else silent.push(who);
+        const word = standing ? standingWordOf(mb, name, field, spineName, origin) : null;
+        if (a.lines.length || word) across.push({ who, word, ...a }); else silent.push(who);
         return;
       }
       if (spineFloor !== TEMPORAL_FLOOR) {
@@ -1143,7 +1178,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     across.sort((a, b) => a.who.localeCompare(b.who));
     lines.push(
       `# Across the span, on the ${span.place} clock — ${across.length} ${across.length === 1 ? 'holder says' : 'holders say'} something here` +
-      ` (the SNAPSHOT: each holder's lines touching it, the year down to the beats, a run of beats saying one thing as one block, listed and never synthesised)`,
+      ` (the SNAPSHOT: each holder's ${standing ? 'standing word, then their ' : ''}lines touching it, the year down to the beats, a run of beats saying one thing as one block, listed and never synthesised)`,
     );
     if (across.length === 0) lines.push('  (nobody has said anything touching this span — everyone shown is available, as far as their lines go)');
     const when = (l: SpanLine) => {
@@ -1153,7 +1188,9 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     };
     for (const a of across) {
       lines.push(`## ${a.who}${a.who === handle ? ' (you)' : ''}`);
+      if (a.word) lines.push(`  standing word, at every time: ${a.word}`);
       for (const l of a.lines) lines.push(`  ${when(l)}  ${l.text}`);
+      if (!a.lines.length) lines.push('  (nothing said across the span)');
     }
   } else {
     lines.push(
@@ -1218,6 +1255,10 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       if (replacedLine) lines.push(`  it replaced your own line there: '${clip(replacedLine, 160)}' — if another instance of you wrote that, say it back, and tie yours at a digit no one holds (function:thread 3)`);
     }
     if (keptTo) lines.push(`✓ fold kept at ${keptTo}`);
+    // A holder saying in a family that keeps a standing word is handed theirs
+    // back, so a calendar synced by their AI meets it at every line it says.
+    const ownWord = standing && saidBlock && !spanSaid?.cleared ? standingWordOf(saidBlock, mirrorName, field, spineName, origin) : null;
+    if (ownWord) lines.push(`  your standing word, at your mirror's root, holds at every time — say nothing that it rules out (function:${field}): ${ownWord}`);
   }
 
   return out(lines.join('\n'));
