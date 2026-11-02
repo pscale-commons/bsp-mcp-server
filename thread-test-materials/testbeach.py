@@ -24,6 +24,15 @@ LAW_ROOT = json.load(open(os.path.join(HERE, "teachings", "function-thread.json"
 WHOLE_CHARS = 6000
 # A run set up to meet a thread as a live mind does holds the law's branches and the way as plain blocks.
 TAUGHT = {"function:thread": "function-thread.json", "ways:thread": "ways-thread.json"}
+# What the router's envelope says of the law and of the way a law names (tools/stream.ts wayHandedOver); smoke:thread
+# holds these words and way_w2.txt to what the router prints. A run set up with way_once gets them as a session does:
+# whole in its first read or say, and after that that they stand.
+LAW_FIRST = "# The law — function:thread, this family’s operator: its root line stands here, and its branches at function:thread, read when the law is needed, never to say a line"
+LAW_STANDS = "# The law — function:thread, standing as it was given to you earlier in this session (read function:thread to have it whole again)"
+WAY_FIRST = "# The way — ways:thread, how a mind carries this family's work; given once in a session"
+WAY_STANDS = "# The way — ways:thread, standing as it was given to you earlier in this session (read ways:thread to have it whole again)"
+WAY_TEXT = open(os.path.join(HERE, "teachings", "way_w2.txt")).read().strip()
+WAY_SECTION = WAY_FIRST + "\n" + WAY_TEXT
 
 
 def load(d):
@@ -114,6 +123,16 @@ def answered(s, p, me):
     return None
 
 
+def law_section(s):
+    """The law's section as this read prints it, and the way beside it in a run set up for that."""
+    if not s.get("way_once"):
+        return [LAW_FIRST, LAW_ROOT]
+    if s.get("told"):
+        return [LAW_STANDS, WAY_STANDS]
+    s["told"] = True
+    return [LAW_FIRST, LAW_ROOT, "", WAY_SECTION]
+
+
 def disc(b):
     """The probe the router answers a block past its size with: every position's opening line, and how to take it whole."""
     clip = lambda t: t if len(t) <= 150 else t[:150] + "..."
@@ -137,8 +156,9 @@ def main():
             reg = s["registry"].get(n)
             ls = lines_under(s, a)
             rows = [f"stream:thread — at {a}", "", "# The ladder", f"  p0 [{n}] {reg if reg else '(no thread at this number)'}", "",
-                    "# The law — function:thread, this family’s operator: its root line stands here, and its branches at function:thread, read when the law is needed, never to say a line",
-                    LAW_ROOT, "", f"# Readings at {a} — {len({h for _, h, _ in ls})} voices"]
+                    *law_section(s), "", f"# Readings at {a} — {len({h for _, h, _ in ls})} voices"]
+            if s.get("way_once"):
+                save(d, s)
             rows += [f"- {addr(q)} · {h}: {t}" for q, h, t in ls] or ["  (no hand has a line at or beneath this address)"]
             out = "\n".join(rows)
     elif cmd == "say":
@@ -177,8 +197,10 @@ def main():
                 set_line(m, p, line)
                 for k, o in enumerate(opts, 1):
                     set_line(m, p + [str(k)], o)
+                first = s.get("way_once") and not s.get("told")
+                law = law_section(s) if first else []
                 save(d, s)
-                out = (f"said at {a} in thread:{me}" + (f" (it replaced your earlier line there)" if prev is not None and prev != line else "")
+                out = (("\n".join(law) + "\n\n" if law else "") + f"said at {a} in thread:{me}" + (f" (it replaced your earlier line there)" if prev is not None and prev != line else "")
                        + (f"; options at " + ", ".join(addr(p + [str(k)]) for k in range(1, len(opts) + 1)) if opts else "")
                        + "\n\n" + "\n".join(f"- {addr(q)} · {h}: {t}" for q, h, t in lines_under(s, a)))
     elif cmd == "open":

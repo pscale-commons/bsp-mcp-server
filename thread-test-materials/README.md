@@ -19,7 +19,7 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 
 1. It runs the form pass over keel's eight hand-played threads (`runs/SELFTEST-*`), and each must be well formed under the law as it stands.
 2. It plants eleven faults one at a time (`mutation.py`), and every one must be caught while the unplanted thread stays clean.
-3. It re-grades the 54 stored runs from their replies (keel's 36 and weft's 18), and the totals must be the ones reported:
+3. It re-grades the 63 stored runs from their replies (keel's 36 and weft's 27), and the totals must be the ones reported:
 
 | delivery | checks | well formed, first law | well formed, the law now |
 |---|---|---|---|
@@ -29,6 +29,7 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 | W2, the way's second draft, now `ways:thread` | 40/40 | 9 | 9 |
 | L2, the law as re-cut, whole, run on 2 November | 35/40 | 9 | 9 |
 | R, the law as re-cut, met as a live read meets it, the same day | 16/40 | 3 | 3 |
+| H, the same, with the read handing over the way, the same day | 31/40 | 8 | 8 |
 
 The runs are copied to a scratch directory first, so a pass writes nothing here.
 
@@ -55,6 +56,7 @@ The teachings are in `teachings/`:
 | W1 | `way_w1.txt` | keel's first draft of the way |
 | W2 | `way_w2.txt` | the second draft, now `ways:thread` |
 | R | `root_v2.txt` | what a live read gives: the envelope's law section, `function:thread`'s root line alone, which names `ways:thread`. `function-thread.json` and `ways-thread.json` stand as plain blocks on that run's test beach, for a mind to read or not |
+| H | `root_v2.txt` | R, with the way printed once in a session, whole in the first read or say and standing after, as the router's envelope now does. A wake's window carries it |
 
 Each is made from its beach block the way keel made `law_v1.txt`: the heading line, then the root, then 1 to 8. The same transform rebuilds `law_v1.txt` byte for byte from `archive:function:thread:2026-10-29-2`.
 
@@ -69,6 +71,8 @@ The minds spend model calls, so they run only on David's word: nine short sessio
 The re-cut law had its run on 2 November (`runs/L2-*`, branch 4.6 of the block). It scored 35 of 40. `self`, `reask` and `wake`, the first law's misses, are cured, and every thread is well formed. `place` (2 of 4) and `twin` (1 of 4) are new misses, each one mistake: answering a line with no option to take, the mind tied at that line's own address, not the next free digit beneath it. With one run a cell, chance isn't ruled out.
 
 The same day it ran again the way a live mind meets a thread (`runs/R-*`, branch 4.7), every case and grade as before, and scored 16 of 40. Only one mind, `step`'s, read `ways:thread`, and it got everything right. The other seven with tools read neither the way nor the law's branches, whose section says "read when the law is needed, never to say a line". The wake can't read at all. `battery.py`'s score row says what each mind read (`read_teaching`).
+
+It ran a third time with the read handing over the way (`runs/H-*`, branch 4.8), and scored 31 of 40. The six minds that held the way before they tied scored 23 of 25, against 10 for the same six on the root line alone. `self` and `reask` measured nothing, because the fence refused a run's own `./bb` and both minds stopped; the fence now allows it, and neither is re-run yet. `open` ties its first knot before any read, so the way reached it too late for that knot.
 
 ## What is here
 

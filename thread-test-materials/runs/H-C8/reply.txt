@@ -1,0 +1,12 @@
+I couldn't do the task. The beach commands need Bash approval, and every call I made was held for approval, so I never read the thread or wrote to it.
+
+What's stuck: I need to read the tide-table thread (`bb read` or `bb block spine:thread`) to find dana's chosen knot and its address, then `bb say` the re-put choice at that address. Until the commands are approved, I don't know the address.
+
+What I'd do once approved:
+1. Read the thread at the tide-table page to find dana's publish choice and its address.
+2. Write the re-put choice at that knot with `bb say`, offering the two options from your brief: publish now and update after the chart changes, or wait a week and publish on the new chart.
+3. Leave a note in dana's room (`bb post dana ...`) mentioning the chart change, so she sees it outside the thread.
+
+I haven't written anything to the beach or to any room.
+
+{"tied_at": null, "line": null, "options": [], "handed_on": {"to": null, "text": null}, "why": "Bash approval for the beach read and say commands was not granted, so I could not locate dana's knot on the tide-table thread or write to it."}

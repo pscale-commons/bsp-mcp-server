@@ -1,0 +1,3 @@
+1.1 | fetched this month's harbour feed: 62 November tide times returned, saved at tides:feed 11; the feed is up, so 1.2 does not hold · waits on rook · read: tides:feed 11, tides:draft 1 | options: none
+
+I answered at 1.1 because that is option 1 of rook's knot 1, and the waker's fetch took that step.

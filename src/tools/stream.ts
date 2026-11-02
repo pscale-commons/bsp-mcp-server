@@ -516,6 +516,34 @@ export function standingBrief(key: string | null, lawText: string, nowMs: number
 /** For tests: forget what was given. */
 export function resetStanding(): void { standing.clear(); }
 
+/** THE WAY A LAW NAMES IS HANDED OVER, ONCE (proposals/2026-11-02-the-read-hands-
+ *  over-the-way). A mind told where a family's way stands mostly does not go: of
+ *  eight free to fetch ways:thread one did, and it alone got everything right
+ *  (pscale://thread-test 4.7). So a law whose root line closes 'is ways:<name>.'
+ *  has that way printed beside it, by the rule the law's own section keeps. The
+ *  law says which family has one, and nothing here names a family: a way merely
+ *  named for a field, or mentioned in passing, hands nothing over. Printed is its
+ *  root and its steps without its provenance, which is the text the battery ran.
+ *  Both doors call this, so a session is given it once across them. */
+const LAW_NAMES_ITS_WAY = /\bis (ways:[a-z][a-z0-9-]*)\.\s*$/;
+export function wayText(way: Block): string {
+  const steps = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+    .map((d) => [d, voiceOf((way as Record<string, unknown>)[d])] as const)
+    .filter(([, t]) => t && !/^PROVENANCE\b/.test(t))
+    .map(([d, t]) => `${d} ${t}`);
+  return [voiceOf(way) ?? '', ...steps].filter(Boolean).join('\n\n');
+}
+export async function wayHandedOver(session: string | null | undefined, origin: string, law: unknown, nowMs: number): Promise<string[]> {
+  const name = LAW_NAMES_ITS_WAY.exec(voiceOf(law) ?? '')?.[1];
+  if (!name) return [];
+  const row = await loadBlock(origin, name).catch(() => null);
+  if (!row || !row.block || typeof row.block !== 'object') return [];
+  const text = wayText(row.block as Block);
+  return standingBrief(session ? `${session}|${origin}|${name}` : null, text, nowMs)
+    ? [`# The way — ${name}, standing as it was given to you earlier in this session (read ${name} to have it whole again)`]
+    : [`# The way — ${name}, how a mind carries this family's work; given once in a session`, text];
+}
+
 /** A block born into a family is born AT THE FAMILY'S FLOOR. Floor is the depth
  *  of the underscore chain, and it is what anchors pscale 0 — so a mirror born
  *  one deep beside a spine standing ten deep is not merely untidy: the same node
@@ -1175,6 +1203,8 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       lines.push(lawLines.length > 1 ? lawLines[1] : lawLines[0]);
     }
   }
+  const way = await wayHandedOver(session, origin, oprow?.block, nowMs);
+  if (way.length) lines.push('', ...way);
 
   crossed.sort((a, b) => {
     const ka = a.addr.replace('.', ''), kb = b.addr.replace('.', '');

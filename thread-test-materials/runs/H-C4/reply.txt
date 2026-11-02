@@ -1,0 +1,3 @@
+I recorded dana's "Publish it" on thread 1 at option 1.11 ("dana publishes the page") in my mirror. The line is marked complete, so nothing is handed on.
+
+{"tied_at": "1.11", "line": "dana publishes the page: rook published it, live at tides:live, at dana's word 'Publish it' · complete · read: tides:live", "options": [], "handed_on": {"to": null, "text": null}, "why": "Dana's 'Publish it' is option 1.11 of the knot wren left for her decision, so the line goes at that option's address."}

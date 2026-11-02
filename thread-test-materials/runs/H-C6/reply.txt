@@ -1,0 +1,3 @@
+I made draft 3 with the low-water marks shown, tied that on thread 1 at 1.12, and handed it to dana's room. Dana now has two options: accept draft 3 as the page (1.121) or one more pass on the marks (1.122).
+
+{"tied_at": "1.12", "line": "rook made draft 3, draft 2 with the low-water marks shown · waits on dana · read: tides:draft 3, thread:1.12", "options": ["accept draft 3 as the page", "one more pass on the low-water marks"], "handed_on": {"to": "dana", "text": "thread:1.12 — draft 3 is ready with the low-water marks shown; waits on your decision"}, "why": "1.12 is the knot dana tied asking for the low-water marks, and it waits on rook, so my answer goes at that address with the options for dana's next choice beneath it."}

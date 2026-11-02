@@ -1,0 +1,7 @@
+The moorings page is on the beach at thread 3, and the choice is waiting on dana. One flaw to know about: my knot at 3 has no closing ` · waits on dana · read: moorings:draft` tail. The beach doesn't let me edit a knot once it's tied, and there's no clean digit free beneath it to correct it, so it stands as written. The handoff note in dana's room names thread 3 and both options, so the next reader can still find and act on it.
+
+- Opened thread 3, "the moorings page · opened by rook", in the registry.
+- Tied the knot at 3 with the choice: 3.1 wren checks the list against the harbour register first; 3.2 dana publishes it as it is.
+- Posted to dana's room pointing at thread:3. I chose dana because the choice is hers; wren is only the first option's actor.
+
+{"tied_at": "3", "line": "moorings:draft 1 is built: 48 moorings, by pontoon and berth. It is not yet checked against the harbour register. Which way next?", "options": ["wren checks the list against the harbour register first", "dana publishes it as it is"], "handed_on": {"to": "dana", "text": "thread:3 — moorings:draft 1 (48 moorings, by pontoon and berth) waits on your choice: 3.1 wren checks the list against the harbour register first, or 3.2 you publish it as it is. Read the thread at 3."}, "why": "The knot is the open choice on the moorings page, so it sits at the thread's own number, 3, and the handoff goes to dana because she makes the choice."}

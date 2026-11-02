@@ -43,12 +43,18 @@ WINDOW = "\n".join([
     "  14.12 · happyseaurchin: asked for changes — admit the room plug as a third tag",
     "  14.121 · happyseaurchin: resubmit",
     "",
+    "# The way — ways:thread, how a mind carries this family's work; given once in a session",
+    "THE WAY OF A THREAD — how a mind carries a piece of work.",
+    "",
+    "1 FIND IT, OR OPEN IT.",
+    "",
     "═══════════ THE COMPASS — this beach's lighthouse at a glance ═══════════",
     "COMPASS-BODY",
 ])
 sec = waker.thread_section(WINDOW)
 check(sec.startswith("═══════════ THE THREAD — thread:14.12"), "the section opens on its own header")
 check("14.121 · happyseaurchin: resubmit" in sec, "every knot at the place rides")
+check("# The way — ways:thread" in sec and "1 FIND IT" in sec, "and the way the door prints beside them")
 check("COMPASS" not in sec and "ROOM-BODY" not in sec, "nothing else of the window rides")
 check(waker.thread_section("no sections here") == "", "a window with no thread gives nothing")
 
@@ -76,6 +82,9 @@ LONG = "═══════════ THE THREAD — thread:2, the work take
 ring = json.loads(waker.ring_payload("keel", "pool:egg-one", 136, "egg-one — keel. A thread waits: thread:2.", LONG))
 check(ring["voice"] == "egg-one — keel. A thread waits: thread:2.", "the voice rides as it landed")
 check(ring.get("thread") == LONG and len(LONG) > 2500, "a thread section past 2,500 characters rides whole beside it")
+WITH_WAY = LONG + "\n\n# The way — ways:thread, how a mind carries this family's work; given once in a session\n" + "THE WAY OF A THREAD. " * 300
+ring_way = json.loads(waker.ring_payload("keel", "pool:egg-one", 136, "thread:2", WITH_WAY))
+check(ring_way.get("thread") == WITH_WAY and len(WITH_WAY) > 8000, "the door's section with the way beside its knots rides whole")
 check("thread" not in json.loads(waker.ring_payload("keel", "pool:egg-one", 137, "hello")), "a ring that names no place carries no thread")
 
 os.environ["ANTHROPIC_API_KEY"] = "offline-test-never-spent"  # the kernel binds a key at import; nothing calls out
@@ -83,7 +92,8 @@ import kernel  # noqa: E402
 given = kernel.ring_given(ring)
 check(given.get("thread") == LONG, "the kernel lays the live end in the given as its own key")
 check(given["voice"] == ring["voice"], "and the voice beside it, unclipped by the thread")
-check("ways:thread" in given["_"] and "read it before you tie" in given["_"].lower(), "the ring's assignment says the live end is there to read before tying")
+check("the way of a thread" in given["_"] and "read it before you tie" in given["_"].lower(), "the ring's assignment says the live end and the way are there to read before tying")
+check(kernel.ring_given(ring_way).get("thread") == WITH_WAY, "and the kernel lays that in whole")
 plain = kernel.ring_given({"ringer": "keel", "pool": "pool:egg-one", "slot": "137", "voice": "hello"})
 check("thread" not in plain and plain["_"] == kernel.RING_LEAD, "a ring with no thread composes exactly as before")
 

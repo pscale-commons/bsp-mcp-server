@@ -6,7 +6,8 @@
 #
 #   thread-test-materials/run-minds.sh --spend [delivery] [cases]
 #     delivery  L2 (function:thread as re-cut, the default), R (the root line a live read gives,
-#               the law's branches and the way on the test beach), W2 (ways:thread), L, W1 ...
+#               the law's branches and the way on the test beach), H (R, with the way printed
+#               once in a session as the read now does), W2 (ways:thread), L, W1 ...
 #     cases     C1,C2,... (default all nine)
 #
 # Each mind gets its brief on stdin and one tool, Bash, fenced to its own run's test-beach
@@ -28,7 +29,7 @@ ASK=(--model haiku --strict-mcp-config --mcp-config '{"mcpServers":{}}' --settin
      --no-session-persistence --max-budget-usd 0.25 --output-format json)
 for c in ${(s:,:)CASES}; do
   R=$THREAD_TEST_RUNS/$D-$c
-  if [[ $c == C9 ]]; then TOOLS=(--tools ""); else TOOLS=(--tools Bash --allowedTools "Bash($R/bb:*)"); fi
+  if [[ $c == C9 ]]; then TOOLS=(--tools ""); else TOOLS=(--tools Bash --allowedTools "Bash($R/bb:*)" "Bash(./bb:*)"); fi
   (cd $R && "${FRESH[@]}" claude -p "${ASK[@]}" "${TOOLS[@]}" < $R/brief.txt > $R/run.json 2> $R/err.txt)
   rc=$?
   python3 -I -c '
