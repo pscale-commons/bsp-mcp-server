@@ -1,0 +1,7 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["room", "wren"], "chars": 28}
+{"cmd": ["block", "harbour:chart"], "chars": 117}
+{"cmd": ["read", "1"], "chars": 1336}
+{"cmd": ["say", "1.1", "dana, the harbour changes its tide chart next week (harbour:chart 2), after the draft was reviewed against chart 1. Choose again how the page goes out.", "--option", "publish now, and update the page after the chart changes", "--option", "wait a week and publish on the new chart"], "chars": 108}
+{"cmd": ["say", "1.13", "dana, the harbour changes its tide chart next week (harbour:chart 2). The draft was reviewed against chart 1, so choose again how the page goes out.", "--option", "publish now, and update the page after the chart changes", "--option", "wait a week and publish on the new chart"], "chars": 385}
+{"cmd": ["read", "1"], "chars": 1575}

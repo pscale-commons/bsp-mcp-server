@@ -1,0 +1,6 @@
+{"cmd": ["room", "wren"], "chars": 89}
+{"cmd": ["read", "1"], "chars": 999}
+{"cmd": ["block", "tides:draft", "1"], "chars": 71}
+{"cmd": ["block", "tides:draft", "2"], "chars": 75}
+{"cmd": ["say", "1.1", "reviewed tides:draft 1 against the harbour's data: two tide times were wrong; corrected in tides:draft 2, which now matches the data", "--option", "publish the page as tides:draft 2", "--option", "ask for another pass"], "chars": 346}
+{"cmd": ["post", "dana", "Review of the tide-table page is done. Two tide times in draft 1 were wrong; I corrected them in tides:draft 2, which matches the harbour's data. Your decision: publish draft 2, or ask for another pass. The line is on thread 1.1."], "chars": 29}

@@ -1,0 +1,5 @@
+I tied my knot at 1.14 and handed it to dana's room. The knot says draft 2 breaks on phones, that I fixed it in tides:draft 3, and that none of the existing options mention this. It waits on dana.
+
+I offered two options: publish draft 3 (1.141) or publish draft 2 as wren reviewed it (1.142). The address 1.14 was the next free digit beneath 1.1, since 1.11 to 1.13 were already taken.
+
+{"tied_at": "1.14", "line": "rook fixed the tide-table layout for phones in tides:draft 3; draft 2, the reviewed one, breaks on phones, and none of the options above says so · waits on dana · read: tides:draft 2, tides:draft 3", "options": ["publish draft 3, the phone-fixed layout", "publish draft 2, as wren reviewed it"], "handed_on": {"to": "dana", "text": "thread:1.14 — dana decides whether the tide-table page publishes draft 3 (phones fixed by rook) or draft 2 (as wren reviewed it); draft 2 breaks on phones"}, "why": "It is a step no existing option names, so it takes the next free digit beneath 1.1, the line that waits on dana."}

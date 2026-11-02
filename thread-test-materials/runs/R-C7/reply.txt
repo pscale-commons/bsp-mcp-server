@@ -1,0 +1,7 @@
+I checked the low-water marks against the harbour master's table, corrected one in tides:draft 4, and left the decision with dana.
+
+- **Thread:** My line is at 1.121, the live end of the tide-table page, and it waits on dana. It offers two options: 1.1211 "publish tides:draft 4" and 1.1212 "another pass".
+- **Replaced line:** The write replaced my earlier line at 1.121, which read "added the low-water marks… read: tides:draft 3". The new line covers the same work and points to draft 4, but the draft 3 wording is gone from the thread.
+- **Hand-off:** I posted a note in pool:dana (at dana's line 2) saying draft 4 is ready and pointing to the two options.
+
+{"tied_at": "1.121", "line": "checked the low-water marks against the harbour master's table: one corrected in tides:draft 4 · waits on dana · read: tides:draft 4", "options": ["publish tides:draft 4", "another pass"], "handed_on": {"to": "dana", "text": "tides:draft 4 is ready: draft 3 with one low-water mark corrected against the harbour master's table. Thread 1 waits on you: publish it (1.1211) or ask for another pass (1.1212)."}, "why": "1.121 is the live end of thread 1 where my knot was waiting on dana, so the corrected draft 4 belongs there as the knot dana answers."}

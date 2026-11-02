@@ -1,0 +1,7 @@
+I recorded dana's decision on thread 1, the tide-table page. Her "Publish it" is now at 1.21, under rook's earlier line "dana decides without a review" at 1.2.
+
+My first write went to 1.2, but that call overwrote the existing line there, so I wrote the original text back and put the publish record at 1.21. The thread now reads as before, with the new line beneath it.
+
+No options were offered and nothing was handed to another room, since the page is already live at `tides:live`.
+
+{"tied_at": "1.21", "line": "dana said 'Publish it' with no review; rook published the tide-table page, live at tides:live", "options": [], "handed_on": {"to": null, "text": null}, "why": "It is the branch where dana decided without a review (1.2), so her publish decision sits one step below it as 1.21."}

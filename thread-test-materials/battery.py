@@ -8,7 +8,10 @@ on a test beach, graded by the form checker and by what each case expects.  keel
 
 delivery: the teaching a mind is handed, from teachings/ —
   L   function:thread as keel ran it (law_v1.txt, the registry law of 29 October morning)
-  L2  function:thread as re-cut that evening (law_v2.txt; the law as it stands)
+  L2  function:thread as re-cut that evening (law_v2.txt; the law as it stands), whole
+  R   what a live read gives (root_v2.txt): the envelope's law section, the root line alone, which names
+      ways:thread; the law's branches and the way stand on the test beach as plain blocks, for a mind to
+      read or not (bb block function:thread 2, bb block ways:thread), and the grade row says which it read
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 is ways:thread
   a name ending x<k> (Lx2) is round k of the same teaching
 cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake
@@ -22,7 +25,8 @@ sys.path.insert(0, HERE)
 import thread_form as TF
 
 RUNS = os.environ.get("THREAD_TEST_RUNS") or os.path.join(HERE, "runs")
-TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt"}
+TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt", "R": "root_v2.txt"}
+LIVE = {"R"}
 NAMES = ["tides:draft", "tides:live", "tides:feed", "moorings:draft", "harbour:chart", "harbour:register", "pool:tides"]
 HANDS = ["rook", "wren", "dana", "kestrel"]
 
@@ -213,6 +217,9 @@ def setup(dname, cases):
         s["me"] = CASES[case]["me"]
         s["blocks"] = BLOCKS[case]
         s["names"] = sorted(set(s.get("names", [])) | set(BLOCKS[case]))
+        if dname.split("x")[0] in LIVE:
+            s["live"] = True
+            s["names"] = sorted(set(s["names"]) | {"function:thread", "ways:thread"})
         json.dump(s, open(os.path.join(d, "state.json"), "w"), indent=1, ensure_ascii=False)
         json.dump(s, open(os.path.join(d, "start.json"), "w"), indent=1, ensure_ascii=False)
         bb = os.path.join(d, "bb")
@@ -300,6 +307,7 @@ def grade(dname, case):
     row["calls"] = len(m)
     row["reads"] = sum(1 for x in m if x["cmd"][0] in ("read", "block", "room"))
     row["thread_reads"] = [x["cmd"][1] for x in m if x["cmd"][0] == "read"]
+    row["read_teaching"] = [" ".join(x["cmd"][1:]) for x in m if x["cmd"][0] in ("block", "read") and re.search(r"function:thread|ways:thread", " ".join(x["cmd"][1:]))]
     row["wrote"] = sorted(added)
     row["changed_own"] = changed
     reg_new = {k: v for k, v in end["registry"].items() if k not in start["registry"]}
@@ -308,7 +316,7 @@ def grade(dname, case):
     row["opened"] = reg_new
     row["posted"] = posts
     # the form checker on the thread touched
-    json.dump({**end, "names": sorted(set(NAMES) | set(end.get("blocks", {})))}, open(os.path.join(d, "end-view.json"), "w"))
+    json.dump({**end, "names": sorted(set(NAMES) | set(end.get("blocks", {})) | set(end.get("names", [])))}, open(os.path.join(d, "end-view.json"), "w"))
     view = TF.View.state(os.path.join(d, "end-view.json"))
     tnum = (sorted(reg_new)[0] if reg_new else "1")
     F1, S1 = TF.check(view, tnum, phase2=False)
@@ -408,7 +416,8 @@ if __name__ == "__main__":
         rows = [grade(dname, c) for c in cases]
         json.dump(rows, open(os.path.join(RUNS, f"scores-{dname}.json"), "w"), indent=1, ensure_ascii=False)
         for r in rows:
-            print(f"{r['run']:8} {r.get('score','-'):5} calls {r.get('calls','-')!s:3} v1 {r.get('form_v1','-')} | p2 {r.get('form_p2','-')}")
+            print(f"{r['run']:8} {r.get('score','-'):5} calls {r.get('calls','-')!s:3} v1 {r.get('form_v1','-')} | p2 {r.get('form_p2','-')}"
+                  + (f" | read {'; '.join(r['read_teaching'])}" if r.get("read_teaching") else ""))
             for e in r.get("expect", []):
                 if e.startswith("MISS"):
                     print("          " + e)

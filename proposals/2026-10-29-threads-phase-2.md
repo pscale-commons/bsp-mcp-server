@@ -118,7 +118,7 @@ Every step is paid by the mind that takes it. The checker reads the registry and
 ## 9. What waits
 
 - **David's two hands** for the waker: the *Railway Config File* setting, then the merge. Done 29 October: Railway built the waker on this PR's merge at 18:08Z.
-- **What follows the fresh minds' result** (below) is David's, at `thread:2.1121`.
+- **What follows the fresh minds' results** (below) is David's, at `thread:2.11211`.
 - **keel's knot at 1.1** and **egg-one's at 2.4** are their hands' own: keel may re-say 1.1 under the new law; egg-one's stands as the record of a blind wake.
 - **Proposal decisions as thread knots**, keel's rollout: worth one trial, on the loom, before any change to how proposals ask.
 - **A page's tap past the ninth thread** (pscale-beach, upstream-owed): the beach's voice founds a new mirror at the registry's floor, but writes into a standing mirror as it stands. Once the registry nests, a person's mirror born at floor 1 needs raising before a tap at 11.3, as the router raises a writer's mirror before every say through it.
@@ -160,3 +160,33 @@ At David's word, relayed by the bee ("Go ahead with fresh runs"), the nine uses 
 **How far to trust it.** One run a cell, so chance isn't ruled out, though the morning's law never missed these in two rounds. No mind reached for `ways:thread`, which this test beach doesn't hold, so this measures the law alone; `ways:thread`, the way the law's root now points to, is unchanged and stands at 40 of 40. On the real router, a say that replaces one's own line also tells the hand to say it back, which the test beach's shorter notice doesn't, so the twin's loss would be easier to repair there. The fence refused each tool-using mind one compound shell line, and each carried on with single commands.
 
 **What was changed.** Nothing in the law. A change to it is David's word first, by proposal and version (`thread:2.1121` offers it). The runner gained a clean environment, a budget cap per mind and a record of each mind's model and cost before it first spent, and the nine runs are kept in `thread-test-materials/runs/L2-*`, held to these figures by the CI pass.
+
+## The live read, 2 November 2026
+
+David's word, relayed by the bee, answering "Run the nine again the way a live mind meets a thread?": "Run them." The first run handed each mind `function:thread` whole, on a test beach that held no way, which is not how a live mind meets a thread. Here the nine ran again with one change. Each mind's teaching was what a live read gives it: the envelope's law section, the root line alone, which names `ways:thread`. The law's branches and `ways:thread` stood on the test beach as plain blocks, read through `bb block` or not, each mind's choice. Every case and grade stayed as they were. One fresh `claude-haiku-5-5` a use, about three cents in all at list price.
+
+| Use | Law whole | **Live read** | What the mind read | What it did |
+|---|---|---|---|---|
+| open | 6/6 | **4/6** | neither | its act closed on nobody; no place handed |
+| take | 5/5 | **2/5** | neither | the right address; closed on nobody; no place handed |
+| self | 5/5 | **2/5** | neither | the right address; not the option's words; closed on nobody; no place handed |
+| word | 4/4 | **0/4** | neither | tied beneath the wrong option, at 1.21 |
+| step | 4/4 | **4/4** | **`ways:thread`** | everything right: at 1.14, closed on dana, `thread:1.14` handed |
+| place | 2/4 | **2/4** | neither | at 1.12 beside dana, as before; closed on nobody |
+| twin | 1/4 | **1/4** | neither | over its own act at 1.121, as before; this act closed on dana |
+| reask | 4/4 | **0/4** | neither | over its own option at 1.13, closed on nobody; the test beach's copy of the answered-option guard refused its first try, at 1.1 |
+| wake | 4/4 | **1/4** | can't: no tools | wrote an address with two dots, which the walker refuses, so nothing landed |
+| **checks** | **35/40** | **16/40** | | |
+| well formed, the law as it stands | 9 of 9 | 3 of 9 | | the wake's only because nothing landed |
+| calls, median of uses 1-8 | 6 | 6.5 | | |
+
+**What it shows.**
+
+- **The pointer seldom hands over the way.** Of eight minds free to go, one did. It got everything right; the other seven scored 11 of 32, and none of them handed on a place. So the way's 40 of 40 holds for a mind handed the way.
+- **No mind read the law's branches.** The section a read prints says of them: "read when the law is needed, never to say a line". Tying a knot is saying a line, so these words steer a mind away from the branches that teach it. They are the same words for every family.
+- **place and twin look like an untaught mind's default.** Without the law they made the same two mistakes as with it whole, so the law's whole text didn't lift them from that default in these runs.
+- **A wake cannot fetch.** It gets only what its window holds, and a root line isn't enough to tie a knot.
+
+**How far to trust it.** One run a cell, of the smallest model. The brief still said "read what you need first", and a larger mind may read more. The test beach's second read repeats the section, where the router names it after the first, and its notice of a replaced line is shorter than the router's, which tells the hand to say the line back.
+
+**What was changed.** Nothing in the law. `thread:2.11211` offers David what follows: a root line that carries the rules a mind breaks, a read that hands over the way itself, or both standing as they are.

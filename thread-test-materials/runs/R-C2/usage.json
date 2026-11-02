@@ -1,0 +1,12 @@
+{
+ "models": [
+  "claude-haiku-5-5"
+ ],
+ "turns": 8,
+ "ms": 18844,
+ "cost_usd": 0.00342105,
+ "stop": "success",
+ "refused": [
+  "./bb room wren && echo \"---\" && ./bb block tides draft 2>/dev/null; echo \"---\"; ./bb read 1 2>&1 | head -50"
+ ]
+}

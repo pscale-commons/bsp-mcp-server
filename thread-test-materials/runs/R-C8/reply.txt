@@ -1,0 +1,7 @@
+The choice is back in front of dana on the tide-table thread, at 1.13. Her earlier publish choice at 1.11 is already answered, so the new options could not go under 1.1 and I put them at the live end.
+
+One side effect to flag: my say at 1.13 replaced the line already there, which was my own earlier line: "rook rebuilds it on the new chart first". That text is gone from the thread. If that plan still matters, it needs to go back in as a new knot.
+
+The thread now reads at 1.13: "dana, the harbour changes its tide chart next week (harbour:chart 2). The draft was reviewed against chart 1, so choose again how the page goes out.", with options 1.131 "publish now, and update the page after the chart changes" and 1.132 "wait a week and publish on the new chart". I checked it with a re-read. I did not post anything to dana's room.
+
+{"tied_at": "1.13", "line": "dana, the harbour changes its tide chart next week (harbour:chart 2). The draft was reviewed against chart 1, so choose again how the page goes out.", "options": ["publish now, and update the page after the chart changes", "wait a week and publish on the new chart"], "handed_on": {"to": null, "text": null}, "why": "Dana's publish choice at 1.11 is already answered and the 1.1 options are taken, so the new choice goes at the thread's live end, 1.13, where its options take fresh digits 1.131 and 1.132."}
