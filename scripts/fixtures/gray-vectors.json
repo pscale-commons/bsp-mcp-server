@@ -1,0 +1,85 @@
+{
+  "_": "gray test vectors — Argon2id(word, salt padded to 8 with NUL; t=3 m=65536 p=1, 64 bytes) → first 32 bytes the secretbox key; shared by keys.ts, gray.js, vault.js and stack.html. Regenerate with npm run smoke:gray-vectors -- --make.",
+  "vectors": [
+    {
+      "name": "a-day-at-the-place",
+      "secret": "amber kite seventeen",
+      "salt": "https://beach.happyseaurchin.com/w/community-recovery",
+      "plaintext": "Kept 2 November 2026 — a quiet day: two walks, one call, early night.",
+      "nonce_b64": "hkwstQB6PaajpaUmW1HDKWqdVLcf1VWi",
+      "key_hex": "42a26ef6d901df7837b3e52b9f067dafaead0a0384ec7c2299490d407acc79f6",
+      "ciphertext_b64": "pMW9VSqsnxVFqoeLvPjfsFQSLqx/ijoeMe614CzMJ9SBfIjyU/TRpKaV6qWAbOHoqk5vE3AeuP+yFLme5/aB8rOfaWPOpxg1Vezd/gFO1FJ8utFx5NjA",
+      "x25519_pub_b64": "d5wAhVWylFf1QObl9NZfpbMeh/N5m/xgrGZmsenNyl8=",
+      "ed25519_pub_b64": "lpYOa1f5f/7+5MVqd6l26BddudD80/DA2N3GJcy/JcA=",
+      "envelope": {
+        "1": "pMW9VSqsnxVFqoeLvPjfsFQSLqx/ijoeMe614CzMJ9SBfIjyU/TRpKaV6qWAbOHoqk5vE3AeuP+yFLme5/aB8rOfaWPOpxg1Vezd/gFO1FJ8utFx5NjA",
+        "2": "hkwstQB6PaajpaUmW1HDKWqdVLcf1VWi",
+        "9": {
+          "1": "self",
+          "_": "gray"
+        },
+        "_": "Encrypted (gray); readable only with the author secret."
+      }
+    },
+    {
+      "name": "a-short-handle",
+      "secret": "cedar lamp quiet river",
+      "salt": "Ada",
+      "plaintext": "Día claro — café ☕ y nada más.",
+      "nonce_b64": "HsPo9Ypbgi+V2EHw+tdtwfIY3fAOdwUn",
+      "key_hex": "d545d6598d0ee78043b8aca457f1bc584a01d5264382f0eaeae61c3436dd3dbc",
+      "ciphertext_b64": "oWRzWy9awfRXIenoqslT942LszbZiD/bGl2ARHpI4+Erm7fr/rF9XirhZMHNRqzRTDUmbcw=",
+      "x25519_pub_b64": "v2oHczonBQIdq+nDbcfr+YpDGKKoTCZyz8J07ZZG1ho=",
+      "ed25519_pub_b64": "wodhextvRsX59WpO1rykHowNQue7boXkdzRjFqzC6vA=",
+      "envelope": {
+        "1": "oWRzWy9awfRXIenoqslT942LszbZiD/bGl2ARHpI4+Erm7fr/rF9XirhZMHNRqzRTDUmbcw=",
+        "2": "HsPo9Ypbgi+V2EHw+tdtwfIY3fAOdwUn",
+        "9": {
+          "1": "self",
+          "_": "gray"
+        },
+        "_": "Encrypted (gray); readable only with the author secret."
+      }
+    },
+    {
+      "name": "a-handle",
+      "secret": "three words here",
+      "salt": "happyseaurchin",
+      "plaintext": "{\"_\":\"a card\",\"5\":\"beyond\"}",
+      "nonce_b64": "irLJuNqrxzFjBD6LiR6MhryupBMQOqMT",
+      "key_hex": "cf57c95b91b4c6e6284448aaf663f646d52f54e1263b6dcb9deefed4e3cdadb0",
+      "ciphertext_b64": "83xulyUiSkcsSRAU6MJhg7flg41kouyPZHPHYbDu7qlTyicll/8yR7YZbA==",
+      "x25519_pub_b64": "6siyJ6M5qByzhhdyRipDiQv5Du9zIXT9oWwdS5iR3ks=",
+      "ed25519_pub_b64": "ZwYHBIzCvRViwEeBPTj4iu4mwnhiQgPw08CHKNCu9Vo=",
+      "envelope": {
+        "1": "83xulyUiSkcsSRAU6MJhg7flg41kouyPZHPHYbDu7qlTyicll/8yR7YZbA==",
+        "2": "irLJuNqrxzFjBD6LiR6MhryupBMQOqMT",
+        "9": {
+          "1": "self",
+          "_": "gray"
+        },
+        "_": "Encrypted (gray); readable only with the author secret."
+      }
+    },
+    {
+      "name": "the-new-beach",
+      "secret": "weft everyday test key",
+      "salt": "https://beach.bringingtheflavour.com",
+      "plaintext": "the first day on David's own beach",
+      "nonce_b64": "wAUt32Pdx3GBXkj9FNe9UBcrFTlGVwuu",
+      "key_hex": "31f837215be9b3401a78318b784de3a12d98b559558f5b02157a248599e8a1ae",
+      "ciphertext_b64": "we8+tQAx9aVr6BHpdkf3O/Yw2zCnSVL/dzyKhtCPc0FKTDybqa6gHasMB7dOPIldL4c=",
+      "x25519_pub_b64": "84ne5GRboxAgq16wYXQ1bsk1qpCFME8rwEBpJuTaWTI=",
+      "ed25519_pub_b64": "3cwd7yz6jb8W3k1/gNOyy756okuFRjAf1qdaLWiRYQk=",
+      "envelope": {
+        "1": "we8+tQAx9aVr6BHpdkf3O/Yw2zCnSVL/dzyKhtCPc0FKTDybqa6gHasMB7dOPIldL4c=",
+        "2": "wAUt32Pdx3GBXkj9FNe9UBcrFTlGVwuu",
+        "9": {
+          "1": "self",
+          "_": "gray"
+        },
+        "_": "Encrypted (gray); readable only with the author secret."
+      }
+    }
+  ]
+}
