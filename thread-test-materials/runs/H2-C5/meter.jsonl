@@ -1,0 +1,4 @@
+{"cmd": ["read", "1.1"], "chars": 4943}
+{"cmd": ["block", "tides:draft"], "chars": 233}
+{"cmd": ["say", "1.14", "rook: found the page broke on phones and fixed the layout in tides:draft 3; draft 2 otherwise unchanged, so the phone fix is new to this choice \u00b7 waits on dana \u00b7 read: tides:draft 2, tides:draft 3", "--option", "publish draft 3 with the phone layout", "--option", "publish draft 2 as it stands; desktop only"], "chars": 378}
+{"cmd": ["post", "dana", "thread:1.14 \u2014 the tide-table page broke on phones; rook fixed the layout in tides:draft 3 (draft 2 otherwise the same). Waits on dana's choice at 1.14: publish draft 3, or draft 2 desktop only; 1.11\u20131.13 still stand."], "chars": 29}

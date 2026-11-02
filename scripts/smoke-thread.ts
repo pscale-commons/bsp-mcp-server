@@ -61,6 +61,7 @@ globalThis.fetch = (async (input: any, init: any = {}) => {
   const body = JSON.parse(init.body);
   const name = block ?? body.block;
   posts.push({ block: name, ...body });
+  if (body.append) return json(200, { ok: true, slot: '13', floor: 2 });
   const born = !(name in store);
   if (!born && locks[name] !== undefined && body.secret !== locks[name]) {
     return json(403, { error: `"${name}" inherits the lock at its root, secret required` });
@@ -74,6 +75,7 @@ globalThis.fetch = (async (input: any, init: any = {}) => {
 
 const { handleStreamEngage, resetStanding, wayText } = await import('../src/tools/stream.js');
 const { handlePlay } = await import('../src/tools/play.js');
+const { handleBsp } = await import('../src/tools/bsp.js');
 const { seatThread, orientationRider, toldKey, resetSeats } = await import('../src/orientation.js');
 const { crossSection, renderPlace } = await import('../src/cross.js');
 
@@ -188,6 +190,23 @@ r = await engageIn('w4', { handle: 'cy', at: '11' });
 ok(r.includes(standsAs) && !r.includes('1 FIND IT.'), 'a session that took the thread up at the door is not handed it again at its first read');
 d = await door('w5', {});
 ok(!d.includes('# The way'), 'a door with no thread prints no way');
+
+// ── the opening hands it over, before the first knot ──
+const append = async (session: string, p: Record<string, unknown>) =>
+  (await handleBsp({ agent_id: ORIGIN, append: true, content: 'a new thread · opened by cy', ...p } as any, { sessionId: session })).content.map((c: any) => c.text).join('\n');
+r = await append('w7', { block: 'spine:thread' });
+ok(r.includes(way) && r.includes('1 FIND IT.') && r.includes('→ slot 13'), 'the answer to opening a thread gives its number and hands the way over');
+r = await engageIn('w7', { handle: 'cy', at: '13', say: 'tied the first knot · waits on ben', secret: 'cy-key' });
+ok(r.includes(standsAs) && !r.includes('1 FIND IT.'), 'so the first knot\'s answer does not give it again');
+ok(r.includes('# The law — function:thread, this family'), 'and still gives the law, which the opening did not');
+r = await append('w8', { block: 'spine:tide' });
+ok(!r.includes('# The way') && !r.includes('never handed over'), 'opening in a family whose law only mentions a way hands nothing over');
+r = await append('w9', { block: 'spine:thread', spindle: '5' });
+ok(!r.includes('# The way'), 'an append beneath a line of the spine opens nothing');
+r = await append('w9', { block: 'ways:thread' });
+ok(!r.includes('# The way'), 'nor does an append to any other block');
+r = await append('w4', { block: 'spine:thread' });
+ok(r.includes('→ slot 13') && !r.includes('1 FIND IT.'), 'a session already given it is not given it again at an opening');
 
 console.log(`\nthread: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

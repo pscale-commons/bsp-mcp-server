@@ -202,6 +202,7 @@ export async function bundleFollowsAppend(origin: string, block: string, landed:
   return '';
 }
 import { reflect } from '../looks.js';
+import { wayHandedOver } from './stream.js';
 import { compileBundle, handleOfBlock, looksLikeBundle, renderBundle } from '../bundle.js';
 import { rideOrientation, seatOf, seatTold, surfaceLoader } from '../orientation.js';
 import {
@@ -1095,11 +1096,20 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       const readBack = wantGrayAppend
         ? ''
         : await readBackAfterAppend(agent_id, blockName, res.address ?? (res.slot !== undefined && res.slot !== null ? String(res.slot) : undefined));
+      // THE OPENING HANDS THE WAY OVER (proposals/2026-11-02-the-read-hands-over-the-
+      // way): a line appended at a spine's root opens something in that family, and
+      // the hand that opens ties its first knot before any read of it, so the answer
+      // to the append gives what a first read gives, by the same rule: the family's
+      // law says whether it has a way, and a session is given it once.
+      const family = appendSpindle ? null : /^spine:([^:]+)$/.exec(target.block)?.[1];
+      const lawOfIt = family ? await loadBlock(agent_id, `function:${family}`).catch(() => null) : null;
+      const handed = lawOfIt ? await wayHandedOver(sessionId, agent_id.replace(/\/+$/, ''), lawOfIt.block, Date.now()) : [];
+      const way = handed.length ? `\n\n${handed.join('\n')}` : '';
       if (res.address !== undefined) {
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}${way}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}${way}` }] };
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       // The one refusal this change can newly provoke, named rather than left

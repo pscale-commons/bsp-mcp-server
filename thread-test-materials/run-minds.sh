@@ -7,11 +7,13 @@
 #   thread-test-materials/run-minds.sh --spend [delivery] [cases]
 #     delivery  L2 (function:thread as re-cut, the default), R (the root line a live read gives,
 #               the law's branches and the way on the test beach), H (R, with the way printed
-#               once in a session as the read now does), W2 (ways:thread), L, W1 ...
+#               once in a session as the read now does), H2 (H, the opening handing it over too),
+#               W2 (ways:thread), L, W1 ...
 #     cases     C1,C2,... (default all nine)
 #
 # Each mind gets its brief on stdin and one tool, Bash, fenced to its own run's test-beach
-# command (bb); the wake (C9) gets no tool at all, as a wake has none. No MCP server, no
+# command (bb, by its path or as ./bb) and echo, which a mind strings between calls; the
+# wake (C9) gets no tool at all, as a wake has none. No MCP server, no
 # settings, no session kept, and nothing of the session that runs this but what the CLI
 # needs to sign in and find itself. The runs land in $THREAD_TEST_RUNS (default: a new
 # directory under the system's temp), never in the repo; each keeps its reply and, in
@@ -29,7 +31,7 @@ ASK=(--model haiku --strict-mcp-config --mcp-config '{"mcpServers":{}}' --settin
      --no-session-persistence --max-budget-usd 0.25 --output-format json)
 for c in ${(s:,:)CASES}; do
   R=$THREAD_TEST_RUNS/$D-$c
-  if [[ $c == C9 ]]; then TOOLS=(--tools ""); else TOOLS=(--tools Bash --allowedTools "Bash($R/bb:*)" "Bash(./bb:*)"); fi
+  if [[ $c == C9 ]]; then TOOLS=(--tools ""); else TOOLS=(--tools Bash --allowedTools "Bash($R/bb:*)" "Bash(./bb:*)" "Bash(echo:*)"); fi
   (cd $R && "${FRESH[@]}" claude -p "${ASK[@]}" "${TOOLS[@]}" < $R/brief.txt > $R/run.json 2> $R/err.txt)
   rc=$?
   python3 -I -c '

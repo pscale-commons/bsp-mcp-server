@@ -6,10 +6,10 @@
   2. THE PLANTED FAULTS (mutation.py): every one is caught, and the unplanted
      thread stays clean.
   3. THE RUNS, re-graded from their stored replies: keel's of 29 October and weft's
-     three of 2 November on the re-cut law: the law whole, as a live read meets it,
-     and with the read handing over the way. The grader still gives the totals
-     reported (pool:threads 11, 14, 15 and 16), so a change to the checker or the
-     grading that moves a verdict is seen.
+     four of 2 November on the re-cut law: the law whole, as a live read meets it,
+     with the read handing over the way, and with the opening handing it over too.
+     The grader still gives the totals reported (pool:threads 11, 14, 15, 16 and 17),
+     so a change to the checker or the grading that moves a verdict is seen.
 
 The runs are copied to a scratch directory first, so grading writes nothing here.
 Fresh minds are run-minds.sh's, and they run only on David's word, because they
@@ -21,7 +21,7 @@ import glob, json, os, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # delivery: (checks passed, checks, well formed under the first law, under the law as it stands)
-EXPECT = {"L": (36, 40, 8, 3), "W1": (31, 40, 9, 9), "Lx2": (35, 40, 8, 5), "W2": (40, 40, 9, 9), "L2": (35, 40, 9, 9), "R": (16, 40, 3, 3), "H": (31, 40, 8, 8)}
+EXPECT = {"L": (36, 40, 8, 3), "W1": (31, 40, 9, 9), "Lx2": (35, 40, 8, 5), "W2": (40, 40, 9, 9), "L2": (35, 40, 9, 9), "R": (16, 40, 3, 3), "H": (31, 40, 8, 8), "H2": (37, 40, 9, 9)}
 
 failed = []
 

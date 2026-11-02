@@ -1,0 +1,5 @@
+I recorded dana's choice on the thread at 1.11 and marked the branch complete. The tide-table page is live at `tides:live`, which I confirmed exists before writing. The knot went into rook's mirror (`thread:rook`), so it sits under wren's option line at 1.11.
+
+Nothing is handed on, because a complete branch hands on nothing. I offered no options, since no choice is left open.
+
+{"tied_at": "1.11", "line": "rook: dana publishes the page, at dana's word; rook published it, live at tides:live · complete · read: tides:live", "options": [], "handed_on": {"to": null, "text": ""}, "why": "Dana's 'Publish it.' matches option 1 under 1.1 ('dana publishes the page'), so the knot goes at 1.11, and the branch is complete."}

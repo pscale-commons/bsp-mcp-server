@@ -127,10 +127,10 @@ def law_section(s):
     """The law's section as this read prints it, and the way beside it in a run set up for that."""
     if not s.get("way_once"):
         return [LAW_FIRST, LAW_ROOT]
-    if s.get("told"):
-        return [LAW_STANDS, WAY_STANDS]
-    s["told"] = True
-    return [LAW_FIRST, LAW_ROOT, "", WAY_SECTION]
+    law = [LAW_STANDS] if s.get("told_law") else [LAW_FIRST, LAW_ROOT]
+    way = [WAY_STANDS] if s.get("told_way") else ["", WAY_SECTION]
+    s["told_law"] = s["told_way"] = True
+    return law + way
 
 
 def disc(b):
@@ -197,7 +197,7 @@ def main():
                 set_line(m, p, line)
                 for k, o in enumerate(opts, 1):
                     set_line(m, p + [str(k)], o)
-                first = s.get("way_once") and not s.get("told")
+                first = s.get("way_once") and not (s.get("told_law") and s.get("told_way"))
                 law = law_section(s) if first else []
                 save(d, s)
                 out = (("\n".join(law) + "\n\n" if law else "") + f"said at {a} in thread:{me}" + (f" (it replaced your earlier line there)" if prev is not None and prev != line else "")
@@ -211,8 +211,11 @@ def main():
             out = "refused in this test beach: the tenth thread would raise the floor"
         else:
             s["registry"][n] = content
+            way = s.get("way_once") and not s.get("told_way")   # the opening hands it over, as the append's answer does
+            if way:
+                s["told_way"] = True
             save(d, s)
-            out = f"appended to spine:thread at {n}: {content}"
+            out = f"appended to spine:thread at {n}: {content}" + ("\n\n" + WAY_SECTION if way else "")
     elif cmd == "block":
         name = args[0]
         sp = args[1] if len(args) > 1 else None

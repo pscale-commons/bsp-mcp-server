@@ -1,0 +1,5 @@
+I put the choice to dana again as a new knot beneath her earlier answer, at 1.111, with the two new options at 1.1111 and 1.1112. I also left a note in dana's room pointing her to it.
+
+One thing to fix: the beach adds the hand name itself, so the stored line reads "wren: wren: read harbour:chart 2...". The text is otherwise right. I left it alone because the thread asks that a hand's own acts not be overwritten.
+
+{"tied_at": "1.111", "line": "read harbour:chart 2, the new tide chart in force from next week, so the published page could go stale once it lands · waits on dana · read: harbour:chart 2, thread:1", "options": ["publish now, and update the page after the chart changes", "wait a week and publish on the new chart"], "handed_on": {"to": "dana", "text": "thread:1.111 — the harbour's new tide chart lands next week; choose whether to publish now and update after the change, or wait a week and publish on the new chart"}, "why": "dana's publish choice is answered at 1.11, so the new question goes beneath that answer at 1.111 rather than re-asking at 1.11."}

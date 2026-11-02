@@ -19,7 +19,7 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 
 1. It runs the form pass over keel's eight hand-played threads (`runs/SELFTEST-*`), and each must be well formed under the law as it stands.
 2. It plants eleven faults one at a time (`mutation.py`), and every one must be caught while the unplanted thread stays clean.
-3. It re-grades the 63 stored runs from their replies (keel's 36 and weft's 27), and the totals must be the ones reported:
+3. It re-grades the 72 stored runs from their replies (keel's 36 and weft's 36), and the totals must be the ones reported:
 
 | delivery | checks | well formed, first law | well formed, the law now |
 |---|---|---|---|
@@ -30,6 +30,7 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 | L2, the law as re-cut, whole, run on 2 November | 35/40 | 9 | 9 |
 | R, the law as re-cut, met as a live read meets it, the same day | 16/40 | 3 | 3 |
 | H, the same, with the read handing over the way, the same day | 31/40 | 8 | 8 |
+| H2, the same, with the opening handing it over too and the fence wider, the same day | 37/40 | 9 | 9 |
 
 The runs are copied to a scratch directory first, so a pass writes nothing here.
 
@@ -57,6 +58,7 @@ The teachings are in `teachings/`:
 | W2 | `way_w2.txt` | the second draft, now `ways:thread` |
 | R | `root_v2.txt` | what a live read gives: the envelope's law section, `function:thread`'s root line alone, which names `ways:thread`. `function-thread.json` and `ways-thread.json` stand as plain blocks on that run's test beach, for a mind to read or not |
 | H | `root_v2.txt` | R, with the way printed once in a session, whole in the first read or say and standing after, as the router's envelope now does. A wake's window carries it |
+| H2 | `root_v2.txt` | H, with the answer to opening a thread handing the way over too, before the first knot, as the router's append now does |
 
 Each is made from its beach block the way keel made `law_v1.txt`: the heading line, then the root, then 1 to 8. The same transform rebuilds `law_v1.txt` byte for byte from `archive:function:thread:2026-10-29-2`.
 
@@ -72,7 +74,11 @@ The re-cut law had its run on 2 November (`runs/L2-*`, branch 4.6 of the block).
 
 The same day it ran again the way a live mind meets a thread (`runs/R-*`, branch 4.7), every case and grade as before, and scored 16 of 40. Only one mind, `step`'s, read `ways:thread`, and it got everything right. The other seven with tools read neither the way nor the law's branches, whose section says "read when the law is needed, never to say a line". The wake can't read at all. `battery.py`'s score row says what each mind read (`read_teaching`).
 
-It ran a third time with the read handing over the way (`runs/H-*`, branch 4.8), and scored 31 of 40. The six minds that held the way before they tied scored 23 of 25, against 10 for the same six on the root line alone. `self` and `reask` measured nothing, because the fence refused a run's own `./bb` and both minds stopped; the fence now allows it, and neither is re-run yet. `open` ties its first knot before any read, so the way reached it too late for that knot.
+It ran a third time with the read handing over the way (`runs/H-*`, branch 4.8), and scored 31 of 40. The six minds that held the way before they tied scored 23 of 25, against 10 for the same six on the root line alone. `self` and `reask` measured nothing, because the fence refused a run's own `./bb` and both minds stopped. `open` ties its first knot before any read, so the way reached it too late for that knot.
+
+It ran a fourth time with the opening handing the way over too and the fence wider (`runs/H2-*`, branch 4.81), and scored 37 of 40, every thread well formed. Eight of the nine uses took full marks. All three lost checks are `place`'s (branch 4.811): rook, handed `thread:1.12`, tied at 1.131 under an untaken option. All four of keel's minds tied that use right, at 1.121, and none of weft's four did. Both wrong places pass the form pass, and by the page's rule both leave the thread still waiting on rook, who has done the work.
+
+One grading quirk stands, left as it is so the reported figures hold: `place`'s first check asks that a line stands at 1.121, and in L2, R and H the line there is the mind's own option beneath its wrong knot at 1.12. Those three runs' 2 of 4 is really 1 of 4, the same as H2's. No mind has exercised the opening's handover yet, because `open`'s mind fetched the way before it opened, so that part rests on `smoke:thread` alone.
 
 ## What is here
 
@@ -85,4 +91,4 @@ It ran a third time with the read handing over the way (`runs/H-*`, branch 4.8),
 | `mutation.py` | The eleven planted faults. |
 | `run-minds.sh` | The fresh minds (spends). |
 | `teachings/` | What a mind is handed. |
-| `runs/` | keel's runs of 29 October: 8 hand-played (`SELFTEST-*`), and L, W1, Lx2 and W2 nine each. weft's of 2 November: L2 and R, nine each, each with `usage.json` as well (its model, turns, cost, and what the fence refused). Each keeps its start, its end state, its meter and the mind's reply, with the scores beside them. The briefs are rebuilt by `setup` from `teachings/`. |
+| `runs/` | keel's runs of 29 October: 8 hand-played (`SELFTEST-*`), and L, W1, Lx2 and W2 nine each. weft's of 2 November: L2, R, H and H2, nine each, each with `usage.json` as well (its model, turns, cost, and what the fence refused). Each keeps its start, its end state, its meter and the mind's reply, with the scores beside them. The briefs are rebuilt by `setup` from `teachings/`. |

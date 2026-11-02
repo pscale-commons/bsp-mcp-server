@@ -2,7 +2,7 @@
 
 **Date**: 2 November 2026
 **Lane**: threads.3, weft (Claude Code, Opus 5.5, on the Mac), carrying on at David's word through the bee (weft-bee.2)
-**Status**: decided by David, 2 November 2026: "Hand over the recipe", then "and then go with merge". That is `thread:weft` 2.112112. Built and tested; **not merged**, because the run came in below the gate he was told of (31 of 40; see the result below), so the table goes back to him at `thread:2.112112`. The law does not move: `function:thread` already says this in its root line, and no tool's wording changes. This file is the record.
+**Status**: decided by David, 2 November 2026: "Hand over the recipe", then "and then go with merge" (`thread:weft` 2.112112). The first run came in at 31 of 40, below the gate he was told of, and his "Mend and re-run" (2.1121121) mended the opening and ran the nine again: **37 of 40, every thread well formed, one check under the gate. Not merged**; the table goes back to him at `thread:2.1121121`. The law does not move: `function:thread` already says this in its root line, and no tool's wording changes. This file is the record.
 
 ## The ask, and the decision
 
@@ -33,7 +33,7 @@ THE WAY OF A THREAD — how a mind carries a piece of work across its own loops,
 
 What is printed is the way's root and its steps, without its provenance, which teaches nothing: exactly the text keel tested at 40 of 40 (`thread-test-materials/teachings/way_w2.txt`). `smoke:thread` holds the two equal.
 
-**Both doors give it, and count it as one.** `pscale_stream_engage` prints it in the envelope. `pscale_play(…, thread=…)` prints it in THE THREAD's section. A session that took a thread up at the door is not handed it again at its first read.
+**Three places give it, and count it as one.** `pscale_stream_engage` prints it in the envelope. `pscale_play(…, thread=…)` prints it in THE THREAD's section. A session that took a thread up at the door is not handed it again at its first read. The third came with the mend below: the answer to an append to `spine:<field>`, where `function:<field>`'s root line closes on its way, prints it too, so a mind opening a thread holds the way before its first knot. An append to any other `spine:` reads one block more, its law, and prints nothing.
 
 **The waker carries it.** A wake cannot fetch, and the waker asks the door in a fresh session, so the way is always in the section it compiles. The section is now about 3,800 characters longer, so the ring's `thread` field grows from 6,000 to 12,000 characters at the waker and the kernel, and the kernel's line says the way is there. Kernel change, upstream-owed to pscale-biome src/agent (parked; noted per the port discipline).
 
@@ -92,8 +92,68 @@ About three cents in all at list price, on `claude-haiku-5-5`. No mind fetched t
 
 **Three things stand against the rest.**
 
-- **Two runs measured nothing, and that is the harness's fault, not the way's.** `self` and `reask` made no calls. The fence allowed a run's `bb` by its full path and refused `./bb`; both minds tried that, were refused, stopped and said so (*"I couldn't act on the beach"*). What they scored came from the checks an untouched thread passes. The fence now allows `./bb`. Re-running them is beyond the nine, so it asks David first.
-- **The opening meets the way too late.** A mind opening a new thread reads the registry as a plain block, appends, and ties its first knot, all before any read of the family. So the way came in that first say's answer. `open`'s mind then handed its place on as the way says (`thread:3 — …`), but its first knot stayed unclosed. The way itself tells it never to overwrite an act of its own, so it has no way to mend that. A live mind would meet this too. The smallest mend, not built: the answer to an append to `spine:<field>`, where that family's law closes on its way, hands the way over as the reads do.
+- **Two runs measured nothing, and that is the harness's fault, not the way's.** `self` and `reask` made no calls. The fence allowed a run's `bb` by its full path and refused `./bb`; both minds tried that, were refused, stopped and said so (*"I couldn't act on the beach"*). What they scored came from the checks an untouched thread passes. The fence now allows `./bb`, and the run below measured both.
+- **The opening meets the way too late.** A mind opening a new thread reads the registry as a plain block, appends, and ties its first knot, all before any read of the family. So the way came in that first say's answer. `open`'s mind then handed its place on as the way says (`thread:3 — …`), but its first knot stayed unclosed. The way itself tells it never to overwrite an act of its own, so it has no way to mend that. A live mind would meet this too. The smallest mend was the answer to an append to `spine:<field>`, where that family's law closes on its way, handing the way over as the reads do, and it is built below.
 - **`place` tied at the line it answered for the third time, now holding the way:** *"1.12 is the knot dana tied asking for the low-water marks, and it waits on rook, so my answer goes at that address."* That thread is well formed but in the wrong place. The way's words stand against this and keel's run of the way passed it, so this is a soft spot in small minds, not something this change can settle.
 
 **What this doesn't settle.** One run a cell, of the smallest model, and two of the nine void. With those two at full marks the run would read 37 of 40, so the opening has to be mended, or the gate moved, for this to pass.
+
+## The opening mended, and the nine again
+
+David's word, 2 November: "Mend and re-run", which is `thread:weft` 2.1121121. It kept the same rule: the law's root line closing on its way, and no branch for `thread` in a handler. Two things changed:
+
+- **The opening hands it over.** `src/tools/bsp.ts`, in the append's answer, as under What changes above. Five lines: the family is read off `spine:<field>`, and `wayHandedOver` does the rest, so the three places count as one.
+- **The fence is wider.** A mind may call `./bb` as well as the full path, and nothing was refused this time.
+
+The nine ran again, with every case and grade as before: one fresh `claude-haiku-5-5` a use, the same 25-cent cap, $0.0352 in all at list.
+
+| Use | The way given whole | The law whole | Root line only | The read hands it over | **The opening too, fence wider** |
+|---|---|---|---|---|---|
+| open | 6/6 | 6/6 | 4/6 | 5/6 | **6/6** |
+| take | 5/5 | 5/5 | 2/5 | 5/5 | **5/5** |
+| self | 5/5 | 5/5 | 2/5 | 2/5, void | **5/5** |
+| word | 4/4 | 4/4 | 0/4 | 4/4 | **4/4** |
+| step | 4/4 | 4/4 | 4/4 | 4/4 | **4/4** |
+| place | 4/4 | 2/4 | 2/4 | 2/4 | **1/4** |
+| twin | 4/4 | 1/4 | 1/4 | 4/4 | **4/4** |
+| reask | 4/4 | 4/4 | 0/4 | 1/4, void | **4/4** |
+| wake | 4/4 | 4/4 | 1/4 | 4/4 | **4/4** |
+| **checks** | **40/40** | **35/40** | **16/40** | **31/40** | **37/40** |
+| well formed, the law as it stands | 9 of 9 | 9 of 9 | 3 of 9 | 8 of 9 | **9 of 9** |
+| calls, median of uses 1-8 | 5 | 6 | 6.5 | 6, of the six that reached the beach | **8** |
+
+**Against the gate: not met.** 37 of 40 is one under 38, so this did not merge. Every thread is well formed and eight uses of the nine are at full marks. All three lost checks are `place`'s.
+
+**What each mind fetched.** Only `open`'s and `word`'s fetched `ways:thread`, and no mind read the law's branches. Uses 1 to 8 held the way by their first read, and `wake` had it in its window.
+
+**What this run doesn't prove.** `open`'s mind read a thread and fetched the way before it opened, so no mind exercised the opening's handover. Only `smoke:thread` proves that. Calls rose to a median of 8, from 5 for the way given whole.
+
+### `place` on its own
+
+David asked for this apart, because the gate would let it pass unexplained.
+
+Rook is handed `thread:1.12`, where dana's act closes `waits on rook` with no option beneath it, so the answer takes the next digit, 1.121. Over eight runs:
+
+| Run | Who ran it | Where the teaching stood | Tied at |
+|---|---|---|---|
+| L, Lx2 (the morning's law) | keel | head of the brief | 1.121 |
+| W1, W2 (the way) | keel | head of the brief | 1.121 |
+| L2 (the re-cut law whole) | weft | head of the brief | 1.12 |
+| R (root line only) | weft | one line, the rest to fetch | 1.12 |
+| H (the read hands it over) | weft | a read's answer | 1.12 |
+| H2 (the opening too) | weft | a read's answer | 1.131 |
+
+The minds say why. H: *"1.12 is the knot dana tied asking for the low-water marks, and it waits on rook, so my answer goes at that address."* H2 is a new shape: it applied the way's rule to the wrong line, *"the next free digit beneath wren's line at 1.13, which is the step that asked rook to rebuild the page"*. That line is wren's untaken option, which now reads as taken.
+
+**What it costs.** The form pass passes all of these, because the shape of each line is right. The harm is in where it stands. By the page's own rule (`threads.js`, `waiting`, run over each run's end state), the right answer leaves nothing waiting on rook and leaves dana's decision at 1.121. H's and H2's threads still wait on rook, at 1.12, for work rook has done, because dana's act stays a live end. So rook's page goes on asking, and a waker could ring rook again. That is why a gate of 38 with every thread well formed would let it pass: it would pass a thread that names the wrong hand as owing.
+
+**The grade is too kind to the earlier three.** The first check asks that a line stands at 1.121. In L2, R and H the line there is the mind's own option, beneath its wrong knot at 1.12. So their 2 of 4 is really 1 of 4, the same as H2's, and H2 is not worse than they were. The grade is left as it is, so the reported figures hold; H2's 37 doesn't move under either reading.
+
+**What it doesn't say.** The thread each mind starts from is the same in all eight runs; keel added the draft's block from his second round. Two things differ between his four and mine, and no run separates them:
+
+- who ran them: his runner, its model version unrecorded, against `claude -p` here
+- where the teaching stood: at the head of the brief for all of his; in a read's answer here, except L2's, which is a different text
+
+So I can't say the handed-over way fails at this, or that the way's sentence is too weak. A mind given the way at the head of its brief, on `place` alone through this runner, would separate them: one mind, about half a cent. That is beyond the nine, so it asks David first. One run a cell throughout, of the smallest model.
+
+David's own words of 29 October, *"when it is chosen it is filled with the resulting action AT that same location"*, describe taking an option, and a mind can read a knot that waits on it the same way. The way says only *"beneath the line it answers"*. It never says plainly what answering a knot that waits on you does. That is a change to the way, so it is his word first, with the minds run after it.

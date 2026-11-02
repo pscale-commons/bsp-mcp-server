@@ -1,0 +1,5 @@
+I opened a new thread for the moorings page, since the registry had only the tide-table and glossary threads. The first knot is tied at 3 and reads back correctly, and the hand-on is in wren's room.
+
+The moorings block read back only as a one-line summary ("draft 1: 48 moorings, by pontoon and berth"), so I didn't see the list itself.
+
+{"tied_at": "3", "line": "built the moorings page's first part, the moorings list (48 moorings, by pontoon and berth) · waits on wren · read: moorings:draft 1", "options": ["wren checks the list against the harbour's register", "dana decides it is good enough to publish as it is"], "handed_on": {"to": "wren", "text": "thread:3 — wren checks the moorings list (moorings:draft 1, 48 moorings) against the harbour's register; or dana decides it is good enough to publish as it is (options 3.1 and 3.2)"}, "why": "The moorings page is new work, so it opens its own thread (3) rather than joining thread 1, the tide-table page, and the knot sits at 3 because that is the number the registry gave it."}
