@@ -1,0 +1,123 @@
+{
+  "name": "harbour-bell",
+  "blocks": {
+    "spine:harbour-bell": {
+      "_": "HARBOUR BELL — a bell on the harbour wall that rings when the tide turns, so the boats know without a phone.",
+      "1": {
+        "_": "WHAT WE ARE BUILDING — a bell on the wall and the tide table that rings it.",
+        "1": {
+          "_": "HOW IT WORKS — the table says when and the bell says so.",
+          "1": {
+            "_": "THE MONEY — the harbour trust pays for the bronze.",
+            "2": "WHAT IT COSTS — four hundred pounds, read from the trust's quote.",
+            "8": "DECIDE — Does the trust pay? dana. GO, NOT YET or CHANGE."
+          },
+          "8": "DECIDE — What rings it? David. BELL, HORN or NOT YET."
+        },
+        "2": {
+          "_": "THE BELL — bronze, hung at the harbour mouth, its hours read at spine:tide-table 1.",
+          "8": "DECIDE — Bronze or steel? rook. BRONZE, STEEL or NOT YET."
+        },
+        "8": "DECIDE — Do we hang a bell at all? David and rook. GO, NOT YET or CHANGE.",
+        "9": "BUILDING — the bracket is up and the bell is on order."
+      },
+      "2": "THE PAGE — https://happyseaurchin.com/harbour-bell draws the bell and the tide; the family is drawn from its blocks alone at https://happyseaurchin.com/proposal/harbour-bell.",
+      "3": "WHERE IT CAME FROM — rook's note beside spine:tide-table, read on 2 November 2026.",
+      "9": "PROVENANCE — a fixture for the proposal battery, made by weft on 2 November 2026; a family that passes every case, and nothing stands on the beach by this name."
+    },
+    "function:harbour-bell": {
+      "_": "Operator for harbour-bell: a proposal read as a document, the shared law at function:document and the proposal form at function:proposal.",
+      "1": "mode: document",
+      "2": "THE DECISIONS — each step's 8 asks one: 1.8 the bell; 1.18 what rings it; 1.118 who pays; the side-room's 1.28 the metal.",
+      "3": "THE ROOM — pool:harbour-bell, open, for talk that is not a decision.",
+      "4": "SET ASIDE — once the decisions stand and the work lives in its threads, keep the spine at archive:spine:harbour-bell:<date>.",
+      "5": {
+        "_": "THE THREADS — each piece of work, named here, one per digit.",
+        "1": "thread:1 — casting the bell · step 1",
+        "2": "bell-bracket — the bracket on the wall · step 1.1"
+      },
+      "6": "page: https://happyseaurchin.com/harbour-bell — the crafted page, the harbour at slack water, at kestrel's yes, 2 November 2026 · look: kestrel",
+      "7": "phase: proposal — the decisions are open and the page leads with them.",
+      "8": "map: harbour 1.2 — ringing: the part of the harbour's schematic this would change",
+      "9": "PROVENANCE — a fixture for the proposal battery, made by weft on 2 November 2026."
+    },
+    "pool:harbour-bell": {
+      "_": {
+        "_": "THE ROOM of harbour-bell, open to anyone, for talk that is not a decision: a doubt about the metal, who else should hear it. Answer a decision on the proposal's page, which keeps your answer in your own mirror. The page: https://happyseaurchin.com/harbour-bell",
+        "1": { "_": "Is this the bell from the old lifeboat house?", "1": "dana", "3": "2026-11-02T09:01:00Z" },
+        "2": { "_": "No, a new casting.", "1": "rook", "3": "2026-11-02T09:02:00Z" },
+        "3": {
+          "_": "Who hangs it?",
+          "1": "dana",
+          "3": "2026-11-02T09:03:00Z",
+          "4": { "_": "dana — the harbour master's crew. · rook", "3": "2026-11-02T09:04:00Z" }
+        },
+        "4": { "_": "Bronze rings truer.", "1": "rook", "3": "2026-11-02T09:05:00Z" },
+        "5": { "_": "And costs more.", "1": "dana", "3": "2026-11-02T09:06:00Z" },
+        "6": { "_": "The trust has a quote.", "1": "rook", "3": "2026-11-02T09:07:00Z" },
+        "7": { "_": "Four hundred.", "1": "rook", "3": "2026-11-02T09:08:00Z" },
+        "8": { "_": "That is fair.", "1": "dana", "3": "2026-11-02T09:09:00Z" },
+        "9": { "_": "I will ask them.", "1": "dana", "3": "2026-11-02T09:10:00Z" }
+      },
+      "1": {
+        "_": "Summary of 1-9: who hangs it, the metal, and the trust's quote of four hundred pounds, which dana takes to the trust.",
+        "1": { "_": "The trust says yes to half.", "1": "dana", "3": "2026-11-02T10:01:00Z" },
+        "2": { "_": "Then I will find the other half.", "1": "rook", "3": "2026-11-02T10:02:00Z" }
+      }
+    },
+    "harbour-bell:rook": {
+      "_": "MIRROR — rook's readings on the harbour bell.",
+      "1": {
+        "1": { "8": "BELL — a horn frightens the gulls." },
+        "2": { "8": "BRONZE — it rings truer." },
+        "8": "GO — hang it."
+      }
+    },
+    "harbour-bell:dana": {
+      "_": "MIRROR — dana's readings on the harbour bell.",
+      "1": {
+        "1": { "1": { "8": "CHANGE — the trust pays half." } }
+      }
+    },
+    "proposals": {
+      "_": "THE LIST — the proposals shared on this beach.",
+      "1": { "_": "harbour-bell — a bell on the harbour wall that rings when the tide turns · happyseaurchin.com/harbour-bell", "3": "2026-11-02T08:00:00Z" }
+    },
+    "spine:thread": {
+      "_": "THE REGISTRY — one line per thread.",
+      "1": { "_": "casting the harbour bell · opened by rook", "3": "2026-11-02T18:00:00Z" }
+    },
+    "thread:rook": {
+      "_": "rook's knots.",
+      "1": {
+        "_": "sent the pattern to the foundry · waits on dana",
+        "1": "dana checks the casting"
+      }
+    },
+    "spine:bell-bracket": { "_": "the bracket: a ladder of rungs down 1", "1": "harbour-bell:rook 1.8 — the word to hang it" },
+    "look:kestrel": {
+      "_": "kestrel's look.",
+      "1": "palette — ink #14213d, paper #f4efe6, accent #b4582a",
+      "2": "letters — Alegreya Sans, IBM Plex Mono",
+      "3": "measure — seventy characters",
+      "4": "the band — a low horizon, the drawing moving along it",
+      "5": "the drawing — one line weight, no fill",
+      "6": "how the pages are made — wide, the words beside the drawing",
+      "8": "worn on kestrel's own pages",
+      "9": "provenance — a fixture"
+    },
+    "spine:harbour-schematic": {
+      "_": "THE HARBOUR — a map of the harbour as it runs.",
+      "1": { "_": "THE HARBOUR — the whole, as a boat meets it.", "2": "RINGING — what tells a boat the tide has turned." }
+    },
+    "spine:tide-table": { "_": "the tide table", "1": "the hours of the tide" },
+    "function:document": { "_": "the document form" },
+    "function:proposal": { "_": "the proposal form" },
+    "passport:rook": { "_": "rook" },
+    "passport:dana": { "_": "dana" }
+  },
+  "pages": {
+    "https://happyseaurchin.com/harbour-bell": { "file": "harbour-bell.html" },
+    "https://happyseaurchin.com/animations/harbour-bell.jpg": 200
+  }
+}
