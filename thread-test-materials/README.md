@@ -19,7 +19,7 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 
 1. It runs the form pass over keel's eight hand-played threads (`runs/SELFTEST-*`), and each must be well formed under the law as it stands.
 2. It plants eleven faults one at a time (`mutation.py`), and every one must be caught while the unplanted thread stays clean.
-3. It re-grades the 45 stored runs from their replies (keel's 36 and weft's nine), and the totals must be the ones reported:
+3. It re-grades the 54 stored runs from their replies (keel's 36 and weft's 18), and the totals must be the ones reported:
 
 | delivery | checks | well formed, first law | well formed, the law now |
 |---|---|---|---|
@@ -27,7 +27,8 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 | W1, the way's first draft | 31/40 | 9 | 9 |
 | Lx2, the law, round 2 | 35/40 | 8 | 5 |
 | W2, the way's second draft, now `ways:thread` | 40/40 | 9 | 9 |
-| L2, the law as re-cut, run on 2 November | 35/40 | 9 | 9 |
+| L2, the law as re-cut, whole, run on 2 November | 35/40 | 9 | 9 |
+| R, the law as re-cut, met as a live read meets it, the same day | 16/40 | 3 | 3 |
 
 The runs are copied to a scratch directory first, so a pass writes nothing here.
 
@@ -53,10 +54,11 @@ The teachings are in `teachings/`:
 | L2 | `law_v2.txt` | `function:thread` as re-cut that evening, the law as it stands |
 | W1 | `way_w1.txt` | keel's first draft of the way |
 | W2 | `way_w2.txt` | the second draft, now `ways:thread` |
+| R | `root_v2.txt` | what a live read gives: the envelope's law section, `function:thread`'s root line alone, which names `ways:thread`. `function-thread.json` and `ways-thread.json` stand as plain blocks on that run's test beach, for a mind to read or not |
 
 Each is made from its beach block the way keel made `law_v1.txt`: the heading line, then the root, then 1 to 8. The same transform rebuilds `law_v1.txt` byte for byte from `archive:function:thread:2026-10-29-2`.
 
-`testbeach.py` is the router's thread surface as #559 built it. It has the one read, a say with options landing at A followed by k, a say replacing only your own line, the guard that refuses to reword an option another hand has answered, rooms, and the registry's append. Every call is metered to the run's `meter.jsonl`.
+`testbeach.py` is the router's thread surface as #559 built it. A read prints the law's section as the router prints it, and a block past 6,000 characters is answered with its disc unless its root is named. It has the one read, a say with options landing at A followed by k, a say replacing only your own line, the guard that refuses to reword an option another hand has answered, rooms, and the registry's append. Every call is metered to the run's `meter.jsonl`.
 
 ## The minds
 
@@ -65,6 +67,8 @@ Each is made from its beach block the way keel made `law_v1.txt`: the heading li
 The minds spend model calls, so they run only on David's word: nine short sessions, about half a cent each at list price, capped at 25 cents each. A change to `function:thread` or `ways:thread` is followed by a run of the minds before the change is called done (function:thread 7).
 
 The re-cut law had its run on 2 November (`runs/L2-*`, branch 4.6 of the block). It scored 35 of 40. `self`, `reask` and `wake`, the first law's misses, are cured, and every thread is well formed. `place` (2 of 4) and `twin` (1 of 4) are new misses, each one mistake: answering a line with no option to take, the mind tied at that line's own address, not the next free digit beneath it. With one run a cell, chance isn't ruled out.
+
+The same day it ran again the way a live mind meets a thread (`runs/R-*`, branch 4.7), every case and grade as before, and scored 16 of 40. Only one mind, `step`'s, read `ways:thread`, and it got everything right. The other seven with tools read neither the way nor the law's branches, whose section says "read when the law is needed, never to say a line". The wake can't read at all. `battery.py`'s score row says what each mind read (`read_teaching`).
 
 ## What is here
 
@@ -77,4 +81,4 @@ The re-cut law had its run on 2 November (`runs/L2-*`, branch 4.6 of the block).
 | `mutation.py` | The eleven planted faults. |
 | `run-minds.sh` | The fresh minds (spends). |
 | `teachings/` | What a mind is handed. |
-| `runs/` | keel's runs of 29 October: 8 hand-played (`SELFTEST-*`), and L, W1, Lx2 and W2 nine each. weft's of 2 November: L2, nine, each with `usage.json` as well (its model, turns, cost, and what the fence refused). Each keeps its start, its end state, its meter and the mind's reply, with the scores beside them. The briefs are rebuilt by `setup` from `teachings/`. |
+| `runs/` | keel's runs of 29 October: 8 hand-played (`SELFTEST-*`), and L, W1, Lx2 and W2 nine each. weft's of 2 November: L2 and R, nine each, each with `usage.json` as well (its model, turns, cost, and what the fence refused). Each keeps its start, its end state, its meter and the mind's reply, with the scores beside them. The briefs are rebuilt by `setup` from `teachings/`. |

@@ -5,7 +5,8 @@
 # only on David's word, and only with --spend.
 #
 #   thread-test-materials/run-minds.sh --spend [delivery] [cases]
-#     delivery  L2 (function:thread as re-cut, the default), W2 (ways:thread), L, W1 ...
+#     delivery  L2 (function:thread as re-cut, the default), R (the root line a live read gives,
+#               the law's branches and the way on the test beach), W2 (ways:thread), L, W1 ...
 #     cases     C1,C2,... (default all nine)
 #
 # Each mind gets its brief on stdin and one tool, Bash, fenced to its own run's test-beach

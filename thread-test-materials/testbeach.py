@@ -8,7 +8,8 @@
   testbeach.py <rundir> room <handle>                      read pool:<handle>
   testbeach.py <rundir> post <handle> "<text>"             a contribution to pool:<handle>
 
-Semantics follow the live router as built (bsp-mcp #559): a say replaces your own line at that
+Semantics follow the live router as built (bsp-mcp #559): a read carries the law's section as the
+router prints it, its root line naming ways:thread; a say replaces your own line at that
 address and keeps what stands beneath it; options land at <at>.1, <at>.2 ... in your own mirror;
 an option another hand has answered keeps its words (the say is refused); nothing ever writes
 another hand's mirror. Every call is metered to meter.jsonl.
@@ -16,10 +17,13 @@ another hand's mirror. Every call is metered to meter.jsonl.
 import json, os, re, sys
 
 VALID = re.compile(r"^[1-9][0-9]*(\.[1-9]+)?$")
-LAW_ROOT = ("THE THREAD — the form every thread keeps. A thread is a number from one open list, spine:thread, and its knots are "
-            "lines in each hand's own mirror, thread:<handle>, at the number and beneath it, where the digit is the choice: option k "
-            "of the knot at A stands at A followed by k. No keeper ties it and nothing is copied onto it; it is read whole at its "
-            "number, or from the place of its live end, in one call.")
+HERE = os.path.dirname(os.path.abspath(__file__))
+# What the router answers with: the law's root line in every read (function:thread as it stands), and a block
+# past this size as its disc unless its root is named (tools/bsp.ts probeInsteadOfWhole).
+LAW_ROOT = json.load(open(os.path.join(HERE, "teachings", "function-thread.json")))["_"]
+WHOLE_CHARS = 6000
+# A run set up to meet a thread as a live mind does holds the law's branches and the way as plain blocks.
+TAUGHT = {"function:thread": "function-thread.json", "ways:thread": "ways-thread.json"}
 
 
 def load(d):
@@ -110,6 +114,15 @@ def answered(s, p, me):
     return None
 
 
+def disc(b):
+    """The probe the router answers a block past its size with: every position's opening line, and how to take it whole."""
+    clip = lambda t: t if len(t) <= 150 else t[:150] + "..."
+    rows = ["[disc @ pscale 0 (depth 1)]"] + [f"  [{'0' if k == '_' else k}]: {clip(text(b[k]) or '')}" for k in ["_"] + sorted(k for k in b if k != "_")]
+    size = len(json.dumps(b, ensure_ascii=False, indent=2))
+    rows.append(f"  [the whole block is {size} characters: both coordinates omitted gives this probe, the disc at pscale 0. To take it whole, name the root — spindle='0' with no attention; or walk a spindle for the part you need.]")
+    return "\n".join(rows)
+
+
 def main():
     d, cmd, args = sys.argv[1], sys.argv[2], sys.argv[3:]
     s = load(d)
@@ -124,7 +137,7 @@ def main():
             reg = s["registry"].get(n)
             ls = lines_under(s, a)
             rows = [f"stream:thread — at {a}", "", "# The ladder", f"  p0 [{n}] {reg if reg else '(no thread at this number)'}", "",
-                    "# The law — function:thread, this family's operator: its root line stands here, and its branches at function:thread",
+                    "# The law — function:thread, this family’s operator: its root line stands here, and its branches at function:thread, read when the law is needed, never to say a line",
                     LAW_ROOT, "", f"# Readings at {a} — {len({h for _, h, _ in ls})} voices"]
             rows += [f"- {addr(q)} · {h}: {t}" for q, h, t in ls] or ["  (no hand has a line at or beneath this address)"]
             out = "\n".join(rows)
@@ -191,10 +204,14 @@ def main():
             b = {str(i + 1): x for i, x in enumerate(s["rooms"].get(name.split(":", 1)[1], []))}
         else:
             b = s.get("blocks", {}).get(name)
+            if b is None and s.get("live") and name in TAUGHT:
+                b = json.load(open(os.path.join(HERE, "teachings", TAUGHT[name])))
         if b is None:
             out = f"no block named {name}"
+        elif sp is None and len(json.dumps(b, ensure_ascii=False, indent=2)) > WHOLE_CHARS:
+            out = disc(b)
         else:
-            if sp:
+            if sp and sp != "0":
                 b = node_at(b, path(sp)) if VALID.match(sp) else None
             out = json.dumps(b, ensure_ascii=False, indent=1) if b is not None else f"nothing at {sp} in {name}"
     elif cmd == "room":

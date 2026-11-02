@@ -1,0 +1,12 @@
+{
+ "models": [
+  "claude-haiku-5-5"
+ ],
+ "turns": 7,
+ "ms": 20484,
+ "cost_usd": 0.00353584,
+ "stop": "success",
+ "refused": [
+  "./bb room rook"
+ ]
+}
