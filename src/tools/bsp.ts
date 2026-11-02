@@ -241,6 +241,8 @@ import {
   keyringHandles,
   GROUP_KEYRING_MARKER,
 } from '../keys.js';
+import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { handOf } from '../looks.js';
 
 /**
  * The POSITION a lock lands at, mirroring the wire contract (pscale-beach
@@ -900,7 +902,18 @@ export async function handleBsp(
   params: BspToolParams,
   extra?: { sessionId?: string },
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const res = await handleBspInner(params, extra?.sessionId);
+  // THE DOOR: this call stands with the hand it acts as and the latch proof it
+  // carried, so a members' beach that refuses it is proved once and the pass kept
+  // for the session (src/pass.ts; protocol 2.8). Never enc_secret: a seal proves nothing.
+  const door: Door = { session: extra?.sessionId, handles: [handOf(extra?.sessionId), handleOfBlock(params.block ?? '')], secret: params.secret };
+  let res: { content: { type: 'text'; text: string }[] };
+  try {
+    res = await atTheDoor(door, () => handleBspInner(params, extra?.sessionId));
+  } catch (e: any) {
+    if (!isDoorRefusal(e)) throw e;
+    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+  }
+  if (door.minted && res.content.length) res.content[res.content.length - 1].text += mintedLine(door);
   const target = translateAddress(params.agent_id, params.block ?? '');
   if (isSentinelOwner(target.agent_id)) return res;
   const wrote = params.content !== undefined || params.new_lock !== undefined;

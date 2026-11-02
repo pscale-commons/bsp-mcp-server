@@ -51,6 +51,8 @@ import { readBackAfterAppend } from '../read-back.js';
 import { beatMoment, composeTierParts, whenOf, type Tier } from './tiers.js';
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
+import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { handOf } from '../looks.js';
 
 // ── Defaults ──
 
@@ -1822,7 +1824,15 @@ export async function handlePoolEngage(
   // The room is told who is engaging; the door keeps the name for this
   // session's looks. This is how a person at the mirror is seen by name.
   nameAtTheDoor(extra?.sessionId, params.agent_id);
-  const res = await handlePoolEngageInner(params);
+  const door: Door = { session: extra?.sessionId, handles: [params.agent_id, handOf(extra?.sessionId)], secret: (params as any).secret };
+  let res: any;
+  try {
+    res = await atTheDoor(door, () => handlePoolEngageInner(params));
+  } catch (e: any) {
+    if (!isDoorRefusal(e)) throw e;
+    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+  }
+  if (door.minted && res.content?.length) res.content[res.content.length - 1].text += mintedLine(door);
   // A TIER CALL IS A COMPOSED PROMPT another mind runs word for word: the look
   // is noted, and nothing is appended to it.
   if ((params as any).tier) {
