@@ -2,7 +2,7 @@
 
 **Date**: 2 November 2026
 **Lane**: threads.3, weft (Claude Code, Opus 5.5, on the Mac), carrying on at David's word through the bee (weft-bee.2)
-**Status**: decided by David, 2 November 2026: "and proceed with place improvement". Both his spends are covered and nothing beyond them: the way given whole on `place` alone, then this draft through the nine. Written before the nine ran; the result is below.
+**Status**: decided by David, 2 November 2026: "and proceed with place improvement". His word covered two spends and nothing beyond them: the way given whole on `place` alone, then this draft through the nine. **The nine came back 40 of 40, every thread well formed, and `place` 4 of 4, so `ways:thread` took the draft the same day**, its standing text at `archive:ways:thread:2026-11-02`. Written before the nine ran; the result is at the end.
 
 ## The ask
 
@@ -63,3 +63,48 @@ Delivery `H3`: `H2` in every way but the way's text. The mind's head is the law'
 Asked of every stored run, the check would move three of them: **L2 35 to 34, R 16 to 15, H 31 to 30.** L, Lx2, W1, W2 and H2 don't move. So it isn't fixed backwards. It asks for an act at 1.121 only for runs after those eight (`PLACE_AS_REPORTED` in `battery.py`), which keep the grade they were reported under, the way the form pass reads a thread by the law it was tied under. `smoke:thread-test` re-grades them all to the figures reported.
 
 It doesn't affect this gate: a mind tying at 1.12 misses 3 of 4 under either check.
+
+## The result
+
+Delivery `H3`, one fresh `claude-haiku-5-5` a use, $0.0304 in all at list, nothing refused.
+
+| Use | The way given whole, keel's (W2) | The way in a read's answer, today's text (H2) | **The way in a read's answer, this draft (H3)** |
+|---|---|---|---|
+| open | 6/6 | 6/6 | **6/6** |
+| take | 5/5 | 5/5 | **5/5** |
+| self | 5/5 | 5/5 | **5/5** |
+| word | 4/4 | 4/4 | **4/4** |
+| step | 4/4 | 4/4 | **4/4** |
+| place | 4/4 | 1/4 | **4/4** |
+| twin | 4/4 | 4/4 | **4/4** |
+| reask | 4/4 | 4/4 | **4/4** |
+| wake | 4/4 | 4/4 | **4/4** |
+| **checks** | **40/40** | **37/40** | **40/40** |
+| well formed | 9 of 9 | 9 of 9 | **9 of 9** |
+| calls, median of uses 1-8 | 5 | 8 | **8.5** |
+
+**Against the gate: met.** `place` 4 of 4, the total 40, every thread well formed under both laws.
+
+**`place`'s mind, in its own words:** *"dana's act at 1.12 waits on rook, so the answer goes beneath it at the next free digit, 1.121, not at 1.12 itself."* It handed `thread:1.121` to dana's room, and by the page's rule the thread now waits on dana and no longer on rook.
+
+**The opening is exercised at last.** `open`'s mind opened its thread before any read of the family and had the way from that answer, before its first knot, and scored 6 of 6. The last run couldn't show this, because its mind had fetched the way first.
+
+**No use lost anything to the new sentence.** `take`, `self` and `wake` still took their options at the options' addresses. `step` still took 1.14 and `reask` 1.111. `twin` kept its own act and tied at 1.1211. No mind fetched the way or the law's branches.
+
+## What was done on the beach
+
+In this order, under the shared project lock:
+
+1. `archive:ways:thread:2026-11-02`, the standing text, read back equal to the live block and to `teachings/ways-thread.json`.
+2. `ways:thread` 3, the draft, and `ways:thread` 9, the provenance saying so.
+3. Checked as its next reader meets it: through the real router, a fresh session's first read prints the third draft byte for byte, and the live block equals `teachings/ways-thread-w3.json`.
+
+`ways:thread:keel` is keel's and still carries the second draft. `function:thread` doesn't change: its root line only names the way.
+
+## What this doesn't settle
+
+- **One run a cell.** `place`'s pass is one mind's, and the second draft passed through keel's runner four times before it missed twice here.
+- **The way's standing in a read's answer.** The first spend suggests a way at the head of a brief holds better than one in a read's answer, and this draft closes that for `place` by saying it plainly. It doesn't show other sentences of the way hold as well there.
+- **The form pass still can't see a wrong place.** Only the case's grade can. A thread tied at the line it answers stays well formed and goes on waiting on the hand that answered. No check for that is built, because nobody asked for one.
+- **Calls.** A median of 8.5, against 5 for the way at the head of the brief: a mind that meets the way in a read's answer looks around more first.
+

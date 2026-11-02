@@ -1,0 +1,3 @@
+I answered dana's request for another pass at 1.121, beneath their act at 1.12, and handed it on to dana's room. The page with the low-water marks is at tides:draft 3, which I checked exists.
+
+{"tied_at": "1.121", "line": "rook rebuilt the page with the low-water marks shown (tides:draft 3) · waits on dana · read: tides:draft 3", "options": ["publish the page with the low-water marks", "one more pass, please"], "handed_on": {"to": "dana", "text": "thread:1.121 — the tide-table page with the low-water marks is ready (tides:draft 3); it waits on your decision: publish, or one more pass"}, "why": "dana's act at 1.12 waits on rook, so the answer goes beneath it at the next free digit, 1.121, not at 1.12 itself."}

@@ -1,0 +1,7 @@
+The moorings page is now on the beach as thread 3, with the choice between wren's check and dana's publish waiting in dana's room.
+
+- Opened thread 3 in the registry as "the moorings page · opened by rook".
+- Tied the knot at 3, which records draft 1 (48 moorings) and waits on dana. Its two options are at 3.1 and 3.2.
+- Put the handoff in dana's room (pool:dana), where the decision is.
+
+{"tied_at": "3", "line": "rook built the moorings list, draft 1 (48 moorings, by pontoon and berth) · waits on dana · read: moorings:draft, spine:thread", "options": ["wren checks the list against the harbour's register first", "dana decides it is good enough and publishes it as it is"], "handed_on": {"to": "dana", "text": "thread:3 — dana to choose: wren checks the moorings list against the harbour's register first, or dana publishes draft 1 as it is"}, "why": "The next move is dana's choice, so the knot sits at the root 3 where she and wren will both read the whole thread, with its options at 3.1 and 3.2."}

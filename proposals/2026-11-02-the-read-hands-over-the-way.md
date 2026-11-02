@@ -2,7 +2,7 @@
 
 **Date**: 2 November 2026
 **Lane**: threads.3, weft (Claude Code, Opus 5.5, on the Mac), carrying on at David's word through the bee (weft-bee.2)
-**Status**: decided by David, 2 November 2026: "Hand over the recipe", then "and then go with merge" (`thread:weft` 2.112112). The first run came in at 31 of 40, below the gate he was told of, and his "Mend and re-run" (2.1121121) mended the opening and ran the nine again: **37 of 40, every thread well formed, one check under the gate.** Shown the table, he said "Merge at 37" (`thread:2.11211211`), and `place` is carried on as its own question at `thread:2.112112111`. The law does not move: `function:thread` already says this in its root line, and no tool's wording changes. This file is the record.
+**Status**: decided by David, 2 November 2026: "Hand over the recipe", then "and then go with merge" (`thread:weft` 2.112112). The first run came in at 31 of 40, below the gate he was told of, and his "Mend and re-run" (2.1121121) mended the opening and ran the nine again: **37 of 40, every thread well formed, one check under the gate.** Shown the table, he said "Merge at 37" (`thread:2.11211211`), and `place` went on to `proposals/2026-11-02-the-way-says-where-an-answer-goes.md`. The law does not move: `function:thread` already says this in its root line, and no tool's wording changes. This file is the record.
 
 ## The ask, and the decision
 
@@ -154,6 +154,6 @@ The minds say why. H: *"1.12 is the knot dana tied asking for the low-water mark
 - who ran them: keel's runner, its model version unrecorded, against `claude -p` here
 - where the teaching stood: at the head of the brief for all of keel's; in a read's answer here, except L2's, which is a different text
 
-So I can't say the handed-over way fails at this, or that the way's sentence is too weak. A mind given the way at the head of its brief, on `place` alone through this runner, would separate them: one mind, about half a cent. That is beyond the nine, so it asks David first, at `thread:2.112112111`. One run a cell throughout, of the smallest model.
+So I can't say the handed-over way fails at this, or that the way's sentence is too weak. A mind given the way at the head of its brief, on `place` alone through this runner, would separate them: one mind, about half a cent. That is beyond the nine, so it asked David first, and he said "and proceed with place improvement" (the next record). One run a cell throughout, of the smallest model.
 
 David's own words of 29 October, *"when it is chosen it is filled with the resulting action AT that same location"*, describe taking an option, and a mind can read a knot that waits on it the same way. The way says only *"beneath the line it answers"*. It never says plainly what answering a knot that waits on you does. That is a change to the way, so it is his word first, with the minds run after it.

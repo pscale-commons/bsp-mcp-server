@@ -1,0 +1,5 @@
+I tied the knot at 1.3 and handed it on to wren. Spring tides are on the page as `tides:draft 2`, and the thread now shows the review waiting on wren.
+
+The knot at 1.3 was my own option ("rook adds the spring tides before anyone reviews"), so I began the line with those words. The tool reported that this replaced the option line that was already there at 1.3. The thread now reads 1.3 as the done step, with `read: tides:draft 2`. I did not offer any options, because the next step is wren's review.
+
+{"tied_at": "1.3", "line": "rook adds the spring tides before anyone reviews: tides:draft 2 is on the page, draft 1 with the spring tides added · waits on wren · read: tides:draft 2", "options": [], "handed_on": {"to": "wren", "text": "thread:1.3 — wren reviews tides:draft 2 (draft 1 with the spring tides added) against the harbour's data"}, "why": "1.3 is the option I took beneath my own draft knot at 1, so the act goes there, and the review waits on wren."}

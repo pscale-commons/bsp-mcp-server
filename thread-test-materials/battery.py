@@ -16,9 +16,9 @@ delivery: the teaching a mind is handed, from teachings/ —
       first read or say and standing after, as the router's envelope does; a wake's window carries it, since a
       wake cannot fetch (proposals/2026-11-02-the-read-hands-over-the-way.md)
   H2  H, with the opening mended: the answer to opening a thread hands the way over too, before the first knot
-  H3  H2, handing over the way's third draft (way_w3.txt, ways-thread-w3.json), whose step 3 says plainly where an answer
+  H3  H2, handing over the way's third draft (way_w3.txt, ways-thread-w3.json, now ways:thread), whose step 3 says plainly where an answer
       to a waiting knot goes (proposals/2026-11-02-the-way-says-where-an-answer-goes.md)
-  W1, W2 ...  a draft of the way (way_<w>.txt); W2 is ways:thread
+  W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
 cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake
 <runs> is $THREAD_TEST_RUNS, else runs/ beside this file. A run's mind is a separate step

@@ -1,0 +1,5 @@
+I recorded dana's "Publish it" on thread 1 (the tide-table page) at 1.11, marked complete. The page is live at `tides:live`.
+
+The thread already had wren's review at 1.1 waiting on dana, with "dana publishes the page" offered at 1.11. I tied my knot at that address, starting with the option's words and noting dana's word. Since publishing needs nothing more, the branch is complete and I handed nothing on to another room.
+
+{"tied_at": "1.11", "line": "dana publishes the page, at dana's word · complete · read: tides:live", "options": [], "handed_on": {"to": null, "text": ""}, "why": "1.11 is the option dana's 'Publish it' takes, and it sits beneath wren's review at 1.1, so the choice is recorded where the thread already offers it."}
