@@ -1,0 +1,11 @@
+Draft 3 is on the page with the low-water marks shown, and I've tied my act on thread 1 and handed it to dana.
+
+- **Thread 1** (tide-table page): I answered dana's request at 1.12 with "draft 3 done … · waits on dana". The beach placed the knot at 1.12 in my mirror, not at 1.121 as I'd expected, so the act itself sits at the request's own number.
+- **Options for dana**, at 1.121–1.123: keep draft 3, one more pass with named changes, or stop here because the page is complete.
+- **Handover**: I posted a note in pool:dana pointing to thread:1.12 and listing the three options.
+
+I did not verify the page itself beyond reading the `tides:draft 3` block, which says "draft 3: draft 2 with the low-water marks shown".
+
+```json
+{"tied_at": "1.12", "line": "draft 3 done: the low-water marks are shown on the page (tides:draft 3) · waits on dana · read: spine:thread, thread:1.12, tides:draft 3", "options": ["keep draft 3 as the tide-table page", "one more pass on the tide-table page, with its named changes", "stop here; the page is complete"], "handed_on": {"to": "dana", "text": "thread:1.12 — draft 3 is up: the low-water marks are shown on the tide-table page (tides:draft 3). Your decision is open at 1.121 keep, 1.122 another pass, 1.123 stop."}, "why": "dana's request stands at 1.12 and my answer is the act that takes it up, so it sits there, with the three options beneath it for her to decide."}
+```

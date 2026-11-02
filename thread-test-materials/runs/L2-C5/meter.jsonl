@@ -1,0 +1,5 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1.1"], "chars": 983}
+{"cmd": ["block", "tides:draft", "3"], "chars": 51}
+{"cmd": ["say", "1.14", "rook fixed the tide-table layout for phones in tides:draft 3; draft 2 breaks on phones, so dana's decision at 1.1 should weigh draft 3 \u00b7 waits on dana \u00b7 read: tides:draft 2, tides:draft 3, spine:thread 1.1", "--option", "publish tides:draft 3, the phone layout fixed", "--option", "publish tides:draft 2 as it was, broken on phones", "--option", "another pass on the phone layout, said in pool:tides"], "chars": 478}
+{"cmd": ["post", "dana", "Before you decide the tide-table page (thread:1.1): rook fixed draft 2 for phones as tides:draft 3, and the draft 2 layout breaks on phones. The new act is at thread:1.14, with options 1.141 to 1.143 for you to take."], "chars": 29}

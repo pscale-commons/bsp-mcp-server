@@ -1,0 +1,7 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1.12"], "chars": 897}
+{"cmd": ["block", "tides:draft", "4"], "chars": 87}
+{"cmd": ["block", "tides:draft", "3"], "chars": 49}
+{"cmd": ["say", "1.121", "rook: checked the low-water marks against the harbour master's table and corrected one, now tides:draft 4 \u00b7 waits on dana \u00b7 read: tides:draft 3, tides:draft 4, thread:1.12", "--option", "keep draft 4 as the page's tides", "--option", "return the page to draft 3 and check the marks again"], "chars": 402}
+{"cmd": ["post", "dana", "thread:1.121 \u2014 the low-water marks are checked against the harbour master's table and one is corrected (tides:draft 4). Your decision: keep draft 4, or return the page to draft 3 and check again. Options are at 1.1211 and 1.1212."], "chars": 29}

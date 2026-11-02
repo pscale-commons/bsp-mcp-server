@@ -1,0 +1,6 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["read", "1.12"], "chars": 805}
+{"cmd": ["block", "tides:draft", "3"], "chars": 49}
+{"cmd": ["say", "1.12", "draft 3 done: the low-water marks are shown on the page (tides:draft 3) \u00b7 waits on dana \u00b7 read: spine:thread, thread:1.12, tides:draft 3", "--option", "keep draft 3 as the tide-table page", "--option", "one more pass on the tide-table page, with its named changes", "--option", "stop here; the page is complete"], "chars": 555}
+{"cmd": ["post", "dana", "thread:1.12 \u2014 draft 3 is up: the low-water marks are shown on the tide-table page (tides:draft 3). Your decision is open at 1.121 keep, 1.122 another pass, 1.123 stop."], "chars": 29}

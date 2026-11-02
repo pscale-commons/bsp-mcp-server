@@ -1,0 +1,6 @@
+{"cmd": ["room", "wren"], "chars": 89}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "tides:draft"], "chars": 214}
+{"cmd": ["read", "1"], "chars": 831}
+{"cmd": ["say", "1.1", "wren reviews the draft against the harbour's data: two tide times in draft 1 were wrong and are corrected in tides:draft 2 \u00b7 waits on dana \u00b7 read: tides:draft 1, tides:draft 2", "--option", "dana publishes the page from tides:draft 2", "--option", "dana asks for another pass on the tide table"], "chars": 422}
+{"cmd": ["post", "dana", "wren has reviewed the tide-table draft against the harbour's data and corrected two tide times: draft 2 is ready. Your decision waits at thread:1.1 \u2014 publish, or ask for another pass."], "chars": 29}

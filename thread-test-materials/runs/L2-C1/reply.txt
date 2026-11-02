@@ -1,0 +1,10 @@
+The moorings work is on the beach at thread 3, and the decision waits on dana. I opened the thread, tied the first knot, and left the handoff in dana's room with the place thread:3.
+
+- **Registry:** I opened thread 3 as "the harbour moorings page · opened by rook". No existing line covered the moorings list.
+- **Knot:** Thread 3 says the draft is built, with 48 moorings by pontoon and berth at moorings:draft 1. It waits on dana and reads spine:thread and moorings:draft 1.
+- **Options:** 3.1 has wren check the list against the harbour register first. 3.2 has dana publish it as it is.
+- **Handoff:** I posted the thread place to dana's room, since she makes the choice. I did not post to wren's room because wren's part only comes into play if dana picks option 3.1.
+
+Choice of recipient: I judged dana to be the next hand, not wren, because the open question is hers. If you want wren to see it now, a line in wren's room would be the place for it.
+
+{"tied_at": "3", "line": "built the moorings list, draft 1: 48 moorings by pontoon and berth, saved at moorings:draft 1 · waits on dana · read: spine:thread, moorings:draft 1", "options": ["wren checks the list against the harbour register first", "dana publishes the list as it is"], "handed_on": {"to": "dana", "text": "The harbour moorings list is built as draft 1 (48 moorings by pontoon and berth, at moorings:draft 1). Your decision is open at thread:3: wren checks it against the harbour register first, or you publish it as it is. Thread place: thread:3"}, "why": "Thread 3 is the new registry line for this work, and the first knot sits at its number because nothing beneath it yet answers the offer."}

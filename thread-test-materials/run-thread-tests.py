@@ -5,9 +5,10 @@
      well formed under function:thread as it stands.
   2. THE PLANTED FAULTS (mutation.py): every one is caught, and the unplanted
      thread stays clean.
-  3. KEEL'S RUNS of 29 October, re-graded from their stored replies: the grader
-     still gives the totals he reported (pool:threads 11), so a change to the
-     checker or the grading that moves a verdict is seen.
+  3. THE RUNS, re-graded from their stored replies: keel's of 29 October and weft's
+     of 2 November on the re-cut law. The grader still gives the totals reported
+     (pool:threads 11 and 14), so a change to the checker or the grading that moves
+     a verdict is seen.
 
 The runs are copied to a scratch directory first, so grading writes nothing here.
 Fresh minds are run-minds.sh's, and they run only on David's word, because they
@@ -19,7 +20,7 @@ import glob, json, os, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # delivery: (checks passed, checks, well formed under the first law, under the law as it stands)
-EXPECT = {"L": (36, 40, 8, 3), "W1": (31, 40, 9, 9), "Lx2": (35, 40, 8, 5), "W2": (40, 40, 9, 9)}
+EXPECT = {"L": (36, 40, 8, 3), "W1": (31, 40, 9, 9), "Lx2": (35, 40, 8, 5), "W2": (40, 40, 9, 9), "L2": (35, 40, 9, 9)}
 
 failed = []
 
@@ -47,7 +48,7 @@ r = subprocess.run(py + [os.path.join(HERE, "mutation.py")], capture_output=True
 print("\n".join("    " + l for l in r.stdout.strip().split("\n")))
 say(r.returncode == 0, r.stdout.strip().split("\n")[-1] if r.stdout.strip() else "mutation.py gave nothing")
 
-print("── 3. keel's runs, re-graded from their replies ──")
+print("── 3. the runs, re-graded from their replies ──")
 for dname, (want, of, v1, p2) in EXPECT.items():
     r = subprocess.run(py + [os.path.join(HERE, "battery.py"), "score", dname], capture_output=True, text=True, env=env)
     rows = json.load(open(os.path.join(runs, f"scores-{dname}.json"))) if r.returncode == 0 else []
@@ -57,7 +58,7 @@ for dname, (want, of, v1, p2) in EXPECT.items():
     wf2 = sum(1 for x in rows if x.get("form_p2") == "WELL FORMED")
     say((got, total, wf1, wf2) == (want, of, v1, p2),
         f"{dname}: {got}/{total} checks, well formed {wf1} of 9 under the first law and {wf2} under the law as it stands"
-        + ("" if (got, total, wf1, wf2) == (want, of, v1, p2) else f" (keel reported {want}/{of}, {v1} and {p2})"))
+        + ("" if (got, total, wf1, wf2) == (want, of, v1, p2) else f" (reported {want}/{of}, {v1} and {p2})"))
 
 shutil.rmtree(tmp, ignore_errors=True)
 print(f"\nthread-test: {'all passed' if not failed else str(len(failed)) + ' failed'}")

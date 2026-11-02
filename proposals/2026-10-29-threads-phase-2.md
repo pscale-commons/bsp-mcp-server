@@ -117,8 +117,8 @@ Every step is paid by the mind that takes it. The checker reads the registry and
 
 ## 9. What waits
 
-- **David's two hands** for the waker: the *Railway Config File* setting, then the merge.
-- **The fresh-mind battery** against the re-cut law, on David's word (it spends model calls). Until it has run, keel's numbers stand for the law as it was and for the way as it is.
+- **David's two hands** for the waker: the *Railway Config File* setting, then the merge. Done 29 October: Railway built the waker on this PR's merge at 18:08Z.
+- **What follows the fresh minds' result** (below) is David's, at `thread:2.1121`.
 - **keel's knot at 1.1** and **egg-one's at 2.4** are their hands' own: keel may re-say 1.1 under the new law; egg-one's stands as the record of a blind wake.
 - **Proposal decisions as thread knots**, keel's rollout: worth one trial, on the loom, before any change to how proposals ask.
 - **A page's tap past the ninth thread** (pscale-beach, upstream-owed): the beach's voice founds a new mirror at the registry's floor, but writes into a standing mirror as it stands. Once the registry nests, a person's mirror born at floor 1 needs raising before a tap at 11.3, as the router raises a writer's mirror before every say through it.
@@ -130,3 +130,33 @@ Every step is paid by the mind that takes it. The checker reads the registry and
 - **The waker**: `genus-one/test_thread_wake.py` passes 19 of 19. Seven are new: a thread section past 2,500 characters rides whole beside the voice, the kernel lays it in the ring as its own key, and a ring with no place composes exactly as before. `test_place_doorman.py` passes 55 of 55.
 - **The battery**: `npm run smoke:thread-test` passes. It re-grades keel's runs to his figures exactly (L 36/40, W1 31/40, Lx2 35/40, W2 40/40, with the same well-formed counts), catches 11 of 11 planted faults, and finds all eight hand-played threads well formed under the law as it stands.
 - **The page**: played locally with the site's rewrites and the live beach. `/threads` draws 1.2 as taken, sets options in beneath their knot, and gives keel's three open options under 1.1 (which waits on weft) their taps. The loom shows thread 2's 2.411 as red, waiting on David with no option to tap. A throwaway thread 3, injected in the browser only, came up as a red tile with two TAKEs for its waiting hand. A tap founded that hand's mirror under its key and said `'… asks for a second draft · waits on threads3-probe-a'` at 3.2, and the tile cleared on the re-read; the writes were kept in the browser, and nothing reached the beach. `/proposal/schematics` draws its four unfounded keeper threads without one fetch for a missing block. At phone width nothing scrolls sideways.
+
+## The fresh minds, 2 November 2026
+
+At David's word, relayed by the bee ("Go ahead with fresh runs"), the nine uses ran on the law as re-cut: delivery L2, `function:thread`'s root and 1 to 8 as they stand on the beach, unchanged since 29 October. Each use had one fresh `claude-haiku-5-5`, its only tool Bash fenced to its own test beach, about four cents in all at list price.
+
+| Use | Morning's law, round 1 | Round 2 | `ways:thread` | **Re-cut law** |
+|---|---|---|---|---|
+| open | 6/6 | 6/6 | 6/6 | 6/6 |
+| take | 5/5 | 5/5 | 5/5 | 5/5 |
+| self | 2/5 | 2/5 | 5/5 | **5/5** |
+| word | 4/4 | 4/4 | 4/4 | 4/4 |
+| step | 4/4 | 4/4 | 4/4 | 4/4 |
+| place | 4/4 | 4/4 | 4/4 | **2/4** |
+| twin | 4/4 | 4/4 | 4/4 | **1/4** |
+| reask | 4/4 | 3/4 | 4/4 | **4/4** |
+| wake | 3/4 | 3/4 | 4/4 | **4/4** |
+| **checks** | **36/40** | **35/40** | **40/40** | **35/40** |
+| well formed, the law as it stands | 3 of 9 | 5 of 9 | 9 of 9 | 9 of 9 |
+| calls, median of uses 1-8 | 7.5 | 6.5 | 5 | 6 |
+
+**What it cured.** The closing clause did what it was cut for. All three of the first law's misses are gone: a mind takes its own option at its address, re-asks beneath the answer, and a wake names whom it waits on. Every act closes, so every thread is well formed under the law as it stands.
+
+**What it did worse.** Two uses that never missed before lost five checks to two mistakes of one shape: answering a line with no option to take, the mind tied at that line's own address, not the next free digit beneath it.
+
+- *place*: rook, handed `thread:1.12` where dana's request stands, tied at 1.12 beside her, not at 1.121. Its reason: *"dana's request stands at 1.12 and my answer is the act that takes it up, so it sits there."* The thread still reads, but the address no longer says the answer came after the request.
+- *twin*: rook, a second session, tied at 1.121 and replaced its own earlier act. Its reason: *"1.121 is the live end that waits on dana, so my correction answers it there."* That is what function:thread 3 forbids, and its reply said so: *"The spec says a hand never overwrites its own act."* It also quoted the lost line.
+
+**How far to trust it.** One run a cell, so chance isn't ruled out, though the morning's law never missed these in two rounds. No mind reached for `ways:thread`, which this test beach doesn't hold, so this measures the law alone; `ways:thread`, the way the law's root now points to, is unchanged and stands at 40 of 40. On the real router, a say that replaces one's own line also tells the hand to say it back, which the test beach's shorter notice doesn't, so the twin's loss would be easier to repair there. The fence refused each tool-using mind one compound shell line, and each carried on with single commands.
+
+**What was changed.** Nothing in the law. A change to it is David's word first, by proposal and version (`thread:2.1121` offers it). The runner gained a clean environment, a budget cap per mind and a record of each mind's model and cost before it first spent, and the nine runs are kept in `thread-test-materials/runs/L2-*`, held to these figures by the CI pass.
