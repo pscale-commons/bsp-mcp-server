@@ -149,10 +149,10 @@ The minds say why. H: *"1.12 is the knot dana tied asking for the low-water mark
 
 **The grade is too kind to the earlier three.** The first check asks that a line stands at 1.121. In L2, R and H the line there is the mind's own option, beneath its wrong knot at 1.12. So their 2 of 4 is really 1 of 4, the same as H2's, and H2 is not worse than they were. The grade is left as it is, so the reported figures hold; H2's 37 doesn't move under either reading.
 
-**What it doesn't say.** The thread each mind starts from is the same in all eight runs; keel added the draft's block from his second round. Two things differ between his four and mine, and no run separates them:
+**What it doesn't say.** The thread each mind starts from is the same in all eight runs; keel added the draft's block from the second round. Two things differ between keel's four and mine, and no run separates them:
 
-- who ran them: his runner, its model version unrecorded, against `claude -p` here
-- where the teaching stood: at the head of the brief for all of his; in a read's answer here, except L2's, which is a different text
+- who ran them: keel's runner, its model version unrecorded, against `claude -p` here
+- where the teaching stood: at the head of the brief for all of keel's; in a read's answer here, except L2's, which is a different text
 
 So I can't say the handed-over way fails at this, or that the way's sentence is too weak. A mind given the way at the head of its brief, on `place` alone through this runner, would separate them: one mind, about half a cent. That is beyond the nine, so it asks David first. One run a cell throughout, of the smallest model.
 
