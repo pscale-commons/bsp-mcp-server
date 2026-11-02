@@ -250,7 +250,8 @@ def door_api(model, effort, window, system=SYSTEM):
     i, o = next((m[2], m[3]) for m in MODELS.values() if m[0] == model)
     usd = (r.usage.input_tokens * i + r.usage.output_tokens * o) / 1e6
     return dict(reply="".join(b.text for b in r.content if b.type == "text"), stop=r.stop_reason, model=r.model,
-                tokens_in=r.usage.input_tokens, tokens_out=r.usage.output_tokens, thinking=None, list_usd=usd, usd=usd, error=None)
+                tokens_in=r.usage.input_tokens, tokens_out=r.usage.output_tokens, thinking=None,
+                thought=any(b.type == "thinking" for b in r.content), list_usd=usd, usd=usd, error=None)
 
 
 DOORS = {"sub": door_sub, "api": door_api}
@@ -631,8 +632,53 @@ def cmd_score():
                 print(f"  bare's steer against its own door's blind: sub {fmt(*steer(sa['bare'], s[2]))}, api {fmt(*steer(aa['bare'], a[2]))}")
 
 
+def cmd_routes():
+    """Not registered, read after the run: the next choice given the route so far, and what notes kept."""
+    for f in batches():
+        name = os.path.basename(f)[:-6]
+        rows, lin, cells = load_batch(f)
+        print(f"\n{'=' * 8} {name} {'=' * 8}")
+        for rung in (3, 4):
+            print(f"RUNG {rung} GIVEN THE ROUTE TO IT (route: arm takes, mean obj)")
+            table = collections.defaultdict(lambda: collections.defaultdict(list))
+            for (a, chain, rep), steps in lin.items():
+                if rung in steps and all(r in steps for r in range(2, rung)):
+                    first = [steps[1]["type"]] if 1 in steps else [CONDS[a]["plant"]]
+                    route = " ".join(first + [steps[r]["type"] for r in range(2, rung)])
+                    table[route][a].append(steps[rung])
+            for route in sorted(table, key=lambda r: -sum(len(v) for v in table[r].values())):
+                print(f"  {route}")
+                for a in LINEAGE_ARMS:
+                    if a in table[route]:
+                        st = table[route][a]
+                        print(f"    {a:13} {dict(collections.Counter(s['type'] for s in st))} {mean([s['obj'] for s in st]):.2f}")
+        print("BLIND, CELL BY CELL (chain, rung, the order offered: takes)")
+        for k in sorted(cells):
+            print(f"  {k[0]} r{k[1]} {k[2]}: {dict(collections.Counter(s['type'] for s in cells[k]))}")
+        print("WHAT THE AIM1 NOTES KEPT OF THE AIM: share of notes with the word, by rung")
+        for word in ("aim", "school", "kitchen", "winter", "parents", "outside"):
+            row = []
+            for r in ALL:
+                notes = [v[r]["note"].lower() for k, v in lin.items() if k[0] == "aim1" and r in v]
+                row.append(f"r{r} {mean([word in n for n in notes]):.2f}")
+            print(f"  {word:8} " + "  ".join(row))
+        thought = [r["thought"] for r in rows if "thought" in r]
+        if thought:
+            print(f"calls with a thinking block {mean(thought):.2f} (n={len(thought)})")
+        thinks = [r["thinking"] for r in rows if r.get("thinking") is not None]
+        if thinks:
+            print(f"calls with thinking tokens {mean([t > 0 for t in thinks]):.2f}, mean {mean(thinks):.0f} (n={len(thinks)})")
+        print("I AND V: taken of offered, all rungs, by arm")
+        for a in LINEAGE_ARMS:
+            st = [s for k, v in lin.items() if k[0] == a for s in v.values()]
+            print(f"  {a:13} I {sum(s['type'] == 'I' for s in st)}/{sum('I' in s['offered'] for s in st)}  V {sum(s['type'] == 'V' for s in st)}/{sum('V' in s['offered'] for s in st)}")
+
+
 if __name__ == "__main__":
     a = sys.argv[1:]
+    if a[0] == "routes":
+        cmd_routes()
+        sys.exit()
     if a[0] == "check":
         cmd_check(a[1])
     elif a[0] == "run":
