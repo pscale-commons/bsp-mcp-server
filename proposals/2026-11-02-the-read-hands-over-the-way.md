@@ -2,7 +2,7 @@
 
 **Date**: 2 November 2026
 **Lane**: threads.3, weft (Claude Code, Opus 5.5, on the Mac), carrying on at David's word through the bee (weft-bee.2)
-**Status**: decided by David, 2 November 2026: "Hand over the recipe", then "and then go with merge" (`thread:weft` 2.112112). The first run came in at 31 of 40, below the gate he was told of, and his "Mend and re-run" (2.1121121) mended the opening and ran the nine again: **37 of 40, every thread well formed, one check under the gate. Not merged**; the table goes back to him at `thread:2.1121121`. The law does not move: `function:thread` already says this in its root line, and no tool's wording changes. This file is the record.
+**Status**: decided by David, 2 November 2026: "Hand over the recipe", then "and then go with merge" (`thread:weft` 2.112112). The first run came in at 31 of 40, below the gate he was told of, and his "Mend and re-run" (2.1121121) mended the opening and ran the nine again: **37 of 40, every thread well formed, one check under the gate.** Shown the table, he said "Merge at 37" (`thread:2.11211211`), and `place` is carried on as its own question at `thread:2.112112111`. The law does not move: `function:thread` already says this in its root line, and no tool's wording changes. This file is the record.
 
 ## The ask, and the decision
 
@@ -122,7 +122,7 @@ The nine ran again, with every case and grade as before: one fresh `claude-haiku
 | well formed, the law as it stands | 9 of 9 | 9 of 9 | 3 of 9 | 8 of 9 | **9 of 9** |
 | calls, median of uses 1-8 | 5 | 6 | 6.5 | 6, of the six that reached the beach | **8** |
 
-**Against the gate: not met.** 37 of 40 is one under 38, so this did not merge. Every thread is well formed and eight uses of the nine are at full marks. All three lost checks are `place`'s.
+**Against the gate: not met.** 37 of 40 is one under 38, so the table went back to David, who said "Merge at 37". Every thread is well formed and eight uses of the nine are at full marks. All three lost checks are `place`'s.
 
 **What each mind fetched.** Only `open`'s and `word`'s fetched `ways:thread`, and no mind read the law's branches. Uses 1 to 8 held the way by their first read, and `wake` had it in its window.
 
@@ -154,6 +154,6 @@ The minds say why. H: *"1.12 is the knot dana tied asking for the low-water mark
 - who ran them: keel's runner, its model version unrecorded, against `claude -p` here
 - where the teaching stood: at the head of the brief for all of keel's; in a read's answer here, except L2's, which is a different text
 
-So I can't say the handed-over way fails at this, or that the way's sentence is too weak. A mind given the way at the head of its brief, on `place` alone through this runner, would separate them: one mind, about half a cent. That is beyond the nine, so it asks David first. One run a cell throughout, of the smallest model.
+So I can't say the handed-over way fails at this, or that the way's sentence is too weak. A mind given the way at the head of its brief, on `place` alone through this runner, would separate them: one mind, about half a cent. That is beyond the nine, so it asks David first, at `thread:2.112112111`. One run a cell throughout, of the smallest model.
 
 David's own words of 29 October, *"when it is chosen it is filled with the resulting action AT that same location"*, describe taking an option, and a mind can read a knot that waits on it the same way. The way says only *"beneath the line it answers"*. It never says plainly what answering a knot that waits on you does. That is a change to the way, so it is his word first, with the minds run after it.
