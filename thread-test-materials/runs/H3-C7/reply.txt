@@ -1,0 +1,5 @@
+I checked the low-water marks against the harbour master's table, corrected one in tides:draft 4, and tied that on the thread for dana to decide.
+
+I tied the knot at 1.1211, beneath 1.121, the act that waits on dana. No line stood beneath 1.121 yet, so it takes the first free digit. I offered dana two options, publish draft 4 or hold it for a rebuild on the new chart, and posted a hand-on card in pool:dana at 1.1211.
+
+{"tied_at": "1.1211", "line": "rook checked the low-water marks against the harbour master's table and corrected one: draft 4 · waits on dana · read: tides:draft 4", "options": ["publish draft 4 with the corrected low-water marks", "hold draft 4 and rebuild on the new chart first"], "handed_on": {"to": "dana", "text": "thread:1.1211 — dana decides whether draft 4 (one low-water mark corrected against the harbour table) publishes or waits for the new chart"}, "why": "1.121 is the act that waits on dana, and nothing stands beneath it yet, so my knot takes the next free digit beneath it at 1.1211."}

@@ -8,7 +8,8 @@
 #     delivery  L2 (function:thread as re-cut, the default), R (the root line a live read gives,
 #               the law's branches and the way on the test beach), H (R, with the way printed
 #               once in a session as the read now does), H2 (H, the opening handing it over too),
-#               W2 (ways:thread), L, W1 ...
+#               H3 (H2, handing over the way's third draft),
+#               W2 (the way through 2 November), L, W1 ...
 #     cases     C1,C2,... (default all nine)
 #
 # Each mind gets its brief on stdin and one tool, Bash, fenced to its own run's test-beach

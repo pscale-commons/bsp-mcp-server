@@ -25,14 +25,17 @@ WHOLE_CHARS = 6000
 # A run set up to meet a thread as a live mind does holds the law's branches and the way as plain blocks.
 TAUGHT = {"function:thread": "function-thread.json", "ways:thread": "ways-thread.json"}
 # What the router's envelope says of the law and of the way a law names (tools/stream.ts wayHandedOver); smoke:thread
-# holds these words and way_w2.txt to what the router prints. A run set up with way_once gets them as a session does:
-# whole in its first read or say, and after that that they stand.
+# holds these words and the way's text to what the router prints. A run set up with way_once gets them as a session does:
+# whole in its first read or say, and after that that they stand. A run with way_draft is handed that draft of the way.
 LAW_FIRST = "# The law — function:thread, this family’s operator: its root line stands here, and its branches at function:thread, read when the law is needed, never to say a line"
 LAW_STANDS = "# The law — function:thread, standing as it was given to you earlier in this session (read function:thread to have it whole again)"
 WAY_FIRST = "# The way — ways:thread, how a mind carries this family's work; given once in a session"
 WAY_STANDS = "# The way — ways:thread, standing as it was given to you earlier in this session (read ways:thread to have it whole again)"
-WAY_TEXT = open(os.path.join(HERE, "teachings", "way_w2.txt")).read().strip()
-WAY_SECTION = WAY_FIRST + "\n" + WAY_TEXT
+
+
+def way_section(draft=None):
+    """The way as a read prints it: teachings/way_w2.txt, what stood through the first runs, or the draft a run names."""
+    return WAY_FIRST + "\n" + open(os.path.join(HERE, "teachings", f"way_{draft or 'w2'}.txt")).read().strip()
 
 
 def load(d):
@@ -128,7 +131,7 @@ def law_section(s):
     if not s.get("way_once"):
         return [LAW_FIRST, LAW_ROOT]
     law = [LAW_STANDS] if s.get("told_law") else [LAW_FIRST, LAW_ROOT]
-    way = [WAY_STANDS] if s.get("told_way") else ["", WAY_SECTION]
+    way = [WAY_STANDS] if s.get("told_way") else ["", way_section(s.get("way_draft"))]
     s["told_law"] = s["told_way"] = True
     return law + way
 
@@ -215,7 +218,7 @@ def main():
             if way:
                 s["told_way"] = True
             save(d, s)
-            out = f"appended to spine:thread at {n}: {content}" + ("\n\n" + WAY_SECTION if way else "")
+            out = f"appended to spine:thread at {n}: {content}" + ("\n\n" + way_section(s.get("way_draft")) if way else "")
     elif cmd == "block":
         name = args[0]
         sp = args[1] if len(args) > 1 else None
@@ -230,7 +233,8 @@ def main():
         else:
             b = s.get("blocks", {}).get(name)
             if b is None and s.get("live") and name in TAUGHT:
-                b = json.load(open(os.path.join(HERE, "teachings", TAUGHT[name])))
+                taught = f"ways-thread-{s['way_draft']}.json" if name == "ways:thread" and s.get("way_draft") else TAUGHT[name]
+                b = json.load(open(os.path.join(HERE, "teachings", taught)))
         if b is None:
             out = f"no block named {name}"
         elif sp is None and len(json.dumps(b, ensure_ascii=False, indent=2)) > WHOLE_CHARS:

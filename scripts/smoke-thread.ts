@@ -174,6 +174,8 @@ ok(r.includes(way) && r.includes('2 TIE IT, CLOSING.'), 'a changed way is given 
 const taught = JSON.parse(readFileSync(new URL('../thread-test-materials/teachings/ways-thread.json', import.meta.url), 'utf8'));
 const ran = readFileSync(new URL('../thread-test-materials/teachings/way_w2.txt', import.meta.url), 'utf8').trim();
 ok(wayText(taught) === ran, 'what is printed for ways:thread is the text the battery ran at 40 of 40');
+const third = JSON.parse(readFileSync(new URL('../thread-test-materials/teachings/ways-thread-w3.json', import.meta.url), 'utf8'));
+ok(wayText(third) === readFileSync(new URL('../thread-test-materials/teachings/way_w3.txt', import.meta.url), 'utf8').trim(), 'the way as it stands, the third draft, prints as the battery ran it');
 const beach = readFileSync(new URL('../thread-test-materials/testbeach.py', import.meta.url), 'utf8');
 r = await engageIn('w6', { handle: 'cy', at: '11' });
 const said = r.split('\n');

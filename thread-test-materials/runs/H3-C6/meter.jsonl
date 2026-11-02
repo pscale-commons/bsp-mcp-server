@@ -1,0 +1,10 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 5531}
+{"cmd": ["read", "1"], "chars": 947}
+{"cmd": ["block", "tides", "draft"], "chars": 20}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["room", "wren"], "chars": 28}
+{"cmd": ["block", "tides:draft", "3"], "chars": 49}
+{"cmd": ["say", "1.121", "rook rebuilt the page with the low-water marks shown (tides:draft 3) \u00b7 waits on dana \u00b7 read: tides:draft 3", "--option", "publish the page with the low-water marks", "--option", "one more pass, please"], "chars": 277}
+{"cmd": ["post", "dana", "thread:1.121 \u2014 the tide-table page with the low-water marks is ready (tides:draft 3); it waits on your decision: publish, or one more pass"], "chars": 29}
