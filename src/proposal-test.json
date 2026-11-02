@@ -1,0 +1,78 @@
+{
+  "_": "PROPOSAL-TEST — the battery for a proposal: whether a family set up under function:proposal is well formed, beside bsp-test (the walker that reads one block), well-formed (the block being written), compound-test (blocks in company) and thread-test (a thread). A proposal is combined, so the battery is: five smaller batteries, the family at 1, its decisions at 2, its room at 3, its threads at 4, its page and look at 5, each able to run alone and together the whole pass. Run it before listing a proposal (function:proposal 7), and the maker learns what is wrong from the battery, with nobody having to nudge. A program decides all five, reading a family the way the pages read it, by public GET, writing nothing: a FAULT breaks the form or loses a reader something, a WARN weakens it, a NOTE is a reading, and a family with no FAULT is well formed. Branch 6 is what only a reader decides, 7 the planted faults that prove every case fires, 8 what the battery has found, 9 how each part runs and where it came from. A mind with no shell walks 1 to 5 by reading the blocks: each case says what to look at.",
+  "1": {
+    "_": "THE FAMILY — what stands and where (function:proposal 1, 2, 7 and 8). Read spine:<name>, function:<name> and the list, proposals.",
+    "1": "STANDS, a fault: spine:<name> and function:<name> stand, and the name holds only lower-case letters, digits and hyphens, since the list and the page's address read it lower-cased.",
+    "2": "SHAPE and FLOOR, faults: every key of the spine and the law is '_' or a digit 1-9, no subtree is written as a string (well-formed 1), and the spine stands at floor 1, since every page reads the first step at the root's 1.",
+    "3": "TITLE, a fault: the root's one line has its title before ' — '. ROOT, a WARN: the root's 2 names the page, its 3 where the proposal came from, its 9 its provenance.",
+    "4": "STEPS, a fault: a first step stands at 1, and no more than twelve run down 1, where the page stops drawing; one step beside a fan of rooms at the root is a WARN, since a spine is a spindle. TITLES, a WARN: each step and each side-room opens with its title before ' — '.",
+    "5": "STATE, a fault: a step's 9 opens with one of NOT STARTED, SCOPED, SPECIFIED, BUILDING, BUILT or LIVE, since no page draws any other: 'STATE — BUILDING', 'STATE: BUILDING' and 'STATE — 2 November' are all lost.",
+    "6": "MODE, a fault: the law's 1 is 'mode: document'. POSITIONS, a WARN: the law's 2, 3, 4, 5, 6, 7 and 9 are voiced.",
+    "7": "LISTED: the proposal's line on the list reads '<name> — what it is · its page', a fault where it stands and cannot be read and a WARN where it names no page; not on the list yet is a NOTE, because a maker runs this before listing.",
+    "8": "NOTATION and RESOLVES, WARNs: no multi-dot address in the spine, the law or the welcome, and every spine:, function:, ways:, pool:, look:, files: or history: block their words name stands, its address walking. COMPOUND, a fault: the family's bonds pass compound-test's form pass (compound-test 4)."
+  },
+  "2": {
+    "_": "THE DECISIONS — each decision reads on every page as its maker wrote it, and each answer as an answer (function:proposal 3). Read each step's 8 and each side-room's 8, by the page's own rules (proposal.html decisionOf): a decision that parses wrongly loses a button in silence, and nothing else reports it.",
+    "1": "OPENS and SPELT, WARNs: a step's 8 opens exactly 'DECIDE — '; one opening another word draws no card on the standard page, and one spelt otherwise may fail a crafted page's reader. PLACED, a fault: a line opening DECIDE stands only at a step's 8 or a side-room's 8, where a page reads one.",
+    "2": "QUESTION, a WARN: the card asks one question, not a statement and not two; a statement still takes an answer, as the first exemplars' do.",
+    "3": "WHO, a fault: its last sentence, before any words, names whom it waits on, in 170 characters or fewer.",
+    "4": "WORDS, a fault: the words its last sentence offers are the words the page's buttons read. A word holds capitals and apostrophes alone, with no digit and no gloss in brackets: 5TH PLACE loses CLERO and ISBD with it, EVERY 4 HOURS reads as HOURS, and a gloss loses every word before it. The explaining stands in a side-room or the sentence before.",
+    "5": "HOLD, a fault: a decision with words of its own keeps NOT YET among them.",
+    "6": "SHORT, a WARN: the question runs under 300 characters; a card is answered with a tap and a line, and the reasons stand in side-rooms.",
+    "7": "ANSWERS, a WARN: each line in <name>:<handle> at a decision's address opens with one of its words, or it reads as a note and never counts. It is the answerer's own to re-say, never the keeper's to mend.",
+    "8": "NAMED, a WARN: where the law's 2 lists decisions by address, it lists each step's decision and no address where the spine holds none."
+  },
+  "3": {
+    "_": "THE ROOM — the pool a proposal talks in: its welcome and the earlier responses folded beneath it (function:proposal 1 and 7, parlour 1, block-conventions 3.5 and 4.2). Read pool:<name>, or the pool the law names. This battery serves any family with a room.",
+    "1": "STANDS and SHAPE, faults: the room stands, keys '_' and digits alone. NAMED, a fault: the page takes the first pool any line of the law names for the room, so another pool named before the law's 3 sends every reader to the wrong room.",
+    "2": "WELCOME, a fault: the purpose says in words what the room is for, since every arrival reads it; a bare mount or an address is no welcome.",
+    "3": "LINK, a fault: the welcome carries a link to this proposal's page, standard or crafted, at the least. ENDS, a WARN: it ends with the page's address, the crafted page where one stands (ways:proposal 1.111114).",
+    "4": "ENTRIES, a WARN: each line has its speaker at 1 and its stamp at 3, which an append through the room gives it; no page shows a line without them. An empty room is a NOTE.",
+    "5": "SUMMARIES, a WARN: the earlier responses nest as the room grows, and each span that has opened has the nine before it voiced at its underscore (10 voices 1-9, 20 voices 11-19), so a reader of its entries arrives with their frame (block-conventions 3.5).",
+    "6": "REPLIES, a NOTE: responses nested beneath an entry are counted, because the door and the page show the entries alone; walk an entry before calling it unanswered."
+  },
+  "4": {
+    "_": "THE THREADS — the law's 5 names what stands, and the page draws each under what it serves (function:proposal 5, function:thread). A registry thread's own form is thread-test's; this battery runs it and adds what a proposal's law owes.",
+    "1": "HEADED: the law's 5 opens 'THE THREADS', or no page reads what it names: a fault where it holds threads, a WARN where it is only silent on them.",
+    "2": "LINE, a fault: each digit beneath it reads '<thread> — what it carries · step <address>', the thread being thread:<number> or a founded name.",
+    "3": "STANDS: a number the registry, spine:thread, never opened is a fault; a name with no spine:<name> is a WARN, since the page draws it empty.",
+    "4": "STEP, a fault: ' · step <address>' names a step of this spine, or no step draws the thread.",
+    "5": "FORM: each registry thread passes thread-test's form pass (thread-test 1), its faults here as faults and its warnings as one WARN a thread.",
+    "6": "TIED, a WARN: phase: project with no thread leaves the page's trail empty (function:proposal 6)."
+  },
+  "5": {
+    "_": "THE PAGE AND THE LOOK — the phase, the addresses that name the page, a crafted page's source, the look it wears and where it is pinned (function:proposal 4 and 6, ways:proposal, function:look, function:schematic 8). A program reads a page's source and its answer, and never sees it drawn; that is 6.2.",
+    "1": "PHASE: the law's 7 opens 'phase: proposal', 'phase: project' or 'phase: set aside'. A fault where it says anything else, or where nothing says it and the proposal is unlisted, since the page then refuses to draw it; a WARN where the phase stands on another line of the law.",
+    "2": "PAGE: 'page: https://…' at the law's 6, a fault where it is no address the page can follow, a WARN where a crafted page stands that the law does not name, a NOTE while it is still to come. AGREE, a WARN: the law, the spine's 2 and the list name one crafted page. STALE, a WARN: once the page answers, no line still says it is to come.",
+    "3": "ANSWERS, a fault: a crafted page named on the beach answers 200, or it is a dead link there. OFFSITE, a NOTE: a page off this site, as a maker's own GitHub Pages, gets its Snazzy button only once the proposal is listed, because the list is kept under the shared project lock.",
+    "4": "PREVIEW and KEY, faults: the source is the repo page and no preview export (no window.__PREVIEW__ = true), and it holds nothing that looks like a key (ways:proposal 1.111 and 1.11111).",
+    "5": "WIRING, a WARN: on this site the source holds data-proposal on its <html>, a canonical link, a description, a viewport, /theme.js, voice.js, /threads.js, /api/mirrors, the answer's say, keepDraft, dictate, the room's link and the footer's #create-your-own (ways:proposal 1.11); off this site, at the least the family's name. CARDS, a WARN: each decision's address appears in the source. STILL: no og:image is a WARN, and one that does not answer a fault.",
+    "6": "LOOK: 'look: <handle>' ends the law's 6 line, or 'look: accent #rrggbb' stands in it, or no page reads it, a fault; look:<handle> stands, a fault; its 1, 2 and 3 are voiced and it holds no CSS or markup, a WARN (function:look 1). MAKER, a WARN: a look worn off its maker's own pages has look:<handle> 8 naming the family or the law's 6 recording '… at <handle>'s yes, <date>' (function:look 5).",
+    "7": "MAP: a law's 8 opens 'map: <name> <address>', several divided by ';', and each walks in spine:<name>-schematic, a fault where it does not. No pin at all is a NOTE, since a proposal may change no running process.",
+    "8": "WALK, a NOTE: a body that hides its overflow blinds a sideways-scroll check, so 6.2 measures each element's right edge there."
+  },
+  "6": {
+    "_": "WHAT ONLY A READER DECIDES — the program reads words and source and never sees a page. Compound-test's interpretive pass (compound-test 5) is the same act for blocks in company.",
+    "1": "READ IT AS A STRANGER: open happyseaurchin.com/proposal/<name>, as function:proposal 7 asks at its step (5). Can someone new say what this proposes, what it asks and of whom? Mend the spine, never the page.",
+    "2": "WALK A CRAFTED PAGE at 1280 light and 390 dark, motion on and off (ways:proposal 1.1111): no script error, every drawing present, nothing cut off. Measure each element's right edge against the width rather than asking the page to scroll, since a body that hides overflow scrolls for nothing.",
+    "3": "A FRESH READER: hand a fresh mind the spine and the law alone, and ask it of each decision what is asked, of whom, and what each word would do. Where it stumbles, the words are wrong. It costs a model call, so a session runs it on its person's word."
+  },
+  "7": "The planted faults — 91, each planted alone in a well-formed family, harbour-bell, and the pass must catch each at its level while the family unplanted carries no FAULT and no WARN (mutation.py). Those marked 'as found' stand verbatim as the first sweep met them on the beach, so a fault once met stays a case.",
+  "8": {
+    "_": "What it found — the first sweep, 2 November 2026, every proposal on the list by public GET: 28 proposals, 18 well formed and 10 not, with 17 faults, 157 warnings and 24 notes. Nine of the newest ten were well formed. None of the faults had been reported, because a decision that parses wrongly and a STATE no page reads both fail in silence. The list is a record of that day: run the sweep for what stands now.",
+    "1": "BUTTONS LOST — six decisions offer words the standard page cannot read: leros-on-the-commons 1.11118, weft-bee 1.11118, loom 1.118 and 1.111128, shell-indexes 1.118, game-arcade 1.11111178. Where someone answered with a lost word the answer reads as a note and the decision cannot stand: Matthew's CLERO on leros-on-the-commons, weft's ROUTED and NEW PAGE on loom.",
+    "2": "STATES LOST — five STATE lines no page draws: y-ray 1.1119 and 1.1111119, code-as-blocks 1.9, weft-bee 1.1111119, pscale-native 1.11119. Keel's at mistake-proofing 1.111119 was the sixth, mended the same day, which made mistake-proofing, the proposal that asked for this, the battery's first passing family.",
+    "3": "ROOMS — three welcomes with no link to their proposal: character-sheets and visual-consistency share pool:character-sheets, which links a walk, and code-as-blocks talks in pool:keel. Seven spans of earlier responses owe their summaries, and six welcomes end on the standard page where a crafted one stands.",
+    "4": "A LESSON SET AS A CASE — mistake-proofing's crafted page passed its maker's headless check at 390 with a link cut off, because a body that hides its overflow cannot scroll sideways. It is case 5.8 and the walk at 6.2."
+  },
+  "9": {
+    "_": "How it runs — with Python and nothing else. Only the fresh reader at 6.3 spends.",
+    "1": "python3 proposal-test-materials/run-proposal-tests.py is the CI pass (npm run smoke:proposal-test): the clean family, every planted fault, and this block against the code, so no case stands in one without the other. It reads nothing from the network.",
+    "2": "python3 proposal-test-materials/proposal_form.py live <name> checks one family; --all every proposal on the list; --only family,decisions,room,threads,page runs the smaller batteries you name; --beach <origin> reads another beach; --no-net leaves the crafted page unfetched; --json gives the findings as data; state <file.json> reads a fixture. It exits 1 on any FAULT.",
+    "3": "Away from this repo it runs alone: fetch proposal_form.py from https://raw.githubusercontent.com/pscale-commons/bsp-mcp-server/main/proposal-test-materials/proposal_form.py, read it, and run it. It then says that compound-form.py and thread_form.py were not beside it, and passes over those two cases.",
+    "4": "With no shell, walk 1 to 5 by reading the blocks through bsp(): each case says what to look at, and a mind that follows them finds what the program finds, the page's parsing being stated at 2.4 and 5.",
+    "5": "The pass follows the pages' own readers, ported from proposal.html and threads.js and proved identical on 2 November 2026 over 28 families, 173 steps, 149 decisions, 254 answers, 17 threads and 173 room lines. A live pass looks for the lines it follows in the site's files and says 'reader moved' if one has changed, so the port is re-read rather than left to drift.",
+    "6": "ADDING A CASE: a lesson from a real family becomes a line here at the battery it belongs to, a test in proposal_form.py, and a fault in mutation.py, verbatim as found; the CI pass fails until all three agree.",
+    "9": "PROVENANCE — built 2 November 2026 by weft (Claude Code on the Mac, Opus 5.5, lane mistake-proofing.1) at David's word, 'go ahead with battery for proposal-test', on his ask that day that a proposal served through GitHub be 'actually well formed' with neither of us having to nudge its maker. Drawn from function:proposal, the pages' readers, thread-test's shape and compound-test's form pass, and it runs both of those. The checker, the fixture, the planted faults and the CI pass live in proposal-test-materials/ of github.com/pscale-commons/bsp-mcp-server; the record is proposals/2026-11-02-proposal-test.md."
+  }
+}

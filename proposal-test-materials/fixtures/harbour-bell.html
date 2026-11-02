@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" data-proposal="harbour-bell">
+<head>
+<meta charset="utf-8">
+<title>Harbour Bell</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A bell on the harbour wall that rings when the tide turns.">
+<link rel="canonical" href="https://happyseaurchin.com/harbour-bell">
+<meta property="og:image" content="/animations/harbour-bell.jpg">
+<script src="/theme.js"></script>
+<script src="https://beach.happyseaurchin.com/button/voice.js"></script>
+<script src="/threads.js"></script>
+</head>
+<body>
+<section data-dec="1.8" data-part="q">Do we hang a bell at all?</section>
+<section data-dec="1.28" data-part="q">Bronze or steel?</section>
+<section data-dec="1.18" data-part="q">What rings it?</section>
+<section data-dec="1.118" data-part="q">Does the trust pay?</section>
+<a href="https://mirror.onen.ai/?pool=harbour-bell">Talk in the room</a>
+<a href="/#create-your-own">Create your own</a>
+<script>
+fetch('/api/mirrors?family=harbour-bell');
+keepDraft(document.querySelector('textarea'));
+dictate(document.querySelector('textarea'));
+beachVoice.say({ field: 'harbour-bell', at: '1.8', text: 'GO', name: 'rook' });
+</script>
+</body>
+</html>

@@ -54,6 +54,7 @@ import bspTest from './bsp-test.json' with { type: 'json' };
 import wellFormed from './well-formed.json' with { type: 'json' };
 import compoundTest from './compound-test.json' with { type: 'json' };
 import threadTest from './thread-test.json' with { type: 'json' };
+import proposalTest from './proposal-test.json' with { type: 'json' };
 import shellGenome from './shell-genome.json' with { type: 'json' };
 import worldGenome from './world-genome.json' with { type: 'json' };
 
@@ -238,6 +239,12 @@ export const SENTINELS: SentinelEntry[] = [
     json: threadTest as unknown as Block,
     description:
       'Thread-test — the biology battery, beside bsp-test (the walker that reads one block), well-formed (the block being written) and compound-test (blocks in company): whether a thread is well formed, and whether a mind handed a teaching forms one well. Branch 1 is the form pass a program decides over the registry and the mirrors (registered, opened, knotted, rooted, every act closing on whom it waits on or complete and an option never, contiguous digits, short lines, crossings and reads that stand), a thread opened before the law of 29 October read by the law it was tied under; 2 the nine uses a fresh small mind runs on a test beach (open, take, self, word, step, place, twin, reask, wake), graded by the form and by what each case expects; 3 the eleven planted faults the form pass must catch; 4 what it found (the first law alone 36 and 35 of 40, the way 40 of 40, the re-cut law 35 with two new misses, 16 met as a live read meets it, 31 with the read handing over the way, 37 with the opening handing it over too, and 40 with one sentence of step 3 of the way re-cut); 5 how each part runs, and that only the fresh minds spend. The checker, the test beach, the uses, the teachings and every run live in thread-test-materials/ of github.com/pscale-commons/bsp-mcp-server; the way it tests is ways:thread, the law function:thread.',
+  },
+  {
+    name: 'proposal-test',
+    json: proposalTest as unknown as Block,
+    description:
+      'Proposal-test — the battery for a proposal, beside bsp-test (the walker that reads one block), well-formed (the block being written), compound-test (blocks in company) and thread-test (a thread): whether a family set up under function:proposal is well formed, run before it is listed so its maker learns what is wrong from the battery, with nobody having to nudge. A proposal is combined, so the battery is: five smaller batteries, each able to run alone. Branch 1 is the family (the spine and law stand, their positions, the STATE lines a page can draw, the list); 2 the decisions (each reads as its maker wrote it, by the page\'s own rules, because a word with a digit or a gloss loses buttons in silence, and each answer opens with one of its words); 3 the room (the welcome and its link, the entries, the earlier responses nested beneath it with their summaries paid); 4 the threads (the law\'s 5 names what stands, each registry thread through thread-test\'s form pass); 5 the page and look (the phase, the addresses that name the page, a crafted page answering and wired, the look it wears, the map pin). 6 is what only a reader decides; 7 the planted faults that prove every case fires; 8 what the first sweep of the 28 listed proposals found; 9 how each part runs. The checker proposal_form.py runs by public GET with nothing but Python and writes nothing; it, a clean family and the planted faults live in proposal-test-materials/ of github.com/pscale-commons/bsp-mcp-server.',
   },
   {
     name: 'shell-genome',
