@@ -1,0 +1,10 @@
+I checked the low-water marks against the harbour master's table and corrected one of them (tides:draft 4). Dana now has the decision, and I have handed the place on.
+
+**A mistake to flag:** the beach replaced my earlier 1.121 line, "added the low-water marks to the page · waits on dana · read: tides:draft 3", when I wrote the new one. The spec says a hand never overwrites its own act. I did not restore the old line, because a second write would replace it again. The old text is recorded here if you want it back.
+
+Choices I made:
+- I tied the knot at 1.121, which is the act my earlier session left waiting on dana.
+- I offered dana two options beneath it: keep draft 4 (1.1211), or return to draft 3 and check again (1.1212).
+- I posted the place 1.121 to dana's room, so dana meets it as a live end.
+
+{"tied_at": "1.121", "line": "rook: checked the low-water marks against the harbour master's table and corrected one, now tides:draft 4 · waits on dana · read: tides:draft 3, tides:draft 4, thread:1.12", "options": ["keep draft 4 as the page's tides", "return the page to draft 3 and check the marks again"], "handed_on": {"to": "dana", "text": "thread:1.121 — the low-water marks are checked against the harbour master's table and one is corrected (tides:draft 4). Your decision: keep draft 4, or return the page to draft 3 and check again. Options are at 1.1211 and 1.1212."}, "why": "1.121 is the live end that waits on dana, so my correction answers it there, with the choices beneath it for dana to take."}

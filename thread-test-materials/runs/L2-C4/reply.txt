@@ -1,0 +1,3 @@
+The choice is recorded on thread 1 at 1.11, the option that matches dana's "Publish it." Nothing else needed handing on, so I left wren's and dana's rooms alone.
+
+{"tied_at": "1.11", "line": "dana publishes the page at dana's word; the page is live at tides:live · complete · read: spine:thread 1, thread 1", "options": [], "handed_on": {"to": null, "text": null}, "why": "Wren's knot at 1.1 waits on dana, and 1.11 is the option that reads 'dana publishes the page', so her publish choice belongs at that address."}

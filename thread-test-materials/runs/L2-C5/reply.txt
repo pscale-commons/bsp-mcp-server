@@ -1,0 +1,7 @@
+I recorded the phone fix on thread 1.1 and left a handoff in dana's room. The act sits at 1.14, since the digits 1.11–1.13 were already held by wren's options.
+
+The act says draft 3 fixes the layout for phones and that draft 2 breaks on them. It waits on dana, and it offers her three options: publish draft 3, publish draft 2 as it was, or do another pass on the phone layout. I did not change tides:draft 3 or the thread's existing options.
+
+Two choices I made that you may want to change: I offered the options myself, which goes beyond only recording the fix, and I used 1.14 rather than editing 1.1 because the thread's options must keep their digits once offered.
+
+{"tied_at": "1.14", "line": "rook fixed the tide-table layout for phones in tides:draft 3; draft 2 breaks on phones, so dana's decision at 1.1 should weigh draft 3 · waits on dana · read: tides:draft 2, tides:draft 3, spine:thread 1.1", "options": ["publish tides:draft 3, the phone layout fixed", "publish tides:draft 2 as it was, broken on phones", "another pass on the phone layout, said in pool:tides"], "handed_on": {"to": "dana", "text": "Before you decide the tide-table page (thread:1.1): rook fixed draft 2 for phones as tides:draft 3, and the draft 2 layout breaks on phones. The new act is at thread:1.14, with options 1.141 to 1.143 for you to take."}, "why": "1.11 to 1.13 were already held by wren's options, so the next free digit under the knot at 1.1 is 1.14."}

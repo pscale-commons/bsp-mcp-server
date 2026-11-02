@@ -19,7 +19,7 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 
 1. It runs the form pass over keel's eight hand-played threads (`runs/SELFTEST-*`), and each must be well formed under the law as it stands.
 2. It plants eleven faults one at a time (`mutation.py`), and every one must be caught while the unplanted thread stays clean.
-3. It re-grades keel's 36 stored runs from their replies, and the totals must be the ones he reported:
+3. It re-grades the 45 stored runs from their replies (keel's 36 and weft's nine), and the totals must be the ones reported:
 
 | delivery | checks | well formed, first law | well formed, the law now |
 |---|---|---|---|
@@ -27,6 +27,7 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 | W1, the way's first draft | 31/40 | 9 | 9 |
 | Lx2, the law, round 2 | 35/40 | 8 | 5 |
 | W2, the way's second draft, now `ways:thread` | 40/40 | 9 | 9 |
+| L2, the law as re-cut, run on 2 November | 35/40 | 9 | 9 |
 
 The runs are copied to a scratch directory first, so a pass writes nothing here.
 
@@ -59,9 +60,11 @@ Each is made from its beach block the way keel made `law_v1.txt`: the heading li
 
 ## The minds
 
-`run-minds.sh --spend [delivery] [cases]` runs each use with a fresh Claude Haiku, then grades them. Each mind gets its brief on stdin and one tool: Bash, fenced to its own run's `bb`. The wake gets no tool at all. It runs with no MCP server and no settings, and keeps no session. Runs land in `$THREAD_TEST_RUNS` (default: a new temp directory), never in the repo.
+`run-minds.sh --spend [delivery] [cases]` runs each use with a fresh Claude Haiku, then grades them. Each mind gets its brief on stdin and one tool: Bash, fenced to its own run's `bb`. The wake gets no tool at all. It runs with no MCP server and no settings, keeps no session, and inherits nothing of the session that runs it but what the CLI needs to sign in. Runs land in `$THREAD_TEST_RUNS` (default: a new temp directory), never in the repo.
 
-The minds spend model calls, so they run only on David's word. A change to `function:thread` or `ways:thread` is followed by a run of the minds before the change is called done (function:thread 7). Until the re-cut law has had its run, keel's figures stand for the law as it was and the way as it is.
+The minds spend model calls, so they run only on David's word: nine short sessions, about half a cent each at list price, capped at 25 cents each. A change to `function:thread` or `ways:thread` is followed by a run of the minds before the change is called done (function:thread 7).
+
+The re-cut law had its run on 2 November (`runs/L2-*`, branch 4.6 of the block). It scored 35 of 40. `self`, `reask` and `wake`, the first law's misses, are cured, and every thread is well formed. `place` (2 of 4) and `twin` (1 of 4) are new misses, each one mistake: answering a line with no option to take, the mind tied at that line's own address, not the next free digit beneath it. With one run a cell, chance isn't ruled out.
 
 ## What is here
 
@@ -74,4 +77,4 @@ The minds spend model calls, so they run only on David's word. A change to `func
 | `mutation.py` | The eleven planted faults. |
 | `run-minds.sh` | The fresh minds (spends). |
 | `teachings/` | What a mind is handed. |
-| `runs/` | keel's runs of 29 October: 8 hand-played (`SELFTEST-*`), and L, W1, Lx2 and W2 nine each. Each keeps its start, its end state, its meter and the mind's reply, with keel's scores beside them. The briefs are rebuilt by `setup` from `teachings/`. |
+| `runs/` | keel's runs of 29 October: 8 hand-played (`SELFTEST-*`), and L, W1, Lx2 and W2 nine each. weft's of 2 November: L2, nine, each with `usage.json` as well (its model, turns, cost, and what the fence refused). Each keeps its start, its end state, its meter and the mind's reply, with the scores beside them. The briefs are rebuilt by `setup` from `teachings/`. |
