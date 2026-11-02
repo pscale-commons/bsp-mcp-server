@@ -12,6 +12,10 @@ delivery: the teaching a mind is handed, from teachings/ —
   R   what a live read gives (root_v2.txt): the envelope's law section, the root line alone, which names
       ways:thread; the law's branches and the way stand on the test beach as plain blocks, for a mind to
       read or not (bb block function:thread 2, bb block ways:thread), and the grade row says which it read
+  H   what the read prints since it hands over the way: R, with the way printed once in a session, whole in the
+      first read or say and standing after, as the router's envelope does; a wake's window carries it, since a
+      wake cannot fetch (proposals/2026-11-02-the-read-hands-over-the-way.md)
+  H2  H, with the opening mended: the answer to opening a thread hands the way over too, before the first knot
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 is ways:thread
   a name ending x<k> (Lx2) is round k of the same teaching
 cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake
@@ -23,10 +27,12 @@ import copy, json, os, re, shutil, stat, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import thread_form as TF
+import testbeach as TB
 
 RUNS = os.environ.get("THREAD_TEST_RUNS") or os.path.join(HERE, "runs")
-TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt", "R": "root_v2.txt"}
-LIVE = {"R"}
+TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt", "R": "root_v2.txt", "H": "root_v2.txt", "H2": "root_v2.txt"}
+LIVE = {"R", "H", "H2"}
+HANDED = {"H", "H2"}
 NAMES = ["tides:draft", "tides:live", "tides:feed", "moorings:draft", "harbour:chart", "harbour:register", "pool:tides"]
 HANDS = ["rook", "wren", "dana", "kestrel"]
 
@@ -202,7 +208,7 @@ def brief(dname, case, bb):
     c = CASES[case]
     law = delivery(dname)
     if c["kind"] == "wake":
-        return law + "\n\n" + WAKE
+        return law + ("\n\n" + TB.WAY_SECTION if dname.split("x")[0] in HANDED else "") + "\n\n" + WAKE
     return (law + "\n\n" + COMMANDS.format(bb=bb) + "\n\nYOUR SITUATION\n" + c["situation"]
             + "\n\nAct on the beach with the commands, as the text above teaches; read what you need first.\n\n" + REPORT)
 
@@ -220,6 +226,8 @@ def setup(dname, cases):
         if dname.split("x")[0] in LIVE:
             s["live"] = True
             s["names"] = sorted(set(s["names"]) | {"function:thread", "ways:thread"})
+        if dname.split("x")[0] in HANDED:
+            s["way_once"] = True
         json.dump(s, open(os.path.join(d, "state.json"), "w"), indent=1, ensure_ascii=False)
         json.dump(s, open(os.path.join(d, "start.json"), "w"), indent=1, ensure_ascii=False)
         bb = os.path.join(d, "bb")

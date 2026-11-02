@@ -1,0 +1,5 @@
+I rebuilt the page as tides:draft 3 (draft 2 with the low-water marks shown), tied it on the thread, and handed it to dana. Dana now decides whether to publish it or ask for another pass.
+
+The knot sits at 1.131, beneath wren's line at 1.13 ("rook rebuilds it on the new chart first"). Its two options are at 1.1311 and 1.1312. I put the hand-off in pool:dana at 2.
+
+{"tied_at": "1.131", "line": "rook rebuilt the page as tides:draft 3: draft 2 with the low-water marks shown · waits on dana · read: tides:draft 3", "options": ["dana publishes draft 3", "dana asks for another pass"], "handed_on": {"to": "dana", "text": "thread:1.131 — dana decides again on tides:draft 3, the page with the low-water marks shown: publish it, or ask for another pass"}, "why": "It is the next free digit beneath wren's line at 1.13, which is the step that asked rook to rebuild the page."}

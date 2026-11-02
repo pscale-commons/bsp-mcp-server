@@ -1,0 +1,7 @@
+{"cmd": ["block", "moorings:draft"], "chars": 102}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["room", "wren"], "chars": 28}
+{"cmd": ["room", "dana"], "chars": 28}
+{"cmd": ["open", "the moorings page \u00b7 opened by rook"], "chars": 65}
+{"cmd": ["say", "3", "moorings:draft 1 is built: 48 moorings, by pontoon and berth. It is not yet checked against the harbour register. Which way next?", "--option", "wren checks the list against the harbour register first", "--option", "dana publishes it as it is"], "chars": 4784}
+{"cmd": ["post", "dana", "thread:3 \u2014 moorings:draft 1 (48 moorings, by pontoon and berth) waits on your choice: 3.1 wren checks the list against the harbour register first, or 3.2 you publish it as it is. Read the thread at 3."], "chars": 29}

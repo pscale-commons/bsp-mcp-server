@@ -16,7 +16,12 @@
  *      tied since, its own coming back in its own say's answer;
  *    - off the clock the address is said as written (11.2, never 112), and the
  *      registry's line rides with the stamp the beach gave it as it landed
- *      (proposals/2026-10-29-threads-phase-2.md). */
+ *      (proposals/2026-10-29-threads-phase-2.md);
+ *    - a law whose root line closes 'is ways:<name>.' has that way handed over once
+ *      in a session, at either door, the text the battery ran; a family whose law
+ *      only mentions a way, or whose field a way is merely named for, is untouched
+ *      (proposals/2026-11-02-the-read-hands-over-the-way.md). */
+import { readFileSync } from 'node:fs';
 import { writeAt, readAt, floorDepth } from '../src/bsp.js';
 
 const ORIGIN = 'https://smoke-thread.test';
@@ -28,7 +33,14 @@ const store: Record<string, any> = {
     _: { _: 'THE REGISTRY — one line per thread, in the order threads are opened.', '5': 'thread five · opened by ada' },
     '1': { _: 'Summary of 1–9', '1': { _: 'redraw the quipu · opened by ada', '1': 'ada', '3': '2026-10-29T13:53:55Z' }, '2': 'a second thread · opened by ben' },
   },
-  'function:thread': { _: 'THE THREAD — the law of this smoke.' },
+  'function:thread': { _: 'THE THREAD — the law of this smoke. How a mind carries one, step by step, is ways:thread.' },
+  'ways:thread': { _: 'THE WAY — of this smoke.', '1': 'FIND IT.', '2': 'TIE IT.', '9': 'PROVENANCE — never taught.' },
+  // a family with a way of its name and a law that mentions it in passing: no way is handed over
+  'spine:tide': { _: 'the tide', '1': 'the morning' },
+  'function:tide': { _: 'THE TIDE — taught beside ways:tide, which is not this law closing on it. Its law stands here.' },
+  'ways:tide': { _: 'THE WAY OF THE TIDE — never handed over.', '1': 'WAIT.' },
+  'pool:door': { _: 'a room to come in by' },
+  'passport:cy': { _: 'cy, who takes the work up at the door' },
   // ada's mirror was born when the registry stood at floor 1, and holds thread 5's knots there.
   'thread:ada': { _: 'MIRROR — ada', '5': { _: 'ada asked about five', '2': 'ada took her own option 2' } },
 };
@@ -49,6 +61,7 @@ globalThis.fetch = (async (input: any, init: any = {}) => {
   const body = JSON.parse(init.body);
   const name = block ?? body.block;
   posts.push({ block: name, ...body });
+  if (body.append) return json(200, { ok: true, slot: '13', floor: 2 });
   const born = !(name in store);
   if (!born && locks[name] !== undefined && body.secret !== locks[name]) {
     return json(403, { error: `"${name}" inherits the lock at its root, secret required` });
@@ -60,7 +73,9 @@ globalThis.fetch = (async (input: any, init: any = {}) => {
   return json(200, { ok: true, ...(born ? { born: true } : {}) });
 }) as any;
 
-const { handleStreamEngage } = await import('../src/tools/stream.js');
+const { handleStreamEngage, resetStanding, wayText } = await import('../src/tools/stream.js');
+const { handlePlay } = await import('../src/tools/play.js');
+const { handleBsp } = await import('../src/tools/bsp.js');
 const { seatThread, orientationRider, toldKey, resetSeats } = await import('../src/orientation.js');
 const { crossSection, renderPlace } = await import('../src/cross.js');
 
@@ -136,6 +151,62 @@ ok(!toldAda.includes('11.2111 · ada'), 'and not her own, which her say already 
 ok(r.startsWith('stream:thread @ https://smoke-thread.test — at 11.2111'), 'a say at 11.2111 heads its reply at 11.2111, never 112111');
 r = await engage({ handle: 'cy', at: '11.2' });
 ok(r.startsWith('stream:thread @ https://smoke-thread.test — at 11.2') && r.includes('# Readings at 11.2 '), 'a read at 11.2 says 11.2 in its header and its readings');
+
+// ── the way the law names is handed over once in a session, at either door ──
+const way = '# The way — ways:thread, how a mind carries';
+const standsAs = '# The way — ways:thread, standing as it was given to you earlier in this session';
+const engageIn = async (session: string, p: Record<string, unknown>) =>
+  (await handleStreamEngage({ field: 'thread', beach: ORIGIN, ...p } as any, { sessionId: session })).content.map((c: any) => c.text).join('\n');
+resetStanding();
+r = await engageIn('w1', { handle: 'cy', at: '11' });
+ok(r.includes(way) && r.includes('1 FIND IT.') && r.includes('2 TIE IT.'), 'a session\'s first read carries the way');
+ok(!r.includes('PROVENANCE'), 'its root and steps, without its provenance');
+ok(r.indexOf('# The law') < r.indexOf(way) && r.indexOf(way) < r.indexOf('# Readings at'), 'beneath the law\'s section, above the readings');
+r = await engageIn('w1', { handle: 'cy', at: '11.2' });
+ok(r.includes(standsAs) && !r.includes('1 FIND IT.'), 'its second read says it stands, and does not print it again');
+r = await engageIn('w2', { handle: 'ada', at: '11.3', say: 'a step no option names · waits on ben', secret: 'ada-key' });
+ok(r.includes(way) && r.includes('1 FIND IT.'), 'a session that says before it reads meets it in the say\'s answer');
+r = await engageIn('w3', { field: 'tide', handle: 'cy', at: '1' });
+ok(!r.includes('# The way') && !r.includes('never handed over'), 'a family whose law only mentions a way, with a way of its name, is handed nothing');
+store['ways:thread']['2'] = 'TIE IT, CLOSING.';
+r = await engageIn('w1', { handle: 'cy', at: '11' });
+ok(r.includes(way) && r.includes('2 TIE IT, CLOSING.'), 'a changed way is given again');
+const taught = JSON.parse(readFileSync(new URL('../thread-test-materials/teachings/ways-thread.json', import.meta.url), 'utf8'));
+const ran = readFileSync(new URL('../thread-test-materials/teachings/way_w2.txt', import.meta.url), 'utf8').trim();
+ok(wayText(taught) === ran, 'what is printed for ways:thread is the text the battery ran at 40 of 40');
+const beach = readFileSync(new URL('../thread-test-materials/testbeach.py', import.meta.url), 'utf8');
+r = await engageIn('w6', { handle: 'cy', at: '11' });
+const said = r.split('\n');
+ok(['# The way — ways:thread, how a mind carries this family\'s work; given once in a session', '# The law — function:thread, this family’s operator:'].every((h) => said.some((l) => l.startsWith(h)) && beach.includes(h)), 'the test beach prints the first read\'s headers as the router does');
+r = await engageIn('w6', { handle: 'cy', at: '11' });
+const stood = r.split('\n').filter((l) => /^# The (law|way) — .*standing as it was given/.test(l));
+ok(stood.length === 2 && stood.every((l) => beach.includes(l)), 'and the second read\'s');
+const door = async (session: string, p: Record<string, unknown>) =>
+  (await handlePlay({ world: ORIGIN, handle: 'cy', room: 'door', ...p } as any, { sessionId: session })).content.map((c: any) => c.text).join('\n');
+let d = await door('w4', { thread: '11' });
+const section = d.slice(d.indexOf('THE THREAD — thread:11'));
+ok(section.includes(way) && section.includes('1 FIND IT.') && section.indexOf('11.21 · ben') < section.indexOf(way), 'the door prints it in THE THREAD\'s section, beneath the knots');
+r = await engageIn('w4', { handle: 'cy', at: '11' });
+ok(r.includes(standsAs) && !r.includes('1 FIND IT.'), 'a session that took the thread up at the door is not handed it again at its first read');
+d = await door('w5', {});
+ok(!d.includes('# The way'), 'a door with no thread prints no way');
+
+// ── the opening hands it over, before the first knot ──
+const append = async (session: string, p: Record<string, unknown>) =>
+  (await handleBsp({ agent_id: ORIGIN, append: true, content: 'a new thread · opened by cy', ...p } as any, { sessionId: session })).content.map((c: any) => c.text).join('\n');
+r = await append('w7', { block: 'spine:thread' });
+ok(r.includes(way) && r.includes('1 FIND IT.') && r.includes('→ slot 13'), 'the answer to opening a thread gives its number and hands the way over');
+r = await engageIn('w7', { handle: 'cy', at: '13', say: 'tied the first knot · waits on ben', secret: 'cy-key' });
+ok(r.includes(standsAs) && !r.includes('1 FIND IT.'), 'so the first knot\'s answer does not give it again');
+ok(r.includes('# The law — function:thread, this family'), 'and still gives the law, which the opening did not');
+r = await append('w8', { block: 'spine:tide' });
+ok(!r.includes('# The way') && !r.includes('never handed over'), 'opening in a family whose law only mentions a way hands nothing over');
+r = await append('w9', { block: 'spine:thread', spindle: '5' });
+ok(!r.includes('# The way'), 'an append beneath a line of the spine opens nothing');
+r = await append('w9', { block: 'ways:thread' });
+ok(!r.includes('# The way'), 'nor does an append to any other block');
+r = await append('w4', { block: 'spine:thread' });
+ok(r.includes('→ slot 13') && !r.includes('1 FIND IT.'), 'a session already given it is not given it again at an opening');
 
 console.log(`\nthread: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

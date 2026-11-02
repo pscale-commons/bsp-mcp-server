@@ -1,0 +1,12 @@
+{
+ "models": [
+  "claude-haiku-5-5"
+ ],
+ "turns": 8,
+ "ms": 25689,
+ "cost_usd": 0.0049168400000000004,
+ "stop": "success",
+ "refused": [
+  "B=bb; $B room rook; echo ---; $B block spine:thread"
+ ]
+}

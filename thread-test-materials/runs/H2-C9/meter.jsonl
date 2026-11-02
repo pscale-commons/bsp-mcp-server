@@ -1,0 +1,1 @@
+{"cmd": ["say", "1.1", "fetched November's harbour feed: 62 tide times saved at tides:feed 11 \u00b7 waits on rook \u00b7 read: tides:feed 11", "--option", "rebuild the tide-table page from tides:feed 11", "--option", "check the 62 times against November's days first"], "chars": 4871}

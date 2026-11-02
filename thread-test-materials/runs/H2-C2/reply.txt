@@ -1,0 +1,12 @@
+I took the review option at 1.1 on the tide-table thread. I wrote my knot there, offered dana two options, and handed the decision to dana's room.
+
+- Read the thread at 1: rook's opener waits on wren, and 1.1 is the option "wren reviews the draft against the harbour's data".
+- Tied the knot at 1.1, which reports the review and the two corrections in `tides:draft 2`, and names dana as the one it waits on.
+- Offered dana two options, which stand at 1.11 and 1.12.
+- Posted the hand-on note in `pool:dana`, pointing at `thread:1.1`.
+
+The `bb post` reply said "contributed to pool:dana at 1", which I read as the note landing in dana's room. I did not check dana's room afterwards.
+
+```json
+{"tied_at": "1.1", "line": "wren reviewed tides:draft 1 against the harbour's data; two tide times were wrong and are corrected in tides:draft 2 · waits on dana · read: tides:draft 1, tides:draft 2", "options": ["publish the page as tides:draft 2", "ask for another pass on the tide-table draft"], "handed_on": {"to": "dana", "text": "thread:1.1 — publish tides:draft 2, or ask for another pass; wren's review of tides:draft 1 is tied at 1.1 with two corrections in tides:draft 2"}, "why": "1.1 is the open review option beneath rook's knot at 1, so wren's knot goes there and dana's decision hangs beneath it at 1.11 and 1.12."}
+```

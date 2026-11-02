@@ -1,0 +1,8 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1.12"], "chars": 4765}
+{"cmd": ["block", "tides", "spindle_draft_3"], "chars": 20}
+{"cmd": ["block", "tides:draft", "3"], "chars": 49}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["say", "1.12", "rook made draft 3, draft 2 with the low-water marks shown \u00b7 waits on dana \u00b7 read: tides:draft 3, thread:1.12", "--option", "accept draft 3 as the page", "--option", "one more pass on the low-water marks"], "chars": 439}
+{"cmd": ["post", "dana", "thread:1.12 \u2014 draft 3 is ready with the low-water marks shown; waits on your decision"], "chars": 29}

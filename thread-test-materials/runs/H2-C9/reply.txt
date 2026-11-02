@@ -1,0 +1,3 @@
+1.1 | fetched November's harbour feed: 62 tide times saved at tides:feed 11 · waits on rook · read: tides:feed 11 | options: 1 rebuild the tide-table page from tides:feed 11; 2 check the 62 times against November's days first
+
+I tied this at 1.1 because it is the fetch rook asked for, option 1 beneath rook's knot at 1, and the feed being down (1.2) is the other option, which did not happen.

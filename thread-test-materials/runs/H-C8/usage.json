@@ -1,0 +1,13 @@
+{
+ "models": [
+  "claude-haiku-5-5"
+ ],
+ "turns": 3,
+ "ms": 6690,
+ "cost_usd": 0.0018292500000000001,
+ "stop": "success",
+ "refused": [
+  "./bb block spine:thread 2>&1; echo \"---ROOM wren---\"; ./bb room wren 2>&1; echo \"---ROOM dana---\"; ./bb room dana 2>&1",
+  "./bb block spine:thread"
+ ]
+}

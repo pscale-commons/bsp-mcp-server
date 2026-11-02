@@ -1,0 +1,12 @@
+{
+ "models": [
+  "claude-haiku-5-5"
+ ],
+ "turns": 6,
+ "ms": 19394,
+ "cost_usd": 0.0042227,
+ "stop": "success",
+ "refused": [
+  "./bb read 1.1; echo \"---\"; ./bb block spine:thread; echo \"---\"; ./bb block tides:draft 3"
+ ]
+}

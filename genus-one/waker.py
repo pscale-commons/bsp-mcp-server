@@ -1149,10 +1149,12 @@ def ring_payload(ringer, pool, slot, voice, thread=""):
     """GENUS_RING for a pulse: the landed voice, and the live end of the thread
     it names as a field of its own. Appended to the voice, a thread of more
     than a few knots was clipped by the kernel's own cut of the voice
-    (proposals/2026-10-29-threads-phase-2.md); kernel.ring_given lays it in."""
+    (proposals/2026-10-29-threads-phase-2.md); kernel.ring_given lays it in. The
+    door asked in a fresh session prints the way there too, since a wake cannot
+    fetch (proposals/2026-11-02-the-read-hands-over-the-way.md), so it is roomy."""
     ring = {"ringer": ringer or "", "pool": pool, "slot": str(slot), "voice": (voice or "")[:3500]}
     if thread:
-        ring["thread"] = thread[:6000]
+        ring["thread"] = thread[:12000]
     return json.dumps(ring, ensure_ascii=False)
 
 

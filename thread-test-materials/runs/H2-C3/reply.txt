@@ -1,0 +1,10 @@
+The spring tides are on the page (`tides:draft 2`), and I tied the knot on thread 1 at 1.3 and handed the review to wren.
+
+- **Tied:** `1.3`, which was my own option "rook adds the spring tides before anyone reviews". The line reads: "rook adds the spring tides before anyone reviews: tides:draft 2 is draft 1 with the spring tides added · waits on wren · read: tides:draft 2".
+- **Replaced:** the tool said this replaced an earlier line at 1.3. That was the option text I had taken, so this is the intended take-up, not a lost act.
+- **Handed on:** wren's room, as `thread:1.3 — wren reviews the draft (tides:draft 2) against the harbour's data`.
+- **Options:** none offered, because the next step (wren's review) is not a choice.
+
+```json
+{"tied_at": "1.3", "line": "rook adds the spring tides before anyone reviews: tides:draft 2 is draft 1 with the spring tides added · waits on wren · read: tides:draft 2", "options": [], "handed_on": {"to": "wren", "text": "thread:1.3 — wren reviews the draft (tides:draft 2) against the harbour's data"}, "why": "1.3 is the option I took on thread 1, so my knot goes at its own address, and the review is handed to wren at the same place."}
+```

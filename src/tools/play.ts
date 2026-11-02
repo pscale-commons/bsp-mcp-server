@@ -38,7 +38,7 @@ export { splitCast, LIVE_WINDOW_MS } from './pool.js';
 export type { CastEntry } from './pool.js';
 import { Block, readAt, floorDepth } from '../bsp.js';
 import { momentToAddress } from '../temporal.js';
-import { turnsOf, voiceOf, agoWords } from './stream.js';
+import { turnsOf, voiceOf, agoWords, wayHandedOver } from './stream.js';
 import { bspRead, formatRead } from '../bsp-fn.js';
 import { isLocationAddress, contains, pscaleOf, walkedOf, STANDARD_SPINE } from '../grain-address.js';
 import { compile, completeDialed, orderSweep, renderCompletions, renderFramedValue, renderSweptOrders, type Completion, type FetchOrigin } from '../compile.js';
@@ -895,6 +895,9 @@ export async function handlePlay(
     else if ('error' in cs) out.push(`(the place ${threadAt} could not be read: ${cs.error})`);
     else {
       out.push(renderPlace(THREAD_FIELD, threadAt, cs));
+      const law = await loadBlock(resolved, `function:${THREAD_FIELD}`).catch(() => null);
+      const way = await wayHandedOver(extra?.sessionId, resolved, law?.block, Date.now());
+      if (way.length) out.push('', ...way);
       seatThread(extra?.sessionId, resolved, handle, THREAD_FIELD, threadAt, cs.lines.map((l) => toldKey(l.who, l.addr, l.text)));
     }
   }

@@ -1628,9 +1628,9 @@ RING_LEAD = ("Rung awake — this wake's assignment is the landed voice below "
              "wake; the standing work follows after. A voice that asks "
              "nothing is still owed its hearing — say so in the room.")
 THREAD_LEAD = (" The voice names a thread's place, and its live end rides at thread: "
-               "the registry's line and every hand's knots there and beneath it, read "
-               "at the door for you, since a wake cannot fetch. Read it before you tie "
-               "your knot in your own mirror (ways:thread).")
+               "the registry's line and every hand's knots there and beneath it, and "
+               "the way of a thread, read at the door for you, since a wake cannot "
+               "fetch. Read it before you tie your knot in your own mirror.")
 
 
 def ring_given(ring):
@@ -1638,7 +1638,8 @@ def ring_given(ring):
     voice, and — when the voice names a thread's place — that thread's live end
     as a field of its own, so a long thread is never clipped into the voice
     (function:thread 5; proposals/2026-10-29-threads-phase-2.md). The waker
-    reads the place at the door and hands it as GENUS_RING's `thread`.
+    reads the place at the door and hands it as GENUS_RING's `thread`, the way
+    of a thread beside its knots (proposals/2026-11-02-the-read-hands-over-the-way.md).
     Upstream-owed to pscale-biome src/agent (parked; noted per the port discipline)."""
     thread = str(ring.get("thread", "") or "")
     out = {
@@ -1649,7 +1650,7 @@ def ring_given(ring):
         "voice": str(ring.get("voice", ""))[:2000],
     }
     if thread:
-        out["thread"] = thread[:6000]
+        out["thread"] = thread[:12000]
     return out
 
 
