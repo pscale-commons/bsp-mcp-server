@@ -20,6 +20,9 @@ Two doors to one window:
   relay.py run <door> <haiku|sonnet> <arms> <repeats> [workers]
   relay.py judge [workers]                          blind labels for every note kept
   relay.py score                                    the tables, for every batch in runs/
+  relay.py routes                                   the next choice given the route so far; read after the run, not registered
+
+The batches in runs/ are kept compressed: gunzip -k runs/*.gz before score or routes.
 """
 import collections, concurrent.futures, glob, hashlib, json, os, random, re, subprocess, sys, threading, time
 
