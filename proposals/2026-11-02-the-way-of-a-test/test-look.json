@@ -1,0 +1,163 @@
+{
+  "_": "THE LOOK TEST — whether a look (a block named look: and its handle, made under function:look) is well formed, so that anyone's AI can check one by public GET and nobody has to nudge its maker. Here 'the law' is function:look, and 'law 1,1' is its address 1,1. Run it by hand, one look at a time: GET the look and its law at the beach, then walk 1 to 5 case by case. Each case names what must hold, what to read to decide it, who decides it (FORM, by the words; or READER'S, by judgment) and what a reader loses where it does not hold. Grades: a FAULT breaks the form or loses a reader something; a WARN weakens the look and it still reads; a NOTE is a reading, not a judgment. A look with no FAULT is well formed. 6 holds the reader's cases; 7 holds the planted faults that prove each case fires, with the unbroken example at 7,7; 8 holds what the first run found; 9 says how it runs and where it came from.",
+  "1": {
+    "_": "THE FORM — what a look is made of, whatever its colours: its own name, its fixed addresses, named values and its maker's own sentences, and nothing else. All four cases are decided by the words alone (FORM).",
+    "1": "ADDRESSES, a FAULT (FORM): tokens stand only at 1 to 3, the palette, the letters and the measure; grammar only at 4 to 6; where it is worn at 8 and where it came from at 9 (law 1, and law 1,3 for 8 and 9). Read every key of the look. A token or a grammar at an address no page or mind reads is lost, so it is a FAULT.",
+    "2": "NOTHING ELSE, a FAULT (FORM): no CSS, markup or script anywhere in the look: no brace that opens a rule, no angle bracket, no code (law 1). Read every string. A look is worn on another's page, so code in it is a FAULT whatever a reader does with it.",
+    "3": "KEY THEN VALUE, a FAULT (FORM): each token line opens with a key the page reads, then its value. The law's keys are ground, ink, muted, panel, line, accent, light, dark, display, body, mono, scale, weights, step, radius, rule and measure (law 1,1). A token line with no such key loses its token: a FAULT. A key that reads through a longer name, such as muted ink, still reads: a NOTE.",
+    "4": "ONE THING A LINE, a WARN (READER'S): each token line names one thing, its key and one value (law 1,1). A line that names two things, a face and its weight, or a scale holding several sizes, still reads, since the page takes the first value. It becomes a FAULT only where the first value is not the one meant (3,4)."
+  },
+  "2": {
+    "_": "THE PALETTE — the look's 1: two colour sets, light and dark, each with a ground, an ink, a muted, a panel and a line, and one accent named for both (law 1,1). Each colour is worked out from its hex by the WCAG contrast formula, so every case here is FORM. The page checks ink, muted and accent at 4.5 to 1 against their ground (law 2).",
+    "1": "BOTH SETS, GROUND AND INK, a FAULT (FORM): 1,1 and 1,2 both stand, each naming a ground and an ink. Without either, the reader keeps nothing of that theme, so the whole theme falls to the standard (look.js drops the set when its ground or ink is missing).",
+    "2": "MUTED, PANEL AND LINE, a WARN (FORM): each set also names its muted, panel and line (law 1,1). A missing one falls to the standard alone; the others still show.",
+    "3": "INK READS AT AA, a FAULT (FORM): the ink of each set reads at 4.5 to 1 on its ground. The law keeps only the inks and muteds that pass (law 2); look.js drops the whole set when its ink fails, so a failing ink costs the theme its ground, panel and line as well.",
+    "4": "MUTED READS AT AA, a WARN (FORM): the muted of each set reads at 4.5 to 1 on its ground (law 2). One that does not is dropped, and the standard's muted shows in its place.",
+    "5": "ACCENT, a WARN (FORM): one accent, named for light and for dark, as two lines or one line naming both (law 1,1). Each reads at 4.5 to 1 on its ground; one that does not is moved toward the ink, its hue kept, until it does (law 2). An accent named for one theme only is read for both, so the other theme's accent is moved too.",
+    "6": "SIX-DIGIT HEX, a WARN (FORM): every colour is written #rrggbb. look.js reads six digits and no others; a three-digit or named colour is dropped and the standard shows. The law does not give the length, so this is a gap the reader decides.",
+    "7": "THE CHECK IT STATES, a NOTE (FORM): where a look states its own contrast check, the figures hold when they are worked out again. Read the claim, then the colours."
+  },
+  "3": {
+    "_": "THE LETTERS AND THE MEASURE — the look's 2 and 3 (law 1,1): the faces, the body's size, the headings' weight, the text measure and the corner. Values are read as look.js reads them: sizes in rem or px within the reader's ranges (the body 0.85 to 1.5rem, the text measure 20 to 80rem, the corner 0 to 1.5rem), and a weight a hundred from 100 to 900. The law names none of these ranges; the reader does, and a gap is recorded where the law is silent.",
+    "1": "FACES ON THE ALLOWLIST, a WARN (FORM): display, body and mono each name a face on Syne, Newsreader, Space Mono, Cormorant Garamond, JetBrains Mono, Georgia or system-ui (law 1,1). A face off the list keeps the standard.",
+    "2": "THREE FACES NAMED, a WARN (FORM): display, body and mono each stand in the look's 2. A face left out falls to the standard.",
+    "3": "FACES LOADED, a WARN (FORM; the page decides): each face the look names is loaded. look.js loads Cormorant Garamond and JetBrains Mono; it leaves Syne, Newsreader and Space Mono to the page that wears the look, though the law says 'one on it is loaded'. Read the page's own font link. The standard exemplar loads Syne, Newsreader and Space Mono itself; a bare page does not.",
+    "4": "THE BODY'S SIZE, a FAULT (FORM): the first size in the scale line is the body's size, since look.js takes the first. Where another size stands first, such as small text before the body, the page sets the wrong size, so it is a FAULT.",
+    "5": "SIZE IN RANGE, a WARN (FORM): the body size is in rem or px and within 0.85 to 1.5rem. One out of range is dropped, and the standard size shows.",
+    "6": "HEADINGS' WEIGHT FIRST, a WARN (FORM): the weights line gives the headings' weight first, a hundred from 100 to 900 (law 1,1). A weight that is not a hundred is dropped. A weight written on the display line rather than the weights line still reads: a NOTE.",
+    "7": "TEXT MEASURE IN RANGE, a WARN (FORM): the text measure (key measure, or text measure) is in rem and within 20 to 80. In em, or out of range, it is dropped and the standard measure shows.",
+    "8": "THE CORNER IN RANGE, a WARN (FORM): the corner (key radius, or corner radius) is in rem or px and within 0 to 1.5rem. Out of range it is dropped. The law names the corner but not its key; 'radius' and 'corner radius' both read, and a corner under any other key is lost (a WARN)."
+  },
+  "4": {
+    "_": "THE GRAMMAR — the look's 4 to 6 (law 1,2), read by a mind that draws the family in the look (law 3), never by a page. A look with no grammar is worn as tokens alone, and the law allows it.",
+    "1": "WHOLE OR ABSENT, a WARN (FORM; a NOTE where none stands): a look with a band at 4 or a drawing at 5 has its 6, which names the exemplar. A look with 6 and neither 4 nor 5 is fine, since its band and drawing may stand in 6's prose. A look with none of 4 to 6 is worn as tokens, which the law allows: a NOTE.",
+    "2": "EXEMPLAR STANDS, a FAULT (FORM): the underscore of 6 names an https address, and the page there is the maker's own page that shows the look whole. Read the page, not only its status: happyseaurchin.com answers 200 for an unknown /proposal/ path, so a status code alone cannot show a dead exemplar there.",
+    "3": "THE GRAMMAR'S PARTS, a WARN (FORM): beneath 6 stand the sheet and how a section is composed, the frame, the marks with their meanings, the moves and the voice (law 1,2). A part left out is lost to the mind that draws. The law does not say whether all five are required, which is a gap.",
+    "4": "MARKS WITH THEIR MEANING, a WARN (FORM): every mark named in the band at 4 or the marks at 6 has its meaning beside it, since 'a mark is named with its meaning or not at all' (law 1,2). The drawing at 5 is the maker's own mark, whose meaning the law gives: it signs only their own families' pages (law 3,1,1).",
+    "5": "THE DRAWING, a FAULT (FORM): 5 holds one mark by an https address that answers as an image, with its alt line (law 1,2)."
+  },
+  "5": {
+    "_": "WHERE AND WHENCE — the look's 8 and 9: where it is worn, and who gave it, when, and what it was read from (law 1,3). Read them as the law gives them.",
+    "1": "WORN WHERE THE LAW SAYS, a WARN (FORM): 8 says 'any family I keep', or names families. Each family it names stands, and its law names this look at its 6 ('look: <handle>'). A family that does not stand, or whose law does not name the look, is a WARN.",
+    "2": "WHO, WHEN, AND WHAT IT WAS READ FROM, a WARN (FORM): 9 names the maker, a day, and what the values were read from (a named source, or that they were chosen). A missing name, day or source is a WARN. Chosen values that 9 does not say were chosen are a NOTE.",
+    "3": "THE NAMED SOURCE HOLDS THE VALUES, a WARN (FORM): each value that 9 (or the root) says was read from a named source appears in that source when it is fetched. A value found in none of them is a WARN, since the provenance would then be false.",
+    "4": "REFERENCES IN PROSE RESOLVE, a WARN (FORM): every beach address and URL in a look's words stands. A block must answer at the beach, and a page must be read, not only status-checked. The substrate's gate does not check prose, so the look's own words must be walked."
+  },
+  "6": {
+    "_": "THE READER'S CASES — judgment, not form. A judgment is a fresh reader's to make, so these are not planted and were not run in the first pass; each is a NOTE until a mind reads the look.",
+    "1": "A STRANGER KNOWS WHAT IT IS, a NOTE (READER'S): read the root alone. Can a new mind say what the look is, whose it is, and which families wear it?",
+    "2": "THE PICTURE TELLS THE TRUTH, a NOTE (READER'S): the drawing at 5 shows what its alt line says. Look at the picture; do not take the alt's word for it.",
+    "3": "A RENDER FROM THE GRAMMAR ALONE, a NOTE (READER'S): a mind handed 4 to 6 and a family draws it in the hand the grammar gives, without the page's own words. This needs a model call, so it is not run here.",
+    "4": "THE PAGE APPLIES WHAT THE LOOK NAMES, a NOTE (READER'S; a finding on the law): every token the look names should be applied by the page that wears it. look.js applies the measure, the corner, the scale and the weight. The spacing step and the rule are named by every look and applied by none. This is for the law's keeper, not a fault of any one look."
+  },
+  "7": {
+    "_": "THE PLANTED FAULTS — each break is made alone in the unbroken example at 7,7 and walked by hand against the cases. The case it names must fire at its own grade; nothing else may fire except a consequence named here; and the unbroken example must stay clean. Groups: 7,1 the form, 7,2 the palette, 7,3 the letters and the measure, 7,4 the grammar, 7,5 where and whence; 7,6 the reader's cases, not planted; 7,7 the unbroken example, a made-up look whose keys beneath are its own, not positions of this test.",
+    "1": {
+      "_": "THE FORM — breaks for 1,1 to 1,4, and a second break for 1,3.",
+      "1": "1,1 ADDRESSES, FAULT: add a key 7 beside 1 to 3 holding 'accent: #123456', a token at no address any page reads. Walked: 1,1 FAULT; nothing else fires.",
+      "2": "1,2 NOTHING ELSE, FAULT: the root's words gain 'body { colour: #000 }'. Walked: 1,2 FAULT, since braces open a rule; nothing else fires.",
+      "3": "1,3 KEY THEN VALUE, FAULT: the light ground line becomes the bare value '#F4F1EA', with no key. Walked: 1,3 FAULT; the light set then has no ground, so 2,1 also fires FAULT, a named consequence.",
+      "4": "1,4 ONE THING A LINE, WARN: the clean scale line becomes 'body 1.1rem on line height 1.55; small text 0.95rem'. Walked: 1,4 WARN, since two sizes stand on one line; 3,4 silent, since the first size is the body's.",
+      "5": "1,3 KEY THEN VALUE, NOTE: the light muted line reads 'muted ink: #4F5B66'. Walked: 1,3 NOTE, since the page reads it as muted; no FAULT."
+    },
+    "2": {
+      "_": "THE PALETTE — breaks for 2,1 to 2,7.",
+      "1": "2,1 BOTH SETS, GROUND AND INK, FAULT: the dark ground line is deleted. Walked: the dark set has no ground, so the page keeps none of it: 2,1 FAULT; 2,2 to 2,6 silent, since the values they check are present.",
+      "2": "2,2 MUTED, PANEL AND LINE, WARN: the light panel line is deleted. Walked: 2,2 WARN; the light panel falls to the standard; nothing else fires.",
+      "3": "2,3 INK READS AT AA, FAULT: the dark ink becomes #3A4A50, 2.0 to 1 on the dark ground. Walked: 2,3 FAULT; the whole dark set drops; 2,4 silent, since the dark muted still reads.",
+      "4": "2,4 MUTED READS AT AA, WARN: the light muted becomes #6B848D, the value weft wears, at 3.51 to 1 on this ground (3.73 on weft's own). Walked: 2,4 WARN; the standard's muted shows.",
+      "5": "2,5 ACCENT, WARN: the light accent becomes #8FB8D9, 1.86 to 1 on the light ground. Walked: 2,5 WARN; the reader moves it six steps toward the ink, to #597184 at 4.52 to 1, its hue kept.",
+      "6": "2,6 SIX-DIGIT HEX, WARN: the dark muted becomes '#9AB'. Walked: 2,6 WARN, since three digits are dropped; 2,4 silent, since '#9AB' reads at about 7.8 to 1 on the dark ground.",
+      "7": "2,7 THE CHECK IT STATES, NOTE: the palette's underscore gains 'Checked: ink at least 18 to 1 on ground and panel.' Walked: 2,7 NOTE, since the light ink is 14.68 on the ground and 16.56 on the panel."
+    },
+    "3": {
+      "_": "THE LETTERS AND THE MEASURE — breaks for 3,1 to 3,8.",
+      "1": "3,1 FACES ON THE ALLOWLIST, WARN: the display face becomes 'Inter'. Walked: 3,1 WARN; display falls to the standard; 3,3 silent, since Inter is not a face the law lists.",
+      "2": "3,2 THREE FACES NAMED, WARN: the mono line is deleted. Walked: 3,2 WARN; mono falls to the standard; nothing else fires.",
+      "3": "3,3 FACES LOADED, WARN, on a bare page: the display face becomes 'Syne' and the page loads no Syne. Walked: 3,3 WARN on a page without Syne's link; silent on the standard exemplar, which loads Syne itself. Page-dependent: walked against the exemplar's HTML, not rendered.",
+      "4": "3,4 THE BODY'S SIZE, FAULT: the scale line becomes 'small text 0.95rem; body 1.1rem'. Walked: the reader takes 0.95rem as the body size, so 3,4 FAULT, since the page sets the wrong size; 1,4 also fires WARN, a named consequence.",
+      "5": "3,5 SIZE IN RANGE, WARN: the scale line becomes 'body 2.4rem'. Walked: 2.4rem is outside 0.85 to 1.5rem, so it is dropped; 3,5 WARN; 3,4 silent, since no wrong value is applied.",
+      "6": "3,6 HEADINGS' WEIGHT FIRST, WARN: the weights line becomes '650 400'. Walked: 650 is not a hundred, so it is dropped; 3,6 WARN.",
+      "7": "3,7 TEXT MEASURE IN RANGE, WARN: the measure becomes '44em'. Walked: the reader takes only rem and px, so it is dropped; 3,7 WARN.",
+      "8": "3,8 THE CORNER IN RANGE, WARN: the radius becomes '3rem'. Walked: outside 0 to 1.5rem, so it is dropped; 3,8 WARN."
+    },
+    "4": {
+      "_": "THE GRAMMAR — breaks for 4,1 to 4,5.",
+      "1": "4,1 WHOLE OR ABSENT, WARN: the 6 is deleted and a band is added at 4, 'what happened: #4A6B8A'. Walked: a band with no 6 is a WARN at 4,1; 4,2 and 4,3 have no 6 to check and fall silent; 4,4 silent, since the band's hue has its meaning.",
+      "2": "4,2 EXEMPLAR STANDS, FAULT: the exemplar becomes https://raw.githubusercontent.com/pscale-commons/bsp-mcp-server/main/proposals/no-such-file-for-test.md, which answers 404. Walked: 4,2 FAULT; 4,3 and 4,4 still read the parts, since they do not fetch the exemplar.",
+      "3": "4,3 THE GRAMMAR'S PARTS, WARN: the voice (the 6's 5) is deleted. Walked: 4,3 WARN; 4,4 silent, since the marks keep their meanings.",
+      "4": "4,4 MARKS WITH THEIR MEANING, WARN: the dim ink mark loses its meaning, leaving 'dim ink.' Walked: 4,4 WARN; dim ink is named without its meaning.",
+      "5": "4,5 THE DRAWING, FAULT: a 5 is added holding 'http://example.com/mark.png' and no alt line. Walked: 4,5 FAULT, since the address is not https and there is no alt line; nothing else fires."
+    },
+    "5": {
+      "_": "WHERE AND WHENCE — breaks for 5,1 to 5,4.",
+      "1": "5,1 WORN WHERE THE LAW SAYS, WARN: 8 becomes 'any family I keep; the first is ghost-family.' Walked: spine:ghost-family and function:ghost-family both answer 404 at the beach; 5,1 WARN.",
+      "2": "5,2 WHO, WHEN, AND WHAT IT WAS READ FROM, WARN: the day is taken out of 9. Walked: 5,2 WARN; the maker and the source still stand.",
+      "3": "5,3 THE NAMED SOURCE HOLDS THE VALUES, WARN: 9 says the values are read from theme.css, and the clean ground #F4F1EA is not in theme.css. Walked: 5,3 WARN; 5,2 silent, since a source is named.",
+      "4": "5,4 REFERENCES IN PROSE RESOLVE, WARN: 9 gains 'see pool:no-such-room-for-test 7'. Walked: the beach answers 404 for that pool; 5,4 WARN."
+    },
+    "6": "THE READER'S CASES, not planted: 6,1 to 6,3 wait for a fresh reader's judgment and were not run. 6,4 is a finding on the law, which every look shares, the clean example included.",
+    "7": {
+      "_": "A made-up look, kept as the unbroken example of this test: its palette and its letters are its own, its grammar names the standard exemplar, and it is worn wherever any family keeps it.",
+      "1": {
+        "_": "THE PALETTE: two colour sets and one accent, each checked at AA on its own ground.",
+        "1": {
+          "_": "Light: paper and ink.",
+          "1": "ground: #F4F1EA",
+          "2": "ink: #1B1F24",
+          "3": "muted: #4F5B66",
+          "4": "panel: #FFFFFF",
+          "5": "line: #D2CCBF"
+        },
+        "2": {
+          "_": "Dark: the same room at night.",
+          "1": "ground: #101418",
+          "2": "ink: #E8ECEF",
+          "3": "muted: #9AA6B0",
+          "4": "panel: #1A2026",
+          "5": "line: #2C343C"
+        },
+        "3": "accent: slate, #2B5F8A in light, #7FB2DC in dark"
+      },
+      "2": {
+        "_": "THE LETTERS: a display face, a body face and a mono, from the allowlist, with the body's size and the headings' weights.",
+        "1": "display: Cormorant Garamond",
+        "2": "body: Cormorant Garamond",
+        "3": "mono: JetBrains Mono",
+        "4": "scale: 1.1rem",
+        "5": "weights: 600 400"
+      },
+      "3": {
+        "_": "THE MEASURE: the spacing step, the corner, the rule and the text measure.",
+        "1": "step: 1rem",
+        "2": "radius: 0.25rem",
+        "3": "rule: 1px",
+        "4": "measure: 44rem"
+      },
+      "6": {
+        "_": "THE GRAMMAR — how a page made in this look is drawn. Its exemplar is https://happyseaurchin.com/proposal/code-as-blocks, the standard page; take its hand, never its words.",
+        "1": "THE SHEET — a band across the top, the family's words beside its drawing, and a section for each step.",
+        "2": "THE FRAME — a hairline rule round each section, cornered at the measure's radius.",
+        "3": "THE MARKS — the accent is what is live; ink is what stands; dim ink is what is said but not yet answered.",
+        "4": "THE MOVES — nothing moves unless the reader asks, and under reduced motion nothing moves at all.",
+        "5": "THE VOICE — the page speaks in the zeroth person of the family, and no line addresses the reader as you."
+      },
+      "8": "WHERE IT IS WORN: any family I keep.",
+      "9": "PROVENANCE: made up on 2 November 2026 by claude-haiku-5-5 for a test; its values are invented and read from no source."
+    }
+  },
+  "8": {
+    "_": "WHAT IT FOUND — the first run, 2 November 2026, by public GET only, over the three looks on the beach and the law they stand under. Each finding names its block and address. Every grade is the test's own; the reader is look.js as its code reads.",
+    "1": "look:Phenomemental — WARN 1,4 at 2,1, 2,2 and 2,3: a face with its weight, a body with its weight and italic, a scale naming six things. WARN 3,2: there is no mono, so the letters name display and body only. WARN 4,1: 4 and 5 stand and 6 does not, so there is no exemplar for a mind to open. NOTE 1,3: 'muted ink' at 1,1,3, which the page reads as muted. NOTE 3,6: the weight sits on the display line, not the weights line. NOTE 6,2: the drawing at 5 is an open ink stroke round a crimson oval, which the alt calls a heart. PASS on contrast (ink 14.04 and 14.67; muted 6.30 and 6.85; accent 4.76, close, and 5.80 in dark); on the faces it names; on 3,4 (the body's 1.2rem is first); on 3,5, 3,7 and 3,8 (the corner's 2px reads as 0.125rem); on 4,4 (each band hue has its meaning); on 4,5 (https, answers as a PNG, has an alt line); and on 5,3, where every colour it names appears in sundial.html, night-watchman.css or beach.css (its 1rem step, 1px rule and weight 500 were not walked).",
+    "2": "look:keel — NOTE 2,7: its palette says ink at least 14 to 1 on ground and panel, and on the light panel it is 13.98 to 1. NOTE 4,1: it has no band, drawing or grammar, so it is worn as tokens, as the law allows. WARN 3,3 on look.js alone: look.js does not load Newsreader, its body face, so it passes on the standard exemplar, which loads it, and fails on a bare page. NOTE 5,2: its 9 says its shape is weft's and the values were chosen at David's word, but does not say they were chosen. PASS on 1,1 to 1,3 (both sets, every key exact, the accent named in two lines); on 2,1 to 2,6 (ink 15.75 and 16.01; muted 5.90 and 7.33; accent 7.26 and 7.56; six-digit hex); on the faces, all three on the list; on 3,4 to 3,8 (scale 1.05rem, weights 600 400, text measure 42rem, radius 0.25rem); on 5,1 (function:pscale-native, its 6, names 'look: keel'); and on 5,4 (the family's names stand).",
+    "3": "look:weft — WARN 2,4 at 1,1,3: its light muted #6B848D is 3.73 to 1 on its own ground, so the page drops it and shows the standard's muted, the same value in theme.css; the standard fails AA there too. WARN 5,3: its 9 says its tokens are the site's own from theme.css, but its light and dark line values (#D7D0C2 at 1,1,5, #1F4651 at 1,2,5) are not in theme.css, which writes the line as a wash of the vapour; its scale, weights, measure and radius are not in theme.css either (the page's own CSS was not read). WARN 4,3: its 6 has the sheet, the marks and the moves, but no frame and no voice. NOTE 4,1: it has no 4 or 5; its band and drawing sit in 6's prose, which the law allows. PASS on 4,2 (the exemplar https://happyseaurchin.com/proposal/code-as-blocks answers and is the standard page, read and not rendered); on 2,3 (ink 12.66 and 16.68); on 2,5 (accent 5.83 and 8.52); on 3,1, 3,2 and 3,4 to 3,8; on 3,3 (the exemplar loads all three faces); on 4,4 (every mark in its 6,3 has its meaning); on 5,1 (function:code-as-blocks, its 6, names 'look: weft'); and on 5,4 (function:look, spine:code-as-blocks, pool:weft and the exemplar all stand; pool:weft 286 was not walked to its line).",
+    "4": "function:look — the law's own findings, for its keeper, and not a fault of any look: (a) the spacing step and the rule are named at its 1,1 and applied by no page; look.js applies the measure, the corner, the scale and the weight, as its 2 says. (b) look.js loads only Cormorant Garamond and JetBrains Mono, while its 2 says a face on the list 'is loaded'. (c) an ink that fails AA drops the whole theme in look.js, though its 2 says only ink and muted are dropped. (d) its 9 cites proposals/2026-11-02-a-look-asks-no-yes.md, which answers 404 on main; proposals/2026-10-29-a-look-carries-a-design.md answers. (e) it gives no units, no ranges and no hex length; look.js reads rem and px within ranges, and six-digit hex only. (f) it does not say which of 4, 5 and 6 are required, nor which of the grammar's five parts. (g) it does not say what a look with a band and a drawing but no 6 is; look:Phenomemental is one.",
+    "5": "look.js, as its code reads — where the law and the reader part, the reader decides: (a) the first size in the scale line is the body's (3,4). (b) a line's key is the first law name it holds, so 'muted ink' is muted and 'corner radius' is radius. (c) a single hex given for the accent is used for both themes. (d) a failing ink drops the set (2,3). (e) a value in the wrong units or outside its range is dropped without a word (3,5 to 3,8). None of this is in the law. For whoever keeps the reader."
+  },
+  "9": {
+    "_": "HOW IT RUNS AND WHERE IT CAME FROM — with no program: one public GET for each block (?block=<name>, and &spindle=<address> for one position); the contrast by the WCAG formula on the hex values, worked out by hand; the reader read as code at happyseaurchin.com/look.js; the standard read at happyseaurchin.com/theme.css; the exemplar and the drawing fetched and read. Nothing was written to the beach.",
+    "1": "HOW A CASE IS WALKED — the break is stated beside the case in 7; then every case is walked by hand against the broken copy of 7,7, and a case fires at its own grade or it does not. A judgment case (6) needs a fresh reader and is never a program's.",
+    "2": "WHAT IS NOT RUN — the fresh reader's step, any program, the render at 6,3, and the bare-page check at 3,3. This block stands as a file until someone who holds a key puts it on the beach.",
+    "3": "PROVENANCE — built on 2 November 2026 by claude-haiku-5-5, running the draft way at the requester's word, from the law (function:look) and the three looks on the beach. It read the law and the looks before it wrote a case, so it is not a fresh reader. The unbroken example at 7,7 is made up. The first run's findings are at 8."
+  }
+}
