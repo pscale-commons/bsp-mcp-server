@@ -936,6 +936,13 @@ async function bundleWindow(
   return renderBundle(members, { label: `"${target.agent_id}/${target.block}" ${at}` });
 }
 
+// THE CONNECTOR SAYS WHEN IT SEALS UNDER THE LATCH (coloured-stigmergy 1.8, GO from David
+// and weft; bsp-mcp proposals/2026-11-02-leros-on-the-commons-the-build-to-completion.md
+// §4.1 item 3). enc_secret falls back to secret so a single-secret caller keeps working, but
+// a line sealed under the latch opens for whoever holds the latch — the beach's operator
+// among them, once the lock is proved — so no door seals that way silently: the ack says it.
+const LATCH_SEAL_NOTE = '\n  ⓘ sealed under the latch: no enc_secret was given, so the lock\'s secret served as the sealing key — whoever holds this latch can open the line. Pass enc_secret to seal under a key of your own.';
+
 async function handleBspInner(params: BspToolParams, sessionId?: string): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { agent_id, spindle, pscale_attention, content: rawContent, secret, new_lock, enc_secret, face, tier } = params;
   // Block may be omitted (or "") to request a surface index — normalise to a
@@ -1105,11 +1112,12 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       const lawOfIt = family ? await loadBlock(agent_id, `function:${family}`).catch(() => null) : null;
       const handed = lawOfIt ? await wayHandedOver(sessionId, agent_id.replace(/\/+$/, ''), lawOfIt.block, Date.now()) : [];
       const way = handed.length ? `\n\n${handed.join('\n')}` : '';
+      const latchNote = wantGrayAppend && !isGrainAppend && enc_secret === undefined && secret !== undefined ? LATCH_SEAL_NOTE : '';
       if (res.address !== undefined) {
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}${way}` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}${latchNote}${way}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}${way}` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}${latchNote}${way}` }] };
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       // The one refusal this change can newly provoke, named rather than left
@@ -1449,6 +1457,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
   // content write. A gray entry has none (its leaf is an envelope, opaque to the
   // wire), but a gray VOICING does: the node it voiced is still a node, and its
   // entries standing beneath the encrypted line is the whole of what to judge.
+  const latchNote = wantGray && !isGrain && enc_secret === undefined && secret !== undefined ? LATCH_SEAL_NOTE : '';
   if (writeResult) {
     const voicedNote = grayVoiced !== undefined
       ? `\n  ⓘ the encrypted line voices the node at "${spindle}" — its ${grayVoiced} ${grayVoiced === 1 ? 'entry travelled' : 'entries travelled'} with it and ${grayVoiced === 1 ? 'stands' : 'stand'} beneath it.`
@@ -1460,7 +1469,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       ? ''
       : await readBackAfterWrite(agent_id, blockName, writeResult.landed ?? (spindle ?? ''), content);
     const frame = wantGray ? '' : frameLines(blockToSave as Block, writeResult.landed);
-    return { content: [{ type: 'text', text: formatWrite(writeResult) + voicedNote + degrayNote + bornNote + lockNote + frame + readBack }] };
+    return { content: [{ type: 'text', text: formatWrite(writeResult) + voicedNote + degrayNote + bornNote + lockNote + frame + readBack + latchNote }] };
   }
   return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${bornNote}${lockNote}` }] };
 }

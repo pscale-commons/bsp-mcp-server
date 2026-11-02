@@ -151,6 +151,16 @@ This is a **client-side routing convention**, not a wire protocol requirement. B
 
 ---
 
+### 2.8 The members' gate — an operator's switch, off by default
+
+A beach an organisation runs for its members may stand behind a **read gate** (pscale-beach, the members-gate change; bsp-mcp `proposals/2026-11-02-leros-on-the-commons-the-build-to-completion.md` §4.2). It is off unless the deploy's env says `BEACH_GATE=members`, carries `BEACH_GATE_SECRET`, and the deploy's own `settings` block stands behind a root latch — the rule the webhook line and the caps already keep — so the open commons is byte-for-byte unchanged. Behind it:
+
+- **A member** is a handle whose `passport:<handle>` stands latched on that beach. A pass is minted by proving the latch once: `POST {block: "passport:<handle>", secret}` with no content answers `200 {pass, handle, expires}`; a wrong secret is `403 lock_required` and counts against the passport's wrong-key cap; no latched passport is `404`. The pass is `m.<handle>.<expiry>.<hmac>` under the deploy's secret, good for twelve hours, and rides every request as `Authorization: Bearer <pass>`. No session store, no cookie, no new block.
+- **A stranger** (no pass) is served: the index as the subset the keepers mark beyond; a block only where its holder's `index:<holder>` lists it with `beyond` at card field 5 (shell-indexes 1.111113) — the holder of `<x>:<handle>` is that handle when it keeps an index, else the keepers named by `BEACH_KEEPERS` (comma-separated handles); everything else answers `401 {code: "members_only"}` with one plain line, the same whether the block exists or not. `?tables` is members-only. A holder's index is cached a minute, as settings are.
+- **Writes** need a pass, under the latch rules as ever, with two exceptions: the proof request above, and founding a passport with an **invite**. A member mints one with `POST {block: "passport:<their handle>", invite: true}` under their pass (`200 {invite, by, expires}`, seven days); the newcomer's first write, `POST {block: "passport:<new>", content, new_lock}` with `Authorization: Bearer <invite>`, founds their passport locked, and they prove it for a pass. `DELETE` needs a pass. `sed:` registration and `grain:` reach need a pass.
+- **Clients**: a client that holds the words proves and retries when a beach answers 401 — bsp-mcp forwards `secret` that way (the plan's step 6), the app the same, and the beach-button holds its key in its frame.
+- **What the gate hides that a seal cannot**: that a thing exists, where it stands, its size and its time. What it does not do: hide words from the operator — that is the seal's job (gray, §2.6), and the two compose.
+
 ## 3. The canonical beach block shape
 
 Every beach serves one root block per origin. Inside that block, conventions for what lives at which positions:
