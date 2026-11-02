@@ -82,6 +82,8 @@ import { nameAtTheDoor, noteLook, reflect } from '../looks.js';
 import { rideOrientation } from '../orientation.js';
 import { followsOf, lensLaw, lensVoice, composeLensMedium } from './lens.js';
 import { raised, nodeAt, linesAt, dotted, type CrossLine } from '../cross.js';
+import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { handOf } from '../looks.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
 //    would tie this clean surface to the one it exists to stand beside) ──
@@ -1314,7 +1316,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
  *  its answer ends with who else is working the beach just now. A tier call is
  *  a composed prompt another mind runs word for word: the look is noted, and
  *  nothing is appended to it. */
-export async function handleStreamEngage(params: StreamEngageParams, extra?: { sessionId?: string }) {
+async function handleStreamEngageInner(params: StreamEngageParams, extra?: { sessionId?: string }) {
   const session = extra?.sessionId;
   nameAtTheDoor(session, params.handle);
   const res = await streamEngage(params, session);
@@ -1331,3 +1333,16 @@ export async function handleStreamEngage(params: StreamEngageParams, extra?: { s
   return rideOrientation(reflect(res, session, origin, block, params.at ?? null, said || params.keep !== undefined), session);
 }
 
+/** The stream engage stands at the door as the hand it names (src/pass.ts). */
+export async function handleStreamEngage(params: StreamEngageParams, extra?: { sessionId?: string }) {
+  const door: Door = { session: extra?.sessionId, handles: [(params as any).handle, handOf(extra?.sessionId)], secret: (params as any).secret };
+  let res: any;
+  try {
+    res = await atTheDoor(door, () => handleStreamEngageInner(params, extra));
+  } catch (e: any) {
+    if (!isDoorRefusal(e)) throw e;
+    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+  }
+  if (door.minted && (res as any)?.content?.length) (res as any).content[(res as any).content.length - 1].text += mintedLine(door);
+  return res;
+}

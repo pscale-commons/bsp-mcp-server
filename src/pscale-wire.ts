@@ -82,9 +82,45 @@ export function isWireErr<T extends { ok: boolean }>(r: T | WireErr): r is WireE
 // ── transport ────────────────────────────────────────────────────────────────
 
 class HttpError extends Error {
-  constructor(public httpStatus: number, public bodyText: string) {
-    super(`HTTP ${httpStatus}: ${bodyText.slice(0, 200)}`);
+  constructor(public httpStatus: number, public bodyText: string, whole = false) {
+    super(whole ? bodyText : `HTTP ${httpStatus}: ${bodyText.slice(0, 200)}`);
   }
+}
+
+// ── THE DOOR (a members' beach; pscale-beach's gate, protocol 2.8) ──
+// A gated beach refuses a stranger 401 {code: 'members_only'} and serves a member
+// who carries a PASS as Authorization: Bearer. The router's door (src/pass.ts)
+// hands this file four hooks, so it stays free of Node imports: the pass the
+// current session holds for a beach, a proof that mints one from the hand and
+// secret the current call stands with, forgetting a pass the beach no longer
+// honours, and the plain line a stranger is given. With no hooks set (another
+// consumer of this file), a 401 is an HttpError like any other.
+export interface DoorHooks {
+  pass(origin: string): string | null;
+  prove(origin: string, timeoutMs: number): Promise<string | null>;
+  forget(origin: string): void;
+  refusal(origin: string, beachLine: string | undefined): string;
+}
+let doorHooks: DoorHooks | null = null;
+export function setDoorHooks(h: DoorHooks | null): void { doorHooks = h; }
+function originOfUrl(url: string): string { return url.replace(/\/\.well-known\/pscale-beach.*$/i, ''); }
+function bearerHeaders(url: string): Record<string, string> {
+  const pass = doorHooks?.pass(originOfUrl(url));
+  return pass ? { Authorization: `Bearer ${pass}` } : {};
+}
+function membersOnly(status: number, text: string): string | null {
+  if (status !== 401) return null;
+  try { const j = JSON.parse(text); return j?.code === 'members_only' ? String(j.error ?? '') : null; } catch { return null; }
+}
+/** A 401 members_only: prove once at the door and say whether to retry; else the plain line. */
+async function throughTheDoor(url: string, status: number, text: string, timeoutMs: number): Promise<boolean> {
+  const line = membersOnly(status, text);
+  if (line === null || !doorHooks) return false;
+  const origin = originOfUrl(url);
+  doorHooks.forget(origin);
+  const pass = await doorHooks.prove(origin, timeoutMs);
+  if (pass) return true;
+  throw new HttpError(401, doorHooks.refusal(origin, line), true);
 }
 
 function base(origin: string): string {
@@ -106,25 +142,29 @@ export function endpointShape(origin: string, block: string, spindle: string | n
   return url;
 }
 
-async function rawGet(url: string, timeoutMs: number): Promise<Json> {
+async function rawGet(url: string, timeoutMs: number, retried = false): Promise<Json> {
   const r = await fetch(url, {
     cache: 'no-store',
-    headers: { Accept: 'application/json' },
+    headers: { Accept: 'application/json', ...bearerHeaders(url) },
     signal: AbortSignal.timeout(timeoutMs),
   });
   const text = await r.text();
-  if (!r.ok) throw new HttpError(r.status, text);
+  if (!r.ok) {
+    if (!retried && await throughTheDoor(url, r.status, text, timeoutMs)) return rawGet(url, timeoutMs, true);
+    throw new HttpError(r.status, text);
+  }
   try { return JSON.parse(text); } catch { return null; }
 }
 
-async function rawPost(url: string, body: Json, timeoutMs: number): Promise<{ status: number; body: Json; text: string }> {
+async function rawPost(url: string, body: Json, timeoutMs: number, retried = false): Promise<{ status: number; body: Json; text: string }> {
   const r = await fetch(url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', Accept: 'application/json' },
+    headers: { 'content-type': 'application/json', Accept: 'application/json', ...bearerHeaders(url) },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(timeoutMs),
   });
   const text = await r.text();
+  if (!retried && r.status === 401 && await throughTheDoor(url, r.status, text, timeoutMs)) return rawPost(url, body, timeoutMs, true);
   let parsed: Json = null;
   try { parsed = JSON.parse(text); } catch { /* an ack without a body is still an ack */ }
   return { status: r.status, body: parsed, text };

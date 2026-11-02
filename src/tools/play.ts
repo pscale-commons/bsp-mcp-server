@@ -45,6 +45,7 @@ import { compile, completeDialed, orderSweep, renderCompletions, renderFramedVal
 import { toPNode, pyDumps, type Loader, type PNode, type PMap } from '../genus.js';
 import { SENTINELS } from '../sentinels.js';
 import { clockTable, composeClockDoor } from './clock.js';
+import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
 
 /** Loaders for compile() at this door. `load` is beach-scoped: sentinels first
  *  (the completion's shallow points live there), then named blocks at the
@@ -399,7 +400,7 @@ export const playParamsSchema = {
 
 export type PlayParams = { world: string; handle: string; secret?: string; room?: string; thread?: string };
 
-export async function handlePlay(
+async function handlePlayInner(
   params: PlayParams,
   extra?: { sessionId?: string },
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
@@ -963,4 +964,23 @@ export async function handlePlay(
     out.push(renderCompletions(completions));
   }
   return { content: [{ type: 'text', text: out.join('\n') }] };
+}
+
+/** THE DOOR STANDS AT THE DOOR: the play door is told a handle and, when it is
+ *  given, the key; a members' beach that refuses the world's reads is proved
+ *  once as that hand and the pass kept for the session (src/pass.ts). */
+export async function handlePlay(
+  params: PlayParams,
+  extra?: { sessionId?: string },
+): Promise<{ content: { type: 'text'; text: string }[] }> {
+  const door: Door = { session: extra?.sessionId, handles: [params.handle], secret: params.secret };
+  let res: any;
+  try {
+    res = await atTheDoor(door, () => handlePlayInner(params, extra));
+  } catch (e: any) {
+    if (!isDoorRefusal(e)) throw e;
+    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+  }
+  if (door.minted && res.content.length) res.content[res.content.length - 1].text += mintedLine(door);
+  return res;
 }
