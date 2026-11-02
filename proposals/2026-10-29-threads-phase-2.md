@@ -175,7 +175,7 @@ David's word, relayed by the bee, answering "Run the nine again the way a live m
 | place | 2/4 | **2/4** | neither | at 1.12 beside dana, as before; closed on nobody |
 | twin | 1/4 | **1/4** | neither | over its own act at 1.121, as before; this act closed on dana |
 | reask | 4/4 | **0/4** | neither | over its own option at 1.13, closed on nobody; the test beach's copy of the answered-option guard refused its first try, at 1.1 |
-| wake | 4/4 | **1/4** | can't: no tools | wrote the invalid address `1.1.1`, so nothing landed |
+| wake | 4/4 | **1/4** | can't: no tools | wrote an address with two dots, which the walker refuses, so nothing landed |
 | **checks** | **35/40** | **16/40** | | |
 | well formed, the law as it stands | 9 of 9 | 3 of 9 | | the wake's only because nothing landed |
 | calls, median of uses 1-8 | 6 | 6.5 | | |
