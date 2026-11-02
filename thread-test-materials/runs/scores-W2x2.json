@@ -1,0 +1,52 @@
+[
+ {
+  "run": "W2x2-C6",
+  "kind": "place",
+  "calls": 8,
+  "reads": 6,
+  "thread_reads": [
+   "1"
+  ],
+  "read_teaching": [],
+  "wrote": [
+   "1.121",
+   "1.1211",
+   "1.1212"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "dana": [
+    "rook: thread:1.121 — draft 3 is ready with the low-water marks shown: publish it, or ask for another pass"
+   ]
+  },
+  "form_v1": "WELL FORMED",
+  "form_p2": "WELL FORMED",
+  "warns_v1": [],
+  "expect": [
+   "ok the knot at 1.121, beneath dana's line at the place handed on",
+   "ok it waits on dana",
+   "ok taken up with one read",
+   "ok thread:1.121 handed to dana's room"
+  ],
+  "score": "4/4",
+  "tied": {
+   "1.121": "rook rebuilt the page as draft 3, with the low-water marks shown · waits on dana · read: tides:draft 3, tides:draft 2",
+   "1.1211": "publish draft 3",
+   "1.1212": "another pass on draft 3"
+  },
+  "reply_json": {
+   "tied_at": "1.121",
+   "line": "rook rebuilt the page as draft 3, with the low-water marks shown · waits on dana · read: tides:draft 3, tides:draft 2",
+   "options": [
+    "publish draft 3",
+    "another pass on draft 3"
+   ],
+   "handed_on": {
+    "to": "dana",
+    "text": "thread:1.121 — draft 3 is ready with the low-water marks shown: publish it, or ask for another pass"
+   },
+   "why": "1.12 is dana's answered request, and 1.121 is the next free digit beneath it, so my rebuild answers that request at its own address."
+  }
+ }
+]

@@ -1,0 +1,11 @@
+I rebuilt the page as draft 3 with the low-water marks shown, tied that step on the thread, and handed it to dana.
+
+- **Thread:** 1 (the tide-table page). Dana's line at 1.12 asked for another pass and waited on rook.
+- **Check:** `tides:draft 3` reads "draft 2 with the low-water marks shown", so the rebuild is on the page.
+- **Knot:** I tied it at 1.121, the next free digit beneath the line it answers. It reads "rook rebuilt the page as draft 3, with the low-water marks shown · waits on dana · read: tides:draft 3, tides:draft 2".
+- **Options:** 1.1211 "publish draft 3" and 1.1212 "another pass on draft 3". Dana's choice goes at those addresses.
+- **Handed on:** `pool:dana` now holds "thread:1.121 — draft 3 is ready with the low-water marks shown: publish it, or ask for another pass".
+
+Thread 1 is still open and now waits on dana.
+
+{"tied_at": "1.121", "line": "rook rebuilt the page as draft 3, with the low-water marks shown · waits on dana · read: tides:draft 3, tides:draft 2", "options": ["publish draft 3", "another pass on draft 3"], "handed_on": {"to": "dana", "text": "thread:1.121 — draft 3 is ready with the low-water marks shown: publish it, or ask for another pass"}, "why": "1.12 is dana's answered request, and 1.121 is the next free digit beneath it, so my rebuild answers that request at its own address."}
