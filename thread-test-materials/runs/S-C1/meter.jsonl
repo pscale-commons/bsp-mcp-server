@@ -1,0 +1,14 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "moorings:draft"], "chars": 102}
+{"cmd": ["room", "rook"], "chars": 28}
+{"cmd": ["room", "wren"], "chars": 28}
+{"cmd": ["read", "1"], "chars": 1485}
+{"cmd": ["read", "3"], "chars": 403}
+{"cmd": ["block", "moorings:draft", "1"], "chars": 44}
+{"cmd": ["open", "the moorings page \u00b7 opened by rook"], "chars": 65}
+{"cmd": ["block", "spine:thread"], "chars": 217}
+{"cmd": ["read", "3"], "chars": 411}
+{"cmd": ["say", "3", "rook built the moorings page's first draft (moorings:draft 1: 48 moorings, by pontoon and berth)", "--option", "wren reviews the list against the harbour's register", "--option", "dana decides it is good enough to publish without a review"], "chars": 295}
+{"cmd": ["read", "3"], "chars": 610}
+{"cmd": ["post", "wren", "Moorings page for dana: draft 1 is in moorings:draft 1 (48 moorings, by pontoon and berth). The choice is at thread 3: 3.1 wren reviews the list against the harbour's register; 3.2 dana decides it is good enough to publish without a review. If you take 3.1, write your result at 3.1.1 (or 3.1.2 if that is taken) in thread:wren, and tell dana."], "chars": 29}
+{"cmd": ["room", "wren"], "chars": 380}

@@ -1,0 +1,9 @@
+I took the option at 1.13 ("rook rebuilds it on the new chart first"), wrote what came of it in my block, and handed the decision back to dana.
+
+- **Read:** thread 1, where dana asked at 1.12 for another pass to show the low-water marks. The draft with those marks is tides:draft 3.
+- **Wrote:** 1.13 in thread:rook, then offered two options for dana beneath it, at 1.131 and 1.132.
+- **Handed on:** dana's room, pointing at thread:1.13.
+
+One caveat: I did not check draft 3 against the new chart myself. The line records only what the block says, that draft 3 is draft 2 with the low-water marks shown.
+
+{"tied_at": "1.13", "line": "rebuilt on the new chart: tides:draft 3 is draft 2 with the low-water marks shown", "options": ["dana publishes the page", "dana asks for another pass"], "handed_on": {"to": "dana", "text": "thread:1.13 — rook rebuilt the tide-table page with the low-water marks shown (tides:draft 3). Decide: publish it, or ask for another pass."}, "why": "1.13 is the option dana's thread offered for rook's next step after dana's 1.12 request, and rook's block had no line there yet."}

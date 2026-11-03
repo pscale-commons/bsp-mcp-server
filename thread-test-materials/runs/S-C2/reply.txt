@@ -1,0 +1,5 @@
+I reviewed draft 1 against the harbour's data, found two wrong tide times, and confirmed draft 2 corrects them. I tied that to the thread at 1.1 and left dana the choice between publishing and another pass.
+
+I posted the handoff to dana's room at 2 with the wrong option addresses (1.1.1 and 1.1.2), then posted a correction. The options are at 1.11 (publish draft 2) and 1.12 (ask for another pass).
+
+{"tied_at": "1.1", "line": "wren reviewed draft 1 against the harbour's data: two tide times were wrong; corrected in draft 2", "options": ["publish draft 2", "ask for another pass"], "handed_on": {"to": "dana", "text": "wren has reviewed the tide-table page (thread 1). Draft 1 had two wrong tide times; draft 2 corrects them against the harbour's data. Your choice at 1.11: publish draft 2, or 1.12: ask for another pass. Correction: the options sit at 1.11 and 1.12, not 1.1.1 and 1.1.2."}, "why": "1.1 is the branch rook opened for my review, so my line belongs there, and the two options sit beneath it at 1.11 and 1.12."}

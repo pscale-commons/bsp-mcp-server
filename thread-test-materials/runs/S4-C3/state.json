@@ -1,0 +1,65 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft",
+    "1": "wren reviews the draft against the harbour's data",
+    "2": "dana decides without a review",
+    "3": {
+     "_": "rook adds the spring tides before anyone reviews — done: tides:draft 2 is draft 1 with the spring tides added",
+     "1": "wren reviews tides:draft 2 against the harbour's data"
+    }
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms"
+  }
+ },
+ "rooms": {
+  "rook": [
+   "rook: thread:1 — a note to myself: add the spring tides before the review"
+  ],
+  "wren": [
+   "rook: Tides draft 2 is on the page (spring tides added). Your review is the next option on the thread: read thread:1.3.1 (at 1.3, wren reviews tides:draft 2 against the harbour's data).",
+   "rook: Correction: the review option is at thread:1.31, not 1.3.1. Read thread:1.31 (wren reviews tides:draft 2 against the harbour's data)."
+  ],
+  "dana": [],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "function:thread",
+  "harbour:chart",
+  "harbour:register",
+  "moorings:draft",
+  "pool:tides",
+  "tides:draft",
+  "tides:feed",
+  "tides:live",
+  "ways:thread"
+ ],
+ "floor": 1,
+ "me": "rook",
+ "blocks": {
+  "tides:draft": {
+   "_": "the tide-table page, one draft per digit",
+   "1": "draft 1: the tide-table page from last year's tables, laid out by day",
+   "2": "draft 2: draft 1 with the spring tides added"
+  }
+ },
+ "live": true,
+ "way_once": true,
+ "way_draft": "s4",
+ "told_law": true,
+ "told_way": true
+}

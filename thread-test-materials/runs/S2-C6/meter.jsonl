@@ -1,0 +1,10 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "tides:draft", "3"], "chars": 49}
+{"cmd": ["read", "1"], "chars": 1876}
+{"cmd": ["read", "1.12"], "chars": 519}
+{"cmd": ["block", "thread:rook"], "chars": 163}
+{"cmd": ["block", "thread:dana"], "chars": 110}
+{"cmd": ["say", "1.13", "rebuilt on the new chart: tides:draft 3 is draft 2 with the low-water marks shown", "--option", "dana publishes the page", "--option", "dana asks for another pass"], "chars": 288}
+{"cmd": ["post", "dana", "thread:1.13 \u2014 rook rebuilt the tide-table page with the low-water marks shown (tides:draft 3). Decide: publish it, or ask for another pass."], "chars": 29}
+{"cmd": ["read", "1.13"], "chars": 604}

@@ -1,0 +1,7 @@
+I added the spring tides to the page and wrote that on the thread at 1.3, the option my last session left open. I offered two options beneath it (1.31 and 1.32) and posted the handoff to wren's room pointing at thread:1.3.
+
+The tool reported that my line at 1.3 replaced an earlier line there. That line was the open option from my last session ("rook adds the spring tides before anyone reviews"), so the replacement is what the way asks for. I re-read thread 1 and the new lines and options are there.
+
+I did not check the page itself; the work is recorded as tides:draft 2 as given.
+
+{"tied_at": "1.3", "line": "added the spring tides to the page (tides:draft 2)", "options": ["wren reviews tides:draft 2 against the harbour's data", "dana decides on tides:draft 2 without a review"], "handed_on": {"to": "wren", "text": "thread:1.3 — the spring tides are on the page (tides:draft 2). Wren, please review it against the harbour's data."}, "why": "1.3 is the live option my last session left open for adding the spring tides, so this line is what came of it."}

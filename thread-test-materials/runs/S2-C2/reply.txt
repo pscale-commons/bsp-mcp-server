@@ -1,0 +1,7 @@
+I wrote my review line on the tide-table thread and handed it to dana. Two tide times in draft 1 were wrong; I corrected them in draft 2.
+
+The options landed at 1.11 (publish the page) and 1.12 (ask for another pass), not at 1.1.1 and 1.1.2 as my first note to dana said. I posted a correction to dana's room with the right addresses.
+
+```json
+{"tied_at": "1.1", "line": "checked the tide-table draft against the harbour's data: two tide times in draft 1 were wrong; corrected in draft 2", "options": ["publish the page", "ask for another pass"], "handed_on": {"to": "dana", "text": "The tide-table page is reviewed: two tide times were wrong in draft 1 and are corrected in draft 2. Options: thread:1.11 (publish the page) or thread:1.12 (ask for another pass). My review line is at thread:1.1. Correction: my first note gave the option addresses as 1.1.1 and 1.1.2; the correct ones are 1.11 and 1.12."}, "why": "I am answering rook's option 1.1 (the review), so my line goes at that address in my own block, and the options follow beneath it at 1.11 and 1.12."}
+```

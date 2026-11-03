@@ -234,6 +234,8 @@ def main():
             b = s.get("blocks", {}).get(name)
             if b is None and s.get("live") and name in TAUGHT:
                 taught = f"ways-thread-{s['way_draft']}.json" if name == "ways:thread" and s.get("way_draft") else TAUGHT[name]
+                if name == "function:thread" and s.get("way_draft") in ("s", "s2", "s3", "s4"):   # David's form: the law cut to its root line
+                    taught = "function-thread-s.json"
                 b = json.load(open(os.path.join(HERE, "teachings", taught)))
         if b is None:
             out = f"no block named {name}"

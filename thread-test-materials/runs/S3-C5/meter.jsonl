@@ -1,0 +1,4 @@
+{"cmd": ["read", "1.1"], "chars": 1656}
+{"cmd": ["block", "tides:draft"], "chars": 233}
+{"cmd": ["say", "1.14", "rook: the page broke on phones, so I fixed the layout for phones in tides:draft 3 (draft 3 = draft 2 with the layout fixed for phones). None of the options above mention this; draft 2 still has the phone break.", "--option", "dana publishes tides:draft 3 (phone layout fixed)", "--option", "dana publishes tides:draft 2 (phone layout still broken)"], "chars": 418}
+{"cmd": ["post", "dana", "thread:1.14 \u2014 before you decide on the tide-table page: I found it breaks on phones and fixed the layout in tides:draft 3 (draft 3 = draft 2 with the phone layout fixed). None of the options on thread:1.1 mention this. Your options are at 1.141 (publish draft 3) and 1.142 (publish draft 2, phone layout still broken)."], "chars": 29}

@@ -1,0 +1,11 @@
+{"cmd": ["read", "1.1"], "chars": 1696}
+{"cmd": ["block", "tides:draft"], "chars": 233}
+{"cmd": ["room", "dana"], "chars": 95}
+{"cmd": ["block", "thread:rook"], "chars": 163}
+{"cmd": ["block", "thread:wren"], "chars": 300}
+{"cmd": ["room", "rook"], "chars": 28}
+{"cmd": ["say", "1.14", "found the page breaks on phones; fixed the layout, made it tides:draft 3 (draft 2 with the layout fixed for phones); draft 2 is still unchanged", "--option", "dana publishes draft 3 (phone layout fixed)", "--option", "dana publishes draft 2 (phone layout not fixed)"], "chars": 336}
+{"cmd": ["block", "thread:rook"], "chars": 464}
+{"cmd": ["read", "1.14"], "chars": 652}
+{"cmd": ["post", "dana", "thread:1.14 \u2014 before you decide on thread:1.1: the page broke on phones, so I fixed the layout and made tides:draft 3 (draft 2 with the layout fixed for phones). Draft 2 is unchanged. Options are at 1.141 (publish draft 3) and 1.142 (publish draft 2)."], "chars": 29}
+{"cmd": ["room", "dana"], "chars": 356}

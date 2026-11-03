@@ -1,0 +1,68 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft",
+    "1": "wren reviews the draft against the harbour's data",
+    "2": "dana decides without a review"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms",
+   "1": {
+    "1": {
+     "_": "checked the tide-table draft against the harbour's data: two tide times in draft 1 were wrong; corrected in draft 2",
+     "1": "publish the page",
+     "2": "ask for another pass"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [
+   "rook: thread:1 — the tide-table draft is ready for your review"
+  ],
+  "dana": [
+   "wren: the tide-table page is reviewed: two tide times were wrong in draft 1 and are corrected in draft 2. Decide at thread:1.1 — publish the page (1.1.1) or ask for another pass (1.1.2).",
+   "wren: Correction to my last note: the options sit at thread:1.11 (publish the page) and thread:1.12 (ask for another pass). My review line is at thread:1.1."
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "function:thread",
+  "harbour:chart",
+  "harbour:register",
+  "moorings:draft",
+  "pool:tides",
+  "tides:draft",
+  "tides:feed",
+  "tides:live",
+  "ways:thread"
+ ],
+ "floor": 1,
+ "me": "wren",
+ "blocks": {
+  "tides:draft": {
+   "_": "the tide-table page, one draft per digit",
+   "1": "draft 1: the tide-table page from last year's tables, laid out by day",
+   "2": "draft 2: draft 1 with two tide times corrected against the harbour's data"
+  }
+ },
+ "live": true,
+ "way_once": true,
+ "way_draft": "s2",
+ "told_law": true,
+ "told_way": true
+}

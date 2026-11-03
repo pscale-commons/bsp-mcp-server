@@ -1,0 +1,9 @@
+I recorded the phone fix on the thread and left dana a pointer to it. The line is at 1.14, under the knot at 1.1, because the phone fix isn't one of the options wren already wrote (1.11–1.13). I offered two options beneath it: 1.141 (publish draft 3) and 1.142 (publish draft 2, phone layout still broken).
+
+One cosmetic problem: the stored line reads "rook: rook: …" because the tool adds the speaker prefix automatically and my text repeated it. The content is correct.
+
+Dana's room (pool:dana) now has a pointer to thread:1.14.
+
+```json
+{"tied_at": "1.14", "line": "rook: the page broke on phones, so I fixed the layout for phones in tides:draft 3 (draft 3 = draft 2 with the layout fixed for phones). None of the options above mention this; draft 2 still has the phone break.", "options": ["dana publishes tides:draft 3 (phone layout fixed)", "dana publishes tides:draft 2 (phone layout still broken)"], "handed_on": {"to": "dana", "text": "thread:1.14 — before you decide on the tide-table page: I found it breaks on phones and fixed the layout in tides:draft 3 (draft 3 = draft 2 with the phone layout fixed). None of the options on thread:1.1 mention this. Your options are at 1.141 (publish draft 3) and 1.142 (publish draft 2, phone layout still broken)."}, "why": "1.14 is the next free digit under the knot at 1.1, since 1.11–1.13 are already taken by wren's options and the phone fix is not one of them."}
+```
