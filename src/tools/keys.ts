@@ -19,6 +19,8 @@
  */
 
 import { z } from 'zod';
+import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { handOf } from '../looks.js';
 import { Block, writeAt, readAt } from '../bsp.js';
 import { loadBlock, saveBlock, isFederatedOwner, DEFAULT_BEACH } from '../db.js';
 import {
@@ -51,14 +53,35 @@ async function getPublicKeysFromBeach(beach: string, handle: string): Promise<{ 
   return publicKeysFromSpine(row.block?.['9']);
 }
 
-export async function handleKeyPublish(params: {
+type KeyPublishParams = {
   handle: string;
   secret: string;
   enc_secret?: string;
   prior_secret?: string;
   signature?: string;
   agent_id?: string;
-}): Promise<{ content: { type: 'text'; text: string }[] }> {
+};
+
+// THE DOOR (src/pass.ts; protocol 2.8): at a members' beach this call stands with the hand it
+// acts as and the latch proof it carries, is proved once on a 401 and the pass kept for the
+// session, as bsp() is — so a member publishes, reaches and settles there without a second step.
+export async function handleKeyPublish(
+  params: KeyPublishParams,
+  extra?: { sessionId?: string },
+): Promise<{ content: { type: 'text'; text: string }[] }> {
+  const door: Door = { session: extra?.sessionId, handles: [params.handle, handOf(extra?.sessionId)], secret: params.secret };
+  let res: { content: { type: 'text'; text: string }[] };
+  try {
+    res = await atTheDoor(door, () => handleKeyPublishInner(params));
+  } catch (e: any) {
+    if (!isDoorRefusal(e)) throw e;
+    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+  }
+  if (door.minted && res.content.length) res.content[res.content.length - 1].text += mintedLine(door);
+  return res;
+}
+
+async function handleKeyPublishInner(params: KeyPublishParams): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { handle, secret, prior_secret, signature } = params;
   // Keypair seed is enc_secret (never forwarded); secret stays write-authority.
   const encSecret = params.enc_secret ?? secret;
