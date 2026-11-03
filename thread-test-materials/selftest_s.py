@@ -82,6 +82,12 @@ results.append(("C9x", wx, ["an answer in the form", "at 1.1", "option"]))
 sys.stdout = sys.__stdout__
 print(f"{D}: way_{B.DRAFTS[D]}.txt reaches the mind in the first read, the first say, the opening and the wake's window" if not handed_bad
       else f"{D}: way_{B.DRAFTS[D]}.txt MISSING from {handed_bad} of the four handings")
+# the strict spelling, as minds wrote it: a full stop may end the sentence, and a second dotted part names no place
+SPELT = [("Please pick up at thread:3.", "3", True), ("the thread is at thread:1.31.", "1.31", True), ("at thread:1.3, please", "1.3", True),
+         ("the thread is at thread:1.3.1.", "1.3", False), ("the thread is at thread:1.3.1.", "1.31", False), ("read thread:1.31", "1.3", False)]
+spelt_bad = sum(1 for t, a, want in SPELT if B.SH.names_place(t, a, strict=True) != want)
+bad += spelt_bad
+print(f"   the strict spelling reads {len(SPELT) - spelt_bad} of {len(SPELT)} written places as it should")
 for n, r, must in results:
     misses = [e for e in r["expect"] if e.startswith("MISS")]
     ok = (not misses) if must is None else all(any(m in e for e in misses) for m in must)

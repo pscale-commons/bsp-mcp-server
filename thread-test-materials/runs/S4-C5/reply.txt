@@ -1,0 +1,5 @@
+I recorded the phone fix on the thread and handed it to dana. The line is at 1.14, with the two options beneath it, and the handoff is in dana's room.
+
+Because the phone fix wasn't one of the options already on 1.1, I took the next free digit, 1.14, as the way prescribes. The block confirms draft 3 is recorded as "draft 2 with the layout fixed for phones." I read that from the block; I did not render the page on a phone to check the fix.
+
+{"tied_at": "1.14", "line": "rook fixed the layout for phones: the page broke on small screens, so draft 3 is draft 2 with the layout fixed for phones (tides:draft 3). None of the options above said this.", "options": ["dana publishes draft 3", "dana publishes draft 2 as it was"], "handed_on": {"to": "dana", "text": "thread:1.14 — before you decide at 1.1: I found the page breaks on phones and fixed it in tides:draft 3. Draft 2 is unchanged. Choose between draft 3 and draft 2 at 1.14."}, "why": "1.14 is the next free digit under 1.1 because the phone fix is not one of the existing options there, and it sits in my own mirror so dana can read it before choosing."}

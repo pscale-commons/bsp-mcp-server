@@ -1,0 +1,75 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft",
+    "1": {
+     "_": "wren reviews the draft against the harbour's data",
+     "4": {
+      "_": "rook fixed the layout for phones: the page broke on small screens, so draft 3 is draft 2 with the layout fixed for phones (tides:draft 3). None of the options above said this.",
+      "1": "dana publishes draft 3",
+      "2": "dana publishes draft 2 as it was"
+     }
+    },
+    "2": "dana decides without a review"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms",
+   "1": {
+    "1": {
+     "_": "reviewed the draft: two tide times were wrong, corrected in tides:draft 2",
+     "1": "dana publishes the page",
+     "2": "dana asks for another pass, said in pool:tides",
+     "3": "rook rebuilds it on the new chart first"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [],
+  "dana": [
+   "wren: thread:1.1 — the reviewed draft is ready for your decision",
+   "rook: thread:1.14 — before you decide at 1.1: I found the page breaks on phones and fixed it in tides:draft 3. Draft 2 is unchanged. Choose between draft 3 and draft 2 at 1.14."
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "function:thread",
+  "harbour:chart",
+  "harbour:register",
+  "moorings:draft",
+  "pool:tides",
+  "tides:draft",
+  "tides:feed",
+  "tides:live",
+  "ways:thread"
+ ],
+ "floor": 1,
+ "me": "rook",
+ "blocks": {
+  "tides:draft": {
+   "_": "the tide-table page, one draft per digit",
+   "1": "draft 1: the tide-table page from last year's tables, laid out by day",
+   "2": "draft 2: two tide times corrected",
+   "3": "draft 3: draft 2 with the layout fixed for phones"
+  }
+ },
+ "live": true,
+ "way_once": true,
+ "way_draft": "s4",
+ "told_law": true,
+ "told_way": true
+}

@@ -19,7 +19,7 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 
 1. It runs the form pass over keel's eight hand-played threads (`runs/SELFTEST-*`), and each must be well formed under the law as it stands.
 2. It plants eleven faults one at a time (`mutation.py`), and every one must be caught while the unplanted thread stays clean.
-3. It re-grades the 100 stored runs from their replies (keel's 36 and weft's 64), and the totals must be the ones reported:
+3. It re-grades the 118 stored runs from their replies (keel's 36 and weft's 82), and the totals must be the ones reported:
 
 | delivery | checks | well formed, first law | well formed, the law now |
 |---|---|---|---|
@@ -35,10 +35,12 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 | H3, the way's third draft handed over as a live read does it, the same day, now `ways:thread` | 40/40 | 9 | 9 |
 | S, David's form: six sentences in the way's place and no keyword in any seed, graded by `short.py`, run on 2 November | 34/35 | 0 | 0 |
 | S2, the same with two sentences mended, 3 November | 30/35 | 0 | 0 |
+| S3, S with only the place spelled `thread:<address>`, the same day | 33/35 | 0 | 0 |
+| S4, S3 with David's one knot, the same hour | 31/35 | 0 | 0 |
 
-S and S2 are graded by where each line lands and whether anything is lost, not by a keyword, so they have 35 checks and no seed closes on whom it waits on. Both form passes fail every one of their threads on WAITS, as they should.
+S to S4 are graded by where each line lands and whether anything is lost, not by a keyword, so they have 35 checks and no seed closes on whom it waits on. Both form passes fail every one of their threads on WAITS, as they should.
 
-4. It plays the short form's right and wrong acts by hand through the test beach (`selftest_s.py`, for S and S2, and for S3 and S4, which have not run). Each delivery's words must reach the mind at all four handings, every right act must take full marks, and every planted wrong act must be caught.
+4. It plays the short form's right and wrong acts by hand through the test beach (`selftest_s.py`, for S, S2, S3 and S4). Each delivery's words must reach the mind at all four handings, the strict spelling must read six written places as it should, every right act must take full marks, and every planted wrong act must be caught.
 
 The runs are copied to a scratch directory first, so a pass writes nothing here.
 
@@ -71,8 +73,8 @@ The teachings are in `teachings/`:
 | H3 | `root_v2.txt` | H2, handing over the third draft |
 | S | `root_v2.txt` | H3's handing over, carrying David's form in the way's place: six sentences, `way_s.txt` (`ways-thread-s.json` on the test beach). The test beach's `function:thread` is cut to its root line (`function-thread-s.json`), and `short.py` strips the closing clause and the reads from every seed |
 | S2 | `root_v2.txt` | S, with two sentences mended (`way_s2.txt`, `ways-thread-s2.json`): where the thread stands, and the place spelled `thread:<address>` |
-| S3 | `root_v2.txt` | S, with only the place spelled `thread:<address>` (`way_s3.txt`). Not yet run |
-| S4 | `root_v2.txt` | S3, where a hand already holds a line it begins with that line's words in place of going one deeper: David's one knot (`way_s4.txt`). Not yet run. S3 and S4 are graded alike, and a line kept inside the one that replaced it counts as nothing lost |
+| S3 | `root_v2.txt` | S, with only the place spelled `thread:<address>` (`way_s3.txt`) |
+| S4 | `root_v2.txt` | S3, where a hand already holds a line it begins with that line's words in place of going one deeper: David's one knot (`way_s4.txt`). S3 and S4 are graded alike, and a line kept inside the one that replaced it counts as nothing lost |
 
 Each is made from its beach block the way keel made `law_v1.txt`: the heading line, then the root, then 1 to 8. The same transform rebuilds `law_v1.txt` byte for byte from `archive:function:thread:2026-10-29-2`.
 
@@ -96,7 +98,11 @@ It ran a fourth time with the opening handing the way over too and the fence wid
 
 `place`'s first check used to ask only that a line stands at 1.121, and in L2, R and H the line there is the mind's own option beneath its wrong knot at 1.12. Asked for an act, those three would read 34, 15 and 30 where 35, 16 and 31 were reported, so the eight deliveries reported before the change keep the grade they were reported under (`PLACE_AS_REPORTED` in `battery.py`), and the check asks for an act only for runs after them.
 
-Then David's own form, with no keyword anywhere, at his "Yes, run it" and "Yes, do both" (`proposals/2026-11-03-threads-without-the-keyword.md`, branches 4.9 and 4.91). Six sentences took the way's place, handed over as H3 hands it, and `short.py` grades where each line lands and whether anything is lost. What counts as right was fixed before any mind ran. S (`runs/S-*`) scored 34 of 35 with nothing lost: `word` tied beneath an older option, and only one of the seven minds that told a room spelled the place `thread:<address>`. S2 (`runs/S2-*`) mended both and scored 30 of 35. Six of seven now spelled the place, and `word` was cured, but `self` and `reask` each wrote over their own option, and `place` took an untaken option at the same depth as the line it answered. One run a cell. S3 and S4 are set up and graded for the next run, which waits on David's word.
+Then David's own form, with no keyword anywhere, at his "Yes, run it" and "Yes, do both" (`proposals/2026-11-03-threads-without-the-keyword.md`, branches 4.9 and 4.91). Six sentences took the way's place, handed over as H3 hands it, and `short.py` grades where each line lands and whether anything is lost. What counts as right was fixed before any mind ran. S (`runs/S-*`) scored 34 of 35 with nothing lost: `word` tied beneath an older option, and only one of the seven minds that told a room spelled the place `thread:<address>`. S2 (`runs/S2-*`) mended both and scored 30 of 35. All seven now spelled the place, and `word` was cured, but `self` and `reask` each wrote over their own option, and `place` took an untaken option at the same depth as the line it answered.
+
+At "Yes, run both" (branch 4.911), S3 (`runs/S3-*`) kept only the spelling and scored 33 of 35 with nothing lost and six of seven places spelled, which is the gate fixed before it ran. S4 (`runs/S4-*`) added David's one knot and scored 31 with one line lost. Its `self`, `twin` and `reask` each tied at the line they held and kept its words, but `word` tied at its own older option and reworded it. In both, `word` took rook's older option, as in S, and `place` took the untaken option, as in S2, so `place`'s miss is not the dropped sentence's. One run a cell.
+
+The strict spelling check was mended after S3 ran. It read a full stop after a place as a second part of its address, so "Please pick up at thread:3." went uncounted in S2's and S3's `open`, though the page and the waker read it as `thread:3`. Now a full stop may end the sentence and `thread:1.3.1` still names no place. No score moved. S2's count rose from the six first reported to seven, and S3's from five to six, so S3 meets the gate only with the check mended.
 
 ## What is here
 
@@ -106,9 +112,9 @@ Then David's own form, with no keyword anywhere, at his "Yes, run it" and "Yes, 
 | `thread_form.py` | The form checker (keel's, reading the law as re-cut). |
 | `testbeach.py` | The test beach. |
 | `battery.py` | The nine uses: situations, starting states, briefs and grading. |
-| `short.py` | S and S2: the seeds without the keyword, and the grade by where a line lands, nothing lost, and the cards a page would read from the rooms. |
-| `selftest_s.py` | The short form's hand-played right and wrong acts, for S or S2. |
+| `short.py` | S to S4: the seeds without the keyword, and the grade by where a line lands, nothing lost, and the cards a page would read from the rooms. |
+| `selftest_s.py` | The short form's hand-played right and wrong acts, for S, S2, S3 or S4. |
 | `mutation.py` | The eleven planted faults. |
 | `run-minds.sh` | The fresh minds (spends). |
 | `teachings/` | What a mind is handed. |
-| `runs/` | keel's runs of 29 October: 8 hand-played (`SELFTEST-*`), and L, W1, Lx2 and W2 nine each. weft's of 2 November: L2, R, H, H2 and H3, nine each, and W2x2 on `place` alone; and of 2 and 3 November, S and S2, nine each; each with `usage.json` as well (its model, turns, cost, and what the fence refused). Each keeps its start, its end state, its meter and the mind's reply, with the scores beside them. The briefs are rebuilt by `setup` from `teachings/`. |
+| `runs/` | keel's runs of 29 October: 8 hand-played (`SELFTEST-*`), and L, W1, Lx2 and W2 nine each. weft's of 2 November: L2, R, H, H2 and H3, nine each, and W2x2 on `place` alone; and of 2 and 3 November, S, S2, S3 and S4, nine each; each with `usage.json` as well (its model, turns, cost, and what the fence refused). Each keeps its start, its end state, its meter and the mind's reply, with the scores beside them. The briefs are rebuilt by `setup` from `teachings/`. |

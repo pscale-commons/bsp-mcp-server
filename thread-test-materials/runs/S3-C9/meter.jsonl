@@ -1,0 +1,1 @@
+{"cmd": ["say", "1.1", "kestrel: fetched the November harbour feed, which returned 62 tide times, saved at tides:feed 11", "--option", "rook rebuilds the tide-table page from tides:feed 11", "--option", "rook checks the 62 times against last year's tables before rebuilding"], "chars": 1638}

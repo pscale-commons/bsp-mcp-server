@@ -58,7 +58,9 @@
    "why": "The moorings page is separate work from the tide-table page at 1, so it gets its own thread at 3 and the draft line goes at the root, 3, with the options beneath it."
   },
   "geometry_faults": [],
-  "strict_place": [],
+  "strict_place": [
+   "3"
+  ],
   "cards_before": {},
   "cards_after": {
    "wren": [

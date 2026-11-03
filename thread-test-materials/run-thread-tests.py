@@ -9,13 +9,14 @@
      of 2 November on the re-cut law: the law whole, as a live read meets it, with the
      read handing over the way, with the opening handing it over too, the way given
      whole on place alone, and the way's third draft; and weft's of 2 and 3 November on
-     David's form with no keyword, S and S2, graded by short.py. The grader still gives
-     the totals reported (pool:threads 11, 14, 15, 16, 17 and 18, and for S and S2
+     David's form with no keyword, S, S2, S3 and S4, graded by short.py. The grader still
+     gives the totals reported (pool:threads 11, 14, 15, 16, 17 and 18, and for S to S4
      proposals/2026-11-03-threads-without-the-keyword.md), so a change to the checker or
      the grading that moves a verdict is seen.
-  4. THE SHORT FORM'S HAND-PLAYED ACTS (selftest_s.py), for S and S2 and for S3 and S4,
-     which have not run: each delivery's words reach the mind at all four handings, every
-     right act takes full marks, and every planted wrong act is caught.
+  4. THE SHORT FORM'S HAND-PLAYED ACTS (selftest_s.py), for S, S2, S3 and S4: each
+     delivery's words reach the mind at all four handings, the strict spelling reads six
+     written places as it should, every right act takes full marks, and every planted
+     wrong act is caught.
 
 The runs are copied to a scratch directory first, so grading writes nothing here.
 Fresh minds are run-minds.sh's, and they run only on David's word, because they
@@ -29,7 +30,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # delivery: (checks passed, checks, well formed under the first law, under the law as it stands)
 EXPECT = {"L": (36, 40, 8, 3), "W1": (31, 40, 9, 9), "Lx2": (35, 40, 8, 5), "W2": (40, 40, 9, 9), "L2": (35, 40, 9, 9), "R": (16, 40, 3, 3), "H": (31, 40, 8, 8), "H2": (37, 40, 9, 9), "W2x2": (4, 4, 1, 1), "H3": (40, 40, 9, 9),
           # David's form: no seed carries the closing clause, so the form pass's WAITS fails every thread by design
-          "S": (34, 35, 0, 0), "S2": (30, 35, 0, 0)}
+          "S": (34, 35, 0, 0), "S2": (30, 35, 0, 0), "S3": (33, 35, 0, 0), "S4": (31, 35, 0, 0)}
 
 failed = []
 

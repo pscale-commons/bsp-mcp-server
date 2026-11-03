@@ -1,0 +1,5 @@
+The moorings page is on the beach at thread 3, with the choice between wren's check and dana publishing as it is. Wren has a note in its room pointing to the thread.
+
+The moorings list itself is `moorings:draft 1` (48 moorings by pontoon and berth). I did not check it against the harbour register, since that is the option I offered wren.
+
+{"tied_at": "3", "line": "rook: built the moorings list as moorings:draft 1 (48 moorings, by pontoon and berth); it is saved and ready for the next step", "options": ["wren checks the list against the harbour register", "dana decides it is good enough and publishes it as it is"], "handed_on": {"to": "pool:wren", "text": "rook: the moorings page is at thread:3. moorings:draft 1 holds 48 moorings by pontoon and berth. Option 3.1 asks you to check it against the harbour register; if dana would rather publish now, she takes option 3.2."}, "why": "I opened the page as a new thread at 3 and tied the choice there, because the next step depends on that choice and the registry lists threads in the order they are opened."}

@@ -21,9 +21,9 @@ delivery: the teaching a mind is handed, from teachings/ —
   S   David's form: H3's handing over, of six sentences in place of the way (way_s.txt), the law on the test beach cut to its
       root line, and seeds with no closing clause; graded by short.py, by where the line lands and nothing lost, never by a keyword
   S2  S, with two sentences mended (way_s2.txt): where the thread stands, and the place spelled thread:<address>
-  S3  S, with only the place spelled thread:<address> (way_s3.txt); not yet run
-  S4  S3, a hand that already holds a line where it ties beginning with its words, David's one knot (way_s4.txt); not yet run.
-      S3 and S4 are graded alike, a line kept in place counting as nothing lost (short.py AMEND)
+  S3  S, with only the place spelled thread:<address> (way_s3.txt)
+  S4  S3, a hand that already holds a line where it ties beginning with its words, David's one knot (way_s4.txt).
+      S3 and S4 are graded alike, a line kept in place counting as nothing lost (short.py AMEND); both ran on 3 November
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
 cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake
@@ -365,7 +365,7 @@ def grade(dname, case):
         row["reply_json"] = rep
         number = (sorted(reg_new)[0] if reg_new else "1")
         row["geometry_faults"] = SH.well_formed(end, mirror_lines, number)
-        row["strict_place"] = sorted(a for a in R + kids for h, ts in posts.items() for t in ts if SH.names_place(t, a, strict=True))
+        row["strict_place"] = sorted({a for a in R + kids for h, ts in posts.items() for t in ts if SH.names_place(t, a, strict=True)})
         row["cards_before"] = SH.cards_open(start, mirror_lines)
         row["cards_after"] = SH.cards_open(end, mirror_lines)
         return row

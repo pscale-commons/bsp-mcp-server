@@ -1,0 +1,8 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["room", "rook"], "chars": 28}
+{"cmd": ["room", "dana"], "chars": 95}
+{"cmd": ["read", "1"], "chars": 1755}
+{"cmd": ["block", "thread:rook"], "chars": 163}
+{"cmd": ["block", "tides:live"], "chars": 42}
+{"cmd": ["say", "1.2", "dana decided without a review: in chat she said 'Publish it.'; rook published the tide-table page, now live at tides:live"], "chars": 201}
+{"cmd": ["read", "1"], "chars": 859}

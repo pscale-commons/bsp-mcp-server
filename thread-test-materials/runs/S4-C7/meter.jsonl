@@ -1,0 +1,6 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["read", "1.12"], "chars": 1561}
+{"cmd": ["block", "thread:rook"], "chars": 242}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["say", "1.121", "added the low-water marks to the page; checked them against the harbour master's table and corrected tides:draft 4", "--option", "dana accepts the corrected low-water marks as they stand", "--option", "dana asks wren to review the corrected marks against the harbour data"], "chars": 386}
+{"cmd": ["post", "dana", "The low-water marks are on the tide-table page and checked against the harbour master's table. I corrected one of them, tides:draft 4. Your decision: accept the corrected marks, or ask wren to review them against the harbour data first. The line is at thread 1.121."], "chars": 29}

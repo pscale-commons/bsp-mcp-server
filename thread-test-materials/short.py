@@ -1,9 +1,10 @@
-"""Deliveries S and S2: the nine uses on David's form (lane thread-loom.1, 2 and 3 November 2026;
+"""Deliveries S to S4: the nine uses on David's form (lane thread-loom.1, 2 and 3 November 2026;
 proposals/2026-11-03-threads-without-the-keyword.md).
 
-The teaching is the six-sentence instruction (S) or its seven-sentence mending (S2), handed over as a read hands over the
-way. The seeds carry no closing clause and no reads clause. Graded by where the line lands and whether anything is lost,
-never by a keyword. Written and fixed BEFORE any mind ran, and the same for both. What counts as right, use by use:
+The teaching is the six-sentence instruction (S), its seven-sentence mending (S2), or one of its two re-cuts (S3, S4),
+handed over as a read hands over the way. The seeds carry no closing clause and no reads clause. Graded by where the line
+lands and whether anything is lost, never by a keyword. Written and fixed BEFORE any mind ran, and the same for S and S2.
+What counts as right, use by use:
 
   open   one thread opened; the line at its number; two or more options beneath; a room of wren or dana told, naming the place
   take   the line at 1.1, or one deeper at 1.11; two or more options beneath; dana told, naming the place
@@ -24,6 +25,10 @@ each only if the line that stood there is still in it; and a line counts as lost
 'Naming the place' takes the landing address or one of its new options in any spelling (thread:1.31, 1.31, thread 3).
 Reported beside the score and not counted: the strict spelling thread:<address>, whether the thread is rooted and its digits
 run without a gap, and the cards a page would read from the rooms with no keyword (cards_open below).
+Mended after S3 ran: a place followed by a full stop ending its sentence ('pick up at thread:3.') was read as no place, so
+the spelling went uncounted in S2's and S3's open, though the page and the waker both read it as thread:3. A place followed
+by a second dotted part (thread:1.3.1) still names neither 1.3 nor 1.31. No score moves; the spelling counts are now S 1,
+S2 7, S3 6 and S4 4 of the seven minds that told a room (S2's was reported as 6 before the mend).
 """
 import json, re
 
@@ -107,11 +112,14 @@ def roots(added):
     return sorted(a for a in added if not any(under(b, a) for b in added))
 
 
+END = r"(?!\d|\.\d)"   # a full stop may end the sentence (thread:3.); a digit or a second dotted part may not (thread:1.3.1)
+
+
 def names_place(text, a, strict=False):
     if strict:
-        return bool(re.search(r"thread:" + re.escape(a) + r"(?![\d.])", text))
+        return bool(re.search(r"thread:" + re.escape(a) + END, text))
     if "." not in a:
-        return bool(re.search(r"(?i)thread[:\s#]*" + re.escape(a) + r"(?![\d.])", text))
+        return bool(re.search(r"(?i)thread[:\s#]*" + re.escape(a) + END, text))
     return bool(re.search(r"(?<![\d.])" + re.escape(a) + r"(?!\d)", text))
 
 

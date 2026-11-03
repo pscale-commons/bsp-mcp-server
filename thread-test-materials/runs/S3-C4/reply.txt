@@ -1,0 +1,3 @@
+I recorded the publish on the tide-table thread at `1.21`, under my own 1.2 line ("dana decides without a review"). That is the matching option, and my block already had a line at 1.2, so I went one deeper. The line is now live in `thread:rook`. Nothing follows it, so I offered no options and handed it to no one.
+
+{"tied_at": "1.21", "line": "rook: dana said 'Publish it.' in chat; published the tide-table page, now live at tides:live", "options": [], "handed_on": {"to": null, "text": null}, "why": "1.2 is dana deciding without a review, which is what happened, but my block already holds a line at 1.2, so the publish goes one option deeper at 1.21."}

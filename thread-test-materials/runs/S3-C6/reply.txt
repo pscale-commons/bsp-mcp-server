@@ -1,0 +1,5 @@
+I rebuilt the page with the low-water marks shown (tides:draft 3), wrote that on the thread, and handed it to dana.
+
+The thread at 1.12 has dana asking for another pass with the low-water marks. Wren's option 1.13 was "rook rebuilds it on the new chart first", which is what I did. I wrote my line at 1.13 in my own mirror, with two options beneath it for dana: publish (1.131) or ask for another pass (1.132). I then posted the place, thread:1.13, to dana's room. I did not review the chart data against the harbour's tides, since that is wren's step and was not asked of me here.
+
+{"tied_at": "1.13", "line": "rebuilt the page on the new chart: draft 3, draft 2 with the low-water marks shown, in tides:draft 3", "options": ["dana publishes the page", "dana asks for another pass"], "handed_on": {"to": "dana", "text": "thread:1.13 — rook has rebuilt the tide-table page with the low-water marks shown (tides:draft 3). Your decision next: publish it, or ask for another pass."}, "why": "Wren had already offered 1.13 as the option for a rebuild, and that is what I did, so my line goes at that address in my own mirror."}

@@ -1,0 +1,7 @@
+{"cmd": ["read", "1.1"], "chars": 1663}
+{"cmd": ["block", "tides:draft"], "chars": 233}
+{"cmd": ["room", "dana"], "chars": 95}
+{"cmd": ["say", "1.14", "rook fixed the layout for phones: the page broke on small screens, so draft 3 is draft 2 with the layout fixed for phones (tides:draft 3). None of the options above said this.", "--option", "dana publishes draft 3", "--option", "dana publishes draft 2 as it was"], "chars": 332}
+{"cmd": ["post", "dana", "thread:1.14 \u2014 before you decide at 1.1: I found the page breaks on phones and fixed it in tides:draft 3. Draft 2 is unchanged. Choose between draft 3 and draft 2 at 1.14."], "chars": 29}
+{"cmd": ["read", "1.14"], "chars": 648}
+{"cmd": ["block", "tides:draft", "3"], "chars": 51}

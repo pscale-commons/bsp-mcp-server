@@ -1,0 +1,4 @@
+{"cmd": ["room", "wren"], "chars": 93}
+{"cmd": ["read", "1"], "chars": 1511}
+{"cmd": ["say", "1.1", "I reviewed the tide-table draft against the harbour's data. Two tide times in draft 1 were wrong; I corrected them in draft 2.", "--option", "publish the page (draft 2)", "--option", "ask rook for another pass"], "chars": 338}
+{"cmd": ["post", "dana", "Review of the tide-table draft is done. Two tide times in draft 1 were wrong; I corrected them in draft 2. Your decision: publish the page, or ask for another pass. Thread: thread:1.1 (options 1.11 publish, 1.12 another pass)."], "chars": 29}
