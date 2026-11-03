@@ -5,7 +5,7 @@
 # only on David's word, and only with --spend.
 #
 #   thread-test-materials/run-minds.sh --spend [delivery] [cases]
-#     delivery  L2 (function:thread as re-cut, the default), R (the root line a live read gives,
+#     delivery  S3 (ways:thread as it stands since 3 November, the default), L2 (function:thread as re-cut), R (the root line a live read gives,
 #               the law's branches and the way on the test beach), H (R, with the way printed
 #               once in a session as the read now does), H2 (H, the opening handing it over too),
 #               H3 (H2, handing over the way's third draft),
@@ -25,7 +25,7 @@
 set -u
 [[ "${1:-}" == "--spend" ]] || { echo "run-minds.sh spends model calls: pass --spend, on David's word"; exit 2; }
 shift
-D=${1:-L2}; CASES=${2:-C1,C2,C3,C4,C5,C6,C7,C8,C9}
+D=${1:-S3}; CASES=${2:-C1,C2,C3,C4,C5,C6,C7,C8,C9}
 HERE=${0:A:h}
 export THREAD_TEST_RUNS=${THREAD_TEST_RUNS:-$(mktemp -d -t thread-minds)}
 python3 -I $HERE/battery.py setup $D $CASES > /dev/null || exit 1

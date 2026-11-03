@@ -12,7 +12,7 @@ keel built all of it on 29 October 2026, in the Keel project chat, at David's as
 python3 thread-test-materials/run-thread-tests.py      # the CI pass: spends nothing
 python3 thread-test-materials/thread_form.py live       # the live beach, by public GET
 python3 thread-test-materials/thread_form.py state <state.json>
-thread-test-materials/run-minds.sh --spend L2           # fresh minds: spends model calls, on David's word only
+thread-test-materials/run-minds.sh --spend S3           # fresh minds: spends model calls, on David's word only
 ```
 
 The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. It does four things:
@@ -48,9 +48,9 @@ The runs are copied to a scratch directory first, so a pass writes nothing here.
 
 `thread_form.py` reads the registry (`spine:thread`) and every hand's mirror (`thread:<handle>`), and asks the questions at branch 1 of the block: registered, opened, knotted, rooted, digits, contiguous, offered, waits, crossing, short, resolves, routes and time.
 
-The rule that tells an act from an option is the law's: **every act closes `' · waits on <handle>'` or `' · complete'` before its reads, and an option never does** (function:thread 2).
+The rule that tells an act from an option is the law's, and since 3 November it is **where the line stands** (function:thread 3). Beneath another hand's line, or beneath its own option (taken one deeper), a hand's line is an act. Beneath its own act it is an option, unless it offers two or more of its own beneath it. A line that closes `' · waits on <handle>'` or `' · complete'`, as every act did from 29 October to 3 November, is an act wherever it stands, and no live end must close so. This is the rule the page reads (`threads.js` in happyseaurchin-home).
 
-A thread opened before the law was re-cut (29 October 2026, 17:13Z, the stamp in `V2_SINCE`) is read by the law it was tied under. There an act may also be known by its reads, a time, a word, or its own hand's options beneath it. What the law as it stands would call a fault there is reported as a WARN. `--v1` and `--phase2` fix the law for every thread.
+Every thread opened since 29 October 2026, 17:13Z (the stamp in `V2_SINCE`), is read so (`v3`), so a knot tied today without the clause on a thread of phase 2 is no fault. A thread opened before is read by the law it was tied under. There an act may also be known by its reads, a time, a word, or its own hand's options beneath it. What the law of 29 October would call a fault there is reported as a WARN. `--v1`, `--phase2` and `--v3` fix the law for every thread. The live pass reads the registry at its own floor: from thread 11 it is floor 2, threads 1 to 9 standing at 01 to 09, and every mirror is read raised to it, as the router raises it.
 
 keel's checker also emulated the page, to catch where `/threads` drew taken or the offerer wrongly. The page now reads both by the closing clause, the same rule this pass uses, so the two can't disagree, and the emulation is retired.
 
@@ -73,7 +73,7 @@ The teachings are in `teachings/`:
 | H3 | `root_v2.txt` | H2, handing over the third draft |
 | S | `root_v2.txt` | H3's handing over, carrying David's form in the way's place: six sentences, `way_s.txt` (`ways-thread-s.json` on the test beach). The test beach's `function:thread` is cut to its root line (`function-thread-s.json`), and `short.py` strips the closing clause and the reads from every seed |
 | S2 | `root_v2.txt` | S, with two sentences mended (`way_s2.txt`, `ways-thread-s2.json`): where the thread stands, and the place spelled `thread:<address>` |
-| S3 | `root_v2.txt` | S, with only the place spelled `thread:<address>` (`way_s3.txt`) |
+| S3 | `root_v2.txt` | S, with only the place spelled `thread:<address>` (`way_s3.txt`), `ways:thread` since 3 November and `run-minds.sh`'s default |
 | S4 | `root_v2.txt` | S3, where a hand already holds a line it begins with that line's words in place of going one deeper: David's one knot (`way_s4.txt`). S3 and S4 are graded alike, and a line kept inside the one that replaced it counts as nothing lost |
 
 Each is made from its beach block the way keel made `law_v1.txt`: the heading line, then the root, then 1 to 8. The same transform rebuilds `law_v1.txt` byte for byte from `archive:function:thread:2026-10-29-2`.

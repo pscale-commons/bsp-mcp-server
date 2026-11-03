@@ -156,7 +156,9 @@ M = [
     ("a number the registry never opened", lambda s: put(s, LAW, "5.1", "thread:7 — casting the bell · step 1"), "threads", "STANDS", "FAULT"),
     ("a thread named and never founded", lambda s: put(s, LAW, "5.2", "no-such-work — the bracket · step 1.1"), "threads", "STANDS", "WARN"),
     ("a thread serving a step that is not one", lambda s: put(s, LAW, "5.1", "thread:1 — casting the bell · step 1.9"), "threads", "STEP", "FAULT"),
-    ("a knot that waits on nobody", lambda s: put(s, "thread:rook", "1", "sent the pattern to the foundry"), "threads", "FORM", "FAULT"),
+    # since 3 November no live end must close on whom it waits on (function:thread 3), so the form fault planted here is a
+    # line hanging beneath an address where no hand has a line
+    ("a knot beneath an empty address", lambda s: put(s, "thread:rook", "1.91", "sent the pattern to the foundry"), "threads", "FORM", "FAULT"),
     ("a knot past three hundred characters", lambda s: put(s, "thread:rook", "1", "x" * 350 + " · waits on dana"), "threads", "FORM", "WARN"),
     ("phase: project with nothing tied", lambda s: (put(s, LAW, "7", "phase: project"), s["blocks"][LAW].__setitem__("5", {"_": "THE THREADS — none yet."})), "threads", "TIED", "WARN"),
     # the page and the look
