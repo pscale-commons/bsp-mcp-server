@@ -23,6 +23,8 @@
  */
 
 import { z } from 'zod';
+import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { handOf } from '../looks.js';
 import { isFederatedOwner, loadBlock, loadBeachIndex, resolveFederationOrigin, refuseKeyInPayload, DEFAULT_BEACH } from '../db.js';
 import { pairId, determineSide } from '../locks.js';
 // The reach body belongs to the WIRE — grainReach computes pid and side
@@ -88,7 +90,7 @@ export const grainReachParamsSchema = {
 
 // ── Handler ──
 
-export async function handleGrainReach(params: {
+type GrainReachParams = {
   handle: string;
   partner_handle: string;
   description: string;
@@ -96,7 +98,28 @@ export async function handleGrainReach(params: {
   my_passphrase: string;
   agent_id?: string;
   verify_only?: boolean;
-}): Promise<{ content: { type: 'text'; text: string }[] }> {
+};
+
+// THE DOOR (src/pass.ts; protocol 2.8): at a members' beach this call stands with the hand it
+// acts as and the latch proof it carries, is proved once on a 401 and the pass kept for the
+// session, as bsp() is — so a member publishes, reaches and settles there without a second step.
+export async function handleGrainReach(
+  params: GrainReachParams,
+  extra?: { sessionId?: string },
+): Promise<{ content: { type: 'text'; text: string }[] }> {
+  const door: Door = { session: extra?.sessionId, handles: [params.handle, handOf(extra?.sessionId)], secret: params.my_passphrase };
+  let res: { content: { type: 'text'; text: string }[] };
+  try {
+    res = await atTheDoor(door, () => handleGrainReachInner(params));
+  } catch (e: any) {
+    if (!isDoorRefusal(e)) throw e;
+    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+  }
+  if (door.minted && res.content.length) res.content[res.content.length - 1].text += mintedLine(door);
+  return res;
+}
+
+async function handleGrainReachInner(params: GrainReachParams): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { handle, partner_handle, description, my_side_content, my_passphrase, verify_only } = params;
   const beach = params.agent_id ?? DEFAULT_BEACH;
 

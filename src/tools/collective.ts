@@ -28,6 +28,8 @@
  */
 
 import { z } from 'zod';
+import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { handOf } from '../looks.js';
 import { isFederatedOwner, resolveFederationOrigin, refuseKeyInPayload, DEFAULT_BEACH } from '../db.js';
 // The register body belongs to the WIRE — sedRegister owns the action shape
 // and returns the handler's {position, address} verbatim.
@@ -45,13 +47,35 @@ export const settleParamsSchema = {
 
 // ── Handler ──
 
-export async function handleSettle(params: {
+type SettleParams = {
   collective: string;
   declaration: string;
   shell_ref?: string;
   passphrase: string;
   agent_id?: string;
-}): Promise<{ content: { type: 'text'; text: string }[] }> {
+};
+
+// THE DOOR (src/pass.ts; protocol 2.8): at a members' beach this call stands with the hand it
+// acts as and the latch proof it carries, is proved once on a 401 and the pass kept for the
+// session, as bsp() is — so a member settles there without a second step (a settle's passphrase is a position's own latch;
+// the pass comes from a bsp() call that proved the member's passport, or from the session's hand).
+export async function handleSettle(
+  params: SettleParams,
+  extra?: { sessionId?: string },
+): Promise<{ content: { type: 'text'; text: string }[] }> {
+  const door: Door = { session: extra?.sessionId, handles: [handOf(extra?.sessionId)], secret: params.passphrase };
+  let res: { content: { type: 'text'; text: string }[] };
+  try {
+    res = await atTheDoor(door, () => handleSettleInner(params));
+  } catch (e: any) {
+    if (!isDoorRefusal(e)) throw e;
+    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+  }
+  if (door.minted && res.content.length) res.content[res.content.length - 1].text += mintedLine(door);
+  return res;
+}
+
+async function handleSettleInner(params: SettleParams): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { collective, declaration, shell_ref, passphrase } = params;
   const beach = params.agent_id ?? DEFAULT_BEACH;
 

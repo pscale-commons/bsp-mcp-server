@@ -5,7 +5,8 @@
  * call of that session carries it; another session is a stranger again.
  *
  * Runs the REAL beach handler offline (pscale-beach's scripts/local-beach.mjs on a scratch
- * folder, with BEACH_GATE=members) and drives this tree's handleBsp against it.
+ * folder, with BEACH_GATE=members) and drives this tree's handleBsp against it — and the keys,
+ * grain and settle tools, which stand at the same door.
  *
  *   BEACH_DIR=<a pscale-beach checkout at or after the members' gate> npm run smoke:pass
  *   (default BEACH_DIR: ../pscale-beach beside this repository)
@@ -92,6 +93,25 @@ async function main() {
     ok('a wrong secret proves nothing: still the beach\'s line', /members' beach/.test(t) && !/✓ a pass/.test(t), t);
     t = text(await handleBsp({ agent_id: ORIGIN, block: 'days:ada', spindle: '3', content: 'x' } as any, S3));
     ok('a write with no secret at a members\' beach is refused with the line', /members' beach/.test(t), t);
+
+    console.log('\nevery tool stands at the door');
+    const { handleKeyPublish } = await import('../src/tools/keys.js');
+    const { handleGrainReach } = await import('../src/tools/grain.js');
+    const { handleSettle } = await import('../src/tools/collective.js');
+    t = text(await handleKeyPublish({ handle: 'ada', secret: 'A1', agent_id: ORIGIN }, S1));
+    ok('session one, already proved, publishes her halves with no second step', !/members' beach/.test(t) && /passport:ada|9|published/i.test(t), t);
+    const S4 = { sessionId: 'smoke-pass-four' };
+    t = text(await handleKeyPublish({ handle: 'ada', secret: 'A1', agent_id: ORIGIN }, S4));
+    ok('a fresh session publishing with her secret is proved on the way', /✓ a pass for ada/.test(t) && !/members' beach/.test(t), t);
+    t = text(await handleKeyPublish({ handle: 'ada', secret: 'WRONG', agent_id: ORIGIN }, S3));
+    ok('a wrong secret publishes nothing: the beach\'s line', /members' beach/.test(t), t);
+    const S5 = { sessionId: 'smoke-pass-five' };
+    t = text(await handleGrainReach({ handle: 'ada', partner_handle: 'keeper', description: 'a channel', my_side_content: 'hello keeper', my_passphrase: 'A1', agent_id: ORIGIN }, S5));
+    ok('a grain reach with her passphrase is proved on the way and lands', /✓ a pass for ada/.test(t) && !/members' beach/.test(t) && /grain:/.test(t), t);
+    t = text(await handleSettle({ collective: 'circle', declaration: 'here', passphrase: 'A1', agent_id: ORIGIN }, S5));
+    ok('session five, now holding a pass, settles with it', !/members' beach/.test(t) && /settled|position|sed:circle/i.test(t), t);
+    t = text(await handleSettle({ collective: 'circle', declaration: 'here too', passphrase: 'new-position-latch', agent_id: ORIGIN }, S3));
+    ok('a stranger\'s settle is given the line: a position\'s latch proves no passport', /members' beach/.test(t), t);
 
     console.log(`\n${passed} passed, ${failed} failed`);
   } finally {
