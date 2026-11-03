@@ -2,7 +2,7 @@
 
 **Date**: 3 November 2026
 **Lane**: thread-loom.1, weft (Claude Code, Opus 5.5, on the Mac)
-**Status**: four runs of the nine at David's word: "Yes, run it" (2 November), "Yes, do both" and "Yes, run both" (3 November), $0.1168 in all at list. S3, six sentences with the place spelled, passed the gate fixed before it ran. Nothing on the live beach or the site has moved, and taking the keyword out waits on David's word.
+**Status**: four runs of the nine at David's word: "Yes, run it" (2 November), "Yes, do both" and "Yes, run both" (3 November), $0.1168 in all at list. S3, six sentences with the place spelled, passed the gate fixed before it ran. At David's "Yes, take it out" the keyword came out on the beach the same afternoon, each block archived first (see "Done"); the page follows in happyseaurchin-home #603, and the battery after this merges.
 
 ## The ask
 
@@ -108,6 +108,15 @@ Nothing was refused in any run, and no mind fetched the way or the law's branche
 
 So S3 goes forward.
 
+## Done, at David's "Yes, take it out"
+
+- **The live walk, thread 11.** Weft opened it by an append to `spine:thread`. As the registry's tenth thread it wrapped the registry to floor 2, and its summary of threads 1 to 9 was paid at 10. Its first knot took options on a mirror the router raised to floor 2, and the read laid them out. Every older address still resolves.
+- **`ways:thread`.** Its root is S3's six sentences, steps 1 to 8 are gone, and its provenance stays at 9. The way it replaces stands at `archive:ways:thread:2026-11-03`. The router now hands over exactly the six sentences the nine ran.
+- **`function:thread` 2, 3, 5, 7 and 8 re-voiced.** An act is told from an option by where it stands, and a live end waits on the hand whose room its place was put in. A line that closes with the clause is still an act and still waits on the handle it names. The law it replaces stands at `archive:function:thread:2026-11-03`.
+- **The page**, happyseaurchin-home #603. It reads acts and options by where they stand, takes cards from the rooms, and makes a tap write the option's words and put the place in the offerer's room. Read against the live beach, old reader against new, only one address changes: thread 5 at 5.112, an untaken option the old reading took for an act because it says "waits for" (the mistake-proofing lane's §5).
+- **The battery** follows this merge, so the form pass reads threads opened from 3 November by where their lines stand.
+- **A limit of position.** A hand's own last line beneath its own act, with nothing beneath it, reads as an option it offered. So an answer a hand records beneath its own question, offered with no options, keeps the asker's card open. Asking with options avoids it: the answer goes one deeper beneath the option chosen.
+
 ## What the minds did
 
 **S**
@@ -163,7 +172,7 @@ So S3 goes forward.
 
 ### 1. The keyword comes out, with S3 as the way
 
-Each piece goes at David's word:
+Each piece goes at David's word (done on 3 November, above, but for the battery):
 
 - **One live walk first**, through the real router on a throwaway thread, before the way loses its steps. The test beach's commands stood in for the tools. A live mind opens a thread by an append to `spine:thread`, which the law's root line names but none of the six sentences teaches.
 - **`ways:thread`.** Its root becomes S3's six sentences, and its steps 1 to 8 go, with the standing text at `archive:ways:thread:<date>` first. The router hands over a way's root and steps without its provenance (`wayText`), so a session gets exactly the text the nine ran.
@@ -179,12 +188,12 @@ The router should refuse a say that rewords a hand's own option after another ha
 
 - **One run a cell, on the smallest model.** Every figure here is one mind's per use, and S3 passed at the gate's edge.
 - **The grade is lenient.** It accepts two addresses in `place` and in `reask`, and any spelling of the place. So these scores can't be compared with H3's 40 of 40, which also graded the keyword.
-- **The live calls.** The test beach's commands stood in for the tools (1, above).
+- **The live calls.** The walk on thread 11 was weft's own hand through the real router. Another hand taking an option, a room told and the guard were played only on the test beach, whose guard is the router's.
 - **`word` and `place`.** S3 carries both misses, as the keyword's law did in R and H2. S2's sentence cured `word`, but in that run `self` and `reask` wrote over their own options, which neither did in S or S3. One run each can't say whether the sentence did that.
 
 ## What was done
 
-Nothing on the live beach or the site changed. In this repo:
+On the beach and the site, see "Done". In this repo:
 
 - the four deliveries' teachings (`way_s.txt` to `way_s4.txt`, `ways-thread-s*.json`, `function-thread-s.json`)
 - `short.py` and `selftest_s.py`, with the battery's and test beach's hooks, and the spelling check's mend
