@@ -12,11 +12,20 @@ reads, an option never does, and lines are short. A thread opened before the re-
 is read by the law it was tied under, v1, and what v2 would call a fault there is a
 WARN (function:thread 7: threads tied before this law stand as they were tied).
 
-  thread_form.py live [--v1|--phase2] [--thread N] [--json]   the live beach, by public GET
-  thread_form.py state <file.json> [--v1|--phase2] [--json]   a test beach's state
+On 3 November 2026 the law was re-cut again, at David's word (v3,
+proposals/2026-11-03-threads-without-the-keyword.md): an act is told from an option by
+where it stands, never by a closing clause. A line at the thread's number is an act, and
+so is a line whose hand holds no act just above it or has a line of its own one digit
+beneath it; a hand's other lines beneath its own act are its options. A line that closes
+' · waits on <handle>' or ' · complete' is still an act, and no live end must close so.
+Every thread opened since v2 is read by v3, so a keyword-free knot tied today on a
+thread of phase 2 is no fault; a thread opened before v2 is read by v1, as before.
 
-With neither flag each thread is read by the law of its opening (live), or by the law
-as it stands (a test beach, whose registry keeps no stamps). Levels: FAULT breaks the
+  thread_form.py live [--v1|--phase2|--v3] [--thread N] [--json]   the live beach, by public GET
+  thread_form.py state <file.json> [--v1|--phase2|--v3] [--json]   a test beach's state
+
+With no flag each thread is read by the law of its opening (live), or by the law as it
+stands, v3 (a test beach, whose registry keeps no stamps). Levels: FAULT breaks the
 form; WARN weakens it; NOTE is a reading, not a judgment. A thread with no FAULT is
 well formed. proposals/2026-10-29-threads-phase-2.md
 """
@@ -30,7 +39,7 @@ WAIT_LOOSE = re.compile(r"\bwait(?:s|ing)?\s+(?:on|for)\b|\bcomplete\b", re.I)
 WAIT_CLAUSE = re.compile(r"\s·\s(?:waits on ([A-Za-z0-9_.\-]+(?:(?:,\s*| and )[A-Za-z0-9_.\-]+)*)|(complete))\s*$")
 WAITS_ON_ANY = re.compile(r"\bwaits? on ([A-Za-z0-9_.\-]+)", re.I)
 WORD_OF = re.compile(r"\bat ([A-Za-z0-9_.\-]+)'s word\b|\bchosen by ([A-Za-z0-9_.\-]+)\b", re.I)
-PLACE = re.compile(r"\bthread:(\d+(?:\.\d+)?)\b")
+PLACE = re.compile(r"(?<![\w:])thread:(\d+(?:\.\d+)?)\b")   # a place standing on its own, not the tail of archive:ways:thread:2026-11-03
 URL = re.compile(r"^https?://\S+$")
 ADDR_TOKEN = re.compile(r"^([A-Za-z][A-Za-z0-9_\-]*(?::[A-Za-z0-9_\-.]+)*)(?:\s+(\d+(?:\.\d+)?))?$")
 ISO = re.compile(r"\b20\d\d-\d\d-\d\dT\d\d:\d\d")
@@ -64,8 +73,30 @@ def text_of(node):
 
 
 def addr(path, floor):
-    a = "".join(path[:floor])
+    a = "".join(path[:floor]).lstrip("0") or "0"   # a supernested registry keeps 1 to 9 at 01 to 09, written 1 to 9
     return a + ("." + "".join(path[floor:]) if len(path) > floor else "")
+
+
+def floor_of(b):
+    """The depth of a block's underscore chain, as the page reads it (threads.js floorOf)."""
+    d, n = 0, b
+    while isinstance(n, dict) and "_" in n:
+        d, n = d + 1, n["_"]
+        if isinstance(n, str):
+            return d
+    return d
+
+
+def raised(b, floor):
+    """A mirror below the registry's floor, read as the router raises it: wrapped {_: old} until it stands there."""
+    while floor_of(b) < floor:
+        b = {"_": b}
+    return b
+
+
+def step(node, d):
+    """One digit down; a zero walks the underscore, where a supernested block keeps what stood before."""
+    return node.get("_" if d == "0" else d) if isinstance(node, dict) else None
 
 
 def to_path(a, floor):
@@ -91,7 +122,9 @@ class View:
                     mirrors[n.split(":", 1)[1]] = get(n)
                 except Exception as e:  # a mirror that will not read is itself a finding
                     mirrors[n.split(":", 1)[1]] = {"_": f"(unreadable: {e})"}
-        return cls(get("spine:thread"), mirrors, names)
+        registry = get("spine:thread")
+        floor = max(1, floor_of(registry))
+        return cls(registry, {h: raised(m, floor) for h, m in mirrors.items()}, names, floor)
 
     @classmethod
     def state(cls, path):
@@ -107,8 +140,10 @@ class View:
 
         def walk(node, path):
             if len(path) == self.floor:
-                out.append("".join(path))
+                out.append("".join(path).lstrip("0"))
                 return
+            if len(path) < self.floor - 1 and isinstance(node.get("_"), dict):
+                walk(node["_"], path + ["0"])   # a supernested root keeps 1 to 9 at 01 to 09
             for k in sorted(node):
                 if k != "_" and isinstance(node[k], (dict, str)) and DIGIT.match(k):
                     walk(node[k], path + [k]) if isinstance(node[k], dict) or len(path) + 1 == self.floor else None
@@ -118,7 +153,7 @@ class View:
     def registry_line(self, n):
         node = self.registry
         for d in to_path(n, self.floor):
-            node = node.get(d) if isinstance(node, dict) else None
+            node = step(node, d)
             if node is None:
                 return None
         return text_of(node)
@@ -127,7 +162,7 @@ class View:
         """The stamp the beach gave the registry line as it landed (field 3), or ''."""
         node = self.registry
         for d in to_path(n, self.floor):
-            node = node.get(d) if isinstance(node, dict) else None
+            node = step(node, d)
             if node is None:
                 return ""
         st = node.get("3") if isinstance(node, dict) else None
@@ -139,7 +174,7 @@ class View:
         for hand, m in sorted(self.mirrors.items()):
             node = m
             for d in to_path(n, self.floor):
-                node = node.get(d) if isinstance(node, dict) else None
+                node = step(node, d)
                 if node is None:
                     break
             if node is None:
@@ -167,10 +202,12 @@ class View:
         for hand, m in self.mirrors.items():
             def walk(nd, path):
                 if len(path) == self.floor:
-                    if "".join(path) not in reg:
-                        out.append((hand, "".join(path)))
+                    if "".join(path).lstrip("0") not in reg:
+                        out.append((hand, "".join(path).lstrip("0")))
                     return
                 if isinstance(nd, dict):
+                    if len(path) < self.floor - 1 and isinstance(nd.get("_"), dict):
+                        walk(nd["_"], path + ["0"])
                     for k, v in nd.items():
                         if k != "_" and DIGIT.match(k):
                             walk(v, path + [k])
@@ -195,14 +232,14 @@ def reads_of(t):
 
 
 def check(view, n, phase2=None):
-    """Thread n by the law of its opening (phase2 None), by v2 (True) or by v1 (False)."""
+    """Thread n by the law of its opening (phase2 None), by v3 ("v3"), by v2 (True) or by v1 (False)."""
     if phase2 is not None:
         return _check(view, n, phase2)
     st = view.registry_stamp(n)
     if not st or st >= V2_SINCE:
-        F, S = _check(view, n, True)
+        F, S = _check(view, n, "v3")
         if S:
-            S["law"] = "v2"
+            S["law"] = "v3"
         return F, S
     F, S = _check(view, n, False)
     held = {(x["test"], x["at"], x["hand"]) for x in F}
@@ -215,6 +252,7 @@ def check(view, n, phase2=None):
 
 
 def _check(view, n, phase2):
+    v3 = phase2 == "v3"
     F = []
 
     def f(level, test, where, hand, detail):
@@ -254,12 +292,24 @@ def _check(view, n, phase2):
         p = to_path(a, view.floor)
         return [x for x in by_addr if len(to_path(x, view.floor)) > len(p) and to_path(x, view.floor)[: len(p)] == p]
 
+    above = {}
+
     def is_act(a, t, hand):
         """An act closes on whom it waits on or 'complete' (or carries reads, a word or a time); an option never does.
-        A line with its own hand's lines beneath it is a knot whatever its words, since options hang only beneath an act."""
+        A line with its own hand's lines beneath it is a knot whatever its words, since options hang only beneath an act.
+        By v3, where it stands decides: an act also where its hand holds no act just above it."""
         if parent(a) is None:
             return True
         b = body(t)
+        if v3:
+            # beneath another hand's line, or beneath its own option (taken one deeper), a line is an act; beneath its
+            # own act it is an option, unless it offers two or more of its own beneath it (a step that went on)
+            if WAIT_CLAUSE.search(b):
+                return True
+            pa = parent(a)
+            if (pa, hand) not in above:
+                above[(pa, hand)] = any(h == hand and is_act(pa, t2, h) for h, t2, _ in by_addr.get(pa, []))
+            return not above[(pa, hand)] or sum(1 for c in kids(a) if hand in [h for h, _, _ in by_addr[c]]) >= 2
         said = WAIT_CLAUSE.search(b) if phase2 else WAIT_LOOSE.search(b)
         if said or READS in t or WORD_OF.search(b) or ISO.search(b):
             return True
@@ -348,12 +398,14 @@ def _check(view, n, phase2):
             ends.append(a)
 
     def complete(a):
-        return all(re.search(r"\bcomplete\b", body(t), re.I) for h, t, _ in by_addr[a] if acts[(a, h)])
+        """By v3 no word ends a branch: an end is complete only where its acts still close ' · complete'."""
+        said = (lambda b: (WAIT_CLAUSE.search(b) or [None, None, None])[2]) if v3 else (lambda b: re.search(r"\bcomplete\b", b, re.I))
+        return all(said(body(t)) for h, t, _ in by_addr[a] if acts[(a, h)])
     live = [a for a in ends if not complete(a)]
     done = [a for a in ends if complete(a)]
     for a in ends:
         for h, t, _ in by_addr[a]:
-            if not acts[(a, h)]:
+            if not acts[(a, h)] or v3:
                 continue
             b = body(t)
             if phase2:
@@ -366,7 +418,7 @@ def _check(view, n, phase2):
     # knot_hands() read here, so the two cannot disagree and the emulation is retired.)
     for a, hs in by_addr.items():
         for h, t, _ in hs:
-            if phase2 and acts[(a, h)] and kinds[(a, h)] != "knot" and a not in ends and not WAIT_CLAUSE.search(body(t)):
+            if phase2 and not v3 and acts[(a, h)] and kinds[(a, h)] != "knot" and a not in ends and not WAIT_CLAUSE.search(body(t)):
                 f("WARN", "WAITS", a, h, "an act with no closing ' · waits on <handle>' or ' · complete'")
     if not view.registry_stamp(n):
         f("NOTE", "TIME", n, "", "the registry line carries no stamp, so when the thread was opened cannot be read; a knot keeps no time by law (function:thread 4)")
@@ -400,7 +452,7 @@ def report(view, numbers, phase2=None, as_json=False):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    phase2 = True if "--phase2" in args else False if "--v1" in args else None
+    phase2 = "v3" if "--v3" in args else True if "--phase2" in args else False if "--v1" in args else None
     as_json = "--json" in args
     only = args[args.index("--thread") + 1] if "--thread" in args else None
     if not args or args[0] not in ("live", "state"):

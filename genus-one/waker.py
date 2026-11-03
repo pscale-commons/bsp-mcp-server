@@ -1128,7 +1128,7 @@ def router_call(tool, arguments, timeout=45):
     return "\n".join(p.get("text", "") for p in parts if isinstance(p, dict))
 
 
-THREAD_PLACE = re.compile(r"\bthread:(\d+(?:\.\d+)?)\b")
+THREAD_PLACE = re.compile(r"(?<![\w:])thread:(\d+(?:\.\d+)?)\b")   # never the tail of archive:ways:thread:2026-11-03
 
 
 def thread_place(voice):

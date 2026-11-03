@@ -30,6 +30,7 @@ check(waker.thread_place("keel → neptune: thread:14.12 waits on you") == "14.1
 check(waker.thread_place("over to you, thread:7") == "7", "a bare number is a place")
 check(waker.thread_place("the threads proposal, spine:threads 1.18") is None, "a block named threads is not a place")
 check(waker.thread_place("thread:weft is a mirror") is None, "a mirror's name is not a place")
+check(waker.thread_place("archived at archive:ways:thread:2026-11-03; over to you, thread:11.1111") == "11.1111", "a block's name is not a place, the place after it is")
 check(waker.thread_place(None) is None, "no voice, no place")
 
 # ── the door's THREAD section ────────────────────────────────────────────────

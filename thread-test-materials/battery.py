@@ -21,7 +21,7 @@ delivery: the teaching a mind is handed, from teachings/ —
   S   David's form: H3's handing over, of six sentences in place of the way (way_s.txt), the law on the test beach cut to its
       root line, and seeds with no closing clause; graded by short.py, by where the line lands and nothing lost, never by a keyword
   S2  S, with two sentences mended (way_s2.txt): where the thread stands, and the place spelled thread:<address>
-  S3  S, with only the place spelled thread:<address> (way_s3.txt)
+  S3  S, with only the place spelled thread:<address> (way_s3.txt); ways:thread since 3 November, and run-minds.sh's default
   S4  S3, a hand that already holds a line where it ties beginning with its words, David's one knot (way_s4.txt).
       S3 and S4 are graded alike, a line kept in place counting as nothing lost (short.py AMEND); both ran on 3 November
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place

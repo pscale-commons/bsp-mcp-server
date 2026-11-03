@@ -153,7 +153,7 @@ def cards_open(s, mirror_lines):
     for h, r in s["rooms"].items():
         for line in r:
             who = line.split(":", 1)[0].strip()
-            for p in re.findall(r"thread:(\d+(?:\.\d+)?)", line):
+            for p in re.findall(r"(?<![\w:])thread:(\d+(?:\.\d+)?)", line):
                 if card_open(at, h, p, who) and p not in out.get(h, []):
                     out.setdefault(h, []).append(p)
     return out
