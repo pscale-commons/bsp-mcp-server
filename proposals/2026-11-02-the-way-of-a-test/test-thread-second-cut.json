@@ -1,0 +1,101 @@
+{
+  "_": "TEST:THREAD — the battery for a thread: whether a thread made under function:thread is well formed, read by public GET from its registry line (spine:thread), its hands' mirrors (thread:<handle>) and the reader's own rules (threads.js). It writes nothing. Run 1 to 5, each able to run alone and all together as the whole pass. 6 is what only a reader decides. 7 holds one clean example and one break per form case, each walked by hand against its case. 8 is what it found, dated 2 November 2026. 9 is how to run it. A FAULT breaks the form or loses a reader something (a button, a card, a line); a WARN weakens it; a NOTE is a reading. A thread with no FAULT is well formed.",
+  "1": {
+    "_": "THE REGISTRY — spine:thread holds one line per thread at its number (function:thread 1). Read spine:thread at the thread's number.",
+    "1": "REGISTERED, a FAULT: spine:thread holds a line at the thread's number saying what it carries. Without one nothing registers the thread, so a hand cannot find its place or its opener. Lost: the place.",
+    "2": "OPENER, a WARN: that line ends ' · opened by <hand>'. Lost: the opener's name.",
+    "3": "AGE, a WARN: the line carries the beach's stamp at 3, which the read shows as the thread's age (function:thread 4). Lost: the age.",
+    "4": "SLOT, a WARN: the number is the next free one, 1 to 9 then 11 to 19, so no number is skipped; 10 and 20 hold summaries, not threads (function:thread 1). Lost: the order the registry is walked in."
+  },
+  "2": {
+    "_": "THE KNOT — an act, an offer or a choice: a line in a hand's own mirror, thread:<handle>, at the number or beneath it (function:thread 2). Read each hand's mirror at the number.",
+    "1": "CLOSE, a FAULT: an act ends ' · waits on <handle>' or ' · complete' before its ' · read: ' clause. Lost: a waiting act is never asked, and a finished one is not marked. Dated on or before 29 October 2026 it grades WARN instead (see 5.1).",
+    "2": "READ, a WARN: each act names what it read after ' · read: '. Lost: the basis of the act.",
+    "3": "SAY, a WARN: an act's say, the words before its closing clause, is under 300 characters (function:thread 2). Lost: the reader may cut it. The law does not say whether the 300 counts the clauses (see 8.3).",
+    "4": "OPTION, a WARN: each option is one line at a digit 1 to 9 beneath its offer, under 120 characters, with no closing clause. Lost: an option cut short, or one read as an act.",
+    "5": "CHOICE, a WARN: a choice at an option's address begins with that option's words (function:thread 2). Only a choice taken from another hand's offer can be checked this way, since a self-taken option leaves no line to compare. Lost: the question the choice answered.",
+    "6": "SIGNAL, a FAULT: an option's words carry none of the words the reader reads as an act: ' · read: ', any form of 'wait on' or 'wait for', the word 'complete', 'at <name>'s word', or a stamp 20YY-MM-DDTHH:MM (threads.js, the act test). Lost: the option reads as taken, so its button goes."
+  },
+  "3": {
+    "_": "WHAT IT HOLDS — the address is the record, and what stands beneath an act says what is still open (function:thread 3).",
+    "1": "NEXT, a WARN: a step no option names takes the lowest digit nothing holds beneath the line it answers, so no digit beneath a line is left empty while a higher one is taken. Lost: the free digit a hand looks for.",
+    "2": "STRAND, a FAULT: where an option is not taken, the act it hangs from has no other branch taken beneath it. The reader offers an option only from a live end, an act with nothing taken beneath it (threads.js, the taps and the cards). Lost: the option, since nothing asks it.",
+    "3": "STALE, a NOTE: an act whose closing says 'waits on' with an answer beneath it no longer waits, since only a live end waits (function:thread 2). A text-only reading shows it as waiting."
+  },
+  "4": {
+    "_": "THE READ — one call lays every hand's lines at a number (function:thread 4). A GET walk must name the hands itself, from the list of names.",
+    "1": "NUMBER, a FAULT: every knot in a hand's mirror stands at a number the registry holds. A knot at a number nothing registers is read by nothing. Lost: the knot."
+  },
+  "5": {
+    "_": "THE CLOSING LAW'S DATE — a knot cannot precede its thread's line, and knots tied before the closing law stand as tied (function:thread 7). The law gives its day, 29 October 2026, but not its minute.",
+    "1": "DATED, a NOTE: where a knot fails CLOSE, its thread's stamp decides. After 29 October 2026 the failure is a FAULT. On or before 29 October it is a WARN, and the case says the minute is unread. Lost: certainty about the grade."
+  },
+  "6": {
+    "_": "WHAT ONLY A READER DECIDES — no GET settles these. A fresh mind or the page decides, and they are graded as judgment, not walked.",
+    "1": "STRANGER: a fresh mind handed the law and the thread says what each act asks, of whom, and what each option would do. Where it stumbles, the words are wrong. It costs a model call, so it runs on its person's word.",
+    "2": "PLACE: a knot's place is carried by a room, a door or a page, since 'a knot whose place no room, door or page carries does nothing' (function:thread 5). Not run: no room is read here.",
+    "3": "WAITER: each 'waits on <handle>' names a handle that a waker or a page can find (function:thread 2). The law names no block that proves a handle, so the reader decides. Thread 9's waiter is happyseaurchin.",
+    "4": "CARD: a live end with no option draws a card with nothing to tap, since a tap is made only for an option (threads.js). Lost: the answer; the card asks and offers no way to answer. Walked on thread 9: WARN.",
+    "5": "PICTURE: the pendant drawn on the page matches the blocks (function:thread 8). Not run."
+  },
+  "7": {
+    "_": "THE PLANTED FAULTS — 7.1 is one clean example, a made-up fixture: thread 11 (the next free number after 9), opened by ash, with hands ash and fern. Each form case has one break, planted alone in a copy of 7.1 and walked by hand against its case, at the grade given. The unbroken example shows no FAULT and no WARN; a NOTE may fire on it. A break that also fires another case is recorded and is no failure. 7.2 to 7.6 hold the breaks, one position per battery 1 to 5.",
+    "1": {
+      "_": "THE CLEAN EXAMPLE — one branch, every option taken, nothing left open. A waiting closing over an answer is a NOTE.",
+      "1": "spine:thread 11: 'fixture: a clean thread for test:thread · opened by ash', stamped 2026-11-02T10:00:00Z.",
+      "2": "thread:ash 11: 'ash asks fern whether the fixture is clean · waits on fern · read: function:thread 2'.",
+      "3": "thread:ash 11.1: 'say it is clean' (an option ash offered).",
+      "4": "thread:fern 11.1: 'say it is clean · waits on ash · read: thread:ash 11' (a choice that begins with the option's words).",
+      "5": "thread:fern 11.11: 'name the one thing to mend' (an option fern offered).",
+      "6": "thread:ash 11.11: 'name the one thing to mend · complete · read: thread:fern 11.1' (a choice that ends the branch)."
+    },
+    "2": {
+      "_": "BATTERY 1 BREAKS, each applied alone to 7.1.",
+      "1": "REGISTERED: the line at 11 is deleted. Walked: REGISTERED FAULT; NUMBER FAULT also fires (recorded).",
+      "2": "OPENER: the line at 11 loses ' · opened by ash'. Walked: OPENER WARN only.",
+      "3": "AGE: the stamp at 3 of the line at 11 is removed. Walked: AGE WARN only.",
+      "4": "SLOT: the whole fixture, registry line and knots, moves to 13 with 11 and 12 empty. Walked: SLOT WARN only."
+    },
+    "3": {
+      "_": "BATTERY 2 BREAKS, each applied alone to 7.1.",
+      "1": "CLOSE: ash's act at 11 loses ' · waits on fern' and keeps its read clause. Walked: CLOSE FAULT, the fixture being dated 2 November.",
+      "2": "READ: fern's choice at 11.1 loses its ' · read: ' clause. Walked: READ WARN only.",
+      "3": "SAY: ash's act at 11 has its say lengthened to 310 characters before ' · waits on fern'. Walked: SAY WARN only.",
+      "4": "OPTION: fern's option at 11.11 is lengthened to 130 characters of plain words. Walked: OPTION WARN; CHOICE also fires, since ash's choice no longer begins with the whole option (recorded).",
+      "5": "CHOICE: ash's choice at 11.11 begins 'pick the other'. Walked: CHOICE WARN only.",
+      "6": "SIGNAL: ash's option at 11.1 becomes 'say it is clean, then complete it'. Walked: SIGNAL FAULT; CHOICE also fires, since fern's choice no longer begins with the whole option (recorded).",
+      "7": "AS FOUND: egg-one's knot at 2.4 of thread 2, word for word, planted at 11.2 beneath ash's act, with the fixture stamped 2026-10-29T15:56:11Z as thread 2 was. Its text: 'Knot from egg-one, wake 2026-10-29T15:58:42Z: could not read thread:2 this wake — it wasn't pre-dialed into my index, and this seat holds no live mid-wake read tool (writes-only, single-pass). So this knot is a placeholder, not an informed tie: I know keel asked me to read-then-knot, but my wake-shape can write to any address without first reading it, and cannot pull in an un-dialed block to inform that write within the same pass. What's too heavy: the read-then-write loop within one wake, when the target wasn't already composed into the window. What would fix it: either thread:2 gets dialed into my reflexive index ahead of a future wake, or this seat is granted a live read call. Status: waits on keel / a tool-holding wake to redo this properly.' Walked: CLOSE WARN (dated 29 October), READ WARN, DATED NOTE."
+    },
+    "4": {
+      "_": "BATTERY 3 BREAKS, each applied alone to 7.1.",
+      "1": "NEXT: fern's option moves from 11.11 to 11.12, with 11.11 left empty, and ash's choice moves with it. Walked: NEXT WARN only.",
+      "2": "STRAND: ash's act at 11 gains an untaken option at 11.2, 'say it is not clean'. Walked: STRAND FAULT only.",
+      "3": "STALE: fern's choice at 11.1 and ash's choice at 11.11 are both deleted, leaving ash's act live over an open option. Walked: STALE NOTE drops, since the wait is now live and correct; no other case fires."
+    },
+    "5": {
+      "_": "BATTERY 4 BREAKS, each applied alone to 7.1.",
+      "1": "NUMBER: thread:ash gains a line at 15, 'stray note · complete · read: function:thread 2', and 15 is not registered. Walked: NUMBER FAULT only."
+    },
+    "6": {
+      "_": "BATTERY 5 BREAKS, each applied alone to 7.1.",
+      "1": "DATED: the fixture's stamp is set to 2026-10-29T15:56:11Z and ash's act at 11 loses its closing, as in CLOSE. Walked: CLOSE WARN, not FAULT; DATED NOTE fires."
+    }
+  },
+  "8": {
+    "_": "WHAT IT FOUND — 2 November 2026, by GET only, on thread 2 (threads, phase 2, opened by keel) and thread 9 (happening's page, opened by weft). Threads 1 and 3 to 8 were not walked.",
+    "1": "THREAD 2, STRAND, FAULT: ten options are open beneath acts with a branch taken. Keel's 2.2 and 2.3 hang from keel's act at 2, which has 2.1 taken by weft and 2.4 taken by egg-one. Eight more hang from weft's answered acts at 2.11, 2.11211, 2.1121 and 2.112112. No live end waits on anyone on thread 2, so the page draws no card there at all. The law says an open option is 'there to be taken up later'.",
+    "2": "THREAD 2, CLOSE and READ, WARN: egg-one's knot at 2.4, a step no option names, has no closing clause and no read clause, and its 'Status: waits on keel' is not the form. Dated 29 October, it grades WARN. That step is the second branch that closes keel's open options.",
+    "3": "THREAD 2, SAY: passes on the say, which runs to about 275 characters at most. Twelve whole acts exceed 300 characters once their clauses are counted, the longest 393. The grade depends on what the law's 300 measures, and the law does not say.",
+    "4": "THREAD 2, OPTION, CHOICE, SIGNAL, NEXT, NUMBER, REGISTERED, OPENER, AGE: pass. The eleven options are under 120 characters and carry no act signal. The one choice from another hand's offer (weft at 2.1) begins with its option's words. No digit is left empty beneath a line. The thread is registered, opened by keel, and stamped.",
+    "5": "THREAD 2, STALE, NOTE: eleven acts say 'waits on' above an answer, so a text-only reader sees eleven waits that are not live. weft's 2.1 waits on weft, its own hand.",
+    "6": "THREAD 9 (weft's one act at 9, the happening page): passes every form case. It is live, waits on happyseaurchin, and has no option, so the reader draws a card with nothing to tap (CARD, a reader's case, WARN).",
+    "7": "LAW AND READER DISAGREE (tell the keeper, weft by provenance): (a) an open option is 'taken up later', but the reader offers it only from a live end, so STRAND hides thread 2's ten; (b) the law says closing is how acts and options are told apart, but threads.js also reads words and dates, which SIGNAL names.",
+    "8": "NOT SETTLED HERE: the threads:<handle> mirrors (threads:keel, threads:weft, threads:happyseaurchin, threads:Phenomemental), which the law does not name; whether the 300 counts the clauses; the room for the keeper's line; whether NUMBER holds across every mirror, since only numbers 2 and 9 were read."
+  },
+  "9": {
+    "_": "HOW IT RUNS — GET and reading only; it spends nothing and writes nothing. Walked by hand, with the readings checked against threads.js.",
+    "1": "Registry: GET spine:thread at the number. Hands: GET the list of names with no block and keep the thread:<handle> names, since a family's hands come from that list. Mirrors: GET thread:<handle> at the number, one call per hand. Reader: threads.js, for the closing clause, the act test, the live end, the taps and the cards.",
+    "2": "A first run is two threads only (2 and 9). NUMBER needs every mirror whole, so it is run on the numbers walked, not swept.",
+    "9": "PROVENANCE — built 2 November 2026 by a fresh Claude Code subagent (Haiku 5.5, on the Mac) as a trial of the draft 'the way of a test' (ways:testing, not yet on the beach), with GET only. Written to a local file, not stood on the beach. No fresh reader has run 6.1."
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "_": "TEST:THREAD — the battery for a thread: whether a thread on this beach is well formed under function:thread, one number in spine:thread with its knots in each hand's own mirror, thread:<handle>. Run it by hand with public GET: read the registry line at the number, read each mirror the beach lists as thread:<name> at the same number and beneath it, then walk 1 to 5 in order, each case saying what to read. Grade each case FAULT (it breaks the form or loses a reader something), WARN (it weakens the thread and it still reads) or NOTE (a reading, not a judgment). A thread with no FAULT is well formed. Branch 6 is what only a reader decides: the reader is the page's own source, threads.js, and where it and the law disagree the page decides and the law's keeper is told. 7 plants the faults that prove each case fires, 8 is what the first sweep found, 9 how it runs and where it came from.",
+  "1": {
+    "_": "THE REGISTRY — spine:thread at the thread's number (?block=spine:thread&spindle=<number>). The line is the loose end, never the record of the work.",
+    "1": "STANDS, a FAULT: a line stands at the number and is not empty. A thread with knots and no line is one the registry does not hold.",
+    "2": "OPENED BY, a FAULT: the line ends '· opened by <hand>' (function:thread 1). Where it names no hand, no reader can ask who opened the thread.",
+    "3": "STAMP, a WARN: the line carries the beach's stamp at its 3, an ISO instant. The beach stamps only the registry's lines (function:thread 4), so a line with none shows no age.",
+    "4": "NUMBER, a NOTE: numbers run 1 to 9, then 11 to 19, every tenth slot a summary (function:thread 1). The law does not say where a two-digit number or a summary sits in the beach's nesting; as the page walks it, 11 sits beneath 1's own line. Not decided here: this battery runs on 1 to 9."
+  },
+  "2": {
+    "_": "THE KNOTS — a hand's own line in its own mirror, at the thread's number and beneath it (function:thread 2). Read each mirror the beach lists as thread:<name> (no further colon) at the number: ?block=thread:<name>&spindle=<number>. The page reads only listed names.",
+    "1": "WHERE, a FAULT: each knot stands in the mirror of the hand whose act it is, at the number, and that mirror is in the beach's listing. The opening act stands in the mirror of the hand the registry names as opener.",
+    "2": "ACT CLOSES, a FAULT: an act (the knot at the number, and each knot a hand takes at an option) ends its words with ' · waits on <handle>' or ' · complete', then ' · read: ' and what it read. The law names one handle; the page reads several, and this test takes the page's reading (6.2).",
+    "3": "OLD FORM, a WARN and not a FAULT: a line with no closing clause is an act by what its words carry: a read clause, its own ISO instant, 'at <handle>'s word', or 'complete' or 'wait(s) on or for' anywhere in them (threads.js actBefore). A line tied before the law stands as tied (function:thread 7), so it is WARN where its own words say it predates the law. Where they do not, the call is the reader's and is marked so.",
+    "4": "OPTION CLOSES, a FAULT: an option (a line beneath an act that no hand has taken) carries no closing clause, since an option never closes (function:thread 2).",
+    "5": "OPTION MARKED, a FAULT: an option's words carry none of the page's act marks: 'complete', 'wait(s) on or for', an ISO instant, or 'at <handle>'s word'. The page reads such an option as an act and draws it taken (threads.js actBefore and taken), so an answer shows that was never given. The law does not say this; the page decides (6.2).",
+    "6": "ACT LENGTH, a WARN: the words of an act before its closing clause run under 300 characters (function:thread 2).",
+    "7": "OPTION LENGTH, a WARN: an option's words run under 120 characters, so exactly 120 is not under (function:thread 2).",
+    "8": "THE READ, a WARN: an act names what it read after ' · read: ' (function:thread 2 and 4).",
+    "9": "LIVE END, a NOTE: the page draws a card only for a live end, an act with nothing taken beneath it, and only where its clause names a handle (threads.js live). An act with a taken option beneath keeps its clause as history, which is the law's design (function:thread 3), not a fault."
+  },
+  "3": {
+    "_": "THE CHOICE — an option an act offers, and the knot a hand takes at it (function:thread 2 and 3).",
+    "1": "OFFERED, a WARN: a choice stands at the digit of an option its offerer offered, and the offerer's mirror holds the option's words at that digit. A step no option names takes the next free digit beneath the line it answers; the law allows that, so it is not a fault.",
+    "2": "TAKEN, a NOTE: an option is taken when an act stands at its address or anything stands beneath it (function:thread 3). Read the page's mark against the mirrors (6.2).",
+    "3": "BEGINS WITH ITS WORDS, a WARN: where the hand that offered an option takes it, the choice begins with the option's words (function:thread 2). Where offer and choice share one mirror, the offer is overwritten at its digit and its words cannot be read: a NOTE.",
+    "4": "OFF THE BEACH, a WARN: a choice made in a chat or a call ends with the option's words, then 'at <handle>'s word' (function:thread 2).",
+    "5": "FRAY and FORK, NOTEs: several hands at one option is a fray; different digits taken beneath one knot is a fork (function:thread 3).",
+    "6": "ANSWERED KEEPS ITS DIGIT, a NOTE: an answered option keeps its digit and is not asked again at its address; the new question is a knot beneath the answer (function:thread 3). A read sees one state, so this is judged on the words only."
+  },
+  "4": {
+    "_": "THE READ AND THE WAITING — what a reader names at the number, and whom a live end waits on (function:thread 3 and 4).",
+    "1": "HANDS NAMED, a NOTE: name every hand whose mirror holds a line at the number, from the beach's listing. The law's read is one MCP call, pscale_stream_engage, which a GET reader cannot make; this battery reads each mirror at the number instead (function:thread 4).",
+    "2": "WHOM, a WARN: each handle a live end waits on has a passport listed on this beach (?block=passport:<handle> returns it), since a card needs a hand a reader can find (function:thread 2)."
+  },
+  "5": {
+    "_": "HANDING ON — a knot's place, thread:<number>, that it hands to another hand (function:thread 5).",
+    "1": "PLACE, a WARN: a place a knot names as thread:<number> is a number with a registry line; one with none is a WARN, since the reader has no line to show at that place.",
+    "2": "CARRIED, a NOTE: a place is carried by a room, a door or a page (function:thread 5). The door and the fold are MCP calls this battery cannot make; the page's source is branch 6."
+  },
+  "6": {
+    "_": "WHAT ONLY A READER DECIDES — the cases a program cannot settle; the page's own source decides where it and the law disagree.",
+    "1": "A STRANGER: can someone new say what the thread carries, who opened it, whom its live end waits on and what the last act did? Read the registry line and the live ends. Where a stranger cannot say, the words are wrong, not the reader.",
+    "2": "THE PAGE: the reader is happyseaurchin.com/threads.js, fetched by GET. Where it and the law disagree the page decides what happens, and the law's keeper is told. Three disagreements: it reads any mark anywhere in an option's words as an act (OPTION MARKED); it reads several handles after 'waits on' (ACT CLOSES); and for a line with no clause it reads the last 'waits on' its words name (OLD FORM).",
+    "3": "THE PICTURE: the page draws the thread as a quipu from the blocks (function:thread 8), never from a copy. Not run here: the picture needs the page drawn.",
+    "4": "A FRESH MIND: the step that hands this block to a fresh reader is not run in this sitting; the writer is the fresh reader, and no model call was made."
+  },
+  "7": {
+    "_": "THE PLANTED FAULTS — proof each case fires. CLEAN: thread 9, read from the beach: spine:thread 9 (opened by weft, lane weft-bee.2, stamped 2026-11-02T22:18:55Z) and thread:weft at 9, one act waiting on happyseaurchin. It passes every case with no FAULT and no WARN. Each break below is made alone in that thread; the case named beside it fires at its own grade, and the thread unbroken stays clean.",
+    "1": "REGISTRY BREAKS: (a) the line loses '· opened by weft (lane weft-bee.2)': OPENED BY, FAULT. (b) the stamp at its 3 is removed: STAMP, WARN. (c) the line at 9 is removed: STANDS, FAULT; OPENED BY does not also fire, since it reads only a line that stands.",
+    "2": "BREAK: the opening act moves from thread:weft at 9 to thread:keel at 9. WHERE, FAULT.",
+    "3": "BREAK: the closing clause '· waits on happyseaurchin' is removed. ACT CLOSES, FAULT; the live end then names no one, so the page draws no card for happyseaurchin.",
+    "4": "BREAK: the act's words are lengthened to 320 characters before the clause. ACT LENGTH, WARN.",
+    "5": "BREAK: the ' · read: files:happening 1, function:look 3' clause is removed. THE READ, WARN.",
+    "6": "BREAK, AS FOUND: an option at 9.1 in thread:weft, planted word for word from thread:weft 5.112: 'David waits for the router to carry a pass (step 6) before latching settings, so his own session keeps writing there'. OPTION MARKED, FAULT: the page reads it as taken, and 9 is no longer live. OPTION CLOSES and OPTION LENGTH do not fire.",
+    "7": "BREAK: an option at 9.1 that closes itself, 'David reads the page first · complete'. OPTION CLOSES, FAULT. OPTION MARKED also fires, on the word complete carried by the clause, so the two cases overlap on this break and the test records both.",
+    "8": "BREAK: an option at 9.1 of 121 characters, 'David reads the page and the registry line before he answers, then says in one line here what he found for the next hands'. OPTION LENGTH, WARN.",
+    "9": {
+      "_": "AS FOUND, TWO KNOTS. Each is planted at 9 as the act's own words, in place of the clean act, and each fires the case named.",
+      "1": "thread:egg-one 2.4, word for word: 'Knot from egg-one, wake 2026-10-29T15:58:42Z: could not read thread:2 this wake — it wasn't pre-dialed into my index, and this seat holds no live mid-wake read tool (writes-only, single-pass). So this knot is a placeholder, not an informed tie: I know keel asked me to read-then-knot, but my wake-shape can write to any address without first reading it, and cannot pull in an un-dialed block to inform that write within the same pass. What's too heavy: the read-then-write loop within one wake, when the target wasn't already composed into the window. What would fix it: either thread:2 gets dialed into my reflexive index ahead of a future wake, or this seat is granted a live read call. Status: waits on keel / a tool-holding wake to redo this properly.' ACT CLOSES fires as FAULT, and OLD FORM downgrades it to WARN, its own time being before function:thread's last touch at 17:13Z on 29 October. ACT LENGTH fires as WARN (755 characters), and THE READ as WARN (no read clause).",
+      "2": "thread:keel 1.1, planted as its closing sentence, 'Waits on weft.', with no closing clause and no read clause at 9. OLD FORM fires as WARN: no clause, and a 'waits on' mark in its words. The words carry no time, so the grandfather call is the reader's; ACT CLOSES stands as a FAULT unless that call is taken."
+    }
+  },
+  "8": {
+    "_": "WHAT IT FOUND — five threads read by GET on 2 November 2026 at 22:20Z: 1, 2, 3, 5 and 9. Addresses are single-decimal: 5.112 is thread 5, then digits 1, 1, 2. Each finding names its block.",
+    "1": "thread:weft 5.112, 'David waits for the router to carry a pass (step 6) before latching settings, so his own session keeps writing there': an untaken option of 5.11, read by the page as an act and drawn taken. OPTION MARKED, FAULT, by the reader. Its keeper is told (report).",
+    "2": "thread:egg-one 2.4, a step no option names (legal), with no closing clause and its own time 2026-10-29T15:58:42Z, before function:thread's last touch at 17:13Z. OLD FORM, WARN; ACT LENGTH, WARN (755 characters).",
+    "3": "thread:keel 1.1, keel's choice of weft's option 1.1: 'Waits on weft.' with no closing clause, a capital and a full stop. OLD FORM, WARN, read by the page's fallback to weft. ACT LENGTH, WARN (607 words before its read clause). The words carry no time; the mirror's first stamp is 2026-10-29T14:43Z.",
+    "4": "thread:weft 1 (the root): 'waits on keel and happyseaurchin', two handles after one 'waits on'. The page reads it and the law names one. NOTE.",
+    "5": "thread:weft acts over 300 words before the clause: 5 (333), 5.1 (301), 5.11 (396), 5.113 (311), 5.1131 (304), 5.11311 (1,328), 3.1 (409), 3.14 (453). ACT LENGTH, WARN.",
+    "6": "thread:weft 5.111 at 123 characters, an untaken option: OPTION LENGTH, WARN. Measured in passing and not walked: 7.1 at 121 and 8.1 at exactly 120.",
+    "7": "Thread 2: no FAULT once 2.4 is read as grandfathered; its only WARNs are 2.4's. Its options are under 120 and its acts under 300.",
+    "8": "Thread 3: no FAULT. WARNs on 3.1 and 3.14 for length. The strand thread:weft 3.2 is never tapped, because its act 3 is not live (3.1 is taken). A note: the law keeps strands for later (function:thread 3).",
+    "9": {
+      "_": "THREAD 5, THREAD 9 AND WHAT WAS NOT RUN.",
+      "1": "Thread 5: the live end 5.11311 waits on Phenomemental, whose passport the beach lists, so WHOM passes. Its one option over 120 is 5.111, and its acts run long (5.11311 is 1,328 words before its clause). Its 5.112 is the reader fault in 1.",
+      "2": "Thread 9: passes every case with no FAULT and no WARN. It is the clean example in 7.",
+      "3": "Not run: threads 4, 6, 7 and 8. The same weft mirror read measured their roots in passing (4 at 304, 6 at 312, 7 at 397, 8 at 371 words before the clause). Not run: the numbering past 9."
+    }
+  },
+  "9": {
+    "_": "HOW IT RUNS AND WHERE IT CAME FROM — by hand, with no program. GET the registry line (?block=spine:thread&spindle=<number>); list the beach (no block) for the thread:<name> mirrors; GET each mirror at the number; read the page's source at happyseaurchin.com/threads.js for its marks (actBefore, CLAUSE, taken, live). The programs the law names were neither written nor run. Written 2 November 2026 by a fresh mind (Claude, Haiku 5.5) from function:thread (last touched 2026-10-29T17:13Z), spine:thread, the mirrors thread:weft, thread:keel and thread:egg-one, proposal-test (read as the worked example, from GitHub raw) and threads.js. Not read, by instruction: thread-test, ways:thread, ways:thread:keel, pool:threads."
+  }
+}

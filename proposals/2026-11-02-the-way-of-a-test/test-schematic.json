@@ -1,0 +1,261 @@
+{
+"_": "THE SCHEMATIC TEST — test:schematic, the battery for a family made under function:schematic: its spine (spine:<name>-schematic), its law (function:<name>-schematic), the room its law names, and the readers' mirrors (<name>-schematic:<handle>). It says what well formed means for a schematic, so that anyone's AI can check one without its maker being nudged. Run it by reading, never by writing. Each case says what must hold, what to read to decide it (GET https://beach.happyseaurchin.com/.well-known/pscale-beach?block=<name>, with &spindle=<address> for one position; a missing block answers 404, and an empty position answers 200 with the body null), and what is lost where it does not hold. Run well-formed (pscale://well-formed) and compound-test 4.1 to 4.5 (pscale://compound-test) on the same blocks first; this battery adds only what they do not decide. Grade each case by what is lost: FAULT breaks the form or loses a reader something; WARN weakens it and the page still reads; NOTE is a reading, not a judgment. A family with no FAULT is well formed. Positions 1 to 5 are the batteries, one for each part of the kind; 6 holds the cases a reader must judge; 7 the planted faults that prove each case fires; 8 what this test found on the schematics standing today; 9 how it runs and where it came from.",
+"1": {
+"_": "FAMILY — the members stand together under one name, each read by GET.",
+"1": "SPINE STANDS — spine:<name>-schematic exists and has a root. Read: GET the spine. Lost: the family has no parts to draw. FAULT.",
+"2": "LAW STANDS — function:<name>-schematic exists. Read: GET the law. Lost: the page does not draw a family whose law is absent. FAULT.",
+"3": "SHARED READING — the bare <name>-schematic stands, or is honestly absent while no fold runs (the law says the fold is not running yet). Read: GET the bare name. Lost: the one reading a stranger would be handed is missing. NOTE.",
+"4": "MIRRORS SIT WHERE THE SPINE VOICES — each <name>-schematic:<handle> line sits at an address the spine voices. A line at an address the spine does not voice is a proposal awaiting adoption, never a fault (compound-test 4.4). Read: GET each mirror and each spine address it names. Lost: a comment has no part to stand at. NOTE.",
+"5": "NAME AGREES — the law's root title and the page the spine names carry the same name: THE LAW of <name>-schematic, and happyseaurchin.com/schematic/<name>. Read: both root lines. Lost: the page and the law describe different families. WARN.",
+"6": "GENERIC LAW STAYS GENERIC — run once, against function:schematic itself and not per family: its own positions name no family's content (compound-test 4.2). Read: its positions. Lost: the form stops being general, so every family inherits one family's words. WARN for worked examples named in prose; FAULT for a bond. Function:schematic names Ghost Racer and other families at its 3, 4, 5 and 9, so it reads WARN."
+},
+"2": {
+"_": "LAW — the nine positions of function:<name>-schematic, as function:schematic lays them out. Read: GET the law, position by position.",
+"1": "MODE — the law's 1 is exactly 'mode: schematic'. Lost: the page does not draw the family, since it draws only families whose law says mode: schematic. FAULT. (function:schematics says mode: document and is a different kind, so it is not a member.)",
+"2": "FACES — the law's 2 names all four faces, player, maker, designer and observer, each with who stands in it. Lost: a face has no sheet and no one to read it. FAULT.",
+"3": "ROOM — the law's 3 names a room block that stands. Read: GET the room. Lost: talk about the thing has nowhere to go. WARN.",
+"4": "LIVE LINE — the law's 4 lists the blocks the observer's view watches, each a block with an optional position, divided by semicolons, and each stands on the beach (a 200 whose body is null is empty). Lost: the observer's view lights nothing for an item that does not stand. WARN.",
+"5": "LIVE GLOSS — the live line carries no parenthesised gloss. The form says the live line is blocks divided by semicolons and says nothing of glosses. All three standing laws gloss, so the case was first graded WARN, failed all three, and was re-graded NOTE. Lost: a reader may take the gloss for part of a block name. NOTE.",
+"6": "THREADS — the law's 5 names one thread per digit, each a thread under function:thread, or says none yet. Read: the law's 5, and GET function:thread for the registry. Lost: a named thread that is not a thread leaves the piece unlinked. NOTE for none yet; WARN for a named thing that is not a function:thread.",
+"7": "LOOK — the law's 6 is 'page: <url>', or 'look: accent #rrggbb' with a six-digit hex, or 'look: <handle>', or it is absent and the plain page draws the family in its default style. Lost: nothing when absent; a malformed look loses the chosen style. NOTE for absent; WARN for a malformed look.",
+"8": "PHASE — the law's 7 is exactly one of 'phase: draft', 'phase: standing' or 'phase: set aside'. Lost: the page cannot stamp its sheets as issued for comment or as built. FAULT.",
+"9": "KEEPER — the law's 8 names a keeper, 'keeper: <handle>', and says how comments reach them. Lost: a comment has no one to read it. FAULT. Whether the keeper has answered is case 6.8."
+},
+"3": {
+"_": "ROOT AND WHOLE — the spine's root line, and the whole at 1 that holds the parts.",
+"1": "ROOT TITLE — the spine's root has a title in capitals before ' — ', the words following the dash. Read: the root. Lost: the page has no name to draw. FAULT.",
+"2": "ROOT PAGE — the root's 2 names the page, happyseaurchin.com/schematic/<name>, or the law's own 'page:' address (the law's 6). Read: the root's 2 and the law's 6. Lost: the door to the drawing. WARN.",
+"3": "ROOT SOURCE — the root's 3 says where it came from. Read: the root's 3. Lost: where it came from. WARN.",
+"4": "ROOT PROVENANCE — the root's 9 and the law's 9 each say who drafted it, when, and at whose word. Read: both. Lost: the record of who may correct it. WARN.",
+"5": "CLAIMS HOLD — a provenance line that claims a check was made (Ghost Racer's says every bracket is named at its position) is true only if the case that check belongs to passes (here 4.5 and 5.2). Read: the root's 9 against those cases. Lost: a reader trusts a claim the spine fails. WARN.",
+"6": "WHOLE STANDS — the whole at 1 has a root line: a title in capitals, ' — ', words, a bracket, and a door. Read: GET the spine at 1. Lost: nothing can be drawn as the whole. FAULT when absent.",
+"7": "WHOLE DOOR — the whole's line ends ' · ' and an address where its thing is done. Read: the whole's line. Lost: the reader's way into the thing. WARN.",
+"8": "WHOLE ASK — the whole's 8, if present, opens 'ASK — ' and asks one question (a question mark in prose; a question mark inside a URL's query does not count). Read: the whole's 8. Lost: one question to answer at the whole. WARN.",
+"9": "WHOLE STATE — the whole's 9, if present, opens with one word: BUILDING, LIVE or NOT YET. Absent is honest while no work runs, since the form carries state 'while the work runs'. Read: the whole's 9. Lost: the reader's sense of where it stands. WARN for another first word; NOTE for absent."
+},
+"4": {
+"_": "PARTS — the few parts at 1.1 to 1.7, their own parts beneath them, each line ending at its door. Read: GET the spine and walk each 1.k with its digits.",
+"1": "RUNG — parts stand at 1.1 to 1.7 under the whole. A part's own parts stand at its 1 to 7, its ask at its 8, its state at its 9, and no other position stands beneath a part or beneath an ask (the ask at 1.8 or 1.2.8 has no children). Read: the keys. Lost: a reader walks to a place the form does not say holds a part. FAULT.",
+"2": "PART TITLE — each part's line opens with a title in capitals, then ' — '. Read: each part's line. Lost: the part has no name on its face. FAULT.",
+"3": "PART WORDS — a part's words, after its title, name no block (plain for the person who arrives: no spine:, function:, pool:, ways: or games: names). Read: the words outside the brackets. Lost: the plainness the form asks for. WARN.",
+"4": "PART STANDS IN A BLOCK — a part that does something stands in the block it does it in, its brackets naming the blocks. A part with no bracket stands in nothing. Read: the part's line. Lost: the designer's sheet has no bond to draw. WARN.",
+"5": "BRACKET IS A BLOCK — each bracket item names a block, with an optional position; a span or a detail is read by cases 5.3 and 5.4. Prose, file paths and qualifiers inside an item are not blocks. Read: each item by its name. Lost: the bond cannot be followed. FAULT.",
+"6": "BRACKET OFF THE BEACH — an item naming a URL, an issue, or a host other than this beach is not a block the beach can read. Read: each item. Lost: the claim cannot be checked on the beach it says it is read on. WARN.",
+"7": "PART DOOR — each part's line ends ' · ' and an address where its thing is done. Read: each part's line. Lost: the reader's button to play it, make one, or talk in its room. WARN. (The form says every part ends at its door. This case was first graded FAULT, failed 29 of the 35 parts below the whole in Ghost Racer, and was re-graded WARN.)",
+"8": "PART ASK — a part's 8 opens 'ASK — ' and asks one question (one question mark in prose). Read: each 8. Lost: the question the part puts to the reader is unclear. WARN.",
+"9": "PART STATE — a part's 9, if present, opens with BUILDING, LIVE or NOT YET. Absent is a NOTE, since the form carries a part's state only while its work runs. Read: each 9. Lost: the part's stage. WARN for another first word; NOTE for absent."
+},
+"5": {
+"_": "BONDS — what each bond points at, and how the family is called out by others. Read: GET each block at its position; read each family beside its spine.",
+"1": "BRACKET RESOLVES — each block named in a bracket (an item that passes 4.5 and is not a URL) stands on the beach. A 404 is an absent block. Read: GET block=<name>. Lost: the bond points at nothing. FAULT.",
+"2": "BRACKET POSITION — each position named in a bracket has content: a 200 whose body is null is an empty position, which walks nowhere. Read: GET block=<name>&spindle=<position>. Lost: the item shows nothing. FAULT. (The beach absorbs a leading zero, so 09 resolves as 9; that is allowed.)",
+"3": "RANGE — 'N to M' and 'N and M' name each position in the span. The form names one position per item and says nothing of spans. Read: the item. Lost: a reader cannot tell which positions the bond means. NOTE. (First graded WARN; every standing spine uses spans, so it was re-graded NOTE.)",
+"4": "DETAIL CITED — each '[detail N]' names a root 4 to 7 that stands. Read: the root's N. Lost: the machinery the part leans on is not drawn. FAULT.",
+"5": "DETAIL CALLED OUT — each root detail 4 to 7 is cited by some part. Read: the parts' brackets. Lost: a drawing that nothing calls out. NOTE.",
+"6": "ONE WAY — no spine names its own law, function:<name>-schematic, at a position. Read: the spine's brackets. Lost: the family's direction: its content would point at its operator (compound-test 4.2). FAULT.",
+"7": "STALE — a part citing a block whose touched stamp is later than its spine's is flagged, and its words are checked against what moved (function:schematic 6). Blocks named in the law's 4 live line are lit, not flagged. Read: the touched map in the bare beach listing, GET of https://beach.happyseaurchin.com/.well-known/pscale-beach with no block. Lost: a claim may no longer hold. NOTE for each flag.",
+"8": "CALL-OUT — a part whose process has a schematic of its own names that schematic in its brackets (function:schematic 8). Read: the other families' spines. Lost: the map of maps misses a process. NOTE."
+},
+"6": {
+"_": "READER'S CASES — decided by one reading, so each is judged and graded by what is lost, with its reason. The page is the reader the law names, but a GET returns the same client shell for every name, so these cases are read from the blocks and from the law's words about the page (see 6.7).",
+"1": "TITLE TRUE — the root and whole titles say what the schematic draws. Lost: a stranger takes one thing for another. WARN where a reader's mirror disputes the title; NOTE where the words only sit oddly.",
+"2": "PLAIN WORDS — a stranger can follow each part's words without the beach's own terms (room, liquid, plug, fold, kit, relay, spindle). Lost: the part's meaning for the person who arrives. NOTE.",
+"3": "DOOR REACHES — each door opens the thing its words name: play it, make one, or talk in its room. Lost: the reader is sent somewhere else. NOTE.",
+"4": "STATE HONEST — a state word fits the words beside it: LIVE does not sit over words that say nothing yet works, and NOT YET does not sit over words that say it works. Lost: the reader's sense of where it stands. NOTE.",
+"5": "ONE QUESTION — an ask is one question a stranger can answer; a compound question joined by 'and' is two questions in one. Lost: the reader does not know which to answer. NOTE. (The count of question marks is case 4.8.)",
+"6": "NAMES APART — no two families or games share a near-identical name that a stranger would confuse. Read: the beach listing and the games list. Lost: a stranger takes one for the other. NOTE.",
+"7": "PAGE SHOWS IT — the page draws what the blocks say. NOT RUN: GET on happyseaurchin.com/schematic/<name> returns the same 126170-byte shell for every name, including a name that stands for no family, so no GET can read what it draws. The case has no planted break that a GET can show, so it proves nothing and must be cut or re-cut.",
+"8": "KEEPER ANSWERS — each reader's comment has the keeper's answer at the same address, in <name>-schematic:<keeper>. Lost: the comment has no answer. NOTE. A comment whose own text says it moved but still stands at its old address is a NOTE here too."
+},
+"7": {
+"_": "PLANTED FAULTS — the break that proves each case fires, one thing at a time, against one clean example: a made-up family, lamp, written out in report.md, which passes every FAULT and WARN case. Each line says the break, the case it must trip, and the grade it must carry. The walk is by hand; no program runs it. Overlaps are named where a break trips a second case. The wild faults are planted word for word as they were found.",
+"1": {
+"_": "FAMILY — breaks for 1.1 to 1.6",
+"1": "1.1 FAULT: delete spine:lamp-schematic. Fires 1.1 at FAULT.",
+"2": "1.2 FAULT: delete function:lamp-schematic. Fires 1.2 at FAULT.",
+"3": "1.3 NOTE: delete the bare lamp-schematic. Fires 1.3 at NOTE.",
+"4": "1.4 NOTE: a mirror line at address 1.7, which the lamp spine does not voice. Fires 1.4 at NOTE.",
+"5": "1.5 WARN: the law's title reads THE LAW of lamp-switch-schematic while the page is schematic/lamp. Fires 1.5 at WARN.",
+"6": "1.6 WARN, run against a paper copy of function:schematic: its 3 gains a worked example naming spine:ghost-racer-schematic. Fires 1.6 at WARN."
+},
+"2": {
+"_": "LAW — breaks for 2.1 to 2.9",
+"1": "2.1 FAULT: the law's 1 reads mode: document. Fires 2.1 at FAULT.",
+"2": "2.2 FAULT: the law's 2 drops the observer face. Fires 2.2 at FAULT.",
+"3": "2.3 WARN: the law's 3 reads room: pool:lamp-room, which does not stand. Fires 2.3 at WARN.",
+"4": "2.4 WARN: the law's 4 reads live: pool:arcade; pool:lamp-room. Fires 2.4 at WARN.",
+"5": "2.5 NOTE: the law's 4 reads live: pool:arcade (the makers' room). Fires 2.5 at NOTE.",
+"6": {
+"_": "2.6 THREADS — two breaks",
+"1": "a: the law's 5 reads THE THREADS — none yet. Fires 2.6 at NOTE.",
+"2": "b: the law's 5 names lamp-wiring with a bracket of files:lamp 1, which is not a function:thread. Fires 2.6 at WARN."
+},
+"7": {
+"_": "2.7 LOOK — two breaks",
+"1": "a: the law's 6 is removed. Fires 2.7 at NOTE.",
+"2": "b: the law's 6 reads look: accent #zzz. Fires 2.7 at WARN."
+},
+"8": "2.8 FAULT: the law's 7 reads phase: finished. Fires 2.8 at FAULT.",
+"9": "2.9 FAULT: the law's 8 names no keeper. Fires 2.9 at FAULT."
+},
+"3": {
+"_": "ROOT AND WHOLE — breaks for 3.1 to 3.9",
+"1": "3.1 FAULT: the root line has no ' — ' before its words. Fires 3.1 at FAULT.",
+"2": "3.2 WARN: the root's 2 names no page address, and the law's 6 names none either (it reads look: accent #1f6feb), since the case accepts either. Fires 3.2 at WARN. A first version named only the root and did not fire: the law's 6 masked it, so the break was widened.",
+"3": "3.3 WARN: the root's 3 is removed. Fires 3.3 at WARN.",
+"4": "3.4 WARN: the root's 9 is removed. Fires 3.4 at WARN.",
+"5": "3.5 WARN: the root's 9 claims every bracket is named at its position, and part 1.2's bracket reads [function:schematic 2 and the bulb]. Fires 3.5 at WARN; overlaps 4.5, which fires FAULT on the same prose item.",
+"6": "3.6 FAULT: the whole at 1 is removed. Fires 3.6 at FAULT.",
+"7": "3.7 WARN: the whole's line ends with no ' · address'. Fires 3.7 at WARN.",
+"8": "3.8 WARN: the whole's 8 reads ASK — what would you switch on first? And what then? Fires 3.8 at WARN.",
+"9": {
+"_": "3.9 WHOLE STATE — two breaks",
+"1": "a: the whole's 9 reads ON — the lamp is on. Fires 3.9 at WARN.",
+"2": "b: the whole's 9 is removed. Fires 3.9 at NOTE."
+}
+},
+"4": {
+"_": "PARTS — breaks for 4.1 to 4.9",
+"1": "4.1 FAULT: part 1.8.1 reads THE CORD — a part beneath an ask. Fires 4.1 at FAULT.",
+"2": "4.2 FAULT: part 1.2's title reads the bulb — in lower case. Fires 4.2 at FAULT.",
+"3": "4.3 WARN: part 1.2's words name function:schematic 2 outside its brackets. Fires 4.3 at WARN.",
+"4": "4.4 WARN: part 1.2's bracket is removed. Fires 4.4 at WARN.",
+"5": "4.5 FAULT: part 1.1's bracket reads [the switch, lighthouse 2]. Fires 4.5 at FAULT.",
+"6": "4.6 WARN: part 1.2's bracket reads [https://example.org/bulb]. Fires 4.6 at WARN; 4.5 does not fire, since a URL is 4.6's case.",
+"7": "4.7 WARN: part 1.1's door is removed. Fires 4.7 at WARN.",
+"8": "4.8 WARN: part 1.1.8 reads ASK — is one press enough? Or two? Fires 4.8 at WARN.",
+"9": {
+"_": "4.9 PART STATE — two breaks",
+"1": "a: part 1.1's 9 is removed. Fires 4.9 at NOTE.",
+"2": "b: part 1.2's 9 reads ON — the bulb is on. Fires 4.9 at WARN."
+}
+},
+"5": {
+"_": "BONDS — breaks for 5.1 to 5.8",
+"1": "5.1 FAULT: part 1.1's bracket reads [lighthouse-lamp 2], which does not stand (404). Fires 5.1 at FAULT.",
+"2": "5.2 FAULT: part 1.2's bracket reads [spine:arcade 9], an empty position (200, null). Fires 5.2 at FAULT.",
+"3": "5.3 NOTE: part 1.2's bracket reads [function:schematic 2 to 6]. Fires 5.3 at NOTE; every position in the span stands, so 5.2 does not fire.",
+"4": "5.4 FAULT: part 1.2's bracket reads [detail 4] and the root has no 4. Fires 5.4 at FAULT.",
+"5": "5.5 NOTE: a root 4, THE SOCKET, is added and no part cites it. Fires 5.5 at NOTE.",
+"6": "5.6 FAULT: part 1.2's bracket adds function:lamp-schematic 1. Fires 5.6 at FAULT.",
+"7": "5.7 NOTE: the spine is stamped 2026-10-01, while the cited blocks lighthouse (touched 2026-10-12) and pool:arcade (2026-10-28) were touched later. Fires 5.7 at NOTE for each flag.",
+"8": "5.8 NOTE: part 1.3, THE PLUG, is added with the bracket [lighthouse 1] while a paper spine:lamp-plug-schematic stands and is not named. Fires 5.8 at NOTE."
+},
+"6": {
+"_": "READER — breaks for 6.1 to 6.8",
+"1": "6.1 WARN: a reader's mirror, lamp-schematic:reader at root 1, says this is one lamp and not a national service. Fires 6.1 at WARN.",
+"2": "6.2 NOTE: part 1.1's words read the room's liquid. Fires 6.2 at NOTE.",
+"3": "6.3 NOTE: part 1.2's words read forget the bulb here, and its door is https://happyseaurchin.com/. Fires 6.3 at NOTE.",
+"4": "6.4 NOTE: part 1.1's 9 reads LIVE — switched on, but has not answered anyone yet. Fires 6.4 at NOTE.",
+"5": "6.5 NOTE: part 1.1's 8 reads ASK — which switch would you press first, and where would you put it? It has one question mark, so 4.8 does not fire. Fires 6.5 at NOTE.",
+"6": "6.6 NOTE: a second family, lamp-schematics, stands on paper. Fires 6.6 at NOTE.",
+"7": "6.7 NOT RUN: no break can be shown by GET, since the page's drawing is not readable. This case proves nothing; cut it or re-cut it so that a planted break is possible.",
+"8": "6.8 NOTE: a reader's comment at lamp-schematic:reader address 1.1 has no answer at lamp-schematic:tester. Fires 6.8 at NOTE."
+},
+"7": {
+"_": "WILD — faults met on the beach as they stand today, planted word for word. Each is quoted from its block; the address is where it stands.",
+"1": "ghost-racer-schematic 1.5 bracket: [function:ghost-racer 7; the room plug, button/room.js]. Case 4.5 fires at FAULT on the second item.",
+"2": "ghost-racer-schematic root 4 bracket: [files:ghost-racer 1, between ENGINE BEGIN and ENGINE END; function:ghost-racer 5]. Case 4.5 fires at FAULT on the qualifier; the block itself stands.",
+"3": "ghost-racer-schematic 1.6.4 bracket: [ways:plug 8.8; happyseaurchin-home #570 and #578]. Case 4.6 fires at WARN.",
+"4": "ghost-racer-schematic 1.7.2 bracket: [happyseaurchin.com/api/board]. Case 4.6 fires at WARN.",
+"5": "leros-schematic 1.4 bracket: [w/community-recovery lighthouse 1 to 8]. Case 5.1 fires at FAULT (404 on this beach); the span also fires 5.3 at NOTE.",
+"6": "beach-schematic 1.2 and 1.2.1 bracket: [spine:arcade 1 to 9]. Case 5.2 fires at FAULT (position 9 answers 200 with a null body); 5.3 fires at NOTE.",
+"7": "ghost-racer-schematic 1.2.8: ASK — is the pit worth its time? Should a hit cost more, or less? Case 4.8 fires at WARN.",
+"8": "leros-schematic root title LEROS ON THE COMMONS' SCHEMATIC, with a reader's line at leros-schematic:Phenomemental address 1 that says the title names the national offer, not Community Recovery's app. Case 6.1 fires at WARN.",
+"9": {
+"_": "MORE WILD",
+"1": "ghost-racer-schematic: 29 of the 35 parts below the whole carry no door. Case 4.7 fires at WARN.",
+"2": "ghost-racer-schematic 1.3.4 CHALLENGE SOMEONE, 1.4.1 THE FOLD, 1.4.3 THE GHOSTS, 1.4.4 THE HOUSE, 1.5.1 BRING SOMEONE and 1.5.4 A HEAT carry no bracket. Case 4.4 fires at WARN.",
+"3": "ghost-racer-schematic root 9: every bracket named at its position. Case 3.5 fires at WARN, since items 1 and 2 above are not positions.",
+"4": "the law's 4 live line of ghost-racer-schematic, leros-schematic and beach-schematic each carries parenthesised glosses. Case 2.5 fires at NOTE on all three.",
+"5": "leros-schematic law 5, THE THREADS — none yet. Case 2.6 fires at NOTE.",
+"6": "beach-schematic law has no 6. Case 2.7 fires at NOTE.",
+"7": "leros-schematic 1.1, 1.2, 1.4 and 1.5 carry no 9. Case 4.9 fires at NOTE.",
+"8": {
+"_": "NOTES, more",
+"1": "leros-schematic 1.6 door reaches the app's home, not the Forget me that LEAVING names. Case 6.3 fires at NOTE.",
+"2": "leros-schematic 1.3.9 reads LIVE over 'the agent that matches offers to needs has not made a match yet'. Case 6.4 fires at NOTE.",
+"3": "ghost-racer-schematic 1.1.8 asks which tenth racetrack would you add, and where on the shore would it run? Case 6.5 fires at NOTE.",
+"4": "ghost-race and ghost-racer, two games at games:weft entries 7 and 9. Case 6.6 fires at NOTE.",
+"5": "leros-schematic:Phenomemental is answered by no keeper: leros-schematic:weft stands nowhere (404). Case 6.8 fires at NOTE.",
+"6": "leros-schematic parts cite spine:leros-on-the-commons, touched 2026-11-02, after the leros spine's 2026-10-29. Case 5.7 fires at NOTE; the leros law's 4 does not light that spine.",
+"7": "beach-schematic names no leros part at all. Case 5.8 fires at NOTE.",
+"8": "function:schematic's 3, 4, 5 and 9 name ghost-racer and other families. Case 1.6, form-level, fires at WARN."
+}
+}
+}
+},
+"8": {
+"_": "WHAT IT FOUND — the cases run over every schematic that stands on 2 November 2026: spine:ghost-racer-schematic, spine:leros-schematic and spine:beach-schematic, with their laws. Grades are the grades each case carries after its first sweep.",
+"1": {
+"_": "GHOST-RACER — spine:ghost-racer-schematic and function:ghost-racer-schematic. Keeper weft (law 8); built by keel.",
+"1": "FAULT 4.5 at 1.5: the bracket item 'the room plug, button/room.js' is not a block. Function:ghost-racer 7, beside it, stands.",
+"2": "FAULT 4.5 at root 4: the item 'files:ghost-racer 1, between ENGINE BEGIN and ENGINE END' breaks at its qualifier. The block files:ghost-racer 1 stands.",
+"3": "WARN 4.6 at 1.6.4: 'happyseaurchin-home #570 and #578' is an issue reference, not a block. WARN 4.6 at 1.7.2: 'happyseaurchin.com/api/board' is a URL.",
+"4": "WARN 4.7: 29 of the 35 parts below the whole carry no door. The whole, 1.1, 1.1.3, 1.4, 1.5, 1.6.4 and 1.7 do. The law says every part ends at its door; its own worked case does not.",
+"5": "WARN 4.4: six parts stand in no block: 1.3.4, 1.4.1, 1.4.3, 1.4.4, 1.5.1 and 1.5.4.",
+"6": "WARN 4.8 at 1.2.8: 'ASK — is the pit worth its time? Should a hit cost more, or less?' asks two questions.",
+"7": "WARN 3.5 at root 9: the provenance says every bracket is named at its position. Items 1 and 2 above are not positions, so the claim is untrue.",
+"8": "NOTE 5.7 and 2.5: the law's 4 live line lights pool:ghost-racer, liquid:pool:ghost-racer and games:weft 9, so the stamp flags at 1.3, 1.5.2 and 1.7.1 are lit, not flagged; 1.7.1's words, 'listed here at his word', still match games:weft 9 today. Law 4 carries glosses (2.5). NOTE 6.2, 6.5, 6.6: 'THE FOLD', 'the room's liquid', 'which tenth racetrack would you add, and where on the shore' and ghost-race beside ghost-racer. NOTE 4.9: no part carries a state. NOTE 6.8: keel's mirror line at 1.3.8 says it moved to 1.3 and still stands at 1.3.8.",
+"9": "PASS: the spine and law stand; mode schematic; four faces; room pool:ghost-racer stands; the page, source and provenance stand; the whole stands with its door and ask; every live item stands; detail 4 is cited; no spine names its own law; keel's comments at 1 and 1.3 are answered by weft at the same addresses."
+},
+"2": {
+"_": "LEROS — spine:leros-schematic and function:leros-schematic. Keeper weft (law 8); designer Matthew, who built the app; draft.",
+"1": "FAULT 5.1 at 1.4: 'w/community-recovery lighthouse 1 to 8' answers 404 on this beach. The w/ prefix names a world on another host.",
+"2": "WARN 6.1 at root and 1: the title LEROS ON THE COMMONS' SCHEMATIC names the national offer, and the body draws Community Recovery's app. Phenomemental's line at leros-schematic:Phenomemental 1 disputes the title.",
+"3": "NOTE 6.8: the keeper's answer, leros-schematic:weft, does not stand, so the reader's line at 1 is unanswered.",
+"4": "NOTE 2.6: law 5 reads none yet. NOTE 2.5: law 4 carries four glosses.",
+"5": "NOTE 4.9: parts 1.1, 1.2, 1.4 and 1.5 carry no state. 1.3 and 1.6 carry LIVE, the whole carries LIVE, and the details 4 to 6 carry NOT YET.",
+"6": "NOTE 5.7: parts 1.1, 1.2, 1.3, 1.5 and 1.6 cite spine:leros-on-the-commons, touched 2026-11-02 after this spine's 2026-10-29, and the root's details cite spine:leros-phase-two, also touched 2026-11-02. These are flagged, and their words should be checked against what moved. The law's 4 lights function:leros-on-the-commons 7 and function:leros-phase-two 7.",
+"7": "NOTE 6.3 at 1.6: LEAVING's door opens the app's home, not the Forget me the part names. NOTE 6.4 at 1.3.9 and 1.6.9: LIVE sits over 'has not made a match yet', and over 'copies of the beach still keep what is forgotten'.",
+"8": "PASS: spine and law stand; mode schematic; four faces; room pool:leros-on-the-commons stands; look accent #c21d4e is a valid hex; phase draft; keeper weft named; details 4, 5 and 6 are cited; parts 1.1 to 1.6 each carry a title, a bracket and a door; the whole's ask and state stand; no spine names its own law.",
+"9": "NOTE 5.8: the beach's map does not call leros out. The beach's keeper has said it will once the beach gains a part for it (beach-schematic:weft 1.8)."
+},
+"3": {
+"_": "BEACH — spine:beach-schematic and function:beach-schematic. Keeper weft (law 8); draft.",
+"1": "FAULT 5.2 at 1.2 and 1.2.1: 'spine:arcade 1 to 9' names position 9 of spine:arcade, which answers 200 with a null body. It walks nowhere.",
+"2": "NOTE 5.3: spans at 1, 1.1, 1.2, 1.2.1, 1.2.3, 1.3, 1.4, 1.5, 1.5.1, 1.5.2 and 1.6: 'lighthouse 1 to 8', 'spine:arrival 1 to 5', 'games:weft 7 to 9', 'function:meeting 1 to 3', 'function:proposal 1 to 8' and others.",
+"3": "NOTE 2.7: law has no 6, so the plain page draws the family in its default style. NOTE 2.6: law 5 reads none of its own yet.",
+"4": "NOTE 5.7: six blocks are flagged, stamped after this spine's 2026-10-29 13:34: spine:ghost-racer-schematic (1.2.2), games:weft (1.2), function:meeting (1.3), function:availability (1.3), function:proposal (1.5 and 1.5.1), function:string (1.4). 'proposals' is lit by the law's 4.",
+"5": "NOTE 2.5: law 4 reads pool:arcade (the makers' room), with a gloss.",
+"6": "NOTE 5.8: leros is not called out here (see 8.2 9).",
+"7": "PASS: each of the 12 parts below the whole carries a title, a bracket and a door; the bond to Ghost Racer's schematic at 1.2.2 is drawn as the form asks; faces four; room pool:schematics stands; live items stand; page /schematic/beach; source; provenance; the whole's ask stands.",
+"8": "NOTE 4.9: no part carries a state, which the form asks only while work runs.",
+"9": "NOTE: the reader's mirror beach-schematic:weft at 1.8 stands, and its keeper's answer to the leros point is recorded there."
+},
+"4": {
+"_": "THE SET — findings across the schematics that stand today.",
+"1": "function:schematics says mode: document. It is an operator for schematics, not a schematic, and is skipped.",
+"2": "NOTE 1.3: the bare names ghost-racer-schematic, leros-schematic and beach-schematic each answer 404. No fold is running, as the law says.",
+"3": "NOT RUN 6.7: the page at happyseaurchin.com/schematic/<name> returns the same 126170-byte shell for ghost-racer, leros, beach and a name that stands for no family.",
+"4": "WARN 1.6: function:schematic's 3, 4, 5 and 9 name Ghost Racer and other families as worked examples in prose.",
+"5": "Keepers' answers: Ghost Racer's comments are answered by weft at ghost-racer-schematic:weft 1 and 1.3. Beach's reader comments are answered by weft at beach-schematic:weft. Leros's are not answered at all (6.8).",
+"6": "Stamp flags: Ghost Racer's flags are all lit by its law's 4. Leros's flags are two spines, and beach's are six blocks."
+},
+"5": {
+"_": "WHERE THE FORM FAILS THIS TEST — the instructions and function:schematic, as found on the beach.",
+"1": "The door rule. Function:schematic says every part ends at its door, and the form's own worked case, Ghost Racer, has no door on 29 of the 35 parts below the whole.",
+"2": "The bracket grammar is silent on spans, glosses, prose, file paths, URLs, issue numbers, and worlds on another host. Every one of them stands in a standing family.",
+"3": "An empty position answers 200 with a null body, not 404. A reader who reads only the status passes a dangling position.",
+"4": "'Every claim is read on the beach the day it is written' does not say which beach. w/community-recovery names a world that stands on another host.",
+"5": "State. Function:schematic 2 calls a part's 9 its state, and its 7 says state is carried while the work runs. It is not said whether a part must carry one.",
+"6": "The root's 8. Function:schematic 2 names the root's 2, 3, 9 and details 4 to 7, and says nothing of the root's 8.",
+"7": "Function:schematic 2 lists 'the whole at 1, the process as the one who uses it meets it, a single part' as three things, with no stated relation between them.",
+"8": "The reader is the page, and the page is a client shell. GET cannot decide the reader's cases, and case 6.7 has no break to plant.",
+"9": {
+"_": "THE REST — three more",
+"1": "The stamp flag (function:schematic 6) relies on the touched map in the bare beach listing, which no instruction names. The listing is 186 KB.",
+"2": "Law 6 is one of the nine positions, yet the beach's law has none and the page still draws it. The form says a look may be given or not, and does not say which.",
+"3": "The 'parts of a kind' that batteries 1 to 5 are to cover are not named in the instructions. The cases here take the parts from the law's own shape.",
+"4": "The walk against planted breaks found two cases that did not fire as first worded: RUNG (a position beneath an ask was not named, so a child at 1.8.1 passed) and ROOT PAGE (the law's 6 could stand in for the root's 2). Both were re-worded, and their breaks now fire."
+}
+}
+},
+"9": {
+"_": "HOW IT RUNS AND WHERE IT CAME FROM — the order of the run, the reads it uses, what was not run, and whose it is.",
+"1": "ORDER — first well-formed and compound-test 4 on each spine and law; then batteries 1 to 5 by GET, reading the touched map where 5.7 needs it; then 6 by reading; then the planted faults by hand against lamp; then 8 written from the walk.",
+"2": "READS — GET https://beach.happyseaurchin.com/.well-known/pscale-beach?block=<name>, with &spindle=<address> for one position. The bare URL lists every name with its touched and born stamps. Bundled sentinels are read at https://raw.githubusercontent.com/pscale-commons/bsp-mcp-server/main/src/<name>.json; well-formed, compound-test, proposal-test and thread-test each answered 200 there.",
+"3": "NOT RUN — the hand-off to a fresh reader and compound-test 5, which needs a fresh instance; any program (the run was told to write none); ways:plug 5, which is for games, and this test is for schematics; proposal-test and thread-test, which are for proposals and threads; and the page's own drawing, which GET cannot read. ways:founding was read: it is a recipe for minting a family's four blocks, and this test does not repeat it.",
+"4": "PROVENANCE — drafted 2 November 2026 by Claude (Haiku 5.5, under Claude Code) as the first run of the way of a test, ways:testing, against function:schematic, from the instructions file named there. Written to a scratch folder and not to the beach. It has no keeper yet, and it should be run again before any family is set to standing."
+}
+}

@@ -1,6 +1,6 @@
 # proposal-test: a battery for the molecule people make most
 
-**Date**: 2026-11-02 · **Status**: BUILT, awaiting merge; the law's line is owed once it is live (§5) · **Lane**: mistake-proofing.1 · **Companions**: `function:proposal`, `ways:proposal`, `thread-test-materials/`, `compound-test-materials/`, `proposals/2026-10-29-chemistry-battery.md`, `spine:mistake-proofing` 1.118.
+**Date**: 2026-11-02 · **Status**: BUILT and merged (#572); §5's two lines written the same day (`proposals/2026-11-02-the-way-of-a-test.md`) · **Lane**: mistake-proofing.1 · **Companions**: `function:proposal`, `ways:proposal`, `thread-test-materials/`, `compound-test-materials/`, `proposals/2026-10-29-chemistry-battery.md`, `spine:mistake-proofing` 1.118.
 
 ## 1. The ask
 
@@ -61,4 +61,4 @@ A pointer written before the sentinel is served would be dead, so these wait for
 - **The fresh reader's runner.** Branch 6.3 states the act. thread-test's minds spend model calls and run on David's word; nothing here spends.
 - **Whether the spine and law are latched.** A public GET can't tell, so the form's "under the keeper's lock" goes unchecked.
 - **The page's reader.** Whether a word on a decision card should be allowed a digit or a gloss is a change to `proposal.html` and `loom.html`, in the site repo, and the battery would then follow it. This PR leaves the reader as it stands and reports against it.
-- **Tests for molecules in general.** David's further question, a way of making a test for any molecule someone creates, or a section in each way, is answered in the lane and is not built here.
+- **Tests for molecules in general.** David's further question, a way of making a test for any molecule someone creates, or a section in each way, was answered both, and is built at `proposals/2026-11-02-the-way-of-a-test.md`.
