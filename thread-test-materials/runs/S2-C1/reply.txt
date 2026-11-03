@@ -1,0 +1,5 @@
+The moorings draft is now on the beach as its own thread, number 3, with the two options for what comes next. I also left wren a note in their room.
+
+I did not use thread 1: it is rook's tide-table page, and the moorings page is a separate piece of work. Option 3.1 (wren checks against the register) and 3.2 (dana publishes as it is) are open for whoever picks it up. I did not check the list against the register myself.
+
+{"tied_at": "thread:rook 3", "line": "built the moorings page's first draft: moorings:draft 1, 48 moorings by pontoon and berth", "options": ["wren checks the list against the harbour's register", "dana decides it is good enough to publish as it is"], "handed_on": {"to": "pool:wren", "text": "rook has built the moorings page's first draft (moorings:draft 1, 48 moorings by pontoon and berth). The thread is at 3: option 3.1 is your check of the list against the harbour's register; option 3.2 is dana deciding to publish as it is. Please pick up at thread:3."}, "why": "The moorings page is separate work from the tide-table page at 1, so it gets its own thread at 3 and the draft line goes at the root, 3, with the options beneath it."}

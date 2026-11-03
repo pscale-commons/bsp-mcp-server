@@ -1,0 +1,11 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "moorings:draft", "1"], "chars": 44}
+{"cmd": ["room", "rook"], "chars": 28}
+{"cmd": ["read", "1"], "chars": 1544}
+{"cmd": ["read", "2"], "chars": 412}
+{"cmd": ["block", "thread:rook"], "chars": 163}
+{"cmd": ["open", "the moorings page \u00b7 opened by rook"], "chars": 65}
+{"cmd": ["block", "spine:thread"], "chars": 217}
+{"cmd": ["say", "3", "built the moorings page's first draft: moorings:draft 1, 48 moorings by pontoon and berth", "--option", "wren checks the list against the harbour's register", "--option", "dana decides it is good enough to publish as it is"], "chars": 279}
+{"cmd": ["read", "3"], "chars": 594}
+{"cmd": ["post", "wren", "rook has built the moorings page's first draft (moorings:draft 1, 48 moorings by pontoon and berth). The thread is at 3: option 3.1 is your check of the list against the harbour's register; option 3.2 is dana deciding to publish as it is. Please pick up at thread:3."], "chars": 29}

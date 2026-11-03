@@ -1,0 +1,3 @@
+The publish is recorded on the thread at 1.21, under my earlier option 1.2 ("dana decides without a review"). Address 1.2 already held my line, so I went one deeper, per the way. No options were offered and nothing was handed on, since the page is live and nothing more is needed.
+
+{"tied_at": "1.21", "line": "dana said 'Publish it' without a review; published, live at tides:live, nothing more needed", "options": [], "handed_on": {"to": null, "text": null}, "why": "Dana's 'Publish it' took my earlier option 1.2, which already holds my line, so the outcome goes one digit deeper at 1.21."}

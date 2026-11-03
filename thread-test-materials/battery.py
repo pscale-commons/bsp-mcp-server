@@ -18,6 +18,12 @@ delivery: the teaching a mind is handed, from teachings/ —
   H2  H, with the opening mended: the answer to opening a thread hands the way over too, before the first knot
   H3  H2, handing over the way's third draft (way_w3.txt, ways-thread-w3.json, now ways:thread), whose step 3 says plainly where an answer
       to a waiting knot goes (proposals/2026-11-02-the-way-says-where-an-answer-goes.md)
+  S   David's form: H3's handing over, of six sentences in place of the way (way_s.txt), the law on the test beach cut to its
+      root line, and seeds with no closing clause; graded by short.py, by where the line lands and nothing lost, never by a keyword
+  S2  S, with two sentences mended (way_s2.txt): where the thread stands, and the place spelled thread:<address>
+  S3  S, with only the place spelled thread:<address> (way_s3.txt); not yet run
+  S4  S3, a hand that already holds a line where it ties beginning with its words, David's one knot (way_s4.txt); not yet run.
+      S3 and S4 are graded alike, a line kept in place counting as nothing lost (short.py AMEND)
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
 cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake
@@ -30,12 +36,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import thread_form as TF
 import testbeach as TB
+import short as SH
 
 RUNS = os.environ.get("THREAD_TEST_RUNS") or os.path.join(HERE, "runs")
-TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt", "R": "root_v2.txt", "H": "root_v2.txt", "H2": "root_v2.txt", "H3": "root_v2.txt"}
-LIVE = {"R", "H", "H2", "H3"}
-HANDED = {"H", "H2", "H3"}
-DRAFTS = {"H3": "w3"}   # a delivery that hands over a draft of the way, not the text the first runs had
+SHORT = {"S", "S2", "S3", "S4"}   # David's form: seeds with no closing clause, graded by short.py
+TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt", "R": "root_v2.txt", "H": "root_v2.txt", "H2": "root_v2.txt", "H3": "root_v2.txt",
+             **{d: "root_v2.txt" for d in SHORT}}
+LIVE = {"R", "H", "H2", "H3"} | SHORT
+HANDED = {"H", "H2", "H3"} | SHORT
+DRAFTS = {"H3": "w3", **{d: d.lower() for d in SHORT}}   # a delivery that hands over a draft of the way, not the text the first runs had
 # Graded as they were reported: place's first check then asked only that a line stands at 1.121, and in L2, R and H that line
 # is the mind's own option beneath its knot at 1.12. Asking for an act there would make those 34, 15 and 30, so the check is
 # tightened only for runs after these, and the figures already reported hold.
@@ -215,8 +224,12 @@ def brief(dname, case, bb):
     c = CASES[case]
     law = delivery(dname)
     if c["kind"] == "wake":
-        return law + ("\n\n" + TB.way_section(DRAFTS.get(dname.split("x")[0])) if dname.split("x")[0] in HANDED else "") + "\n\n" + WAKE
-    return (law + "\n\n" + COMMANDS.format(bb=bb) + "\n\nYOUR SITUATION\n" + c["situation"]
+        return law + ("\n\n" + TB.way_section(DRAFTS.get(dname.split("x")[0])) if dname.split("x")[0] in HANDED else "") + "\n\n" + (SH.WAKE_S if dname.split("x")[0] in SHORT else WAKE)
+    situation = c["situation"]
+    if dname.split("x")[0] in SHORT and case in SH.SITUATION_S:
+        assert SH.SITUATION_S[case][0] in situation
+        situation = situation.replace(*SH.SITUATION_S[case])
+    return (law + "\n\n" + COMMANDS.format(bb=bb) + "\n\nYOUR SITUATION\n" + situation
             + "\n\nAct on the beach with the commands, as the text above teaches; read what you need first.\n\n" + REPORT)
 
 
@@ -227,6 +240,8 @@ def setup(dname, cases):
             shutil.rmtree(d)
         os.makedirs(d)
         s = CASES[case]["state"]()
+        if dname.split("x")[0] in SHORT:
+            s = SH.plain(s)
         s["me"] = CASES[case]["me"]
         s["blocks"] = BLOCKS[case]
         s["names"] = sorted(set(s.get("names", [])) | set(BLOCKS[case]))
@@ -341,6 +356,19 @@ def grade(dname, case):
     row["form_v1"] = "WELL FORMED" if not [x for x in F1 if x["level"] == "FAULT"] else "NOT: " + "; ".join(f"{x['test']} {x['at']}" for x in F1 if x["level"] == "FAULT")
     row["form_p2"] = "WELL FORMED" if not [x for x in F2 if x["level"] == "FAULT"] else "NOT: " + "; ".join(f"{x['test']} {x['at']}" for x in F2 if x["level"] == "FAULT")
     row["warns_v1"] = sorted({f"{x['test']} {x['at']}" for x in F1 if x["level"] == "WARN" and x["hand"] == me})
+    if dname.split("x")[0] in SHORT:
+        Es, lost, R, kids = SH.grade_s(case, row, c, start, end, added, posts, rep, mirror_lines, amend=dname.split("x")[0] in SH.AMEND)
+        row["expect"] = Es
+        row["score"] = f"{sum(1 for e in Es if e.startswith('ok'))}/{len(Es)}"
+        row["lost"] = lost
+        row["tied"] = {a: v for a, v in added.items()}
+        row["reply_json"] = rep
+        number = (sorted(reg_new)[0] if reg_new else "1")
+        row["geometry_faults"] = SH.well_formed(end, mirror_lines, number)
+        row["strict_place"] = sorted(a for a in R + kids for h, ts in posts.items() for t in ts if SH.names_place(t, a, strict=True))
+        row["cards_before"] = SH.cards_open(start, mirror_lines)
+        row["cards_after"] = SH.cards_open(end, mirror_lines)
+        return row
     # what each case expects
     E = []
 

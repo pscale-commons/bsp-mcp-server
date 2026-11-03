@@ -1,0 +1,7 @@
+I checked the low-water marks against the harbour master's table, corrected one in tides:draft 4, and left the decision with dana.
+
+I took the reading that dana's request at 1.12 ("another pass, please: the harbour master wants the low-water marks shown") is the job I'm on. The thread already had my earlier line at 1.121 (low-water marks added), so my check went one deeper, at 1.1211. I offered dana two options beneath it, and posted the handoff to dana's room. I didn't rebuild the page; wren's note at 1.13 asks for a rebuild on the new chart first, and I left that open.
+
+```json
+{"tied_at": "1.1211", "line": "checked the low-water marks against the harbour master's table and corrected one of them in tides:draft 4", "options": ["dana publishes the page", "dana asks for another pass"], "handed_on": {"to": "dana", "text": "I checked the low-water marks on the tide-table page against the harbour master's table and corrected one of them in tides:draft 4. Your decision is next: publish the page (1.12111), or ask for another pass (1.12112). Reply on thread 1 at 1.1211 with your choice."}, "why": "My check follows my earlier low-water line at 1.121, so it goes one deeper at 1.1211."}
+```

@@ -1,0 +1,8 @@
+The moorings page now has its own thread, 3, with the first draft tied to it and the next choice offered. The handoff is in wren's room.
+
+- **Thread 3** is registered in `spine:thread` as "the moorings page · opened by rook". The thread 1 tide-table page was not the right home for this work.
+- **Line at 3:** rook built the first draft (`moorings:draft 1`, 48 moorings by pontoon and berth).
+- **Options:** 3.1 wren reviews the list against the harbour's register; 3.2 dana decides it is good enough to publish without a review.
+- **Handoff:** I posted in wren's room, since the first option is theirs. The note points to thread 3 and the draft, and asks wren to tell dana when the review is done. Dana has no room on the beach, so she sees the choice only through wren or by reading thread 3 herself.
+
+{"tied_at": "3", "line": "rook built the moorings page's first draft (moorings:draft 1: 48 moorings, by pontoon and berth)", "options": ["wren reviews the list against the harbour's register", "dana decides it is good enough to publish without a review"], "handed_on": {"to": "wren", "text": "Moorings page for dana: draft 1 is in moorings:draft 1 (48 moorings, by pontoon and berth). The choice is at thread 3: 3.1 wren reviews the list against the harbour's register; 3.2 dana decides it is good enough to publish without a review. If you take 3.1, write your result at 3.1.1 (or 3.1.2 if that is taken) in thread:wren, and tell dana."}, "why": "The moorings page is a new thread, so its first line goes at the new number 3 and its choices at 3.1 and 3.2 beneath it."}

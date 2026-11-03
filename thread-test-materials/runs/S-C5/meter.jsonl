@@ -1,0 +1,6 @@
+{"cmd": ["read", "1.1"], "chars": 1637}
+{"cmd": ["room", "dana"], "chars": 95}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["say", "1.14", "rook: before your decision, the page broke on phones; I fixed it in tides:draft 3", "--option", "publish tides:draft 3 as it stands", "--option", "ask wren to review the phone fix against the harbour's data"], "chars": 277}
+{"cmd": ["post", "dana", "thread:1.14 \u2014 the tide-table page broke on phones before you decided; I fixed it in tides:draft 3. None of the options on 1.1 mentioned this, so it is added at 1.14."], "chars": 29}
+{"cmd": ["read", "1.1"], "chars": 899}

@@ -1,0 +1,13 @@
+{"cmd": ["room", "rook"], "chars": 104}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 1548}
+{"cmd": ["block", "thread:rook"], "chars": 222}
+{"cmd": ["block", "thread:wren"], "chars": 47}
+{"cmd": ["block", "tides:draft", "2"], "chars": 46}
+{"cmd": ["say", "1.3.1", "spring tides are on the page as tides:draft 2, draft 1 with the spring tides added", "--option", "wren reviews draft 2 against the harbour's data", "--option", "dana decides without a review"], "chars": 74}
+{"cmd": ["post", "wren", "Draft 2 of the tide-table page is ready: draft 1 with the spring tides added (tides:draft 2). Please review it against the harbour's data. The thread is at 1.3.1 \u2014 read it with: read 1.3.1"], "chars": 29}
+{"cmd": ["read", "1.3.1"], "chars": 70}
+{"cmd": ["say", "1.31", "spring tides are on the page as tides:draft 2, draft 1 with the spring tides added", "--option", "wren reviews draft 2 against the harbour's data", "--option", "dana decides without a review"], "chars": 261}
+{"cmd": ["post", "wren", "Correction to my last note: the thread address is 1.31, not 1.3.1. Read it with: read 1.31 (draft 2 of the tide-table page is tides:draft 2, the draft 1 plus the spring tides)"], "chars": 29}
+{"cmd": ["read", "1.31"], "chars": 577}
+{"cmd": ["block", "thread:rook"], "chars": 448}

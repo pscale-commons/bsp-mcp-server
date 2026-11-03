@@ -1,0 +1,11 @@
+I wrote the phone fix onto the tide-table thread at 1.14, with two options beneath it, and put a note in dana's room pointing to it. The thread now reads back with my line at 1.14, and the note landed in pool:dana at 2.
+
+- **Line at 1.14:** the page broke on phones before dana decided, and I fixed it in tides:draft 3.
+- **Options:** 1.141 publish tides:draft 3 as it stands; 1.142 ask wren to review the phone fix against the harbour's data.
+- **Why 1.14:** 1.11 to 1.13 are already the options wren offered, so 1.14 is the next free digit under 1.1. The phone fix isn't one of those options, so it gets its own address.
+
+I did not change the choice itself; dana still decides between the existing options and these two.
+
+```json
+{"tied_at": "1.14", "line": "rook: before your decision, the page broke on phones; I fixed it in tides:draft 3", "options": ["publish tides:draft 3 as it stands", "ask wren to review the phone fix against the harbour's data"], "handed_on": {"to": "dana", "text": "thread:1.14 — the tide-table page broke on phones before you decided; I fixed it in tides:draft 3. None of the options on 1.1 mentioned this, so it is added at 1.14."}, "why": "1.11 to 1.13 are already wren's options, so the phone fix goes at the next free digit under 1.1, which is 1.14."}
+```

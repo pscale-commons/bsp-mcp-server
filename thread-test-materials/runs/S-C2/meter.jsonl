@@ -1,0 +1,8 @@
+{"cmd": ["room", "wren"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 1485}
+{"cmd": ["block", "tides:draft", "1"], "chars": 71}
+{"cmd": ["block", "tides:draft"], "chars": 214}
+{"cmd": ["say", "1.1", "wren reviewed draft 1 against the harbour's data: two tide times were wrong; corrected in draft 2", "--option", "publish draft 2", "--option", "ask for another pass"], "chars": 293}
+{"cmd": ["post", "dana", "wren has reviewed the tide-table page (thread 1). Draft 1 had two wrong tide times; draft 2 corrects them against the harbour's data. Your choice at 1.1.1: publish draft 2, or 1.1.2: ask for another pass."], "chars": 29}
+{"cmd": ["post", "dana", "Correction to my last line: the options sit at 1.11 (publish draft 2) and 1.12 (ask for another pass), not 1.1.1 and 1.1.2."], "chars": 29}

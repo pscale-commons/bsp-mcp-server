@@ -1,0 +1,13 @@
+{"cmd": ["room", "wren"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "tides:draft", "2"], "chars": 76}
+{"cmd": ["read", "tides:draft", "1"], "chars": 76}
+{"cmd": ["read", "1"], "chars": 1544}
+{"cmd": ["read", "1.1"], "chars": 431}
+{"cmd": ["read", "1.2"], "chars": 411}
+{"cmd": ["block", "thread:wren"], "chars": 47}
+{"cmd": ["block", "thread:rook"], "chars": 163}
+{"cmd": ["say", "1.1", "checked the tide-table draft against the harbour's data: two tide times in draft 1 were wrong; corrected in draft 2", "--option", "publish the page", "--option", "ask for another pass"], "chars": 312}
+{"cmd": ["read", "1.1"], "chars": 629}
+{"cmd": ["post", "dana", "the tide-table page is reviewed: two tide times were wrong in draft 1 and are corrected in draft 2. Decide at thread:1.1 \u2014 publish the page (1.1.1) or ask for another pass (1.1.2)."], "chars": 29}
+{"cmd": ["post", "dana", "Correction to my last note: the options sit at thread:1.11 (publish the page) and thread:1.12 (ask for another pass). My review line is at thread:1.1."], "chars": 29}

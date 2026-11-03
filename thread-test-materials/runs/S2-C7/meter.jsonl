@@ -1,0 +1,15 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "thread:rook"], "chars": 242}
+{"cmd": ["read", "1"], "chars": 1930}
+{"cmd": ["read", "1.12"], "chars": 573}
+{"cmd": ["read", "1.1"], "chars": 817}
+{"cmd": ["block", "thread:dana"], "chars": 110}
+{"cmd": ["block", "thread:tides"], "chars": 27}
+{"cmd": ["block", "tides:draft"], "chars": 326}
+{"cmd": ["read", "1.121"], "chars": 425}
+{"cmd": ["read", "1.1211"], "chars": 423}
+{"cmd": ["block", "thread:rook", "1.1211"], "chars": 32}
+{"cmd": ["room", "dana"], "chars": 95}
+{"cmd": ["say", "1.1211", "corrected the low-water mark in draft 4 against the harbour master's table", "--option", "dana publishes draft 4", "--option", "another pass on the low-water marks"], "chars": 246}
+{"cmd": ["post", "dana", "thread:1.1211 \u2014 draft 4 has the low-water mark corrected against the harbour master's table. Publish it, or ask for another pass?"], "chars": 29}

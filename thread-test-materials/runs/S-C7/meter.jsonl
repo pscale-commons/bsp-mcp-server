@@ -1,0 +1,9 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 1871}
+{"cmd": ["read", "1.12"], "chars": 573}
+{"cmd": ["block", "thread:rook"], "chars": 242}
+{"cmd": ["block", "thread:dana"], "chars": 110}
+{"cmd": ["say", "1.1211", "checked the low-water marks against the harbour master's table and corrected one of them in tides:draft 4", "--option", "dana publishes the page", "--option", "dana asks for another pass"], "chars": 269}
+{"cmd": ["read", "1.1211"], "chars": 583}
+{"cmd": ["post", "dana", "dana: I checked the low-water marks on the tide-table page against the harbour master's table and corrected one of them in tides:draft 4. Your decision is next: publish the page (1.12111), or ask for another pass (1.12112). Reply on thread 1 at 1.1211 with your choice."], "chars": 29}

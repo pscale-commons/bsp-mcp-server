@@ -1,0 +1,13 @@
+I recorded the phone-layout fix on the thread and handed it to dana before she decides. Both writes read back correctly.
+
+- **Line at 1.14:** "found the page breaks on phones; fixed the layout, made it tides:draft 3 (draft 2 with the layout fixed for phones); draft 2 is still unchanged"
+- **Options at 1.141 and 1.142:** publish draft 3 (phone layout fixed), or publish draft 2 (phone layout not fixed).
+- **Handoff:** a pointer to thread:1.14 is in dana's room (pool:dana, contribution 2).
+
+The fix was already in `tides:draft` as draft 3, so I recorded it rather than changing the page. The fix itself is not verified on a phone here. The line says what I did, not that I tested it on a device.
+
+`1.14` is the next free digit under the thread's live end at 1.1. The options at 1.11–1.13 are wren's, so I did not put anything at those addresses.
+
+```json
+{"tied_at": "1.14", "line": "found the page breaks on phones; fixed the layout, made it tides:draft 3 (draft 2 with the layout fixed for phones); draft 2 is still unchanged", "options": ["dana publishes draft 3 (phone layout fixed)", "dana publishes draft 2 (phone layout not fixed)"], "handed_on": {"to": "dana", "text": "thread:1.14 — before you decide on thread:1.1: the page broke on phones, so I fixed the layout and made tides:draft 3 (draft 2 with the layout fixed for phones). Draft 2 is unchanged. Options are at 1.141 (publish draft 3) and 1.142 (publish draft 2)."}, "why": "1.14 is the next free digit beneath the thread's live end at 1.1, since the fix is not one of the options already offered."}
+```

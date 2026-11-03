@@ -1,0 +1,542 @@
+[
+ {
+  "run": "S-C1",
+  "kind": "open",
+  "calls": 14,
+  "reads": 11,
+  "thread_reads": [
+   "1",
+   "3",
+   "3",
+   "3"
+  ],
+  "read_teaching": [],
+  "wrote": [
+   "3",
+   "3.1",
+   "3.2"
+  ],
+  "changed_own": {},
+  "opened": {
+   "3": "the moorings page · opened by rook"
+  },
+  "posted": {
+   "wren": [
+    "rook: Moorings page for dana: draft 1 is in moorings:draft 1 (48 moorings, by pontoon and berth). The choice is at thread 3: 3.1 wren reviews the list against the harbour's register; 3.2 dana decides it is good enough to publish without a review. If you take 3.1, write your result at 3.1.1 (or 3.1.2 if that is taken) in thread:wren, and tell dana."
+   ]
+  },
+  "form_v1": "NOT: WAITS 3",
+  "form_p2": "NOT: WAITS 3",
+  "warns_v1": [],
+  "landed": [
+   "3"
+  ],
+  "expect": [
+   "ok one thread opened",
+   "ok the line lands at 3",
+   "ok 2 or more option(s) beneath it",
+   "ok the next hand's room told, naming the place",
+   "ok nothing lost"
+  ],
+  "score": "5/5",
+  "lost": [],
+  "tied": {
+   "3": "rook built the moorings page's first draft (moorings:draft 1: 48 moorings, by pontoon and berth)",
+   "3.1": "wren reviews the list against the harbour's register",
+   "3.2": "dana decides it is good enough to publish without a review"
+  },
+  "reply_json": {
+   "tied_at": "3",
+   "line": "rook built the moorings page's first draft (moorings:draft 1: 48 moorings, by pontoon and berth)",
+   "options": [
+    "wren reviews the list against the harbour's register",
+    "dana decides it is good enough to publish without a review"
+   ],
+   "handed_on": {
+    "to": "wren",
+    "text": "Moorings page for dana: draft 1 is in moorings:draft 1 (48 moorings, by pontoon and berth). The choice is at thread 3: 3.1 wren reviews the list against the harbour's register; 3.2 dana decides it is good enough to publish without a review. If you take 3.1, write your result at 3.1.1 (or 3.1.2 if that is taken) in thread:wren, and tell dana."
+   },
+   "why": "The moorings page is a new thread, so its first line goes at the new number 3 and its choices at 3.1 and 3.2 beneath it."
+  },
+  "geometry_faults": [],
+  "strict_place": [],
+  "cards_before": {},
+  "cards_after": {}
+ },
+ {
+  "run": "S-C2",
+  "kind": "take",
+  "calls": 8,
+  "reads": 5,
+  "thread_reads": [
+   "1"
+  ],
+  "read_teaching": [],
+  "wrote": [
+   "1.1",
+   "1.11",
+   "1.12"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "dana": [
+    "wren: wren has reviewed the tide-table page (thread 1). Draft 1 had two wrong tide times; draft 2 corrects them against the harbour's data. Your choice at 1.1.1: publish draft 2, or 1.1.2: ask for another pass.",
+    "wren: Correction to my last line: the options sit at 1.11 (publish draft 2) and 1.12 (ask for another pass), not 1.1.1 and 1.1.2."
+   ]
+  },
+  "form_v1": "NOT: WAITS 1.1",
+  "form_p2": "NOT: WAITS 1.1",
+  "warns_v1": [],
+  "landed": [
+   "1.1"
+  ],
+  "expect": [
+   "ok the line lands at 1.1 or 1.11",
+   "ok 2 or more option(s) beneath it",
+   "ok the next hand's room told, naming the place",
+   "ok nothing lost"
+  ],
+  "score": "4/4",
+  "lost": [],
+  "tied": {
+   "1.1": "wren reviewed draft 1 against the harbour's data: two tide times were wrong; corrected in draft 2",
+   "1.11": "publish draft 2",
+   "1.12": "ask for another pass"
+  },
+  "reply_json": {
+   "tied_at": "1.1",
+   "line": "wren reviewed draft 1 against the harbour's data: two tide times were wrong; corrected in draft 2",
+   "options": [
+    "publish draft 2",
+    "ask for another pass"
+   ],
+   "handed_on": {
+    "to": "dana",
+    "text": "wren has reviewed the tide-table page (thread 1). Draft 1 had two wrong tide times; draft 2 corrects them against the harbour's data. Your choice at 1.11: publish draft 2, or 1.12: ask for another pass. Correction: the options sit at 1.11 and 1.12, not 1.1.1 and 1.1.2."
+   },
+   "why": "1.1 is the branch rook opened for my review, so my line belongs there, and the two options sit beneath it at 1.11 and 1.12."
+  },
+  "geometry_faults": [],
+  "strict_place": [],
+  "cards_before": {
+   "wren": [
+    "1"
+   ]
+  },
+  "cards_after": {}
+ },
+ {
+  "run": "S-C3",
+  "kind": "self",
+  "calls": 13,
+  "reads": 9,
+  "thread_reads": [
+   "1",
+   "1.3.1",
+   "1.31"
+  ],
+  "read_teaching": [],
+  "wrote": [
+   "1.31",
+   "1.311",
+   "1.312"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "wren": [
+    "rook: Draft 2 of the tide-table page is ready: draft 1 with the spring tides added (tides:draft 2). Please review it against the harbour's data. The thread is at 1.3.1 — read it with: read 1.3.1",
+    "rook: Correction to my last note: the thread address is 1.31, not 1.3.1. Read it with: read 1.31 (draft 2 of the tide-table page is tides:draft 2, the draft 1 plus the spring tides)"
+   ]
+  },
+  "form_v1": "NOT: WAITS 1.31",
+  "form_p2": "NOT: WAITS 1.31",
+  "warns_v1": [],
+  "landed": [
+   "1.31"
+  ],
+  "expect": [
+   "ok the line lands at 1.31",
+   "ok 1 or more option(s) beneath it",
+   "ok the next hand's room told, naming the place",
+   "ok nothing lost"
+  ],
+  "score": "4/4",
+  "lost": [],
+  "tied": {
+   "1.31": "spring tides are on the page as tides:draft 2, draft 1 with the spring tides added",
+   "1.311": "wren reviews draft 2 against the harbour's data",
+   "1.312": "dana decides without a review"
+  },
+  "reply_json": {
+   "tied_at": "1.31",
+   "line": "spring tides are on the page as tides:draft 2, draft 1 with the spring tides added",
+   "options": [
+    "wren reviews draft 2 against the harbour's data",
+    "dana decides without a review"
+   ],
+   "handed_on": {
+    "to": "wren",
+    "text": "Correction to my last note: the thread address is 1.31, not 1.3.1. Read it with: read 1.31 (draft 2 of the tide-table page is tides:draft 2, the draft 1 plus the spring tides)"
+   },
+   "why": "My line at 1.3 already existed in my mirror, so I went one deeper to 1.31, the first option of that knot, which is where the spring tides line belongs."
+  },
+  "geometry_faults": [],
+  "strict_place": [],
+  "cards_before": {
+   "rook": [
+    "1"
+   ]
+  },
+  "cards_after": {}
+ },
+ {
+  "run": "S-C4",
+  "kind": "word",
+  "calls": 5,
+  "reads": 4,
+  "thread_reads": [
+   "1"
+  ],
+  "read_teaching": [],
+  "wrote": [
+   "1.21"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {},
+  "form_v1": "NOT: WAITS 1.1; WAITS 1.2",
+  "form_p2": "NOT: WAITS 1.1; WAITS 1.2",
+  "warns_v1": [],
+  "landed": [
+   "1.21"
+  ],
+  "expect": [
+   "MISS the line lands at 1.11 or 1.111",
+   "ok no options beneath it",
+   "ok no room told",
+   "ok nothing lost"
+  ],
+  "score": "3/4",
+  "lost": [],
+  "tied": {
+   "1.21": "dana said 'Publish it' without a review; published, live at tides:live, nothing more needed"
+  },
+  "reply_json": {
+   "tied_at": "1.21",
+   "line": "dana said 'Publish it' without a review; published, live at tides:live, nothing more needed",
+   "options": [],
+   "handed_on": {
+    "to": null,
+    "text": null
+   },
+   "why": "Dana's 'Publish it' took my earlier option 1.2, which already holds my line, so the outcome goes one digit deeper at 1.21."
+  },
+  "geometry_faults": [],
+  "strict_place": [],
+  "cards_before": {
+   "dana": [
+    "1.1"
+   ]
+  },
+  "cards_after": {
+   "dana": [
+    "1.1"
+   ]
+  }
+ },
+ {
+  "run": "S-C5",
+  "kind": "step",
+  "calls": 6,
+  "reads": 4,
+  "thread_reads": [
+   "1.1",
+   "1.1"
+  ],
+  "read_teaching": [],
+  "wrote": [
+   "1.14",
+   "1.141",
+   "1.142"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "dana": [
+    "rook: thread:1.14 — the tide-table page broke on phones before you decided; I fixed it in tides:draft 3. None of the options on 1.1 mentioned this, so it is added at 1.14."
+   ]
+  },
+  "form_v1": "NOT: WAITS 1.14",
+  "form_p2": "NOT: WAITS 1.14",
+  "warns_v1": [],
+  "landed": [
+   "1.14"
+  ],
+  "expect": [
+   "ok the line lands at 1.14",
+   "ok the next hand's room told, naming the place",
+   "ok nothing lost"
+  ],
+  "score": "3/3",
+  "lost": [],
+  "tied": {
+   "1.14": "rook: before your decision, the page broke on phones; I fixed it in tides:draft 3",
+   "1.141": "publish tides:draft 3 as it stands",
+   "1.142": "ask wren to review the phone fix against the harbour's data"
+  },
+  "reply_json": {
+   "tied_at": "1.14",
+   "line": "rook: before your decision, the page broke on phones; I fixed it in tides:draft 3",
+   "options": [
+    "publish tides:draft 3 as it stands",
+    "ask wren to review the phone fix against the harbour's data"
+   ],
+   "handed_on": {
+    "to": "dana",
+    "text": "thread:1.14 — the tide-table page broke on phones before you decided; I fixed it in tides:draft 3. None of the options on 1.1 mentioned this, so it is added at 1.14."
+   },
+   "why": "1.11 to 1.13 are already wren's options, so the phone fix goes at the next free digit under 1.1, which is 1.14."
+  },
+  "geometry_faults": [],
+  "strict_place": [
+   "1.14"
+  ],
+  "cards_before": {
+   "dana": [
+    "1.1"
+   ]
+  },
+  "cards_after": {
+   "dana": [
+    "1.14"
+   ]
+  }
+ },
+ {
+  "run": "S-C6",
+  "kind": "place",
+  "calls": 7,
+  "reads": 5,
+  "thread_reads": [
+   "1",
+   "1.12"
+  ],
+  "read_teaching": [],
+  "wrote": [
+   "1.12",
+   "1.121",
+   "1.122"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "dana": [
+    "rook: Draft 3 is up (tides:draft 3): draft 2 with the low-water marks shown. Thread 1 at 1.12. Your decision: publish it, or ask for another pass."
+   ]
+  },
+  "form_v1": "NOT: WAITS 1.12",
+  "form_p2": "NOT: WAITS 1.12",
+  "warns_v1": [],
+  "landed": [
+   "1.12"
+  ],
+  "expect": [
+   "ok the line lands at 1.12 or 1.121",
+   "ok 1 or more option(s) beneath it",
+   "ok the next hand's room told, naming the place",
+   "ok nothing lost"
+  ],
+  "score": "4/4",
+  "lost": [],
+  "tied": {
+   "1.12": "built tides:draft 3: draft 2 with the low-water marks shown",
+   "1.121": "dana publishes draft 3",
+   "1.122": "dana asks for another pass"
+  },
+  "reply_json": {
+   "tied_at": "1.12",
+   "line": "built tides:draft 3: draft 2 with the low-water marks shown",
+   "options": [
+    "dana publishes draft 3",
+    "dana asks for another pass"
+   ],
+   "handed_on": {
+    "to": "dana",
+    "text": "Draft 3 is up (tides:draft 3): draft 2 with the low-water marks shown. Thread 1 at 1.12. Your decision: publish it, or ask for another pass."
+   },
+   "why": "1.12 is the knot dana's request sits at, so my answer to it belongs there, not at 1.13, which is an option about rebuilding on a new chart that I have no evidence of doing."
+  },
+  "geometry_faults": [],
+  "strict_place": [],
+  "cards_before": {
+   "rook": [
+    "1.12"
+   ]
+  },
+  "cards_after": {}
+ },
+ {
+  "run": "S-C7",
+  "kind": "twin",
+  "calls": 9,
+  "reads": 7,
+  "thread_reads": [
+   "1",
+   "1.12",
+   "1.1211"
+  ],
+  "read_teaching": [],
+  "wrote": [
+   "1.1211",
+   "1.12111",
+   "1.12112"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "dana": [
+    "rook: dana: I checked the low-water marks on the tide-table page against the harbour master's table and corrected one of them in tides:draft 4. Your decision is next: publish the page (1.12111), or ask for another pass (1.12112). Reply on thread 1 at 1.1211 with your choice."
+   ]
+  },
+  "form_v1": "NOT: WAITS 1.1211",
+  "form_p2": "NOT: WAITS 1.1211",
+  "warns_v1": [],
+  "landed": [
+   "1.1211"
+  ],
+  "expect": [
+   "ok the line lands at 1.1211 or 1.122",
+   "ok 1 or more option(s) beneath it",
+   "ok the next hand's room told, naming the place",
+   "ok nothing lost"
+  ],
+  "score": "4/4",
+  "lost": [],
+  "tied": {
+   "1.1211": "checked the low-water marks against the harbour master's table and corrected one of them in tides:draft 4",
+   "1.12111": "dana publishes the page",
+   "1.12112": "dana asks for another pass"
+  },
+  "reply_json": {
+   "tied_at": "1.1211",
+   "line": "checked the low-water marks against the harbour master's table and corrected one of them in tides:draft 4",
+   "options": [
+    "dana publishes the page",
+    "dana asks for another pass"
+   ],
+   "handed_on": {
+    "to": "dana",
+    "text": "I checked the low-water marks on the tide-table page against the harbour master's table and corrected one of them in tides:draft 4. Your decision is next: publish the page (1.12111), or ask for another pass (1.12112). Reply on thread 1 at 1.1211 with your choice."
+   },
+   "why": "My check follows my earlier low-water line at 1.121, so it goes one deeper at 1.1211."
+  },
+  "geometry_faults": [],
+  "strict_place": [],
+  "cards_before": {},
+  "cards_after": {}
+ },
+ {
+  "run": "S-C8",
+  "kind": "reask",
+  "calls": 9,
+  "reads": 7,
+  "thread_reads": [
+   "1",
+   "1"
+  ],
+  "read_teaching": [],
+  "wrote": [
+   "1.14",
+   "1.141",
+   "1.142"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {
+   "dana": [
+    "wren: the harbour changes its tide chart next week (harbour:chart 2). Your publish choice on the tide-table page is open again at thread 1.14: publish now and update the page after the chart changes (1.141), or wait a week and publish on the new chart (1.142)."
+   ]
+  },
+  "form_v1": "NOT: WAITS 1.14",
+  "form_p2": "NOT: WAITS 1.14",
+  "warns_v1": [],
+  "landed": [
+   "1.14"
+  ],
+  "expect": [
+   "ok the line lands at 1.111 or 1.14",
+   "ok 2 or more option(s) beneath it",
+   "ok the next hand's room told, naming the place",
+   "ok nothing lost"
+  ],
+  "score": "4/4",
+  "lost": [],
+  "tied": {
+   "1.14": "the harbour changes its tide chart next week (harbour:chart 2), so the publish choice at 1.11 was made on a chart that will soon be out of date",
+   "1.141": "publish now and update the page after the chart changes",
+   "1.142": "wait a week and publish on the new chart"
+  },
+  "reply_json": {
+   "tied_at": "1.14",
+   "line": "the harbour changes its tide chart next week (harbour:chart 2), so the publish choice at 1.11 was made on a chart that will soon be out of date",
+   "options": [
+    "publish now and update the page after the chart changes",
+    "wait a week and publish on the new chart"
+   ],
+   "handed_on": {
+    "to": "dana",
+    "text": "the harbour changes its tide chart next week (harbour:chart 2). Your publish choice on the tide-table page is open again at thread 1.14: publish now and update the page after the chart changes (1.141), or wait a week and publish on the new chart (1.142)."
+   },
+   "why": "The chart change is news rather than one of the options already offered, so it takes the next free digit under my review line at 1.1, which is 1.14."
+  },
+  "geometry_faults": [],
+  "strict_place": [],
+  "cards_before": {},
+  "cards_after": {}
+ },
+ {
+  "run": "S-C9",
+  "kind": "wake",
+  "calls": 1,
+  "reads": 0,
+  "thread_reads": [],
+  "read_teaching": [],
+  "wrote": [
+   "1.1",
+   "1.11"
+  ],
+  "changed_own": {},
+  "opened": {},
+  "posted": {},
+  "form_v1": "NOT: WAITS 1.1",
+  "form_p2": "NOT: WAITS 1.1",
+  "warns_v1": [],
+  "landed": [
+   "1.1"
+  ],
+  "expect": [
+   "ok an answer in the form",
+   "ok at 1.1, or one deeper",
+   "ok an option beneath it for rook"
+  ],
+  "score": "3/3",
+  "lost": [],
+  "tied": {
+   "1.1": "kestrel: fetched this month's tide times from the harbour feed; it returned 62 tide times for November, saved at tides:feed 11",
+   "1.11": "rook: rebuild the tide-table page from tides:feed 11"
+  },
+  "reply_json": {
+   "tied_at": "1.1",
+   "line": "kestrel: fetched this month's tide times from the harbour feed; it returned 62 tide times for November, saved at tides:feed 11",
+   "options": [
+    "rook: rebuild the tide-table page from tides:feed 11"
+   ]
+  },
+  "geometry_faults": [],
+  "strict_place": [],
+  "cards_before": {},
+  "cards_after": {}
+ }
+]

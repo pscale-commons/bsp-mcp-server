@@ -1,0 +1,3 @@
+1.1 | kestrel fetched this month's tide times: 62 November times, saved at tides:feed 11 | options: 1 rook rebuilds the tide-table page from tides:feed 11
+
+I answered at 1.1 because the waker's fetch completes rook's option "kestrel fetches this month's tide times," so the result belongs on that line, and the rebuild is the one option that follows it.

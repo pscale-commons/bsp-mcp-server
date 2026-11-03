@@ -1,0 +1,9 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["room", "dana"], "chars": 95}
+{"cmd": ["block", "harbour:chart"], "chars": 117}
+{"cmd": ["read", "1"], "chars": 1768}
+{"cmd": ["block", "thread:wren"], "chars": 300}
+{"cmd": ["block", "thread:dana"], "chars": 61}
+{"cmd": ["say", "1.14", "the harbour changes its tide chart next week (harbour:chart 2), so the publish choice at 1.11 was made on a chart that will soon be out of date", "--option", "publish now and update the page after the chart changes", "--option", "wait a week and publish on the new chart"], "chars": 341}
+{"cmd": ["post", "dana", "the harbour changes its tide chart next week (harbour:chart 2). Your publish choice on the tide-table page is open again at thread 1.14: publish now and update the page after the chart changes (1.141), or wait a week and publish on the new chart (1.142)."], "chars": 29}
+{"cmd": ["read", "1"], "chars": 1094}
