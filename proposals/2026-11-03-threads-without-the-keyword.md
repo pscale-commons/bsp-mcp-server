@@ -2,7 +2,7 @@
 
 **Date**: 3 November 2026
 **Lane**: thread-loom.1, weft (Claude Code, Opus 5.5, on the Mac)
-**Status**: four runs of the nine at David's word: "Yes, run it" (2 November), "Yes, do both" and "Yes, run both" (3 November), $0.1168 in all at list. S3, six sentences with the place spelled, passed the gate fixed before it ran. At David's "Yes, take it out" the keyword came out on the beach the same afternoon, each block archived first (see "Done"); the page follows in happyseaurchin-home #603, and the battery after this merges.
+**Status**: four runs of the nine at David's word: "Yes, run it" (2 November), "Yes, do both" and "Yes, run both" (3 November), $0.1168 in all at list. S3, six sentences with the place spelled, passed the gate fixed before it ran. At David's "Yes, take it out" the keyword came out on the beach the same afternoon, each block archived first (see "Done"); the page follows in happyseaurchin-home #603, and the battery after this merges. Partly turned back on 4 November: `proposals/2026-11-04-threads-keep-their-endings.md` (#584) brought the endings back, with a date for later, and was built the same day (#586, happyseaurchin-home #608).
 
 ## The ask
 
