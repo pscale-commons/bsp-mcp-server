@@ -17,8 +17,10 @@
  * Dependencies: tweetnacl (X25519/Ed25519/XSalsa20-Poly1305), hash-wasm (Argon2id).
  */
 
+import { createHash } from 'node:crypto';
 import nacl from 'tweetnacl';
 import { argon2id } from 'hash-wasm';
+import { doorHere } from './pass.js';
 
 // ── Types ──
 
@@ -79,11 +81,50 @@ function fromBase64(b64: string): Uint8Array {
 
 // ── Key derivation ──
 
+/** How many pairs were really derived: a counter on the derive function, never
+ *  a clock, for the smoke that prices a seal (scripts/smoke-seal-price.ts). */
+export const derivations = { count: 0 };
+
+// THE PAIR IS DERIVED ONCE A SESSION (coloured-stigmergy, step 1; proposals/
+// 2026-11-03-coloured-stigmergy-the-design.md §4.4, §12). Argon2id is the price
+// of a seal — about a tenth of a second a derivation on the keeper's Mac — and
+// until 4 November 2026 the connector paid it for every sealed line it opened and
+// for every copy of a ring it tried: the thirtieth member of a ring waited thirty
+// derivations on every read, a point read of one entry among fifty sealed ones
+// fifty. Each session now keeps the pairs it has derived, keyed by a hash of the
+// word and the salt and never by the word, in process memory for the session —
+// the door's (src/pass.ts), or the process's where a script derives outside one —
+// dropped with the session and written nowhere. A word tried many times is
+// forgotten first: a session holds at most HELD pairs.
+const derived = new Map<string, Map<string, Promise<DerivedKeys>>>();
+const HELD = 64;
+
+/** Forget the pairs a session derived — at the session's end, or all of them. */
+export function forgetDerived(session?: string): void {
+  if (session === undefined) derived.clear();
+  else derived.delete(session);
+}
+
 /**
  * Derive X25519 + Ed25519 keypairs from a secret and agent_id (handle).
  * Argon2id: memory-hard, brute-force resistant. Same inputs → same keys.
  */
-export async function deriveKeypair(secret: string, agentId: string): Promise<DerivedKeys> {
+export function deriveKeypair(secret: string, agentId: string): Promise<DerivedKeys> {
+  const session = doorHere()?.session ?? '';
+  let held = derived.get(session);
+  if (!held) derived.set(session, (held = new Map()));
+  const at = createHash('sha256').update(secret).update('\0').update(agentId).digest('hex');
+  const known = held.get(at);
+  if (known) return known;
+  derivations.count++;
+  const pair = derive(secret, agentId);
+  pair.catch(() => held!.delete(at));
+  if (held.size >= HELD) held.delete(held.keys().next().value!);
+  held.set(at, pair);
+  return pair;
+}
+
+async function derive(secret: string, agentId: string): Promise<DerivedKeys> {
   // Salt must be at least 8 bytes for Argon2.
   const saltStr = agentId.length >= 8 ? agentId : agentId.padEnd(8, '\0');
 
@@ -198,6 +239,11 @@ const GRAY_MARKER = 'gray' as const;
 const NOTE_SELF = 'Encrypted (gray); readable only with the author secret.';
 const NOTE_GRAIN = 'Encrypted (gray); readable by the two grain parties.';
 const NOTE_GROUP = 'Encrypted (gray); readable by the group (key wrapped per member in the keyring at 9).';
+
+/** The note each mode writes at an envelope's underscore — what a keyless
+ *  reader sees of a sealed line over the wire, where the beach computes the
+ *  shape and sends no envelope (bsp-fn.ts draws the grey line from it). */
+export const GRAY_NOTES = { self: NOTE_SELF, grain: NOTE_GRAIN, group: NOTE_GROUP } as const;
 
 /** Block is group-encrypted ⇔ block[9]._ === this marker. */
 export const GROUP_KEYRING_MARKER = 'group-keyring';
@@ -373,27 +419,37 @@ export function buildKeyring(wraps: GroupKeyEntry[], marker: string = GROUP_KEYR
   return node;
 }
 
-/** All member handles in a keyring (recurses the continuation chain). */
-export function keyringHandles(keyring: any): string[] {
-  const out: string[] = [];
+/** Every wrapped copy in a (possibly chained) keyring, in ring order. */
+export function keyringEntries(keyring: any): GroupKeyEntry[] {
+  const out: GroupKeyEntry[] = [];
   if (!keyring || typeof keyring !== 'object') return out;
-  for (let i = 1; i <= 8; i++) { if (isKeyEntry(keyring[String(i)])) out.push(keyring[String(i)]['_']); }
+  for (let i = 1; i <= 8; i++) { if (isKeyEntry(keyring[String(i)])) out.push(keyring[String(i)]); }
   const tail = keyring['9'];
-  if (isKeyEntry(tail)) out.push(tail['_']);
-  else if (tail && typeof tail === 'object') out.push(...keyringHandles(tail));
+  if (isKeyEntry(tail)) out.push(tail);
+  else if (tail && typeof tail === 'object') out.push(...keyringEntries(tail));
   return out;
 }
 
-/** Trial-unwrap the group key from a (possibly chained) keyring using only the reader's enc_secret. */
-export async function unwrapGroupKeyFromKeyring(keyring: any, encSecret: string): Promise<Uint8Array | null> {
-  if (!keyring || typeof keyring !== 'object') return null;
-  for (let i = 1; i <= 8; i++) {
-    const entry = keyring[String(i)];
-    if (isKeyEntry(entry)) { const K = await unwrapGroupKey(entry as GroupKeyEntry, encSecret, entry['_']); if (K) return K; }
+/** All member handles in a keyring (recurses the continuation chain). */
+export function keyringHandles(keyring: any): string[] {
+  return keyringEntries(keyring).map((e) => e._);
+}
+
+/**
+ * Unwrap the group key from a (possibly chained) keyring with the reader's
+ * enc_secret. A COPY IS FOUND BY ITS HOLDER'S NAME: where the reader's handle is
+ * known, their own copy is opened first — one derivation — and only when it
+ * stays shut is each copy tried in turn, as before, each derivation now kept
+ * for the session. With no handle every copy is tried, salted with its own
+ * holder's name, so the thirtieth member once paid thirty derivations a read.
+ */
+export async function unwrapGroupKeyFromKeyring(keyring: any, encSecret: string, handle?: string | null): Promise<Uint8Array | null> {
+  const entries = keyringEntries(keyring);
+  const own = handle ? entries.filter((e) => e._ === handle) : [];
+  for (const entry of [...own, ...entries.filter((e) => !own.includes(e))]) {
+    const K = await unwrapGroupKey(entry, encSecret, entry._);
+    if (K) return K;
   }
-  const tail = keyring['9'];
-  if (isKeyEntry(tail)) { const K = await unwrapGroupKey(tail as GroupKeyEntry, encSecret, tail['_']); if (K) return K; }
-  else if (tail && typeof tail === 'object') return unwrapGroupKeyFromKeyring(tail, encSecret);
   return null;
 }
 

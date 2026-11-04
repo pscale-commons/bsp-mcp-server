@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createServer } from './server.js';
 import { looksWindow } from './looks.js';
+import { forgetDerived } from './keys.js';
 import { SIGNIN_ON, asHandle, authFor, originOf, refuseUnsigned, signinRoute } from './signin.js';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -219,6 +220,7 @@ const httpServer = createHttpServer(async (req, res) => {
       await transport.handleRequest(req, res, body);
       transports.delete(sessionId);
       inflight.delete(sessionId);
+      forgetDerived(sessionId); // the pairs the session derived go with it
     } else {
       res.writeHead(200);
       res.end(JSON.stringify({ jsonrpc: '2.0', result: {} }));

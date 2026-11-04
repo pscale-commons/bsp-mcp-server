@@ -30,6 +30,8 @@ import {
   onRealClock,
   formatWrite,
   formatBorn,
+  splitStar,
+  BspReadResult,
   BspWriteResult,
 } from '../bsp-fn.js';
 import { readBackAfterWrite, readBackAfterAppend } from '../read-back.js';
@@ -594,13 +596,17 @@ export function grainShutLine(
  * Build a per-leaf decryptor for a secret-bearing read. Self envelopes decrypt
  * with the reader's own derived key. Grain envelopes trial-decrypt from both
  * party perspectives — the reader's secret opens exactly one — using each
- * party's published x25519 fetched from their passport.
+ * party's published x25519 fetched from their passport. `hand` is the session's
+ * hand where the door knows it (the play door, or a name given at a room): its
+ * own copy of a ring, or its own side of a grain, is tried first, so a reader
+ * pays one derivation rather than one per copy (coloured-stigmergy §12, step 1).
  */
 async function buildGrayDecryptor(
   block: any,
   isGrain: boolean,
   agentId: string,
   secret: string,
+  hand: string | null = null,
 ): Promise<(env: GrayEnvelope) => Promise<string | null>> {
   let h1: string | undefined;
   let h2: string | undefined;
@@ -616,11 +622,12 @@ async function buildGrayDecryptor(
     k1 = p1?.x25519 ?? null;
     k2 = p2?.x25519 ?? null;
   }
-  // Group: unwrap the shared key once from the keyring at position 9 (null if
-  // the reader is not a member, so group leaves render as opaque).
+  // Group: unwrap the shared key once from the keyring at position 9 — the
+  // hand's own copy first where it is known (null if the reader is not a
+  // member, so group leaves render as the grey line).
   let groupKey: Uint8Array | null = null;
   if (block?.['9']?._ === GROUP_KEYRING_MARKER) {
-    groupKey = await unwrapGroupKeyFromKeyring(block['9'], secret);
+    groupKey = await unwrapGroupKeyFromKeyring(block['9'], secret, hand);
   }
   // Which party the reader's secret belongs to — derived once, and only when a
   // grain line stays shut, so that line can say whose key is off.
@@ -629,10 +636,13 @@ async function buildGrayDecryptor(
     const mode = grayMode(env);
     if (mode === 'self') return selfDecrypt(env, secret, agentId);
     if (mode === 'grain') {
-      // Reader is whichever party their secret belongs to; try both. My handle
-      // pairs with the OTHER party's published key.
-      if (h1 && k2) { const pt = await grainDecrypt(env, secret, h1, k2); if (pt !== null) return pt; }
-      if (h2 && k1) { const pt = await grainDecrypt(env, secret, h2, k1); if (pt !== null) return pt; }
+      // Reader is whichever party their secret belongs to: the hand's own side
+      // first, else both in turn. My handle pairs with the OTHER party's
+      // published key.
+      const sides: Array<[string | undefined, string | null]> = hand && hand === h2 ? [[h2, k1], [h1, k2]] : [[h1, k2], [h2, k1]];
+      for (const [h, k] of sides) {
+        if (h && k) { const pt = await grainDecrypt(env, secret, h, k); if (pt !== null) return pt; }
+      }
       if (!h1 || !h2) return null;
       if (k1 && k2) readerSide ??= grainReaderSide(secret, h1, k1, h2, k2);
       return grainShutLine(env, h1, h2, k1, k2, k1 && k2 ? await readerSide : null);
@@ -640,6 +650,72 @@ async function buildGrayDecryptor(
     if (mode === 'group') return groupKey ? groupDecryptContent(env, groupKey) : null;
     return null;
   };
+}
+
+/**
+ * THE KEYED READ WALKS FIRST AND OPENS ONLY WHAT IT RETURNS (coloured-stigmergy,
+ * step 1; proposals/2026-11-03-coloured-stigmergy-the-design.md §12). Until
+ * 4 November 2026 a keyed read opened every envelope in the block before the
+ * walk (decryptGrayNodes over the whole block), so a point read of one entry
+ * among fifty sealed ones paid fifty openings — and, before a pair was kept for
+ * the session, fifty derivations. The walk here is the walk the read will make:
+ * its shape names the positions that will be shown, and an envelope standing at
+ * one of them is opened on a copy of the block, shallowly — an entry that landed
+ * inside an envelope is a position of its own, opened only when returned. A
+ * sealed node the key does not open stays as the beach holds it and renders as
+ * the grey line. The whole block is every position, and opens as before.
+ */
+export async function openReturned(
+  block: Block,
+  spindle: string | null | undefined,
+  pscale: number | null | undefined,
+  open: (env: GrayEnvelope) => Promise<string | null>,
+): Promise<Block> {
+  let r: BspReadResult;
+  try { r = bspRead(block, spindle, pscale); } catch { return block; } // the read reports a bad address itself
+  if (r.shape === 'block') return decryptGrayNodes(block, open);
+  const copy = structuredClone(block);
+  await openShape(copy, r, spindle, open);
+  return copy;
+}
+
+async function openShape(block: Block, r: BspReadResult, spindle: string | null | undefined, open: (env: GrayEnvelope) => Promise<string | null>): Promise<void> {
+  if (r.shape === 'star') {
+    // A star enters the terminus's hidden directory: the terminus's own voicing
+    // opens, and what the inner read returns opens within the directory.
+    const { pre, post } = splitStar(spindle);
+    if (pre) await openAt(block, pre, open);
+    const t: any = pre ? readAt(block, pre) : block;
+    if (r.inner && t && typeof t === 'object' && t._ && typeof t._ === 'object') await openShape(t._, r.inner, post, open);
+    return;
+  }
+  const listed = [...(r.entries ?? []), ...(r.path_walk ?? []), ...(r.descent ?? [])] as Array<{ address: string }>;
+  const addresses = r.shape === 'point' ? (r.address ? [r.address] : []) : listed.map((e) => e.address);
+  for (const a of addresses) await openAt(block, a, open);
+}
+
+/** Open the envelope a returned position stands as: the node at the address, or
+ *  the one its underscore chain reaches (a container voiced in gray). */
+async function openAt(block: Block, address: string, open: (env: GrayEnvelope) => Promise<string | null>): Promise<void> {
+  let node: any;
+  try { node = readAt(block, address); } catch { return; }
+  if (isGrayEnvelope(node)) { writeAt(block, address, await openedForm(node, open)); return; }
+  for (; node && typeof node === 'object'; node = node._) {
+    if (isGrayEnvelope(node._)) { node._ = await openedForm(node._, open); return; }
+  }
+}
+
+/** The opened node, in decryptGrayNodes' shape: the plaintext alone, or voicing
+ *  whatever stood beside the envelope's own fields (the arrival stamp at 3, an
+ *  entry that landed inside); the envelope itself when the key does not open it. */
+async function openedForm(env: GrayEnvelope, open: (env: GrayEnvelope) => Promise<string | null>): Promise<unknown> {
+  const text = await open(env);
+  if (text === null) return env;
+  const beside = Object.keys(env).filter((k) => !ENVELOPE_FIELDS.has(k));
+  if (!beside.length) return text;
+  const kept: Record<string, unknown> = { _: text };
+  for (const k of beside) kept[k] = (env as any)[k];
+  return kept;
 }
 
 // ── Schemas ──
@@ -1230,20 +1306,23 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
     if (!row) {
       return notFoundResponse(target, agent_id, blockName);
     }
-    // When an encryption key is provided on a read, walk the block and rehydrate
-    // any gray envelopes (self or grain) to plaintext before bspRead computes
-    // the shape. The decrypt key is enc_secret (falling back to secret).
+    // THE ROOT NAMED IS THE WHOLE: spindle='0' with no attention takes the
+    // block whole, as name:0 bare does in a reference; nothing named is the probe.
+    const wholeNamed = String(spindle ?? '').trim() === '0' && pscale_attention == null;
+    const readSpindle = wholeNamed ? '' : (spindle ?? '');
+    // A key on a read opens the sealed nodes the read will return, and only
+    // those (openReturned), with enc_secret falling back to secret; the
+    // session's hand, where the door knows it, finds its own copy first.
     const blockForRead = encSecret
-      ? await decryptGrayNodes(
+      ? await openReturned(
           row.block,
-          await buildGrayDecryptor(row.block, target.block.startsWith('grain:'), agent_id, encSecret),
+          readSpindle,
+          pscale_attention ?? null,
+          await buildGrayDecryptor(row.block, target.block.startsWith('grain:'), agent_id, encSecret, handOf(sessionId)),
         )
       : row.block;
     try {
-      // THE ROOT NAMED IS THE WHOLE: spindle='0' with no attention takes the
-      // block whole, as name:0 bare does in a reference; nothing named is the probe.
-      const wholeNamed = String(spindle ?? '').trim() === '0' && pscale_attention == null;
-      const result = bspRead(blockForRead, wholeNamed ? '' : (spindle ?? ''), pscale_attention ?? null);
+      const result = bspRead(blockForRead, readSpindle, pscale_attention ?? null);
       const localText = formatRead(result, { onClock });
       const probe = wholeNamed ? null : probeInsteadOfWhole(blockForRead, spindle, pscale_attention, localText, onClock);
       let text = probe ?? tooLarge(result, localText) ?? localText;
