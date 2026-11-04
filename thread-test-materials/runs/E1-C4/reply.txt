@@ -1,0 +1,3 @@
+I recorded the publish on thread 1 at 1.11, the option wren left for "dana publishes the page." Nothing follows it, so the line is marked complete and I handed it to no one.
+
+{"tied_at": "1.11", "line": "published the tide-table page at dana's word 'Publish it'; it is live at tides:live · complete", "options": [], "handed_on": {"to": null, "text": ""}, "why": "Dana's 'Publish it' is the option wren wrote at 1.11 under the review knot, so my line goes at that address in my own mirror."}

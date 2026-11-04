@@ -1,0 +1,12 @@
+I added the spring tides, tied the line at 1.3 on the tide-table thread, and handed the review to wren.
+
+- **Read first:** my room held the note to add the spring tides before the review. Thread 1 listed 1.3 as "rook adds the spring tides before anyone reviews", so that was the matching option.
+- **Line written:** at 1.3 in my mirror, I wrote that the spring tides are in, that tides:draft 2 is up, and that it waits on wren.
+- **Options offered:** the beach put them at 1.31 and 1.32, since an option's address is its knot plus its digit. I re-read thread 1 and both are there.
+- **Handed on:** wren's room now has a line pointing to thread:1.3.
+
+I did not review the draft myself, and I did not check tides:draft 2 against any harbour data.
+
+```json
+{"tied_at": "1.3", "line": "rook added the spring tides before the review: tides:draft 2 · waits on wren · read: tides:draft 2", "options": ["wren reviews the draft against the harbour's data", "dana decides without a review"], "handed_on": {"to": "wren", "text": "rook: tides:draft 2 is on the page with the spring tides added. Please review it against the harbour's data. Thread place: thread:1.3"}, "why": "1.3 is the option matching the note to add the spring tides before review, and it is where the next move to wren begins."}
+```

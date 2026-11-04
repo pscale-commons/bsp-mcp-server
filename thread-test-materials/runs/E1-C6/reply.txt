@@ -1,0 +1,5 @@
+I tied my line at 1.12, the knot dana's request sits on, and left two options for dana beneath it. The draft 3 page was already built, so this only records the move and hands it to dana.
+
+The line reads "rook: rook: built draft 3…" because the tool adds its own "rook:" prefix on top of mine. It is cosmetic and I left it as is.
+
+{"tied_at": "1.12", "line": "rook: built draft 3, the low-water marks shown on the page (tides:draft 3) · waits on dana", "options": ["dana publishes draft 3", "dana asks for another pass"], "handed_on": {"to": "dana", "text": "thread:1.12 — draft 3 is built: the low-water marks are shown on the page (tides:draft 3). Your move: publish it, or ask for another pass."}, "why": "1.12 is the knot dana's request for another pass stands on, and my line answers it, so the next move goes to dana from there."}

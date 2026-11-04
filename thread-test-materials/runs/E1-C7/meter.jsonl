@@ -1,0 +1,10 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1.12"], "chars": 1756}
+{"cmd": ["read", "1"], "chars": 1039}
+{"cmd": ["block", "thread:rook"], "chars": 318}
+{"cmd": ["block", "tides:draft"], "chars": 326}
+{"cmd": ["block", "tides"], "chars": 20}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["say", "1.122", "checked the low-water marks against the harbour master's table and corrected one in tides:draft 4 \u00b7 waits on dana \u00b7 read: tides:draft 4", "--option", "dana publishes the page", "--option", "dana asks for another pass"], "chars": 293}
+{"cmd": ["post", "dana", "thread:1.122 \u2014 rook checked the low-water marks against the harbour master's table and corrected one in tides:draft 4. Your decision: publish the page, or ask for another pass."], "chars": 29}

@@ -1,0 +1,9 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["block", "harbour:chart"], "chars": 117}
+{"cmd": ["read", "1"], "chars": 2027}
+{"cmd": ["block", "thread:wren"], "chars": 379}
+{"cmd": ["block", "thread:dana"], "chars": 77}
+{"cmd": ["say", "1.1.1", "the harbour changes its tide chart next week (harbour:chart 2), so the reviewed draft may be out of date once it is live; the choice is put to you again \u00b7 waits on dana", "--option", "publish now and update the page after the chart changes", "--option", "wait a week and publish on the new chart"], "chars": 74}
+{"cmd": ["say", "1.111", "the harbour changes its tide chart next week (harbour:chart 2), so a page published now goes live on the old chart; the choice is put to you again \u00b7 waits on dana", "--option", "publish now and update the page after the chart changes", "--option", "wait a week and publish on the new chart"], "chars": 366}
+{"cmd": ["post", "dana", "thread:1.111 \u2014 the harbour changes its tide chart next week (harbour:chart 2). Choose again: 1.1111 publish now and update the page after the chart changes; 1.1112 wait a week and publish on the new chart."], "chars": 29}

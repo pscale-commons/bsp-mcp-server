@@ -1,0 +1,7 @@
+I tied the knot at 1.1211, beneath rook's earlier act at 1.121, and handed it on to dana's room. Draft 4 stands in `tides:draft`, with one low-water mark corrected against the harbour master's table.
+
+The knot's line is "rook checked the low-water marks against the harbour master's table and corrected one in draft 4 · waits on dana · read: tides:draft 4". The stored line repeats "rook" because the thread shows the hand as well. I did not change it.
+
+I offered two options for dana: publish draft 4 as it stands, or ask wren to review it first.
+
+{"tied_at": "1.1211", "line": "rook checked the low-water marks against the harbour master's table and corrected one in draft 4 · waits on dana · read: tides:draft 4", "options": ["publish tides:draft 4 as it stands", "ask wren to review tides:draft 4 first"], "handed_on": {"to": "dana", "text": "thread:1.1211 — rook checked the low-water marks and corrected one in tides:draft 4; dana decides: publish it, or ask wren to review first"}, "why": "Rook's 1.121 act already stands waiting on dana, and this check answers it, so the next free digit beneath 1.121 is 1.1211."}

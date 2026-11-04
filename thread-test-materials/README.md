@@ -19,7 +19,7 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 
 1. It runs the form pass over keel's eight hand-played threads (`runs/SELFTEST-*`), and each must be well formed under the law as it stands.
 2. It plants eleven faults one at a time (`mutation.py`), and every one must be caught while the unplanted thread stays clean.
-3. It re-grades the 118 stored runs from their replies (keel's 36 and weft's 82), and the totals must be the ones reported:
+3. It re-grades the 138 stored runs from their replies (keel's 36 and weft's 102), and the totals must be the ones reported:
 
 | delivery | checks | well formed, first law | well formed, the law now |
 |---|---|---|---|
@@ -37,10 +37,12 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 | S2, the same with two sentences mended, 3 November | 30/35 | 0 | 0 |
 | S3, S with only the place spelled `thread:<address>`, the same day | 33/35 | 0 | 0 |
 | S4, S3 with David's one knot, the same hour | 31/35 | 0 | 0 |
+| E1, S3 with the endings back in one sentence, ten uses, 4 November | 43/47 | 10 of 10 | 9 of 10 |
+| E2, #570's way with the date, ten uses, the same hour, now `ways:thread` | 44/47 | 10 of 10 | 10 of 10 |
 
-S to S4 are graded by where each line lands and whether anything is lost, not by a keyword, so they have 35 checks and no seed closes on whom it waits on. Both form passes fail every one of their threads on WAITS, as they should.
+S to S4 are graded by where each line lands and whether anything is lost, not by a keyword, so they have 35 checks and no seed closes on whom it waits on. Both form passes fail every one of their threads on WAITS, as they should. E1 and E2 are graded the same way, plus one ending in each use (44 checks for the nine), plus a tenth use, later, whose line must end ` · waits on wren from 2026-11-10` (3 checks).
 
-4. It plays the short form's right and wrong acts by hand through the test beach (`selftest_s.py`, for S, S2, S3 and S4). Each delivery's words must reach the mind at all four handings, the strict spelling must read six written places as it should, every right act must take full marks, and every planted wrong act must be caught.
+4. It plays the short form's right and wrong acts by hand through the test beach (`selftest_s.py` for S, S2, S3 and S4, `selftest_e.py` for E1 and E2, whose planted wrong acts are wrong endings and dates). Each delivery's words must reach the mind at all four handings, the strict spelling must read six written places as it should, every right act must take full marks, and every planted wrong act must be caught.
 
 The runs are copied to a scratch directory first, so a pass writes nothing here.
 
@@ -48,9 +50,9 @@ The runs are copied to a scratch directory first, so a pass writes nothing here.
 
 `thread_form.py` reads the registry (`spine:thread`) and every hand's mirror (`thread:<handle>`), and asks the questions at branch 1 of the block: registered, opened, knotted, rooted, digits, contiguous, offered, waits, crossing, short, resolves, routes and time.
 
-The rule that tells an act from an option is the law's, and since 3 November it is **where the line stands** (function:thread 3). Beneath another hand's line, or beneath its own option (taken one deeper), a hand's line is an act. Beneath its own act it is an option, unless it offers two or more of its own beneath it. A line that closes `' · waits on <handle>'` or `' · complete'`, as every act did from 29 October to 3 November, is an act wherever it stands, and no live end must close so. This is the rule the page reads (`threads.js` in happyseaurchin-home).
+The rule that tells an act from an option is the law's. Since 4 November it is **the ending** again: every act ends `' · waits on <handle>'`, `' · waits on <handle> from <date>'` or `' · complete'`, and an option never does (function:thread 2). For the threads tied on 3 and 4 November, without endings, it is **where the line stands** (function:thread 7). Beneath another hand's line, or beneath its own option (taken one deeper), a hand's line is an act. Beneath its own act it is an option, unless it offers two or more of its own beneath it. A line that closes `' · waits on <handle>'` or `' · complete'`, as every act did from 29 October to 3 November, is an act wherever it stands, and no live end must close so. This is the rule the page reads (`threads.js` in happyseaurchin-home).
 
-Every thread opened since 29 October 2026, 17:13Z (the stamp in `V2_SINCE`), is read so (`v3`), so a knot tied today without the clause on a thread of phase 2 is no fault. A thread opened before is read by the law it was tied under. There an act may also be known by its reads, a time, a word, or its own hand's options beneath it. What the law of 29 October would call a fault there is reported as a WARN. `--v1`, `--phase2` and `--v3` fix the law for every thread. The live pass reads the registry at its own floor: from thread 11 it is floor 2, threads 1 to 9 standing at 01 to 09, and every mirror is read raised to it, as the router raises it.
+A thread opened from the re-cut of 4 November, 12:13:42Z (`V4_SINCE`), is read by its endings (`v4`, the law of 29 October with the date), and so is a test beach, which keeps no stamps. Every thread opened from 29 October 2026, 17:13Z (`V2_SINCE`), up to the re-cut is read by position (`v3`), so a knot tied today without the clause on a thread of phase 2 is no fault. A thread opened before is read by the law it was tied under. There an act may also be known by its reads, a time, a word, or its own hand's options beneath it. What the law of 29 October would call a fault there is reported as a WARN. `--v1`, `--phase2` and `--v3` fix the law for every thread. The live pass reads the registry at its own floor: from thread 11 it is floor 2, threads 1 to 9 standing at 01 to 09, and every mirror is read raised to it, as the router raises it.
 
 keel's checker also emulated the page, to catch where `/threads` drew taken or the offerer wrongly. The page now reads both by the closing clause, the same rule this pass uses, so the two can't disagree, and the emulation is retired.
 
@@ -104,6 +106,8 @@ At "Yes, run both" (branch 4.911), S3 (`runs/S3-*`) kept only the spelling and s
 
 The strict spelling check was mended after S3 ran. It read a full stop after a place as a second part of its address, so "Please pick up at thread:3." went uncounted in S2's and S3's `open`, though the page and the waker read it as `thread:3`. Now a full stop may end the sentence and `thread:1.3.1` still names no place. No score moved. S2's count rose from the six first reported to seven, and S3's from five to six, so S3 meets the gate only with the check mended.
 
+At David's GO of 4 November (bsp-mcp #584, `proposals/2026-11-04-threads-keep-their-endings.md`) the endings came back, and the battery ran first. Two ways ran, ten uses each. Their grade and gate were committed before either ran (`short.py`'s docstring). E1, S3's six sentences with one more, "End your line with whose move is next: ...", scored 43 of 47. It got every ending in the nine right, but it wrote later's date in words, "from 10 November 2026", and on `self` it rewrote its own option, losing the option's words. So it missed the gate. E2, #570's way with "written 2026-11-07" added to its step 4, scored 44 of 47 with every ending right, nine of nine well formed, the date right and nothing lost. So it passed, and became `ways:thread` the same hour, with `function:thread` re-cut beside it. Each block was archived first, at `archive:ways:thread:2026-11-04` and `archive:function:thread:2026-11-04`. Its misses were `word` taking rook's older option again, `self` offering no option, and the wake offering none. The one sentence that taught the date's spelling is the difference between the two.
+
 ## What is here
 
 | Path | What it is |
@@ -114,7 +118,8 @@ The strict spelling check was mended after S3 ran. It read a full stop after a p
 | `battery.py` | The nine uses: situations, starting states, briefs and grading. |
 | `short.py` | S to S4: the seeds without the keyword, and the grade by where a line lands, nothing lost, and the cards a page would read from the rooms. |
 | `selftest_s.py` | The short form's hand-played right and wrong acts, for S, S2, S3 or S4. |
+| `selftest_e.py` | The endings' hand-played right and wrong acts, for E1 or E2: right acts take full marks and read well formed; wrong endings and dates are caught. |
 | `mutation.py` | The eleven planted faults. |
 | `run-minds.sh` | The fresh minds (spends). |
 | `teachings/` | What a mind is handed. |
-| `runs/` | keel's runs of 29 October: 8 hand-played (`SELFTEST-*`), and L, W1, Lx2 and W2 nine each. weft's of 2 November: L2, R, H, H2 and H3, nine each, and W2x2 on `place` alone; and of 2 and 3 November, S, S2, S3 and S4, nine each; each with `usage.json` as well (its model, turns, cost, and what the fence refused). Each keeps its start, its end state, its meter and the mind's reply, with the scores beside them. The briefs are rebuilt by `setup` from `teachings/`. |
+| `runs/` | keel's runs of 29 October: 8 hand-played (`SELFTEST-*`), and L, W1, Lx2 and W2 nine each. weft's of 2 November: L2, R, H, H2 and H3, nine each, and W2x2 on `place` alone; and of 2 and 3 November, S, S2, S3 and S4, nine each; and of 4 November, E1 and E2, ten each; each with `usage.json` as well (its model, turns, cost, and what the fence refused). Each keeps its start, its end state, its meter and the mind's reply, with the scores beside them. The briefs are rebuilt by `setup` from `teachings/`. |

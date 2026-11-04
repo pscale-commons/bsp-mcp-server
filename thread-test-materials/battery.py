@@ -27,7 +27,9 @@ delivery: the teaching a mind is handed, from teachings/ —
   E1  S3, with one sentence more: the line ends with whose move is next, ' · waits on <handle>', from a date if later,
       or ' · complete' (way_e1.txt); the endings back, at David's GO of 4 November (bsp-mcp #584)
   E2  the way of #570 (archive:ways:thread:2026-11-03) with the date added to its step 4 (way_e2.txt). E1 and E2 keep the
-      seeds' endings, run a tenth use, later, and are graded by short.py with an ending in each use (its docstring has the gate)
+      seeds' endings, run a tenth use, later, and are graded by short.py with an ending in each use (its docstring has the gate).
+      Run 4 November: E1 43 of 47, the date written in words on later and a line lost on self, so it missed the gate; E2 44
+      of 47, every ending right, the date right, nothing lost, so it passed and became ways:thread the same hour
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
 cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2)

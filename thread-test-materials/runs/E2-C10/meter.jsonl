@@ -1,0 +1,6 @@
+{"cmd": ["room", "wren"], "chars": 89}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 5234}
+{"cmd": ["say", "1.1", "wren reviews the draft against the harbour's data \u00b7 waits on wren from 2026-11-10 \u00b7 read: 1"], "chars": 197}
+{"cmd": ["post", "wren", "thread:1.1 \u2014 wren reviews tides:draft against harbour:data 2, which publishes 10 Nov 2026; wren picks this up that day"], "chars": 29}
+{"cmd": ["read", "1"], "chars": 667}

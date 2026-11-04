@@ -1,0 +1,3 @@
+1.1 | kestrel fetches this month's tide times from the harbour feed: 62 November times fetched and saved at tides:feed 11 · waits on rook · read: tides:feed 11 | options: none
+
+I tie at 1.1 because that option is mine and the fetch is done, so my knot takes its address; 1.2 ("feed is down") is now contradicted by the 62 returned times, but I leave it standing rather than overwrite it.

@@ -1,0 +1,6 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "thread:rook"], "chars": 201}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["say", "1.2", "dana said 'Publish it'; published without review and live at tides:live, so no further step is needed"], "chars": 5109}
+{"cmd": ["read", "1"], "chars": 915}
+{"cmd": ["say", "1.2", "dana decides without a review \u2014 taken at dana's word 'Publish it'; published, live at tides:live \u00b7 complete \u00b7 read: tides:live"], "chars": 206}
