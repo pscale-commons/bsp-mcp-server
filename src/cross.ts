@@ -22,6 +22,7 @@
 import { type Block, floorDepth, readAt, parseSpindle } from './bsp.js';
 import { loadBlock, loadBeachIndex } from './db.js';
 import { supernest } from './accumulator.js';
+import { readSeal } from './colour.js';
 
 /** The family every thread on a beach is tied in: its registry spine:thread,
  *  each hand's knots in thread:<handle>, its law function:thread. */
@@ -47,7 +48,12 @@ export function nodeAt(block: Block, digits: string[], floor: number): unknown {
   return readAt(b, ds.join('').padEnd(floorDepth(b), '0'));
 }
 
-function voiceOf(node: unknown): string | null {
+/** A line's text: the string its underscore chain reaches — or, for a line
+ *  whose words are sealed in a colour (coloured stigmergy §2.3), its words
+ *  through the colours the session wears at `origin`, else the grey line. */
+function voiceOf(node: unknown, origin?: string): string | null {
+  const seal = readSeal(node, origin);
+  if (seal) return seal.text;
   let n = node;
   while (n && typeof n === 'object') n = (n as Record<string, unknown>)._;
   return typeof n === 'string' && n.trim() !== '' ? n : null;
@@ -61,20 +67,25 @@ export function dotted(digits: string[], floor: number): string {
   return right ? `${left || '0'}.${right}` : left || '0';
 }
 
-export interface CrossLine { who: string; addr: string; text: string }
+/** `shut` — the line is sealed in a colour the reader does not wear, and `text`
+ *  is its grey line. */
+export interface CrossLine { who: string; addr: string; text: string; shut?: boolean }
 
-/** Every line at and beneath a node, in address order, each with its address. */
-export function linesAt(node: unknown, digits: string[], floor: number, who: string): CrossLine[] {
+/** Every line at and beneath a node, in address order, each with its address;
+ *  a sealed line as its words through the session's worn colours at `origin`,
+ *  else as the grey line, marked shut. */
+export function linesAt(node: unknown, digits: string[], floor: number, who: string, origin?: string): CrossLine[] {
   const out: CrossLine[] = [];
-  const own = voiceOf(node);
-  if (own) out.push({ who, addr: dotted(digits, floor), text: own });
+  const line = (n: unknown, addr: string, text: string): CrossLine => (readSeal(n, origin)?.shut ? { who, addr, text, shut: true } : { who, addr, text });
+  const own = voiceOf(node, origin);
+  if (own) out.push(line(node, dotted(digits, floor), own));
   const walk = (n: unknown, ds: string[]) => {
     if (!n || typeof n !== 'object') return;
     for (const k of Object.keys(n as object).filter((k) => /^[1-9]$/.test(k)).sort()) {
       const child = (n as Record<string, unknown>)[k];
       const d = ds.concat(k);
-      const t = voiceOf(child);
-      if (t) out.push({ who, addr: dotted(d, floor), text: t });
+      const t = voiceOf(child, origin);
+      if (t) out.push(line(child, dotted(d, floor), t));
       walk(child, d);
     }
   };
@@ -118,7 +129,7 @@ export async function crossSection(origin: string, field: string, address: strin
   const per = await Promise.all(names.map(async (name) => {
     const row = await loadBlock(origin, name).catch(() => null);
     if (!row || !row.block || typeof row.block !== 'object') return [];
-    return linesAt(nodeAt(row.block as Block, digits, floor), digits, floor, name.slice(field.length + 1));
+    return linesAt(nodeAt(row.block as Block, digits, floor), digits, floor, name.slice(field.length + 1), origin);
   }));
   return { floor, digits, spineLine, spineStamp, lines: per.flat().sort(byAddress) };
 }
