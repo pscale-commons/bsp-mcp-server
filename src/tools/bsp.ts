@@ -243,6 +243,7 @@ import {
 } from '../keys.js';
 import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
+import { sealingKey, signedSealNote } from '../signin.js';
 
 /**
  * The POSITION a lock lands at, mirroring the wire contract (pscale-beach
@@ -965,8 +966,9 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
   // Encryption identity — separate from the lock `secret`. Derives the keypair
   // and encrypts/decrypts; NEVER forwarded to the beach. Falls back to `secret`
   // so single-secret callers keep working (but are not host-proof — the secret
-  // then reaches the beach as the lock).
-  const encSecret = enc_secret ?? secret;
+  // then reaches the beach as the lock) — never to a secret the sign-in supplied,
+  // which opens latches and nothing else (src/signin.ts).
+  const encSecret = sealingKey(enc_secret, secret);
 
   // Normalise stringified content before any walk — LLMs sometimes serialise
   // nested structure as a JSON string by mistake; the beach's shape gate would
@@ -1037,7 +1039,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
     let grayBlock: Block | null = null;
     if (wantGrayAppend) {
       if (!encSecret) {
-        return { content: [{ type: 'text', text: 'Append rejected: gray encryption requires an encryption key (enc_secret, or secret as fallback). Pass gray:false to append in the open.' }] };
+        return { content: [{ type: 'text', text: `Append rejected: gray encryption requires an encryption key (enc_secret, or secret as fallback). Pass gray:false to append in the open.${signedSealNote()}` }] };
       }
       if (isGrainAppend && !secret) {
         return { content: [{ type: 'text', text: 'Append rejected: a grain append needs `secret` to prove your side lock (plus enc_secret for privacy).' }] };
@@ -1326,7 +1328,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
     if (wantGray) {
       if (!encSecret) {
         return {
-          content: [{ type: 'text', text: 'Write rejected: gray encryption requires an encryption key (enc_secret, or secret as fallback). Pass gray:false to write public.' }],
+          content: [{ type: 'text', text: `Write rejected: gray encryption requires an encryption key (enc_secret, or secret as fallback). Pass gray:false to write public.${signedSealNote()}` }],
         };
       }
       if (isGrain && !secret) {
