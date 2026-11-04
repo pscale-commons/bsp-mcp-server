@@ -36,6 +36,7 @@ import { resolveHere } from './here.js';
 import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPayway } from './resources/payway.js';
 import { SENTINELS } from './sentinels.js';
+import { installSignedIn, signedLine } from './signin.js';
 
 /**
  * Wrap every tool handler so exceptions surface as `isError: true` content
@@ -134,14 +135,17 @@ THE REST IS IN BLOCKS — walk via bsp(agent_id="pscale", block=…), which is t
 
 ARCHITECTURE: a router plus a sentinel server. The walker runs in-process for sentinel reads and for client-side merge during federated writes; block content lives at federated beaches, and this server stores none of it. Default beach: ${DEFAULT_BEACH_URL}, changed with the DEFAULT_BEACH env var.`;
 
-export function createServer(): McpServer {
+export function createServer(signedAs?: string): McpServer {
   const server = new McpServer(
     { name: 'bsp-mcp-server', version: '0.4.0' },
-    { instructions: INSTRUCTIONS },
+    { instructions: signedAs ? `${INSTRUCTIONS}\n\n${signedLine(signedAs)}` : INSTRUCTIONS },
   );
 
   installErrorWrapper(server);
   installTemporalGrounding(server);
+  // A connection signed in at /as/<handle> (src/signin.ts): every tool that takes a
+  // secret gets the handle's key when the call carries none. Innermost, like the clock.
+  installSignedIn(server);
 
   // ── The unified function ──
   server.tool(

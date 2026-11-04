@@ -78,6 +78,7 @@ import {
 } from '../sand.js';
 import { digitPathSlots, findNextSlot, isEntryNode } from './pool.js';
 import { deriveKeypair, formatPublicKeys } from '../keys.js';
+import { sealingKey } from '../signin.js';
 import { pairId } from '../locks.js';
 
 // ── Probe as scanned from a channel ──
@@ -427,7 +428,7 @@ async function doForward(
   if (!d.to_channel) {
     return { slot: probe.slot, verb: 'forward', ok: false, detail: 'forward needs to_channel' };
   }
-  const key = await signingKey(agentId, encSecret ?? secret);
+  const key = await signingKey(agentId, sealingKey(encSecret, secret));
   if ('error' in key) {
     return { slot: probe.slot, verb: 'forward', ok: false, detail: key.error };
   }
@@ -529,7 +530,7 @@ async function doHau(
   if (hops.length === 0) {
     return { slot: probe.slot, verb: 'hau', ok: false, detail: 'the chain names no hops beyond yourself — nobody relayed this' };
   }
-  const key = await signingKey(agentId, encSecret ?? secret);
+  const key = await signingKey(agentId, sealingKey(encSecret, secret));
   if ('error' in key) {
     return { slot: probe.slot, verb: 'hau', ok: false, detail: key.error };
   }

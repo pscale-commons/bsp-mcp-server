@@ -12,6 +12,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { createServer } from './server.js';
 import { looksWindow } from './looks.js';
 import { forgetDerived } from './keys.js';
+import { SIGNIN_ON, asHandle, authFor, originOf, refuseUnsigned, signinRoute } from './signin.js';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 const MCP_PATH = process.env.MCP_PATH || '/mcp/v1';
@@ -57,7 +58,7 @@ function requestIds(body: unknown): (string | number)[] {
   return ids;
 }
 
-function createSession(): StreamableHTTPServerTransport {
+function createSession(signedAs?: string): StreamableHTTPServerTransport {
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
     enableJsonResponse: true,
@@ -68,7 +69,7 @@ function createSession(): StreamableHTTPServerTransport {
     // Don't delete session here — SSE drop ≠ session end. Clients reconnect.
   };
 
-  const mcpServer = createServer();
+  const mcpServer = createServer(signedAs);
   mcpServer.connect(transport);
 
   return transport;
@@ -77,8 +78,8 @@ function createSession(): StreamableHTTPServerTransport {
 const httpServer = createHttpServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-session-id, Accept');
-  res.setHeader('Access-Control-Expose-Headers', 'mcp-session-id');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-session-id, mcp-protocol-version, Accept, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'mcp-session-id, WWW-Authenticate');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -96,10 +97,32 @@ const httpServer = createHttpServer(async (req, res) => {
     return;
   }
 
-  if (url.pathname !== MCP_PATH) {
+  // THE KEY IN THE CONNECTOR (src/signin.ts): the sign-in's own addresses, then
+  // <MCP_PATH>/as/<handle>, the connector as that handle — every request there carries
+  // its token or is answered 401, which is what starts a client's sign-in. MCP_PATH
+  // itself is untouched: open and keyless.
+  if (await signinRoute(req, res, url, MCP_PATH)) return;
+  const signedAs = asHandle(url.pathname, MCP_PATH);
+  if (url.pathname !== MCP_PATH && !signedAs) {
     res.writeHead(404);
     res.end(JSON.stringify({ error: `bsp-mcp endpoint at ${MCP_PATH}` }));
     return;
+  }
+  if (signedAs) {
+    if (!SIGNIN_ON) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: `this router has no sign-in; the open endpoint is ${MCP_PATH}` }));
+      return;
+    }
+    const origin = originOf(req);
+    const auth = await authFor(req, signedAs, `${origin}${url.pathname}`);
+    if (auth === 'unreachable') {
+      res.writeHead(503, { 'Content-Type': 'application/json', 'Retry-After': '5' });
+      res.end(JSON.stringify({ error: 'the beach did not answer while opening this fingerprint; try again' }));
+      return;
+    }
+    if (!auth) { refuseUnsigned(res, origin, MCP_PATH, signedAs); return; }
+    (req as typeof req & { auth?: typeof auth }).auth = auth;
   }
 
   let body: unknown = undefined;
@@ -172,7 +195,7 @@ const httpServer = createHttpServer(async (req, res) => {
       return;
     }
     if (sessionId) delete req.headers['mcp-session-id'];
-    const transport = createSession();
+    const transport = createSession(signedAs ?? undefined);
     await transport.handleRequest(req, res, body);
     if (transport.sessionId) transports.set(transport.sessionId, transport);
     return;
