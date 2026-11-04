@@ -1,10 +1,12 @@
 /**
  * signin.ts — THE KEY IN THE CONNECTOR, BY FINGERPRINT (proposals/2026-11-04-the-key-in-the-connector.md).
  *
- * A connection at /mcp/v1/as/<handle> is that handle, signed in with a FINGERPRINT. The first
- * time a client connects there (Claude on any surface: claude.ai, desktop, mobile, Claude Code,
- * Cowork and its routines) the router answers 401 and points at its own sign-in page. There the
- * person types the handle's key once and names the connection. The router mints a fingerprint
+ * A connection at /mcp/v1/me is a handle, signed in with a FINGERPRINT. The first time a client
+ * connects there (Claude on any surface: claude.ai, desktop, mobile, Claude Code, Cowork and its
+ * routines) the router answers 401 and points at its own sign-in page. There the person types a
+ * handle and its key once, and names the connection. /mcp/v1/as/<handle> is the same with the
+ * handle fixed in the path: the address for a second identity on one client account, which adds
+ * any one address only once (David as himself at /me, weft beside him at /as/weft). The router mints a fingerprint
  * (32 random bytes), seals the key to it, and keeps the sealed copy on the beach at
  * fingerprints:<handle>, one digit per fingerprint. The client is handed a token that carries
  * the fingerprint and never the key.
@@ -206,13 +208,21 @@ export function originOf(req: IncomingMessage): string {
   return `${proto === 'http' ? 'http' : 'https'}://${host}`;
 }
 
-/** The handle a path names under <mcp path>/as/, or null. */
+/** What <mcp path>/me stands for: the one address, where the handle is the one typed at sign-in. */
+export const ANY = '*';
+
+/** The handle a signed address fixes: its handle for <mcp path>/as/<handle>, ANY for
+ *  <mcp path>/me, null for every other path. */
 export function asHandle(pathname: string, mcpPath: string): string | null {
+  if (pathname === `${mcpPath}/me`) return ANY;
   const prefix = `${mcpPath}/as/`;
   if (!pathname.startsWith(prefix)) return null;
   const h = pathname.slice(prefix.length);
   return HANDLE.test(h) ? h : null;
 }
+
+/** The path of a signed address. */
+const addressOf = (handle: string, mcpPath: string) => (handle === ANY ? `${mcpPath}/me` : `${mcpPath}/as/${handle}`);
 
 function loopback(u: URL): boolean {
   return u.protocol === 'http:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname === '[::1]');
@@ -301,8 +311,9 @@ function checkAsk(ask: Ask, origin: string, mcpPath: string): { problem: string 
   if (!ask.code_challenge || ask.code_challenge_method !== 'S256') return fail('invalid_request', 'S256 PKCE is required');
   const name = typeof client.n === 'string' && client.n ? client.n : 'a client';
   if (!ask.resource) return { handle: null, client: name };
-  const handle = ask.resource.startsWith(`${origin}${mcpPath}/as/`) ? asHandle(ask.resource.slice(origin.length), mcpPath) : null;
-  return handle ? { handle, client: name } : fail('invalid_target', 'the resource is not an address of this router');
+  const handle = ask.resource.startsWith(`${origin}${mcpPath}/`) ? asHandle(ask.resource.slice(origin.length), mcpPath) : null;
+  if (!handle) return fail('invalid_target', 'the resource is not an address of this router');
+  return { handle: handle === ANY ? null : handle, client: name };
 }
 
 function backTo(redirectUri: string): string {
@@ -317,7 +328,7 @@ function backTo(redirectUri: string): string {
 
 function signinPage(ask: Ask, handle: string | null, client: string, problem = ''): string {
   const hidden = ASK_KEYS.filter((k) => ask[k] !== undefined).map((k) => `<input type="hidden" name="${k}" value="${esc(ask[k]!)}">`).join('');
-  const as = handle ? `<b>${esc(handle)}</b>` : 'you';
+  const as = handle ? `<b>${esc(handle)}</b>` : 'the handle you give here';
   const named = `${client === 'a client' ? 'Claude' : client}, ${new Date().toISOString().slice(0, 10)}`;
   return `<h1>Sign in to the beach${handle ? ` as ${esc(handle)}` : ''}</h1>
 <p>${esc(backTo(ask.redirect_uri ?? ''))} is asking to act on the beach as ${as}. Type the key once, here on the router's own page, and never in a chat.</p>
@@ -398,13 +409,13 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
     }
     if (p.startsWith(RESOURCE_METADATA) && req.method === 'GET') {
       const handle = asHandle(p.slice(RESOURCE_METADATA.length), mcpPath);
-      if (!handle) return send(res, 404, { error: 'not_found', error_description: `a signed address is ${mcpPath}/as/<handle>` });
+      if (!handle) return send(res, 404, { error: 'not_found', error_description: `a signed address is ${mcpPath}/me, or ${mcpPath}/as/<handle>` });
       return send(res, 200, {
-        resource: `${origin}${mcpPath}/as/${handle}`,
+        resource: `${origin}${addressOf(handle, mcpPath)}`,
         authorization_servers: [origin],
         scopes_supported: [SCOPE],
         bearer_methods_supported: ['header'],
-        resource_name: `the beach, as ${handle}`,
+        resource_name: handle === ANY ? 'the beach, as the handle you sign in with' : `the beach, as ${handle}`,
       }, { 'Cache-Control': 'max-age=3600' });
     }
     if (p === '/oauth/register' && req.method === 'POST') {
@@ -494,14 +505,16 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
 
 // ── The signed address ──
 
-/** Who a request at <mcp path>/as/<handle> is signed in as, for the transport to hand every
- *  tool call: its handle and the key its fingerprint opens. null for no token, a forged, expired
- *  or refresh one, one for another address, or a fingerprint revoked; 'unreachable' when the
- *  beach did not answer. */
+/** Who a request at a signed address is signed in as, for the transport to hand every tool call:
+ *  its handle and the key its fingerprint opens. At <mcp path>/as/<handle> the token must be that
+ *  handle's; at <mcp path>/me (ANY) it is whichever handle signed in there. null for no token, a
+ *  forged, expired or refresh one, one minted for another address, or a fingerprint revoked;
+ *  'unreachable' when the beach did not answer. */
 export async function authFor(req: IncomingMessage, handle: string, resource: string): Promise<AuthInfo | null | 'unreachable'> {
   const m = String(req.headers.authorization ?? '').match(/^Bearer\s+(\S+)$/i);
   const a = m ? unseal('access', m[1]) : null;
-  if (!a || a.h !== handle || (a.res && a.res !== resource) || typeof a.f !== 'string' || typeof a.d !== 'string') return null;
+  if (!a || typeof a.h !== 'string' || !HANDLE.test(a.h) || (handle !== ANY && a.h !== handle)) return null;
+  if ((a.res && a.res !== resource) || typeof a.f !== 'string' || typeof a.d !== 'string') return null;
   const key = await openFingerprint(a.h, a.f, a.d);
   if (key === 'unreachable' || key === null) return key;
   return { token: m![1], clientId: 'bsp-signin', scopes: [SCOPE], expiresAt: Math.floor(a.exp / 1000), extra: { signedIn: { handle: a.h, key } } };
@@ -509,15 +522,16 @@ export async function authFor(req: IncomingMessage, handle: string, resource: st
 
 /** The 401 that starts a client's sign-in, pointing at the address's own metadata. */
 export function refuseUnsigned(res: ServerResponse, origin: string, mcpPath: string, handle: string): void {
+  const at = `${origin}${addressOf(handle, mcpPath)}`;
   send(res, 401, {
     error: 'invalid_token',
-    error_description: `${origin}${mcpPath}/as/${handle} is the beach as ${handle}: sign in once through your client's connector, and every call carries a fingerprint from then on`,
-  }, { 'WWW-Authenticate': `Bearer resource_metadata="${origin}${RESOURCE_METADATA}${mcpPath}/as/${handle}", scope="${SCOPE}"` });
+    error_description: `${at} is the beach as ${handle === ANY ? 'the handle you sign in with' : handle}: sign in once through your client's connector, and every call carries a fingerprint from then on`,
+  }, { 'WWW-Authenticate': `Bearer resource_metadata="${origin}${RESOURCE_METADATA}${addressOf(handle, mcpPath)}", scope="${SCOPE}"` });
 }
 
 /** The line a signed session's instructions carry, so the model never asks for the key. */
 export function signedLine(handle: string): string {
-  return `THIS CONNECTION IS SIGNED IN AS ${handle}, by a fingerprint. Every call that carries no secret writes with ${handle}'s key, which never enters this window: do not ask the person for it, and do not look for it. To seal or open a gray line, ${handle}'s vault among them (agent_id the beach's URL, block "vault:${handle}"), pass enc_secret: "vault", and the router seals or opens with the key. Nothing the router returns ever contains the key itself.`;
+  return `THIS CONNECTION IS SIGNED IN AS ${handle}, by a fingerprint. Every call that carries no secret writes with ${handle}'s key, which never enters this window: do not ask the person for it, and do not look for it. Wherever a call would name the key, write "vault" and the router puts the key there: enc_secret: "vault" seals and opens a gray line, ${handle}'s vault among them (agent_id the beach's URL, block "vault:${handle}"); new_lock: "vault" latches a new block under the key. Nothing the router returns ever contains the key itself.`;
 }
 
 // ── The tools ──
@@ -536,6 +550,9 @@ export function signedSealNote(): string {
 }
 
 const MARK = "[this connection's key]";
+/** The word a signed call writes wherever it would name the key. */
+const VAULT = 'vault';
+const KEY_FIELDS = ['secret', 'enc_secret', 'new_lock'] as const;
 /** Every text a signed call returns, with the key taken out wherever it stands. */
 function withoutKey(res: any, key: string): any {
   if (key.length < 6 || !res || !Array.isArray(res.content)) return res;
@@ -549,9 +566,11 @@ function isZodShape(a: unknown): a is Record<string, unknown> {
 
 /**
  * For a signed call: every tool that takes a `secret` gets the key where the call carries none;
- * `enc_secret: "vault"` becomes the key; nothing returned contains it; and the session's hand is
- * its handle wherever a hand is asked for (the reflection; a members' beach, whose pass is proved
- * with the key). Installed innermost, beside the error and clock wrappers in server.ts, so it
+ * "vault" in `secret`, `enc_secret` or `new_lock` becomes the key, so a signed hand writes, seals,
+ * opens and latches with a key it never sees; nothing returned contains it; and the session's hand
+ * is its handle wherever a hand is asked for (the reflection; a members' beach, whose pass is
+ * proved with the key). An unsigned call that names "vault" is refused, since the word would
+ * become the key. Installed innermost, beside the error and clock wrappers in server.ts, so it
  * reaches every tool that exists and every tool added later.
  */
 export function installSignedIn(server: McpServer): void {
@@ -562,16 +581,24 @@ export function installSignedIn(server: McpServer): void {
     const shape = args.slice(1, -1).find(isZodShape);
     const takesSecret = !!shape && 'secret' in shape;
     const takesEnc = !!shape && 'enc_secret' in shape;
+    const takesLock = !!shape && 'new_lock' in shape;
     args[args.length - 1] = async (...h: any[]) => {
       const extra = h[h.length - 1];
       const who = extra?.authInfo?.extra?.signedIn as { handle: string; key: string } | undefined;
-      if (!who) return handler(...h);
+      if (!who) {
+        // "vault" is the key only where a fingerprint stands behind it. Anywhere else the word
+        // would itself become the key: a latch, a seal or a published key pair anyone could open.
+        const named = h.length > 1 && h[0] && typeof h[0] === 'object' ? KEY_FIELDS.find((k) => h[0][k] === VAULT) : undefined;
+        if (named) return { isError: true, content: [{ type: 'text', text: `${named}: "vault" stands for the key only on a signed connection (the router's address ending /me, signed in once through a client's connector). This connection is not signed in, so nothing was done: pass the key itself, or connect at the signed address.` }] };
+        return handler(...h);
+      }
       if (extra?.sessionId && !handOf(extra.sessionId)) declareHand(extra.sessionId, who.handle);
       const params = h.length > 1 && h[0] && typeof h[0] === 'object' ? { ...h[0] } : null;
       let injected = false;
       if (params) {
-        if (takesSecret && !(typeof params.secret === 'string' && params.secret !== '')) { params.secret = who.key; injected = true; }
-        if (takesEnc && params.enc_secret === 'vault') params.enc_secret = who.key;
+        if (takesSecret && (params.secret === VAULT || !(typeof params.secret === 'string' && params.secret !== ''))) { params.secret = who.key; injected = true; }
+        if (takesEnc && params.enc_secret === VAULT) params.enc_secret = who.key;
+        if (takesLock && params.new_lock === VAULT) params.new_lock = who.key;
       }
       const call = params ? [params, ...h.slice(1)] : h;
       const res = injected ? await fromSignIn.run(true, () => handler(...call)) : await handler(...call);

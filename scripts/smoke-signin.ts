@@ -3,8 +3,9 @@
  * proposals/2026-11-04-the-key-in-the-connector.md).
  *
  * Part 1, in-process: every tool that takes a `secret` gets the signed key where a call carries
- * none; a call's own secret wins; `enc_secret: "vault"` is the key; the key never seals unless
- * asked; nothing a signed call returns contains the key; a signed session's hand is its handle.
+ * none; a call's own secret wins; "vault" in `secret`, `enc_secret` or `new_lock` is the key; the
+ * key never seals unless asked; an unsigned call naming "vault" is refused; nothing a signed call
+ * returns contains the key; a signed session's hand is its handle.
  *
  * Part 2, over HTTP, with no beach behind the router (as CI runs): the router spawned as Railway
  * runs it, with BSP_SIGNIN_SECRET, and everything that proves itself without one: the 401 and its
@@ -16,7 +17,9 @@
  * folder, as smoke:pass runs it): minting with a wrong key and the right one, the ring holding no
  * key in the clear, a signed write with no secret, the vault opened with enc_secret "vault" and the
  * key taken out of what comes back, a second fingerprint, revoking one on the router's page while
- * the other goes on, and refresh refused for the revoked one. Skipped, and said so, where no
+ * the other goes on, and refresh refused for the revoked one; then the one address, /me, signed
+ * in with the handle typed, its token and /as/<handle>'s each refused at the other, and a new
+ * block founded with new_lock "vault". Skipped, and said so, where no
  * pscale-beach checkout stands beside this repository: CI's gate proves itself from this repo
  * alone.
  *
@@ -48,8 +51,8 @@ async function wrapper() {
   const stub: any = { tool: (...args: any[]) => { tools[args[0]] = args[args.length - 1]; } };
   installSignedIn(stub);
   let seen: any = null;
-  stub.tool('takes', 'a tool with a secret', { secret: z.string().optional(), enc_secret: z.string().optional() }, {},
-    async (p: any) => { seen = { secret: p.secret, enc: p.enc_secret, seal: sealingKey(p.enc_secret, p.secret), note: signedSealNote() }; return { content: [{ type: 'text', text: 'ok' }] }; });
+  stub.tool('takes', 'a tool with a secret', { secret: z.string().optional(), enc_secret: z.string().optional(), new_lock: z.string().nullable().optional() }, {},
+    async (p: any) => { seen = { secret: p.secret, enc: p.enc_secret, lock: p.new_lock, seal: sealingKey(p.enc_secret, p.secret), note: signedSealNote() }; return { content: [{ type: 'text', text: 'ok' }] }; });
   stub.tool('keyless', 'a tool with no secret', { block: z.string() }, {}, async (p: any) => { seen = { keys: Object.keys(p) }; return { content: [{ type: 'text', text: `the vault says ${KEY} opens it` }] }; });
   stub.tool('bare', 'a tool with no parameters', async () => { seen = { bare: true }; return { content: [{ type: 'text', text: 'ok' }] }; });
   const signed = (sessionId: string) => ({ sessionId, authInfo: { token: 't', clientId: 'c', scopes: ['bsp'], extra: { signedIn: { handle: 'ada', key: KEY } } } });
@@ -66,8 +69,19 @@ async function wrapper() {
   ok("a call's own secret wins over the sign-in, and seals as it always did", seen.secret === 'OTHER' && seen.seal === 'OTHER' && seen.note === '');
   await tools.takes({ secret: '' }, signed('s1'));
   ok('an empty secret counts as none', seen.secret === KEY);
-  await tools.takes({ secret: 'X', enc_secret: 'vault' }, { sessionId: 's2' });
-  ok('an unsigned call is untouched, "vault" included', seen.secret === 'X' && seen.enc === 'vault');
+  await tools.takes({ secret: 'vault' }, signed('s1'));
+  ok('secret "vault" is the key, and seals nothing unless asked', seen.secret === KEY && seen.seal === undefined);
+  await tools.takes({ new_lock: 'vault' }, signed('s1'));
+  ok('new_lock "vault" latches under the key', seen.lock === KEY && seen.secret === KEY);
+  await tools.takes({ new_lock: 'OTHER' }, signed('s1'));
+  ok("a call's own new_lock is its own", seen.lock === 'OTHER');
+  await tools.takes({ secret: 'X', enc_secret: 'E' }, { sessionId: 's2' });
+  ok('an unsigned call is untouched', seen.secret === 'X' && seen.enc === 'E' && seen.seal === 'E');
+  for (const field of ['secret', 'enc_secret', 'new_lock']) {
+    seen = null;
+    const r = await tools.takes({ [field]: 'vault' }, { sessionId: 's2' });
+    ok(`an unsigned call naming "vault" in ${field} is refused, and runs nothing`, seen === null && r.isError === true && /only on a signed connection/.test(r.content[0].text), JSON.stringify(r));
+  }
   const shown = await tools.keyless({ block: 'b' }, signed('s3'));
   ok('a tool that takes no secret is given none', seen.keys.length === 1 && seen.keys[0] === 'block', JSON.stringify(seen));
   ok('nothing a signed call returns contains the key', !shown.content[0].text.includes(KEY) && shown.content[0].text.includes("[this connection's key]"), shown.content[0].text);
@@ -104,8 +118,9 @@ async function start(port: number, env: Record<string, string | undefined>): Pro
   return child;
 }
 
-function client(O: string, handle: string) {
-  const RES = `${O}/mcp/v1/as/${handle}`;
+/** A client of one signed address: <O>/mcp/v1/as/<handle>, or <O>/mcp/v1/me with at = 'me'. */
+function client(O: string, handle: string, at = `as/${handle}`) {
+  const RES = `${O}/mcp/v1/${at}`;
   const verifier = b64url(randomBytes(32));
   const challenge = b64url(createHash('sha256').update(verifier).digest());
   const register = async () => (await fetch(`${O}/oauth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -113,8 +128,9 @@ function client(O: string, handle: string) {
   const ask = (clientId: string, over: Record<string, string> = {}) => ({ response_type: 'code', client_id: clientId, redirect_uri: CB,
     code_challenge: challenge, code_challenge_method: 'S256', state: 'st1', scope: 'bsp', resource: RES, ...over });
   const authorize = (clientId: string, over: Record<string, string> = {}) => fetch(`${O}/oauth/authorize?${form(ask(clientId, over))}`, { redirect: 'manual' });
-  const signIn = (clientId: string, key: string, name: string) => fetch(`${O}/oauth/authorize`, { method: 'POST', redirect: 'manual',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form({ ...ask(clientId), handle: 'mallory', key, name }) });
+  // At /as/<handle> the posted handle is ignored (the address fixes it); at /me it is the one signed in.
+  const signIn = (clientId: string, key: string, name: string, typed = at === 'me' ? handle : 'mallory') => fetch(`${O}/oauth/authorize`, { method: 'POST', redirect: 'manual',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form({ ...ask(clientId), handle: typed, key, name }) });
   const token = (body: Record<string, string>) => fetch(`${O}/oauth/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form(body) });
   const exchange = (clientId: string, code: string) => token({ grant_type: 'authorization_code', code, redirect_uri: CB, client_id: clientId, code_verifier: verifier, resource: RES });
   const mcp = (url: string, body: string, bearer?: string, session?: string) => fetch(url, { method: 'POST',
@@ -163,6 +179,23 @@ async function router() {
     ok("another server's resource → invalid_target", /error=invalid_target/.test((await c.authorize(cl.client_id, { resource: 'https://elsewhere.example/mcp/v1/as/ada' })).headers.get('location') ?? ''));
     const loop = await c.authorize(cl.client_id, { redirect_uri: 'http://localhost:53123/callback' });
     ok('a loopback return matches on any port (Claude Code)', loop.status === 200 && /A program on this computer/.test(await loop.text()));
+
+    console.log('\n=== the one address, /mcp/v1/me ===');
+    const me = client(O, 'ada', 'me');
+    const m401 = await me.mcp(me.RES, init(4));
+    const mwww = m401.headers.get('www-authenticate') ?? '';
+    ok('/me with no token → 401, pointing at its own metadata', m401.status === 401 && mwww.includes(`resource_metadata="${O}/.well-known/oauth-protected-resource/mcp/v1/me"`), mwww);
+    const mprm = await (await fetch(`${O}/.well-known/oauth-protected-resource/mcp/v1/me`)).json();
+    ok('its metadata names /me, served by this router', mprm.resource === me.RES && mprm.authorization_servers?.[0] === O, JSON.stringify(mprm));
+    const mpg = await me.authorize(cl.client_id);
+    const mhtml = await mpg.text();
+    ok('its page asks for the handle as well as the key', mpg.status === 200 && /<input name="handle" required/.test(mhtml) && !/name="handle"[^>]*readonly/.test(mhtml) && /type="password"/.test(mhtml), mhtml.slice(0, 600));
+    const notHandle = await me.signIn(cl.client_id, 'ada-the-key', 'my phone', 'not a handle!');
+    ok('a typed handle that is not a handle stays on the page', notHandle.status === 400 && /A handle is letters/.test(await notHandle.text()));
+    const mlost = await me.signIn(cl.client_id, 'ada-the-key', 'my phone');
+    ok('…and a good one with no beach to answer mints nothing', mlost.status === 400 && !mlost.headers.get('location') && /did not answer/.test(await mlost.text()));
+    ok('a forged bearer at /me → 401', (await me.mcp(me.RES, init(5), 'forged-token-'.repeat(5))).status === 401);
+    ok('/mcp/v1/me/more is no address', (await me.mcp(`${O}/mcp/v1/me/more`, init(6))).status === 404);
 
     console.log('\n=== with no beach to answer, nothing is minted ===');
     const lost = await c.signIn(cl.client_id, 'ada-the-key', 'my phone');
@@ -285,6 +318,33 @@ async function realBeach() {
     ok('the laptop goes on, with the same key', /written by the laptop/.test(await (async () => { await lap.call({ block: 'journal:ada', spindle: '5', content: 'written by the laptop' }); return raw('journal:ada', '5'); })()));
     const fresh = await c.token({ grant_type: 'refresh_token', refresh_token: t2.refresh_token });
     ok("the laptop's refresh gives a fresh pair", fresh.status === 200 && !!(await fresh.json()).access_token);
+
+    console.log('  — the one address');
+    const me = client(O, 'ada', 'me');
+    const mcl = await me.register();
+    const wrongMe = await me.signIn(mcl.client_id, 'bob-other-key', 'my tablet');
+    ok('at /me, a key that does not open the typed handle mints nothing', wrongMe.status === 400 && /does not open ada/.test(await wrongMe.text()));
+    const meCode = new URL((await me.signIn(mcl.client_id, KEY, 'my tablet')).headers.get('location') ?? 'http://none/').searchParams.get('code') ?? '';
+    const tm = await (await me.exchange(mcl.client_id, meCode)).json();
+    ok('signing in at /me with the handle typed mints a fingerprint for it', !!tm.access_token && /my tablet/.test(await raw('fingerprints:ada')), JSON.stringify(tm));
+    const ms = await session(me.RES, tm.access_token);
+    ok('the token opens /me', ms.status === 200);
+    await ms.call({ block: 'journal:ada', spindle: '6', content: 'written at the one address' });
+    ok('…as the handle signed in, writing under its latch', /written at the one address/.test(await raw('journal:ada', '6')));
+    ok('a /me token does not open /as/ada', (await c.mcp(c.RES, init(30), tm.access_token)).status === 401);
+    ok('an /as/ada token does not open /me', (await me.mcp(me.RES, init(31), t2.access_token)).status === 401);
+
+    console.log('  — "vault" wherever a call would name the key');
+    const founded = textOf((await ms.call({ block: 'notes:ada', content: { _: "ada's notes" }, new_lock: 'vault' })).body);
+    ok('new_lock "vault" founds a block under the key, and the reply hides it', /ada's notes|notes:ada/.test(await raw('notes:ada')) && !founded.includes(KEY), founded);
+    const shut = textOf((await open.call({ block: 'notes:ada', spindle: '1', content: 'unsigned' })).body);
+    ok('…latched: the open endpoint cannot write it', /secret required|locked/i.test(shut), shut);
+    await ms.call({ block: 'notes:ada', spindle: '1', content: 'the signed hand can' });
+    ok('…and the signed hand can', /the signed hand can/.test(await raw('notes:ada', '1')));
+    await ms.call({ block: 'journal:ada', spindle: '7', content: 'secret named as vault', secret: 'vault' });
+    ok('secret "vault" writes with the key', /secret named as vault/.test(await raw('journal:ada', '7')));
+    const lit = textOf((await open.call({ block: 'journal:ada', spindle: '8', content: 'x', secret: 'vault' })).body);
+    ok('"vault" through the open endpoint is refused before it reaches the beach', /only on a signed connection/.test(lit), lit);
   } finally {
     rtr?.kill('SIGTERM');
     beach.kill('SIGTERM');

@@ -3,7 +3,9 @@
 **Status**: PROPOSED and BUILT in the same PR, at David's word ("Yes, build it", then "Yes, rework it", 4
 November), lane fingerprint.key, Claude Code (Opus 5.5) on David's Mac; the record is at watch:weft 816. It
 goes live when the router carries `BSP_SIGNIN_SECRET` and this PR is merged. Until then nothing changes
-anywhere.
+anywhere. Live the same day (bsp-mcp #582). **Amended the same day, §9**: the one address, `/mcp/v1/me`,
+with the handle typed on the sign-in page, and "vault" standing for the key wherever a signed call would
+name it.
 
 ## 0. David's words
 
@@ -166,3 +168,77 @@ secret, and its fingerprints open nowhere else.
   fingerprints page with two fingerprints listed.
 - Not yet proved: Claude itself signing in. That needs the router deployed with its secret, and is step 3
   of §7.
+
+## 9. Amendment: the one address, and "vault" wherever a key is named (4 November, afternoon)
+
+**Status**: PROPOSED and BUILT in one PR, at David's word ("Yes, build it"). It goes live when merged; the
+router's secret is already set.
+
+### 9.1 David's words
+
+On where a connection's handle should live: *"I think the one address and the sign-in page carries the
+handle is the better design."* On the two addresses side by side: *"Ah, ok, so /me is the generic user and
+/as/<handle> is for an agent; that is good I think."*
+
+### 9.2 What was found
+
+1. **One address per identity was a chore.** A connector's address named its handle, so every person
+   needed to be told their own URL, and a mistyped handle in the URL could only fail at the key.
+2. **A client account adds any one address once.** So a second identity on the same account, David's
+   account holding weft beside himself, still needs an address of its own.
+3. **A signed connection could not found a block under its key.** The weaver's first signed run (4
+   November, 15:18Z) wrote its archive, archive:portal:2026-11-04, unlatched: it could pass the key as
+   proof without seeing it, but never as the lock a new block takes. Founding a colour (`src/tools/bsp.ts`,
+   a colour is latched whole by its keeper) and any new block named for the handle hit the same wall.
+
+### 9.3 The shape
+
+- **`/mcp/v1/me` is the address to give anyone.** It answers 401 and points at its own metadata like
+  `/as/<handle>` does. Its sign-in page asks for the handle as well as the key, with no automatic capital
+  letter (a phone's first-letter capital once split a handle in two). The fingerprint is minted for the
+  handle typed, and a key that does not open that handle's blocks mints nothing, exactly as before.
+- **The token is bound to the address it was minted at.** A token from `/me` opens `/me`, for the handle
+  that signed in there, and nothing else; a token from `/as/<handle>` opens only that address.
+- **`/mcp/v1/as/<handle>` stays**, for a second identity on one client account: David at `/me`, weft at
+  `/as/weft`, both on his account.
+- **"vault" wherever a signed call would name the key.** `secret: "vault"`, `enc_secret: "vault"` and
+  `new_lock: "vault"` each become the connection's key at the router. `new_lock: "vault"` is the new one:
+  it latches a new block under the key, so a signed connection founds its own blocks, archives and
+  colours locked, without ever seeing the key it locks them with.
+- **An unsigned call that names "vault" is refused before it reaches the beach.** There the word would
+  itself become the key: a latch anyone could open, a seal anyone could read, a key pair anyone could
+  derive.
+
+### 9.4 What it still does not do
+
+- **It does not narrow what a connection may do.** A signed connection can still rotate or relinquish a
+  latch it holds, by passing `new_lock` with another value or empty, as anyone holding the key can. A
+  misled agent could therefore move a block to a key it was handed. Refusing every `new_lock` but "vault"
+  on a signed call would close that, at the cost of a signed hand founding a block under any other key.
+  That choice is David's, and this PR leaves it open.
+- **It does not lock the archive the weaver already wrote open.** archive:portal:2026-11-04 stands
+  unlatched until a signed hand latches it with `new_lock: "vault"`, a homestead its own keeper may make.
+
+### 9.5 Where it lands
+
+| file | what |
+|---|---|
+| `src/signin.ts` | `ANY`, the path `/me` in `asHandle`; `/me`'s metadata and 401; the page asking for the handle; `authFor` taking whichever handle a `/me` token carries, bound to `/me`; "vault" in `secret`, `enc_secret` and `new_lock`; the unsigned "vault" refused; the instructions line |
+| `src/index.ts` | the session takes its handle from the token, so `/me` signs a session in as whoever signed in there |
+| `scripts/smoke-signin.ts` | 24 checks more (below) |
+
+### 9.6 Check
+
+- `npm run build` is clean.
+- `npm run smoke:signin` passes 88 of 88:
+  - 20 on the wrapper: "vault" in each of the three fields; a call's own `new_lock` kept; an unsigned call
+    naming "vault" in each field refused, running nothing.
+  - 32 over HTTP with no beach behind the router: `/me`'s 401 and its pointer, its metadata, its page
+    asking for the handle, a typed handle that is not a handle, no mint with no beach, a forged bearer, and
+    `/me/more` no address.
+  - 36 through the real beach handler run offline: at `/me` a key that does not open the typed handle
+    mints nothing, the right one mints for it, its token writes as that handle, a `/me` token is refused at
+    `/as/ada` and an `/as/ada` token at `/me`; `new_lock: "vault"` founds a block the open endpoint
+    cannot write and the signed hand can; `secret: "vault"` writes; "vault" through the open endpoint is
+    refused.
+- The live beach was never touched.
