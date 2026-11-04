@@ -6,7 +6,7 @@
 - `spine:thread-schematic` and `function:thread-schematic` were founded, and the beach map gained its 1.53;
 - `function:schematic` 6, 7 and 9 were re-voiced, the standing text archived first at `archive:function:schematic:2026-11-04`.
 
-The page follows in happyseaurchin-home #613, open for David's merge. This file is their record (`proposals/2026-08-05-law-writes-get-their-record.md`).
+The page is happyseaurchin-home #613, merged at 16:30Z at David's "Merge all three", with this record and #590. This file is their record (`proposals/2026-08-05-law-writes-get-their-record.md`).
 
 ## The ask
 
