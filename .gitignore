@@ -10,3 +10,7 @@ dist/
 .claude/settings.local.json
 .tree-rig-out/
 scripts/.vectors-cache/
+
+# relay test: raw chooser logs, kept compressed beside the results
+scripts/relay/runs/*.jsonl
+scripts/relay/__pycache__/
