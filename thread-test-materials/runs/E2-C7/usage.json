@@ -1,0 +1,12 @@
+{
+ "models": [
+  "claude-haiku-5-5"
+ ],
+ "turns": 8,
+ "ms": 20532,
+ "cost_usd": 0.004772579999999999,
+ "stop": "success",
+ "refused": [
+  "B=/private/tmp/claude-501/-Users-davidpinto-Projects-bsp-mcp-server/8320b30f-a181-4277-9226-ee52ea77206a/scratchpad/endings/runs/E2-C7/bb; $B block tides:draft 4; echo ---; $B block tides:draft 3 | head -40; echo ---; $B room dana"
+ ]
+}

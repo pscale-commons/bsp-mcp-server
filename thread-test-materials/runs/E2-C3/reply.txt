@@ -1,0 +1,9 @@
+I tied the knot at 1.3 and handed the review to wren. The tide-table thread is now waiting on wren.
+
+The note I found in my room was thread 1's option 1.3, "rook adds the spring tides before anyone reviews". I confirmed `tides:draft 2` stands ("draft 1 with the spring tides added"), then took that option and wrote the knot at its address. The `say` reported that it replaced the earlier option line at 1.3. That line was an option, not an act, so nothing of wren's or yours was lost. I offered no new options, since the next step is wren's review, not a choice of mine.
+
+wren's room now holds `thread:1.3`, asking for a review of draft 2 against the harbour's data.
+
+```json
+{"tied_at": "1.3", "line": "rook adds the spring tides before anyone reviews: tides draft 2 now stands on the page · waits on wren · read: tides:draft 2", "options": [], "handed_on": {"to": "wren", "text": "thread:1.3 — wren reviews tides:draft 2 (draft 1 with the spring tides added) against the harbour's data"}, "why": "Option 1.3 was my own taken choice, so the knot goes at its address, and the review passes to wren at the same address."}
+```

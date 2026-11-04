@@ -1,0 +1,7 @@
+The moorings work is on the beach at thread 3. I opened a new thread because thread 1 is the tide-table page and thread 2 is the glossary, and neither is this work. The knot is tied and verified, and the hand-off is in wren's room.
+
+One gap: `moorings:draft` returned only its summary line ("draft 1: 48 moorings, by pontoon and berth"), not the list itself. I could not check the entries from here, so wren's review will need to read the full list.
+
+```json
+{"tied_at": "3", "line": "rook built the moorings page's first draft: 48 moorings by pontoon and berth · waits on wren · read: moorings:draft", "options": ["wren checks the moorings list against the harbour's register before publishing", "dana decides the list is good enough to publish as it is, without a review"], "handed_on": {"to": "wren", "text": "thread:3 — the moorings page draft 1 (48 moorings, by pontoon and berth) waits on your review against the harbour's register, or dana's decision to publish as it is (options 3.1 and 3.2)"}, "why": "I opened a new thread at 3 because the moorings page is new work and neither existing thread carries it, and wren is the next hand because the choice between review and publishing waits on wren's room."}
+```

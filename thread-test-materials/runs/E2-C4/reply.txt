@@ -1,0 +1,5 @@
+I recorded dana's choice on thread 1 at 1.2 ("dana decides without a review") and marked the branch complete. The page is live at tides:live. I did not hand anything on, because the branch needs nothing more.
+
+One thing to check: the beach reported that my write at 1.2 "replaced your earlier line there." The earlier 1.2 line was mine, but I can't recover its text. I wrote the line twice; the second version is the one that stands.
+
+{"tied_at": "1.2", "line": "dana decides without a review — taken at dana's word 'Publish it'; published, live at tides:live · complete · read: tides:live", "options": [], "handed_on": {"to": null, "text": null}, "why": "Dana's 'Publish it' is the option 'dana decides without a review' beneath the knot at 1, so the choice is tied at 1.2 and the branch closes as complete."}

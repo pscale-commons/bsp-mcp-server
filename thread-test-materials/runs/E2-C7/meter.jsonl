@@ -1,0 +1,11 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "tides:draft"], "chars": 76}
+{"cmd": ["read", "1"], "chars": 5712}
+{"cmd": ["read", "1.12"], "chars": 627}
+{"cmd": ["block", "thread:rook"], "chars": 318}
+{"cmd": ["block", "thread:dana"], "chars": 126}
+{"cmd": ["block", "tides:draft", "4"], "chars": 87}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["say", "1.1211", "rook checked the low-water marks against the harbour master's table and corrected one in draft 4 \u00b7 waits on dana \u00b7 read: tides:draft 4", "--option", "publish tides:draft 4 as it stands", "--option", "ask wren to review tides:draft 4 first"], "chars": 321}
+{"cmd": ["post", "dana", "thread:1.1211 \u2014 rook checked the low-water marks and corrected one in tides:draft 4; dana decides: publish it, or ask wren to review first"], "chars": 29}

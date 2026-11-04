@@ -1,0 +1,3 @@
+I recorded the phone fix on the thread at 1.14, beneath wren's knot at 1.1, and left it waiting on dana. None of the existing options mention the fix, so I didn't add options. I also put a pointer to 1.14 in dana's room.
+
+{"tied_at": "1.14", "line": "rook fixed the page for phones, which broke on small screens, in tides:draft 3 (draft 2 with the layout fixed for phones); none of the options above mention this · waits on dana · read: tides:draft 3", "options": [], "handed_on": {"to": "dana", "text": "thread:1.14 — rook fixed the tide-table page for phones in tides:draft 3; dana's decision on 1.1 waits on this, which none of the options name"}, "why": "1.14 is the next free digit beneath 1.1, the line it answers, since no option there names the phone fix."}

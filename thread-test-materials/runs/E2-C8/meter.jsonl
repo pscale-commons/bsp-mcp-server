@@ -1,0 +1,8 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["block", "harbour:chart"], "chars": 117}
+{"cmd": ["read", "1"], "chars": 5571}
+{"cmd": ["block", "thread:wren"], "chars": 379}
+{"cmd": ["block", "thread:dana"], "chars": 77}
+{"cmd": ["say", "1.111", "wren put the choice to dana again: the harbour's tide chart changes next week (harbour:chart 2) \u00b7 waits on dana \u00b7 read: harbour:chart 2, tides:draft 1", "--option", "publish now and update the page after the chart changes", "--option", "wait a week and publish on the new chart"], "chars": 354}
+{"cmd": ["post", "dana", "thread:1.111 \u2014 dana, the harbour's tide chart changes next week. Choose again: publish now and update after the change, or wait a week and publish on the new chart."], "chars": 29}

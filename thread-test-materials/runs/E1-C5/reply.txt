@@ -1,0 +1,5 @@
+I recorded the phone fix on the thread and handed it to dana. The line is at 1.3 in my mirror, with two options beneath it, and I posted a pointer to dana's room.
+
+```json
+{"tied_at": "1.3", "line": "fixed the tide-table layout for phones in tides:draft 3 — draft 2 broke on phones, which none of the options above mention · waits on dana", "options": ["publish draft 3 as it is", "check draft 3 on a phone before publishing"], "handed_on": {"to": "dana", "text": "thread:1.3 — rook fixed draft 3 for phones; draft 2 broke on phone screens, which no option on thread:1.1 covers. Decide with that in view. · waits on dana"}, "why": "The phone fix is not one of the options at 1.1, so it takes the next free digit (1.3) in my own mirror, which is where the way puts a line that isn't an option."}
+```

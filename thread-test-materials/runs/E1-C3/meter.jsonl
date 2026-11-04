@@ -1,0 +1,8 @@
+{"cmd": ["room", "rook"], "chars": 104}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 1753}
+{"cmd": ["block", "thread:rook"], "chars": 260}
+{"cmd": ["room", "wren"], "chars": 28}
+{"cmd": ["say", "1.3", "rook added the spring tides before the review: tides:draft 2 \u00b7 waits on wren \u00b7 read: tides:draft 2", "--option", "wren reviews the draft against the harbour's data", "--option", "dana decides without a review"], "chars": 311}
+{"cmd": ["read", "1"], "chars": 784}
+{"cmd": ["post", "wren", "rook: tides:draft 2 is on the page with the spring tides added. Please review it against the harbour's data. Thread place: thread:1.3"], "chars": 29}

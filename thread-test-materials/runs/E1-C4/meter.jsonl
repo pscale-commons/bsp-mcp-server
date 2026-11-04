@@ -1,0 +1,7 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["read", "1"], "chars": 1972}
+{"cmd": ["block", "thread:rook"], "chars": 201}
+{"cmd": ["block", "thread:dana"], "chars": 26}
+{"cmd": ["say", "1.11", "published the tide-table page at dana's word 'Publish it'; it is live at tides:live \u00b7 complete"], "chars": 177}
+{"cmd": ["read", "1"], "chars": 953}

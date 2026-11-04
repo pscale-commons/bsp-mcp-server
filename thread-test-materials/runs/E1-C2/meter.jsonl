@@ -1,0 +1,10 @@
+{"cmd": ["room", "wren"], "chars": 89}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "thread:wren"], "chars": 88}
+{"cmd": ["read", "1"], "chars": 1690}
+{"cmd": ["block", "thread:rook"], "chars": 201}
+{"cmd": ["block", "tides:draft"], "chars": 214}
+{"cmd": ["say", "1.1", "reviewed draft 1 against the harbour's data; two tide times were wrong and are corrected in tides:draft 2 \u00b7 waits on dana", "--option", "dana publishes tides:draft 2", "--option", "dana asks for another pass"], "chars": 336}
+{"cmd": ["post", "dana", "thread:1.1 \u2014 rook's tide-table draft 1 is reviewed by wren; two tide times were wrong and are corrected in tides:draft 2. Your decision: publish draft 2, or ask for another pass."], "chars": 29}
+{"cmd": ["block", "thread:wren"], "chars": 323}
+{"cmd": ["read", "1"], "chars": 783}

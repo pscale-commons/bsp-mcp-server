@@ -1,0 +1,5 @@
+I tied my knot at 1.121, beneath dana's request at 1.12, and handed it to dana's room. The line has a small flaw: it reads "rook: rook:" because I included my handle, which the read already shows. I left it as written rather than overwrite my own act, and I'm flagging it here.
+
+Dana's request at 1.12 was for the low-water marks. Draft 3 shows them, so the knot says the page is ready and waits on dana. I offered two options: publish draft 3, or ask for another pass on the marks. The hand-on in dana's room points to thread:1.121.
+
+{"tied_at": "1.121", "line": "rook: low-water marks now shown on the tide-table page, tides:draft 3 (draft 2 with the marks) · waits on dana · read: tides:draft 3", "options": ["dana publishes draft 3", "another pass, please: the marks need changing"], "handed_on": {"to": "dana", "text": "thread:1.121 — dana decides on tides:draft 3: publish it, or ask for another pass on the low-water marks"}, "why": "Dana's act at 1.12 waits on rook and already has lines at that address, so my answer goes at the next free digit beneath it, 1.121."}

@@ -21,12 +21,18 @@ delivery: the teaching a mind is handed, from teachings/ —
   S   David's form: H3's handing over, of six sentences in place of the way (way_s.txt), the law on the test beach cut to its
       root line, and seeds with no closing clause; graded by short.py, by where the line lands and nothing lost, never by a keyword
   S2  S, with two sentences mended (way_s2.txt): where the thread stands, and the place spelled thread:<address>
-  S3  S, with only the place spelled thread:<address> (way_s3.txt); ways:thread since 3 November, and run-minds.sh's default
+  S3  S, with only the place spelled thread:<address> (way_s3.txt); ways:thread on 3 and 4 November
   S4  S3, a hand that already holds a line where it ties beginning with its words, David's one knot (way_s4.txt).
       S3 and S4 are graded alike, a line kept in place counting as nothing lost (short.py AMEND); both ran on 3 November
+  E1  S3, with one sentence more: the line ends with whose move is next, ' · waits on <handle>', from a date if later,
+      or ' · complete' (way_e1.txt); the endings back, at David's GO of 4 November (bsp-mcp #584)
+  E2  the way of #570 (archive:ways:thread:2026-11-03) with the date added to its step 4 (way_e2.txt). E1 and E2 keep the
+      seeds' endings, run a tenth use, later, and are graded by short.py with an ending in each use (its docstring has the gate).
+      Run 4 November: E1 43 of 47, the date written in words on later and a line lost on self, so it missed the gate; E2 44
+      of 47, every ending right, the date right, nothing lost, so it passed and became ways:thread the same hour; run-minds.sh's default
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
-cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake
+cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2)
 <runs> is $THREAD_TEST_RUNS, else runs/ beside this file. A run's mind is a separate step
 (run-minds.sh, which spends model calls); setup and score spend nothing.
 """
@@ -40,11 +46,12 @@ import short as SH
 
 RUNS = os.environ.get("THREAD_TEST_RUNS") or os.path.join(HERE, "runs")
 SHORT = {"S", "S2", "S3", "S4"}   # David's form: seeds with no closing clause, graded by short.py
+ENDS = {"E1", "E2"}   # the endings back (bsp-mcp #584): seeds as tied, graded by short.py with an ending in each use
 TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt", "R": "root_v2.txt", "H": "root_v2.txt", "H2": "root_v2.txt", "H3": "root_v2.txt",
-             **{d: "root_v2.txt" for d in SHORT}}
-LIVE = {"R", "H", "H2", "H3"} | SHORT
-HANDED = {"H", "H2", "H3"} | SHORT
-DRAFTS = {"H3": "w3", **{d: d.lower() for d in SHORT}}   # a delivery that hands over a draft of the way, not the text the first runs had
+             **{d: "root_v2.txt" for d in SHORT | ENDS}}
+LIVE = {"R", "H", "H2", "H3"} | SHORT | ENDS
+HANDED = {"H", "H2", "H3"} | SHORT | ENDS
+DRAFTS = {"H3": "w3", **{d: d.lower() for d in SHORT | ENDS}}   # a delivery that hands over a draft of the way, not the text the first runs had
 # Graded as they were reported: place's first check then asked only that a line stands at 1.121, and in L2, R and H that line
 # is the mind's own option beneath its knot at 1.12. Asking for an act there would make those 34, 15 and 30, so the check is
 # tightened only for runs after these, and the figures already reported hold.
@@ -124,6 +131,10 @@ def st_c8():
     return s
 
 
+def st_c10():
+    return st_c2()
+
+
 def st_c9():
     s = base()
     s["mirrors"]["rook"]["1"] = {"_": "built the tide-table page's first draft from last year's tables · waits on kestrel · read: tides:draft 1",
@@ -145,6 +156,9 @@ BLOCKS = {
                            "4": "draft 4: draft 3 with one low-water mark corrected against the harbour master's table"}},
     "C8": {"tides:draft": {"_": "the tide-table page, one draft per digit", "1": D1, "2": "draft 2: two tide times corrected"},
            "harbour:chart": {"_": "the harbour's tide charts", "1": "the chart in force now", "2": "the new chart, in force from next week"}},
+    "C10": {"tides:draft": {"_": "the tide-table page, one draft per digit", "1": D1},
+            "harbour:data": {"_": "the harbour's tide data, one month per digit", "1": "October's data, published 3 October 2026",
+                             "2": "November's data, which the harbour publishes on 10 November 2026"}},
     "C9": {"tides:draft": {"_": "the tide-table page, one draft per digit", "1": D1},
            "tides:feed": {"_": "what the harbour feed returned, by fetch", "11": "62 tide times for November"}},
 }
@@ -186,6 +200,10 @@ CASES = {
         "to dana again, with two new options: publish now and update the page after the chart changes, or wait a week and publish on the "
         "new chart. Put the choice to her again on the beach.")),
     "C9": dict(me="kestrel", kind="wake", state=st_c9, situation=None),
+    "C10": dict(me="wren", kind="later", state=st_c10, situation=(
+        "You are wren, an agent that reviews work. Your room has something for you. Today is 4 November 2026. You cannot do it "
+        "yet: the review needs the harbour's November data, which the harbour publishes on 10 November 2026 (harbour:data 2). "
+        "Put it off on the beach until that day, so that it comes back to you then.")),
 }
 
 COMMANDS = """COMMANDS — this is a test beach. Run these with Bash; `{bb}` stands for the beach's tools, and your secret is already supplied. Use nothing else: no other tool touches this beach, and the real beach must not be touched.
@@ -356,8 +374,9 @@ def grade(dname, case):
     row["form_v1"] = "WELL FORMED" if not [x for x in F1 if x["level"] == "FAULT"] else "NOT: " + "; ".join(f"{x['test']} {x['at']}" for x in F1 if x["level"] == "FAULT")
     row["form_p2"] = "WELL FORMED" if not [x for x in F2 if x["level"] == "FAULT"] else "NOT: " + "; ".join(f"{x['test']} {x['at']}" for x in F2 if x["level"] == "FAULT")
     row["warns_v1"] = sorted({f"{x['test']} {x['at']}" for x in F1 if x["level"] == "WARN" and x["hand"] == me})
-    if dname.split("x")[0] in SHORT:
-        Es, lost, R, kids = SH.grade_s(case, row, c, start, end, added, posts, rep, mirror_lines, amend=dname.split("x")[0] in SH.AMEND)
+    if dname.split("x")[0] in SHORT | ENDS:
+        Es, lost, R, kids = SH.grade_s(case, row, c, start, end, added, posts, rep, mirror_lines,
+                                       amend=dname.split("x")[0] in SH.AMEND | ENDS, ending=dname.split("x")[0] in ENDS)
         row["expect"] = Es
         row["score"] = f"{sum(1 for e in Es if e.startswith('ok'))}/{len(Es)}"
         row["lost"] = lost
@@ -454,7 +473,7 @@ def grade(dname, case):
 
 if __name__ == "__main__":
     cmd, dname = sys.argv[1], sys.argv[2]
-    cases = sys.argv[3].split(",") if len(sys.argv) > 3 else list(CASES)
+    cases = sys.argv[3].split(",") if len(sys.argv) > 3 else [c for c in CASES if c != "C10" or dname.split("x")[0] in ENDS]
     if cmd == "setup":
         setup(dname, cases)
     elif cmd == "score":

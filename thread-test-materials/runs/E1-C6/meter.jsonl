@@ -1,0 +1,8 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "tides:draft"], "chars": 231}
+{"cmd": ["read", "1"], "chars": 2076}
+{"cmd": ["read", "1.12"], "chars": 535}
+{"cmd": ["say", "1.12", "rook: built draft 3, the low-water marks shown on the page (tides:draft 3) \u00b7 waits on dana", "--option", "dana publishes draft 3", "--option", "dana asks for another pass"], "chars": 407}
+{"cmd": ["post", "dana", "thread:1.12 \u2014 draft 3 is built: the low-water marks are shown on the page (tides:draft 3). Your move: publish it, or ask for another pass."], "chars": 29}
+{"cmd": ["read", "1.12"], "chars": 723}

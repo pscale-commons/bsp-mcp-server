@@ -1,0 +1,5 @@
+The review is parked on the beach and set to come back on 10 November 2026. The readback shows my line at 1.1, with the option offered beneath it at 1.11.
+
+The readback shows my line with a doubled "1.1 · wren:" prefix. The beach adds that prefix itself, and I did not re-save to fix it, since that would have written a second line.
+
+{"tied_at": "1.1", "line": "1.1 · wren: the review waits for the harbour's November data, published 10 November 2026 · waits on wren from 10 November 2026", "options": ["wren reviews the tide-table draft against harbour:data 2 (November)"], "handed_on": {"to": "wren", "text": "thread:1.1 waits for harbour:data 2 on 10 November 2026; when it lands, review rook's draft at tides:draft 1 against it"}, "why": "1.1 is the option rook already offered for this review, and it is where I tie the deferral so the 'from 10 November 2026' wait sits on the review step itself."}

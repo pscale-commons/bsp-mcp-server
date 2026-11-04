@@ -21,11 +21,17 @@ beneath it; a hand's other lines beneath its own act are its options. A line tha
 Every thread opened since v2 is read by v3, so a keyword-free knot tied today on a
 thread of phase 2 is no fault; a thread opened before v2 is read by v1, as before.
 
+On 4 November 2026 the endings came back, at David's GO (v4, bsp-mcp
+proposals/2026-11-04-threads-keep-their-endings.md): every act ends ' · waits on <handle>',
+' · waits on <handle> from <date>' or ' · complete', and an option never does. A thread
+opened from the re-cut (V4_SINCE) is read by v2's reading with the date; one opened from
+v2 up to it keeps v3, since knots tied on 3 and 4 November carry no ending.
+
   thread_form.py live [--v1|--phase2|--v3] [--thread N] [--json]   the live beach, by public GET
   thread_form.py state <file.json> [--v1|--phase2|--v3] [--json]   a test beach's state
 
 With no flag each thread is read by the law of its opening (live), or by the law as it
-stands, v3 (a test beach, whose registry keeps no stamps). Levels: FAULT breaks the
+stands, v4 (a test beach, whose registry keeps no stamps). Levels: FAULT breaks the
 form; WARN weakens it; NOTE is a reading, not a judgment. A thread with no FAULT is
 well formed. proposals/2026-10-29-threads-phase-2.md
 """
@@ -36,7 +42,8 @@ DIGIT = re.compile(r"^[1-9]$")
 OPENED = re.compile(r"·\s*opened by\s+([A-Za-z0-9_.\-]+)\s*(?:\(|$|·)")
 READS = " · read: "
 WAIT_LOOSE = re.compile(r"\bwait(?:s|ing)?\s+(?:on|for)\b|\bcomplete\b", re.I)
-WAIT_CLAUSE = re.compile(r"\s·\s(?:waits on ([A-Za-z0-9_.\-]+(?:(?:,\s*| and )[A-Za-z0-9_.\-]+)*)|(complete))\s*$")
+# a waiting may be put off to a day, ' · waits on <handle> from 2026-11-07' (proposals/2026-11-04-threads-keep-their-endings.md)
+WAIT_CLAUSE = re.compile(r"\s·\s(?:waits on ([A-Za-z0-9_.\-]+(?:(?:,\s*| and )[A-Za-z0-9_.\-]+)*)(?:\s+from\s+\d{4}-\d\d-\d\d)?|(complete))\s*$")
 WAITS_ON_ANY = re.compile(r"\bwaits? on ([A-Za-z0-9_.\-]+)", re.I)
 WORD_OF = re.compile(r"\bat ([A-Za-z0-9_.\-]+)'s word\b|\bchosen by ([A-Za-z0-9_.\-]+)\b", re.I)
 PLACE = re.compile(r"(?<![\w:])thread:(\d+(?:\.\d+)?)\b")   # a place standing on its own, not the tail of archive:ways:thread:2026-11-03
@@ -48,6 +55,9 @@ ACT_MAX, ACT_WARN, OPTION_WARN, REGISTRY_WARN = 600, 300, 120, 200
 # function:thread re-cut to v2 (the closing clause is the law): a thread whose
 # registry line was stamped before this is read by v1, the law it was tied under.
 V2_SINCE = "2026-10-29T17:13:14Z"
+# function:thread re-cut with the endings back (4 November 2026, bsp-mcp proposals/2026-11-04-threads-keep-their-endings.md):
+# a thread whose registry line was stamped from this is read by its endings again, v2's reading with the date (v4).
+V4_SINCE = "2026-11-04T12:13:42Z"
 
 
 def get(block):
@@ -232,11 +242,17 @@ def reads_of(t):
 
 
 def check(view, n, phase2=None):
-    """Thread n by the law of its opening (phase2 None), by v3 ("v3"), by v2 (True) or by v1 (False)."""
+    """Thread n by the law of its opening (phase2 None), by v3 ("v3"), by v2 (True) or by v1 (False). v4, the endings with
+    the date, is v2's reading (True), the law as it stands for a thread opened from V4_SINCE and on a test beach."""
     if phase2 is not None:
         return _check(view, n, phase2)
     st = view.registry_stamp(n)
-    if not st or st >= V2_SINCE:
+    if not st or st >= V4_SINCE:
+        F, S = _check(view, n, True)
+        if S:
+            S["law"] = "v4"
+        return F, S
+    if st >= V2_SINCE:
         F, S = _check(view, n, "v3")
         if S:
             S["law"] = "v3"
