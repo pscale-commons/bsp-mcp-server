@@ -84,6 +84,9 @@ import { followsOf, lensLaw, lensVoice, composeLensMedium } from './lens.js';
 import { raised, nodeAt, linesAt, dotted, type CrossLine } from '../cross.js';
 import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
+import { colourBlockName, type GrayEnvelope } from '../keys.js';
+import { sealer, colourLine, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
+import { sealingKey } from '../signin.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
 //    would tie this clean surface to the one it exists to stand beside) ──
@@ -135,9 +138,15 @@ export async function operatorLaw(
 
 /** The text a node presents: a leaf string is itself, an object speaks through
  *  its underscore. Null when the position is unvoiced — which is SILENCE, and
- *  silence at an address is honest absence (tree:5e), never a gap to fill. */
-export function voiceOf(node: unknown): string | null {
+ *  silence at an address is honest absence (tree:5e), never a gap to fill.
+ *  A line whose words are sealed in a colour — the envelope standing as the
+ *  node, or one zero deeper at its underscore (coloured stigmergy §2.3) —
+ *  speaks as its words through the colours the session wears at `origin`,
+ *  else as the grey line naming its colour and turn, never as its ciphertext. */
+export function voiceOf(node: unknown, origin?: string): string | null {
   if (typeof node === 'string') return node.trim() === '' ? null : node;
+  const seal = readSeal(node, origin);
+  if (seal) return seal.text;
   if (node && typeof node === 'object') {
     const u = (node as Record<string, unknown>)['_'];
     if (typeof u === 'string' && u.trim() !== '') return u;
@@ -276,28 +285,29 @@ export function laneOf(at: string): { rung: string; lane: string } | null {
  *  1.2) and liquid keeps (block-conventions 4.51): the line as it stands, 6 the
  *  instant of arrival, 3 the instant of the latest revision. Saying again in the
  *  same beat revises the line and 3, and keeps 6. */
-export function turnValue(existing: unknown, text: string, iso: string): Record<string, unknown> {
+export function turnValue(existing: unknown, text: string | GrayEnvelope, iso: string): Record<string, unknown> {
   const prev = existing && typeof existing === 'object' && !Array.isArray(existing) ? (existing as Record<string, unknown>) : {};
   return { ...prev, _: text, 6: typeof prev['6'] === 'string' ? prev['6'] : iso, 3: iso };
 }
 
 /** The stamped turns standing beneath a node: digit children that speak and
  *  carry an instant at 3. A scalar child is a field of an entry, never a lane,
- *  and an unstamped child is ordinary substructure — neither is read as a turn. */
-export function turnsOf(node: unknown, prefix = ''): { lane: string; text: string; ms: number }[] {
+ *  and an unstamped child is ordinary substructure — neither is read as a turn.
+ *  `shut` marks a turn sealed in a colour the session does not wear. */
+export function turnsOf(node: unknown, prefix = '', origin?: string): { lane: string; text: string; ms: number; shut?: boolean }[] {
   if (!node || typeof node !== 'object' || Array.isArray(node)) return [];
-  const found: { lane: string; text: string; ms: number }[] = [];
+  const found: { lane: string; text: string; ms: number; shut?: boolean }[] = [];
   for (const k of Object.keys(node as object)) {
     if (!/^[1-9]$/.test(k)) continue;
     const c = (node as Record<string, unknown>)[k];
     if (!c || typeof c !== 'object' || Array.isArray(c)) continue;
-    const text = voiceOf(c);
+    const text = voiceOf(c, origin);
     const ms = Date.parse(String((c as Record<string, unknown>)['3'] ?? ''));
-    if (text && Number.isFinite(ms)) found.push({ lane: prefix + k, text, ms });
+    if (text && Number.isFinite(ms)) found.push({ lane: prefix + k, text, ms, ...(readSeal(c, origin)?.shut ? { shut: true } : {}) });
     // Beneath the beat the turns stand at their instants — a minute, a breath,
     // a second deep — and two sessions in one second stand one beneath the
     // other; the label is the digits walked to the turn.
-    found.push(...turnsOf(c, prefix + k));
+    found.push(...turnsOf(c, prefix + k, origin));
   }
   return found;
 }
@@ -324,22 +334,24 @@ export function mirrorAtBeat(
   nowMs: number,
   cellMs: number,
   touchedMs: number,
-): { lanes: { lane: string; text: string; ms: number }[]; voicing: string | null; voicingMs: number | null } {
-  const lanes = turnsOf(node);
+  origin?: string,
+): { lanes: { lane: string; text: string; ms: number; shut?: boolean }[]; voicing: string | null; voicingMs: number | null; voicingShut: boolean } {
+  const lanes = turnsOf(node, '', origin);
   const fresh = Number.isFinite(touchedMs) && nowMs - touchedMs >= 0 && cellMs > 0 && nowMs - touchedMs < cellMs;
-  let voicing = voiceOf(node);
+  let voicing = voiceOf(node, origin);
+  let voicingShut = readSeal(node, origin)?.shut === true;
   let voicingMs: number | null = voicing && fresh ? touchedMs : null;
   if (prevNode !== undefined && prevNode !== null && cellMs > 0) {
-    for (const t of turnsOf(prevNode)) {
+    for (const t of turnsOf(prevNode, '', origin)) {
       if (nowMs - t.ms < cellMs) lanes.push(t);
     }
     if (!voicing && lanes.length === 0 && fresh) {
-      const pv = voiceOf(prevNode);
-      if (pv) { voicing = pv; voicingMs = touchedMs; }
+      const pv = voiceOf(prevNode, origin);
+      if (pv) { voicing = pv; voicingMs = touchedMs; voicingShut = readSeal(prevNode, origin)?.shut === true; }
     }
   }
   lanes.sort((a, b) => b.ms - a.ms);
-  return { lanes, voicing, voicingMs };
+  return { lanes, voicing, voicingMs, voicingShut };
 }
 
 // ── A SPAN — every beat two times touch (temporal.ts readHumanSpan) ──
@@ -383,7 +395,7 @@ const RUNG_AT: Record<number, string> = { 4: 'year', 5: 'season', 6: 'month', 7:
 
 /** A line a mirror keeps whose period touches a span: its rung, its address,
  *  the period it covers and the holder's words. */
-export interface SpanLine { rung: string; addr: string; start: number; end: number; text: string }
+export interface SpanLine { rung: string; addr: string; start: number; end: number; text: string; shut?: boolean }
 
 /** What one mirror holds across a span: EVERY LINE WHOSE PERIOD TOUCHES IT,
  *  coarse to fine — the year, season, month, week and day the span stands in,
@@ -391,27 +403,30 @@ export interface SpanLine { rung: string; addr: string; start: number; end: numb
  *  the same thing are one block, from the first beat's start to the last one's
  *  end). A line at a rung is said at that rung's grain, so a 'busy' said at a
  *  day covers the whole day; reading the words is the reader's. Pure. */
-export function acrossOf(mb: Block, beats: string[]): { lines: SpanLine[] } {
+export function acrossOf(mb: Block, beats: string[], origin?: string): { lines: SpanLine[] } {
   const lines: SpanLine[] = [];
   const seen = new Set<string>();
+  const shutAt = (node: unknown) => (readSeal(node, origin)?.shut ? { shut: true } : {});
   for (let depth = 4; depth <= 9; depth++) {
     for (const beat of beats) {
       const p = beat.slice(0, depth);
       if (seen.has(p)) continue;
       seen.add(p);
       const addr = p.padEnd(10, '0');
-      const text = voiceOf(readAt(mb, emitFor(p.split(''), mb)));
+      const node = readAt(mb, emitFor(p.split(''), mb));
+      const text = voiceOf(node, origin);
       if (!text) continue;
       const { start, end } = addressToSpan(addr);
-      lines.push({ rung: RUNG_AT[depth], addr, start: start.getTime(), end: end.getTime(), text });
+      lines.push({ rung: RUNG_AT[depth], addr, start: start.getTime(), end: end.getTime(), text, ...shutAt(node) });
     }
   }
   let open: SpanLine | null = null;
   for (const beat of beats) {
-    const text = voiceOf(readAt(mb, emitFor(beat.split(''), mb)));
+    const node = readAt(mb, emitFor(beat.split(''), mb));
+    const text = voiceOf(node, origin);
     const { start, end } = addressToSpan(beat);
     if (text && open && open.text === text) open.end = end.getTime();
-    else if (text) { open = { rung: 'beat', addr: beat, start: start.getTime(), end: end.getTime(), text }; lines.push(open); }
+    else if (text) { open = { rung: 'beat', addr: beat, start: start.getTime(), end: end.getTime(), text, ...shutAt(node) }; lines.push(open); }
     else open = null;
   }
   return { lines };
@@ -455,7 +470,7 @@ export function standingWordOf(mb: Block, name: string, field: string, spineName
  *  what was saved. Returns how many beats were written, or held a line and
  *  were cleared. */
 export async function sayAcross(
-  origin: string, name: string, mb: Block, beats: string[], line: string | null, secret?: string,
+  origin: string, name: string, mb: Block, beats: string[], line: string | null, secret?: string, envelope?: GrayEnvelope,
 ): Promise<number> {
   const byDay = new Map<string, string[]>();
   for (const beat of beats) {
@@ -469,7 +484,10 @@ export async function sayAcross(
     if (line !== null) {
       for (const beat of dayBeats) {
         const addr = emitFor(beat.split(''), mb);
-        writeAt(mb, addr, voicedValue(readAt(mb, addr), line));
+        // A line in a colour lands on every beat with its words one zero deeper
+        // (coloured stigmergy §2.3); one envelope on every beat of the span, as
+        // one line stands on them, so a run of beats still reads as one block.
+        writeAt(mb, addr, envelope ? voicedIn(readAt(mb, addr), envelope) : voicedValue(readAt(mb, addr), line));
         touched++;
       }
     } else {
@@ -651,6 +669,10 @@ export const streamEngageParamsSchema = {
     .string()
     .optional()
     .describe("The synthesis to persist, required by `keep`. Yours to write: this primitive assembles the snapshot and delivers the law, and never synthesises anything itself."),
+  gray: z
+    .string()
+    .optional()
+    .describe("THE PRIVATE ROOM at a mirror (coloured stigmergy): the colour your `say` — and the fold you `keep` in the same call — is sealed in: 'colour:<name>' or its bare name, a colour its keeper founded at this beach. The address stays open, and that you said something there; the WORDS are sealed one zero deeper, at the line's underscore, with the colour's current turn's key, and the options beneath a coloured say are sealed with it. The key is opened from your own copy by `secret` as the sealing word (a member meets one word) and WORN by this session from then on; a session already wearing the colour needs no key; holding no copy, the line lands as a LETTER to the colour, which every holder reads and you cannot read back — the ack says which. ON READ (every engage) a line in a colour you wear opens as if open; one you do not reads as one grey line naming its colour and turn, never its ciphertext, and the snapshot says how many stayed sealed, so a fold is made over the open lines alone; `secret` on a read puts the glasses on the same way, once a session. A colour that wants a fold keeps its own, sealed in its colour: keep with this set."),
   beach: z
     .string()
     .optional()
@@ -673,6 +695,7 @@ export interface StreamEngageParams {
   options?: string[];
   keep?: 'personal' | 'collective';
   keep_text?: string;
+  gray?: string;
   beach?: string;
   secret?: string;
   tier?: 'soft' | 'medium' | 'hard';
@@ -873,6 +896,25 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // One hand's says to one mirror land one after another (oneAtATime); a say
   // that waited for another reads the mirror afresh.
   const writing = params.say !== undefined && (params.say.trim() !== '' || !!span);
+  // THE PRIVATE ROOM AT A MIRROR (coloured stigmergy, step 3; §2.3, §3.4, §4.1):
+  // the colour the say and the kept fold are sealed in, and the one word a
+  // member meets — `secret`, doing duty as the sealing word that opens their
+  // own copy of the colour's key, never a word the sign-in supplied. The
+  // writer's door seals before the line leaves; the reader's door puts the
+  // session's colours on once (wearFor, below) and every line in them then
+  // reads as its words.
+  const colour = typeof params.gray === 'string' && params.gray.trim() ? colourBlockName(params.gray) : null;
+  const word = sealingKey(undefined, params.secret);
+  let seal: ((plaintext: string) => Sealed) | null = null;
+  let saidSeal = null as Sealed | null;   // what the say was sealed with, for the ack
+  let keptSeal = null as Sealed | null;   // what the kept fold was sealed with
+  if (colour && (saying || (params.keep && (params.keep_text ?? '').trim()))) {
+    try {
+      seal = await sealer(origin, colour, word, handle);
+    } catch (e: any) {
+      return out(`Nothing was written: ${e?.message ?? String(e)}`);
+    }
+  }
   const refused = !writing ? null : await oneAtATime(`${origin}|${mirrorName}`, async (waited) => {
     const mirrorNow = () => waited ? loadBlock(origin, mirrorName).catch(() => null) : (mirrorP ?? loadBlock(origin, mirrorName).catch(() => null));
     if (span && params.say !== undefined && params.say.trim() === '') {
@@ -928,7 +970,8 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
         if (span) {
           // A LINE ACROSS A SPAN lands on every beat the span touches, each day
           // saved once (sayAcross).
-          spanSaid = { touched: await sayAcross(origin, mirrorName, mblock, span.beats, params.say, params.secret), cleared: false };
+          const env = seal ? (saidSeal = seal(params.say)).envelope : undefined;
+          spanSaid = { touched: await sayAcross(origin, mirrorName, mblock, span.beats, params.say, params.secret, env), cleared: false };
           saidAt = mirrorName;
           saidBlock = mblock;
         } else if (moving) {
@@ -948,18 +991,23 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
             cell += ['1', '2', '3', '4', '5', '6', '7', '8', '9'].find((d) => !taken.has(d)) ?? '9';
           }
           const beatAddr = cell.slice(0, TEMPORAL_FLOOR);
-          writeAt(mblock, cell, turnValue(readAt(mblock, cell), params.say, instant.toISOString()));
+          // In a colour the turn and the beat's voicing carry the words one
+          // zero deeper, one envelope for both (coloured stigmergy §2.3).
+          const env = seal ? (saidSeal = seal(params.say)).envelope : null;
+          writeAt(mblock, cell, turnValue(readAt(mblock, cell), env ?? params.say, instant.toISOString()));
           await saveBlock(origin, mirrorName, mblock, { spindle: cell, secret: params.secret });
           const voiced: Block = JSON.parse(JSON.stringify(mblock));
-          writeAt(voiced, beatAddr, params.say);
+          writeAt(voiced, beatAddr, env ? voicedIn(readAt(voiced, beatAddr), env) : params.say);
           await saveBlock(origin, mirrorName, voiced, { spindle: beatAddr, secret: params.secret });
           saidAt = `${mirrorName}:${cell}`;
           saidCell = cell.slice(TEMPORAL_FLOOR + 1);
           saidBlock = voiced;
         } else {
           const standing = readAt(mblock, mAddr);
-          const before = voiceOf(standing);
-          let value = voicedValue(standing, params.say);
+          const before = voiceOf(standing, origin);
+          // In a colour the words stand one zero deeper, and so do the options
+          // offered beneath them (coloured stigmergy §2.3).
+          let value: unknown = seal ? voicedIn(standing, (saidSeal = seal(params.say)).envelope) : voicedValue(standing, params.say);
           const offered = spineFloor !== TEMPORAL_FLOOR ? (params.options ?? []).map((o) => o.trim()).filter(Boolean) : [];
           if (offered.length) {
             // AN OPTION KEEPS ITS DIGIT ONCE OFFERED (function:thread 3): an
@@ -967,9 +1015,9 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
             const others = await Promise.all([...othersP.entries()].map(async ([n, p]) => [n.slice(field.length + 1), await p] as const));
             for (let i = 0; i < offered.length; i++) {
               const k = String(i + 1);
-              const was = standing && typeof standing === 'object' ? voiceOf((standing as Record<string, unknown>)[k]) : null;
+              const was = standing && typeof standing === 'object' ? voiceOf((standing as Record<string, unknown>)[k], origin) : null;
               if (!was || was.trim() === offered[i]) continue;
-              const takers = others.filter(([, b]) => b && voiceOf(nodeAt(b, digits.concat(k), spineFloor))).map(([w]) => w);
+              const takers = others.filter(([, b]) => b && voiceOf(nodeAt(b, digits.concat(k), spineFloor), origin)).map(([w]) => w);
               if (takers.length) {
                 return out(`Option ${k} at ${dotted(digits, spineFloor)} has been answered by ${takers.join(', ')} at ${dotted(digits.concat(k), spineFloor)}, so it keeps its words: '${clip(was, 140)}'. Offer what is new at a digit no one holds (function:thread 3).`);
               }
@@ -978,7 +1026,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
             offered.forEach((o, i) => {
               const k = String(i + 1);
               const child = node[k];
-              node[k] = child && typeof child === 'object' ? { ...(child as Record<string, unknown>), _: o } : o;
+              node[k] = seal ? voicedIn(child, seal(o).envelope) : child && typeof child === 'object' ? { ...(child as Record<string, unknown>), _: o } : o;
             });
             value = node;
             optionsSaid = offered.length;
@@ -1017,7 +1065,8 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
           trow = await loadBlock(origin, treeName).catch(() => null);
         }
         const { block: tblock, addr: tAddr } = await atSpineFloor(origin, treeName, JSON.parse(JSON.stringify(trow!.block)), digits, spineFloor, params.secret);
-        writeAt(tblock, tAddr, voicedValue(readAt(tblock, tAddr), text));
+        // A colour that wants a fold keeps its own, sealed in its colour (§3.4).
+        writeAt(tblock, tAddr, seal ? voicedIn(readAt(tblock, tAddr), (keptSeal = seal(text)).envelope) : voicedValue(readAt(tblock, tAddr), text));
         await saveBlock(origin, treeName, tblock, { spindle: tAddr, secret: params.secret });
         keptTo = `${treeName}:${tAddr}`;
       } else {
@@ -1039,7 +1088,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
           frow = await loadBlock(origin, field).catch(() => null);
         }
         const { block: fblock, addr: fAddr } = await atSpineFloor(origin, field, JSON.parse(JSON.stringify(frow!.block)), digits, spineFloor, params.secret);
-        writeAt(fblock, fAddr, voicedValue(readAt(fblock, fAddr), text));
+        writeAt(fblock, fAddr, seal ? voicedIn(readAt(fblock, fAddr), (keptSeal = seal(text)).envelope) : voicedValue(readAt(fblock, fAddr), text));
         await saveBlock(origin, field, fblock, { spindle: fAddr, secret: params.secret });
         keptTo = `${field}:${fAddr}`;
       }
@@ -1054,10 +1103,10 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // (the trial, 2026-09-21). What is kept is shown, whole at the attended
   // address and marked on the ladder.
   const foldBlock = await foldP;
-  const foldAt = (d: string[]): string | null => (foldBlock
-    ? voiceOf(spineFloor !== TEMPORAL_FLOOR ? nodeAt(foldBlock, d, spineFloor) : readAt(foldBlock, emitFor(d, foldBlock)))
+  const foldNodeAt = (d: string[]): unknown => (foldBlock
+    ? spineFloor !== TEMPORAL_FLOOR ? nodeAt(foldBlock, d, spineFloor) : readAt(foldBlock, emitFor(d, foldBlock))
     : null);
-  const standingFold = foldAt(digits);
+  const foldAt = (d: string[]): string | null => voiceOf(foldNodeAt(d), origin);
 
   // ── L — every mirror's reading at this address ──
   // Enumeration is the surface index, walked not searched: mirrors are the
@@ -1096,35 +1145,54 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // ACROSS A SPAN a reading is each touched day's line and the runs of beats
   // beneath it (acrossOf) — a holder with neither has said nothing there.
   const across: ({ who: string; word: string | null } & ReturnType<typeof acrossOf>)[] = [];
-  await Promise.all(
-    mirrorNames.map(async (name) => {
-      const who = name.slice(field.length + 1);
-      const mb = name === mirrorName && saidBlock ? saidBlock : await (othersP.get(name) ?? blockOf(loadBlock(origin, name).catch(() => null)));
-      if (!mb) { silent.push(who); return; }
-      if (span) {
-        const a = acrossOf(mb, span.beats);
-        const word = standing ? standingWordOf(mb, name, field, spineName, origin) : null;
-        if (a.lines.length || word) across.push({ who, word, ...a }); else silent.push(who);
-        return;
-      }
-      if (spineFloor !== TEMPORAL_FLOOR) {
-        const got = linesAt(nodeAt(mb, digits, spineFloor), digits, spineFloor, who);
-        if (got.length) crossed.push(...got); else silent.push(who);
-        return;
-      }
-      const node = readAt(mb, emitFor(digits, mb));
-      if (!atBeat) {
-        const text = voiceOf(node);
-        if (text) readings.push({ who, text }); else silent.push(who);
-        return;
-      }
-      const prevNode = prevDigits ? readAt(mb, emitFor(prevDigits, mb)) : undefined;
-      const here = mirrorAtBeat(node, prevNode, nowMs, cellMs, Date.parse(touched[name] ?? ''));
-      if (here.lanes.length) for (const l of here.lanes) readings.push({ who, text: l.text, lane: l.lane, ms: l.ms });
-      else if (here.voicing) readings.push({ who, text: here.voicing, ms: here.voicingMs });
-      else silent.push(who);
-    }),
-  );
+  // THE MIRRORS ARE LOADED TOGETHER, THE GLASSES PUT ON ONCE, THEN READ. The
+  // nodes a read attends to — the address and what stands beneath it, the beat
+  // and the one before it on the moving now, a span's whole mirror — name the
+  // colours their sealed lines are in; each the session does not wear is put
+  // on once with the reader's own copy (coloured stigmergy §4.1), and every
+  // line in a worn colour then reads as its words. A read meeting no sealed
+  // line puts nothing on and pays nothing.
+  const mirrors = await Promise.all(mirrorNames.map(async (name) => {
+    const mb = name === mirrorName && saidBlock ? saidBlock : await (othersP.get(name) ?? blockOf(loadBlock(origin, name).catch(() => null)));
+    return [name, mb] as const;
+  }));
+  const attended = (mb: Block): unknown[] => span ? [mb]
+    : spineFloor !== TEMPORAL_FLOOR ? [nodeAt(mb, digits, spineFloor)]
+    : [readAt(mb, emitFor(digits, mb)), prevDigits ? readAt(mb, emitFor(prevDigits, mb)) : undefined];
+  await wearFor([...mirrors.flatMap(([, mb]) => (mb ? attended(mb) : [])), foldNodeAt(digits)], origin, word, handle);
+  const standingFold = foldAt(digits);
+  // LINES THAT STAYED SEALED — in a colour the reader does not wear — are the
+  // grey line each, and counted, so the fold is made over the open lines alone
+  // and says that these were skipped (§3.4, 1.111116).
+  let shut = 0;
+  for (const [name, mb] of mirrors) {
+    const who = name.slice(field.length + 1);
+    if (!mb) { silent.push(who); continue; }
+    if (span) {
+      const a = acrossOf(mb, span.beats, origin);
+      shut += a.lines.filter((l) => l.shut).length;
+      const word = standing ? standingWordOf(mb, name, field, spineName, origin) : null;
+      if (a.lines.length || word) across.push({ who, word, ...a }); else silent.push(who);
+      continue;
+    }
+    if (spineFloor !== TEMPORAL_FLOOR) {
+      const got = linesAt(nodeAt(mb, digits, spineFloor), digits, spineFloor, who, origin);
+      shut += got.filter((l) => l.shut).length;
+      if (got.length) crossed.push(...got); else silent.push(who);
+      continue;
+    }
+    const node = readAt(mb, emitFor(digits, mb));
+    if (!atBeat) {
+      const text = voiceOf(node, origin);
+      if (text) { readings.push({ who, text }); if (readSeal(node, origin)?.shut) shut++; } else silent.push(who);
+      continue;
+    }
+    const prevNode = prevDigits ? readAt(mb, emitFor(prevDigits, mb)) : undefined;
+    const here = mirrorAtBeat(node, prevNode, nowMs, cellMs, Date.parse(touched[name] ?? ''), origin);
+    if (here.lanes.length) for (const l of here.lanes) { readings.push({ who, text: l.text, lane: l.lane, ms: l.ms }); if (l.shut) shut++; }
+    else if (here.voicing) { readings.push({ who, text: here.voicing, ms: here.voicingMs }); if (here.voicingShut) shut++; }
+    else silent.push(who);
+  }
   readings.sort((a, b) => a.who.localeCompare(b.who) || (b.ms ?? 0) - (a.ms ?? 0));
   silent.sort();
 
@@ -1262,6 +1330,9 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       }
     }
   }
+  if (shut) {
+    lines.push(`  (${shut} of these lines ${shut === 1 ? 'is' : 'are'} sealed in a colour you do not wear and ${shut === 1 ? 'stands' : 'stand'} as a grey line naming the colour and its turn: fold the open lines only, and say that ${shut} stayed sealed — a reader wearing the colour reads them as words)`);
+  }
   if (unfollowed > 0) {
     lines.push('');
     lines.push(`  ${unfollowed} other ${unfollowed === 1 ? 'lens stands' : 'lenses stand'} here that you do not follow — a follow is a line at lists:${handle} 4, rank as depth`);
@@ -1295,11 +1366,11 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
         ? (n ? `✓ cleared ${n} ${n === 1 ? 'line' : 'lines'} of yours across the span at ${mirrorName}` : `nothing of yours stood across the span at ${mirrorName} — nothing to clear`)
         : `✓ your line landed at ${mirrorName} on ${n} ${n === 1 ? 'beat' : 'beats'}, ${span.beats[0]} … ${span.beats[span.beats.length - 1]} (${spanExtent})${mintedMirror ? formatBorn(mintedMirror) : ''}`);
     } else if (saidAt) {
-      lines.push(`✓ your reading landed at ${saidAt}${mintedMirror ? formatBorn(mintedMirror) : ''}`);
+      lines.push(`✓ your reading landed at ${saidAt}${colour && saidSeal ? colourLine(colour, saidSeal) : ''}${mintedMirror ? formatBorn(mintedMirror) : ''}`);
       if (optionsSaid) lines.push(`✓ ${optionsSaid} ${optionsSaid === 1 ? 'option' : 'options'} beneath it, at ${Array.from({ length: optionsSaid }, (_, i) => dotted(digits.concat(String(i + 1)), spineFloor)).join(', ')} — whoever takes one says at its address`);
       if (replacedLine) lines.push(`  it replaced your own line there: '${clip(replacedLine, 160)}' — if another instance of you wrote that, say it back, and tie yours at a digit no one holds (function:thread 3)`);
     }
-    if (keptTo) lines.push(`✓ fold kept at ${keptTo}`);
+    if (keptTo) lines.push(`✓ fold kept at ${keptTo}${colour && keptSeal ? colourLine(colour, keptSeal) : ''}`);
     // A holder saying in a family that keeps a standing word is handed theirs
     // back, so a calendar synced by their AI meets it at every line it says.
     const ownWord = standing && saidBlock && !spanSaid?.cleared ? standingWordOf(saidBlock, mirrorName, field, spineName, origin) : null;

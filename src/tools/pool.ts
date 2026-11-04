@@ -53,6 +53,9 @@ import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
 import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
+import { isGrayEnvelope, colourBlockName, type GrayEnvelope } from '../keys.js';
+import { sealer, colourLine, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
+import { sealingKey } from '../signin.js';
 
 // ── Defaults ──
 
@@ -128,11 +131,13 @@ export function readSlot(block: Block | null, slot: string): any {
  * the mark shape. Without this prune, an OBJECT field of an entry leaks as a
  * pseudo-slot — a probe's rider at position 9 of slot 6 enumerated as slots
  * 69, 692, 694 (witnessed live at pool:keel, 2026-08-25; the string-field
- * guard below never covered object fields).
+ * guard below never covered object fields). A contribution whose words are
+ * sealed one zero deeper (coloured stigmergy §2.3) is voiced by the envelope at
+ * its underscore, and is an entry exactly as an open one is.
  */
 export function isEntryNode(v: any): boolean {
   return !!v && typeof v === 'object' && !Array.isArray(v)
-    && typeof (v as any)._ === 'string'
+    && (typeof (v as any)._ === 'string' || isGrayEnvelope((v as any)._))
     && (typeof (v as any)['1'] === 'string' || typeof (v as any)['3'] === 'string');
 }
 
@@ -282,6 +287,11 @@ export interface PoolContribution {
    *  contribution, which appends rather than overwrites and needs no second
    *  stamp. Legacy slots carry it at 2 — `arrivalOf` resolves either. */
   arrival: string | null;
+  /** The words are sealed in a colour this reader does not wear, and `text` is
+   *  the grey line (coloured stigmergy §4.1): a synthesis is made over the open
+   *  voices alone. False for an open line, and for a sealed one opened through
+   *  the session's worn colours. */
+  sealed: boolean;
 }
 
 /** An ISO-8601 stamp, told apart from a pscale address by shape alone. The
@@ -414,9 +424,10 @@ export function closedContainerLines(closed: { span: string; entries: number; su
 export function foldContributions(
   block: Block,
   sincePosition: number,
+  origin?: string,
 ): { closed: FoldedContainer[]; open: PoolContribution[]; folded: boolean } {
   const floor = Math.max(floorDepth(block), 1);
-  const { contributions } = collectContributions(block, sincePosition);
+  const { contributions } = collectContributions(block, sincePosition, undefined, origin);
   if (floor < 2 || contributions.length === 0) return { closed: [], open: contributions, folded: false };
 
   const byContainer = new Map<string, PoolContribution[]>();
@@ -440,7 +451,10 @@ export function foldContributions(
     // block-conventions:3.5). pool:weft is the live proof: container 01, which
     // holds entries 011-019, carries "Summary of 01-09".
     const node = nodeAtPadded(block, keys[i + 1]);
-    const voicing = node && typeof node === 'object' && typeof node._ === 'string' && node._ !== '' ? node._ : null;
+    // A summary paid in a colour (placeGray, one zero deeper) reads through the
+    // session's worn colours, else as the grey line — never as unpaid.
+    const u = node && typeof node === 'object' ? node._ : undefined;
+    const voicing = typeof u === 'string' && u !== '' ? u : readSeal(u, origin)?.text ?? null;
     const first = String(entries[0].position).padStart(floor, '0');
     const last = String(entries[entries.length - 1].position).padStart(floor, '0');
     closed.push({ container: key, span: first === last ? first : `${first}-${last}`, summary: voicing, entries: entries.length });
@@ -513,10 +527,15 @@ export function coveredThrough(account: Block | null, room: string): number {
   return covered;
 }
 
+/** `origin` — the beach the block stands at, so a line whose words are sealed in
+ *  a colour this session wears is read as its words (coloured stigmergy §4.1);
+ *  without it, or without the colour, a sealed line reads as the grey line and
+ *  is marked `sealed`. */
 export function collectContributions(
   block: Block,
   sincePosition: number,
   at?: string,
+  origin?: string,
 ): { contributions: PoolContribution[]; more_available: boolean } {
   const out: PoolContribution[] = [];
   let more = false;
@@ -557,25 +576,35 @@ export function collectContributions(
         face: null,
         woven: null,
         arrival: null,
+        sealed: false,
       };
     } else if (typeof v === 'object' && v !== null) {
       const obj = v as Record<string, any>;
-      const txt = typeof obj._ === 'string' ? obj._ : '';
+      // THE WORDS ONE ZERO DEEPER (coloured stigmergy §2.3): a contribution whose
+      // underscore is a gray envelope keeps its author, address, stamp and face
+      // open beside it, and its words read through the session's worn colours
+      // or as the grey line. An envelope standing as the whole entry (a gray
+      // append through bsp()) has no fields of its own to read: its 1 and 2 are
+      // the ciphertext and the nonce, never an author and an address.
+      const seal = readSeal(obj, origin);
+      const own = isGrayEnvelope(obj);
+      const txt = seal ? seal.text : typeof obj._ === 'string' ? obj._ : '';
       // Skip tombstones (empty underscore at depth 1) — block-conventions:9.4
       // says wipes delete keys, but legacy tombstones may still appear.
       if (slot.length === 1 && txt === '') continue;
       entry = {
         position,
         text: txt,
-        agent_id: typeof obj['1'] === 'string' ? obj['1'] : null,
+        agent_id: !own && typeof obj['1'] === 'string' ? obj['1'] : null,
         // Field 2 is where across the whole family. A liquid slot staged while
         // the 2026-07-15 shape stood carries an arrival stamp here instead; it
         // is not an address, so it reads as unlocated rather than as junk.
-        address: typeof obj['2'] === 'string' && !ISO_STAMP_RE.test(obj['2']) ? obj['2'] : null,
+        address: !own && typeof obj['2'] === 'string' && !ISO_STAMP_RE.test(obj['2']) ? obj['2'] : null,
         ts: typeof obj['3'] === 'string' ? obj['3'] : null,
-        face: typeof obj['4'] === 'string' ? obj['4'] : null,
-        woven: typeof obj['5'] === 'string' ? obj['5'] : null,
-        arrival: arrivalOf(obj),
+        face: !own && typeof obj['4'] === 'string' ? obj['4'] : null,
+        woven: !own && typeof obj['5'] === 'string' ? obj['5'] : null,
+        arrival: own ? null : arrivalOf(obj),
+        sealed: seal?.shut === true,
       };
     } else {
       continue;
@@ -1537,6 +1566,7 @@ async function stageLiquid(
   face: string | undefined,
   secret: string | undefined,
   at?: string,
+  envelope?: GrayEnvelope,
 ): Promise<string | null> {
   const lrow = await loadBlock(url, liquidName);
   const exists = !!lrow && typeof lrow.block === 'object' && lrow.block !== null;
@@ -1559,7 +1589,9 @@ async function stageLiquid(
   // 1 who, 2 where, 3 when, 4 face, 5 woven (block-conventions:4.51). Liquid's
   // one extra, the immutable arrival stamp it needs because it overwrites where
   // marks and pools append, takes 6 rather than displacing the address at 2.
-  const slotObj: Record<string, any> = { _: text, '1': agentId, '2': at ?? '', '3': nowIso, '6': nowIso };
+  // A staged line sealed in a colour keeps its words one zero deeper, at the
+  // slot's underscore, and every field beside them open (coloured stigmergy §2.3).
+  const slotObj: Record<string, any> = { _: envelope ?? text, '1': agentId, '2': at ?? '', '3': nowIso, '6': nowIso };
   if (face) slotObj['4'] = face;
 
   const liveCount = exists
@@ -1681,13 +1713,13 @@ export async function assembleBackground(url: string, poolName: string): Promise
     ]);
     const entries: string[] = [];
     if (prow?.block && typeof prow.block === 'object') {
-      const cs = collectContributions(prow.block as Block, 0).contributions.filter((c) => c.text.trim() !== '');
+      const cs = collectContributions(prow.block as Block, 0, undefined, url).contributions.filter((c) => c.text.trim() !== '');
       for (const c of cs.slice(-BACKGROUND_PER_PLACE)) {
         entries.push(`${c.agent_id ?? 'someone'}${c.ts ? ` (${c.ts.slice(0, 10)})` : ''}: ${c.text.slice(0, 240)}`);
       }
     }
     if (lrow?.block && typeof lrow.block === 'object') {
-      for (const s of collectContributions(lrow.block as Block, 0).contributions.filter((s) => s.text !== '')) {
+      for (const s of collectContributions(lrow.block as Block, 0, undefined, url).contributions.filter((s) => s.text !== '')) {
         entries.push(`${s.agent_id ?? 'someone'} intends: ${s.text.slice(0, 160)}`);
       }
     }
@@ -1753,6 +1785,10 @@ export const poolEngageParamsSchema = {
     .string()
     .optional()
     .describe("Optional, applies to `contribution`. Where the commit lands: 'pool' (default — the shared spool everyone pulls) or a block name such as 'solid:<name>' for a shared committed artifact. The deposit is a dumb atomic append; the primitive never synthesises. This is the objective dial. Structured per-subject spine writes (the RPG subjective case) are the resolver's bsp() job, NOT this param — point destination only at accumulator-shaped blocks."),
+  gray: z
+    .string()
+    .optional()
+    .describe("THE PRIVATE ROOM (coloured stigmergy): the colour this line is sealed in — 'colour:<name>' or its bare name, a colour its keeper founded at this beach. ON COMMIT and ON SUBMIT the WORDS are sealed one zero deeper, at the contribution's underscore, with the colour's current turn's key: the author, the address, the stamp and the face stay open, so the room's slots, its presence and its located views stand as they do for any line. The key is opened from your own copy by `secret` as the sealing word (a member meets one word) and WORN by this session from then on; a session already wearing the colour needs no key; holding no copy, the line lands as a LETTER to the colour, which every holder reads and you cannot read back — the ack says which. ON READ (every engage, with or without this) a line in a colour you wear opens as if open; one you do not reads as one grey line naming its colour and turn, never its ciphertext, and the envelope says how many stayed sealed, so a synthesis is made over the open voices alone; `secret` on a read puts the glasses on the same way, once a session."),
   resolves_window: z
     .string()
     .optional()
@@ -1806,6 +1842,7 @@ export type PoolEngageParams = {
   since_position?: number;
   secret?: string;
   purpose?: string;
+  gray?: string;
   resolves_window?: string;
   resolves_seen?: string;
   tier?: Tier;
@@ -1873,6 +1910,24 @@ async function handlePoolEngageInner(
     };
   }
   const atAddress = params.at?.trim();
+
+  // THE PRIVATE ROOM (coloured stigmergy, step 3; proposals/2026-11-03-coloured-
+  // stigmergy-the-design.md §2.3, §3.4, §4.1): the colour a commit or a stage is
+  // sealed in, and the one word a member meets — `secret`, doing duty as the
+  // sealing word that opens their own copy of the colour's key, never a word the
+  // sign-in supplied (src/signin.ts). The writer's door seals before the line
+  // leaves; the reader's door puts the session's colours on once (wearFor) and
+  // every line in them then reads as its words, wherever it stands.
+  const colour = typeof params.gray === 'string' && params.gray.trim() ? colourBlockName(params.gray) : null;
+  const word = sealingKey(undefined, secret);
+  let seal: ((plaintext: string) => Sealed) | null = null;
+  if (colour && ((contribution !== undefined && contribution.trim() !== '') || (submit !== undefined && submit.trim() !== ''))) {
+    try {
+      seal = await sealer(pool_url, colour, word, agent_id);
+    } catch (e: any) {
+      return { content: [{ type: 'text', text: `Nothing was written: ${e?.message ?? String(e)}` }] };
+    }
+  }
 
   if (!isFederatedOwner(pool_url)) {
     return {
@@ -2023,9 +2078,13 @@ async function handlePoolEngageInner(
   }
 
   let submittedSlot: string | null = null;
+  // A staged line in a colour: its words sealed one zero deeper, the slot's
+  // author, address, stamps and face open (the private room, §3.4).
+  let stagedSeal: Sealed | null = null;
   if (submit !== undefined && !(isRpgPool && !embodied)) {
     try {
-      submittedSlot = await stageLiquid(pool_url, liquidName, agent_id, submit, face, secret, params.at);
+      if (seal && submit.trim() !== '') stagedSeal = seal(submit);
+      submittedSlot = await stageLiquid(pool_url, liquidName, agent_id, submit, face, secret, params.at, stagedSeal?.envelope);
     } catch (e: any) {
       if (e instanceof TableFullError) return { content: [{ type: 'text', text: e.message }] };
       return { content: [{ type: 'text', text: `Liquid submit rejected by beach: ${e?.message ?? String(e)}` }] };
@@ -2047,12 +2106,15 @@ async function handlePoolEngageInner(
   let foldCleared: Block | null = null;
   let stagedConsumed = false;
   let postedMoment: string | null = null;
+  // The commit's seal, when the line is coloured: the words one zero deeper.
+  let sealed: Sealed | null = null;
   if (contribution !== undefined && contribution.trim() !== '') {
     // A closing WHEN line is the resolution's word that time passed: it leaves
     // the beat's text and moves the moment the beat carries (below).
     const { text: said, jump } = whenOf(contribution);
+    if (seal) sealed = seal(said);
     const entry: Record<string, any> = {
-      _: said,
+      _: sealed ? sealed.envelope : said,
       '1': agent_id,
       // Field 2 — address-of-attention (block-conventions:4.22): the coordinate
       // this voice is located at within the structure the pool gathers around
@@ -2197,13 +2259,15 @@ async function handlePoolEngageInner(
         // same block do not clobber each other.
         try {
           const tblock: Block = JSON.parse(JSON.stringify(trow!.block));
-          writeAt(tblock, addr, contribution);
+          // A coloured line voices the node with its words one zero deeper, and
+          // keeps whatever stands beneath it, as an open voicing does (writeAt).
+          writeAt(tblock, addr, sealed ? voicedIn(readAt(tblock, addr), sealed.envelope) : contribution);
           await saveBlock(pool_url, target, tblock, { spindle: addr, secret });
         } catch (e: any) {
           return { content: [{ type: 'text', text: `Commit rejected by beach at ${target}:${addr} — ${e?.message ?? String(e)}` }] };
         }
         return { content: [{ type: 'text', text:
-          `Committed as ${face} → ${target} at ${addr}\n\n${contribution}\n\nRead it back: bsp(agent_id="${pool_url}", block="${target}", spindle="${addr}").` }] };
+          `Committed as ${face} → ${target} at ${addr}${colour && sealed ? colourLine(colour, sealed) : ''}\n\n${contribution}\n\nRead it back: bsp(agent_id="${pool_url}", block="${target}", spindle="${addr}").` }] };
       }
     }
 
@@ -2239,7 +2303,7 @@ async function handlePoolEngageInner(
     // character saying the same short line twice — still commits normally.
     if (destBlock === blockName && row?.block && typeof row.block === 'object') {
       const nowMs = Date.now();
-      for (const c of collectContributions(row.block as Block, 0).contributions) {
+      for (const c of collectContributions(row.block as Block, 0, undefined, pool_url).contributions) {
         if (c.agent_id !== agent_id || c.text !== said) continue;
         const ms = c.ts ? Date.parse(c.ts) : NaN;
         if (Number.isFinite(ms) && nowMs - ms <= DUPLICATE_WINDOW_MS) { duplicateOf = c.position; break; }
@@ -2352,7 +2416,12 @@ async function handlePoolEngageInner(
   // inline (the read is the beach's — no extra tool call for the caller).
   const directiveText = isDirectiveRef(purpose) ? await resolveDirective(pool_url, purpose) : null;
   const { hint: synthesisHint, source: hintSource } = extractSynthesisHint(row.block);
-  const { contributions, more_available } = collectContributions(row.block, sincePosition, atAddress);
+  // THE READER'S DOOR (§4.1): the colours the room's sealed lines name are put
+  // on once for the session — the reader's own copy opened with their word,
+  // one derivation, one copy a turn — and nothing happens when no line is
+  // sealed, no word is given, or the glasses are on already.
+  await wearFor([row.block], pool_url, word, agent_id);
+  const { contributions, more_available } = collectContributions(row.block, sincePosition, atAddress, pool_url);
 
   // THE FOLD (2026-09-08). A door that inlines a grown room replays it from its
   // first slot at every arrival — 108,665 of weft's 132,836 characters, 82%,
@@ -2363,7 +2432,7 @@ async function handlePoolEngageInner(
   // alone too: its slice is narrow by construction and its containers are not
   // the fold's.
   const wantsFold = (params as any).fold === true && sincePosition === 0 && atAddress === undefined;
-  const fold = wantsFold ? foldContributions(row.block, sincePosition) : null;
+  const fold = wantsFold ? foldContributions(row.block, sincePosition, pool_url) : null;
 
   const markerNew = contributions.length > 0
     ? contributions[contributions.length - 1].position
@@ -2378,7 +2447,8 @@ async function handlePoolEngageInner(
     const lrow = await loadBlock(pool_url, liquidName);
     if (lrow && typeof lrow.block === 'object' && lrow.block !== null) {
       liquidBlock = lrow.block;
-      liquidSlots = collectContributions(lrow.block, 0).contributions;
+      await wearFor([lrow.block], pool_url, word, agent_id);
+      liquidSlots = collectContributions(lrow.block, 0, undefined, pool_url).contributions;
       // A located view narrows the mirror by the slot's OWN address-of-attention
       // at field 2 — the same read as the pool slice above, because the family
       // keeps where at one position (block-conventions:4.52).
@@ -2424,7 +2494,7 @@ async function handlePoolEngageInner(
   }
   if (submittedSlot !== null) {
     lines.push(submit && submit.trim() !== ''
-      ? `submitted: liquid slot ${submittedSlot} (your pending intention — staged, not yet committed; liquid slots are per-author and count separately from pool slots, and this one overwrites on every submit until a commit or withdraw clears it)`
+      ? `submitted: liquid slot ${submittedSlot} (your pending intention — staged, not yet committed; liquid slots are per-author and count separately from pool slots, and this one overwrites on every submit until a commit or withdraw clears it)${colour && stagedSeal ? colourLine(colour, stagedSeal).trim().replace(/^/, ' — ') : ''}`
       : `withdrawn: liquid slot ${submittedSlot} cleared`);
     lines.push('');
   }
@@ -2440,11 +2510,13 @@ async function handlePoolEngageInner(
     if (duplicateOf !== null) {
       lines.push(`ALREADY LANDED at slot ${postedPosition} → ${where} — this exact beat from you is already in the record, so nothing was appended a second time. A timeout is not a failure here: the write lands and only the reply is lost. Read the slot before rewording and retrying.`);
     } else {
-      lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}${stagedConsumed ? ' — your staged intention graduated into this entry, so your liquid slot cleared itself' : ''}${postedMoment ? ` — on the world's clock: ${postedMoment}` : ''}`);
+      lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}${stagedConsumed ? ' — your staged intention graduated into this entry, so your liquid slot cleared itself' : ''}${postedMoment ? ` — on the world's clock: ${postedMoment}` : ''}${colour && sealed ? colourLine(colour, sealed).trim().replace(/^/, ' — ') : ''}`);
       // THE MUSCLE BEHIND, at the door: the commit walks back to its landed slot
       // as the next reader receives it — the containers above it in view, an
-      // unvoiced one showing as the debt it is (src/read-back.ts).
-      const readBack = await readBackAfterAppend(pool_url, postedTo ?? blockName, String(postedPosition));
+      // unvoiced one showing as the debt it is (src/read-back.ts). A sealed
+      // line has none, as a gray write through bsp() has none: the next reader
+      // receives its words through their own glasses, or the grey line.
+      const readBack = sealed ? '' : await readBackAfterAppend(pool_url, postedTo ?? blockName, String(postedPosition));
       if (readBack) lines.push(readBack.trim());
     }
     lines.push('');
@@ -2535,8 +2607,11 @@ async function handlePoolEngageInner(
     // "0 authors" — a solo stager could never verify their own intention).
     // What was just written is known without asking the wire: render it.
     if (submit && submit.trim() !== '' && submittedSlot !== null && !standing.some((s) => s.agent_id === agent_id)) {
-      standing.push({ position: parseInt(submittedSlot, 10) || 0, agent_id, text: submit, ts: null, address: params.at ?? null, face: null, woven: null, arrival: null } as PoolContribution);
+      standing.push({ position: parseInt(submittedSlot, 10) || 0, agent_id, text: submit, ts: null, address: params.at ?? null, face: null, woven: null, arrival: null, sealed: false } as PoolContribution);
     }
+    // THE FOLD GATHERS ONLY WHAT IT CAN READ: a staged line sealed in a colour
+    // this reader does not wear stands as its grey line, and is said to.
+    const stagedShut = standing.filter((s) => s.sealed).length;
     const liquidWhere = params.at !== undefined
       ? ` at ${params.at}`
       : locatedElsewhere > 0
@@ -2558,6 +2633,7 @@ async function handlePoolEngageInner(
         const locatedAt = s.address ? ` @ ${s.address}` : '';
         lines.push(`- ${who}${mine} (arrived ${arrived ?? '?'}${revised})${locatedAt}: ${s.text || '(empty)'}`);
       }
+      if (stagedShut) lines.push(`(${stagedShut} of these ${stagedShut === 1 ? 'is' : 'are'} sealed in a colour you do not wear and ${stagedShut === 1 ? 'stands' : 'stand'} as a grey line: a fold gathers only what it can read — say so when you fold)`);
       // The window's open-stamp rides WITH the window, not behind the dice gate
       // (NHITL round 4: the fold law says "the open-stamp the envelope hands
       // you", but the only emission sat inside the dice section — the town's
@@ -2671,6 +2747,12 @@ async function handlePoolEngageInner(
     lines.push('(voices are verbatim — quote or preserve them in any synthesis; never let a summary replace what was said)');
   }
   const shown = fold?.folded ? fold.open : contributions;
+  // THE SYNTHESIS SKIPS SEALED WORDS AND SAYS SO (coloured stigmergy §3.4,
+  // 1.111116): a voice sealed in a colour this reader does not wear is its grey
+  // line here, naming the colour and the turn and never the words, and a
+  // synthesis is made over the open voices alone.
+  const shut = shown.filter((c) => c.sealed).length;
+  if (shut) lines.push(`(${shut} of these voices ${shut === 1 ? 'is' : 'are'} sealed in a colour you do not wear and ${shut === 1 ? 'stands' : 'stand'} as a grey line naming the colour and its turn: synthesise the open voices only, and say that ${shut} stayed sealed — a reader wearing the colour reads them as words)`);
   if (fold?.folded) {
     lines.push('');
     lines.push(`# Before this — ${fold.closed.length} closed ${fold.closed.length === 1 ? 'container' : 'containers'}, each standing for its span`);

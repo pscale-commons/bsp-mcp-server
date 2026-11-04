@@ -248,15 +248,11 @@ import {
   COLOUR_PREFIX,
   colourBlockName,
   buildTurn,
-  colourSeal,
-  colourLetter,
-  colourOpen,
   parseColourNote,
-  wornKey,
-  wearColour,
-  wornColour,
   wearsColours,
 } from '../keys.js';
+import { colourTurns, keyOfTurn, sealInColour, colourLine, openWorn, wearFor } from '../colour.js';
+import { envelopeOf } from '../bsp-fn.js';
 import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { sealingKey, signedSealNote } from '../signin.js';
@@ -648,25 +644,18 @@ async function buildGrayDecryptor(
   // key's address, the colour block at 9.2 and the turn at 9.3. A turn this
   // session wears opens with no key and no read; the first line of a turn met
   // with a key reads that colour block once, opens the reader's own copy, and
-  // the session wears the turn from then on.
-  const turns = new Map<string, Promise<{ address: string; node: any } | null>>();
-  const turnOf = (colour: string, turn: string) => {
-    const at = `${colour}|${turn}`;
-    let t = turns.get(at);
-    if (!t) { t = loadBlock(origin, colour).then((row) => (row ? turnsOf(row.block).find((x) => x.address === String(parseInt(turn, 10) || turn)) ?? null : null)).catch(() => null); turns.set(at, t); }
-    return t;
-  };
+  // the session wears the turn from then on (src/colour.ts). A turn that did
+  // not open is not tried again in this call.
+  const tried = new Set<string>();
   // Which party the reader's secret belongs to — derived once, and only when a
   // grain line stays shut, so that line can say whose key is off.
   let readerSide: Promise<'1' | '2' | null> | null = null;
   return async (env: GrayEnvelope): Promise<string | null> => {
     const mode = grayMode(env);
     if (mode === 'colour') {
-      const colour = String(env['9']['2'] ?? ''), turn = String(env['9']['3'] ?? '');
-      if (!colour || !turn) return null;
-      let K = wornColour(wornKey(origin, colour, turn));
-      if (!K && secret) { const t = await turnOf(colour, turn); K = t ? await keyOfTurn(origin, colour, t, secret, hand) : null; }
-      return K ? colourOpen(env, K) : null;
+      const at = `${env['9']['2']}|${env['9']['3']}`;
+      if (secret && !tried.has(at)) { tried.add(at); await wearFor([env], origin, secret, hand); }
+      return openWorn(env, origin);
     }
     if (!secret) return null;
     if (mode === 'self') return selfDecrypt(env, secret, agentId);
@@ -687,56 +676,21 @@ async function buildGrayDecryptor(
   };
 }
 
-// ── Colour: the keeper's door, the writer's seal, the reader's glasses ──
-// (coloured stigmergy, step 2; proposals/2026-11-03-coloured-stigmergy-the-
-// design.md §3 and §4). A colour is colour:<name>, an ordinary block latched
-// whole: an accumulator of turns at its root, each {_: when, 1: the ring of
-// copies of one key, 2: its public half}. Nothing here is a primitive: the
-// keeper founds, admits and turns through bsp() with `members`; a writer seals
-// with gray: "colour:<name>"; a reader's glasses are the turns the session wears.
+// ── Colour: the keeper's door (coloured stigmergy, step 2; proposals/2026-11-03-
+// coloured-stigmergy-the-design.md §3 and §4). A colour is colour:<name>, an
+// ordinary block latched whole: an accumulator of turns at its root, each {_:
+// when, 1: the ring of copies of one key, 2: its public half}. Nothing here is a
+// primitive: the keeper founds, admits and turns through bsp() with `members`; a
+// writer seals with gray: "colour:<name>"; a reader's glasses are the turns the
+// session wears. The writer's seal and the reader's glasses, shared by every
+// door, stand in src/colour.ts.
 
 const iso = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, 'Z');
-
-/** The turns of a colour block in accumulator order — the disc at pscale 0,
- *  each a node with a ring at 1 and a public half at 2 — named by the address
- *  the beach allocated, which stays good across a supernest ('3' at floor 2
- *  left-pads to 03 and walks the chain). */
-function turnsOf(block: Block): Array<{ address: string; node: any }> {
-  const out: Array<{ address: string; node: any }> = [];
-  let r: BspReadResult;
-  try { r = bspRead(block, '', 0); } catch { return out; }
-  for (const e of (r.entries ?? []) as Array<{ address: string }>) {
-    const a = String(e.address ?? '');
-    if (!/^\d+$/.test(a) || /^0+$/.test(a)) continue;
-    let node: any;
-    try { node = readAt(block, a); } catch { continue; }
-    if (node && typeof node === 'object' && node['1'] && typeof node['1'] === 'object' && typeof node['2'] === 'string') out.push({ address: String(parseInt(a, 10)), node });
-  }
-  return out.sort((x, y) => parseInt(x.address, 10) - parseInt(y.address, 10));
-}
 
 /** A holder's published half at this beach: passport:<handle> 9, as pscale_key_publish leaves it. */
 async function publishedHalfAt(origin: string, handle: string): Promise<string | null> {
   const row = await loadBlock(origin, `passport:${handle}`).catch(() => null);
   return row ? publicKeysFromSpine((row.block as any)?.['9'])?.x25519 ?? null : null;
-}
-
-/** A turn's key for this session: worn already, or opened from the reader's own
- *  copy (the hand's first, one derivation) and worn from then on. Null when no
- *  copy opens for the key given — and, where the hand is known and no copy in
- *  the ring names it or names nobody, without a derivation at all: a colour's
- *  copies name their holders (§3.3), so a hand outside the ring is shut by the
- *  ring itself, not by trying every copy under every other name. */
-async function keyOfTurn(origin: string, colour: string, turn: { address: string; node: any }, secret: string | undefined, hand: string | null): Promise<Uint8Array | null> {
-  const at = wornKey(origin, colour, turn.address);
-  let K = wornColour(at);
-  if (!K && secret) {
-    const copies = keyringEntries(turn.node['1']);
-    if (hand && !copies.some((e) => e._ === hand || e._ === '')) return null;
-    K = await unwrapGroupKeyFromKeyring(turn.node['1'], secret, hand);
-    if (K) wearColour(at, K);
-  }
-  return K;
 }
 
 /**
@@ -777,7 +731,7 @@ async function keepColour(origin: string, blockName: string, p: BspToolParams, h
     await saveBlock(origin, blockName, block, { spindle: '', pscale_attention: null, new_lock: p.new_lock, hasContent: true });
     return `[colour @ "${origin}/${blockName}" founded, latched whole] turn 1 from ${iso(now)}: ${copies(holders.length)} (${holders.join(', ')}), the public half for letters at 1.2.\n  seal a line in it anywhere on this beach with gray: "${blockName}"; admit with members listing every holder; a holder left out of members turns the colour.`;
   }
-  const turns = turnsOf(row.block);
+  const turns = colourTurns(row.block);
   const current = turns[turns.length - 1];
   if (!current) throw new Error(`${blockName} stands but holds no turn ({_: when, 1: the ring of copies, 2: the public half} at a root slot): turn it with members and append:true.`);
   const standing = keyringHandles(current.node['1']);
@@ -798,40 +752,18 @@ async function keepColour(origin: string, blockName: string, p: BspToolParams, h
   return `[colour @ "${origin}/${blockName}" turned → turn ${res.slot ?? '?'}${res.supernested ? ` (supernested, floor ${res.floor})` : ''}] from ${iso(now)}: ${copies(holders.length)} (${holders.join(', ')})${leaving.length ? `; shut out of every new line: ${leaving.join(', ')}, who keep what they could already read` : ''}; no line moves.`;
 }
 
-/** THE WRITER'S DOOR (§4.1): seal a line in a colour with the current turn's
- *  key — worn by this session, or opened from the writer's own copy — and,
- *  with no copy, as a letter to the turn's public half, which needs no key. */
-async function sealInColour(origin: string, colour: string, plaintext: string, encSecret: string | undefined, hand: string | null): Promise<{ envelope: GrayEnvelope; how: 'worn' | 'copy' | 'letter'; turn: string }> {
-  const row = await loadBlock(origin, colour);
-  if (!row) throw new Error(`no ${colour} at ${origin}: a colour is founded by its keeper first — bsp(agent_id="${origin}", block="${colour}", members=[…], new_lock=<the keeper's latch>).`);
-  const turns = turnsOf(row.block);
-  const current = turns[turns.length - 1];
-  if (!current) throw new Error(`${colour} holds no turn to seal with.`);
-  const worn = wornColour(wornKey(origin, colour, current.address));
-  const K = worn ?? await keyOfTurn(origin, colour, current, encSecret, hand);
-  if (K) return { envelope: colourSeal(plaintext, colour, current.address, K), how: worn ? 'worn' : 'copy', turn: current.address };
-  return { envelope: colourLetter(plaintext, colour, current.address, current.node['2']), how: 'letter', turn: current.address };
-}
-
-/** The ack's line for a coloured write or append. */
-function colourLine(colour: string, sealed: { how: 'worn' | 'copy' | 'letter'; turn: string }): string {
-  return sealed.how === 'letter'
-    ? `\n  ⓘ sealed as a letter to ${colour}, turn ${sealed.turn}: every holder of the colour reads it; you hold no copy, so you cannot read it back.`
-    : `\n  ⓘ sealed in ${colour}, turn ${sealed.turn}.`;
-}
-
 /** A KEYLESS READ IN WORN COLOURS (§4.1): the slice comes from the wire as it
  *  does for anyone, and only the sealed lines in it whose colour and turn this
- *  session wears are fetched raw — one node each — and opened in place, the
- *  envelope's own fields then hidden as for a line drawn grey. */
+ *  session wears are fetched raw — one node each, the envelope the node stands
+ *  as or keeps one zero deeper (a room's contribution, §2.3) — and opened in
+ *  place, the envelope's own fields then hidden as for a line drawn grey. */
 async function openWornOnWire(r: any, origin: string, block: string): Promise<any> {
   const opened = new Set<string>();
   const open = async (e: any) => {
-    const c = parseColourNote(e?.content);
-    const K = c ? wornColour(wornKey(origin, c.block, c.turn)) : null;
-    if (!K || !e?.address) return e;
+    if (!parseColourNote(e?.content) || !e?.address) return e;
     const raw = await loadBspShape(origin, block, String(e.address), null).catch(() => null);
-    const text = isGrayEnvelope(raw) ? colourOpen(raw, K) : null;
+    const env = envelopeOf(raw);
+    const text = env ? openWorn(env, origin) : null;
     if (text === null) return e;
     opened.add(String(e.address));
     return { ...e, content: text };

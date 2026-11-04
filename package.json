@@ -55,6 +55,7 @@
     "smoke:gray-vectors": "tsx scripts/smoke-gray-vectors.ts",
     "smoke:seal-price": "tsx scripts/smoke-seal-price.ts",
     "smoke:colour": "tsx scripts/smoke-colour.ts",
+    "smoke:private-room": "tsx scripts/smoke-private-room.ts",
     "smoke:pass": "tsx scripts/smoke-pass.ts",
     "smoke:gray-guard": "tsx scripts/smoke-gray-guard.ts",
     "smoke:gray-append-live": "tsx scripts/smoke-gray-append-live.ts",

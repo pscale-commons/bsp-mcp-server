@@ -246,8 +246,9 @@ export function sealedLine(env: GrayEnvelope): string {
 }
 
 /** The envelope a node stands as: the node itself, or the one its underscore
- *  chain reaches before any string — a container voiced in gray (placeGray). */
-function envelopeOf(node: unknown): GrayEnvelope | null {
+ *  chain reaches before any string — a container voiced in gray (placeGray), or
+ *  a line whose words are sealed one zero deeper (coloured-stigmergy §2.3). */
+export function envelopeOf(node: unknown): GrayEnvelope | null {
   for (let n: any = node; n && typeof n === 'object'; n = n._) if (isGrayEnvelope(n)) return n;
   return null;
 }
