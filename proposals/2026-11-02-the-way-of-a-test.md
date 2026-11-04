@@ -76,6 +76,6 @@ One false alarm: mind 1 reported `spine:leros-schematic` 1.4 as a 404, because i
 
 ## 6. Not built
 
-- **`test:schematic`, `test:look`, `test:thread`.** The minds' four drafts are kept in `proposals/2026-11-02-the-way-of-a-test/` as they were written, unreviewed, and none stands on the beach. `test-schematic.json` still writes addresses with several dots and carries the false alarm above; neither of those may go on the beach.
+- **`test:schematic` and `test:thread`.** The minds' four drafts are kept in `proposals/2026-11-02-the-way-of-a-test/` as they were written. `test:look` has since been reviewed and stood on the beach (`proposals/2026-11-04-test-look.md`); the others are unreviewed and do not stand. `test-schematic.json` still writes addresses with several dots and carries the false alarm above; neither of those may go on the beach.
 - **A section for every way.** `ways:vault` 4 and `ways:tickets` carry their own proofs, and the rest teach a stance rather than make a thing.
 - **`block-conventions`.** `test:<kind>` is not added to the catalogue of names. It is a sentinel and law-class, and on this beach a name becomes a convention when others take it up.
