@@ -114,7 +114,12 @@ const httpServer = createHttpServer(async (req, res) => {
       return;
     }
     const origin = originOf(req);
-    const auth = authFor(req, signedAs, `${origin}${url.pathname}`);
+    const auth = await authFor(req, signedAs, `${origin}${url.pathname}`);
+    if (auth === 'unreachable') {
+      res.writeHead(503, { 'Content-Type': 'application/json', 'Retry-After': '5' });
+      res.end(JSON.stringify({ error: 'the beach did not answer while opening this fingerprint; try again' }));
+      return;
+    }
     if (!auth) { refuseUnsigned(res, origin, MCP_PATH, signedAs); return; }
     (req as typeof req & { auth?: typeof auth }).auth = auth;
   }

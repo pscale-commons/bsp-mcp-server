@@ -1,31 +1,36 @@
 /**
- * signin.ts — THE KEY IN THE CONNECTOR (proposals/2026-11-04-the-key-in-the-connector.md).
+ * signin.ts — THE KEY IN THE CONNECTOR, BY FINGERPRINT (proposals/2026-11-04-the-key-in-the-connector.md).
  *
- * A connection at /mcp/v1/as/<handle> is that handle, signed in. The first time a client
- * connects there (Claude on any surface: claude.ai, desktop, mobile, Claude Code, Cowork and
- * its routines) the router answers 401 and points at its own sign-in. The client registers,
- * the person types the handle's key on the router's own page, and the router seals the key
- * into the token it hands back. The client keeps the token and sends it on every call, and
- * every tool that takes a `secret` gets the key when the call carries none. No instruction,
- * prompt or window ever holds it.
+ * A connection at /mcp/v1/as/<handle> is that handle, signed in with a FINGERPRINT. The first
+ * time a client connects there (Claude on any surface: claude.ai, desktop, mobile, Claude Code,
+ * Cowork and its routines) the router answers 401 and points at its own sign-in page. There the
+ * person types the handle's key once and names the connection. The router mints a fingerprint
+ * (32 random bytes), seals the key to it, and keeps the sealed copy on the beach at
+ * fingerprints:<handle>, one digit per fingerprint. The client is handed a token that carries
+ * the fingerprint and never the key.
  *
- * NOTHING IS STORED. A client's id is its redirect addresses, sealed; a code is the key and
- * the PKCE challenge, sealed for five minutes; a token is the key, sealed for a day; a refresh
- * token is the same for 180 days, issued fresh at every refresh. All are sealed under
- * BSP_SIGNIN_SECRET, so only this deployment opens them. Off unless the deploy carries that
- * secret (32 characters at least); /mcp/v1 is untouched either way.
+ * On every call the router opens the fingerprint's copy and has the key for that call: every tool
+ * that takes a `secret` gets it where a call carries none, `enc_secret: "vault"` seals and opens
+ * with it (the vault among the lines it opens), and nothing the router returns ever contains it.
+ * The key stays stable. Fingerprints come and go: revoking one, on the router's own page with
+ * the key, empties its digit, and its connector is signed out.
  *
- * THE SIGNED KEY OPENS LATCHES AND NOTHING ELSE. `sealingKey` keeps it from becoming the key
- * that seals, opens or signs a line, so a run signed in this way writes and never opens the
- * vault (David, pool:weft 386: a scheduled run is kept from the vault and given only the
- * writes it needs).
+ * NOTHING SECRET IS STORED IN THE CLEAR. A client's id is its redirect addresses, sealed; a code
+ * is the fingerprint and the PKCE challenge, sealed for five minutes; a token is the fingerprint,
+ * sealed for a day; a refresh token is the same for 180 days. All are sealed under
+ * BSP_SIGNIN_SECRET, so only this deployment opens them. The key itself stands only at
+ * fingerprints:<handle>, sealed to each fingerprint. An opened key is held in memory for a minute
+ * and forgotten with the process. Off unless the deploy carries BSP_SIGNIN_SECRET (32 characters
+ * at least); /mcp/v1 is untouched either way.
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import nacl from 'tweetnacl';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
+import { DEFAULT_BEACH, loadBlock, resolveFederationOrigin, saveBlock } from './db.js';
 import { declareHand, handOf } from './looks.js';
 
 const SECRET = process.env.BSP_SIGNIN_SECRET ?? '';
@@ -37,10 +42,13 @@ const CLIENT_MS = 10 * 365 * 24 * 60 * 60 * 1000;
 const CODE_MS = 5 * 60 * 1000;
 const ACCESS_MS = 24 * 60 * 60 * 1000;
 const REFRESH_MS = 180 * 24 * 60 * 60 * 1000;
+const OPENED_MS = 60 * 1000;
 const SCOPE = 'bsp';
 const HANDLE = /^[A-Za-z0-9_-]{1,64}$/;
+const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 const SERVER_METADATA = '/.well-known/oauth-authorization-server';
 const RESOURCE_METADATA = '/.well-known/oauth-protected-resource';
+const FINGERPRINTS_PAGE = '/fingerprints/';
 
 // ── The seal ──
 
@@ -74,6 +82,116 @@ function sameText(a: string, b: unknown): boolean {
   if (typeof b !== 'string') return false;
   const x = Buffer.from(a), y = Buffer.from(b);
   return x.length === y.length && timingSafeEqual(x, y);
+}
+
+// ── The fingerprints ──
+//
+// fingerprints:<handle>, one digit per fingerprint, nine at most:
+//   { _: name, 1: the key sealed to the fingerprint, 2: its nonce, 3: the sealer's one-off
+//     public key, 4: the fingerprint's public key, 5: when it was minted }
+// A fingerprint is 32 random bytes; its box key pair derives from it by sha256, which needs no
+// stretching because nothing about it is guessable. Only the router ever holds one in the clear.
+
+const RING = (handle: string) => `fingerprints:${handle}`;
+const b64 = (u: Uint8Array) => Buffer.from(u).toString('base64');
+const unb64 = (s: string) => new Uint8Array(Buffer.from(s, 'base64'));
+
+function ringLaw(handle: string): string {
+  return `fingerprints:${handle} — the fingerprints that act for ${handle} through the bsp connector, one at each digit: its name at the underscore; ${handle}'s key sealed to it at 1, with the nonce at 2 and the sealer's one-off public key at 3; the fingerprint's public key at 4; when it was minted at 5. Only the router that minted a fingerprint can open its digit, and only for a connector signed in with it, so no model and no reader of this block ever sees the key. Minted and revoked on that router's own pages with ${handle}'s key, which latches this block; an empty digit is a fingerprint revoked.`;
+}
+
+function fingerprintPair(fingerprint: string) {
+  const seed = createHash('sha256').update('bsp-fingerprint\u0000').update(Buffer.from(fingerprint, 'base64url')).digest();
+  return nacl.box.keyPair.fromSecretKey(new Uint8Array(seed));
+}
+
+function isSealedEntry(n: any): boolean {
+  return !!n && typeof n === 'object' && ['1', '2', '3', '4'].every((k) => typeof n[k] === 'string');
+}
+
+function sealKeyTo(key: string, name: string, publicKey: Uint8Array) {
+  const eph = nacl.box.keyPair();
+  const nonce = nacl.randomBytes(nacl.box.nonceLength);
+  const sealed = nacl.box(new TextEncoder().encode(key), nonce, publicKey, eph.secretKey);
+  return { _: name, '1': b64(sealed), '2': b64(nonce), '3': b64(eph.publicKey), '4': b64(publicKey), '5': new Date().toISOString() };
+}
+
+/** The key a fingerprint's digit holds, opened with the fingerprint, or null. */
+function openKey(entry: any, fingerprint: string): string | null {
+  if (!isSealedEntry(entry)) return null;
+  const pair = fingerprintPair(fingerprint);
+  if (entry['4'] !== b64(pair.publicKey)) return null;
+  try {
+    const plain = nacl.box.open(unb64(entry['1']), unb64(entry['2']), unb64(entry['3']), pair.secretKey);
+    return plain ? new TextDecoder().decode(plain) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The ring, or null when none stands. Throws when the beach does not answer, which is never
+ *  read as a ring gone (a fingerprint is revoked only by its digit emptying). */
+async function readRing(handle: string): Promise<Record<string, any> | null> {
+  if (!(await resolveFederationOrigin(DEFAULT_BEACH))) throw new Error(`no beach answered at ${DEFAULT_BEACH}`);
+  const row = await loadBlock(DEFAULT_BEACH, RING(handle));
+  return row?.block && typeof row.block === 'object' ? (row.block as Record<string, any>) : null;
+}
+
+/** What a refused write at the ring says to the person at the page. */
+function refusalFor(e: unknown, handle: string): string {
+  const m = String((e as any)?.message ?? e);
+  if (/wrong keys this hour|cap_wrong_keys/.test(m)) return 'Too many wrong keys this hour. Try again when the hour turns.';
+  if (/does not match|whose passport is locked|lock rotation requires|secret required|lock_required|handle_bound/.test(m)) return `That key does not open ${handle}'s blocks.`;
+  return `The beach did not take it (${m.slice(0, 160)}). Nothing was changed.`;
+}
+
+/** Mint a fingerprint for `handle` under its key: the key is proved by the write itself, since the
+ *  ring is latched by it (and founding the ring is bound to the passport's key). */
+async function mint(handle: string, key: string, name: string): Promise<{ fingerprint: string; digit: string } | { problem: string }> {
+  let ring: Record<string, any> | null;
+  try { ring = await readRing(handle); } catch { return { problem: 'The beach did not answer. Try again in a moment.' }; }
+  const digit = DIGITS.find((d) => !isSealedEntry(ring?.[d]));
+  if (!digit) return { problem: `Nine fingerprints already act for ${handle}. Revoke one first, at ${FINGERPRINTS_PAGE}${handle}.` };
+  const fingerprint = randomBytes(32).toString('base64url');
+  const next = { ...(ring ?? {}), _: typeof ring?._ === 'string' ? ring._ : ringLaw(handle), [digit]: sealKeyTo(key, name, fingerprintPair(fingerprint).publicKey) };
+  try {
+    await saveBlock(DEFAULT_BEACH, RING(handle), next, ring ? { secret: key, hasContent: true } : { new_lock: key, hasContent: true });
+  } catch (e) {
+    return { problem: refusalFor(e, handle) };
+  }
+  return { fingerprint, digit };
+}
+
+async function revoke(handle: string, key: string, digits: string[]): Promise<{ problem: string } | { revoked: string[] }> {
+  let ring: Record<string, any> | null;
+  try { ring = await readRing(handle); } catch { return { problem: 'The beach did not answer. Try again in a moment.' }; }
+  const gone = digits.filter((d) => DIGITS.includes(d) && isSealedEntry(ring?.[d]));
+  if (!ring || gone.length === 0) return { problem: 'Choose a fingerprint to revoke.' };
+  const next = { ...ring };
+  for (const d of gone) delete next[d];
+  try {
+    await saveBlock(DEFAULT_BEACH, RING(handle), next, { secret: key, hasContent: true });
+  } catch (e) {
+    return { problem: refusalFor(e, handle) };
+  }
+  for (const [f, o] of opened) if (o.handle === handle && gone.includes(o.digit)) opened.delete(f);
+  return { revoked: gone.map((d) => String(ring![d]._ ?? `fingerprint ${d}`)) };
+}
+
+/** Keys opened in the last minute, by fingerprint: memory only, as the members' passes are. */
+const opened = new Map<string, { key: string; handle: string; digit: string; until: number }>();
+
+/** The key a live fingerprint opens; null when its digit is gone (revoked); 'unreachable' when
+ *  the beach did not answer, which is no reason to sign anyone out. */
+async function openFingerprint(handle: string, fingerprint: string, digit: string): Promise<string | null | 'unreachable'> {
+  const memo = opened.get(fingerprint);
+  if (memo && memo.until > Date.now() && memo.handle === handle && memo.digit === digit) return memo.key;
+  let ring: Record<string, any> | null;
+  try { ring = await readRing(handle); } catch { return 'unreachable'; }
+  const key = openKey(ring?.[digit], fingerprint);
+  if (!key) { opened.delete(fingerprint); return null; }
+  opened.set(fingerprint, { key, handle, digit, until: Date.now() + OPENED_MS });
+  return key;
 }
 
 // ── Addresses ──
@@ -143,7 +261,7 @@ function redirect(res: ServerResponse, to: string): true {
   return true;
 }
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
-function page(res: ServerResponse, status: number, body: string): true {
+function page(res: ServerResponse, status: number, body: string, title = 'Sign in to the beach'): true {
   res.writeHead(status, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'no-store',
@@ -151,17 +269,19 @@ function page(res: ServerResponse, status: number, body: string): true {
     'X-Frame-Options': 'DENY',
     'Referrer-Policy': 'no-referrer',
   });
-  res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in to the beach</title><style>
+  res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><style>
 :root{color-scheme:light dark;--ink:#1d2a33;--soft:#5b6b75;--line:#c9d6dc;--sea:#2f6f86;--on-sea:#fff;--bg:#f4f8f9}
 @media (prefers-color-scheme:dark){:root{--ink:#e3eef2;--soft:#9fb2bb;--line:#33454e;--sea:#6fb3c9;--on-sea:#10181c;--bg:#10181c}}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,sans-serif}
 main{max-width:30rem;margin:0 auto;padding:2.5rem 1rem}h1{font-size:1.4rem;margin:0 0 1rem}
-label{display:block;margin:1rem 0;font-weight:600}input{display:block;box-sizing:border-box;width:100%;margin-top:.35rem;padding:.7rem;font:inherit;border:1px solid var(--line);border-radius:.5rem;background:transparent;color:inherit}
+label{display:block;margin:1rem 0;font-weight:600}input:not([type=checkbox]){display:block;box-sizing:border-box;width:100%;margin-top:.35rem;padding:.7rem;font:inherit;border:1px solid var(--line);border-radius:.5rem;background:transparent;color:inherit}
 input[readonly]{color:var(--soft)}button{margin-top:.5rem;padding:.75rem 1.4rem;font:inherit;font-weight:600;border:0;border-radius:.5rem;background:var(--sea);color:var(--on-sea)}
+ul{list-style:none;padding:0}li{padding:.6rem 0;border-bottom:1px solid var(--line)}li label{display:flex;gap:.6rem;margin:0;font-weight:400}
 .small{color:var(--soft);font-size:.9rem}.problem{color:#b3412e;font-weight:600}
 </style></head><body><main>${body}</main></body></html>`);
   return true;
 }
+const keyField = '<label>Key<input name="key" type="password" required autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"></label>';
 
 // ── The authorization request ──
 
@@ -171,17 +291,18 @@ const readAsk = (src: Record<string, string>): Ask =>
   Object.fromEntries(ASK_KEYS.filter((k) => typeof src[k] === 'string').map((k) => [k, src[k]])) as Ask;
 
 /** A fault the client cannot be sent back for is a page; one it can is a redirect carrying the
- *  error, as OAuth asks; a sound request names the handle its resource fixes, if it fixes one. */
-function checkAsk(ask: Ask, origin: string, mcpPath: string): { problem: string } | { back: string } | { handle: string | null } {
+ *  error, as OAuth asks; a sound request names its client and the handle its resource fixes. */
+function checkAsk(ask: Ask, origin: string, mcpPath: string): { problem: string } | { back: string } | { handle: string | null; client: string } {
   const client = unseal('client', ask.client_id);
   if (!client) return { problem: 'This sign-in did not come from a client this router registered. Start again from the connector in your client.' };
   if (!ask.redirect_uri || !redirectMatches(client.r, ask.redirect_uri)) return { problem: 'The address this sign-in would return to is not one its client registered.' };
   const fail = (error: string, error_description: string) => ({ back: withParams(ask.redirect_uri!, { error, error_description, state: ask.state }) });
   if (ask.response_type !== 'code') return fail('unsupported_response_type', 'only response_type=code');
   if (!ask.code_challenge || ask.code_challenge_method !== 'S256') return fail('invalid_request', 'S256 PKCE is required');
-  if (!ask.resource) return { handle: null };
+  const name = typeof client.n === 'string' && client.n ? client.n : 'a client';
+  if (!ask.resource) return { handle: null, client: name };
   const handle = ask.resource.startsWith(`${origin}${mcpPath}/as/`) ? asHandle(ask.resource.slice(origin.length), mcpPath) : null;
-  return handle ? { handle } : fail('invalid_target', 'the resource is not an address of this router');
+  return handle ? { handle, client: name } : fail('invalid_target', 'the resource is not an address of this router');
 }
 
 function backTo(redirectUri: string): string {
@@ -194,29 +315,40 @@ function backTo(redirectUri: string): string {
   }
 }
 
-function signinPage(ask: Ask, handle: string | null, problem = ''): string {
+function signinPage(ask: Ask, handle: string | null, client: string, problem = ''): string {
   const hidden = ASK_KEYS.filter((k) => ask[k] !== undefined).map((k) => `<input type="hidden" name="${k}" value="${esc(ask[k]!)}">`).join('');
   const as = handle ? `<b>${esc(handle)}</b>` : 'you';
+  const named = `${client === 'a client' ? 'Claude' : client}, ${new Date().toISOString().slice(0, 10)}`;
   return `<h1>Sign in to the beach${handle ? ` as ${esc(handle)}` : ''}</h1>
-<p>${esc(backTo(ask.redirect_uri ?? ''))} is asking to write on the beach as ${as}. Type the key here, on the router's own page, and never in a chat.</p>
+<p>${esc(backTo(ask.redirect_uri ?? ''))} is asking to act on the beach as ${as}. Type the key once, here on the router's own page, and never in a chat.</p>
 ${problem ? `<p class="problem">${esc(problem)}</p>` : ''}
 <form method="post" action="/oauth/authorize">${hidden}
 <label>Handle<input name="handle" ${handle ? `value="${esc(handle)}" readonly` : 'required'} autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></label>
-<label>Key<input name="key" type="password" required autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"></label>
+${keyField}
+<label>Name this connection<input name="name" value="${esc(named)}" maxlength="80" autocapitalize="sentences"></label>
 <button type="submit">Sign in</button>
 </form>
-<p class="small">Nothing is stored. The key is sealed into the sign-in this page hands back, which only this router can open. From then on every call through that connector writes with it, and no conversation ever sees it. It writes and does nothing else: sealed lines stay shut.</p>
-<p class="small">To undo it, disconnect the connector, or change the key. The key is not checked here: if it is mistyped, writes will be refused, and connecting again puts it right.</p>`;
+<p class="small">The router mints a fingerprint for this connection and seals the key to it. The sealed copy stands at fingerprints:${esc(handle ?? '<handle>')} on the beach, where only this router can open it. The connection carries the fingerprint, never the key, and no model ever sees the key. It can write, and open sealed lines when asked, your vault among them.</p>
+<p class="small">To revoke the connection, use ${esc(FINGERPRINTS_PAGE)}${esc(handle ?? '<handle>')} on this router: the key stays the same, and the connection is signed out.</p>`;
+}
+
+function fingerprintsPage(handle: string, ring: Record<string, any> | null, note = '', problem = ''): string {
+  const live = DIGITS.filter((d) => isSealedEntry(ring?.[d]));
+  const rows = live.map((d) => `<li><label><input type="checkbox" name="revoke" value="${d}"> <span><b>${esc(String(ring![d]._ ?? `fingerprint ${d}`))}</b><br><span class="small">at ${d}, minted ${esc(String(ring![d]['5'] ?? '').slice(0, 16).replace('T', ' '))}</span></span></label></li>`).join('');
+  return `<h1>Fingerprints for ${esc(handle)}</h1>
+${note ? `<p>${esc(note)}</p>` : ''}${problem ? `<p class="problem">${esc(problem)}</p>` : ''}
+${live.length ? `<form method="post" action="${FINGERPRINTS_PAGE}${esc(handle)}"><ul>${rows}</ul>${keyField}<button type="submit">Revoke the ticked ones</button></form>` : '<p>No fingerprints act for this handle.</p>'}
+<p class="small">Each line is a connection signed in as ${esc(handle)}. Revoking one signs it out and leaves the key and every other connection as they are. It takes ${esc(handle)}'s key, typed here.</p>`;
 }
 
 // ── The routes ──
 
-function tokens(h: string, k: string, res: string | null) {
+function tokens(h: string, f: string, d: string, res: string | null) {
   return {
-    access_token: seal('access', { h, k, res }, ACCESS_MS),
+    access_token: seal('access', { h, f, d, res }, ACCESS_MS),
     token_type: 'Bearer',
     expires_in: Math.floor(ACCESS_MS / 1000),
-    refresh_token: seal('refresh', { h, k, res }, REFRESH_MS),
+    refresh_token: seal('refresh', { h, f, d, res }, REFRESH_MS),
     scope: SCOPE,
   };
 }
@@ -247,7 +379,7 @@ function fields(raw: string, type: string | undefined): Record<string, string> {
 /** The sign-in's own addresses: true when this request was one of them, and answered. */
 export async function signinRoute(req: IncomingMessage, res: ServerResponse, url: URL, mcpPath: string): Promise<boolean> {
   const p = url.pathname;
-  if (p !== SERVER_METADATA && !p.startsWith(RESOURCE_METADATA) && !p.startsWith('/oauth/')) return false;
+  if (p !== SERVER_METADATA && !p.startsWith(RESOURCE_METADATA) && !p.startsWith('/oauth/') && !p.startsWith(FINGERPRINTS_PAGE)) return false;
   if (!SIGNIN_ON) return send(res, 404, { error: 'not_found', error_description: 'this router has no sign-in' });
   const origin = originOf(req);
   try {
@@ -282,9 +414,9 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
       if (!uris || uris.length === 0 || uris.length > 8 || !uris.every(registrable)) {
         return send(res, 400, { error: 'invalid_redirect_uri', error_description: 'redirect_uris: https addresses, or a loopback for a client on the person\'s machine' });
       }
-      const client_name = typeof j.client_name === 'string' ? j.client_name.slice(0, 100) : undefined;
+      const client_name = typeof j.client_name === 'string' ? j.client_name.slice(0, 60) : undefined;
       return send(res, 201, {
-        client_id: seal('client', { r: uris }, CLIENT_MS),
+        client_id: seal('client', { r: uris, n: client_name }, CLIENT_MS),
         client_id_issued_at: Math.floor(Date.now() / 1000),
         client_name,
         redirect_uris: uris,
@@ -300,17 +432,26 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
       const checked = checkAsk(ask, origin, mcpPath);
       if ('problem' in checked) return page(res, 400, `<h1>This sign-in cannot go on</h1><p>${esc(checked.problem)}</p>`);
       if ('back' in checked) return redirect(res, checked.back);
-      if (!posted) return page(res, 200, signinPage(ask, checked.handle));
+      if (!posted) return page(res, 200, signinPage(ask, checked.handle, checked.client));
       const handle = checked.handle ?? (posted.handle ?? '').trim();
-      if (!HANDLE.test(handle)) return page(res, 400, signinPage(ask, checked.handle, 'A handle is letters, digits, - and _ only.'));
+      if (!HANDLE.test(handle)) return page(res, 400, signinPage(ask, checked.handle, checked.client, 'A handle is letters, digits, - and _ only.'));
       const key = posted.key ?? '';
-      if (!key || key.length > 512) return page(res, 400, signinPage(ask, checked.handle, 'Type the key.'));
-      const code = seal('code', { h: handle, k: key, c: digest(ask.client_id!), r: ask.redirect_uri, x: ask.code_challenge, res: ask.resource ?? null }, CODE_MS);
+      if (!key || key.length > 512) return page(res, 400, signinPage(ask, checked.handle, checked.client, 'Type the key.'));
+      const name = (posted.name ?? '').trim().slice(0, 80) || `${checked.client}, ${new Date().toISOString().slice(0, 10)}`;
+      const minted = await mint(handle, key, name);
+      if ('problem' in minted) return page(res, 400, signinPage(ask, checked.handle, checked.client, minted.problem));
+      const code = seal('code', { h: handle, f: minted.fingerprint, d: minted.digit, c: digest(ask.client_id!), r: ask.redirect_uri, x: ask.code_challenge, res: ask.resource ?? null }, CODE_MS);
       return redirect(res, withParams(ask.redirect_uri!, { code, state: ask.state }));
     }
     if (p === '/oauth/token' && req.method === 'POST') {
       const f = fields(await readBody(req), req.headers['content-type']);
-      const deny = (error: string, error_description: string) => send(res, 400, { error, error_description });
+      const deny = (error: string, error_description: string, status = 400) => send(res, status, { error, error_description });
+      const still = async (s: Record<string, any>) => {
+        const k = await openFingerprint(s.h, s.f, s.d);
+        if (k === 'unreachable') return deny('temporarily_unavailable', 'the beach did not answer', 503);
+        if (!k) return deny('invalid_grant', 'this fingerprint was revoked: sign in again');
+        return send(res, 200, tokens(s.h, s.f, s.d, s.res));
+      };
       if (f.grant_type === 'authorization_code') {
         const code = unseal('code', f.code);
         if (!code) return deny('invalid_grant', 'the code is unknown or expired');
@@ -318,15 +459,32 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
         if (f.client_id && digest(f.client_id) !== code.c) return deny('invalid_grant', 'the code was issued to another client');
         if (!f.code_verifier || !sameText(digest(f.code_verifier), code.x)) return deny('invalid_grant', 'PKCE verification failed');
         if (f.resource && code.res && f.resource !== code.res) return deny('invalid_target', 'the resource does not match the authorization request');
-        return send(res, 200, tokens(code.h, code.k, code.res));
+        return still(code);
       }
       if (f.grant_type === 'refresh_token') {
         const r = unseal('refresh', f.refresh_token);
         if (!r) return deny('invalid_grant', 'the refresh token is unknown or expired');
         if (f.resource && r.res && f.resource !== r.res) return deny('invalid_target', 'the resource does not match the sign-in');
-        return send(res, 200, tokens(r.h, r.k, r.res));
+        return still(r);
       }
       return deny('unsupported_grant_type', 'authorization_code or refresh_token');
+    }
+    if (p.startsWith(FINGERPRINTS_PAGE) && (req.method === 'GET' || req.method === 'POST')) {
+      const handle = p.slice(FINGERPRINTS_PAGE.length);
+      if (!HANDLE.test(handle)) return page(res, 404, '<h1>No such handle</h1>');
+      if (req.method === 'POST') {
+        const raw = await readBody(req);
+        const picked = new URLSearchParams(raw).getAll('revoke');
+        const key = fields(raw, req.headers['content-type']).key ?? '';
+        const done = key ? await revoke(handle, key, picked) : { problem: 'Type the key.' };
+        const ring = await readRing(handle).catch(() => null);
+        const title = `Fingerprints for ${handle}`;
+        if ('problem' in done) return page(res, 400, fingerprintsPage(handle, ring, '', done.problem), title);
+        return page(res, 200, fingerprintsPage(handle, ring, `Revoked: ${done.revoked.join(', ')}. Those connections are signed out.`), title);
+      }
+      let ring: Record<string, any> | null;
+      try { ring = await readRing(handle); } catch { return page(res, 503, '<h1>The beach did not answer</h1><p>Try again in a moment.</p>', `Fingerprints for ${handle}`); }
+      return page(res, 200, fingerprintsPage(handle, ring), `Fingerprints for ${handle}`);
     }
     return send(res, 405, { error: 'invalid_request', error_description: `${req.method} ${p} is not a sign-in address` });
   } catch (e: any) {
@@ -337,40 +495,51 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
 // ── The signed address ──
 
 /** Who a request at <mcp path>/as/<handle> is signed in as, for the transport to hand every
- *  tool call; null for no token, a forged, expired or refresh one, or one for another address. */
-export function authFor(req: IncomingMessage, handle: string, resource: string): AuthInfo | null {
+ *  tool call: its handle and the key its fingerprint opens. null for no token, a forged, expired
+ *  or refresh one, one for another address, or a fingerprint revoked; 'unreachable' when the
+ *  beach did not answer. */
+export async function authFor(req: IncomingMessage, handle: string, resource: string): Promise<AuthInfo | null | 'unreachable'> {
   const m = String(req.headers.authorization ?? '').match(/^Bearer\s+(\S+)$/i);
   const a = m ? unseal('access', m[1]) : null;
-  if (!a || a.h !== handle || (a.res && a.res !== resource)) return null;
-  return { token: m![1], clientId: 'bsp-signin', scopes: [SCOPE], expiresAt: Math.floor(a.exp / 1000), extra: { signedIn: { handle: a.h, key: a.k } } };
+  if (!a || a.h !== handle || (a.res && a.res !== resource) || typeof a.f !== 'string' || typeof a.d !== 'string') return null;
+  const key = await openFingerprint(a.h, a.f, a.d);
+  if (key === 'unreachable' || key === null) return key;
+  return { token: m![1], clientId: 'bsp-signin', scopes: [SCOPE], expiresAt: Math.floor(a.exp / 1000), extra: { signedIn: { handle: a.h, key } } };
 }
 
 /** The 401 that starts a client's sign-in, pointing at the address's own metadata. */
 export function refuseUnsigned(res: ServerResponse, origin: string, mcpPath: string, handle: string): void {
   send(res, 401, {
     error: 'invalid_token',
-    error_description: `${origin}${mcpPath}/as/${handle} is the beach as ${handle}: sign in once through your client's connector, and every call carries the key from then on`,
+    error_description: `${origin}${mcpPath}/as/${handle} is the beach as ${handle}: sign in once through your client's connector, and every call carries a fingerprint from then on`,
   }, { 'WWW-Authenticate': `Bearer resource_metadata="${origin}${RESOURCE_METADATA}${mcpPath}/as/${handle}", scope="${SCOPE}"` });
 }
 
 /** The line a signed session's instructions carry, so the model never asks for the key. */
 export function signedLine(handle: string): string {
-  return `THIS CONNECTION IS SIGNED IN AS ${handle}. The person signed in once on this router's own page, and every call that carries no secret writes with ${handle}'s key, which never enters this window: do not ask the person for it, and do not look for it. It opens latches and nothing else. Sealing or opening a gray line, the vault among them, still needs enc_secret in the call.`;
+  return `THIS CONNECTION IS SIGNED IN AS ${handle}, by a fingerprint. Every call that carries no secret writes with ${handle}'s key, which never enters this window: do not ask the person for it, and do not look for it. To seal or open a gray line, ${handle}'s vault among them (agent_id the beach's URL, block "vault:${handle}"), pass enc_secret: "vault", and the router seals or opens with the key. Nothing the router returns ever contains the key itself.`;
 }
 
 // ── The tools ──
 
 const fromSignIn = new AsyncLocalStorage<true>();
 
-/** The key that seals, opens or signs for this call: its enc_secret, else its secret, unless
- *  that secret came from the sign-in, which opens latches and nothing else. */
+/** The key that seals, opens or signs for this call: its enc_secret, else its secret, unless that
+ *  secret came from the sign-in, which seals nothing unless asked (enc_secret: "vault"). */
 export function sealingKey(encSecret: string | undefined, secret: string | undefined): string | undefined {
   return encSecret ?? (fromSignIn.getStore() ? undefined : secret);
 }
 
 /** Said where a seal is refused, when the refusal is the sign-in's rule and not a missing key. */
 export function signedSealNote(): string {
-  return fromSignIn.getStore() ? ' This connection is signed in, and its key opens latches only: pass enc_secret to seal or open.' : '';
+  return fromSignIn.getStore() ? ' This connection is signed in: pass enc_secret: "vault" to seal or open with its key.' : '';
+}
+
+const MARK = "[this connection's key]";
+/** Every text a signed call returns, with the key taken out wherever it stands. */
+function withoutKey(res: any, key: string): any {
+  if (key.length < 6 || !res || !Array.isArray(res.content)) return res;
+  return { ...res, content: res.content.map((c: any) => (c && typeof c.text === 'string' && c.text.includes(key) ? { ...c, text: c.text.split(key).join(MARK) } : c)) };
 }
 
 function isZodShape(a: unknown): a is Record<string, unknown> {
@@ -379,10 +548,11 @@ function isZodShape(a: unknown): a is Record<string, unknown> {
 }
 
 /**
- * Every tool that takes a `secret` gets the signed key when the call carries none, and a signed
- * session's hand is its handle wherever a hand is asked for (the reflection; a members' beach,
- * whose pass is proved with the signed key). Installed innermost, beside the error and clock
- * wrappers in server.ts, so it reaches every tool that exists and every tool added later.
+ * For a signed call: every tool that takes a `secret` gets the key where the call carries none;
+ * `enc_secret: "vault"` becomes the key; nothing returned contains it; and the session's hand is
+ * its handle wherever a hand is asked for (the reflection; a members' beach, whose pass is proved
+ * with the key). Installed innermost, beside the error and clock wrappers in server.ts, so it
+ * reaches every tool that exists and every tool added later.
  */
 export function installSignedIn(server: McpServer): void {
   const orig = server.tool.bind(server);
@@ -391,14 +561,21 @@ export function installSignedIn(server: McpServer): void {
     if (typeof handler !== 'function') return (orig as any)(...args);
     const shape = args.slice(1, -1).find(isZodShape);
     const takesSecret = !!shape && 'secret' in shape;
+    const takesEnc = !!shape && 'enc_secret' in shape;
     args[args.length - 1] = async (...h: any[]) => {
       const extra = h[h.length - 1];
       const who = extra?.authInfo?.extra?.signedIn as { handle: string; key: string } | undefined;
       if (!who) return handler(...h);
       if (extra?.sessionId && !handOf(extra.sessionId)) declareHand(extra.sessionId, who.handle);
-      const params = h.length > 1 ? h[0] : undefined;
-      if (!takesSecret || !params || (typeof params.secret === 'string' && params.secret !== '')) return handler(...h);
-      return fromSignIn.run(true, () => handler({ ...params, secret: who.key }, ...h.slice(1)));
+      const params = h.length > 1 && h[0] && typeof h[0] === 'object' ? { ...h[0] } : null;
+      let injected = false;
+      if (params) {
+        if (takesSecret && !(typeof params.secret === 'string' && params.secret !== '')) { params.secret = who.key; injected = true; }
+        if (takesEnc && params.enc_secret === 'vault') params.enc_secret = who.key;
+      }
+      const call = params ? [params, ...h.slice(1)] : h;
+      const res = injected ? await fromSignIn.run(true, () => handler(...call)) : await handler(...call);
+      return withoutKey(res, who.key);
     };
     return (orig as any)(...args);
   };

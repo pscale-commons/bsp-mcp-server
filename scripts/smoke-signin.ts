@@ -1,22 +1,24 @@
 /**
- * smoke-signin.ts — THE KEY IN THE CONNECTOR (src/signin.ts;
+ * smoke-signin.ts — THE KEY IN THE CONNECTOR, BY FINGERPRINT (src/signin.ts;
  * proposals/2026-11-04-the-key-in-the-connector.md).
  *
- * Part 1, in-process: every tool that takes a `secret` gets the signed key when the call
- * carries none; a call's own secret wins; the signed key never becomes a sealing key; a
- * signed session's hand is its handle unless the session already named one.
+ * Part 1, in-process: every tool that takes a `secret` gets the signed key where a call carries
+ * none; a call's own secret wins; `enc_secret: "vault"` is the key; the key never seals unless
+ * asked; nothing a signed call returns contains the key; a signed session's hand is its handle.
  *
- * Part 2, over HTTP: the router spawned as Railway runs it, with BSP_SIGNIN_SECRET, and the
- * whole sign-in walked as Claude walks it: the 401 and its pointer, both metadata
- * documents, registration, the page, the redirect, PKCE, the token, a signed session,
- * refresh, and every refusal. Then once more with no secret: sign-in is off, and the open
- * endpoint is untouched either way.
+ * Part 2, over HTTP, with no beach behind the router (as CI runs): the router spawned as Railway
+ * runs it, with BSP_SIGNIN_SECRET, and everything that proves itself without one: the 401 and its
+ * pointer, both metadata documents, registration, the page, every refusal before a fingerprint
+ * is minted, a sign-in that cannot reach the beach mints nothing. Then once with no secret: sign-in
+ * is off, and the open endpoint is untouched either way.
  *
- * Part 3, through the REAL beach handler (pscale-beach's scripts/local-beach.mjs on a
- * scratch folder, as smoke:pass runs it): a signed write with no secret lands under the
- * latch, the same write through the open endpoint is refused, the signed key never seals,
- * and another hand's latch refuses it. Skipped, and said so, where no pscale-beach
- * checkout stands beside this repository (CI).
+ * Part 3, through the REAL beach handler (pscale-beach's scripts/local-beach.mjs on a scratch
+ * folder, as smoke:pass runs it): minting with a wrong key and the right one, the ring holding no
+ * key in the clear, a signed write with no secret, the vault opened with enc_secret "vault" and the
+ * key taken out of what comes back, a second fingerprint, revoking one on the router's page while
+ * the other goes on, and refresh refused for the revoked one. Skipped, and said so, where no
+ * pscale-beach checkout stands beside this repository: CI's gate proves itself from this repo
+ * alone.
  *
  * Localhost only; never the live beach. Run: npm run smoke:signin
  *   (BEACH_DIR=<a pscale-beach checkout> for part 3; default ../pscale-beach)
@@ -30,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { installSignedIn, sealingKey, signedSealNote } from '../src/signin.js';
 import { declareHand, handOf } from '../src/looks.js';
+import { selfEncrypt } from '../src/keys.js';
 
 let pass = 0, fail = 0;
 function ok(label: string, cond: boolean, detail = '') {
@@ -39,34 +42,37 @@ function ok(label: string, cond: boolean, detail = '') {
 // ── Part 1: the wrapper ──
 
 async function wrapper() {
-  console.log('=== the wrapper: the signed key where a call carries none ===');
-  const tools: Record<string, (...a: any[]) => Promise<unknown>> = {};
+  console.log('=== the wrapper ===');
+  const KEY = 'ada-wrapper-key';
+  const tools: Record<string, (...a: any[]) => Promise<any>> = {};
   const stub: any = { tool: (...args: any[]) => { tools[args[0]] = args[args.length - 1]; } };
   installSignedIn(stub);
   let seen: any = null;
   stub.tool('takes', 'a tool with a secret', { secret: z.string().optional(), enc_secret: z.string().optional() }, {},
-    async (p: any) => { seen = { secret: p.secret, seal: sealingKey(p.enc_secret, p.secret), note: signedSealNote() }; return 'ok'; });
-  stub.tool('keyless', 'a tool with no secret', { block: z.string() }, {}, async (p: any) => { seen = { keys: Object.keys(p) }; return 'ok'; });
-  stub.tool('bare', 'a tool with no parameters', async () => { seen = { bare: true }; return 'ok'; });
-  const signed = (sessionId: string) => ({ sessionId, authInfo: { token: 't', clientId: 'c', scopes: ['bsp'], extra: { signedIn: { handle: 'ada', key: 'ADA-KEY' } } } });
+    async (p: any) => { seen = { secret: p.secret, enc: p.enc_secret, seal: sealingKey(p.enc_secret, p.secret), note: signedSealNote() }; return { content: [{ type: 'text', text: 'ok' }] }; });
+  stub.tool('keyless', 'a tool with no secret', { block: z.string() }, {}, async (p: any) => { seen = { keys: Object.keys(p) }; return { content: [{ type: 'text', text: `the vault says ${KEY} opens it` }] }; });
+  stub.tool('bare', 'a tool with no parameters', async () => { seen = { bare: true }; return { content: [{ type: 'text', text: 'ok' }] }; });
+  const signed = (sessionId: string) => ({ sessionId, authInfo: { token: 't', clientId: 'c', scopes: ['bsp'], extra: { signedIn: { handle: 'ada', key: KEY } } } });
 
   await tools.takes({}, signed('s1'));
-  ok('a call with no secret gets the signed key', seen.secret === 'ADA-KEY', JSON.stringify(seen));
-  ok('…and the signed key is never the sealing key', seen.seal === undefined);
-  ok('…and a refused seal says why', /signed in/.test(seen.note));
+  ok('a call with no secret gets the signed key', seen.secret === KEY, JSON.stringify(seen));
+  ok('…which never seals unless asked', seen.seal === undefined);
+  ok('…and a refused seal says how to ask', /enc_secret: "vault"/.test(seen.note));
+  await tools.takes({ enc_secret: 'vault' }, signed('s1'));
+  ok('enc_secret "vault" seals and opens with the key', seen.enc === KEY && seen.seal === KEY);
   await tools.takes({ enc_secret: 'SEAL' }, signed('s1'));
-  ok("a call's own enc_secret still seals", seen.seal === 'SEAL' && seen.secret === 'ADA-KEY');
+  ok("a call's own enc_secret still seals", seen.seal === 'SEAL' && seen.secret === KEY);
   await tools.takes({ secret: 'OTHER' }, signed('s1'));
-  ok("a call's own secret wins over the sign-in", seen.secret === 'OTHER');
-  ok('…and seals as it always did', seen.seal === 'OTHER' && seen.note === '');
+  ok("a call's own secret wins over the sign-in, and seals as it always did", seen.secret === 'OTHER' && seen.seal === 'OTHER' && seen.note === '');
   await tools.takes({ secret: '' }, signed('s1'));
-  ok('an empty secret counts as none', seen.secret === 'ADA-KEY');
-  await tools.takes({ secret: 'X' }, { sessionId: 's2' });
-  ok('an unsigned call is untouched, its secret sealing as before', seen.secret === 'X' && seen.seal === 'X');
-  await tools.takes({}, { sessionId: 's2' });
-  ok('an unsigned call with no secret stays without one', seen.secret === undefined && seen.seal === undefined);
-  await tools.keyless({ block: 'b' }, signed('s3'));
+  ok('an empty secret counts as none', seen.secret === KEY);
+  await tools.takes({ secret: 'X', enc_secret: 'vault' }, { sessionId: 's2' });
+  ok('an unsigned call is untouched, "vault" included', seen.secret === 'X' && seen.enc === 'vault');
+  const shown = await tools.keyless({ block: 'b' }, signed('s3'));
   ok('a tool that takes no secret is given none', seen.keys.length === 1 && seen.keys[0] === 'block', JSON.stringify(seen));
+  ok('nothing a signed call returns contains the key', !shown.content[0].text.includes(KEY) && shown.content[0].text.includes("[this connection's key]"), shown.content[0].text);
+  const plain = await tools.keyless({ block: 'b' }, { sessionId: 's6' });
+  ok('…while an unsigned call returns what the tool said', plain.content[0].text.includes(KEY));
   await tools.bare(signed('s4'));
   ok('a tool with no parameters still runs', seen.bare === true);
   ok("a signed session's hand is its handle", handOf('s1') === 'ada');
@@ -75,9 +81,10 @@ async function wrapper() {
   ok('a hand the session already named is kept', handOf('s5') === 'bob');
 }
 
-// ── Part 2: the router ──
+// ── Shared: the router and the client side of the sign-in ──
 
 const ACCEPT = 'application/json, text/event-stream';
+const CB = 'https://claude.ai/api/mcp/auth_callback';
 const init = (id: number) => JSON.stringify({
   jsonrpc: '2.0', id, method: 'initialize',
   params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'smoke-signin', version: '0.0.0' } },
@@ -85,120 +92,86 @@ const init = (id: number) => JSON.stringify({
 const b64url = (b: Buffer) => b.toString('base64url');
 const form = (o: Record<string, string>) => new URLSearchParams(o).toString();
 
-async function start(port: number, secret: string | null): Promise<ChildProcess> {
-  const env: NodeJS.ProcessEnv = { ...process.env, PORT: String(port) };
-  if (secret) env.BSP_SIGNIN_SECRET = secret; else delete env.BSP_SIGNIN_SECRET;
-  const child = spawn('npx', ['tsx', 'src/index.ts'], { env, stdio: ['ignore', 'pipe', 'inherit'] });
-  await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('server did not start in 20s')), 20000);
-    child.stdout!.on('data', (buf: Buffer) => { if (buf.toString().includes('running on')) { clearTimeout(timer); resolve(); } });
-    child.on('exit', () => { clearTimeout(timer); reject(new Error('server exited early')); });
+async function start(port: number, env: Record<string, string | undefined>): Promise<ChildProcess> {
+  const e: NodeJS.ProcessEnv = { ...process.env, PORT: String(port) };
+  for (const [k, v] of Object.entries(env)) { if (v === undefined) delete e[k]; else e[k] = v; }
+  const child = spawn('npx', ['tsx', 'src/index.ts'], { env: e, stdio: ['ignore', 'pipe', 'inherit'] });
+  await new Promise<void>((res, rej) => {
+    const timer = setTimeout(() => rej(new Error('server did not start in 20s')), 20000);
+    child.stdout!.on('data', (buf: Buffer) => { if (buf.toString().includes('running on')) { clearTimeout(timer); res(); } });
+    child.on('exit', () => { clearTimeout(timer); rej(new Error('server exited early')); });
   });
   return child;
 }
 
+function client(O: string, handle: string) {
+  const RES = `${O}/mcp/v1/as/${handle}`;
+  const verifier = b64url(randomBytes(32));
+  const challenge = b64url(createHash('sha256').update(verifier).digest());
+  const register = async () => (await fetch(`${O}/oauth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_name: 'Claude', redirect_uris: [CB, 'http://localhost/callback'] }) })).json();
+  const ask = (clientId: string, over: Record<string, string> = {}) => ({ response_type: 'code', client_id: clientId, redirect_uri: CB,
+    code_challenge: challenge, code_challenge_method: 'S256', state: 'st1', scope: 'bsp', resource: RES, ...over });
+  const authorize = (clientId: string, over: Record<string, string> = {}) => fetch(`${O}/oauth/authorize?${form(ask(clientId, over))}`, { redirect: 'manual' });
+  const signIn = (clientId: string, key: string, name: string) => fetch(`${O}/oauth/authorize`, { method: 'POST', redirect: 'manual',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form({ ...ask(clientId), handle: 'mallory', key, name }) });
+  const token = (body: Record<string, string>) => fetch(`${O}/oauth/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form(body) });
+  const exchange = (clientId: string, code: string) => token({ grant_type: 'authorization_code', code, redirect_uri: CB, client_id: clientId, code_verifier: verifier, resource: RES });
+  const mcp = (url: string, body: string, bearer?: string, session?: string) => fetch(url, { method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: ACCEPT, ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}), ...(session ? { 'mcp-session-id': session } : {}) }, body });
+  return { RES, verifier, register, authorize, signIn, token, exchange, mcp };
+}
+
+// ── Part 2: the router with no beach behind it ──
+
 async function router() {
   const PORT = 3000 + Math.floor(Math.random() * 2000);
   const O = `http://127.0.0.1:${PORT}`;
-  const RES = `${O}/mcp/v1/as/ada`;
-  const CB = 'https://claude.ai/api/mcp/auth_callback';
-  const child = await start(PORT, 'smoke-signin-secret-' + 'x'.repeat(40));
+  const c = client(O, 'ada');
+  const child = await start(PORT, { BSP_SIGNIN_SECRET: 'smoke-signin-secret-' + 'x'.repeat(40), DEFAULT_BEACH: 'http://127.0.0.1:9' });
   try {
     console.log('\n=== the signed address answers 401, pointing at its metadata ===');
-    const r401 = await fetch(RES, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: ACCEPT }, body: init(1) });
+    const r401 = await c.mcp(c.RES, init(1));
     const www = r401.headers.get('www-authenticate') ?? '';
     ok('no token → 401', r401.status === 401);
     ok('…with resource_metadata for this address', www.includes(`resource_metadata="${O}/.well-known/oauth-protected-resource/mcp/v1/as/ada"`), www);
-    const pre = await fetch(`${O}/mcp/v1/as/ada`, { method: 'OPTIONS' });
-    ok('CORS lets a browser client send Authorization', /authorization/i.test(pre.headers.get('access-control-allow-headers') ?? ''));
+    ok('CORS lets a browser client send Authorization', /authorization/i.test((await fetch(c.RES, { method: 'OPTIONS' })).headers.get('access-control-allow-headers') ?? ''));
 
     console.log('\n=== the two metadata documents ===');
     const prm = await (await fetch(`${O}/.well-known/oauth-protected-resource/mcp/v1/as/ada`)).json();
-    ok('the resource is the address as entered', prm.resource === RES, JSON.stringify(prm));
-    ok('the authorization server is this router, first', prm.authorization_servers?.[0] === O);
+    ok('the resource is the address as entered, its server this router', prm.resource === c.RES && prm.authorization_servers?.[0] === O, JSON.stringify(prm));
     ok('the bare resource document names no handle → 404', (await fetch(`${O}/.well-known/oauth-protected-resource`)).status === 404);
     const asm = await (await fetch(`${O}/.well-known/oauth-authorization-server`)).json();
     ok('issuer, endpoints, S256, public clients', asm.issuer === O && asm.token_endpoint === `${O}/oauth/token`
       && asm.registration_endpoint === `${O}/oauth/register` && asm.code_challenge_methods_supported?.includes('S256')
       && asm.token_endpoint_auth_methods_supported?.includes('none'), JSON.stringify(asm));
 
-    console.log('\n=== registration, stored nowhere ===');
-    const reg = await fetch(`${O}/oauth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client_name: 'Claude', redirect_uris: [CB, 'http://localhost/callback'] }) });
-    const client = await reg.json();
-    ok('a client registers → 201 with an id', reg.status === 201 && typeof client.client_id === 'string', JSON.stringify(client));
-    const other = await (await fetch(`${O}/oauth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ redirect_uris: [CB] }) })).json();
+    console.log('\n=== registration and the page ===');
+    const cl = await c.register();
+    ok('a client registers, stored nowhere', typeof cl.client_id === 'string' && cl.client_name === 'Claude');
     ok('a plain-http redirect elsewhere is refused', (await fetch(`${O}/oauth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ redirect_uris: ['http://evil.example/cb'] }) })).status === 400);
-
-    console.log('\n=== the page ===');
-    const verifier = b64url(randomBytes(32));
-    const challenge = b64url(createHash('sha256').update(verifier).digest());
-    const ask = (over: Record<string, string> = {}) => ({ response_type: 'code', client_id: client.client_id, redirect_uri: CB,
-      code_challenge: challenge, code_challenge_method: 'S256', state: 'st1', scope: 'bsp', resource: RES, ...over });
-    const authorize = (over: Record<string, string> = {}) => fetch(`${O}/oauth/authorize?${form(ask(over))}`, { redirect: 'manual' });
-    const pg = await authorize();
+    const pg = await c.authorize(cl.client_id);
     const html = await pg.text();
-    ok('the page asks for the key of the handle the address fixes', pg.status === 200 && /as ada/.test(html) && /type="password"/.test(html) && /readonly/.test(html));
-    ok('…names where it returns to', /Claude \(claude\.ai\)/.test(html));
-    ok('…and cannot be framed', pg.headers.get('x-frame-options') === 'DENY' && /frame-ancestors 'none'/.test(pg.headers.get('content-security-policy') ?? ''));
-    ok('an unregistered return address is a page, never a redirect', (await authorize({ redirect_uri: 'https://evil.example/cb' })).status === 400);
-    ok('a forged client is a page', (await authorize({ client_id: 'forged' })).status === 400);
-    const plain = await authorize({ code_challenge_method: 'plain' });
-    ok('no S256 → back to the client with invalid_request', plain.status === 302
-      && (plain.headers.get('location') ?? '').startsWith(`${CB}?error=invalid_request`) && /state=st1/.test(plain.headers.get('location') ?? ''));
-    const foreign = await authorize({ resource: 'https://elsewhere.example/mcp/v1/as/ada' });
-    ok('another server\'s resource → invalid_target', /error=invalid_target/.test(foreign.headers.get('location') ?? ''));
-    const loop = await authorize({ redirect_uri: 'http://localhost:53123/callback' });
-    ok("a loopback return matches on any port (Claude Code)", loop.status === 200 && /A program on this computer/.test(await loop.text()));
+    ok('the page asks for the key of the handle the address fixes, and a name for the connection',
+      pg.status === 200 && /as ada/.test(html) && /type="password"/.test(html) && /readonly/.test(html) && /name="name"/.test(html) && /Claude, \d{4}-\d\d-\d\d/.test(html));
+    ok('…names where it returns to, and cannot be framed', /Claude \(claude\.ai\)/.test(html) && pg.headers.get('x-frame-options') === 'DENY');
+    ok('an unregistered return address is a page, never a redirect', (await c.authorize(cl.client_id, { redirect_uri: 'https://evil.example/cb' })).status === 400);
+    ok('a forged client is a page', (await c.authorize('forged')).status === 400);
+    const plain = await c.authorize(cl.client_id, { code_challenge_method: 'plain' });
+    ok('no S256 → back to the client with invalid_request', plain.status === 302 && (plain.headers.get('location') ?? '').startsWith(`${CB}?error=invalid_request`));
+    ok("another server's resource → invalid_target", /error=invalid_target/.test((await c.authorize(cl.client_id, { resource: 'https://elsewhere.example/mcp/v1/as/ada' })).headers.get('location') ?? ''));
+    const loop = await c.authorize(cl.client_id, { redirect_uri: 'http://localhost:53123/callback' });
+    ok('a loopback return matches on any port (Claude Code)', loop.status === 200 && /A program on this computer/.test(await loop.text()));
 
-    console.log('\n=== the sign-in, PKCE, the token ===');
-    const signin = await fetch(`${O}/oauth/authorize`, { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: form({ ...ask(), handle: 'mallory', key: 'ADA-KEY' }) });
-    const back = new URL(signin.headers.get('location') ?? 'http://none/');
-    const code = back.searchParams.get('code') ?? '';
-    ok('signing in returns to the client with a code and its state', signin.status === 302 && back.origin + back.pathname === CB && !!code && back.searchParams.get('state') === 'st1');
-    ok('the code carries nothing readable', !/ADA-KEY|ada/.test(code));
-    const token = (body: Record<string, string>) => fetch(`${O}/oauth/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form(body) });
-    const wrong = await token({ grant_type: 'authorization_code', code, redirect_uri: CB, client_id: client.client_id, code_verifier: b64url(randomBytes(32)) });
-    ok('a wrong verifier → invalid_grant', wrong.status === 400 && (await wrong.json()).error === 'invalid_grant');
-    const stolen = await token({ grant_type: 'authorization_code', code, redirect_uri: CB, client_id: other.client_id, code_verifier: verifier });
-    ok("another client's id → invalid_grant", stolen.status === 400);
-    const got = await token({ grant_type: 'authorization_code', code, redirect_uri: CB, client_id: client.client_id, code_verifier: verifier, resource: RES });
-    const t = await got.json();
-    ok('the right verifier → a bearer token and a refresh token', got.status === 200 && t.token_type === 'Bearer' && !!t.access_token && !!t.refresh_token && t.expires_in === 86400, JSON.stringify(t));
-    ok('…neither readable', !JSON.stringify(t).includes('ADA-KEY'));
-    ok('an unknown grant → unsupported_grant_type', (await (await token({ grant_type: 'password' })).json()).error === 'unsupported_grant_type');
-
-    console.log('\n=== a signed session ===');
-    const mcp = (url: string, body: string, bearer?: string, session?: string) => fetch(url, { method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: ACCEPT, ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}), ...(session ? { 'mcp-session-id': session } : {}) }, body });
-    const s = await mcp(RES, init(1), t.access_token);
-    const sid = s.headers.get('mcp-session-id') ?? '';
-    const sj = await s.json();
-    ok('the token opens the signed address', s.status === 200 && !!sid);
-    ok('…and the session is told it is signed in, so it never asks for the key', /THIS CONNECTION IS SIGNED IN AS ada/.test(sj?.result?.instructions ?? ''));
-    await mcp(RES, JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }), t.access_token, sid);
-    const call = await mcp(RES, JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'bsp', arguments: { agent_id: 'pscale', block: 'whetstone', spindle: '9' } } }), t.access_token, sid);
-    const cj = await call.json();
-    ok('a tool call goes through', call.status === 200 && /9/.test(cj?.result?.content?.[0]?.text ?? ''), JSON.stringify(cj).slice(0, 300));
-    ok('a later request without the token → 401', (await mcp(RES, init(3), undefined, sid)).status === 401);
-    ok("ada's token at bob's address → 401", (await mcp(`${O}/mcp/v1/as/bob`, init(4), t.access_token)).status === 401);
-    ok('a refresh token is not a bearer → 401', (await mcp(RES, init(5), t.refresh_token)).status === 401);
-    ok('a tampered token → 401', (await mcp(RES, init(6), t.access_token.slice(0, -4) + 'AAAA')).status === 401);
-
-    console.log('\n=== refresh ===');
-    const rr = await token({ grant_type: 'refresh_token', refresh_token: t.refresh_token, client_id: client.client_id });
-    const t2 = await rr.json();
-    ok('a refresh gives a fresh pair', rr.status === 200 && t2.access_token !== t.access_token && t2.refresh_token !== t.refresh_token);
-    ok('…and the fresh token opens the address', (await mcp(RES, init(7), t2.access_token)).status === 200);
-    ok('an access token is not a refresh token', (await token({ grant_type: 'refresh_token', refresh_token: t.access_token })).status === 400);
-
-    await realBeach(O, RES, t2.access_token, mcp);
-
-    console.log('\n=== the open endpoint, untouched ===');
-    ok('/mcp/v1 initializes with no token', (await mcp(`${O}/mcp/v1`, init(8))).status === 200);
+    console.log('\n=== with no beach to answer, nothing is minted ===');
+    const lost = await c.signIn(cl.client_id, 'ada-the-key', 'my phone');
+    ok('a sign-in that cannot reach the beach stays on the page, with no code', lost.status === 400 && !lost.headers.get('location') && /did not answer/.test(await lost.text()));
+    ok('a code that was never minted → invalid_grant', (await (await c.exchange(cl.client_id, 'never-minted-code-'.repeat(4))).json()).error === 'invalid_grant');
+    ok('an unknown grant → unsupported_grant_type', (await (await c.token({ grant_type: 'password' })).json()).error === 'unsupported_grant_type');
+    ok('a forged bearer → 401', (await c.mcp(c.RES, init(2), 'forged-token-'.repeat(5))).status === 401);
+    ok('the fingerprints page says the beach did not answer', (await fetch(`${O}/fingerprints/ada`)).status === 503);
+    ok('/mcp/v1 initializes with no token', (await c.mcp(`${O}/mcp/v1`, init(3))).status === 200);
   } finally {
     child.kill('SIGTERM');
   }
@@ -206,61 +179,114 @@ async function router() {
   console.log('\n=== a router with no secret: sign-in is off ===');
   const P2 = PORT + 1;
   const O2 = `http://127.0.0.1:${P2}`;
-  const off = await start(P2, null);
+  const off = await start(P2, { BSP_SIGNIN_SECRET: undefined });
   try {
     ok('no metadata', (await fetch(`${O2}/.well-known/oauth-authorization-server`)).status === 404);
     ok('no signed address', (await fetch(`${O2}/mcp/v1/as/ada`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: ACCEPT }, body: init(1) })).status === 404);
+    ok('no fingerprints page', (await fetch(`${O2}/fingerprints/ada`)).status === 404);
     ok('the open endpoint still answers', (await fetch(`${O2}/mcp/v1`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: ACCEPT }, body: init(1) })).status === 200);
   } finally {
     off.kill('SIGTERM');
   }
 }
 
-// ── Part 3: through the real beach handler ──
+// ── Part 3: the whole life of a fingerprint, through the real beach handler ──
 
-type Mcp = (url: string, body: string, bearer?: string, session?: string) => Promise<Response>;
 const textOf = (j: any) => String(j?.result?.content?.[0]?.text ?? j?.error?.message ?? JSON.stringify(j));
 
-async function realBeach(O: string, RES: string, access: string, mcp: Mcp) {
+async function realBeach() {
   const BEACH_DIR = process.env.BEACH_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'pscale-beach');
   const script = join(BEACH_DIR, 'scripts', 'local-beach.mjs');
   if (!existsSync(script)) { console.log(`\n=== the real beach handler: skipped — no pscale-beach checkout at ${BEACH_DIR} (set BEACH_DIR) ===`); return; }
-  console.log('\n=== through the real beach handler ===');
+  console.log('\n=== the whole life of a fingerprint, through the real beach handler ===');
   const BP = 6000 + Math.floor(Math.random() * 2000);
   const B = `http://127.0.0.1:${BP}`;
   const W = `${B}/.well-known/pscale-beach`;
   const dir = mkdtempSync(join(os.tmpdir(), 'signin-'));
   const beach = spawn('node', [script, '--dir', dir, '--port', String(BP), '--origin', 'signin.test'], { stdio: ['ignore', 'ignore', 'inherit'] });
+  const RP = 5000 + Math.floor(Math.random() * 900);
+  const O = `http://127.0.0.1:${RP}`;
+  let rtr: ChildProcess | null = null;
   try {
     let up = false;
     for (let i = 0; i < 80 && !up; i++) {
       try { up = (await fetch(W)).status < 500; } catch { await new Promise((r) => setTimeout(r, 250)); }
     }
     if (!up) { ok('the local beach starts', false); return; }
-    const found = (block: string, key: string) => fetch(`${W}?block=${encodeURIComponent(block)}`, { method: 'POST',
-      headers: { 'content-type': 'application/json' }, body: JSON.stringify({ spindle: '', content: { _: `${block}, a fixture` }, new_lock: key }) });
-    ok("ada's journal founded under her key", (await found('journal:ada', 'ADA-KEY')).status === 200);
-    ok("bob's journal founded under his", (await found('journal:bob', 'BOB-KEY')).status === 200);
+    rtr = await start(RP, { BSP_SIGNIN_SECRET: 'smoke-signin-secret-' + 'y'.repeat(40), DEFAULT_BEACH: B });
 
+    const KEY = 'ada-the-actual-key';
+    const found = (block: string, content: unknown, key: string) => fetch(`${W}?block=${encodeURIComponent(block)}`, { method: 'POST',
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify({ spindle: '', content, new_lock: key }) });
+    const raw = async (block: string, spindle?: string) => (await fetch(`${W}?block=${encodeURIComponent(block)}${spindle ? `&spindle=${spindle}` : ''}`)).text();
+    ok("ada's passport, latched by her key", (await found('passport:ada', { _: 'ADA' }, KEY)).status === 200);
+    ok("ada's journal, latched by it too", (await found('journal:ada', { _: "ada's journal" }, KEY)).status === 200);
+    const sealed = await selfEncrypt(`journal:ada opens with ${KEY}; the gate key is GATE-KEY-123`, KEY, B);
+    ok("ada's vault, one entry sealed under her key", (await found('vault:ada', { _: "ada's vault", 1: sealed }, KEY)).status === 200);
+    ok('…and journal:bob under bob\'s', (await found('journal:bob', { _: "bob's journal" }, 'bob-other-key')).status === 200);
+
+    const c = client(O, 'ada');
+    const cl = await c.register();
+    console.log('  — minting');
+    const wrong = await c.signIn(cl.client_id, 'not-adas-key', 'my phone');
+    const wrongPage = await wrong.text();
+    ok('a wrong key mints nothing: the page says so', wrong.status === 400 && /does not open ada/.test(wrongPage), `${wrong.status} ${(wrongPage.match(/class="problem">([^<]*)/) ?? [])[1] ?? ''}`);
+    ok('…and leaves no ring behind', /not found/.test(await raw('fingerprints:ada')));
+    const phone = await c.signIn(cl.client_id, KEY, 'my phone');
+    const code = new URL(phone.headers.get('location') ?? 'http://none/').searchParams.get('code') ?? '';
+    ok('the right key mints a fingerprint and returns a code', phone.status === 302 && !!code);
+    const ring1 = await raw('fingerprints:ada');
+    ok('fingerprints:ada names it, holding the key only sealed', /my phone/.test(ring1) && !ring1.includes(KEY), ring1.slice(0, 200));
+    const t = await (await c.exchange(cl.client_id, code)).json();
+    ok('the code gives a token and a refresh token', !!t.access_token && !!t.refresh_token, JSON.stringify(t));
+
+    console.log('  — using');
     const session = async (url: string, bearer?: string) => {
-      const sid = (await mcp(url, init(20), bearer)).headers.get('mcp-session-id') ?? '';
-      await mcp(url, JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }), bearer, sid);
+      const r = await c.mcp(url, init(20), bearer);
+      const sid = r.headers.get('mcp-session-id') ?? '';
+      await c.mcp(url, JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }), bearer, sid);
       let id = 21;
-      return async (args: Record<string, unknown>) => (await mcp(url, JSON.stringify({ jsonrpc: '2.0', id: id++, method: 'tools/call',
-        params: { name: 'bsp', arguments: { agent_id: B, ...args } } }), bearer, sid)).json();
+      const call = async (args: Record<string, unknown>) => {
+        const res = await c.mcp(url, JSON.stringify({ jsonrpc: '2.0', id: id++, method: 'tools/call', params: { name: 'bsp', arguments: { agent_id: B, ...args } } }), bearer, sid);
+        return { status: res.status, body: res.status === 200 ? await res.json() : null };
+      };
+      return { status: r.status, call };
     };
-    const signed = await session(RES, access);
-    const w = await signed({ block: 'journal:ada', spindle: '1', content: 'written through the signed connector, no secret in the call' });
-    const node = await (await fetch(`${W}?block=${encodeURIComponent('journal:ada')}&spindle=1`)).text();
-    ok('a signed write with no secret lands under the latch', /written through the signed connector/.test(node), textOf(w));
+    const s = await session(c.RES, t.access_token);
+    ok('the token opens the signed address', s.status === 200);
+    const w = await s.call({ block: 'journal:ada', spindle: '1', content: 'written through a fingerprint, no key in the call' });
+    ok('a write with no secret lands under the latch', /written through a fingerprint/.test(await raw('journal:ada', '1')), textOf(w.body));
+    const v = textOf((await s.call({ block: 'vault:ada', spindle: '1', enc_secret: 'vault' })).body);
+    ok('enc_secret "vault" opens the vault', /GATE-KEY-123/.test(v), v);
+    ok('…and the key itself is taken out of what comes back', !v.includes(KEY) && v.includes("[this connection's key]"), v);
+    const g = textOf((await s.call({ block: 'journal:ada', spindle: '3', content: 'sealed?', gray: true })).body);
+    ok('a seal not asked for is refused, saying how to ask', /rejected/i.test(g) && /enc_secret: "vault"/.test(g), g);
+    const foreign = textOf((await s.call({ block: 'journal:bob', spindle: '1', content: 'not mine' })).body);
+    ok("another hand's latch refuses the key", /does not match/.test(foreign), foreign);
     const open = await session(`${O}/mcp/v1`);
-    const refused = await open({ block: 'journal:ada', spindle: '2', content: 'the same write, unsigned' });
-    ok('the same write through the open endpoint is refused', /secret required/.test(textOf(refused)), textOf(refused));
-    const gray = await signed({ block: 'journal:ada', spindle: '3', content: 'sealed?', gray: true });
-    ok('the signed key never seals a line', /rejected/i.test(textOf(gray)) && /signed in/.test(textOf(gray)), textOf(gray));
-    const foreign = await signed({ block: 'journal:bob', spindle: '1', content: 'not mine' });
-    ok("another hand's latch refuses the signed key", /does not match/.test(textOf(foreign)), textOf(foreign));
+    ok('the same write through the open endpoint is refused', /secret required/.test(textOf((await open.call({ block: 'journal:ada', spindle: '2', content: 'unsigned' })).body)));
+
+    console.log('  — a second fingerprint, and revoking the first');
+    const laptopCode = new URL((await c.signIn(cl.client_id, KEY, 'my laptop')).headers.get('location') ?? 'http://none/').searchParams.get('code') ?? '';
+    const t2 = await (await c.exchange(cl.client_id, laptopCode)).json();
+    ok('a second fingerprint takes the next digit', /my laptop/.test(await raw('fingerprints:ada', '2')) && !!t2.access_token);
+    const list = await (await fetch(`${O}/fingerprints/ada`)).text();
+    ok('the fingerprints page lists both', /my phone/.test(list) && /my laptop/.test(list) && /type="password"/.test(list));
+    const revokeAt = (key: string) => fetch(`${O}/fingerprints/ada`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form({ revoke: '1', key }) });
+    const badRevoke = await revokeAt('not-adas-key');
+    ok('revoking needs the key', badRevoke.status === 400 && /does not open ada/.test(await badRevoke.text()));
+    const goodRevoke = await revokeAt(KEY);
+    ok('with the key, the phone is revoked', goodRevoke.status === 200 && /Revoked: my phone/.test(await goodRevoke.text()));
+    ok('…its digit emptied, the laptop\'s standing', !/my phone/.test(await raw('fingerprints:ada')) && /my laptop/.test(await raw('fingerprints:ada')));
+    const after = await s.call({ block: 'journal:ada', spindle: '4', content: 'after revoking' });
+    ok("the phone's session is signed out at once", after.status === 401);
+    ok("the phone's refresh is refused", (await (await c.token({ grant_type: 'refresh_token', refresh_token: t.refresh_token })).json()).error === 'invalid_grant');
+    const lap = await session(c.RES, t2.access_token);
+    ok('the laptop goes on, with the same key', /written by the laptop/.test(await (async () => { await lap.call({ block: 'journal:ada', spindle: '5', content: 'written by the laptop' }); return raw('journal:ada', '5'); })()));
+    const fresh = await c.token({ grant_type: 'refresh_token', refresh_token: t2.refresh_token });
+    ok("the laptop's refresh gives a fresh pair", fresh.status === 200 && !!(await fresh.json()).access_token);
   } finally {
+    rtr?.kill('SIGTERM');
     beach.kill('SIGTERM');
     rmSync(dir, { recursive: true, force: true });
   }
@@ -269,6 +295,7 @@ async function realBeach(O: string, RES: string, access: string, mcp: Mcp) {
 (async () => {
   await wrapper();
   await router();
+  await realBeach();
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });
