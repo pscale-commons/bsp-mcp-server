@@ -12,7 +12,7 @@ keel built all of it on 29 October 2026, in the Keel project chat, at David's as
 python3 thread-test-materials/run-thread-tests.py      # the CI pass: spends nothing
 python3 thread-test-materials/thread_form.py live       # the live beach, by public GET
 python3 thread-test-materials/thread_form.py state <state.json>
-thread-test-materials/run-minds.sh --spend S3           # fresh minds: spends model calls, on David's word only
+thread-test-materials/run-minds.sh --spend E2           # fresh minds: spends model calls, on David's word only
 ```
 
 The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. It does four things:
@@ -75,7 +75,9 @@ The teachings are in `teachings/`:
 | H3 | `root_v2.txt` | H2, handing over the third draft |
 | S | `root_v2.txt` | H3's handing over, carrying David's form in the way's place: six sentences, `way_s.txt` (`ways-thread-s.json` on the test beach). The test beach's `function:thread` is cut to its root line (`function-thread-s.json`), and `short.py` strips the closing clause and the reads from every seed |
 | S2 | `root_v2.txt` | S, with two sentences mended (`way_s2.txt`, `ways-thread-s2.json`): where the thread stands, and the place spelled `thread:<address>` |
-| S3 | `root_v2.txt` | S, with only the place spelled `thread:<address>` (`way_s3.txt`), `ways:thread` since 3 November and `run-minds.sh`'s default |
+| S3 | `root_v2.txt` | S, with only the place spelled `thread:<address>` (`way_s3.txt`), `ways:thread` on 3 and 4 November |
+| E1 | `root_v2.txt` | S3 with one sentence more, 'End your line with whose move is next: …' (`way_e1.txt`, `ways-thread-e1.json`). Missed its gate |
+| E2 | `root_v2.txt` | #570's way with ' from <date>', written 2026-11-07, added to its step 4 (`way_e2.txt`, `ways-thread-e2.json`), `ways:thread` since 4 November and `run-minds.sh`'s default. E1 and E2 keep the seeds' endings and run a tenth use, later |
 | S4 | `root_v2.txt` | S3, where a hand already holds a line it begins with that line's words in place of going one deeper: David's one knot (`way_s4.txt`). S3 and S4 are graded alike, and a line kept inside the one that replaced it counts as nothing lost |
 
 Each is made from its beach block the way keel made `law_v1.txt`: the heading line, then the root, then 1 to 8. The same transform rebuilds `law_v1.txt` byte for byte from `archive:function:thread:2026-10-29-2`.

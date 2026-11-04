@@ -21,7 +21,7 @@ delivery: the teaching a mind is handed, from teachings/ —
   S   David's form: H3's handing over, of six sentences in place of the way (way_s.txt), the law on the test beach cut to its
       root line, and seeds with no closing clause; graded by short.py, by where the line lands and nothing lost, never by a keyword
   S2  S, with two sentences mended (way_s2.txt): where the thread stands, and the place spelled thread:<address>
-  S3  S, with only the place spelled thread:<address> (way_s3.txt); ways:thread since 3 November, and run-minds.sh's default
+  S3  S, with only the place spelled thread:<address> (way_s3.txt); ways:thread on 3 and 4 November
   S4  S3, a hand that already holds a line where it ties beginning with its words, David's one knot (way_s4.txt).
       S3 and S4 are graded alike, a line kept in place counting as nothing lost (short.py AMEND); both ran on 3 November
   E1  S3, with one sentence more: the line ends with whose move is next, ' · waits on <handle>', from a date if later,
@@ -29,7 +29,7 @@ delivery: the teaching a mind is handed, from teachings/ —
   E2  the way of #570 (archive:ways:thread:2026-11-03) with the date added to its step 4 (way_e2.txt). E1 and E2 keep the
       seeds' endings, run a tenth use, later, and are graded by short.py with an ending in each use (its docstring has the gate).
       Run 4 November: E1 43 of 47, the date written in words on later and a line lost on self, so it missed the gate; E2 44
-      of 47, every ending right, the date right, nothing lost, so it passed and became ways:thread the same hour
+      of 47, every ending right, the date right, nothing lost, so it passed and became ways:thread the same hour; run-minds.sh's default
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
 cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2)
