@@ -29,6 +29,18 @@ Mended after S3 ran: a place followed by a full stop ending its sentence ('pick 
 the spelling went uncounted in S2's and S3's open, though the page and the waker both read it as thread:3. A place followed
 by a second dotted part (thread:1.3.1) still names neither 1.3 nor 1.31. No score moves; the spelling counts are now S 1,
 S2 7, S3 6 and S4 4 of the seven minds that told a room (S2's was reported as 6 before the mend).
+
+E1 and E2 (4 November, at David's GO; proposals/2026-11-04-threads-keep-their-endings.md, bsp-mcp #584), the endings back.
+E1 is S3's six sentences with one more, 'End your line with whose move is next: ...' (way_e1.txt); E2 is the way of #570,
+archive:ways:thread:2026-11-03, with the date added to its step 4 (way_e2.txt). Seeds keep their endings, as they were
+tied. Both are graded alike and FIXED BEFORE EITHER RAN: S3's grade (the widening above included), plus, in each of the
+nine, one check that the line ends with whose move is next (ENDING below; the wake's answer line too), plus a tenth use,
+later: wren cannot review before the harbour's November data comes out on 10 November 2026, so the line lands at 1.3, the
+next free digit, or at 1.1, the review it promises; it ends ' · waits on wren from 2026-11-10'; nothing is lost.
+THE GATE, fixed with the grade: a delivery goes forward if nothing is lost in any of the ten, the nine score at least 41 of
+44, at least eight of the nine threads are well formed by the form pass reading endings (thread_form.py, the law of
+29 October with the date), and later ends ' · waits on wren from 2026-11-10'. If both pass, E1 goes forward, as the
+shorter way and David's own six sentences; if one passes, that one; if neither, nothing moves and David is told.
 """
 import json, re
 
@@ -80,7 +92,39 @@ EXPECT = {
     "C6": dict(land={"1.12", "1.121"}, options=1, told=["dana"]),
     "C7": dict(land={"1.1211", "1.122"}, options=1, told=["dana"]),
     "C8": dict(land={"1.111", "1.14"}, options=2, told=["dana"]),
+    "C10": dict(land={"1.3", "1.1"}, options=None, told=False),   # later: E1 and E2 only; a room told or not, as the hand likes
 }
+
+# E1 and E2: whose move each line ends on (proposals/2026-11-04-threads-keep-their-endings.md)
+ENDING = {"C1": ("waits", {"wren", "dana"}, None), "C2": ("waits", {"dana"}, None), "C3": ("waits", {"wren"}, None),
+          "C4": ("complete", None, None), "C5": ("waits", {"dana"}, None), "C6": ("waits", {"dana"}, None),
+          "C7": ("waits", {"dana"}, None), "C8": ("waits", {"dana"}, None), "C9": ("waits", {"rook"}, None),
+          "C10": ("waits", {"wren"}, "2026-11-10")}
+ENDS_ON = re.compile(r"\s·\s(?:waits on ([A-Za-z0-9_.\-]+(?:(?:,\s*|\s+and\s+)[A-Za-z0-9_.\-]+)*)(?:\s+from\s+(\S+))?|(complete))\s*$")
+
+
+def ending_of(t):
+    """(kind, handles, date) of a line's ending, read before its reads; or None when it ends on nothing."""
+    m = ENDS_ON.search(str(t or "").split(" · read: ")[0])
+    if not m:
+        return None
+    if m.group(3):
+        return ("complete", None, None)
+    return ("waits", set(re.split(r",\s*|\s+and\s+", m.group(1))), m.group(2))
+
+
+def ends_right(t, want):
+    got = ending_of(t)
+    kind, who, day = want
+    if not got or got[0] != kind:
+        return False
+    return kind == "complete" or (bool(got[1]) and got[1] <= who and got[2] == day)
+
+
+def ending_said(want):
+    kind, who, day = want
+    return ("it ends ' · complete'" if kind == "complete" else
+            "it ends ' · waits on " + " or ".join(sorted(who)) + (" from " + day if day else "") + "', whose move is next")
 
 
 AMEND = {"S3", "S4"}
@@ -175,7 +219,7 @@ def well_formed(s, mirror_lines, number):
     return sorted(set(faults))
 
 
-def grade_s(case, row, c, start, end, added, posts, rep, mirror_lines, amend=False):
+def grade_s(case, row, c, start, end, added, posts, rep, mirror_lines, amend=False, ending=False):
     E = []
 
     def expect(ok, what):
@@ -195,6 +239,8 @@ def grade_s(case, row, c, start, end, added, posts, rep, mirror_lines, amend=Fal
         expect(at in ("1.1", "1.11"), "at 1.1, or one deeper")
         opts = (rep or {}).get("options") or []
         expect(any("rook" in o.lower() for o in opts), "an option beneath it for rook")
+        if ending:
+            expect(ends_right((rep or {}).get("line"), ENDING["C9"]), ending_said(ENDING["C9"]))
         return E, lost, R, []
     x = EXPECT[case]
     land = x["land"]
@@ -214,7 +260,9 @@ def grade_s(case, row, c, start, end, added, posts, rep, mirror_lines, amend=Fal
     places = R + kids
     if x["told"] is None:
         expect(not posts, "no room told")
-    else:
+    elif x["told"]:
         expect(any(names_place(t, p) for h in x["told"] for t in posts.get(h, []) for p in places), "the next hand's room told, naming the place")
+    if ending:
+        expect(any(ends_right(mirror_lines(end, me).get(r), ENDING[case]) for r in R), ending_said(ENDING[case]))
     expect(not lost, "nothing lost")
     return E, lost, R, kids

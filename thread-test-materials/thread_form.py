@@ -36,7 +36,8 @@ DIGIT = re.compile(r"^[1-9]$")
 OPENED = re.compile(r"·\s*opened by\s+([A-Za-z0-9_.\-]+)\s*(?:\(|$|·)")
 READS = " · read: "
 WAIT_LOOSE = re.compile(r"\bwait(?:s|ing)?\s+(?:on|for)\b|\bcomplete\b", re.I)
-WAIT_CLAUSE = re.compile(r"\s·\s(?:waits on ([A-Za-z0-9_.\-]+(?:(?:,\s*| and )[A-Za-z0-9_.\-]+)*)|(complete))\s*$")
+# a waiting may be put off to a day, ' · waits on <handle> from 2026-11-07' (proposals/2026-11-04-threads-keep-their-endings.md)
+WAIT_CLAUSE = re.compile(r"\s·\s(?:waits on ([A-Za-z0-9_.\-]+(?:(?:,\s*| and )[A-Za-z0-9_.\-]+)*)(?:\s+from\s+\d{4}-\d\d-\d\d)?|(complete))\s*$")
 WAITS_ON_ANY = re.compile(r"\bwaits? on ([A-Za-z0-9_.\-]+)", re.I)
 WORD_OF = re.compile(r"\bat ([A-Za-z0-9_.\-]+)'s word\b|\bchosen by ([A-Za-z0-9_.\-]+)\b", re.I)
 PLACE = re.compile(r"(?<![\w:])thread:(\d+(?:\.\d+)?)\b")   # a place standing on its own, not the tail of archive:ways:thread:2026-11-03

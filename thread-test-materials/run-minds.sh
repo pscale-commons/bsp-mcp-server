@@ -11,7 +11,8 @@
 #               H3 (H2, handing over the way's third draft),
 #               S (David's form: six sentences in the way's place, no keyword in any seed),
 #               S2 (S, with two sentences mended), S3 (S, the place spelled), S4 (S3, a held line kept
-#               in place), W2 (the way through 2 November), L, W1 ...
+#               in place), E1 (S3 with the endings back, 4 November), E2 (#570's way with the date),
+#               W2 (the way through 2 November), L, W1 ...   (E1 and E2 run C1,...,C10: C10 is later)
 #     cases     C1,C2,... (default all nine)
 #
 # Each mind gets its brief on stdin and one tool, Bash, fenced to its own run's test-beach
