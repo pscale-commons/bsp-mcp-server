@@ -1,5 +1,5 @@
 {
-  "_": "gray test vectors — Argon2id(word, salt padded to 8 with NUL; t=3 m=65536 p=1, 64 bytes) → first 32 bytes the secretbox key; shared by keys.ts, gray.js, vault.js and stack.html. Regenerate with npm run smoke:gray-vectors -- --make.",
+  "_": "gray test vectors — Argon2id(word, salt padded to 8 with NUL; t=3 m=65536 p=1, 64 bytes) → bytes 0-31 the secretbox key and X25519 secret, 32-63 the Ed25519 seed; the latch from the same word under salt latch:<handle>, 32 bytes base64; four modes, self, grain, group and colour; shared by keys.ts, the beach's seal.js, gray.js, vault.js and stack.html. Regenerate with npm run smoke:gray-vectors -- --make.",
   "vectors": [
     {
       "name": "a-day-at-the-place",
@@ -11,6 +11,7 @@
       "ciphertext_b64": "pMW9VSqsnxVFqoeLvPjfsFQSLqx/ijoeMe614CzMJ9SBfIjyU/TRpKaV6qWAbOHoqk5vE3AeuP+yFLme5/aB8rOfaWPOpxg1Vezd/gFO1FJ8utFx5NjA",
       "x25519_pub_b64": "d5wAhVWylFf1QObl9NZfpbMeh/N5m/xgrGZmsenNyl8=",
       "ed25519_pub_b64": "lpYOa1f5f/7+5MVqd6l26BddudD80/DA2N3GJcy/JcA=",
+      "latch_b64": "3LgNZ2/uz15PPm5U75jGWrclFPOY5OdSxq1emlJHpvg=",
       "envelope": {
         "1": "pMW9VSqsnxVFqoeLvPjfsFQSLqx/ijoeMe614CzMJ9SBfIjyU/TRpKaV6qWAbOHoqk5vE3AeuP+yFLme5/aB8rOfaWPOpxg1Vezd/gFO1FJ8utFx5NjA",
         "2": "hkwstQB6PaajpaUmW1HDKWqdVLcf1VWi",
@@ -31,6 +32,7 @@
       "ciphertext_b64": "oWRzWy9awfRXIenoqslT942LszbZiD/bGl2ARHpI4+Erm7fr/rF9XirhZMHNRqzRTDUmbcw=",
       "x25519_pub_b64": "v2oHczonBQIdq+nDbcfr+YpDGKKoTCZyz8J07ZZG1ho=",
       "ed25519_pub_b64": "wodhextvRsX59WpO1rykHowNQue7boXkdzRjFqzC6vA=",
+      "latch_b64": "F/win6ApTd5N7bFN7RzvhkIDzGDF2pE3eJIpttQs5kg=",
       "envelope": {
         "1": "oWRzWy9awfRXIenoqslT942LszbZiD/bGl2ARHpI4+Erm7fr/rF9XirhZMHNRqzRTDUmbcw=",
         "2": "HsPo9Ypbgi+V2EHw+tdtwfIY3fAOdwUn",
@@ -51,6 +53,7 @@
       "ciphertext_b64": "83xulyUiSkcsSRAU6MJhg7flg41kouyPZHPHYbDu7qlTyicll/8yR7YZbA==",
       "x25519_pub_b64": "6siyJ6M5qByzhhdyRipDiQv5Du9zIXT9oWwdS5iR3ks=",
       "ed25519_pub_b64": "ZwYHBIzCvRViwEeBPTj4iu4mwnhiQgPw08CHKNCu9Vo=",
+      "latch_b64": "uAFG0EX2TFib3QwtEimOnV8qWC8OdbOIK8iSxjD03go=",
       "envelope": {
         "1": "83xulyUiSkcsSRAU6MJhg7flg41kouyPZHPHYbDu7qlTyicll/8yR7YZbA==",
         "2": "irLJuNqrxzFjBD6LiR6MhryupBMQOqMT",
@@ -71,6 +74,7 @@
       "ciphertext_b64": "we8+tQAx9aVr6BHpdkf3O/Yw2zCnSVL/dzyKhtCPc0FKTDybqa6gHasMB7dOPIldL4c=",
       "x25519_pub_b64": "84ne5GRboxAgq16wYXQ1bsk1qpCFME8rwEBpJuTaWTI=",
       "ed25519_pub_b64": "3cwd7yz6jb8W3k1/gNOyy756okuFRjAf1qdaLWiRYQk=",
+      "latch_b64": "s4OZ1sLnvY8SLlGAXHu16XUCZJGqYuAPSGq7kmUR2Ac=",
       "envelope": {
         "1": "we8+tQAx9aVr6BHpdkf3O/Yw2zCnSVL/dzyKhtCPc0FKTDybqa6gHasMB7dOPIldL4c=",
         "2": "wAUt32Pdx3GBXkj9FNe9UBcrFTlGVwuu",
@@ -81,5 +85,113 @@
         "_": "Encrypted (gray); readable only with the author secret."
       }
     }
-  ]
+  ],
+  "grain": {
+    "a": {
+      "secret": "rowan pier swallow 41",
+      "handle": "ada"
+    },
+    "b": {
+      "secret": "flint harbour lotus 77",
+      "handle": "bob"
+    },
+    "plaintext": "ada → bob: the first sealed word on a grain, 4 November 2026",
+    "nonce_b64": "WqvnnvT0fNu3lM3Nct8txbh5WKd8l+Hm",
+    "shared_hex": "f6e82f9d5ee33559961b97f6c3e7f62e8e433e195521d3711a70c861ce8580c3",
+    "ciphertext_b64": "W1PWjLpGLnlL8X/wy5d+QB8P6teIjf0bwMHKfMPgMzTVn0J/JlJUxOHxXyrvrOKfyDVMA7ogqVwkXIboDXOz5A4I1i9ZY3jj1+qiuYC3",
+    "envelope": {
+      "1": "W1PWjLpGLnlL8X/wy5d+QB8P6teIjf0bwMHKfMPgMzTVn0J/JlJUxOHxXyrvrOKfyDVMA7ogqVwkXIboDXOz5A4I1i9ZY3jj1+qiuYC3",
+      "2": "WqvnnvT0fNu3lM3Nct8txbh5WKd8l+Hm",
+      "9": {
+        "1": "grain",
+        "2": "bob",
+        "_": "gray"
+      },
+      "_": "Encrypted (gray); readable by the two grain parties."
+    }
+  },
+  "group": {
+    "K_hex": "e094434a7773c4ef20657e5f100fa2f648b473411023fd4a1b49f948eaa7614f",
+    "member": {
+      "secret": "flint harbour lotus 77",
+      "handle": "bob"
+    },
+    "plaintext": "a line the members read",
+    "nonce_b64": "QzqqLfkNyfffeIK92RqW/GMCrxcVvINy",
+    "ciphertext_b64": "femXPiG8ntDbejoO4HXzgoLf9dtMl6HtscRLQ+9ZtPfLkVbDKj57",
+    "envelope": {
+      "1": "femXPiG8ntDbejoO4HXzgoLf9dtMl6HtscRLQ+9ZtPfLkVbDKj57",
+      "2": "QzqqLfkNyfffeIK92RqW/GMCrxcVvINy",
+      "9": {
+        "1": "group",
+        "_": "gray"
+      },
+      "_": "Encrypted (gray); readable by the group (key wrapped per member in the keyring at 9)."
+    },
+    "ring": {
+      "1": {
+        "1": "YisRw0OBCOd5cywhhhTf1cfgYgz5OwOA0tMHuFM8ccBl+Nw81gsrS385kLgRy8Ip",
+        "2": "uYgD/ntOgA9sgNsYUbUbvXUxn0WF6qzA",
+        "3": "KmwF+Cb/JwjKrfHoKiiXc/N6/bJ2mo3yTD2jVejNzEc=",
+        "_": "bob"
+      },
+      "_": "group-keyring"
+    }
+  },
+  "colour": {
+    "K_hex": "d410354c1a4b9daf737c69c69dc7baa012e8f0521c8a7fc68ed296c42a9e8056",
+    "block": "colour:salt",
+    "turn": "1",
+    "half_b64": "bEgqtaS6yjfaUmcgJowP00khBz1yeeYMgHJGwAoOkTM=",
+    "holder": {
+      "secret": "rowan pier swallow 41",
+      "handle": "ada"
+    },
+    "block_node": {
+      "1": {
+        "1": {
+          "1": {
+            "1": "6/yrmALk5kLAgEOkZIIGJzNL4k0qcMAsj7DknKMU0HAzXaPy6Wb/fqpD4uE0sUvm",
+            "2": "/t1SkbksJVDm4L35KQuSRnAWlL/BBA6n",
+            "3": "3Q+98BH/Rl5aAIjPX45g9Qs6UvIKRD3ZHizn9J47PDk=",
+            "_": "ada"
+          },
+          "_": "the copies of this turn's key, one sealed to each holder's published half"
+        },
+        "2": "bEgqtaS6yjfaUmcgJowP00khBz1yeeYMgHJGwAoOkTM=",
+        "_": "from 2026-11-04T16:00:00Z: the key every line of this turn is sealed with — 1 copy at 1, one sealed to each holder's published half; its public half for letters at 2"
+      },
+      "_": "colour:salt — a readership: a line sealed in this colour opens for each holder of a copy in its current turn below; a letter to it is sealed to the turn's public half and read by every holder."
+    },
+    "plaintext": "SHARE https://example.org/salt — a line only SALT reads",
+    "nonce_b64": "bG+ZyDeb446ssbE6+6gild3F+6X4RSwg",
+    "ciphertext_b64": "C//BaGmX/nXOgyQeqI5YOH0vxogPkRh7/0mFZHH0Jk7wWbwS/ZeM6fUCc3FOHhywnU1d75vG7dEjOiWAo5qLUlKHODBAR4i6jw==",
+    "envelope": {
+      "1": "C//BaGmX/nXOgyQeqI5YOH0vxogPkRh7/0mFZHH0Jk7wWbwS/ZeM6fUCc3FOHhywnU1d75vG7dEjOiWAo5qLUlKHODBAR4i6jw==",
+      "2": "bG+ZyDeb446ssbE6+6gild3F+6X4RSwg",
+      "9": {
+        "1": "colour",
+        "2": "colour:salt",
+        "3": "1",
+        "_": "gray"
+      },
+      "_": "Sealed for colour:salt, turn 1."
+    },
+    "grey": "sealed · colour · salt · turn 1",
+    "letter": {
+      "plaintext": "a letter to SALT from someone with no copy",
+      "envelope": {
+        "1": "zyukMWzE8sSZfLw6ySxSN5/qwyW8fjaXnlaRG+vgTQ6iYl9P5rSJezz+krpk9zzdgWHDEw8omqzH+g==",
+        "2": "IgsZUXO9bhqI5Wu/OQKkvXXjBPKm4wOq",
+        "9": {
+          "1": "colour",
+          "2": "colour:salt",
+          "3": "1",
+          "4": "BTRvUOGHPI6Q0VuZaF3jD2TbHavTI7Ny6n5Stt5JhCM=",
+          "_": "gray"
+        },
+        "_": "Sealed for colour:salt, turn 1."
+      }
+    }
+  }
 }
