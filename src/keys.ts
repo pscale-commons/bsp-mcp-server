@@ -4,15 +4,19 @@
  * Deterministic key derivation: Argon2id(secret, salt=handle) → X25519 + Ed25519.
  * The secret is a passphrase (HITL) or local block hash (NHITL). Never stored.
  *
- * Two encryption modes, both producing a SPINE-LEGAL envelope (every key is
+ * Four encryption modes, all producing a SPINE-LEGAL envelope (every key is
  * "_" or a digit 1-9, so the federated beach shape gate accepts it, and a
  * walker without the secret sees opaque structure — privacy without secrecy
  * of existence):
- *   - self:  symmetric secretbox under the author's own derived key. Only the
- *            author (same secret + handle) decrypts. For private-to-me leaves.
- *   - grain: bilateral. Both parties derive ONE shared key via X25519 ECDH
- *            between their published keypairs (nacl.box.before). Either party
- *            reads either side; outsiders cannot. For private grain curation.
+ *   - self:   symmetric secretbox under the author's own derived key. Only the
+ *             author (same secret + handle) decrypts. For private-to-me leaves.
+ *   - grain:  bilateral. Both parties derive ONE shared key via X25519 ECDH
+ *             between their published keypairs (nacl.box.before). Either party
+ *             reads either side; outsiders cannot. For private grain curation.
+ *   - group:  one key wrapped to each member in a keyring at the block's own 9.
+ *   - colour: the group envelope with one more rung — its 9 names the block
+ *             that keeps the key (colour:<name>) and the turn within it, so the
+ *             line can stand in any block (coloured stigmergy, step 2).
  *
  * Dependencies: tweetnacl (X25519/Ed25519/XSalsa20-Poly1305), hash-wasm (Argon2id).
  */
@@ -40,12 +44,20 @@ export interface PublicKeyPair {
  *   { _: <human note>,
  *     "1": <ciphertext b64>,
  *     "2": <nonce b64>,
- *     "9": { _: "gray", "1": "self" | "grain", "2"?: <partner handle> } }
+ *     "9": { _: "gray", "1": "self" | "grain" | "group" | "colour",
+ *            "2"?: <partner handle, or the colour block colour:<name>>,
+ *            "3"?: <the turn's address in the colour block>,
+ *            "4"?: <a letter's one-off public half> } }
  */
 export interface GrayMeta {
   _: 'gray';
-  '1': 'self' | 'grain' | 'group';
+  '1': 'self' | 'grain' | 'group' | 'colour';
+  /** grain: the other party. colour: the block that keeps the key, colour:<name>. */
   '2'?: string;
+  /** colour: the turn within that block whose key sealed this line. */
+  '3'?: string;
+  /** colour, a letter: the writer's one-off public half, boxed to the turn's public half. */
+  '4'?: string;
 }
 export interface GrayEnvelope {
   _: string;
@@ -99,10 +111,11 @@ export const derivations = { count: 0 };
 const derived = new Map<string, Map<string, Promise<DerivedKeys>>>();
 const HELD = 64;
 
-/** Forget the pairs a session derived — at the session's end, or all of them. */
+/** Forget the pairs a session derived and the colours it wears — at the
+ *  session's end, or all of them. */
 export function forgetDerived(session?: string): void {
-  if (session === undefined) derived.clear();
-  else derived.delete(session);
+  if (session === undefined) { derived.clear(); worn.clear(); }
+  else { derived.delete(session); worn.delete(session); }
 }
 
 /**
@@ -262,10 +275,10 @@ export function isGrayEnvelope(node: any): node is GrayEnvelope {
 }
 
 /** The envelope's encryption mode, or null if not a gray envelope. */
-export function grayMode(node: any): 'self' | 'grain' | 'group' | null {
+export function grayMode(node: any): 'self' | 'grain' | 'group' | 'colour' | null {
   if (!isGrayEnvelope(node)) return null;
   const m = (node['9'] as GrayMeta)['1'];
-  return m === 'self' || m === 'grain' || m === 'group' ? m : null;
+  return m === 'self' || m === 'grain' || m === 'group' || m === 'colour' ? m : null;
 }
 
 // ── Self-encryption (private to the author) ──
@@ -442,12 +455,16 @@ export function keyringHandles(keyring: any): string[] {
  * stays shut is each copy tried in turn, as before, each derivation now kept
  * for the session. With no handle every copy is tried, salted with its own
  * holder's name, so the thirtieth member once paid thirty derivations a read.
+ * A copy that names nobody (a colour whose membership is itself private,
+ * coloured-stigmergy §3.3) is tried with the reader's own name as its salt.
  */
 export async function unwrapGroupKeyFromKeyring(keyring: any, encSecret: string, handle?: string | null): Promise<Uint8Array | null> {
   const entries = keyringEntries(keyring);
   const own = handle ? entries.filter((e) => e._ === handle) : [];
   for (const entry of [...own, ...entries.filter((e) => !own.includes(e))]) {
-    const K = await unwrapGroupKey(entry, encSecret, entry._);
+    const salt = entry._ || handle;
+    if (!salt) continue;
+    const K = await unwrapGroupKey(entry, encSecret, salt);
     if (K) return K;
   }
   return null;
@@ -465,6 +482,113 @@ export function groupEncryptContent(plaintext: string, groupKey: Uint8Array): Gr
 export function groupDecryptContent(env: GrayEnvelope, groupKey: Uint8Array): string | null {
   const pt = nacl.secretbox.open(fromBase64(env['1']), fromBase64(env['2']), groupKey);
   return pt ? decoder.decode(pt) : null;
+}
+
+// ── Colour (coloured stigmergy, step 2; proposals/2026-11-03-coloured-stigmergy-
+// the-design.md §2.1, §3.2, §4.1) ──
+//
+// A coloured line is the group envelope with one more rung, and the rung is the
+// whole design: a group line finds its key by walking up its own block to that
+// block's 9, so it cannot leave the block; a colour line carries in its own 9
+// the address of its key — the colour block at 9.2 and the turn within it at
+// 9.3 — so the seal belongs to the line and the line stands in any block. The
+// colour, colour:<name>, is an ordinary block latched whole by its keeper: an
+// accumulator of TURNS appended at its root, each turn {_: when, 1: the ring of
+// copies of one key as buildKeyring lays it, 2: that key's public half}. A line
+// names its colour; the colour never names its lines. A turn shuts a leaver
+// out of every new line and re-seals nothing. A LETTER is a line sealed by
+// someone with no copy — a newcomer, a stranger, another organisation — boxed
+// to the turn's public half with a one-off pair whose public half rides at
+// 9.4: every holder opens it, and its writer cannot read it back.
+
+export const COLOUR_PREFIX = 'colour:';
+/** The colour block a colour is named by: 'salt' and 'colour:salt' both name colour:salt. */
+export function colourBlockName(colour: string): string {
+  const c = String(colour).trim();
+  return c.startsWith(COLOUR_PREFIX) ? c : COLOUR_PREFIX + c;
+}
+/** The colour's bare name, for the grey line. */
+export function colourNameOf(block: string): string {
+  return String(block).replace(/^colour:/, '');
+}
+/** The note at a coloured line's underscore — what a keyless reader is sent over
+ *  the wire, and what the grey line is drawn from there. */
+export function colourNote(block: string, turn: string): string {
+  return `Sealed for ${block}, turn ${turn}.`;
+}
+const COLOUR_NOTE_RE = /^Sealed for (colour:\S+), turn (\S+)\.$/;
+export function parseColourNote(note: unknown): { block: string; turn: string } | null {
+  const m = typeof note === 'string' ? COLOUR_NOTE_RE.exec(note) : null;
+  return m ? { block: m[1], turn: m[2] } : null;
+}
+
+/** A turn's public half: the turn's key read as an X25519 secret, so every holder
+ *  can remake the private half and anyone can seal a letter to it. */
+export function turnPublicHalf(K: Uint8Array): string {
+  return toBase64(nacl.box.keyPair.fromSecretKey(K).publicKey);
+}
+
+/** A turn, as the colour block keeps it at a root slot: when it began, the ring
+ *  of copies at 1, the public half for letters at 2. Spine-legal. */
+export function buildTurn(K: Uint8Array, wraps: GroupKeyEntry[], now: Date = new Date()): { _: string; '1': any; '2': string } {
+  const iso = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  return {
+    _: `from ${iso}: the key every line of this turn is sealed with — ${wraps.length} ${wraps.length === 1 ? 'copy' : 'copies'} at 1, one sealed to each holder's published half; its public half for letters at 2`,
+    '1': buildKeyring(wraps, "the copies of this turn's key, one sealed to each holder's published half"),
+    '2': turnPublicHalf(K),
+  };
+}
+
+/** Seal a line in a colour with the turn's key (secretbox). */
+export function colourSeal(plaintext: string, block: string, turn: string, K: Uint8Array): GrayEnvelope {
+  const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+  const ct = nacl.secretbox(encoder.encode(plaintext), nonce, K);
+  if (!ct) throw new Error('colour seal failed');
+  return { _: colourNote(block, turn), '1': toBase64(ct), '2': toBase64(nonce), '9': { _: GRAY_MARKER, '1': 'colour', '2': block, '3': turn } };
+}
+
+/** Seal a letter to a colour: boxed to the turn's public half with a one-off
+ *  pair, its public half at 9.4. Needs no key, and its writer cannot open it. */
+export function colourLetter(plaintext: string, block: string, turn: string, publicHalfB64: string): GrayEnvelope {
+  const eph = nacl.box.keyPair();
+  const nonce = nacl.randomBytes(nacl.box.nonceLength);
+  const ct = nacl.box(encoder.encode(plaintext), nonce, fromBase64(publicHalfB64), eph.secretKey);
+  if (!ct) throw new Error('colour letter failed');
+  return { _: colourNote(block, turn), '1': toBase64(ct), '2': toBase64(nonce), '9': { _: GRAY_MARKER, '1': 'colour', '2': block, '3': turn, '4': toBase64(eph.publicKey) } };
+}
+
+/** Open a coloured line, or a letter to the colour, with the turn's key. */
+export function colourOpen(env: GrayEnvelope, K: Uint8Array): string | null {
+  const writer = env['9']['4'];
+  const pt = typeof writer === 'string'
+    ? nacl.box.open(fromBase64(env['1']), fromBase64(env['2']), fromBase64(writer), K)
+    : nacl.secretbox.open(fromBase64(env['1']), fromBase64(env['2']), K);
+  return pt ? decoder.decode(pt) : null;
+}
+
+// A SESSION WEARS ITS COLOURS ONCE (§4.1): each turn key a session has opened is
+// kept in process memory for the session — the door's — and dropped with it
+// (forgetDerived), written nowhere; every later line of that colour and turn it
+// meets, keyed or not, opens with no key passed and no ring read.
+const worn = new Map<string, Map<string, Uint8Array>>();
+
+/** The name a worn turn is kept under: the beach, the colour block, the turn. */
+export function wornKey(origin: string, block: string, turn: string): string {
+  return `${String(origin).trim().replace(/\/+$/, '').toLowerCase()}|${block}|${String(parseInt(String(turn), 10) || turn)}`;
+}
+export function wearColour(key: string, K: Uint8Array): void {
+  const session = doorHere()?.session ?? '';
+  let held = worn.get(session);
+  if (!held) worn.set(session, (held = new Map()));
+  held.set(key, K);
+}
+export function wornColour(key: string): Uint8Array | null {
+  return worn.get(doorHere()?.session ?? '')?.get(key) ?? null;
+}
+/** True when this session wears any colour — the one test a keyless read makes
+ *  before looking for a sealed line it could open. */
+export function wearsColours(): boolean {
+  return (worn.get(doorHere()?.session ?? '')?.size ?? 0) > 0;
 }
 
 // ── Block-level decryption (for walk) ──

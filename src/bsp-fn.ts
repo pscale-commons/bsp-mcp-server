@@ -47,7 +47,7 @@ import {
 export { InvalidAddressError } from './bsp.js';
 
 import { renderAddressRelation, parseTemporalLabel } from './temporal.js';
-import { isGrayEnvelope, grayMode, GRAY_NOTES, type GrayEnvelope } from './keys.js';
+import { isGrayEnvelope, grayMode, GRAY_NOTES, colourNameOf, parseColourNote, type GrayEnvelope } from './keys.js';
 
 // ── Shape vocabulary (canonical) ──
 
@@ -236,11 +236,13 @@ function semantic(node: any): string | null {
 // which a descent and a keyless walk handed the model until 4 November 2026,
 // about 150 tokens of words nobody there could read. The whole block stays
 // byte-true, because a whole read is also the copy a whole write is made from.
-// A colour and its turn join the line at step 2.
+// A coloured line names its colour and its turn (step 2, §2.1): what the line
+// says is sealed, which glasses open it is not.
 export function sealedLine(env: GrayEnvelope): string {
   const mode = grayMode(env) ?? 'gray';
   const party = mode === 'grain' && typeof env['9']['2'] === 'string' ? ` · for ${env['9']['2']}` : '';
-  return `sealed · ${mode}${party} · ${Buffer.from(env['1'], 'base64').length} bytes`;
+  const colour = mode === 'colour' ? ` · ${colourNameOf(String(env['9']['2'] ?? ''))} · turn ${env['9']['3'] ?? '?'}` : '';
+  return `sealed · ${mode}${party}${colour} · ${Buffer.from(env['1'], 'base64').length} bytes`;
 }
 
 /** The envelope a node stands as: the node itself, or the one its underscore
@@ -1009,33 +1011,71 @@ export function onRealClock(blockName: string): boolean {
 // else is hidden, so a line voiced in gray one zero deeper (§2.3) keeps every
 // field beside it. A local read never needs this: its collectors drew the line
 // from the envelope itself.
-function sealedNote(content: unknown): string | null {
+export function sealedNote(content: unknown): string | null {
   const mode = (Object.keys(GRAY_NOTES) as Array<keyof typeof GRAY_NOTES>).find((m) => GRAY_NOTES[m] === content);
-  return mode ? `sealed · ${mode}` : null;
+  if (mode) return `sealed · ${mode}`;
+  const colour = parseColourNote(content);
+  return colour ? `sealed · colour · ${colourNameOf(colour.block)} · turn ${colour.turn}` : null;
 }
+
+/** A wire shape without the envelope's own fields beneath the positions named:
+ *  a point's ring when it is exactly 1, 2 and 9; in a descent the ciphertext at
+ *  1, the nonce at 2 and the marker at 9 with everything beneath it (the mode,
+ *  a colour's name and turn, a letter's public half), told by the marker's own
+ *  "gray" at 9. Used for a sealed line drawn as the grey line, and for a worn
+ *  colour's line opened in place (tools/bsp.ts). */
+export function hideOwnFields(r: BspReadResult, at: Set<string>): BspReadResult {
+  const undot = (a: string) => a.replace('.', '');
+  switch (r.shape) {
+    case 'point': {
+      if (!r.address || !at.has(r.address)) return r;
+      const ring = r.beneath ?? [];
+      const ownRing = ring.length === 3 && ring.map((a) => a.slice(-1)).join('') === '129';
+      return ownRing ? { ...r, beneath: undefined, beneath_pscale: undefined } : r;
+    }
+    case 'path-walk+descent': {
+      const fl = floorOf(r);
+      const marked = [...at].filter((a) => (r.descent ?? []).some((e) => e.content === 'gray' && undot(e.address) === undot(a) + '9')).map(undot);
+      const own = (e: PathWalkEntry) => {
+        if (fl == null || e.depth <= fl) return false;
+        const u = undot(e.address);
+        return marked.some((m) => u === m + '1' || u === m + '2' || u.startsWith(m + '9'));
+      };
+      return { ...r, descent: (r.descent ?? []).filter((e) => !own(e)) };
+    }
+    default:
+      return r;
+  }
+}
+
 function greyWire(r: BspReadResult): BspReadResult {
   const seal = <E extends { content?: string | null }>(e: E): E => {
     const line = sealedNote(e.content);
     return line ? { ...e, content: line } : e;
   };
   switch (r.shape) {
-    case 'point': {
-      if (!sealedNote(r.content)) return r;
-      const ring = r.beneath ?? [];
-      const ownRing = ring.length === 3 && ring.map((a) => a.slice(-1)).join('') === '129';
-      return { ...seal(r), ...(ownRing ? { beneath: undefined, beneath_pscale: undefined } : {}) };
-    }
+    case 'point':
+      return sealedNote(r.content) ? hideOwnFields(seal(r), new Set([r.address ?? ''])) : r;
     case 'path-walk':
       return { ...r, entries: ((r.entries as PathWalkEntry[]) ?? []).map(seal) };
-    case 'disc':
-      return { ...r, entries: ((r.entries as DiscEntry[]) ?? []).map(seal) };
+    case 'disc': {
+      // A disc one pscale finer than a sealed entry lists the entry's own fields
+      // as positions, the sealed entry itself standing a pscale above and out of
+      // view: the marker's own "gray" at X9, a directory of at least one, with
+      // strings at X1 and X2 beside it, names them, and they are not listed.
+      const entries = ((r.entries as DiscEntry[]) ?? []).map(seal);
+      const undot = (a: string) => a.replace('.', '');
+      const at = (u: string) => entries.find((e) => undot(e.address) === u);
+      const sealedAbove = entries
+        .filter((e) => e.content === 'gray' && (e.beneath ?? 0) >= 1 && /9$/.test(undot(e.address)))
+        .map((e) => undot(e.address).slice(0, -1))
+        .filter((x) => typeof at(x + '1')?.content === 'string' && typeof at(x + '2')?.content === 'string');
+      const own = (e: DiscEntry) => sealedAbove.some((x) => { const u = undot(e.address); return u === x + '1' || u === x + '2' || u.startsWith(x + '9'); });
+      return { ...r, entries: sealedAbove.length ? entries.filter((e) => !own(e)) : entries };
+    }
     case 'path-walk+descent': {
-      const fl = floorOf(r);
-      const above = (a: string) => a.replace(/\.?[1-9]$/, '');
       const sealedAt = new Set([...(r.path_walk ?? []), ...(r.descent ?? [])].filter((e) => sealedNote(e.content)).map((e) => e.address));
-      const marked = new Set((r.descent ?? []).filter((e) => e.content === 'gray' && /9$/.test(e.address) && sealedAt.has(above(e.address))).map((e) => above(e.address)));
-      const own = (e: PathWalkEntry) => fl != null && e.depth > fl && /[129]$/.test(e.address) && marked.has(above(e.address));
-      return { ...r, path_walk: (r.path_walk ?? []).map(seal), descent: (r.descent ?? []).map(seal).filter((e) => !own(e)) };
+      return hideOwnFields({ ...r, path_walk: (r.path_walk ?? []).map(seal), descent: (r.descent ?? []).map(seal) }, sealedAt);
     }
     case 'star':
       return r.inner ? { ...r, inner: greyWire(r.inner) } : r;

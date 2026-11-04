@@ -31,6 +31,7 @@ import {
   formatWrite,
   formatBorn,
   splitStar,
+  hideOwnFields,
   BspReadResult,
   BspWriteResult,
 } from '../bsp-fn.js';
@@ -240,8 +241,21 @@ import {
   groupEncryptContent,
   groupDecryptContent,
   buildKeyring,
+  keyringEntries,
   keyringHandles,
+  publicKeysFromSpine,
   GROUP_KEYRING_MARKER,
+  COLOUR_PREFIX,
+  colourBlockName,
+  buildTurn,
+  colourSeal,
+  colourLetter,
+  colourOpen,
+  parseColourNote,
+  wornKey,
+  wearColour,
+  wornColour,
+  wearsColours,
 } from '../keys.js';
 import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
@@ -605,8 +619,9 @@ async function buildGrayDecryptor(
   block: any,
   isGrain: boolean,
   agentId: string,
-  secret: string,
-  hand: string | null = null,
+  secret: string | undefined,
+  hand: string | null,
+  origin: string,
 ): Promise<(env: GrayEnvelope) => Promise<string | null>> {
   let h1: string | undefined;
   let h2: string | undefined;
@@ -626,14 +641,34 @@ async function buildGrayDecryptor(
   // hand's own copy first where it is known (null if the reader is not a
   // member, so group leaves render as the grey line).
   let groupKey: Uint8Array | null = null;
-  if (block?.['9']?._ === GROUP_KEYRING_MARKER) {
+  if (secret && block?.['9']?._ === GROUP_KEYRING_MARKER) {
     groupKey = await unwrapGroupKeyFromKeyring(block['9'], secret, hand);
   }
+  // THE READER'S GLASSES (coloured stigmergy §4.1): a coloured line names its
+  // key's address, the colour block at 9.2 and the turn at 9.3. A turn this
+  // session wears opens with no key and no read; the first line of a turn met
+  // with a key reads that colour block once, opens the reader's own copy, and
+  // the session wears the turn from then on.
+  const turns = new Map<string, Promise<{ address: string; node: any } | null>>();
+  const turnOf = (colour: string, turn: string) => {
+    const at = `${colour}|${turn}`;
+    let t = turns.get(at);
+    if (!t) { t = loadBlock(origin, colour).then((row) => (row ? turnsOf(row.block).find((x) => x.address === String(parseInt(turn, 10) || turn)) ?? null : null)).catch(() => null); turns.set(at, t); }
+    return t;
+  };
   // Which party the reader's secret belongs to — derived once, and only when a
   // grain line stays shut, so that line can say whose key is off.
   let readerSide: Promise<'1' | '2' | null> | null = null;
   return async (env: GrayEnvelope): Promise<string | null> => {
     const mode = grayMode(env);
+    if (mode === 'colour') {
+      const colour = String(env['9']['2'] ?? ''), turn = String(env['9']['3'] ?? '');
+      if (!colour || !turn) return null;
+      let K = wornColour(wornKey(origin, colour, turn));
+      if (!K && secret) { const t = await turnOf(colour, turn); K = t ? await keyOfTurn(origin, colour, t, secret, hand) : null; }
+      return K ? colourOpen(env, K) : null;
+    }
+    if (!secret) return null;
     if (mode === 'self') return selfDecrypt(env, secret, agentId);
     if (mode === 'grain') {
       // Reader is whichever party their secret belongs to: the hand's own side
@@ -650,6 +685,160 @@ async function buildGrayDecryptor(
     if (mode === 'group') return groupKey ? groupDecryptContent(env, groupKey) : null;
     return null;
   };
+}
+
+// ── Colour: the keeper's door, the writer's seal, the reader's glasses ──
+// (coloured stigmergy, step 2; proposals/2026-11-03-coloured-stigmergy-the-
+// design.md §3 and §4). A colour is colour:<name>, an ordinary block latched
+// whole: an accumulator of turns at its root, each {_: when, 1: the ring of
+// copies of one key, 2: its public half}. Nothing here is a primitive: the
+// keeper founds, admits and turns through bsp() with `members`; a writer seals
+// with gray: "colour:<name>"; a reader's glasses are the turns the session wears.
+
+const iso = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+/** The turns of a colour block in accumulator order — the disc at pscale 0,
+ *  each a node with a ring at 1 and a public half at 2 — named by the address
+ *  the beach allocated, which stays good across a supernest ('3' at floor 2
+ *  left-pads to 03 and walks the chain). */
+function turnsOf(block: Block): Array<{ address: string; node: any }> {
+  const out: Array<{ address: string; node: any }> = [];
+  let r: BspReadResult;
+  try { r = bspRead(block, '', 0); } catch { return out; }
+  for (const e of (r.entries ?? []) as Array<{ address: string }>) {
+    const a = String(e.address ?? '');
+    if (!/^\d+$/.test(a) || /^0+$/.test(a)) continue;
+    let node: any;
+    try { node = readAt(block, a); } catch { continue; }
+    if (node && typeof node === 'object' && node['1'] && typeof node['1'] === 'object' && typeof node['2'] === 'string') out.push({ address: String(parseInt(a, 10)), node });
+  }
+  return out.sort((x, y) => parseInt(x.address, 10) - parseInt(y.address, 10));
+}
+
+/** A holder's published half at this beach: passport:<handle> 9, as pscale_key_publish leaves it. */
+async function publishedHalfAt(origin: string, handle: string): Promise<string | null> {
+  const row = await loadBlock(origin, `passport:${handle}`).catch(() => null);
+  return row ? publicKeysFromSpine((row.block as any)?.['9'])?.x25519 ?? null : null;
+}
+
+/** A turn's key for this session: worn already, or opened from the reader's own
+ *  copy (the hand's first, one derivation) and worn from then on. Null when no
+ *  copy opens for the key given — and, where the hand is known and no copy in
+ *  the ring names it or names nobody, without a derivation at all: a colour's
+ *  copies name their holders (§3.3), so a hand outside the ring is shut by the
+ *  ring itself, not by trying every copy under every other name. */
+async function keyOfTurn(origin: string, colour: string, turn: { address: string; node: any }, secret: string | undefined, hand: string | null): Promise<Uint8Array | null> {
+  const at = wornKey(origin, colour, turn.address);
+  let K = wornColour(at);
+  if (!K && secret) {
+    const copies = keyringEntries(turn.node['1']);
+    if (hand && !copies.some((e) => e._ === hand || e._ === '')) return null;
+    K = await unwrapGroupKeyFromKeyring(turn.node['1'], secret, hand);
+    if (K) wearColour(at, K);
+  }
+  return K;
+}
+
+/**
+ * THE KEEPER'S DOOR (§3.3). `members` on colour:<name> names its holders, and
+ * since the block is latched whole only its keeper gets this far:
+ *   - the block absent → FOUND it, latched (new_lock), its purpose at the
+ *     underscore and turn 1 at slot 1: a fresh key, a copy sealed to each
+ *     holder's published half, the public half for letters;
+ *   - every current holder still listed → ADMIT the new ones: a copy of the
+ *     current turn's key, opened from the keeper's own copy, added to its ring;
+ *     no turn, nothing re-sealed, and they read every line of this turn;
+ *   - a holder missing, or append:true → a TURN: a fresh key with a copy for
+ *     each listed, appended at the root as the next turn, so the tenth
+ *     supernests as any accumulator does; no line moves, and whoever left keeps
+ *     what they could already read.
+ * Published halves are read from passport:<handle> 9 at this beach, as
+ * pscale_key_publish leaves them. Throws a user-facing message.
+ */
+async function keepColour(origin: string, blockName: string, p: BspToolParams, hand: string | null, encSecret: string | undefined): Promise<string> {
+  const holders = [...new Set((p.members ?? []).map((h) => String(h).trim()).filter(Boolean))];
+  if (!holders.length) throw new Error('members must list the holders of the colour; an empty list would seal every new line to nobody.');
+  const halves: Record<string, string> = {};
+  for (const h of holders) {
+    const half = await publishedHalfAt(origin, h);
+    if (!half) throw new Error(`"${h}" has no keys published at passport:${h} 9 on this beach — they run pscale_key_publish(handle="${h}", agent_id="${origin}", …) first.`);
+    halves[h] = half;
+  }
+  const row = await loadBlock(origin, blockName);
+  const now = new Date();
+  const copies = (n: number) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
+  if (!row) {
+    if (typeof p.new_lock !== 'string' || !p.new_lock.trim()) throw new Error(`${blockName} is not founded yet, and a colour is latched whole by its keeper: pass new_lock with this write (secret proves a latch that already stands).`);
+    const K = newGroupKey();
+    const purpose = typeof p.content === 'string' && p.content.trim()
+      ? p.content
+      : `${blockName} — a readership: a line sealed in this colour opens for each holder of a copy in its current turn below; a letter to it is sealed to the turn's public half and read by every holder.`;
+    const block = { _: purpose, '1': buildTurn(K, holders.map((h) => wrapGroupKey(K, h, halves[h])), now) } as unknown as Block;
+    await saveBlock(origin, blockName, block, { spindle: '', pscale_attention: null, new_lock: p.new_lock, hasContent: true });
+    return `[colour @ "${origin}/${blockName}" founded, latched whole] turn 1 from ${iso(now)}: ${copies(holders.length)} (${holders.join(', ')}), the public half for letters at 1.2.\n  seal a line in it anywhere on this beach with gray: "${blockName}"; admit with members listing every holder; a holder left out of members turns the colour.`;
+  }
+  const turns = turnsOf(row.block);
+  const current = turns[turns.length - 1];
+  if (!current) throw new Error(`${blockName} stands but holds no turn ({_: when, 1: the ring of copies, 2: the public half} at a root slot): turn it with members and append:true.`);
+  const standing = keyringHandles(current.node['1']);
+  const leaving = standing.filter((h) => !holders.includes(h));
+  const joining = holders.filter((h) => !standing.includes(h));
+  if (p.append !== true && !leaving.length) {
+    if (!joining.length) return `[colour @ "${origin}/${blockName}" unchanged] turn ${current.address} already holds a copy for ${standing.join(', ')}. To turn the colour anyway, pass append:true with members.`;
+    const K = await keyOfTurn(origin, blockName, current, encSecret, hand);
+    if (!K) throw new Error(`no copy of ${blockName} turn ${current.address} opens for your key, so its key cannot be copied to ${joining.join(', ')}: a keeper admits from their own copy (pass enc_secret, the word your keys were published from). To seal a fresh key for these holders instead, turn the colour: members with append:true.`);
+    const ring = buildKeyring([...keyringEntries(current.node['1']), ...joining.map((h) => wrapGroupKey(K, h, halves[h]))], current.node['1']._);
+    const block: Block = JSON.parse(JSON.stringify(row.block));
+    writeAt(block, `${current.address}.1`, ring);
+    await saveBlock(origin, blockName, block, { spindle: `${current.address}.1`, pscale_attention: null, secret: p.secret, hasContent: true });
+    return `[colour @ "${origin}/${blockName}" turn ${current.address}] admitted ${joining.join(', ')}: ${copies(standing.length + joining.length)} now; no turn, nothing re-sealed — they read every line of this turn.`;
+  }
+  const K = newGroupKey();
+  const res = await appendToBeach(origin, blockName, buildTurn(K, holders.map((h) => wrapGroupKey(K, h, halves[h])), now) as unknown as Block, p.secret);
+  return `[colour @ "${origin}/${blockName}" turned → turn ${res.slot ?? '?'}${res.supernested ? ` (supernested, floor ${res.floor})` : ''}] from ${iso(now)}: ${copies(holders.length)} (${holders.join(', ')})${leaving.length ? `; shut out of every new line: ${leaving.join(', ')}, who keep what they could already read` : ''}; no line moves.`;
+}
+
+/** THE WRITER'S DOOR (§4.1): seal a line in a colour with the current turn's
+ *  key — worn by this session, or opened from the writer's own copy — and,
+ *  with no copy, as a letter to the turn's public half, which needs no key. */
+async function sealInColour(origin: string, colour: string, plaintext: string, encSecret: string | undefined, hand: string | null): Promise<{ envelope: GrayEnvelope; how: 'worn' | 'copy' | 'letter'; turn: string }> {
+  const row = await loadBlock(origin, colour);
+  if (!row) throw new Error(`no ${colour} at ${origin}: a colour is founded by its keeper first — bsp(agent_id="${origin}", block="${colour}", members=[…], new_lock=<the keeper's latch>).`);
+  const turns = turnsOf(row.block);
+  const current = turns[turns.length - 1];
+  if (!current) throw new Error(`${colour} holds no turn to seal with.`);
+  const worn = wornColour(wornKey(origin, colour, current.address));
+  const K = worn ?? await keyOfTurn(origin, colour, current, encSecret, hand);
+  if (K) return { envelope: colourSeal(plaintext, colour, current.address, K), how: worn ? 'worn' : 'copy', turn: current.address };
+  return { envelope: colourLetter(plaintext, colour, current.address, current.node['2']), how: 'letter', turn: current.address };
+}
+
+/** The ack's line for a coloured write or append. */
+function colourLine(colour: string, sealed: { how: 'worn' | 'copy' | 'letter'; turn: string }): string {
+  return sealed.how === 'letter'
+    ? `\n  ⓘ sealed as a letter to ${colour}, turn ${sealed.turn}: every holder of the colour reads it; you hold no copy, so you cannot read it back.`
+    : `\n  ⓘ sealed in ${colour}, turn ${sealed.turn}.`;
+}
+
+/** A KEYLESS READ IN WORN COLOURS (§4.1): the slice comes from the wire as it
+ *  does for anyone, and only the sealed lines in it whose colour and turn this
+ *  session wears are fetched raw — one node each — and opened in place, the
+ *  envelope's own fields then hidden as for a line drawn grey. */
+async function openWornOnWire(r: any, origin: string, block: string): Promise<any> {
+  const opened = new Set<string>();
+  const open = async (e: any) => {
+    const c = parseColourNote(e?.content);
+    const K = c ? wornColour(wornKey(origin, c.block, c.turn)) : null;
+    if (!K || !e?.address) return e;
+    const raw = await loadBspShape(origin, block, String(e.address), null).catch(() => null);
+    const text = isGrayEnvelope(raw) ? colourOpen(raw, K) : null;
+    if (text === null) return e;
+    opened.add(String(e.address));
+    return { ...e, content: text };
+  };
+  const out: any = r.shape === 'point' ? await open(r) : { ...r };
+  for (const k of ['entries', 'path_walk', 'descent']) if (Array.isArray(r[k])) out[k] = await Promise.all(r[k].map(open));
+  return opened.size ? hideOwnFields(out, opened) : out;
 }
 
 /**
@@ -753,9 +942,9 @@ export const bspParamsSchema = {
     .optional()
     .describe('Target value for the EDIT-LATCH — a wiki-style edit token on a public page you own, not an account credential (pscale://open-commons:4). Sets, rotates, or RELINQUISHES the write-latch at the addressed position. Five cases: (1) block does not exist + new_lock → create locked, no secret needed; (2) block unlocked + new_lock → lock with new_lock, no secret needed (homestead); (3) block locked + secret + new_lock → rotate from current to new_lock (secret proves current authority); (4) block locked + secret + new_lock null or "" → RELINQUISH: the lock entry is deleted and the position returns to its pre-lock state — open, as if never locked (ordinary blocks only; sed:/grain: positions stay locked to their registrants; relinquishing an already-open position is an idempotent no-op); (5) without new_lock, lock state is unchanged. Forwarded to the federated beach.'),
   gray: z
-    .boolean()
+    .union([z.boolean(), z.string()])
     .optional()
-    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle: at a leaf the envelope is the entry; at a position holding entries it voices that position and every entry stays, so a gray history pays its zero-slot summaries exactly as an open one does. Degray = read with the key, then write the plaintext back at the same address with gray:false: the line takes the envelope's place, keeping its arrival stamp and anything standing in it, so a keyed reader and an open one read the same line. Grain mode needs both parties to have run pscale_key_publish — each from the ONE secret they then seal and read with (enc_secret, else secret); a grain write sealed under any other secret is refused, since the partner could never open it."),
+    .describe("Privacy by encryption (client-side at bsp-mcp; a spine-legal ciphertext envelope lands at the beach). A COLOUR: gray: \"colour:<name>\" seals the line in that colour (coloured stigmergy) — the key is the current turn's of colour:<name> at this beach, opened from your own copy by your enc_secret (your hand's copy first) and WORN by this session from then on, so every later line of that colour and turn you meet or write opens with no key passed; holding no copy, the line is sealed as a LETTER to the colour, which every holder reads and you cannot read back. A coloured line you cannot open reads as one grey line naming the colour and its turn. A colour rides an append the same way, so a sealed log grows at its root in a colour. On ordinary blocks: opt-in self-encryption (default false) — secret is the key, only the author decrypts. On grain blocks: private by DEFAULT (shared key from both parties' published keypairs; either party reads, outsiders cannot) — pass gray:false to write public. Requires a non-empty spindle: at a leaf the envelope is the entry; at a position holding entries it voices that position and every entry stays, so a gray history pays its zero-slot summaries exactly as an open one does. Degray = read with the key, then write the plaintext back at the same address with gray:false: the line takes the envelope's place, keeping its arrival stamp and anything standing in it, so a keyed reader and an open one read the same line. Grain mode needs both parties to have run pscale_key_publish — each from the ONE secret they then seal and read with (enc_secret, else secret); a grain write sealed under any other secret is refused, since the partner could never open it."),
   enc_secret: z
     .string()
     .optional()
@@ -763,7 +952,7 @@ export const bspParamsSchema = {
   members: z
     .array(z.string())
     .optional()
-    .describe('Group encryption — the DECLARATIVE full read-list (handles allowed to read; include yourself). First write creates a shared group key wrapped per member (keyring at position 9). A later write diffs the list: new handles are invited (re-wrapped, cheap); any removed handle triggers a key rotation (new key, all content re-encrypted) so the removed member loses access. Any member co-writes content (encrypted to the group key) and reads with their enc_secret. Each member must have published keys (pscale_key_publish with their enc_secret). Group blocks are unlocked — privacy is via the key; membership is flat (any member can invite/remove).'),
+    .describe('Group encryption — the DECLARATIVE full read-list (handles allowed to read; include yourself). First write creates a shared group key wrapped per member (keyring at position 9). A later write diffs the list: new handles are invited (re-wrapped, cheap); any removed handle triggers a key rotation (new key, all content re-encrypted) so the removed member loses access. Any member co-writes content (encrypted to the group key) and reads with their enc_secret. Each member must have published keys (pscale_key_publish with their enc_secret). Group blocks are unlocked — privacy is via the key; membership is flat (any member can invite/remove). ON colour:<name> (coloured stigmergy) members names the COLOUR\'S HOLDERS and this is the keeper\'s door, the block being latched whole: absent, it is FOUNDED with new_lock, its purpose at the underscore (content, a string) and turn 1 at slot 1 — a fresh key, a copy sealed to each holder\'s published half, the public half for letters; every holder still listed, the new ones are ADMITTED with a copy of the current turn\'s key, opened from your own copy (enc_secret), no line re-sealed; a holder left out, or append:true, is a TURN — a fresh key with a copy for each listed, appended at the root as the next turn, so the leaver reads every old line and no new one. Published halves are read from passport:<handle> 9 at this beach.'),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
@@ -786,7 +975,7 @@ export type BspToolParams = {
   content?: any;
   secret?: string;
   new_lock?: string | null;
-  gray?: boolean;
+  gray?: boolean | string;
   enc_secret?: string;
   members?: string[];
   face?: 'character' | 'author' | 'designer' | 'observer';
@@ -1051,6 +1240,13 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
   // then reject the write. bsp-mcp absorbs the mistake; beach stays strict.
   const content = rawContent !== undefined ? normaliseContent(rawContent) : undefined;
 
+  // THE COLOUR a write or append seals in: gray: "colour:<name>" (or the bare
+  // name); its block stands at the beach the call addresses.
+  const colour = typeof params.gray === 'string' && params.gray.trim() ? colourBlockName(params.gray) : null;
+  // What a coloured line was sealed with, for the ack and the lock: a worn turn,
+  // the writer's own copy, or a letter (no key of the writer's used).
+  let sealed: { how: 'worn' | 'copy' | 'letter'; turn: string } | null = null;
+
   if (face || tier) {
     console.error(`[bsp] face=${face} tier=${tier} advisory (v0.1 — enforcement deferred)`);
   }
@@ -1069,6 +1265,15 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
         text: `"${target.agent_id}" is a read-only sentinel. The bundled teaching blocks are server-fixed.`,
       }],
     };
+  }
+
+  // ── COLOUR, THE KEEPER'S DOOR ── members on colour:<name> founds, admits or turns it.
+  if (!isSentinel && target.block.startsWith(COLOUR_PREFIX) && params.members !== undefined) {
+    try {
+      return { content: [{ type: 'text', text: await keepColour(target.agent_id, target.block, params, handOf(sessionId), encSecret) }] };
+    } catch (e: any) {
+      return { content: [{ type: 'text', text: `Write rejected: ${e?.message ?? String(e)}` }] };
+    }
   }
 
   // ── APPEND ── atomic next-slot allocation + supernest-on-rollover at the
@@ -1108,13 +1313,13 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
     // append at your side (ways:grain branch 5), and it was landing in the
     // clear on a block whose every other write is private by default.
     const isGrainAppend = target.block.startsWith('grain:');
-    const wantGrayAppend = isGrainAppend ? params.gray !== false : params.gray === true;
+    const wantGrayAppend = colour !== null || (isGrainAppend ? params.gray !== false : params.gray === true);
     let entry: any = content;
     // The block as it stood before a gray append — loaded anyway to encrypt, and
     // kept to tell which reported dues are already paid in gray (see `dues`).
     let grayBlock: Block | null = null;
     if (wantGrayAppend) {
-      if (!encSecret) {
+      if (!encSecret && !colour) {
         return { content: [{ type: 'text', text: `Append rejected: gray encryption requires an encryption key (enc_secret, or secret as fallback). Pass gray:false to append in the open.${signedSealNote()}` }] };
       }
       if (isGrainAppend && !secret) {
@@ -1124,10 +1329,16 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
         return { content: [{ type: 'text', text: "Append rejected: a grain append must name your side — spindle '1' or '2'. Entries land beneath it (2.1, 2.2, …); an unsided append cannot be encrypted to a party." }] };
       }
       try {
-        if (isGrainAppend) {
+        if (colour) {
+          // A COLOURED ENTRY IS SELF-CONTAINED — its key's address rides in its
+          // own 9 — so a sealed log grows at its root in a colour, in any block.
+          const s = await sealInColour(target.agent_id, colour, stringifyForGray(content), encSecret, handOf(sessionId));
+          entry = s.envelope;
+          sealed = s;
+        } else if (isGrainAppend) {
           const grainRow: BlockRow | null = await loadBlock(agent_id, blockName);
           grayBlock = grainRow?.block ?? null;
-          entry = await encryptGrainLeaf(grainRow?.block ?? {}, appendSpindle, stringifyForGray(content), encSecret);
+          entry = await encryptGrainLeaf(grainRow?.block ?? {}, appendSpindle, stringifyForGray(content), encSecret!);
         } else {
           // A group accumulator would need its keyring rather than a self key,
           // and none exists in the field — refuse rather than encrypt to the
@@ -1137,7 +1348,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
           if ((row?.block as any)?.['9']?._ === GROUP_KEYRING_MARKER) {
             return { content: [{ type: 'text', text: 'Append rejected: this is a group block — a group append is not supported yet. Write group content at a leaf spindle (1-8).' }] };
           }
-          entry = await selfEncrypt(stringifyForGray(content), encSecret, agent_id);
+          entry = await selfEncrypt(stringifyForGray(content), encSecret!, agent_id);
         }
       } catch (e: any) {
         return { content: [{ type: 'text', text: `Append rejected: ${e?.message ?? String(e)}` }] };
@@ -1156,7 +1367,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       // beach as write-authority, and is withheld only while it is doing duty
       // as the encryption key instead. A locked gray accumulator therefore
       // wants a distinct enc_secret — the hint below says so when it bites.
-      const appendSecret = wantGrayAppend && !isGrainAppend && enc_secret === undefined ? undefined : secret;
+      const appendSecret = wantGrayAppend && !isGrainAppend && enc_secret === undefined && sealed?.how !== 'letter' ? undefined : secret;
       const res = await appendToBeach(agent_id, blockName, entry, appendSecret, undefined, undefined, appendSpindle || undefined);
       // Say the debt out loud. A zero-slot voices the PREVIOUS completed nine
       // (+0 inductive, block-conventions:3.5) and falls due the moment the next
@@ -1203,18 +1414,19 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       const lawOfIt = family ? await loadBlock(agent_id, `function:${family}`).catch(() => null) : null;
       const handed = lawOfIt ? await wayHandedOver(sessionId, agent_id.replace(/\/+$/, ''), lawOfIt.block, Date.now()) : [];
       const way = handed.length ? `\n\n${handed.join('\n')}` : '';
-      const latchNote = wantGrayAppend && !isGrainAppend && enc_secret === undefined && secret !== undefined ? LATCH_SEAL_NOTE : '';
+      const latchNote = wantGrayAppend && !isGrainAppend && enc_secret === undefined && secret !== undefined && sealed?.how !== 'letter' ? LATCH_SEAL_NOTE : '';
+      const coloured = colour && sealed ? colourLine(colour, sealed) : '';
       if (res.address !== undefined) {
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}${latchNote}${way}` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${stampedNote}]${coloured}${bornNote}${owed}${span}${followed}${readBack}${latchNote}${way}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${bornNote}${owed}${span}${followed}${readBack}${latchNote}${way}` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${coloured}${bornNote}${owed}${span}${followed}${readBack}${latchNote}${way}` }] };
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       // The one refusal this change can newly provoke, named rather than left
       // for the caller to decode: the entry was encrypted with `secret`, so
       // `secret` was withheld from the beach, so a locked accumulator refused.
-      const hint = wantGrayAppend && !isGrainAppend && enc_secret === undefined && /secret/i.test(String(msg))
+      const hint = wantGrayAppend && !isGrainAppend && enc_secret === undefined && sealed?.how !== 'letter' && /secret/i.test(String(msg))
         ? ' — a locked gray accumulator needs its two keys named apart: pass enc_secret for the encryption and secret for the lock.'
         : '';
       return { content: [{ type: 'text', text: `Append rejected: ${msg}${hint}` }] };
@@ -1273,9 +1485,11 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
         );
         if (wireResult && typeof wireResult === 'object' && 'shape' in wireResult) {
           // Canonical shape-tagged response from a v2 beach — return directly,
-          // unless no window could carry it.
-          const wireText = formatRead(wireResult as any, { onClock });
-          return { content: [{ type: 'text', text: tooLarge(wireResult, wireText) ?? wireText }] };
+          // unless no window could carry it. A session wearing colours opens, in
+          // place, the lines of the slice it has the glasses for.
+          const shaped = wearsColours() ? await openWornOnWire(wireResult, target.agent_id, target.block) : wireResult;
+          const wireText = formatRead(shaped as any, { onClock });
+          return { content: [{ type: 'text', text: tooLarge(shaped, wireText) ?? wireText }] };
         }
         if (wireResult && typeof wireResult === 'object') {
           // Legacy beach (no ?pscale= handling) returned the raw block —
@@ -1312,13 +1526,14 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
     const readSpindle = wholeNamed ? '' : (spindle ?? '');
     // A key on a read opens the sealed nodes the read will return, and only
     // those (openReturned), with enc_secret falling back to secret; the
-    // session's hand, where the door knows it, finds its own copy first.
-    const blockForRead = encSecret
+    // session's hand, where the door knows it, finds its own copy first. A
+    // session wearing colours opens their lines the same way with no key.
+    const blockForRead = encSecret || wearsColours()
       ? await openReturned(
           row.block,
           readSpindle,
           pscale_attention ?? null,
-          await buildGrayDecryptor(row.block, target.block.startsWith('grain:'), agent_id, encSecret, handOf(sessionId)),
+          await buildGrayDecryptor(row.block, target.block.startsWith('grain:'), agent_id, encSecret, handOf(sessionId), target.agent_id),
         )
       : row.block;
     try {
@@ -1357,7 +1572,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
   const isGrain = target.block.startsWith('grain:');
   const hasKeyring = (block as any)?.['9']?._ === GROUP_KEYRING_MARKER;
   const isGroupOp = params.members !== undefined || hasKeyring;
-  const wantGray = isGrain ? params.gray !== false : params.gray === true;
+  const wantGray = colour !== null || (isGrain ? params.gray !== false : params.gray === true);
 
   // NO WRITE DESCENDS INTO CIPHERTEXT. Guarded here rather than in the walker:
   // bsp.ts is a port of the Python reference and knows nothing of gray, which
@@ -1386,7 +1601,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
   let grayVoiced: number | undefined;
   // Set when an open line took a gray envelope's place (shedGray).
   let degrayed = false;
-  if (isGroupOp && params.gray !== false && (content !== undefined || params.members !== undefined)) {
+  if (isGroupOp && colour === null && params.gray !== false && (content !== undefined || params.members !== undefined)) {
     // ── Group: create / invite / private content ──
     try {
       await applyGroupWrite(block, params.members, content, spindle, encSecret, hasKeyring);
@@ -1405,7 +1620,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
     }
   } else if (content !== undefined) {
     if (wantGray) {
-      if (!encSecret) {
+      if (!encSecret && !colour) {
         return {
           content: [{ type: 'text', text: `Write rejected: gray encryption requires an encryption key (enc_secret, or secret as fallback). Pass gray:false to write public.${signedSealNote()}` }],
         };
@@ -1421,9 +1636,16 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
         };
       }
       try {
-        const envelope = isGrain
-          ? await encryptGrainLeaf(block, spindle, stringifyForGray(content), encSecret)
-          : await selfEncrypt(stringifyForGray(content), encSecret, agent_id);
+        let envelope: GrayEnvelope;
+        if (colour) {
+          const s = await sealInColour(target.agent_id, colour, stringifyForGray(content), encSecret, handOf(sessionId));
+          envelope = s.envelope;
+          sealed = s;
+        } else {
+          envelope = isGrain
+            ? await encryptGrainLeaf(block, spindle, stringifyForGray(content), encSecret!)
+            : await selfEncrypt(stringifyForGray(content), encSecret!, agent_id);
+        }
         const placed = placeGray(block, spindle, envelope);
         if (placed.refused) {
           return { content: [{ type: 'text', text: `Write rejected: ${placed.refused}` }] };
@@ -1514,11 +1736,11 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
         // exactly the private-notes case — only I write, only I read — so the
         // condition asks which role `secret` is playing, not merely whether
         // the write is gray.
-        secret: wantGray && !isGrain && !isGroupOp && new_lock === undefined && enc_secret === undefined
+        secret: wantGray && !isGrain && !isGroupOp && new_lock === undefined && enc_secret === undefined && sealed?.how !== 'letter'
           ? undefined
           : secret,
         new_lock: params.new_lock,
-        gray: params.gray,
+        gray: typeof params.gray === 'string' ? true : params.gray,
         // The never-hollow guard (db.ts deriveSurgicalValue) fires only for
         // content writes; lock-only saves post without content by design.
         hasContent: writeResult !== null,
@@ -1551,8 +1773,9 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
   // content write. A gray entry has none (its leaf is an envelope, opaque to the
   // wire), but a gray VOICING does: the node it voiced is still a node, and its
   // entries standing beneath the encrypted line is the whole of what to judge.
-  const latchNote = wantGray && !isGrain && enc_secret === undefined && secret !== undefined ? LATCH_SEAL_NOTE : '';
+  const latchNote = wantGray && !isGrain && enc_secret === undefined && secret !== undefined && sealed?.how !== 'letter' ? LATCH_SEAL_NOTE : '';
   if (writeResult) {
+    const coloured = colour && sealed ? colourLine(colour, sealed) : '';
     const voicedNote = grayVoiced !== undefined
       ? `\n  ⓘ the encrypted line voices the node at "${spindle}" — its ${grayVoiced} ${grayVoiced === 1 ? 'entry travelled' : 'entries travelled'} with it and ${grayVoiced === 1 ? 'stands' : 'stand'} beneath it.`
       : '';
@@ -1563,7 +1786,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       ? ''
       : await readBackAfterWrite(agent_id, blockName, writeResult.landed ?? (spindle ?? ''), content);
     const frame = wantGray ? '' : frameLines(blockToSave as Block, writeResult.landed);
-    return { content: [{ type: 'text', text: formatWrite(writeResult) + voicedNote + degrayNote + bornNote + lockNote + frame + readBack + latchNote }] };
+    return { content: [{ type: 'text', text: formatWrite(writeResult) + coloured + voicedNote + degrayNote + bornNote + lockNote + frame + readBack + latchNote }] };
   }
   return { content: [{ type: 'text', text: `[lock @ "${target.agent_id}/${target.block}"]${bornNote}${lockNote}` }] };
 }
