@@ -2,7 +2,7 @@
 
 **Date**: 4 November 2026
 **Lane**: weft-bee.2, weft (Claude Code, Opus 5.5, on the Mac)
-**Status**: PROPOSAL at David's word, "Write it up" (4 November). Nothing is built and no law has moved. It turns back part of `proposals/2026-11-03-threads-without-the-keyword.md` (#576), the day after it landed, at David's question about it.
+**Status**: BUILT on 4 November, at David's GO the same day. The battery ran first, and the fallback way passed its gate. `function:thread` and `ways:thread` were re-cut at 12:13Z, each archived first, and the page (happyseaurchin-home #608) and the battery (#586) were merged at 12:32Z. See "What was built", at the end. It turns back part of `proposals/2026-11-03-threads-without-the-keyword.md` (#576), the day after it landed, at David's question about it.
 
 ## The ask
 
@@ -133,3 +133,23 @@ The session that took the endings out (lane thread-loom.1) touched every one of 
 
 - **In this repo:** this file, and `scripts/thread-moves.mjs`, run as `node scripts/thread-moves.mjs <happyseaurchin-home>/threads.js`.
 - **On the beach:** a knot beneath thread 11's last line, carrying the job on from "the keyword is out of threads", with its place in David's room.
+
+## What was built
+
+At David's GO (4 November, tied at `thread:weft` 11.112111111), weft-bee handed the build to thread-loom.1, which built it the same day. weft-bee then checked it against the beach and the live page.
+
+- **The battery first** (bsp-mcp #586). The grade and the gate were committed before any mind ran. Ten uses each, one fresh claude-haiku-5-5 a use, $0.0687 for both runs.
+  - The candidate, S3 with "End your line with whose move is next: …", scored 43 of 47. Every ending in the nine was right, but the use that puts something off wrote its date in words, and the use that takes its own option rewrote that option and lost its words. It missed the gate.
+  - The fallback, #570's way with "written 2026-11-07" added, scored 44 of 47: every ending right, nine of nine well formed, the date right, nothing lost. It passed, and is `ways:thread` now.
+  - The battery's form pass reads endings again for threads opened from the re-cut (`V4_SINCE`, 2026-11-04T12:13:42Z). Threads opened from 29 October up to it are still read by position.
+- **The law and the way**, re-cut at 12:13Z, their standing texts first copied to `archive:function:thread:2026-11-04` and `archive:ways:thread:2026-11-04`.
+- **The page** (happyseaurchin-home #608):
+  - `threads.js` reads the date. A live end that waits on someone from a day not yet come is not on their cards until that day; `waiting(handle).later` lists it.
+  - A place in someone's room makes a card only when the thread's own lines carry no ending, which covers the threads tied on 3 and 4 November.
+  - A tap writes the option's words and ` · waits on <the hand that offered it>`, and still rings that hand's room.
+  - On the loom, TAKE shows the ending, and a thread put off is a green tile, "thread · later, from <date>", until its day.
+  - `mistake-proofing.html` says again what keel's page said (#600), and `spine:mistake-proofing` 1.1, 1.112, 1.13 and 1.5 were put back the same way.
+- **On the beach**: the acts still open from the morning were given their endings at about 12:50Z (`thread:weft` 12.1111111, 14.1111, 15.1111 and 4.21). Thread 11, the job that carried this, closed at 11.11211111111 with ` · complete`.
+- **The moves, played again** after the merge, on the `threads.js` the live site serves (its sha256 begins 5e30c677): ten of ten with the endings and every room empty. The "as tied today" column keeps its six misses, which is what that way does.
+
+The three points under "What this doesn't settle" still stand. A bare date is what the way teaches; "later" by a rung could follow.
