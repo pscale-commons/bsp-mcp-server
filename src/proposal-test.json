@@ -42,7 +42,7 @@
   },
   "5": {
     "_": "THE PAGE AND THE LOOK — the phase, the addresses that name the page, a crafted page's source, the look it wears and where it is pinned (function:proposal 4 and 6, ways:proposal, function:look, function:schematic 8). A program reads a page's source and its answer, and never sees it drawn; that is 6.2.",
-    "1": "PHASE: the law's 7 opens 'phase: proposal', 'phase: project' or 'phase: set aside'. A fault where it says anything else, or where nothing says it and the proposal is unlisted, since the page then refuses to draw it; a WARN where the phase stands on another line of the law.",
+    "1": "PHASE: the law's 7 opens 'phase: proposal', 'phase: project', 'phase: complete' or 'phase: set aside'. A fault where it says anything else, or where nothing says it and the proposal is unlisted, since the page then refuses to draw it; a WARN where the phase stands on another line of the law.",
     "2": "PAGE: 'page: https://…' at the law's 6, a fault where it is no address the page can follow, a WARN where a crafted page stands that the law does not name, a NOTE while it is still to come. AGREE, a WARN: the law, the spine's 2 and the list name one crafted page. STALE, a WARN: once the page answers, no line still says it is to come.",
     "3": "ANSWERS, a fault: a crafted page named on the beach answers 200, or it is a dead link there. OFFSITE, a NOTE: a page off this site, as a maker's own GitHub Pages, gets its Snazzy button only once the proposal is listed, because the list is kept under the shared project lock.",
     "4": "PREVIEW and KEY, faults: the source is the repo page and no preview export (no window.__PREVIEW__ = true), and it holds nothing that looks like a key (ways:proposal 1.111 and 1.11111).",
