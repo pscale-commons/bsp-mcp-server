@@ -47,6 +47,7 @@ import {
 export { InvalidAddressError } from './bsp.js';
 
 import { renderAddressRelation, parseTemporalLabel } from './temporal.js';
+import { isGrayEnvelope, grayMode, GRAY_NOTES, type GrayEnvelope } from './keys.js';
 
 // ── Shape vocabulary (canonical) ──
 
@@ -221,8 +222,40 @@ function semantic(node: any): string | null {
   // Numeric and boolean leaves are legal wire values (e.g. evaluation scores
   // at passport 6.2) — render their JSON form. Only null/absent stays null.
   if (typeof node === 'number' || typeof node === 'boolean') return JSON.stringify(node);
-  if (node && typeof node === 'object') return collectUnderscore(node);
+  if (node && typeof node === 'object') {
+    const env = envelopeOf(node);
+    return env ? sealedLine(env) : collectUnderscore(node);
+  }
   return null;
+}
+
+// THE GREY LINE (coloured-stigmergy, step 1; proposals/2026-11-03-coloured-
+// stigmergy-the-design.md §4.1, §12). A sealed line a reader cannot open is ONE
+// line in every shape but the whole block: the mode that sealed it, whom a grain
+// line is for, and how many bytes stand sealed — never its ciphertext and nonce,
+// which a descent and a keyless walk handed the model until 4 November 2026,
+// about 150 tokens of words nobody there could read. The whole block stays
+// byte-true, because a whole read is also the copy a whole write is made from.
+// A colour and its turn join the line at step 2.
+export function sealedLine(env: GrayEnvelope): string {
+  const mode = grayMode(env) ?? 'gray';
+  const party = mode === 'grain' && typeof env['9']['2'] === 'string' ? ` · for ${env['9']['2']}` : '';
+  return `sealed · ${mode}${party} · ${Buffer.from(env['1'], 'base64').length} bytes`;
+}
+
+/** The envelope a node stands as: the node itself, or the one its underscore
+ *  chain reaches before any string — a container voiced in gray (placeGray). */
+function envelopeOf(node: unknown): GrayEnvelope | null {
+  for (let n: any = node; n && typeof n === 'object'; n = n._) if (isGrayEnvelope(n)) return n;
+  return null;
+}
+
+/** An envelope's own fields — the ciphertext at 1, the nonce at 2, the marker at
+ *  9 — are fields of the sealed line, never positions beneath it. A shape lists
+ *  what stands beside them (the arrival stamp at 3, an entry that landed inside)
+ *  and never them. */
+function ownField(node: unknown, d: string): boolean {
+  return (d === '1' || d === '2' || d === '9') && isGrayEnvelope(node);
 }
 
 // ── Read ──
@@ -243,7 +276,7 @@ export function bspRead(
     let sem: string | null = null;
     let inner: BspReadResult | null = null;
     if (terminus && typeof terminus === 'object') {
-      sem = collectUnderscore(terminus);
+      sem = semantic(terminus);
       const hidden = terminus._;
       if (hidden && typeof hidden === 'object') {
         inner = bspRead(hidden as Block, post, pscaleAttention ?? null);
@@ -376,7 +409,7 @@ function digitChildren(node: unknown): string[] {
  *  stamp at field 3, which already rides the line as its suffix and is a
  *  field of the entry, never a position beneath it (block-conventions 4.22). */
 function ringBeneath(node: unknown): string[] {
-  const kids = digitChildren(node);
+  const kids = digitChildren(node).filter((k) => !ownField(node, k));
   return entryStamp(node) ? kids.filter((k) => k !== '3') : kids;
 }
 
@@ -504,7 +537,7 @@ function collectDisc(block: Block, targetDepth: number, floor: number): DiscEntr
       }
     }
     for (const d of '123456789') {
-      if (d in node) {
+      if (d in node && !ownField(node, d)) {
         recurse(node[d], depth + 1, walked.concat([d]));
       }
     }
@@ -528,7 +561,7 @@ function collectDescent(
     for (const [node, walkedPath] of frontier) {
       if (!node || typeof node !== 'object') continue;
       for (const d of '123456789') {
-        if (d in node) {
+        if (d in node && !ownField(node, d)) {
           const child = node[d];
           const childDepth = walkedPath.length + 1;
           results.push({
@@ -966,8 +999,54 @@ export function onRealClock(blockName: string): boolean {
   return !/^(spatial|temporal|identity):/.test(blockName);
 }
 
+// OVER THE WIRE the beach computes the shape and knows no envelope: a sealed
+// node arrives as its note, with its ciphertext, nonce and marker offered
+// beneath it as 1, 2 and 9 (pscale-beach's semanticOf and ringBeneath). The note
+// names the mode, so the grey line is drawn from it — without the byte count,
+// which the beach's shape does not carry — and the three fields are not listed
+// beneath a sealed entry: not in a point's ring when they are all it holds, and
+// not in a descent, where the marker's own "gray" at 9 names them. Nothing
+// else is hidden, so a line voiced in gray one zero deeper (§2.3) keeps every
+// field beside it. A local read never needs this: its collectors drew the line
+// from the envelope itself.
+function sealedNote(content: unknown): string | null {
+  const mode = (Object.keys(GRAY_NOTES) as Array<keyof typeof GRAY_NOTES>).find((m) => GRAY_NOTES[m] === content);
+  return mode ? `sealed · ${mode}` : null;
+}
+function greyWire(r: BspReadResult): BspReadResult {
+  const seal = <E extends { content?: string | null }>(e: E): E => {
+    const line = sealedNote(e.content);
+    return line ? { ...e, content: line } : e;
+  };
+  switch (r.shape) {
+    case 'point': {
+      if (!sealedNote(r.content)) return r;
+      const ring = r.beneath ?? [];
+      const ownRing = ring.length === 3 && ring.map((a) => a.slice(-1)).join('') === '129';
+      return { ...seal(r), ...(ownRing ? { beneath: undefined, beneath_pscale: undefined } : {}) };
+    }
+    case 'path-walk':
+      return { ...r, entries: ((r.entries as PathWalkEntry[]) ?? []).map(seal) };
+    case 'disc':
+      return { ...r, entries: ((r.entries as DiscEntry[]) ?? []).map(seal) };
+    case 'path-walk+descent': {
+      const fl = floorOf(r);
+      const above = (a: string) => a.replace(/\.?[1-9]$/, '');
+      const sealedAt = new Set([...(r.path_walk ?? []), ...(r.descent ?? [])].filter((e) => sealedNote(e.content)).map((e) => e.address));
+      const marked = new Set((r.descent ?? []).filter((e) => e.content === 'gray' && /9$/.test(e.address) && sealedAt.has(above(e.address))).map((e) => above(e.address)));
+      const own = (e: PathWalkEntry) => fl != null && e.depth > fl && /[129]$/.test(e.address) && marked.has(above(e.address));
+      return { ...r, path_walk: (r.path_walk ?? []).map(seal), descent: (r.descent ?? []).map(seal).filter((e) => !own(e)) };
+    }
+    case 'star':
+      return r.inner ? { ...r, inner: greyWire(r.inner) } : r;
+    default:
+      return r;
+  }
+}
+
 export function formatRead(r: BspReadResult, opts: { onClock?: boolean } = {}): string {
   const onClock = opts.onClock !== false;
+  r = greyWire(r);
   switch (r.shape) {
     case 'block':
       return `[whole block]\n${JSON.stringify(r.block, null, 2)}`;
