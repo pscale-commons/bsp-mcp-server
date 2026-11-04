@@ -97,32 +97,35 @@ const httpServer = createHttpServer(async (req, res) => {
     return;
   }
 
-  // THE KEY IN THE CONNECTOR (src/signin.ts): the sign-in's own addresses, then
-  // <MCP_PATH>/as/<handle>, the connector as that handle — every request there carries
-  // its token or is answered 401, which is what starts a client's sign-in. MCP_PATH
-  // itself is untouched: open and keyless.
+  // THE KEY IN THE CONNECTOR (src/signin.ts): the sign-in's own addresses, then the
+  // signed addresses — <MCP_PATH>/me, the connector as whichever handle signed in there,
+  // and <MCP_PATH>/as/<handle>, as that handle. Every request there carries its token or
+  // is answered 401, which is what starts a client's sign-in. MCP_PATH itself is
+  // untouched: open and keyless.
   if (await signinRoute(req, res, url, MCP_PATH)) return;
-  const signedAs = asHandle(url.pathname, MCP_PATH);
-  if (url.pathname !== MCP_PATH && !signedAs) {
+  const address = asHandle(url.pathname, MCP_PATH);
+  if (url.pathname !== MCP_PATH && !address) {
     res.writeHead(404);
     res.end(JSON.stringify({ error: `bsp-mcp endpoint at ${MCP_PATH}` }));
     return;
   }
-  if (signedAs) {
+  let signedAs: string | undefined;
+  if (address) {
     if (!SIGNIN_ON) {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: `this router has no sign-in; the open endpoint is ${MCP_PATH}` }));
       return;
     }
     const origin = originOf(req);
-    const auth = await authFor(req, signedAs, `${origin}${url.pathname}`);
+    const auth = await authFor(req, address, `${origin}${url.pathname}`);
     if (auth === 'unreachable') {
       res.writeHead(503, { 'Content-Type': 'application/json', 'Retry-After': '5' });
       res.end(JSON.stringify({ error: 'the beach did not answer while opening this fingerprint; try again' }));
       return;
     }
-    if (!auth) { refuseUnsigned(res, origin, MCP_PATH, signedAs); return; }
+    if (!auth) { refuseUnsigned(res, origin, MCP_PATH, address); return; }
     (req as typeof req & { auth?: typeof auth }).auth = auth;
+    signedAs = (auth.extra?.signedIn as { handle: string }).handle;
   }
 
   let body: unknown = undefined;
@@ -195,7 +198,7 @@ const httpServer = createHttpServer(async (req, res) => {
       return;
     }
     if (sessionId) delete req.headers['mcp-session-id'];
-    const transport = createSession(signedAs ?? undefined);
+    const transport = createSession(signedAs);
     await transport.handleRequest(req, res, body);
     if (transport.sessionId) transports.set(transport.sessionId, transport);
     return;
