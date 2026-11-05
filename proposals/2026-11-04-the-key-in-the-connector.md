@@ -5,7 +5,8 @@ November), lane fingerprint.key, Claude Code (Opus 5.5) on David's Mac; the reco
 goes live when the router carries `BSP_SIGNIN_SECRET` and this PR is merged. Until then nothing changes
 anywhere. Live the same day (bsp-mcp #582). **Amended the same day, §9**: the one address, `/mcp/v1/me`,
 with the handle typed on the sign-in page, and "vault" standing for the key wherever a signed call would
-name it.
+name it. **Amended again on 5 November, §10**: a signed call sets a lock only to the key itself, and a
+fingerprint is minted only for a handle whose passport stands.
 
 ## 0. David's words
 
@@ -215,7 +216,7 @@ handle is the better design."* On the two addresses side by side: *"Ah, ok, so /
   latch it holds, by passing `new_lock` with another value or empty, as anyone holding the key can. A
   misled agent could therefore move a block to a key it was handed. Refusing every `new_lock` but "vault"
   on a signed call would close that, at the cost of a signed hand founding a block under any other key.
-  That choice is David's, and this PR leaves it open.
+  That choice is David's, and this PR leaves it open. **Closed on 5 November at his word, §10.**
 - **It does not lock the archive the weaver already wrote open.** archive:portal:2026-11-04 stands
   unlatched until a signed hand latches it with `new_lock: "vault"`, a homestead its own keeper may make.
 
@@ -241,4 +242,79 @@ handle is the better design."* On the two addresses side by side: *"Ah, ok, so /
     `/as/ada` and an `/as/ada` token at `/me`; `new_lock: "vault"` founds a block the open endpoint
     cannot write and the signed hand can; `secret: "vault"` writes; "vault" through the open endpoint is
     refused.
+- The live beach was never touched.
+
+## 10. Amendment: a lock is set only to the key, and a handle must stand (5 November)
+
+**Status**: BUILT at David's word, in one PR with both parts. It goes live when merged.
+
+### 10.1 David's words
+
+Asked to explain §9.4 and why it was proposed, then asked *"Shall I move your brief to the signed
+connector, with the lock guard too?"*, David answered: *"Yes, both"*.
+
+### 10.2 What was found
+
+1. **One act on a signed connection could not be taken back.** A bad write can be repaired, because the
+   block stays under the holder's key. A lock moved to another key, or opened, cannot: the key no longer
+   opens the block, and revoking the fingerprint does not return it. The worst targets are the handle's
+   passport and shell, and its ring of fingerprints: a ring moved off the key could no longer be revoked
+   on the fingerprints page, so the connection that moved it could not be signed out there, while it
+   went on writing everywhere else with the real key. The new value would also have been typed into a
+   call, a key in plain sight. One call does it, from an agent that invents a lock for a block it thinks
+   needs one, or that follows an instruction in a block it read.
+2. **A connection signed in as "me".** On 5 November David named his connector "bsp as me" and gave it
+   the address `/mcp/v1/as/me`, after `/as/weft` and `/as/happyseaurchin`. An `/as/` address fixes the
+   handle to the word after it, so the page signed him in as a handle called `me`, its field locked and
+   nothing on it saying the address was the cause. No `passport:me` stands, so founding
+   `fingerprints:me` was bound to no passport's key and took his. Two fingerprints stood there, the
+   connection's instructions named it `me`, and the reflection showed him as `me`; he revoked both the
+   same morning, and the page, asked again, offered only `me`. A key that does not open a handle's
+   blocks still minted nothing; a handle with no blocks had nothing to refuse it with, so anyone could
+   have taken a ring for a handle not yet founded, at `/me` by typing it or at `/as/` by naming it.
+
+### 10.3 The shape
+
+- **A signed call sets a lock only to the key itself.** Where the router put the key into the call (no
+  secret, or `secret: "vault"`), any `new_lock` but `"vault"` is refused before the tool runs: another
+  key, an empty one and null alike. Moving a block to another key, or opening it, takes the key in hand.
+  A call that brings its own key, as `secret`, is untouched: the guard binds the fingerprint, not the
+  key. The connection's instructions line says so.
+- **A fingerprint is minted only for a handle that stands.** Before minting, the router reads
+  `passport:<handle>`; where none stands, the page says the typed name is not a handle on this beach and
+  mints nothing, with no ring founded.
+- **An address that fixes a handle nobody holds says so first.** At `/as/<handle>` the page reads the
+  passport before it asks for a key; where none stands it says there is no such handle on this beach and
+  gives the address to sign in as oneself, `/mcp/v1/me`. A beach that does not answer is no reason to
+  turn a sign-in away there: minting says so.
+- **The page names the field plainly.** At `/me` it reads "Your handle, the name your blocks are under".
+
+### 10.4 What it does not do
+
+- **It does not move a connector's address.** A token is checked against its fingerprint's digit, not
+  its passport, so a connection signs in as whatever its address and its page fixed. David gives his
+  connector the address `/mcp/v1/me` and types `happyseaurchin`. The `fingerprints:me` ring stays,
+  latched by his key, with both its digits revoked.
+
+### 10.5 Where it lands
+
+| file | what |
+|---|---|
+| `src/signin.ts` | the lock guard in `installSignedIn`; `passportStands` read before `mint` and before an `/as/` page; `noSuchHandle`; the page's label; the instructions line; the header and the wrapper's comment |
+| `scripts/smoke-signin.ts` | 17 checks more (below) |
+| `proposals/2026-11-04-the-key-in-the-connector.md` | this section; §9.4 closed |
+
+### 10.6 Check
+
+- `npm run build` is clean.
+- `npm run smoke:signin` passes 105 of 105:
+  - 25 on the wrapper: another key, an empty lock and null each refused with the key put in, running
+    nothing; the same with `secret: "vault"`; a call bringing its own key moves its own lock; the key set
+    to the key stands.
+  - 33 over HTTP with no beach behind the router, the page's label among them.
+  - 47 through the real beach handler run offline: at `/me`, `me` and `bob` (a handle with a journal but
+    no passport) each mint nothing and found no ring; `/as/me` is refused before any key is typed,
+    pointing at `/me`, and a sign-in posted there mints nothing; a signed call can neither move `notes:ada` to
+    another key nor open it, and the signed hand still writes it; the key in hand still moves the lock,
+    and after that the fingerprint no longer opens the block.
 - The live beach was never touched.
