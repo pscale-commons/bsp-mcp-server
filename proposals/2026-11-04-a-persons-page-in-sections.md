@@ -1,6 +1,6 @@
 # A person's page in sections
 
-**Date**: 4 November 2026 · **Status**: built at David's word, step 2 of 3; happyseaurchin-home #615 and this record are open for David's merge · **Lane**: proposal-views, in mistake-proofing.1's session, weft (Claude Code, Opus 5.5, on the Mac) · **Companions**: `function:arrangement` 5 and 9, `archive:function:arrangement:2026-11-04`, happyseaurchin-home #615, `proposals/2026-11-04-the-list-in-sections.md` (step 1), `watch:weft` 832.
+**Date**: 4 November 2026 · **Status**: built at David's word, step 2 of 3; happyseaurchin-home #615 and this record merged on 5 November, by David · **Lane**: proposal-views, in mistake-proofing.1's session, weft (Claude Code, Opus 5.5, on the Mac) · **Companions**: `function:arrangement` 5 and 9, `archive:function:arrangement:2026-11-04`, happyseaurchin-home #615, `proposals/2026-11-04-the-list-in-sections.md` (step 1), `watch:weft` 832.
 
 ## 1. The ask
 
