@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+# the raw call logs (every window and reply) are kept compressed beside the results
+runs/*/calls.jsonl
+runs/*/walk.jsonl

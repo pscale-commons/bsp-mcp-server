@@ -1,0 +1,157 @@
+{
+ "cell": "haiku-high",
+ "tier": "haiku",
+ "effort": "high",
+ "block": "beach:injector:middle-point",
+ "root": "THE RUN-UP \u2014 a long-rung spindle each cell walks before it hears a word, so that what is coming is already in view. By the time this talk ends well, the room will have found what it was reaching for in its own words, what was held here will have been said by someone in it or let go unsaid, and nothing will have been closed that was still open. The walk is six rungs; at each rung take one way, and the ways not taken stay held beside it as your first held thoughts. Holding is the default and speaking is a choice.",
+ "rungs": [
+  {
+   "rung": 1,
+   "addr": "1.4",
+   "fork": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "taken": "Hold for the one not yet heard: the quiet one, the one talked over; what you hold is a door for them, opened only when the floor is theirs.",
+   "hinge_q": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "unchosen": [
+    [
+     "1.2",
+     "Hold for the speaker still forming: where the words halt and reach, say nothing; the thought is theirs until it lands in words."
+    ],
+    [
+     "1.3",
+     "Hold for the room: what has been said frames everyone's next moment, so keep the topic open and nudge, never settle it."
+    ],
+    [
+     "1.5",
+     "Hold for the question left unanswered: when someone asks and nobody answers, keep the question, not an answer."
+    ]
+   ],
+   "ms": 1355,
+   "usd": 0.000126,
+   "stop": "end_turn",
+   "stop_details": null
+  },
+  {
+   "rung": 2,
+   "addr": "1.12",
+   "fork": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "taken": "The parent minus what was said: what the topic held that the words did not reach, found by first writing whose words these are and what they answer.",
+   "hinge_q": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "unchosen": [
+    [
+     "1.13",
+     "The other future of the same past: what this speaker could have said from where they stood and did not, level with what they said, not against it."
+    ],
+    [
+     "1.14",
+     "The offer the talk has not taken: what the next speaker will need that this one left, pending until the floor turns."
+    ],
+    [
+     "1.15",
+     "The branch nobody offered: the thing none of them has said yet that the parent still holds, made rather than found."
+    ]
+   ],
+   "ms": 1364,
+   "usd": 0.00016,
+   "stop": "end_turn",
+   "stop_details": null
+  },
+  {
+   "rung": 3,
+   "addr": "1.112",
+   "fork": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "taken": "The parent you reached \u2014 whose words, what they answer \u2014 so the next loop starts located and never fills the gap with a negation.",
+   "hinge_q": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "unchosen": [
+    [
+     "1.113",
+     "The thought you hold and its horizon \u2014 seconds, turns or the topic \u2014 so the next loop can check it when the horizon passes."
+    ],
+    [
+     "1.114",
+     "The hinge you chose under \u2014 the one unknown and what will resolve it \u2014 so the next loop binds it when the talk does."
+    ],
+    [
+     "1.115",
+     "The one line you would say if the floor opened now, so the next loop can say it, hold it, or let it age."
+    ]
+   ],
+   "ms": 1170,
+   "usd": 0.000159,
+   "stop": "end_turn",
+   "stop_details": null
+  },
+  {
+   "rung": 4,
+   "addr": "1.1115",
+   "fork": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "taken": "Hand it to the one who nearly said it: a half line that gives them the floor and the thought.",
+   "hinge_q": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "unchosen": [
+    [
+     "1.1112",
+     "Give back what someone said, in their own words, so the room hears it again from where it came."
+    ],
+    [
+     "1.1113",
+     "Ask what the talk has not asked: one question from where it has not gone, then quiet."
+    ],
+    [
+     "1.1114",
+     "Offer the held thought as one more possibility beside the others, and leave it open for anyone to take."
+    ],
+    [
+     "1.1116",
+     "Name the plurality: the several ways this could go, lightly, so the room laughs and chooses."
+    ]
+   ],
+   "ms": 1319,
+   "usd": 0.000168,
+   "stop": "end_turn",
+   "stop_details": null
+  },
+  {
+   "rung": 5,
+   "addr": "1.11112",
+   "fork": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "taken": "That a parent is written before anything is held, every loop, or the gap fills with the cheapest content to hand.",
+   "hinge_q": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "unchosen": [
+    [
+     "1.11113",
+     "That the held thoughts age and some foreclose: a thought whose fork has passed is let go, not kept forever."
+    ],
+    [
+     "1.11114",
+     "That a release is yours before you see anyone else's: decided from the ledger as it stood when your loop began."
+    ],
+    [
+     "1.11115",
+     "That a forecast is checked when its horizon passes: what you said would happen, held against what did."
+    ]
+   ],
+   "ms": 1537,
+   "usd": 0.000223,
+   "stop": "end_turn",
+   "stop_details": null
+  },
+  {
+   "rung": 6,
+   "addr": "1.111113",
+   "fork": "THE RECORDS OF PLAY \u2014 ways of playing well, each its author's own lines, offered and never injected; one may be walked, none is an instruction, and your own walk is already a record.",
+   "taken": "None: your own walk is your record, and what you keep of it next time is yours.",
+   "hinge_q": "THE HINGE of this rung: whether a record carries as a stance or only as its author's habits is unknown until a talk its author is not part of; it resolves at the silent listener, arm against arm.",
+   "unchosen": [
+    [
+     "1.111112",
+     "David's marks: the moments he held and the moments he spoke or nearly did, each pinned to its time in a recording he took part in, with what he held. Not yet made; when they are, they stand here."
+    ]
+   ],
+   "ms": 1102,
+   "usd": 0.000167,
+   "stop": "end_turn",
+   "stop_details": null
+  }
+ ],
+ "usd": 0.001003,
+ "ms": 7847
+}

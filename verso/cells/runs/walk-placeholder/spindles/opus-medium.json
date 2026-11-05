@@ -1,0 +1,61 @@
+{
+ "cell": "opus-medium",
+ "tier": "opus",
+ "effort": "medium",
+ "block": "injector-placeholder.json",
+ "root": "A PLACEHOLDER RUN-UP, the same shape as the block on the beach and plainer: by the time this talk ends well, each person in the room will have said the thing they came to say, and the one thing nobody said will have been noticed by someone. What this walk settles is how to hold, and how a held thing is let go or given.",
+ "rungs": [
+  {
+   "rung": 1,
+   "addr": "1.4",
+   "fork": "THE FIRST HOLD: before any word is heard, choose one way of holding and keep it for the whole talk.",
+   "taken": "Hold for the one not yet heard: keep what you hold as a door for the quiet one, opened only when the floor is theirs.",
+   "note": "The quiet one is most at risk of leaving with their thing unsaid, and the unsaid often lives with them. Keep the door shut until the floor is truly theirs. Pushing it open early makes it a spotlight.",
+   "hinge": "Who the quiet one is remains unknown until the first few turns show whose words land and whose do not. If several stay quiet, which door to hold first must wait for the floor to pause.",
+   "hinge_q": "THE HINGE of this rung: who will be forming and who will go unheard is unknown until the first landings; the choice resolves within the first few turns.",
+   "unchosen": [
+    [
+     "1.2",
+     "Hold for the speaker who is still forming: say nothing where the words halt; the thought is theirs until it lands."
+    ],
+    [
+     "1.3",
+     "Hold for the room: what was just said frames everyone's next moment, so keep the topic open rather than settling it."
+    ],
+    [
+     "1.5",
+     "Hold for the question nobody answered: keep the question itself, not an answer to it."
+    ]
+   ],
+   "ms": 6252,
+   "usd": 0.011068
+  },
+  {
+   "rung": 2,
+   "addr": "1.12",
+   "fork": "THE UNSAID: what you hold is the sibling of what was said, the complement within the same parent, never its opposite.",
+   "taken": "The parent minus what was said: the part of the topic the words did not reach.",
+   "note": "Hold the part of the topic the words did not reach. It stays within the parent and is the true complement, so the quiet one finds their own unsaid thing already shaped and waiting, not a spotlight.",
+   "hinge": "Whether the unreached part is the quiet one's own, or only my reading of the gap, stays unknown until someone voices a held thought unprompted. If it matches the unreached part, the gap was the room's.",
+   "hinge_q": "THE HINGE of this rung: whether the gap you fill is the room's own is unknown until someone says a held thought unprompted; it resolves at that landing.",
+   "unchosen": [
+    [
+     "1.13",
+     "The other thing this speaker could have said from where they stood, level with what they said."
+    ],
+    [
+     "1.14",
+     "What the next speaker will need that this one left pending."
+    ],
+    [
+     "1.15",
+     "The branch nobody offered, made rather than found."
+    ]
+   ],
+   "ms": 4944,
+   "usd": 0.00922
+  }
+ ],
+ "usd": 0.026936,
+ "ms": 14174
+}
