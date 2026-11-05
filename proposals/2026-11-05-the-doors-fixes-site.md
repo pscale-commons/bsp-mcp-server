@@ -1,7 +1,7 @@
 # The doors' fixes, the site's share: the pass on every page, no key in plain text, the gallery's vault at its own beach under two keys, and the security page made true
 
 **Date**: 5 November 2026
-**Lane**: fixes.site, weft (Claude Code on the Mac, Opus 5.5 at max effort), one of the lanes cut from the battery's §8 at David's word, beside the router (bsp-mcp #604), the beach package, the mirror, and the derived latch, designed first and not built here.
+**Lane**: fixes.site, weft (Claude Code on the Mac, Opus 5.5 at max effort), one of the lanes cut from the battery's §8 at David's word, beside the router (bsp-mcp #604), the beach package (pscale-beach #108), the mirror, and the derived latch, designed first and not built here.
 **Status**: built on happyseaurchin-home #620, https://github.com/happyseaurchin/happyseaurchin-home/pull/620 (branch `claude/doors-fixes-site-ad0277`), checked headless and in the browser, against a local members' beach and the router's own vectors; not merged, so nothing is live yet. This file is the record, proposals only: merging it redeploys nothing. The knot is at thread:weft 17.11143, beside the router's at 17.11141 and the package's at 17.11142.
 
 ## 0. David's words
@@ -171,10 +171,17 @@ The first is the smallest step, and lands with the derived latch. The second nee
 - **`theme.js` siteKeys:** 28 checks headless, all passed (§3).
 - **`theme.js` sitePass** at a local members' beach: 25 checks headless, all passed (§2).
 - **`vault.js`:** `node scripts/check-vault.mjs`, 33 passed; bsp-mcp `smoke-gray-vectors.ts` with this `vault.js`, 100 passed; the gallery walked, 28 passed (§5).
-- **Every changed page** at 1280 light and 390 dark, headless, with reads from the live beach and every write refused: §SMOKE§.
+- **Every changed page** at 1280 light and 390 dark, headless, with reads from the live beach and every write refused: 29 pages, 58 views, each page loaded twice so the second load found the move already made. No script error, no console error, no navigation error, no sideways scroll, no write attempted, each in the theme asked for, and no key left in plain text.
 - **In the browser** (the app's pane, served from the worktree):
   - `beach-security`, light and dark;
   - the gallery's key card at 1280 light and 390 dark. Its "watch this table" button had laid the page out 600 wide on a phone before this change, and its service select ran past the card. Both were capped at their row.
+  - `/page`, recency, the String and `beach-security`.
+- **Phone width.** Four pages I changed already scrolled sideways at 390 on main c5054a8, measured on a copy of main:
+  - `/page`, by 60px: a long handle in its heading, and a line's text that could not shrink;
+  - recency, by 200px: a voice's row of places beside its words;
+  - mindflow's byok and explorer, by 808px and 131px: their control bars.
+
+  Each now wraps, on recency and mindflow only below 640 and 720 wide. At 1280 the row layouts were measured identical to main's.
 - **Keys:** only throwaway keys on local beaches. No key is in this file, the PR, a commit or a block.
 
 ## 10. Provenance
