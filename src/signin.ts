@@ -38,6 +38,7 @@ import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { DEFAULT_BEACH, loadBlock, resolveFederationOrigin, saveBlock } from './db.js';
 import { declareHand, handOf } from './looks.js';
 import { isDoorRefusal } from './pass.js';
+import { deriveLatch } from './keys.js';
 
 const SECRET = process.env.BSP_SIGNIN_SECRET ?? '';
 /** Sign-in stands only on a deploy that carries its secret. */
@@ -591,10 +592,21 @@ const MARK = "[this connection's key]";
 /** The word a signed call writes wherever it would name the key. */
 const VAULT = 'vault';
 const KEY_FIELDS = ['secret', 'enc_secret', 'new_lock'] as const;
-/** Every text a signed call returns, with the key taken out wherever it stands. */
-function withoutKey(res: any, key: string): any {
-  if (key.length < 6 || !res || !Array.isArray(res.content)) return res;
-  return { ...res, content: res.content.map((c: any) => (c && typeof c.text === 'string' && c.text.includes(key) ? { ...c, text: c.text.split(key).join(MARK) } : c)) };
+/** Every text a signed call returns, with the key taken out wherever it stands — and the latch
+ *  derived from it (proposals/2026-11-05-the-derived-latch.md §6), derived only when the text
+ *  holds a 44-character base64 run that could be it, once a session. */
+async function withoutKey(res: any, who: { handle: string; key: string }): Promise<any> {
+  if (who.key.length < 6 || !res || !Array.isArray(res.content)) return res;
+  const keys = [who.key];
+  if (res.content.some((c: any) => c && typeof c.text === 'string' && /[A-Za-z0-9+/]{43}=/.test(c.text))) keys.push(await deriveLatch(who.key, who.handle));
+  return {
+    ...res,
+    content: res.content.map((c: any) => {
+      if (!c || typeof c.text !== 'string') return c;
+      const text = keys.reduce((t, k) => (t.includes(k) ? t.split(k).join(MARK) : t), c.text);
+      return text === c.text ? c : { ...c, text };
+    }),
+  };
 }
 
 function isZodShape(a: unknown): a is Record<string, unknown> {
@@ -647,7 +659,7 @@ export function installSignedIn(server: McpServer): void {
       }
       const call = params ? [params, ...h.slice(1)] : h;
       const res = injected ? await fromSignIn.run(true, () => handler(...call)) : await handler(...call);
-      return withoutKey(res, who.key);
+      return withoutKey(res, who);
     };
     return (orig as any)(...args);
   };

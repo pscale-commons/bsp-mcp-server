@@ -22,9 +22,11 @@ import { z } from 'zod';
 import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { Block, writeAt, readAt } from '../bsp.js';
-import { loadBlock, saveBlock, isFederatedOwner, DEFAULT_BEACH } from '../db.js';
+import { loadBlock, saveBlock, isFederatedOwner, resolveFederationOrigin, indexNames, DEFAULT_BEACH } from '../db.js';
+import { isDerived, markerText, stampNow, forgetNine, forgetSwitched, refusedBlocks, lockPost, writeRaw, sweep, type Swept } from '../latch.js';
 import {
   deriveKeypair,
+  deriveLatch,
   formatPublicKeys,
   keysMatch,
   signKeyRotation,
@@ -40,6 +42,7 @@ export const keyPublishParamsSchema = {
   prior_secret: z.string().optional().describe('Rotation only: the PRIOR encryption secret (it derived the currently-published keypair). Server derives the prior keypair and signs the rotation message internally.'),
   signature: z.string().optional().describe('Rotation only: precomputed base64 Ed25519 sig over "pscale_key_rotation:{handle}:{new_x25519_b64}:{new_ed25519_b64}", made with the prior secret key.'),
   agent_id: z.string().optional().describe(`URL of the beach hosting the passport. Defaults to ${DEFAULT_BEACH}. The passport block name is "passport:<handle>" per the role-with-handle convention.`),
+  latch: z.enum(['derived', 'word']).optional().describe('THE SWITCH (proposals/2026-11-05-the-derived-latch.md §5). "derived" moves this handle\'s latches at this beach off the word onto the latch derived from it, so no beach is sent the word again: the marker at passport 9.3 first, then the passport, then every block named for the handle, each probed with no key first so an open block is never latched; run again, it also moves the blocks this session was refused at. "word" runs the same steps back. secret is the word that derives the halves at 9 (or, for a holder whose latch was another key, that key, with the word as enc_secret). A switched handle changes its word only with latch "derived" and prior_secret, since every latch moves with it.'),
 };
 
 /**
@@ -60,6 +63,7 @@ type KeyPublishParams = {
   prior_secret?: string;
   signature?: string;
   agent_id?: string;
+  latch?: 'derived' | 'word';
 };
 
 // THE DOOR (src/pass.ts; protocol 2.8): at a members' beach this call stands with the hand it
@@ -108,14 +112,21 @@ async function handleKeyPublishInner(params: KeyPublishParams): Promise<{ conten
   }
 
   const existingKeys = await getPublicKeysFromBeach(beach, handle);
+  const old9: any = (row.block as any)?.['9'];
+  const wasDerived = isDerived(old9);
+  const changes = !!existingKeys && !keysMatch(existingKeys, newPubKeys);
+  // A switched handle's latches are all derived from the word its keys came from: a new word moves them all.
+  if (wasDerived && changes && !(params.latch === 'derived' && prior_secret)) {
+    return { content: [{ type: 'text', text: `Rotation rejected: ${blockName} says its latch is derived (9.3), so every latch it holds comes from the word these keys came from, and a new word moves them all. Pass latch: "derived" with prior_secret (the old word) and secret (the old word, which proves the passport today), and the switch moves every latch from the old word's latch to the new one's. Nothing was written.` }] };
+  }
+  if (params.latch === 'word' && !wasDerived) {
+    return { content: [{ type: 'text', text: `Nothing to switch back: ${blockName} carries no "latch: derived" at 9.3, so its latches stand on the word already. Nothing was written.` }] };
+  }
 
-  if (existingKeys && keysMatch(existingKeys, newPubKeys)) {
-    return {
-      content: [{
-        type: 'text',
-        text: `Keys verified. Your secret derives the same keypair. Ready to send and open grays.\n\nx25519: ${newPubKeys.x25519}\ned25519: ${newPubKeys.ed25519}`,
-      }],
-    };
+  if (existingKeys && !changes) {
+    const verified = `Keys verified. Your secret derives the same keypair. Ready to send and open grays.\n\nx25519: ${newPubKeys.x25519}\ned25519: ${newPubKeys.ed25519}`;
+    if (!params.latch) return { content: [{ type: 'text', text: verified }] };
+    return { content: [{ type: 'text', text: `${verified}\n\n${await theSwitch(params, beach, encSecret, old9, wasDerived)}` }] };
   }
 
   if (existingKeys) {
@@ -151,7 +162,8 @@ async function handleKeyPublishInner(params: KeyPublishParams): Promise<{ conten
   const block = row.block as Block;
   // Spine-legal published-keys shape ({_, 1: ed25519, 2: x25519}) so the beach
   // shape gate accepts the write — a bare {x25519, ed25519} object is rejected.
-  writeAt(block, '9', publicKeysToSpine(newPubKeys) as any);
+  // The latch's form at 9.3 rides forward: a republish never drops the marker.
+  writeAt(block, '9', { ...publicKeysToSpine(newPubKeys), ...(typeof old9?.['3'] === 'string' ? { '3': old9['3'] } : {}) } as any);
   // Surgical write at spindle "9" with the new key object.
   await saveBlock(beach, blockName, block, {
     spindle: '9',
@@ -159,10 +171,7 @@ async function handleKeyPublishInner(params: KeyPublishParams): Promise<{ conten
     secret,
   });
 
-  return {
-    content: [{
-      type: 'text',
-      text: `${existingKeys ? 'Keys rotated' : 'Keys published'} at passport position 9.
+  const published = `${existingKeys ? 'Keys rotated' : 'Keys published'} at passport position 9.
 
 handle:    ${handle}
 beach:     ${beach}
@@ -170,9 +179,61 @@ block:     ${blockName}
 x25519:    ${newPubKeys.x25519}
 ed25519:   ${newPubKeys.ed25519}
 
-Secret discarded. Re-derive with the same secret on every use.`,
-    }],
-  };
+Secret discarded. Re-derive with the same secret on every use.`;
+  if (!params.latch) return { content: [{ type: 'text', text: published }] };
+  return { content: [{ type: 'text', text: `${published}\n\n${await theSwitch(params, beach, encSecret, old9, wasDerived)}` }] };
+}
+
+/**
+ * THE SWITCH (proposals/2026-11-05-the-derived-latch.md §5.2), with the word in hand: the marker at
+ * 9.3 first, so every door that reads it from then on sends the derived latch; the passport's root;
+ * the sweep of every block named for the handle at this beach, and of the blocks this session was
+ * refused at, each probed with no key so an open block is never latched; then the marker says swept.
+ * "word" runs it back. Every write here is the switch's own, under the form it names (writeRaw,
+ * lockPost), and no reply carries a key.
+ */
+async function theSwitch(params: KeyPublishParams, beach: string, word: string, old9: any, wasDerived: boolean): Promise<string> {
+  const { handle, secret, prior_secret } = params;
+  const blockName = `passport:${handle}`;
+  const origin = await resolveFederationOrigin(beach);
+  if (!origin) return `The switch did not run: no beach answered at ${beach}.`;
+  const L = await deriveLatch(word, handle);
+  const named = (await indexNames(origin)).filter((n) => n !== blockName && n.endsWith(`:${handle}`) && !/^(sed|grain|archive):/.test(n));
+  const blocks = [...new Set([...named, ...refusedBlocks(origin, handle)])];
+  const tally = (s: Swept) =>
+    `${s.moved.length} moved${s.already.length ? `, ${s.already.length} moved already` : ''}; ${s.open.length} open and left so (a room is never latched)` +
+    (s.refused.length ? `; ${s.refused.length} under another key and left: ${s.refused.join(', ')}` : '') +
+    (s.skipped.length ? `; ${s.skipped.length} not swept: ${s.skipped.join(', ')}` : '');
+
+  if (params.latch === 'word') {
+    const back = await sweep(origin, blocks, L, secret);
+    const root = await lockPost(origin, blockName, { secret: L, new_lock: secret });
+    if (!root.ok) return `The switch back stopped at the passport (${root.error}); the blocks: ${tally(back)}. Run it again.`;
+    const nine: any = { _: old9?._ ?? publicKeysToSpine({ x25519: '', ed25519: '' })._, '1': old9?.['1'], '2': old9?.['2'] };
+    const w = await writeRaw(origin, blockName, '9', nine, secret);
+    forgetSwitched(origin, handle);
+    forgetNine(origin, handle);
+    return `Switched back: ${blockName} answers to the word again${w.ok ? ' and 9.3 is gone' : `, but 9.3 still stands (${w.error})`}; the blocks named for ${handle}: ${tally(back)}.`;
+  }
+
+  // The form the latches stand in now: the first switch finds them on the word (or on an older key);
+  // a new word finds them on the old word's latch; a run again finds the passport moved already.
+  const from = !wasDerived ? secret : prior_secret ? await deriveLatch(prior_secret, handle) : L;
+  const since = (wasDerived && typeof old9?.['3'] === 'string' && /since (\S+)/.exec(old9['3'])?.[1]) || stampNow();
+  if (!wasDerived) {
+    const m = await writeRaw(origin, blockName, '9.3', markerText(handle, since), from);
+    if (!m.ok) return `Nothing was switched: the marker could not be written at ${blockName} 9.3 (${m.error}).`;
+  }
+  forgetNine(origin, handle);
+  if (from !== L) {
+    const root = await lockPost(origin, blockName, { secret: from, new_lock: L });
+    if (!root.ok) return `The marker stands at ${blockName} 9.3 but the passport did not move (${root.error}): run the switch again with the same word.`;
+  }
+  // A run again sweeps what still stands on the word; a first switch or a new word, what stands on the old form.
+  const swept = await sweep(origin, blocks, wasDerived && !prior_secret ? secret : from, L, wasDerived && !prior_secret);
+  const done = await writeRaw(origin, blockName, '9.3', markerText(handle, since, stampNow()), L);
+  forgetNine(origin, handle);
+  return `Switched: ${handle}'s latches at ${origin} are derived from the word, so no beach is sent the word again (${blockName} 9.3${done.ok ? ', swept' : ` stands, not yet swept: ${done.error}`}). The blocks named for ${handle}: ${tally(swept)}. A block found later that still answers to the word is refused with its name; run this again to move it.`;
 }
 
 // Suppress unused-import warning if readAt isn't used directly.

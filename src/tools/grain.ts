@@ -33,6 +33,7 @@ import { pairId, determineSide } from '../locks.js';
 // for the verify-only dry-runs; the battery's live vector pins the two
 // derivations together (085d6efa34a97d66 — the first sibling grain).
 import { grainReach } from '../pscale-wire.js';
+import { latchFor } from '../latch.js';
 
 // ── Casing guard ──
 
@@ -240,13 +241,15 @@ A second call with these args would be rejected as "your side already exists".`,
   if (!origin) {
     return { content: [{ type: 'text', text: `Federated grain reach failed: No beach at ${beach} (also tried beach.<host>). Site is not federated.` }] };
   }
-  refuseKeyInPayload({ description, my_side_content }, [my_passphrase]);
+  // The derived latch (src/latch.ts): a side is latched by its holder's word, sent as its derived form where it has switched.
+  const sideLatch = (await latchFor(origin, `grain:${pid}`, my_passphrase, [handle])).send;
+  refuseKeyInPayload({ description, my_side_content }, [my_passphrase, sideLatch]);
   const result = await grainReach(origin, {
     handle,
     partner: partner_handle,
     description,
     sideContent: my_side_content,
-    passphrase: my_passphrase,
+    passphrase: sideLatch,
   });
   if (!result.ok) {
     return { content: [{ type: 'text', text: `Federated grain reach rejected: ${result.error ?? 'unknown reason'}` }] };

@@ -27,6 +27,7 @@
 import { Block, readAt, floorDepth, parseSpindle } from './bsp.js';
 import { SENTINEL_BLOCK_MAP } from './sentinels.js';
 import { publicKeysFromSpine } from './keys.js';
+import { latchFor, sendUnder } from './latch.js';
 import type { BlockStore, PMap } from './genus.js';
 // The wire — ONE implementation of the beach HTTP contract (canonical here;
 // xstream re-vendors it at each WIRE_VERSION; battery in pscale-wire-contract.ts).
@@ -599,32 +600,25 @@ async function saveBlockToBeach(
   }
   const userSpindle = opts.spindle;
   const isWholeBlock = !userSpindle || userSpindle === '' || userSpindle === '*';
-  const wireOpts = {
-    timeoutMs: BEACH_TIMEOUT_MS,
-    secret: opts.secret,
-    newLock: opts.new_lock,
-    gray: opts.gray,
-  };
-  let born = false;
-  if (isWholeBlock) {
+  const cleanedSpindle = isWholeBlock ? '' : userSpindle.replace(/\*$/, '');
+  const value = isWholeBlock ? block : deriveSurgicalValue(block, cleanedSpindle, opts.hasContent === true);
+  // THE DERIVED LATCH (src/latch.ts): where the hand's passport says its latch is derived and the
+  // string derives its halves, the beach is sent the latch derived from the word, never the word.
+  const sec = await latchFor(origin, blockName, opts.secret);
+  const lock = typeof opts.new_lock === 'string' && opts.new_lock !== '' ? await latchFor(origin, blockName, opts.new_lock) : null;
+  refuseKeyInPayload(value, [opts.secret, opts.new_lock, sec.send, lock?.send]);
+  const post = (secret: string | undefined) => {
+    const wireOpts = { timeoutMs: BEACH_TIMEOUT_MS, secret, newLock: lock ? lock.send : opts.new_lock, gray: opts.gray };
     // Whole-block replace, read-back confirmed by the wire — the discipline
     // the seat has carried since wake-1 ("a lost write is a lost wake") now
     // holds at this door too; this path previously fired and trusted.
-    refuseKeyInPayload(block, [opts.secret, opts.new_lock]);
-    const r = await wire.saveWhole(origin, blockName, block, wireOpts);
-    if (!r.ok) throw beachRejection('save', r, origin);
-    born = r.born === true;
-  } else {
-    const cleanedSpindle = userSpindle.replace(/\*$/, '');
-    const value = deriveSurgicalValue(block, cleanedSpindle, opts.hasContent === true);
-    refuseKeyInPayload(value, [opts.secret, opts.new_lock]);
-    const r = await wire.writeAt(origin, blockName, cleanedSpindle, value, {
-      ...wireOpts,
-      pscaleAttention: opts.pscale_attention ?? null,
-    });
-    if (!r.ok) throw beachRejection('save', r, origin);
-    born = r.born === true;
-  }
+    return isWholeBlock
+      ? wire.saveWhole(origin, blockName, block, wireOpts)
+      : wire.writeAt(origin, blockName, cleanedSpindle, value, { ...wireOpts, pscaleAttention: opts.pscale_attention ?? null });
+  };
+  const r = await sendUnder(origin, blockName, sec, post);
+  if (!r.ok) throw beachRejection('save', r, origin);
+  const born = (r as { born?: boolean }).born === true;
   const now = new Date().toISOString();
   return {
     id: `${ownerId}/${blockName}`,
@@ -722,17 +716,20 @@ export async function appendToBeach(
   if (!origin) {
     throw new Error(`No beach at ${ownerId} (also tried beach.<host>). Site is not federated; cannot append.`);
   }
+  // The derived latch, as a write takes it (src/latch.ts).
+  const sec = await latchFor(origin, t.block, secret);
+  refuseKeyInPayload(entry, [sec.send]);
   // The wire owns the body (append flag, node-scoped spindle, the resolver
   // fields) and hands the two 409s that are ANSWERS — already_resolved,
   // window_moved — back discriminated; this door reshapes them into its
   // existing return contract.
-  const r = await wire.append(origin, t.block, entry, {
+  const r = await sendUnder(origin, t.block, sec, (s) => wire.append(origin, t.block, entry, {
     timeoutMs: BEACH_TIMEOUT_MS,
-    secret,
+    secret: s,
     spindle,
     resolveWindow,
     resolveSeen,
-  });
+  }));
   if (r.alreadyResolved) {
     return { alreadyResolved: true, resolvedBy: r.resolvedBy ?? null, window: r.window, landed: r.landed ?? null };
   }
