@@ -9,12 +9,33 @@ the cell in its own words was reasoning extraction, refused on Opus 5.5 and Sonn
 hinge is the block's own 8, recorded by the host beside the choice (hinge_q). After the last rung the
 cell holds a spindle. Its unchosen options become its first held thoughts, their horizon the hinge.
 Four arms: walked, yoked, neutral, none.
+
+THE HEAD of the walk window is the frame — the rules of the table, the same head every loop reads —
+then "Reply as asked.". Standing alone, with no word of what it is for, the window was refused on Opus
+5.5 and Sonnet 5.5 at rung 3 as cyber (the choice alone asked), and a one-sentence head was refused
+at rung 1; under the frame both walked every rung (walk-probe.py, 5 November 2026, $0.10). So a cell
+walks the run-up as it listens: under the table's rules. settings.injector.head = "bare" restores
+the old head, for comparison only.
 """
 import asyncio, json, os, re, urllib.error, urllib.request
 
 from door import parse_json
+from frame import frame_text
 
-SYSTEM = [{"type": "text", "text": "Reply as asked."}]
+BARE = [{"type": "text", "text": "Reply as asked."}]
+SYSTEM = BARE   # a probe may set this to a head of its own; otherwise head_for(settings) decides
+_heads = {}
+
+
+def head_for(settings):
+    """The walk's system blocks: the frame (cached) then 'Reply as asked.'; BARE when injector.head is 'bare'."""
+    if settings.get("injector", {}).get("head") == "bare":
+        return BARE
+    key = (settings["beach"], settings["shell"], settings.get("line_words"))
+    if key not in _heads:
+        _heads[key] = [{"type": "text", "text": frame_text(*key), "cache_control": {"type": "ephemeral"}},
+                       {"type": "text", "text": "Reply as asked."}]
+    return _heads[key]
 
 
 def child(addr, k):
@@ -89,13 +110,14 @@ async def walk(cid, tier, effort, block, source, door_fn, spend, log, settings):
     """One cell's walk: a spindle of the root and one line per rung, with the unchosen options kept."""
     root = str(block.get("_", ""))
     route, usd, ms = [], 0.0, 0
+    head = SYSTEM if SYSTEM is not BARE else head_for(settings)
     for i, (addr, node) in enumerate(rungs(block), 1):
         window, opts = render(root, route, addr, node)
         if not opts:
             break
         taken = None
         for attempt in (1, 2):
-            r = await door_fn(tier, effort, SYSTEM, window, int(settings["max_tokens"]), spend, "walk", log,
+            r = await door_fn(tier, effort, head, window, int(settings["max_tokens"]), spend, "walk", log,
                               meta={"cell": cid, "rung": i, "addr": addr, "attempt": attempt, "block": source})
             usd += r["usd"]
             ms += r["ms"]

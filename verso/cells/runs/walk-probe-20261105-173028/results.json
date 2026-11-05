@@ -1,0 +1,93 @@
+{
+ "rung1": {
+  "bare": {
+   "opus": {
+    "stop": "end_turn",
+    "category": null,
+    "choice": "1.2",
+    "usd": 0.002656,
+    "ms": 1980
+   },
+   "sonnet": {
+    "stop": "end_turn",
+    "category": null,
+    "choice": "1.3",
+    "usd": 0.001328,
+    "ms": 1663
+   }
+  },
+  "line": {
+   "opus": {
+    "stop": "refusal",
+    "category": "cyber",
+    "choice": null,
+    "usd": 0.002616,
+    "ms": 1512
+   },
+   "sonnet": {
+    "stop": "end_turn",
+    "category": null,
+    "choice": "1.2",
+    "usd": 0.001438,
+    "ms": 1436
+   }
+  },
+  "frame": {
+   "opus": {
+    "stop": "end_turn",
+    "category": null,
+    "choice": "1.2",
+    "usd": 0.013914,
+    "ms": 2215
+   },
+   "sonnet": {
+    "stop": "end_turn",
+    "category": null,
+    "choice": "1.2",
+    "usd": 0.006397,
+    "ms": 1554
+   }
+  }
+ },
+ "whole": {
+  "bare": {
+   "opus": {
+    "rungs": 2,
+    "route": "1.2 1.12",
+    "refused": 0,
+    "usd": 0.016256,
+    "ms": 12573
+   },
+   "sonnet": {
+    "rungs": 2,
+    "route": "1.3 1.14",
+    "refused": 0,
+    "usd": 0.006188,
+    "ms": 6133
+   }
+  },
+  "frame": {
+   "opus": {
+    "rungs": 6,
+    "route": "1.4 1.14 1.112 1.1115 1.11112 1.111113",
+    "refused": 0,
+    "usd": 0.032376,
+    "ms": 17876
+   },
+   "sonnet": {
+    "rungs": 6,
+    "route": "1.2 1.12 1.112 1.1115 1.11112 1.111113",
+    "refused": 0,
+    "usd": 0.013616,
+    "ms": 10090
+   }
+  }
+ },
+ "spend": {
+  "usd": 0.0968,
+  "calls": {
+   "walk": 27,
+   "loop": 0
+  }
+ }
+}
