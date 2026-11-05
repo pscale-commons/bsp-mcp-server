@@ -1,0 +1,13 @@
+# verso/voices — Python 3.12 on an Apple Silicon Mac (MLX runs only there).
+# The direct dependencies, pinned to the versions measured on 5 November 2026.
+mlx==0.32.4               # Apple's array framework: whisper on the Mac's GPU
+mlx-whisper==0.4.3        # whisper large-v3-turbo with word timestamps
+silero-vad==6.2.3         # voice activity, no token: the floor
+torch==2.15.0             # Silero and pyannote run on it
+torchaudio==2.11.1
+pyannote.audio==4.0.7     # Community-1 with a token; its ungated WeSpeaker model without
+huggingface_hub==2.4.0    # fetches the weights; finds HF_TOKEN or ~/.cache/huggingface/token
+numpy==2.5.4
+scipy==1.18.1             # clustering and the best label mapping
+sounddevice==0.5.6        # the microphone
+websockets==17.4          # ws://localhost:8766

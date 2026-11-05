@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.wav
+# Runs stay on the Mac. Only the stand-in's record is kept: no person is in it.
+runs/*
+!runs/standin-1/
