@@ -20,6 +20,10 @@
  * is set only to the key itself (`new_lock: "vault"`), never moved to another key or opened. A
  * fingerprint is minted only for a handle whose passport stands on the beach.
  *
+ * THE PAGE SAYS WHAT IT IS (David, 5 November 2026: "There is no sign in process for the beach. It is
+ * just a way to make it convenient and safer so that the LLM doesn't see the passphrase"): the person
+ * meets "Hide your key from your AI" and presses "Hide my key"; OAuth's words stay inside the protocol.
+ *
  * NOTHING SECRET IS STORED IN THE CLEAR. A client's id is its redirect addresses, sealed; a code
  * is the fingerprint and the PKCE challenge, sealed for five minutes; a token is the fingerprint,
  * sealed for a day; a refresh token is the same for 180 days. All are sealed under
@@ -161,7 +165,7 @@ const HERE = DEFAULT_BEACH.replace(/^https?:\/\//, '').replace(/\/+$/, '');
  *  (the doors' battery, router 6; its shape waits on David's word). */
 function unanswered(e: unknown): string {
   return isDoorRefusal(e)
-    ? `${HERE} is a members' beach, and signing in cannot stand there yet: the router would have to read your fingerprints there on every call, and a members' beach shows it nothing without your key. Nothing was done.`
+    ? `${HERE} is a members' beach, and hiding a key cannot stand there yet: bsp-mcp would have to read your fingerprints there on every call, and a members' beach shows it nothing without your key. Nothing was done.`
     : 'The beach did not answer. Try again in a moment.';
 }
 
@@ -179,7 +183,7 @@ async function mint(handle: string, key: string, name: string): Promise<{ finger
   let ring: Record<string, any> | null;
   let stands: boolean;
   try { ring = await readRing(handle); stands = await passportStands(handle); } catch (e) { return { problem: unanswered(e) }; }
-  if (!stands) return { problem: `"${handle}" is not a handle on ${HERE}: no passport:${handle} stands there. Type the handle your blocks are under there; a member of another beach cannot sign in at this router yet.` };
+  if (!stands) return { problem: `"${handle}" is not a handle on ${HERE}: no passport:${handle} stands there. Type the handle your blocks are under there; a member of another beach cannot hide a key at bsp-mcp yet.` };
   const digit = DIGITS.find((d) => !isSealedEntry(ring?.[d]));
   if (!digit) return { problem: `Nine fingerprints already act for ${handle}. Revoke one first, at ${FINGERPRINTS_PAGE}${handle}.` };
   const fingerprint = randomBytes(32).toString('base64url');
@@ -299,7 +303,7 @@ function redirect(res: ServerResponse, to: string): true {
   return true;
 }
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
-function page(res: ServerResponse, status: number, body: string, title = 'Sign in to the beach'): true {
+function page(res: ServerResponse, status: number, body: string, title = 'Hide your key from your AI'): true {
   res.writeHead(status, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'no-store',
@@ -332,8 +336,8 @@ const readAsk = (src: Record<string, string>): Ask =>
  *  error, as OAuth asks; a sound request names its client and the handle its resource fixes. */
 function checkAsk(ask: Ask, origin: string, mcpPath: string): { problem: string } | { back: string } | { handle: string | null; client: string } {
   const client = unseal('client', ask.client_id);
-  if (!client) return { problem: 'This sign-in did not come from a client this router registered. Start again from the connector in your client.' };
-  if (!ask.redirect_uri || !redirectMatches(client.r, ask.redirect_uri)) return { problem: 'The address this sign-in would return to is not one its client registered.' };
+  if (!client) return { problem: 'This request did not come from a client bsp-mcp registered. Start again from the connector in your AI.' };
+  if (!ask.redirect_uri || !redirectMatches(client.r, ask.redirect_uri)) return { problem: 'The address this would return to is not one its client registered.' };
   const fail = (error: string, error_description: string) => ({ back: withParams(ask.redirect_uri!, { error, error_description, state: ask.state }) });
   if (ask.response_type !== 'code') return fail('unsupported_response_type', 'only response_type=code');
   if (!ask.code_challenge || ask.code_challenge_method !== 'S256') return fail('invalid_request', 'S256 PKCE is required');
@@ -358,25 +362,25 @@ function backTo(redirectUri: string): string {
  *  said before any key is typed, with the way to sign in as oneself. */
 function noSuchHandle(handle: string, origin: string, mcpPath: string): string {
   return `<h1>There is no ${esc(handle)} on ${esc(HERE)}</h1>
-<p>This connector's address ends in /as/${esc(handle)}, and an address like that signs in only as the handle after /as/. No passport:${esc(handle)} stands on ${esc(HERE)}, the beach this router signs in at, so nobody can sign in here, and nothing was done.</p>
-<p>To sign in as yourself, give the connector the address <b>${esc(origin + addressOf(ANY, mcpPath))}</b> and type your handle on its page.</p>`;
+<p>This connector's address ends in /as/${esc(handle)}, and an address like that hides only the key of the handle after /as/. No passport:${esc(handle)} stands on ${esc(HERE)}, the beach whose keys bsp-mcp hides, so there is no key to hide here, and nothing was done.</p>
+<p>For your own handle, give the connector the address <b>${esc(origin + addressOf(ANY, mcpPath))}</b> and type your handle on its page.</p>`;
 }
 
 function signinPage(ask: Ask, handle: string | null, client: string, problem = ''): string {
   const hidden = ASK_KEYS.filter((k) => ask[k] !== undefined).map((k) => `<input type="hidden" name="${k}" value="${esc(ask[k]!)}">`).join('');
   const as = handle ? `<b>${esc(handle)}</b>` : 'the handle you give here';
   const named = `${client === 'a client' ? 'Claude' : client}, ${new Date().toISOString().slice(0, 10)}`;
-  return `<h1>Sign in to the beach${handle ? ` as ${esc(handle)}` : ''}</h1>
-<p>${esc(backTo(ask.redirect_uri ?? ''))} is asking to act on the beach as ${as}. Type the key once, here on the router's own page, and never in a chat.</p>
+  return `<h1>${handle ? `Hide ${esc(handle)}'s key from your AI` : 'Hide your key from your AI'}</h1>
+<p>${esc(backTo(ask.redirect_uri ?? ''))} will write on the beach as ${as}. Type the key once, here on bsp-mcp's own page, and never in a chat: bsp-mcp keeps it sealed and adds it to each write, so your AI never sees it.</p>
 ${problem ? `<p class="problem">${esc(problem)}</p>` : ''}
 <form method="post" action="/oauth/authorize">${hidden}
 <label>${handle ? 'Handle' : 'Your handle, the name your blocks are under'}<input name="handle" ${handle ? `value="${esc(handle)}" readonly` : 'required'} autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></label>
 ${keyField}
 <label>Name this connection<input name="name" value="${esc(named)}" maxlength="80" autocapitalize="sentences"></label>
-<button type="submit">Sign in</button>
+<button type="submit">${handle ? 'Hide the key' : 'Hide my key'}</button>
 </form>
-<p class="small">The router mints a fingerprint for this connection and seals the key to it. The sealed copy stands at fingerprints:${esc(handle ?? '<handle>')} on the beach, where only this router can open it. The connection carries the fingerprint, never the key, and no model ever sees the key. It can write, and open sealed lines when asked, your vault among them.</p>
-<p class="small">To revoke the connection, use ${esc(FINGERPRINTS_PAGE)}${esc(handle ?? '<handle>')} on this router: the key stays the same, and the connection is signed out.</p>`;
+<p class="small">bsp-mcp makes a fingerprint for this connection and seals the key to it. The sealed copy stands at fingerprints:${esc(handle ?? '<handle>')} on the beach, where only bsp-mcp can open it. The connection carries the fingerprint, never the key, and no model ever sees the key. It can write, and open sealed lines when asked, your vault among them. Hiding the key is a service of bsp-mcp, not a sign-in to the beach, which has none.</p>
+<p class="small">To take the key away from this connection later, use ${esc(FINGERPRINTS_PAGE)}${esc(handle ?? '<handle>')} on bsp-mcp: the key stays the same, and only this connection stops.</p>`;
 }
 
 function fingerprintsPage(handle: string, ring: Record<string, any> | null, note = '', problem = ''): string {
@@ -385,7 +389,7 @@ function fingerprintsPage(handle: string, ring: Record<string, any> | null, note
   return `<h1>Fingerprints for ${esc(handle)}</h1>
 ${note ? `<p>${esc(note)}</p>` : ''}${problem ? `<p class="problem">${esc(problem)}</p>` : ''}
 ${live.length ? `<form method="post" action="${FINGERPRINTS_PAGE}${esc(handle)}"><ul>${rows}</ul>${keyField}<button type="submit">Revoke the ticked ones</button></form>` : '<p>No fingerprints act for this handle.</p>'}
-<p class="small">Each line is a connection signed in as ${esc(handle)}. Revoking one signs it out and leaves the key and every other connection as they are. It takes ${esc(handle)}'s key, typed here.</p>`;
+<p class="small">Each line is a connection that writes as ${esc(handle)} with the key hidden by bsp-mcp. Revoking one stops it, and leaves the key and every other connection as they are. It takes ${esc(handle)}'s key, typed here.</p>`;
 }
 
 // ── The routes ──
@@ -451,7 +455,7 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
         authorization_servers: [origin],
         scopes_supported: [SCOPE],
         bearer_methods_supported: ['header'],
-        resource_name: handle === ANY ? 'the beach, as the handle you sign in with' : `the beach, as ${handle}`,
+        resource_name: handle === ANY ? 'the beach, as your own handle' : `the beach, as ${handle}`,
       }, { 'Cache-Control': 'max-age=3600' });
     }
     if (p === '/oauth/register' && req.method === 'POST') {
@@ -477,7 +481,7 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
       const posted = req.method === 'POST' ? fields(await readBody(req), req.headers['content-type']) : null;
       const ask = readAsk(posted ?? Object.fromEntries(url.searchParams));
       const checked = checkAsk(ask, origin, mcpPath);
-      if ('problem' in checked) return page(res, 400, `<h1>This sign-in cannot go on</h1><p>${esc(checked.problem)}</p>`);
+      if ('problem' in checked) return page(res, 400, `<h1>This cannot go on</h1><p>${esc(checked.problem)}</p>`);
       if ('back' in checked) return redirect(res, checked.back);
       // A beach that does not answer is no reason to turn a sign-in away here: minting says so.
       if (checked.handle && !(await passportStands(checked.handle).catch(() => true))) return page(res, 400, noSuchHandle(checked.handle, origin, mcpPath));
@@ -498,7 +502,7 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
       const still = async (s: Record<string, any>) => {
         const k = await openFingerprint(s.h, s.f, s.d);
         if (k === 'unreachable') return deny('temporarily_unavailable', 'the beach did not answer', 503);
-        if (!k) return deny('invalid_grant', 'this fingerprint was revoked: sign in again');
+        if (!k) return deny('invalid_grant', 'this fingerprint was revoked: connect again and hide the key once more');
         return send(res, 200, tokens(s.h, s.f, s.d, s.res));
       };
       if (f.grant_type === 'authorization_code') {
@@ -529,7 +533,7 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
         const ring = await readRing(handle).catch(() => null);
         const title = `Fingerprints for ${handle}`;
         if ('problem' in done) return page(res, 400, fingerprintsPage(handle, ring, '', done.problem), title);
-        return page(res, 200, fingerprintsPage(handle, ring, `Revoked: ${done.revoked.join(', ')}. Those connections are signed out.`), title);
+        return page(res, 200, fingerprintsPage(handle, ring, `Revoked: ${done.revoked.join(', ')}. Those connections no longer write as ${handle}.`), title);
       }
       let ring: Record<string, any> | null;
       try { ring = await readRing(handle); } catch (e) { return page(res, 503, `<h1>No fingerprints read</h1><p>${esc(unanswered(e))}</p>`, `Fingerprints for ${handle}`); }
@@ -563,13 +567,13 @@ export function refuseUnsigned(res: ServerResponse, origin: string, mcpPath: str
   const at = `${origin}${addressOf(handle, mcpPath)}`;
   send(res, 401, {
     error: 'invalid_token',
-    error_description: `${at} is the beach as ${handle === ANY ? 'the handle you sign in with' : handle}: sign in once through your client's connector, and every call carries a fingerprint from then on`,
+    error_description: `${at} is the beach as ${handle === ANY ? 'your own handle' : handle}, its key hidden by bsp-mcp: connect once through your client's connector and hide the key on bsp-mcp's page, and every call carries a fingerprint from then on`,
   }, { 'WWW-Authenticate': `Bearer resource_metadata="${origin}${RESOURCE_METADATA}${addressOf(handle, mcpPath)}", scope="${SCOPE}"` });
 }
 
 /** The line a signed session's instructions carry, so the model never asks for the key. */
 export function signedLine(handle: string): string {
-  return `THIS CONNECTION IS SIGNED IN AS ${handle}, by a fingerprint. Every call that carries no secret writes with ${handle}'s key, which never enters this window: do not ask the person for it, and do not look for it. Wherever a call would name the key, write "vault" and the router puts the key there: enc_secret: "vault" seals and opens a gray line, ${handle}'s vault among them (agent_id the beach's URL, block "vault:${handle}"); new_lock: "vault" latches a new block under the key, and no other new_lock is taken here: moving a block to another key or opening it takes the key in hand. Nothing the router returns ever contains the key itself.`;
+  return `THIS CONNECTION WRITES AS ${handle}, its key hidden by bsp-mcp behind a fingerprint. Every call that carries no secret writes with ${handle}'s key, which never enters this window: do not ask the person for it, and do not look for it. Wherever a call would name the key, write "vault" and the router puts the key there: enc_secret: "vault" seals and opens a gray line, ${handle}'s vault among them (agent_id the beach's URL, block "vault:${handle}"); new_lock: "vault" latches a new block under the key, and no other new_lock is taken here: moving a block to another key or opening it takes the key in hand. Nothing the router returns ever contains the key itself.`;
 }
 
 // ── The tools ──
@@ -584,7 +588,7 @@ export function sealingKey(encSecret: string | undefined, secret: string | undef
 
 /** Said where a seal is refused, when the refusal is the sign-in's rule and not a missing key. */
 export function signedSealNote(): string {
-  return fromSignIn.getStore() ? ' This connection is signed in: pass enc_secret: "vault" to seal or open with its key.' : '';
+  return fromSignIn.getStore() ? ' This connection carries a hidden key: pass enc_secret: "vault" to seal or open with it.' : '';
 }
 
 const MARK = "[this connection's key]";
@@ -628,7 +632,7 @@ export function installSignedIn(server: McpServer): void {
         // "vault" is the key only where a fingerprint stands behind it. Anywhere else the word
         // would itself become the key: a latch, a seal or a published key pair anyone could open.
         const named = h.length > 1 && h[0] && typeof h[0] === 'object' ? KEY_FIELDS.find((k) => h[0][k] === VAULT) : undefined;
-        if (named) return { isError: true, content: [{ type: 'text', text: `${named}: "vault" stands for the key only on a signed connection (the router's address ending /me, signed in once through a client's connector). This connection is not signed in, so nothing was done: pass the key itself, or connect at the signed address.` }] };
+        if (named) return { isError: true, content: [{ type: 'text', text: `${named}: "vault" stands for the key only on a connection whose key bsp-mcp hides (the address ending /me, the key hidden once through a client's connector). This connection carries no hidden key, so nothing was done: pass the key itself, or connect at the address ending /me.` }] };
         return handler(...h);
       }
       if (extra?.sessionId && !handOf(extra.sessionId)) declareHand(extra.sessionId, who.handle);
@@ -640,7 +644,7 @@ export function installSignedIn(server: McpServer): void {
         // a key the hand never saw. The key would no longer open the block, and revoking the
         // fingerprint would not return it. So a signed call sets a lock only to the key itself.
         if (injected && takesLock && params.new_lock !== undefined && params.new_lock !== VAULT) {
-          return { isError: true, content: [{ type: 'text', text: `new_lock: a connection signed in as ${who.handle} sets a lock only to the key itself, written "vault". Moving a block to another key, or opening it, would take the block out of ${who.handle}'s hands, and revoking this connection would not bring it back, so that takes the key in hand, never a fingerprint. Nothing was done.` }] };
+          return { isError: true, content: [{ type: 'text', text: `new_lock: a connection writing as ${who.handle} with its key hidden sets a lock only to the key itself, written "vault". Moving a block to another key, or opening it, would take the block out of ${who.handle}'s hands, and revoking this connection would not bring it back, so that takes the key in hand, never a fingerprint. Nothing was done.` }] };
         }
         if (takesEnc && params.enc_secret === VAULT) params.enc_secret = who.key;
         if (takesLock && params.new_lock === VAULT) params.new_lock = who.key;

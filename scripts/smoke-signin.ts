@@ -95,7 +95,7 @@ async function wrapper() {
   for (const field of ['secret', 'enc_secret', 'new_lock']) {
     seen = null;
     const r = await tools.takes({ [field]: 'vault' }, { sessionId: 's2' });
-    ok(`an unsigned call naming "vault" in ${field} is refused, and runs nothing`, seen === null && r.isError === true && /only on a signed connection/.test(r.content[0].text), JSON.stringify(r));
+    ok(`an unsigned call naming "vault" in ${field} is refused, and runs nothing`, seen === null && r.isError === true && /only on a connection whose key bsp-mcp hides/.test(r.content[0].text), JSON.stringify(r));
   }
   const shown = await tools.keyless({ block: 'b' }, signed('s3'));
   ok('a tool that takes no secret is given none', seen.keys.length === 1 && seen.keys[0] === 'block', JSON.stringify(seen));
@@ -185,7 +185,8 @@ async function router() {
     const pg = await c.authorize(cl.client_id);
     const html = await pg.text();
     ok('the page asks for the key of the handle the address fixes, and a name for the connection',
-      pg.status === 200 && /as ada/.test(html) && /type="password"/.test(html) && /readonly/.test(html) && /name="name"/.test(html) && /Claude, \d{4}-\d\d-\d\d/.test(html));
+      pg.status === 200 && /Hide ada's key from your AI/.test(html) && /type="password"/.test(html) && /readonly/.test(html) && /name="name"/.test(html) && /Claude, \d{4}-\d\d-\d\d/.test(html));
+    ok('…says what it is, hiding the key, and never a sign-in to the beach', />Hide the key<\/button>/.test(html) && /not a sign-in to the beach, which has none/.test(html) && !/Sign in/.test(html));
     ok('…names where it returns to, and cannot be framed', /Claude \(claude\.ai\)/.test(html) && pg.headers.get('x-frame-options') === 'DENY');
     ok('an unregistered return address is a page, never a redirect', (await c.authorize(cl.client_id, { redirect_uri: 'https://evil.example/cb' })).status === 400);
     ok('a forged client is a page', (await c.authorize('forged')).status === 400);
@@ -206,6 +207,7 @@ async function router() {
     const mhtml = await mpg.text();
     ok('its page asks for the handle as well as the key', mpg.status === 200 && /<input name="handle" required/.test(mhtml) && !/name="handle"[^>]*readonly/.test(mhtml) && /type="password"/.test(mhtml), mhtml.slice(0, 600));
     ok('…saying the handle is the name the blocks are under, not the address', /Your handle, the name your blocks are under<input name="handle"/.test(mhtml));
+    ok('…under "Hide your key from your AI", its button "Hide my key"', /<h1>Hide your key from your AI<\/h1>/.test(mhtml) && />Hide my key<\/button>/.test(mhtml) && !/Sign in/.test(mhtml));
     const notHandle = await me.signIn(cl.client_id, 'ada-the-key', 'my phone', 'not a handle!');
     ok('a typed handle that is not a handle stays on the page', notHandle.status === 400 && /A handle is letters/.test(await notHandle.text()));
     const mlost = await me.signIn(cl.client_id, 'ada-the-key', 'my phone');
@@ -375,7 +377,7 @@ async function realBeach() {
     await ms.call({ block: 'journal:ada', spindle: '7', content: 'secret named as vault', secret: 'vault' });
     ok('secret "vault" writes with the key', /secret named as vault/.test(await raw('journal:ada', '7')));
     const lit = textOf((await open.call({ block: 'journal:ada', spindle: '8', content: 'x', secret: 'vault' })).body);
-    ok('"vault" through the open endpoint is refused before it reaches the beach', /only on a signed connection/.test(lit), lit);
+    ok('"vault" through the open endpoint is refused before it reaches the beach', /only on a connection whose key bsp-mcp hides/.test(lit), lit);
 
     console.log('  — a lock is set only to the key');
     for (const [lock, act] of [['mallory-key', 'move notes:ada to another key'], ['', 'open notes:ada']] as const) {
@@ -434,7 +436,7 @@ async function gatedBeach() {
     const signed = await me.signIn(cl.client_id, KEY, 'my phone');
     const signedPage = await signed.text();
     ok("signing in with the right key mints nothing, and the page says the beach is a members' beach, never that it was silent",
-      signed.status === 400 && !signed.headers.get('location') && /is a members&#39; beach, and signing in cannot stand there yet/.test(signedPage) && !/did not answer/.test(signedPage),
+      signed.status === 400 && !signed.headers.get('location') && /is a members&#39; beach, and hiding a key cannot stand there yet/.test(signedPage) && !/did not answer/.test(signedPage),
       `${signed.status} ${(signedPage.match(/class="problem">([^<]*)/) ?? [])[1] ?? ''}`);
     const fp = await fetch(`${O}/fingerprints/ada`);
     const fpPage = await fp.text();

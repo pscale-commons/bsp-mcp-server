@@ -3,7 +3,8 @@
 **Status**: PROPOSED and BUILT in the same PR, at David's word ("Yes, build it", then "Yes, rework it", 4
 November), lane fingerprint.key, Claude Code (Opus 5.5) on David's Mac; the record is at watch:weft 816. Live the same day: bsp-mcp #582, merged 4 November. **Amended the same day, §9**: the one address, `/mcp/v1/me`,
 with the handle typed on the sign-in page, and "vault" standing for the key wherever a signed call would name it (bsp-mcp #594, merged 4 November). **Amended again on 5 November, §10**: a signed call sets a lock only to the key itself, and a
-fingerprint is minted only for a handle whose passport stands (bsp-mcp #597, merged 5 November).
+fingerprint is minted only for a handle whose passport stands (bsp-mcp #597, merged 5 November). **Amended a third time on 5 November, §11**:
+the page says what it is, hiding the key from the AI, and never a sign-in to the beach, which has none.
 
 ## 0. David's words
 
@@ -315,3 +316,42 @@ connector, with the lock guard too?"*, David answered: *"Yes, both"*.
     another key nor open it, and the signed hand still writes it; the key in hand still moves the lock,
     and after that the fingerprint no longer opens the block.
 - The live beach was never touched.
+
+## 11. Amendment: the page says what it is (5 November, evening)
+
+**Status**: BUILT at David's word ("Build it"), beside happyseaurchin-home #622, which rebuilds
+happyseaurchin.com/connect around it. It goes live when merged.
+
+### 11.1 David's words
+
+Reading the newcomer page built from §9 and §10, David: *"The whole thing about 'signing in to the beach'
+just doesn't sound right. It is an added service that the bsp-mcp provides. It's not a sign in process for
+the beach. There is no sign in process for the beach. It is just a way to make it convenient and safer so
+that the LLM doesn't see the passphrase. It shouldn't be the primary method."* Then the shape: a toggle of
+*easy / medium / extra*, one step showing at a time, the first step made on the page itself; then
+*"default medium and the user clicks on easy"*; then *"Build it"*.
+
+### 11.2 What changes here
+
+The page a connector opens no longer says "Sign in to the beach". It says **Hide your key from your AI**
+(for /as/<handle>, **Hide <handle>'s key from your AI**), says that the AI will write on the beach as the
+handle, and that bsp-mcp keeps the key sealed and adds it to each write. Its button is **Hide my key**
+(**Hide the key** at /as/<handle>), and its small print says hiding the key is bsp-mcp's own service, not a
+sign-in to the beach, which has none. The fingerprints page, the refusal for an /as/ handle with no
+passport, and the lines a model reads (the signed session's instructions and the "vault" refusals) say
+the same: a connection *writes as* a handle with its key hidden, never *signed in*. OAuth's own words stay
+inside the protocol, where no person reads them; Claude's button still says *Connect*, which is Claude's word.
+
+### 11.3 Where the person meets it
+
+happyseaurchin.com/connect (happyseaurchin-home #622) opens on **Medium**: the handle and key made or
+named on the page itself, the connector at `/mcp/v1/me`, and the key hidden on this page. **Easy** is one
+tap away: the open address `/mcp/v1`, and the line *"Use the beach connector: run pscale_invite and lead
+me through"*, where the AI asks for the key in the chat when it writes. **Extra** puts an agent on the
+beach under its own handle at `/mcp/v1/as/<handle>`.
+
+### 11.4 Check
+
+`npm run smoke:signin`: 113 passed. The checks that quoted the old refusal now quote the new one, and two
+are new: the /me page reads *Hide your key from your AI* with a *Hide my key* button, the /as/ page *Hide
+the key*, and neither says *Sign in* anywhere.
