@@ -1,8 +1,7 @@
 # The table in the mirror — one hand, two phases, the room's law deciding (2026-09-15)
 
 **Status**: PROPOSAL, ruled in conversation (David, 2026-09-15: the chip rather than a
-divider; the narration inline beneath the beat; one mirror, no skin) — for a fresh session
-to build. The substrate is untouched; no primitive, no block family, no daemon; one
+divider; the narration inline beneath the beat; one mirror, no skin) — built the same day: xstream-bsp #306, merged 15 September; extended by 2026-09-17-the-clean-mirror.md (xstream-bsp #320). The substrate is untouched; no primitive, no block family, no daemon; one
 Author's edit to a canon text. Companions: the round at `log:urb-hitl` 7 (David as Ugarth,
 Julie as Astrel, brackenfoot-open through the mirror, 2026-09-14); the mirror charter
 (`mirror`, limbs 2.2 the hand, 2.6 the ask, 2.7 the body; 1.5 and 4.2 as re-voiced on

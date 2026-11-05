@@ -6,7 +6,7 @@ the o-pages can contain UI that is influenced by the beach (the go drop-down is 
 configuration saved on the beach), so the mirror UI is influenced by the character and
 world or ruleset it is set in… a systematic way that it can operate which is elegant and
 minimal and maximises the pscale and federated approach so that it is fluidly
-configurable." Nothing here is built. No primitive, no new block family, no config system:
+configurable." Step 2 of §5 landed as xstream-bsp #338 and #341 (merged 21 September, under David's "option 2": a room's resolved convention decides its mode); step 5 is not built; steps 1, 3, 4 and 6 are not traced as built. No primitive, no new block family, no config system:
 every home named below already exists. Six small steps at §5, each its own PR, none urgent
 before people play. Companions: `2026-09-15-the-table-in-the-mirror.md` §2 ("one mirror, no
 skin… dice and other instruments can arrive later as a tool array in the mirror frame —

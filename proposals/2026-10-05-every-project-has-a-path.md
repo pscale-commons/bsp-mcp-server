@@ -13,7 +13,7 @@ he merges it. Lane animations.1, weft through Claude Code (Claude Opus 5.5); the
   redirected.
 - Plain views leave out square brackets, which hold references for minds. The tree 9.3 grammar's round
   brackets still apply.
-- Still to do: set aside `spine:paths` and `function:paths` once #380 merges, so /paths never breaks. After a
+- Done the same day: `spine:paths` and `function:paths` set aside once happyseaurchin-home #380 merged (archive:spine:paths:2026-10-06, archive:function:paths:2026-10-06), so /paths never broke. After a
   week of folds, the lineage view, /found's offer and the line in `conventions` 2.12 follow.
 **Supersedes**, the same day: [2026-10-05-the-paths-family](2026-10-05-the-paths-family.md) — one tree for
 the whole beach (`spine:paths`, `function:paths`, the page /paths) and the growing step it put in

@@ -1,7 +1,6 @@
 # Forms — a family declares its law, the pages walk what the law declares, and anyone can add a form (2026-09-28)
 
-**Status**: proposed at David's word (*"yes, write the proposal"*). Nothing is built yet. §8 gives
-the build order.
+**Status**: proposed at David's word ("yes, write the proposal") and built the same day at his "go ahead with changes please", interleaved with the groups proposal: §8 steps 1 and 2 are happyseaurchin-home #329, step 3 #334, step 4 #332, all merged 28 September; step 5, tree 9.2 and 9.3 and conventions 2.12, was written on the beach the same day (archive:tree:2026-09-28, archive:conventions:2026-09-28).
 **Prompted by**: David, 2026-09-28, after finding Matthew's hand-built families drawn on /walk and
 /recency under wording written for the clock, and a mirror's automatic first line listed as his
 voice (happyseaurchin-home #326 fixed the line for new mirrors).

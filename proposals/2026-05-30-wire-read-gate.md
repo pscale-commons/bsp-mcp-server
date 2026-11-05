@@ -1,6 +1,6 @@
 # Wire-read contract drift — no-pscale path-walk and star reads (2026-05-30)
 
-**Status**: bsp-mcp side LANDED + tested. Beach side PATCHED in source (commons + happyseaurchin + idiothuman), pending redeploy. xstream: no change needed (verified immune).
+**Status**: bsp-mcp side LANDED + tested. Beach side merged (pscale-beach #13, 30 May) and deployed to the commons, happyseaurchin and idiothuman. xstream: no change needed (verified immune).
 
 ## Symptom
 

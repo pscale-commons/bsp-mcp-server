@@ -1,7 +1,7 @@
 # Encryption / privacy — Phases 0-2
 
 **Date**: 2026-06-01
-**Status**: IMPLEMENTED 2026-06-01 (bsp-mcp; build + tests green; **not yet deployed to Railway**). See §9b for what shipped and what's flagged. Scope, trust model, terminology, and grain lifecycle confirmed with David 2026-06-01.
+**Status**: IMPLEMENTED 2026-06-01 (bsp-mcp; build + tests green; deployed to Railway since). See §9b for what shipped and what's flagged. Scope, trust model, terminology, and grain lifecycle confirmed with David 2026-06-01.
 **Locus**: **bsp-mcp only** (the Railway service). The federated beaches and the `pscale-beach` package do **not** change. No coordinated multi-repo PR, no Vercel redeploy, no wipe, no data migration.
 
 ---

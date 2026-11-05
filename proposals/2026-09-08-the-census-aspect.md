@@ -1,6 +1,6 @@
 # The census aspect — how a million standpoints show on one card
 
-**Date** 2026-09-08 · **Lane** the standpoint lane (watch:weft 255, 256) · **Status** PROPOSAL, David's to rule
+**Date** 2026-09-08 · **Lane** the standpoint lane (watch:weft 255, 256) · **Status** PROPOSAL, ruled and built: the census at the earth beach (pscale-beach-happyseaurchin #23, 8 September; scripts/earth-census.mjs).
 **Follows** [2026-09-08-the-earth-pass.md](2026-09-08-the-earth-pass.md) · **Answers** David, this morning:
 *"imagine thousands of people, how is that going to be managed? Or if there is a million users, how is
 this displayed? Is there a grouping/count at different pscale — and only when the user taps and goes

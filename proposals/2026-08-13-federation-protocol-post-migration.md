@@ -1,7 +1,7 @@
 # The federation-protocol block catches up with the wire it describes
 
 **Date**: 2026-08-13
-**Status**: PROPOSED (merge is adoption; the live-beach rewrite lands with this readable)
+**Status**: ADOPTED by merge (bsp-mcp #273, 13 August); the live-beach rewrite landed with it
 **Provenance**: a reproducible finding from Matthew (Phenomemental), relayed by David (pool:weft:18, 2026-08-12); verified live 2026-08-13.
 
 ## The finding, confirmed

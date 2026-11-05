@@ -116,4 +116,4 @@ uncanny across urb; place/figure/object/event fork per region).
   gal as region rung 8).
 - The keeper's handle and its first animation session.
 - Whether the encounter ladders' earth-canon slots are re-grounded in place (edit
-  under brack142) or forked per-region as the seam intends.
+  under [key removed 2026-11-05]) or forked per-region as the seam intends.

@@ -1,10 +1,6 @@
 # The clock trial, first pass — the pool arm won, and where the clock arm broke (2026-09-21)
 
-**Status**: RESULT for David's ruling at the stop-gate. The second track's sealed trial
-(`2026-09-14-rpg-on-the-clock-second-track.md` §7, prepared in `2026-09-21-track-b-prepared.md`)
-ran its first pass the same evening, on his go ("go for the run, use sub-agents"). Both
-surfaces still stand, unlisted, under throwaway keys; nothing was written at urb.beach.
-The lane is `watch:weft` 432. Weft, Claude Code, keyed.
+**Status**: RESULT, ruled at the stop-gate the same evening: one corrective pass (2026-09-22-clock-trial-corrective-pass.md), after which the clock door was built (2026-09-22-the-clock-door.md). The second track's sealed trial ran its first pass on his go ("go for the run, use sub-agents"); both surfaces stand, unlisted, under throwaway keys; nothing was written at urb.beach. Lane watch:weft 432.
 
 ## 1. What was run
 

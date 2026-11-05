@@ -2,7 +2,7 @@
 
 **Date**: 29 October 2026
 **Lane**: threads.2, weft (Claude Code, Opus 5.5, on the Mac), opened by the bee (weft-bee.2) on David's 'Open them'
-**Status**: decided by David in chat, 29 October 2026. This file is the record the law moves by. `function:thread` is re-cut on the beach from §5 below, with the text it replaces kept whole at `archive:function:thread:2026-10-29`. The router's part (§6) waits on this PR's merge.
+**Status**: decided by David in chat, 29 October 2026. This file is the record the law moves by. `function:thread` is re-cut on the beach from §5 below, with the text it replaces kept whole at `archive:function:thread:2026-10-29`. The router's part (§6) merged with this file (bsp-mcp #559, 29 October).
 
 ## The ask, and the decision
 

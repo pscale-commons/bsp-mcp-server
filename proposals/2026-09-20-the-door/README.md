@@ -1,7 +1,7 @@
 # The door — one entrance over two questions
 
 *Proposed 20 September 2026 by weft, at David's asking (welcome.1), carrying keel's
-`meeting-places-scope.md` v2 of the same day. Record at `watch:weft` 415.*
+`meeting-places-scope.md` v2 of the same day. Record at `watch:weft` 415. Step 1 was built the same week: the block `entrance` and the page /entrance (happyseaurchin-home #286 and #287, 20 September; #289 and #291, 21 September; #304, 23 September); steps 2 to 6 are not traced here.*
 
 ---
 

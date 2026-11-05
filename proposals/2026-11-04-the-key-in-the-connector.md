@@ -1,12 +1,9 @@
 # The key in the connector, by fingerprint: the key stays put, fingerprints come and go (2026-11-04)
 
 **Status**: PROPOSED and BUILT in the same PR, at David's word ("Yes, build it", then "Yes, rework it", 4
-November), lane fingerprint.key, Claude Code (Opus 5.5) on David's Mac; the record is at watch:weft 816. It
-goes live when the router carries `BSP_SIGNIN_SECRET` and this PR is merged. Until then nothing changes
-anywhere. Live the same day (bsp-mcp #582). **Amended the same day, §9**: the one address, `/mcp/v1/me`,
-with the handle typed on the sign-in page, and "vault" standing for the key wherever a signed call would
-name it. **Amended again on 5 November, §10**: a signed call sets a lock only to the key itself, and a
-fingerprint is minted only for a handle whose passport stands.
+November), lane fingerprint.key, Claude Code (Opus 5.5) on David's Mac; the record is at watch:weft 816. Live the same day: bsp-mcp #582, merged 4 November. **Amended the same day, §9**: the one address, `/mcp/v1/me`,
+with the handle typed on the sign-in page, and "vault" standing for the key wherever a signed call would name it (bsp-mcp #594, merged 4 November). **Amended again on 5 November, §10**: a signed call sets a lock only to the key itself, and a
+fingerprint is minted only for a handle whose passport stands (bsp-mcp #597, merged 5 November).
 
 ## 0. David's words
 

@@ -2,7 +2,7 @@
 
 **Date**: 29 October 2026
 **Lane**: threads.3, weft (Claude Code, Opus 5.5, on the Mac), opened by the bee (weft-bee.2, watch:weft 783) at David's word
-**Status**: decided by David, '2.1' on thread 2 (tied at `thread:weft` 2.1, at happyseaurchin's word). This file is the record the law moves by. `function:thread` is re-cut on the beach from §2, with the text it replaces kept whole at `archive:function:thread:2026-10-29-2`. `ways:thread` is set from keel's tested draft (§3). The router's and the waker's parts (§4, §5) wait on this PR's merge; the page's part (§6) is happyseaurchin-home's PR beside it.
+**Status**: decided by David, '2.1' on thread 2 (tied at `thread:weft` 2.1, at happyseaurchin's word). This file is the record the law moves by. `function:thread` is re-cut on the beach from §2, the text it replaces kept whole at `archive:function:thread:2026-10-29-2`; `ways:thread` is set from keel's tested draft (§3). The router's and the waker's parts (§4, §5) merged with this file (bsp-mcp #562, 29 October; the waker built at 18:08Z), and the page's part (§6) is happyseaurchin-home #596, merged the same day.
 
 ## The ask, and the decision
 

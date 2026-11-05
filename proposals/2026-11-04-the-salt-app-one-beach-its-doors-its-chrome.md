@@ -4,7 +4,7 @@ SALT's app is the set of doors of SALT's own beach. Every page wears SALT's own 
 
 **Date**: 4 November 2026
 **Lane**: salt-app, weft (Claude Code, Opus 5.5, on the Mac), a side session of lane lero.2, started at David's message of that day.
-**Status**: proposed, for David's and Matthew's answers. Nothing is built. The first build step, SALT's own header, is drafted in §7 in words only. On the beach this lane wrote the proposal family and its listing, weft's readings, one knot with its place, and its account (§9).
+**Status**: proposed 4 November and decided three for three the same day (weft, davidmpinto, Matthewbushell: ONE, OWN, GO, BOTH, ENGINE, GO); function:salt-app 7 reads phase: project, the fold stands at salt-app, and thread:16 carries the work. The crafted page is happyseaurchin-home #609. The first build step, SALT's own header (§7), is not built.
 **Builds on**: the members' gate live on beach.bringingtheflavour.com (pscale-beach #102, #103, #104, #105; bsp-mcp #571, #577); the String's SALT door (happyseaurchin-home #605, #607; bringingtheflavour #1; `function:string` 5) and its portal ([2026-11-03-the-salt-portal-one-route-in.md](2026-11-03-the-salt-portal-one-route-in.md)); field 5 of an index card ([2026-11-03-shell-indexes-one-index-per-holder.md](2026-11-03-shell-indexes-one-index-per-holder.md) §5); coloured stigmergy ([2026-11-03-coloured-stigmergy-the-design.md](2026-11-03-coloured-stigmergy-the-design.md), its first step built as #585); Matthew's pocket beach (`spine:pocket-beach`).
 **Decides**: the six decisions at `spine:salt-app` 1.8, 1.18, 1.118, 1.1118, 1.11118 and 1.111118.
 

@@ -52,7 +52,7 @@ When one LLM-app instance wears both hats in one conversation, the medium's know
 
 ## 5. The new `function:thornwood` (full directive)
 
-Drop-in replacement (floor 1; `_` thorn142; branches `_,1,2,3`).
+Drop-in replacement (floor 1; `_` [key removed 2026-11-05]; branches `_,1,2,3`).
 
 ```json
 {
@@ -68,7 +68,7 @@ Drop-in replacement (floor 1; `_` thorn142; branches `_,1,2,3`).
 
 ## 6. What's open, what's locked
 
-- **`pool:<room>` — OPEN for appends.** The contributor-resolver (a player, no GM secret) writes skeletons to it. Open-by-default beach; the skeleton is non-authoritative and re-derivable from the window, so an open pool is consistent and safe for cooperative play. *(This resolves the live obstacle: the pool was `_`-locked under thorn142 from the crab-as-sole-writer era.)*
+- **`pool:<room>` — OPEN for appends.** The contributor-resolver (a player, no GM secret) writes skeletons to it. Open-by-default beach; the skeleton is non-authoritative and re-derivable from the window, so an open pool is consistent and safe for cooperative play. *(This resolves the live obstacle: the pool was `_`-locked under [key removed 2026-11-05] from the crab-as-sole-writer era.)*
 - **`liquid:pool:<room>` — open.** Staging surface; players submit with no secret.
 - **character `history` / shell — the character's own**, written by their own LLM with their own passphrase. (Provisional: the open `witnessed:<handle>` blocks already serve; the shell consolidation is §8.)
 - **`spatial:`, `rules:`, `function:` — `_`-locked GM.** Read-only stage and rulebook.

@@ -1,7 +1,7 @@
 # Characters in the vault — how a person knows their own characters, and the mirror's part in it (2026-09-15)
 
 **Status**: PROPOSAL, ruled in conversation (David, 2026-09-15: "go with the vault, propose
-it to the mirror lane") — for the mirror lane to build. The substrate is untouched: no
+it to the mirror lane") — for the mirror lane to build. The entry (§2) is `ways:vault` 1.3 since 29 September, kept and opened in the page by /vault.js (happyseaurchin-home #340; 2026-09-29-the-vault-and-the-latched-book.md); the mirror's one act (§3) is not built. The substrate is untouched: no
 primitive, no block family, no daemon, no change to the beach. It rides a convention that
 already stands and is proven live (`ways:vault`; `vault:Phenomemental`, `vault:weft`), and
 adds one act to the mirror. Companions: the character page (happyseaurchin-home #248, live

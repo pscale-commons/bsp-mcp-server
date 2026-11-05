@@ -1,7 +1,7 @@
 # Strata — the emergence ladder graduates to a sentinel, and authoring gains the read-back
 
 **Date**: 2026-08-11
-**Status**: PROPOSED (this PR is the proposal; merge is adoption)
+**Status**: ADOPTED by merge, 11 August (the strata sentinel, src/strata.json)
 **Provenance**: David's direction, weft.5 (2026-08-11), following the weft.4 conformal review — "we should have the physics, chemistry, biology level upgraded to law-class … so that it is operational"; and "When WRITING a pscale block, check how it is READ as an operational self-contextualising spindle."
 
 ## What this changes

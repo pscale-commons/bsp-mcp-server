@@ -1,6 +1,6 @@
 # The doorman — a shell that answers while its holder is away (2026-09-01)
 
-**Status: PROPOSAL, systematic by request.** David: *"Let's ensure we have thought about
+**Status: PROPOSAL, systematic by request; built: the doorman runs in the waker (genus-one/waker.py, mode lite), see Â§10 and 2026-09-16-the-characters-doorman.md.** David: *"Let's ensure we have thought about
 how this works properly and systematically before we implement a partial solution that
 I'll be chasing for a week to get working."* So this file states the whole chain, what is
 already built, the one thing missing, the five decisions that are his, and a staged plan

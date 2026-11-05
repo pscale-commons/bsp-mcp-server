@@ -6,7 +6,7 @@ perhaps zero-llm, pure machine; a push engine"). Written to seed a **parallel se
 that builds it; the factoring's first step (the waker forwarding every beach event) lands
 beside this proposal. Companions: `proposals/2026-08-12-doorbell-wake.md` (built, live),
 pscale-commons/pscale-beach#62 (the beach's first outbound event), `docs/beach-crab-ladder.md`
-(rung 0: "signal checker; owner-notify" — this is that rung, event-driven instead of cron).
+(rung 0: "signal checker; owner-notify" — this is that rung, event-driven instead of cron). Built: the push engine runs on Railway, and later doors ring through it (2026-10-03-the-private-door.md §3).
 
 ## 1 — The want
 

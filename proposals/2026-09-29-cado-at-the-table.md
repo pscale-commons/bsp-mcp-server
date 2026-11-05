@@ -1,8 +1,6 @@
 # CADO at the table — the face is the block the line lands in (2026-09-29)
 
-**Status**: PROPOSAL for David's ruling. Nothing here is built; the one thing built the same
-evening is the watcher's seat in the mirror (xstream-bsp #364 and its follow-up), which this
-proposal names as the Observer's first rung. Written at David's word on demo day:
+**Status**: PROPOSAL for David's ruling. The watcher's seat was built the same evening (xstream-bsp #364 and its follow-up), the Observer's first rung; the observer's rungs were taken up on 8 October by 2026-10-08-the-studio-on-the-clock.md and built as function:lens (bsp-mcp #514, happyseaurchin-home #396, xstream-bsp #380), each observer's line in lens:<handle>; the author's and designer's doors (§4, §5) are not built. Written at David's word on demo day:
 
 > *"So, you've created 'watcher' versus the observer. I guess this makes sense. But I think we need
 > to work out a systemic solution to this. This is not just about visuals. It's about how we handle

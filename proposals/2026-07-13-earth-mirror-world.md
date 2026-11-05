@@ -1,7 +1,6 @@
 # earth — the mirror world (real-world cartridge, reflexive seat)
 
-**Status:** proposal, direction agreed (David, 2026-07-13: "earth: go"). Genesis gated on one
-infra step (§8.1). **Related:** [2026-07-01-pscale-of-location](2026-07-01-pscale-of-location.md);
+**Status:** proposal, direction agreed (David, 2026-07-13: "earth: go"). Earth was founded at earth.beach.happyseaurchin.com, its law `function:earth`. **Related:** [2026-07-01-pscale-of-location](2026-07-01-pscale-of-location.md);
 `pscale://grit` (engine-first sentinel, #135); the biome real-world island (pscale-biome,
 `project_real_world_spatial`); `soft-agent:3.3` (the four CADO faces); `whetstone:3` (face =
 aperture + register).

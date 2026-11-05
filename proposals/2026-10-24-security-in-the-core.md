@@ -1,6 +1,6 @@
 # Security in the core: keys are pointers, vaults hold them, and the router refuses a write that carries its own key (2026-10-24)
 
-**Status**: PROPOSED. The beach half is done (below). The router half waits for David's word, because a `src/` merge redeploys the router and ends every live session.
+**Status**: BUILT in part. The router half merged with this file (bsp-mcp #546, 24 October): the guard `refuseKeyInPayload` refuses a write that carries a key the same call presents, at every door that posts to the beach. Amended by #547 (24 October) and #548 (25 October: weft's vault opens with the everyday key again, knowingly). ways:vault re-cut on the beach to two keys (archive:ways:vault:2026-10-24), then softened on 25 October to two keys as the safer shape and one key a holder's knowing choice (archive:ways:vault:2026-10-25). Not built: the guard in the beach handler (pscale-beach), the append lock for point writes, and the site's vault.js taking a vault key apart from the latch (#611 of 4 November moved only its cipher onto the beach's seal).
 
 ## The ask
 

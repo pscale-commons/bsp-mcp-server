@@ -1,8 +1,7 @@
 # The studio on the clock — observers who follow, and anyone renders (2026-10-08)
 
 **Status**: PROPOSED at David's ask (8 October: *"take a step back and process this please, and propose
-recommendations on how we can move forwards with this structurally"*). Nothing built, nothing written on
-the beach. Lane visuals.1 (watch:weft 489).
+recommendations on how we can move forwards with this structurally"*). Amended the same day (#513: the watch is following, no team block) and built the same evening as function:lens, founded at David's word: the router's two rungs (bsp-mcp #514), the pictures page (happyseaurchin-home #396) and the mirror's observer box (xstream-bsp #380), all merged 8 October. Lane visuals.1 (watch:weft 489).
 
 **AMENDED the same day**, after David's reflection on the merged text (*"it should be possible for anyone to
 render … the 'studio' becomes the mutually following team, not a defined team"*): §0, §2, §3, §4, §7 and §8

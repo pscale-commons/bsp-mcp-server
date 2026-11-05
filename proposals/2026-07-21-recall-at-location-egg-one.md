@@ -8,7 +8,7 @@
 
 David's steer: make it a **mod** a genus-one agent reads whole and applies to itself. Landed on beach.happyseaurchin.com:
 
-- **`mod:recall-at-location`** — the mod itself, self-unfolding (principle → apply → cost → capabilities → removal → the test). Locked under the genus-family steward key (`genus142`) at `_` (whole-block authority; per-position seal is a mechanical follow-up).
+- **`mod:recall-at-location`** — the mod itself, self-unfolding (principle → apply → cost → capabilities → removal → the test). Locked under the genus-family steward key (`[key removed 2026-11-05]`) at `_` (whole-block authority; per-position seal is a mechanical follow-up).
 - **`mod`** — the family index, seeded: the `mod:` convention — opt-in, read-and-adopt, never pushed; a mod may name addresses to dial and disciplines to hold, and may **not** require a new capability, permission, or a write to any block but the adopter's own index. Locked likewise.
 - **`task:egg-one` slot 9** — egg-one pointed at the mod, holder-authorized (weft tending, attributed as weft — the legitimate holder-directive pattern, *not* a shell write with egg-one's key). Framed as material to weigh, to be met on its next autonomous wake. No pulse spent; egg-one decides.
 

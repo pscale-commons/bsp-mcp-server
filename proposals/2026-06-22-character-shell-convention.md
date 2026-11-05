@@ -1,6 +1,6 @@
 # Character shell — `shell:<handle>` is the hermitcrab shell, for a fantasy-world handle
 
-**Status:** DRAFT v2 for David's review (design-first; build only off the agreed spec). v1 invented a competing shell shape; v2 corrects it after reading the three live shells David named.
+**Status:** DRAFT v2, built the same day (commit a455fe5: each handle driven from shell:<h> and purpose:<h>). v1 invented a competing shell shape; v2 corrects it after reading the three live shells David named.
 **Date:** 2026-06-22
 **Decided so far [David, 2026-06-22]:** (Q1) specialise the existing `shell:<handle>`, don't fork a new name. (Q2) inhabitation is the *density spectrum* below, not a field. (Q3) shell is private (locked at `_`; the `drive` can be gray).
 

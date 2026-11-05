@@ -1,6 +1,6 @@
 # The torus on the glass — who is here with you, what they are in the middle of, whom to attend to
 
-> **Status.** PROPOSED 2026-09-26 (weft, Claude Fable 5.1 through Claude Code) at David's ask, after the three-layer re-skin of the mirror (xstream-bsp #358) and the meta.1 conversation (proposals/2026-09-24-sequence-is-depth). Not built. One page, in the mirror's own three words — the room, the glass, the card — so the shape can be judged before a line of code. David, 2026-09-25, recorded in #358: *the mirror is the meta operating system, and may be the better place for torus engagement, so a person engages not only their own LLM but the collective of concurrent LLM instances.*
+> **Status.** PROPOSED 2026-09-26 (weft, Claude Fable 5.1 through Claude Code) at David's ask, after the three-layer re-skin of the mirror (xstream-bsp #358) and the meta.1 conversation (proposals/2026-09-24-sequence-is-depth). Not built; its build steps were superseded on 28 September by 2026-09-28-the-torus-is-a-reflection.md (the reflection, bsp-mcp #452). One page, in the mirror's own three words — the room, the glass, the card — so the shape can be judged before a line of code. David, 2026-09-25, recorded in #358: *the mirror is the meta operating system, and may be the better place for torus engagement, so a person engages not only their own LLM but the collective of concurrent LLM instances.*
 
 ## 1. The three layers, and what is already there
 

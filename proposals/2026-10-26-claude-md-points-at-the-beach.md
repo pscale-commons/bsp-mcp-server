@@ -2,7 +2,7 @@
 
 **Date**: 26 October 2026
 **Lane**: weft.parlour, Claude Code (Opus 5.5) on the Mac, at David's word
-**Status**: proposed with the change it records, CLAUDE.md, in the same pull request
+**Status**: merged with the change it records, CLAUDE.md, in one pull request (bsp-mcp #550, 26 October)
 
 ## The ask
 

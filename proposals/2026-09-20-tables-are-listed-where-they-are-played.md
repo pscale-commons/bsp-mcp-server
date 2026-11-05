@@ -5,7 +5,7 @@ tables are listed", asking the question that names the whole fault — *"if it i
 an o-page for public consumption, why on earth is it hard to find by claude-ai or
 mirror?"* — after the mirror could not find Garth and Equinox while
 [`/rpg/brackenfoot`](https://happyseaurchin.com/rpg/brackenfoot) lists their table to anyone
-with a browser. Nothing here needs a new primitive or a new block family.
+with a browser. Nothing here needs a new primitive or a new block family. Applied the same day: the clause stands at the `worlds` underscore (standing text at archive:worlds:2026-09-20), and the doors half is bsp-mcp #399 (merged 20 September), carried into the mirror by xstream-bsp #332 and #333.
 
 ## 1. The listing already exists
 

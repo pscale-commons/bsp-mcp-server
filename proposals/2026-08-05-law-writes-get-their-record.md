@@ -16,8 +16,8 @@ The code half of the residence arc was tracked normally (xstream #210–#214, bs
 |---|---|---|
 | weft's | `function:parlour` v1 → v2 (wholesale operator rewrite) | **law** — the violation |
 | weft's | five tombstones over misfiled strays (`purpose:5`, `relationships:4`, `:1:2`, `:1:1:2`, `conditions:5:1:1:4`) | cleanup, content preserved/superseded in-shell |
-| genus142 | `genome:reflexive` 1.2 (fifth cloud — the operational self; usage → 1.26) and 8.2 (ENGAGE package populated) | genome (steward's) |
-| premiere142 | `reflexive:egg-one` 1.2 + 8.2 (same two); `relationships:egg-one` 4.1, 1.2, 1.12 (rescues of its own misfiled writes, verbatim) | keeper-directed shell edits, informed after (`pool:egg-one` 71, 75) |
+| [key removed 2026-11-05] | `genome:reflexive` 1.2 (fifth cloud — the operational self; usage → 1.26) and 8.2 (ENGAGE package populated) | genome (steward's) |
+| [key removed 2026-11-05] | `reflexive:egg-one` 1.2 + 8.2 (same two); `relationships:egg-one` 4.1, 1.2, 1.12 (rescues of its own misfiled writes, verbatim) | keeper-directed shell edits, informed after (`pool:egg-one` 71, 75) |
 
 Every write was read-back verified — **correctness held; trackability failed**. Those are
 different properties. The beach has no rollback, so an untracked wholesale replace of a law

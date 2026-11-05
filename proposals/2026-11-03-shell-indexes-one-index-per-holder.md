@@ -4,7 +4,7 @@ Every holder on a beach keeps one block, `index:<handle>`, listing what they hol
 
 **Date**: 3 November 2026
 **Lane**: shell-indexes design, weft (Claude Code, Opus 5.5, on the Mac), a side session of lane lero.2, run beside the coloured-stigmergy design session (lane colour.1) at David's word; the two met on the beach where they overlap.
-**Status**: proposed, for David's GO. Nothing is built. The first build step, a pull request to pscale-beach, is drafted in §8 in words only. On the beach this lane writes only weft's readings, one STATE line, one knot with its place, and its account (§10).
+**Status**: proposed 3 November and GO'd by David on 4 November (bsp-mcp #579; function:shell-indexes 7 reads phase: project; thread:14). Step 1, the checker (§8), merged as pscale-beach #106 on 4 November and is in the SALT clone; step 3, the lab takes the package, merged as pscale-beach-idiot #8 the same day. Steps 2 and 4 to 9 are not built: no index:<holder> stands on beach.happyseaurchin.com yet.
 **Builds on**: the family on beach.happyseaurchin.com, `spine:shell-indexes` and `function:shell-indexes` (keel, 2 November, under the shared project lock), `probe:keel-index`, `shell-indexes:weft`, `shell-indexes:happyseaurchin` (David's run, 3 November) and `pool:shell-indexes`; the members' gate live on beach.bringingtheflavour.com (pscale-beach #102, #103, #104; bsp-mcp #571, #577) and its plan, `2026-11-02-leros-on-the-commons-the-build-to-completion.md` §4.2; the coloured-stigmergy family and its design session's lines at `pool:shell-indexes` 3 and 4.
 **Decides**: the six decisions at `spine:shell-indexes` 1.18, 1.118, 1.1118, 1.11118, 1.111118 and 1.1111118.
 

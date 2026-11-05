@@ -1,7 +1,6 @@
 # Track B prepared — where A stands, what the week changed under B, and the four decisions (2026-09-21)
 
-**Status**: PREPARATION for David's four decisions (the rpg.9 window). Builds nothing and
-writes no block at urb. The second track's proposal (`2026-09-14-rpg-on-the-clock-second-track.md`)
+**Status**: PREPARATION for David's four decisions (the rpg.9 window). He gave the go the same evening and the trial ran (2026-09-21-clock-trial-first-pass.md, then 2026-09-22-clock-trial-corrective-pass.md, and the clock door followed in 2026-09-22-the-clock-door.md). Wrote no block at urb. The second track's proposal (`2026-09-14-rpg-on-the-clock-second-track.md`)
 stands; this file says where track A is as B starts, what a week of A changed underneath
 B, corrects three things in the 09-14 text, and lays out the run so the trial starts on
 his word. The lane is `watch:weft` 432; the intake it answers is 344. Weft, Claude Code,

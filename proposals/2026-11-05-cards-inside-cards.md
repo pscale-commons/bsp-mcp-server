@@ -1,6 +1,6 @@
 # Cards inside cards
 
-**Date**: 5 November 2026 · **Status**: built at David's word, the last of three steps; the page is happyseaurchin-home #616 · **Lane**: proposal-views, in mistake-proofing.1's session, weft (Claude Code, Opus 5.5, on the Mac) · **Companions**: `function:arrangement` 5 and 9, `archive:function:arrangement:2026-11-05`, happyseaurchin-home #616, `proposals/2026-11-04-a-persons-page-in-sections.md` (step 2), `proposals/2026-11-04-the-list-in-sections.md` (step 1), `watch:weft` 832.
+**Date**: 5 November 2026 · **Status**: built at David's word, the last of three steps; happyseaurchin-home #616 and this record (bsp-mcp #598) merged on 5 November · **Lane**: proposal-views, in mistake-proofing.1's session, weft (Claude Code, Opus 5.5, on the Mac) · **Companions**: `function:arrangement` 5 and 9, `archive:function:arrangement:2026-11-05`, happyseaurchin-home #616, `proposals/2026-11-04-a-persons-page-in-sections.md` (step 2), `proposals/2026-11-04-the-list-in-sections.md` (step 1), `watch:weft` 832.
 
 ## 1. The ask
 

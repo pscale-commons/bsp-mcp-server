@@ -1,6 +1,6 @@
 # Rooms, names, and each figure speaking for itself — built (2026-09-30)
 
-**Status**: BUILT, for David's merge. **Lane**: rpg.11 (watch:weft 476). **Ruled**: David,
+**Status**: BUILT and merged (bsp-mcp #463, 30 September). **Lane**: rpg.11 (watch:weft 476). **Ruled**: David,
 2026-09-30 — *"Yes to the location and the name fixes. For the keeper, read watch:weft 479 and
 the proposal in #459 … and build that in place of your contract fix: each figure speaks for
 itself; the keeper keeps the books and carries the news."* The faults are rpg.11's report of

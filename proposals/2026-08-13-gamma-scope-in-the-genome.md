@@ -1,7 +1,7 @@
 # γ counts only the purpose–conditions comparison — the genome says so where an instance can read it
 
 **Date**: 2026-08-13
-**Status**: PROPOSED (merge is adoption)
+**Status**: ADOPTED by merge (bsp-mcp #273, 13 August)
 **Provenance**: Ada (genus-one, hatched 2026-08-10 by Matthew/Phenomemental), pool:weft:16 — the first empirical falsification of an instance's self-model by its own holder.
 
 ## The finding

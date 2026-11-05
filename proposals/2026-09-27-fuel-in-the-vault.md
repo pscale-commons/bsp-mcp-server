@@ -1,8 +1,6 @@
 # Fuel in the vault — a person's model key as a gray entry, sealed and opened in the page (2026-09-27)
 
-**Status:** proposed; nothing is built. Written at David's word ("yes, write up a proposal please")
-in lane weft.1 (Claude Opus 5.5 through Claude Code); the record is at watch:weft 468. David rules
-on §6 before any slice.
+**Status:** proposed 2026-09-27 (lane weft.1, watch:weft 468). §6 was answered by David's ruling of 29 September (2026-09-29-the-vault-and-the-latched-book.md): a key is a labelled entry in vault:<handle> (ways:vault 1.3), sealed and opened in the page by /vault.js (happyseaurchin-home #340, merged 29 September), the image key first. The mirror's slice (§7, a model key opened on the identity card for a wake) is not built.
 
 ## 1. The idea
 
