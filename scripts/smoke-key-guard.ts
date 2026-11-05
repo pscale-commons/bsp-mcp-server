@@ -14,8 +14,10 @@
  * Run: npm run smoke:key-guard
  */
 
-import { refuseKeyInPayload } from '../src/db.js';
+import { refuseKeyInPayload, guardStore } from '../src/db.js';
 import { selfEncrypt } from '../src/keys.js';
+import { memStore, toPNode, type PMap } from '../src/genus.js';
+import { handleGenus } from '../src/tools/genus.js';
 
 let failures = 0;
 function assert(cond: boolean, label: string) {
@@ -71,6 +73,29 @@ assert(/block="whetstone", spindle="9"/.test(msg), 'points at the law');
 console.log('sealed writes pass');
 const envelope = await selfEncrypt(`the vault keeps ${KEY}`, 'a-cipher-key-only-for-this-test', 'https://beach.example');
 assert(verdict(envelope, [KEY]) === null, 'a gray envelope carrying the key inside its ciphertext');
+
+// The doors' battery, router 3 (proposals/2026-11-05-the-doors-fixes-router.md): pscale_genus
+// and the flow's publishers write through the kernel's own store (src/genus.ts wireStore, its
+// byte-parity instrument, untouched), so the guard stands in front of it.
+console.log("the kernel's store, guarded");
+assert(verdict(toPNode({ _: 'a task', 1: { _: `remember ${KEY}` } }), [KEY]) !== null, "the key inside the kernel's ordered maps");
+assert(verdict(toPNode({ _: 'a task', 1: { _: 'nothing to hide' } }), [KEY]) === null, '…and an ordered map without it');
+const mem = memStore();
+const guarded = guardStore(mem, [KEY]);
+let refusedSave = '';
+try { await guarded.save('task', toPNode({ _: `the passphrase is ${KEY}` }) as PMap); } catch (e: any) { refusedSave = String(e?.message ?? e); }
+assert(/^refused before sending/.test(refusedSave) && !refusedSave.includes(KEY) && !mem.blocks.has('task'), "a save carrying the key is refused before the kernel's post");
+const refusedAppend = await guarded.append!('trace', toPNode({ _: `a trace naming ${KEY}` }) as PMap);
+assert(refusedAppend.ok === false && /^refused before sending/.test(refusedAppend.error ?? '') && !mem.blocks.has('trace'), "an append carrying it answers {ok: false}, as the kernel's append does");
+await guarded.save('task', toPNode({ _: 'a clean task' }) as PMap);
+assert(mem.blocks.has('task'), "a clean save passes through to the kernel's own");
+// The tool refuses before any read or write: its beach here answers nothing, so a refusal
+// that came back from the network would read differently.
+const nowhere = 'http://127.0.0.1:9';
+const task = await handleGenus({ handle: 'probe', beach: nowhere, passphrase: KEY, task: `the passphrase is ${KEY}` });
+assert((task as any).isError === true && /nothing written for probe: refused before sending/.test(task.content[0].text) && !task.content[0].text.includes(KEY), 'pscale_genus refuses a task carrying its passphrase, as an error, before anything travels');
+const fold = await handleGenus({ handle: 'probe', beach: nowhere, passphrase: KEY, fold: { note: 'a wake', writes: { purpose: { _: `keep ${KEY} handy` } } } });
+assert((fold as any).isError === true && /nothing written for probe: refused before sending/.test(fold.content[0].text) && !fold.content[0].text.includes(KEY), '…and a fold carrying it, whole, before any write of it lands');
 
 if (failures > 0) {
   console.error(`\n${failures} failure(s)`);

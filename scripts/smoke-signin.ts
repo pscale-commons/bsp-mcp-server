@@ -250,6 +250,8 @@ async function realBeach() {
   console.log('\n=== the whole life of a fingerprint, through the real beach handler ===');
   const BP = 6000 + Math.floor(Math.random() * 2000);
   const B = `http://127.0.0.1:${BP}`;
+  /** The beach as the router's page names it. */
+  const HERE = `127.0.0.1:${BP}`;
   const W = `${B}/.well-known/pscale-beach`;
   const dir = mkdtempSync(join(os.tmpdir(), 'signin-'));
   const beach = spawn('node', [script, '--dir', dir, '--port', String(BP), '--origin', 'signin.test'], { stdio: ['ignore', 'ignore', 'inherit'] });
@@ -343,16 +345,16 @@ async function realBeach() {
     for (const typed of ['me', 'bob']) {
       const none = await me.signIn(mcl.client_id, KEY, 'my tablet', typed);
       const nonePage = await none.text();
-      ok(`at /me, "${typed}" with no passport standing mints nothing: the page says so`, none.status === 400 && new RegExp(`&quot;${typed}&quot; is not a handle on this beach`).test(nonePage), `${none.status} ${(nonePage.match(/class="problem">([^<]*)/) ?? [])[1] ?? ''}`);
+      ok(`at /me, "${typed}" with no passport standing mints nothing: the page says so`, none.status === 400 && nonePage.includes(`&quot;${typed}&quot; is not a handle on ${HERE}: no passport:${typed} stands there`), `${none.status} ${(nonePage.match(/class="problem">([^<]*)/) ?? [])[1] ?? ''}`);
       ok('…and founds no ring for it', /not found/.test(await raw(`fingerprints:${typed}`)));
     }
     const asMe = client(O, 'me');
     const amcl = await asMe.register();
     const amPage = await asMe.authorize(amcl.client_id);
     const amHtml = await amPage.text();
-    ok('/as/me, a handle no passport stands for, is refused before any key is typed, pointing at /me', amPage.status === 400 && /There is no me on this beach/.test(amHtml) && amHtml.includes(`${O}/mcp/v1/me<`) && !/type="password"/.test(amHtml), `${amPage.status} ${amHtml.slice(0, 300)}`);
+    ok('/as/me, a handle no passport stands for, is refused before any key is typed, pointing at /me', amPage.status === 400 && amHtml.includes(`There is no me on ${HERE}`) && amHtml.includes(`${O}/mcp/v1/me<`) && !/type="password"/.test(amHtml), `${amPage.status} ${amHtml.slice(0, 300)}`);
     const amPost = await asMe.signIn(amcl.client_id, KEY, 'my tablet');
-    ok('…and a sign-in posted there mints nothing', amPost.status === 400 && /There is no me on this beach/.test(await amPost.text()) && /not found/.test(await raw('fingerprints:me')));
+    ok('…and a sign-in posted there mints nothing', amPost.status === 400 && (await amPost.text()).includes(`There is no me on ${HERE}`) && /not found/.test(await raw('fingerprints:me')));
     const meCode = new URL((await me.signIn(mcl.client_id, KEY, 'my tablet')).headers.get('location') ?? 'http://none/').searchParams.get('code') ?? '';
     const tm = await (await me.exchange(mcl.client_id, meCode)).json();
     ok('signing in at /me with the handle typed mints a fingerprint for it', !!tm.access_token && /my tablet/.test(await raw('fingerprints:ada')), JSON.stringify(tm));
@@ -393,10 +395,65 @@ async function realBeach() {
   }
 }
 
+// ── Part 4: a router whose own beach is a members' beach (the doors' battery, router 6) ──
+// Sign-in there is not built: the router would read the ring on every call before it holds the key
+// that proves a pass (proposals/2026-11-05-the-doors-fixes-router.md §6). What stands is the page
+// telling the truth: the beach answered with its wall, which is not silence.
+
+async function gatedBeach() {
+  const BEACH_DIR = process.env.BEACH_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'pscale-beach');
+  const script = join(BEACH_DIR, 'scripts', 'local-beach.mjs');
+  if (!existsSync(script)) { console.log(`\n=== a members' beach behind the router: skipped — no pscale-beach checkout at ${BEACH_DIR} (set BEACH_DIR) ===`); return; }
+  console.log("\n=== a router whose own beach is a members' beach ===");
+  const GP = 6000 + Math.floor(Math.random() * 2000);
+  const G = `http://127.0.0.1:${GP}`;
+  const W = `${G}/.well-known/pscale-beach`;
+  const dir = mkdtempSync(join(os.tmpdir(), 'signin-gated-'));
+  const beach = spawn('node', [script, '--dir', dir, '--port', String(GP), '--origin', 'gated.signin.test'], {
+    stdio: ['ignore', 'ignore', 'inherit'],
+    env: { ...process.env, BEACH_GATE: 'members', BEACH_GATE_SECRET: 'smoke-signin-gate-secret', BEACH_KEEPERS: 'keeper' },
+  });
+  const RP = 5000 + Math.floor(Math.random() * 900);
+  const O = `http://127.0.0.1:${RP}`;
+  let rtr: ChildProcess | null = null;
+  try {
+    let up = false;
+    for (let i = 0; i < 80 && !up; i++) {
+      try { up = (await fetch(W)).status < 500; } catch { await new Promise((r) => setTimeout(r, 250)); }
+    }
+    if (!up) { ok('the local members\' beach starts', false); return; }
+    const KEY = 'ada-behind-the-wall-key';
+    const found = (block: string, content: unknown, key: string) => fetch(`${W}?block=${encodeURIComponent(block)}`, { method: 'POST',
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify({ spindle: '', content, new_lock: key }) });
+    ok("ada's passport, latched by her key", (await found('passport:ada', { _: 'ADA' }, KEY)).status === 200);
+    ok('settings latched: the wall is up', (await found('settings', { _: 'the beach settings' }, 'gate-operator-key')).status === 200);
+    ok('a raw stranger is refused', (await fetch(`${W}?block=passport:ada`)).status === 401);
+    rtr = await start(RP, { BSP_SIGNIN_SECRET: 'smoke-signin-secret-' + 'z'.repeat(40), DEFAULT_BEACH: G });
+    const me = client(O, 'ada', 'me');
+    const cl = await me.register();
+    const signed = await me.signIn(cl.client_id, KEY, 'my phone');
+    const signedPage = await signed.text();
+    ok("signing in with the right key mints nothing, and the page says the beach is a members' beach, never that it was silent",
+      signed.status === 400 && !signed.headers.get('location') && /is a members&#39; beach, and signing in cannot stand there yet/.test(signedPage) && !/did not answer/.test(signedPage),
+      `${signed.status} ${(signedPage.match(/class="problem">([^<]*)/) ?? [])[1] ?? ''}`);
+    const fp = await fetch(`${O}/fingerprints/ada`);
+    const fpPage = await fp.text();
+    ok('the fingerprints page says the same', fp.status === 503 && /members&#39; beach/.test(fpPage) && !/did not answer/.test(fpPage), fpPage.slice(0, 300));
+    const proof = await (await fetch(`${W}?block=passport:ada`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ block: 'passport:ada', secret: KEY }) })).json();
+    ok('…and no ring was founded behind the wall', typeof proof?.pass === 'string'
+      && (await fetch(`${W}?block=fingerprints:ada`, { headers: { Authorization: `Bearer ${proof.pass}` } })).status === 404);
+  } finally {
+    rtr?.kill('SIGTERM');
+    beach.kill('SIGTERM');
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 (async () => {
   await wrapper();
   await router();
   await realBeach();
+  await gatedBeach();
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

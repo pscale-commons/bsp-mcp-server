@@ -34,7 +34,7 @@ import { genusCompose, genusFold, wireStore, toPNode, ZK, descend, deepEq, spark
 import { SENTINELS } from '../sentinels.js';
 import { publishCompose, publishFold } from '../flow.js';
 import { compile } from '../compile.js';
-import { loadBlock } from '../db.js';
+import { loadBlock, guardStore, refuseKeyInPayload } from '../db.js';
 
 const DEFAULT_BEACH = process.env.DEFAULT_BEACH || 'https://beach.happyseaurchin.com';
 
@@ -210,7 +210,16 @@ export async function handleGenus(params: {
     return text(`beach must be an http(s):// origin (got "${params.beach}").`);
   }
 
-  const store = wireStore(beach, handle, passphrase, teachingMap());
+  // THE KEY GUARD stands in front of the kernel's store, which posts for itself
+  // (src/genus.ts wireStore, the kernel.py byte-parity instrument, untouched):
+  // every save and append it makes meets refuseKeyInPayload, and a fold or a
+  // task that carries the passphrase is refused whole before anything is written.
+  const store = guardStore(wireStore(beach, handle, passphrase, teachingMap()), [passphrase]);
+  const carriesKey = (payload: unknown) => {
+    try { refuseKeyInPayload(payload, [passphrase]); return null; } catch (e: any) {
+      return { isError: true as const, content: [{ type: 'text' as const, text: `pscale_genus — nothing written for ${handle}: ${e?.message ?? String(e)}` }] };
+    }
+  };
 
   // ── fold mode — apply a wake, exactly as kernel.route() would ──
   if (fold !== undefined && fold !== null) {
@@ -219,6 +228,8 @@ export async function handleGenus(params: {
         `The fold needs the holder's passphrase — without it this is a ghost-wake and the mind cannot be changed (the locks enforce it). Respond outwardly instead: write task:${handle} via bsp(), or leave a mark.`,
       );
     }
+    const refused = carriesKey(fold);
+    if (refused) return refused;
     const r = await genusFold(store, fold);
     // The trace convention (project:genus-one 1.3) — a thin per-wake residue
     // entry beachside (trace:<handle>, an open accumulator), so every tab and
@@ -276,6 +287,8 @@ export async function handleGenus(params: {
         `A task without the passphrase never enters the window's given — that is the engagement path (hatch:4). Write it from outside instead: bsp(agent_id="${beach}", block="task:${handle}", ...) at the next free digit slot, or leave a mark. With the holder's passphrase, pass task again and it rides the given.`,
       );
     }
+    const refused = carriesKey(task);
+    if (refused) return refused;
     const loaded = await store.load('task');
     const block: PMap = loaded instanceof Map ? (loaded as PMap) : new Map([[ZK, `task:${handle} at ${beach.replace(/^https?:\/\//, '')}.` as PNode]]);
     const slot = nextFreeDigit(block);

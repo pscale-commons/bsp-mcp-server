@@ -32,6 +32,9 @@ export interface Door {
   secret?: string;
   /** Set by the wire when a pass was minted during this call, for the ack. */
   minted?: { origin: string; handle: string; expires: string };
+  /** Beaches where this call's proof was refused. A refused proof counts against the
+   *  passport's wrong keys, so it is tried once a call, however many reads follow. */
+  refused?: Set<string>;
 }
 
 interface Pass { token: string; exp: number; handle: string; expires: string }
@@ -64,12 +67,18 @@ export function forgetPass(origin: string): void {
   passes.delete(passKey(door.getStore()?.session, origin));
 }
 
-/** The line a stranger is given: the beach's own, and the one way through. */
+/** The line a stranger is given: the beach's own, the one way through for a member, and the
+ *  way in for a newcomer, who has no passport there to prove and whose AI cannot take an invitation. */
 export function membersOnlyLine(origin: string, beachLine: string | undefined): string {
   const o = originKey(origin);
   const d = door.getStore();
   const who = d?.handles.find((h) => typeof h === 'string' && h) ?? '<your handle>';
-  return `${beachLine || `${o} is its members' beach`} — prove your passport once in this session: bsp(agent_id="${o}", block="passport:${who}", secret=<your passphrase>) ; the router then carries your pass there for twelve hours, on every read and write.`;
+  return `${beachLine || `${o} is its members' beach`} — prove your passport once in this session: bsp(agent_id="${o}", block="passport:${who}", secret=<your passphrase>) ; the router then carries your pass there for twelve hours, on every read and write. A newcomer has no passport here to prove: a member of this beach sends an invitation, and its link opens the String's join on the beach's own site, which founds the passport and makes the key; no AI app can take an invitation, so the newcomer joins there first and proves the new passport here after.`;
+}
+
+/** A refusal at the door, as the error it is: the one answer a stranger gets, from any tool. */
+export function refusedAtDoor(e: unknown): { isError: true; content: { type: 'text'; text: string }[] } {
+  return { isError: true, content: [{ type: 'text', text: String((e as any)?.message ?? e).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
 }
 
 /** Prove the door's hand at a beach: the beach's own proof request, a plain fetch
@@ -77,6 +86,7 @@ export function membersOnlyLine(origin: string, beachLine: string | undefined): 
 export async function proveAtDoor(origin: string, timeoutMs: number): Promise<string | null> {
   const d = door.getStore();
   if (!d || typeof d.secret !== 'string' || d.secret === '') return null;
+  if (d.refused?.has(originKey(origin))) return null;
   const tried = new Set<string>();
   for (const h of d.handles) {
     if (typeof h !== 'string' || !h || tried.has(h) || /[\s:\/]/.test(h)) continue;
@@ -97,6 +107,7 @@ export async function proveAtDoor(origin: string, timeoutMs: number): Promise<st
       return j.pass;
     } catch { /* this hand did not open it; try the next */ }
   }
+  (d.refused ??= new Set()).add(originKey(origin));
   return null;
 }
 

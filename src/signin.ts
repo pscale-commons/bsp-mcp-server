@@ -37,6 +37,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { DEFAULT_BEACH, loadBlock, resolveFederationOrigin, saveBlock } from './db.js';
 import { declareHand, handOf } from './looks.js';
+import { isDoorRefusal } from './pass.js';
 
 const SECRET = process.env.BSP_SIGNIN_SECRET ?? '';
 /** Sign-in stands only on a deploy that carries its secret. */
@@ -151,6 +152,19 @@ async function passportStands(handle: string): Promise<boolean> {
   return !!row?.block && typeof row.block === 'object';
 }
 
+/** The beach this router keeps its rings at, as a person reads it on the page. */
+const HERE = DEFAULT_BEACH.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+
+/** Why no ring or passport came back. A members' beach answers a router outside
+ *  any door with its wall, which is not silence: sign-in there would have the
+ *  router read the ring on every call, before it holds the key that proves a pass
+ *  (the doors' battery, router 6; its shape waits on David's word). */
+function unanswered(e: unknown): string {
+  return isDoorRefusal(e)
+    ? `${HERE} is a members' beach, and signing in cannot stand there yet: the router would have to read your fingerprints there on every call, and a members' beach shows it nothing without your key. Nothing was done.`
+    : 'The beach did not answer. Try again in a moment.';
+}
+
 /** What a refused write at the ring says to the person at the page. */
 function refusalFor(e: unknown, handle: string): string {
   const m = String((e as any)?.message ?? e);
@@ -164,8 +178,8 @@ function refusalFor(e: unknown, handle: string): string {
 async function mint(handle: string, key: string, name: string): Promise<{ fingerprint: string; digit: string } | { problem: string }> {
   let ring: Record<string, any> | null;
   let stands: boolean;
-  try { ring = await readRing(handle); stands = await passportStands(handle); } catch { return { problem: 'The beach did not answer. Try again in a moment.' }; }
-  if (!stands) return { problem: `"${handle}" is not a handle on this beach: no passport:${handle} stands. Type the handle your blocks are under.` };
+  try { ring = await readRing(handle); stands = await passportStands(handle); } catch (e) { return { problem: unanswered(e) }; }
+  if (!stands) return { problem: `"${handle}" is not a handle on ${HERE}: no passport:${handle} stands there. Type the handle your blocks are under there; a member of another beach cannot sign in at this router yet.` };
   const digit = DIGITS.find((d) => !isSealedEntry(ring?.[d]));
   if (!digit) return { problem: `Nine fingerprints already act for ${handle}. Revoke one first, at ${FINGERPRINTS_PAGE}${handle}.` };
   const fingerprint = randomBytes(32).toString('base64url');
@@ -180,7 +194,7 @@ async function mint(handle: string, key: string, name: string): Promise<{ finger
 
 async function revoke(handle: string, key: string, digits: string[]): Promise<{ problem: string } | { revoked: string[] }> {
   let ring: Record<string, any> | null;
-  try { ring = await readRing(handle); } catch { return { problem: 'The beach did not answer. Try again in a moment.' }; }
+  try { ring = await readRing(handle); } catch (e) { return { problem: unanswered(e) }; }
   const gone = digits.filter((d) => DIGITS.includes(d) && isSealedEntry(ring?.[d]));
   if (!ring || gone.length === 0) return { problem: 'Choose a fingerprint to revoke.' };
   const next = { ...ring };
@@ -343,8 +357,8 @@ function backTo(redirectUri: string): string {
 /** An address that fixes a handle no passport stands for (/as/me, taken for /me on 5 November):
  *  said before any key is typed, with the way to sign in as oneself. */
 function noSuchHandle(handle: string, origin: string, mcpPath: string): string {
-  return `<h1>There is no ${esc(handle)} on this beach</h1>
-<p>This connector's address ends in /as/${esc(handle)}, and an address like that signs in only as the handle after /as/. No passport:${esc(handle)} stands, so nobody can sign in here, and nothing was done.</p>
+  return `<h1>There is no ${esc(handle)} on ${esc(HERE)}</h1>
+<p>This connector's address ends in /as/${esc(handle)}, and an address like that signs in only as the handle after /as/. No passport:${esc(handle)} stands on ${esc(HERE)}, the beach this router signs in at, so nobody can sign in here, and nothing was done.</p>
 <p>To sign in as yourself, give the connector the address <b>${esc(origin + addressOf(ANY, mcpPath))}</b> and type your handle on its page.</p>`;
 }
 
@@ -518,7 +532,7 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
         return page(res, 200, fingerprintsPage(handle, ring, `Revoked: ${done.revoked.join(', ')}. Those connections are signed out.`), title);
       }
       let ring: Record<string, any> | null;
-      try { ring = await readRing(handle); } catch { return page(res, 503, '<h1>The beach did not answer</h1><p>Try again in a moment.</p>', `Fingerprints for ${handle}`); }
+      try { ring = await readRing(handle); } catch (e) { return page(res, 503, `<h1>No fingerprints read</h1><p>${esc(unanswered(e))}</p>`, `Fingerprints for ${handle}`); }
       return page(res, 200, fingerprintsPage(handle, ring), `Fingerprints for ${handle}`);
     }
     return send(res, 405, { error: 'invalid_request', error_description: `${req.method} ${p} is not a sign-in address` });

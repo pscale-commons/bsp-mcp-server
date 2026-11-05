@@ -31,7 +31,7 @@ import { declareHand } from '../looks.js';
 import { allMembers, compileBundle, looksLikeBundle, renderMemberBody } from '../bundle.js';
 import { declareSeat, seatThread, surfaceLoader, toldKey } from '../orientation.js';
 import { crossSection, renderPlace, THREAD_FIELD } from '../cross.js';
-import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, loadBeachIndex, DEFAULT_BEACH } from '../db.js';
+import { loadBlock, saveBlock, resolveFederationOrigin, loadPlayedTables, loadBeachIndex, readIndex, strangersView, DEFAULT_BEACH } from '../db.js';
 import { handlePoolEngage, resolveDirective, collectContributions, coveredThrough, foldedAccountText, floorUnderscore, renderPosition, beachIndex, passportLocation, passportLocationRef, castAtWorld, livenessSignals, splitCast, declareRoomAtBirth, LIVE_WINDOW_MS, type CastEntry } from './pool.js';
 // Re-exported so existing importers (smoke-play-split) keep one source of truth.
 export { splitCast, LIVE_WINDOW_MS } from './pool.js';
@@ -45,7 +45,7 @@ import { compile, completeDialed, orderSweep, renderCompletions, renderFramedVal
 import { toPNode, pyDumps, type Loader, type PNode, type PMap } from '../genus.js';
 import { SENTINELS } from '../sentinels.js';
 import { clockTable, composeClockDoor } from './clock.js';
-import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, membersOnlyLine, type Door } from '../pass.js';
 
 /** Loaders for compile() at this door. `load` is beach-scoped: sentinels first
  *  (the completion's shallow points live there), then named blocks at the
@@ -307,7 +307,8 @@ async function canonSignage(origin: string, world: string, handle: string): Prom
  *  staged. Authored in pscale:world-genome, never hardcoded; a beach hosting its own
  *  `world-genome` overrides it, as char-creation does. */
 async function unauthoredWorld(origin: string, world: string, handle: string): Promise<string | null> {
-  const blocks = await beachIndex(origin).catch(() => [] as string[]);
+  const index = await readIndex(origin).catch(() => null);
+  const blocks = (index?.blocks ?? []).map(String);
   const inhabited = blocks.some(
     (b) =>
       b.startsWith('spatial:') ||
@@ -317,6 +318,11 @@ async function unauthoredWorld(origin: string, world: string, handle: string): P
       b.startsWith('passport:'),
   );
   if (inhabited) return null;
+  // Behind a wall a stranger is listed only what the keepers mark beyond, so an
+  // empty listing there says nothing of the place: the door's one refusal
+  // stands where EMPTY would (a call standing with a member's key has already
+  // proved once and read the index as a member).
+  if (strangersView(index)) throw new Error(membersOnlyLine(origin, undefined));
   const genome =
     (await resolveDirective(origin, 'world-genome')) ??
     (await resolveDirective(origin, 'pscale:world-genome'));
@@ -979,7 +985,7 @@ export async function handlePlay(
     res = await atTheDoor(door, () => handlePlayInner(params, extra));
   } catch (e: any) {
     if (!isDoorRefusal(e)) throw e;
-    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+    res = refusedAtDoor(e);
   }
   if (door.minted && res.content.length) res.content[res.content.length - 1].text += mintedLine(door);
   return res;

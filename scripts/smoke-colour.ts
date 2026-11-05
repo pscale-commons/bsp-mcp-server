@@ -35,9 +35,11 @@ import os from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import nacl from 'tweetnacl';
-import { derivations, forgetDerived, isGrayEnvelope, grayMode } from '../src/keys.js';
+import { derivations, forgetDerived, isGrayEnvelope, grayMode, selfEncrypt, GROUP_KEYRING_MARKER } from '../src/keys.js';
 import { handleBsp } from '../src/tools/bsp.js';
 import { handleKeyPublish } from '../src/tools/keys.js';
+import { handleGrainReach } from '../src/tools/grain.js';
+import { pairId, sideOf } from '../src/pscale-wire.js';
 import { declareHand, resetLooks } from '../src/looks.js';
 import { loadBlock } from '../src/db.js';
 
@@ -56,7 +58,7 @@ function isSpineLegal(node: any): boolean {
 // copies opened (and letters), counted on the one function both go through
 const opens = { box: 0 };
 const realBoxOpen = nacl.box.open;
-nacl.box.open = ((...a: Parameters<typeof realBoxOpen>) => { opens.box++; return realBoxOpen(...a); }) as typeof realBoxOpen;
+nacl.box.open = Object.assign((...a: Parameters<typeof realBoxOpen>) => { opens.box++; return realBoxOpen(...a); }, { after: realBoxOpen.after }) as typeof realBoxOpen;
 
 // ── the beach ──
 const LIVE = process.env.BEACH_URL?.replace(/\/+$/, '');
@@ -251,6 +253,69 @@ async function main(): Promise<void> {
     console.log('\n8. a turn with the same holders, by append');
     const cadence = await door(keeper.session, { block: COLOUR, members: [keeper.handle, a.handle, b.handle], secret: KEEPERS_LATCH, append: true });
     check('append:true with members turns the colour on the keeper\'s cadence', /turned → turn 3/.test(cadence) && !/shut out/.test(cadence), cadence);
+
+    // ── 9. the doors' battery at the router (proposals/2026-11-05-the-doors-fixes-router.md) ──
+    // This beach is not the router's default, as the lab and SALT are not: every half is read here.
+    console.log('\n9. at a beach that is not the router\'s default: one word at a latched mirror, a group, a grain, the key\'s hint, one spelling');
+    // A member whose one word is both latch and sealing word, as the voice makes one (router 5).
+    const e = person('e');
+    e.latch = e.word;
+    declareHand(e.session, e.handle);
+    await door(e.session, { block: `passport:${e.handle}`, content: { _: `${e.handle}, one word for latch and seal` }, new_lock: e.word });
+    founded.push([`passport:${e.handle}`, e.word]);
+    const ePub = (await handleKeyPublish({ handle: e.handle, secret: e.word, enc_secret: e.word, agent_id: BEACH }, { sessionId: e.session })).content[0].text;
+    const eIn = await door(keeper.session, { block: COLOUR, members: [keeper.handle, a.handle, b.handle, e.handle], secret: KEEPERS_LATCH, enc_secret: keeper.word });
+    check('e publishes from one word and is admitted to the colour', /Keys published/.test(ePub) && /admitted/.test(eIn), [ePub, eIn]);
+    const MIRROR = `days:${e.handle}`;
+    await door(e.session, { block: MIRROR, content: { _: `${e.handle}'s days, latched by the one word` }, new_lock: e.word });
+    founded.push([MIRROR, e.word]);
+    const own = await door(e.session, { block: MIRROR, spindle: '1', gray: COLOUR, secret: e.word, content: 'a coloured line in my own latched mirror' });
+    check('a coloured line lands in its writer\'s own latched mirror with secret alone, no enc_secret beside it (router 5)', /^\[wrote point @ "1"\]/.test(own) && /sealed in colour:probe-\S+, turn 3\./.test(own), own);
+    check('…and the ack says how it was sealed, never that the latch sealed it', !/sealed under the latch/.test(own), own);
+    const worn = await door(e.session, { block: MIRROR, spindle: '2', gray: COLOUR, secret: e.word, content: 'a second line, the turn now worn' });
+    check('a second, under the worn turn, lands the same', /^\[wrote point @ "2"\]/.test(worn) && /sealed in colour/.test(worn), worn);
+    const appended = await door(e.session, { block: MIRROR, append: true, gray: COLOUR, secret: e.word, content: 'a coloured line appended to my own latched mirror' });
+    check('and so does a coloured append', /^\[append @/.test(appended) && /sealed in colour/.test(appended), appended);
+    const aReads = await door(a.session, { block: MIRROR, spindle: '1', pscale_attention: 0, enc_secret: a.word });
+    check('another holder opens it', aReads.includes('a coloured line in my own latched mirror'), aReads);
+    const wrongWord = await door(e.session, { block: MIRROR, spindle: '4', content: 'x', secret: 'not the word' });
+    check('a wrong key at this beach is told the probe at this beach, never the apex\'s law (router 9)', /rejected/.test(wrongWord) && new RegExp(`at the refusing block on ${BEACH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(wrongWord) && !/beach\.happyseaurchin\.com/.test(wrongWord), wrongWord);
+
+    // A group of handles who live at this beach, founded on a fresh block (router 2 and 7).
+    const GROUP = `circle:probe-${stamp}`;
+    const g = await door(a.session, { block: GROUP, spindle: '1', members: [a.handle, b.handle], enc_secret: a.word, content: 'a line for a and b alone' });
+    founded.push([GROUP, undefined]);
+    check('a group of handles who published here is founded here: their halves are read at this beach (router 2)', /^\[wrote point @ "1"\]/.test(g) && !/rejected/i.test(g), g);
+    const gBlock = await raw(GROUP);
+    check('founded on a fresh block, it carries its underscore, so the beach\'s floor rule admits it (router 7)', typeof gBlock?._ === 'string' && gBlock?.['9']?._ === GROUP_KEYRING_MARKER && isGrayEnvelope(gBlock?.['1']) && isSpineLegal(gBlock), gBlock);
+    const gB = await door(b.session, { block: GROUP, spindle: '1', pscale_attention: 0, enc_secret: b.word });
+    check('the other member opens the line', gB.includes('a line for a and b alone'), gB);
+    const gD = await door(d.session, { block: GROUP, spindle: '1', pscale_attention: 0, enc_secret: d.word });
+    check('a hand outside the group reads it sealed', /sealed · group/.test(gD) && !gD.includes('a line for a and b alone'), gD);
+
+    // A grain between two who published here (router 2). A grain block cannot be wiped, so
+    // only on the scratch beach.
+    if (!LIVE) {
+      await handleGrainReach({ handle: a.handle, partner_handle: b.handle, description: 'a probe grain', my_side_content: 'a reaches', my_passphrase: a.latch, agent_id: BEACH } as any, { sessionId: a.session });
+      await handleGrainReach({ handle: b.handle, partner_handle: a.handle, description: 'a probe grain', my_side_content: 'b answers', my_passphrase: b.latch, agent_id: BEACH } as any, { sessionId: b.session });
+      const GRAIN = `grain:${await pairId(a.handle, b.handle)}`;
+      const said = await door(a.session, { block: GRAIN, append: true, spindle: sideOf(a.handle, b.handle), secret: a.latch, enc_secret: a.word, content: 'a grain line between a and b' });
+      const at = (said.match(/→ (\d+(?:\.\d+)?) \(slot/) ?? [])[1];
+      check('a grain line between two who published here is sealed here (router 2)', /^\[append @/.test(said) && !!at, said);
+      const heard = at ? await door(b.session, { block: GRAIN, spindle: at, enc_secret: b.word }) : '';
+      check('…and the partner opens it, both halves read at this beach', heard.includes('a grain line between a and b'), heard);
+    }
+
+    // One spelling of a beach: a trailing slash seals and opens as the address without one (router 9).
+    const SELF = `notes:self-${stamp}`;
+    const slashed = await handleBsp({ agent_id: `${BEACH}/`, block: SELF, spindle: '1', gray: true, enc_secret: a.word, content: 'a self line, its beach written with a slash' } as any, { sessionId: a.session });
+    founded.push([SELF, undefined]);
+    const unslashed = await door(a.session, { block: SELF, spindle: '1', pscale_attention: 0, enc_secret: a.word });
+    check('a self line sealed with a trailing slash on the beach opens under the address without one', unslashed.includes('a self line, its beach written with a slash'), [slashed.content.map((x) => x.text).join('\n'), unslashed]);
+    const before = await selfEncrypt('sealed under the slashed spelling, before it was one', a.word, `${BEACH}/`);
+    await fetch(`${W}?block=${encodeURIComponent(SELF)}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ spindle: '2', content: before }) });
+    const old = (await handleBsp({ agent_id: `${BEACH}/`, block: SELF, spindle: '2', pscale_attention: 0, enc_secret: a.word } as any, { sessionId: a.session })).content.map((x) => x.text).join('\n');
+    check('…and a line sealed under the slashed spelling before still opens under it', old.includes('sealed under the slashed spelling, before it was one'), old);
   } finally {
     const wiped: string[] = [];
     for (const [name, secret] of founded) { try { if (await wipe(name, secret)) wiped.push(name); } catch { /* left standing */ } }

@@ -19,7 +19,7 @@
  */
 
 import { z } from 'zod';
-import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { Block, writeAt, readAt } from '../bsp.js';
 import { loadBlock, saveBlock, isFederatedOwner, DEFAULT_BEACH } from '../db.js';
@@ -75,7 +75,7 @@ export async function handleKeyPublish(
     res = await atTheDoor(door, () => handleKeyPublishInner(params));
   } catch (e: any) {
     if (!isDoorRefusal(e)) throw e;
-    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+    res = refusedAtDoor(e);
   }
   if (door.minted && res.content.length) res.content[res.content.length - 1].text += mintedLine(door);
   return res;

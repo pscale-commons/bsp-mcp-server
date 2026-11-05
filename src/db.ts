@@ -27,8 +27,9 @@
 import { Block, readAt, floorDepth, parseSpindle } from './bsp.js';
 import { SENTINEL_BLOCK_MAP } from './sentinels.js';
 import { publicKeysFromSpine } from './keys.js';
-// The wire — ONE implementation of the beach HTTP contract (canonical here,
-// vendored byte-identical into xstream; battery in pscale-wire-contract.ts).
+import type { BlockStore, PMap } from './genus.js';
+// The wire — ONE implementation of the beach HTTP contract (canonical here;
+// xstream re-vendors it at each WIRE_VERSION; battery in pscale-wire-contract.ts).
 // db.ts keeps ROUTING (origin resolution, translation, BlockRow shaping) and
 // hands every HTTP body to the wire.
 import * as wire from './pscale-wire.js';
@@ -438,6 +439,18 @@ export async function loadPlayedTables(ownerId: string): Promise<wire.PlayedTabl
   return (await wire.playedTables(origin, { timeoutMs: BEACH_TIMEOUT_MS }).catch(() => null)) ?? [];
 }
 
+/** A beach's surface index read through the wire, and so through the door: the
+ *  session's pass rides, and at a members' beach a call standing with a key
+ *  proves once (pscale-wire.ts surfaceIndex). null on any failure. */
+export function readIndex(origin: string): ReturnType<typeof wire.surfaceIndex> {
+  return wire.surfaceIndex(origin, { timeoutMs: BEACH_TIMEOUT_MS });
+}
+/** The names it lists; empty on any failure — discovery is orientation, never a gate. */
+export async function indexNames(origin: string): Promise<string[]> {
+  return ((await readIndex(origin))?.blocks ?? []).map(String);
+}
+export { strangersView } from './pscale-wire.js';
+
 /**
  * Probe whether a URL hosts a federated beach. Used to disambiguate "block
  * not found at federated host" from "host not federated at all" after a 404
@@ -456,15 +469,16 @@ export async function probeFederation(ownerId: string): Promise<'federated' | 'a
  * carries the pointer to the recovery law: teaching is found at the refusal,
  * never in a block waiting to be guessed at.
  */
-function beachRejection(kind: string, r: { status?: number; error?: string }): Error {
+function beachRejection(kind: string, r: { status?: number; error?: string }, origin: string): Error {
   const base = `Beach ${kind} rejected: ${r.error}`;
   const keyish = r.status === 403 || /lock|secret|latch/i.test(String(r.error ?? ''));
   if (!keyish) return new Error(base);
-  return new Error(
-    `${base} — a refused key is usually a drifted spelling (often one capitalised first letter). ` +
-      `The recovery law: bsp(agent_id="https://beach.happyseaurchin.com", block="ways:key") — ` +
-      `the three-try rotation probe, then stop.`,
-  );
+  // The hint names the beach at hand: the default beach keeps the law at
+  // ways:key; anywhere else the probe itself is said, at that beach.
+  const law = origin.replace(/\/+$/, '') === DEFAULT_BEACH.replace(/\/+$/, '')
+    ? `The recovery law: bsp(agent_id="${origin}", block="ways:key") — the three-try rotation probe, then stop.`
+    : `The recovery, at the refusing block on ${origin}: the key as meant as both secret and new_lock; then its first letter capitalised as secret, the key as meant as new_lock; then all lowercase the same way; after three refusals, stop and tell its holder.`;
+  return new Error(`${base} — a refused key is usually a drifted spelling (often one capitalised first letter). ${law}`);
 }
 
 /**
@@ -484,7 +498,7 @@ export async function postActionToBeach(
     throw new Error(`No beach at ${origin} (also tried beach.<host>). Site is not federated.`);
   }
   const r = await wire.postAction(resolved, blockName, body, { timeoutMs: BEACH_TIMEOUT_MS });
-  if (!r.ok) throw beachRejection('action', r);
+  if (!r.ok) throw beachRejection('action', r, resolved);
   return r.body;
 }
 
@@ -536,8 +550,10 @@ export function refuseKeyInPayload(payload: unknown, keys: Array<string | null |
   const held = [...new Set(keys.filter((k): k is string => typeof k === 'string' && k.length >= 6))];
   if (held.length === 0 || payload == null) return;
   const words = held.map((k) => new RegExp(`(?<![A-Za-z0-9])${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9])`));
+  // The kernel's blocks are ordered Maps (src/genus.ts), walked like any object.
   const carries = (n: unknown): boolean =>
     typeof n === 'string' ? words.some((w) => w.test(n))
+      : n instanceof Map ? [...n.values()].some(carries)
       : typeof n === 'object' && n !== null ? Object.values(n).some(carries) : false;
   if (!carries(payload)) return;
   throw new Error(
@@ -547,6 +563,28 @@ export function refuseKeyInPayload(payload: unknown, keys: Array<string | null |
       `word the text needs, it is too easy to guess, so change it. The law: ` +
       `bsp(agent_id="pscale", block="whetstone", spindle="9").`,
   );
+}
+
+/**
+ * THE GUARD AT THE KERNEL'S STORE. pscale_genus and the flow's publishers write
+ * through src/genus.ts's wireStore, the kernel.py byte-parity instrument, which
+ * posts for itself and so never met the guard above. It stays untouched; the
+ * guard stands in front of it instead: every save and append meets
+ * refuseKeyInPayload with the keys the call presents before the kernel's own
+ * post. A save refuses by throwing, as the kernel's save fails; an append
+ * answers {ok: false}, as the kernel's append does.
+ */
+export function guardStore(store: BlockStore, keys: Array<string | null | undefined>): BlockStore {
+  return {
+    ...store,
+    save: async (name, block, opts) => { refuseKeyInPayload(block, keys); return store.save(name, block, opts); },
+    ...(store.append ? {
+      append: async (name: string, entry: PMap) => {
+        try { refuseKeyInPayload(entry, keys); } catch (e: any) { return { ok: false, error: String(e?.message ?? e) }; }
+        return store.append!(name, entry);
+      },
+    } : {}),
+  };
 }
 
 async function saveBlockToBeach(
@@ -574,7 +612,7 @@ async function saveBlockToBeach(
     // holds at this door too; this path previously fired and trusted.
     refuseKeyInPayload(block, [opts.secret, opts.new_lock]);
     const r = await wire.saveWhole(origin, blockName, block, wireOpts);
-    if (!r.ok) throw beachRejection('save', r);
+    if (!r.ok) throw beachRejection('save', r, origin);
     born = r.born === true;
   } else {
     const cleanedSpindle = userSpindle.replace(/\*$/, '');
@@ -584,7 +622,7 @@ async function saveBlockToBeach(
       ...wireOpts,
       pscaleAttention: opts.pscale_attention ?? null,
     });
-    if (!r.ok) throw beachRejection('save', r);
+    if (!r.ok) throw beachRejection('save', r, origin);
     born = r.born === true;
   }
   const now = new Date().toISOString();
@@ -701,7 +739,7 @@ export async function appendToBeach(
   if (r.windowMoved) {
     return { windowMoved: true, window: r.window, buffer: r.buffer ?? null };
   }
-  if (!r.ok) throw beachRejection('append', r);
+  if (!r.ok) throw beachRejection('append', r, origin);
   return { slot: r.slot, supernested: r.supernested, floor: r.floor, address: r.address, node: r.node, cleared: r.cleared ?? null, owed: r.owed, born: r.born };
 }
 

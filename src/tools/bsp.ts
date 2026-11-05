@@ -222,7 +222,6 @@ import {
   canonicaliseOrigin,
   probeFederation,
   translateAddress,
-  getPublicKeys,
   DEFAULT_BEACH,
 } from '../db.js';
 import {
@@ -253,7 +252,7 @@ import {
 } from '../keys.js';
 import { colourTurns, keyOfTurn, sealInColour, colourLine, openWorn, wearFor } from '../colour.js';
 import { envelopeOf } from '../bsp-fn.js';
-import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { sealingKey, signedSealNote } from '../signin.js';
 
@@ -481,6 +480,7 @@ async function applyGroupWrite(
   spindle: string | null | undefined,
   encSecret: string | undefined,
   hasKeyring: boolean,
+  origin: string,
 ): Promise<void> {
   if (!encSecret) {
     throw new Error('group operations need enc_secret (the key that unwraps the shared group key).');
@@ -494,11 +494,13 @@ async function applyGroupWrite(
     if (desired.length === 0) {
       throw new Error('members must list the handles allowed to read (include yourself); an empty list would lock everyone out.');
     }
+    // Each member's half as they published it at THIS beach, by their handle
+    // there — as a colour's holders are read (publishedHalfAt).
     const pubs: Record<string, string> = {};
     for (const handle of desired) {
-      const mk = await getPublicKeys(handle);
-      if (!mk) throw new Error(`member "${handle}" has not published keys — they run pscale_key_publish first.`);
-      pubs[handle] = mk.x25519;
+      const half = await publishedHalfAt(origin, handle);
+      if (!half) throw new Error(`member "${handle}" has no keys published at passport:${handle} 9 on this beach — they run pscale_key_publish(handle="${handle}", agent_id="${origin}", …) first.`);
+      pubs[handle] = half;
     }
     if (hasKeyring) {
       const oldK = await unwrapGroupKeyFromKeyring(block['9'], encSecret);
@@ -515,6 +517,10 @@ async function applyGroupWrite(
       groupKey = newGroupKey(); // create
     }
     block['9'] = buildKeyring(desired.map((h) => wrapGroupKey(groupKey, h, pubs[h])));
+    // A membership write saves the block whole, and the beach stores a whole
+    // block only on a floor — a root underscore that says what it is — so a
+    // group founded on a fresh block is founded with one.
+    if (block._ === undefined) block._ = 'A group: every line here is sealed with one key, a copy of it wrapped at 9 for each reader named there; any reader writes a line, and nobody else opens one.';
   } else {
     // ── Content-only (co-write): obtain K from the keyring ──
     if (!hasKeyring) {
@@ -549,6 +555,7 @@ async function encryptGrainLeaf(
   spindle: string,
   plaintext: string,
   secret: string,
+  origin: string,
 ): Promise<GrayEnvelope> {
   const side = leadingSideDigit(spindle);
   if (side !== '1' && side !== '2') {
@@ -561,16 +568,17 @@ async function encryptGrainLeaf(
   if (!myHandle || !partnerHandle) {
     throw new Error('grain not established (no parties at position 9). Reach first via pscale_grain_reach, then curate with bsp().');
   }
-  const [partnerKeys, myKeys] = await Promise.all([getPublicKeys(partnerHandle), getPublicKeys(myHandle)]);
-  if (!partnerKeys) {
-    throw new Error(`partner "${partnerHandle}" has not published keys — cannot curate privately. They run pscale_key_publish, or write with gray:false. (Your side secret must be the same secret you published keys with.)`);
+  // Both halves as published at the grain's own beach, by each handle there.
+  const [partnerHalf, myHalf] = await Promise.all([publishedHalfAt(origin, partnerHandle), publishedHalfAt(origin, myHandle)]);
+  if (!partnerHalf) {
+    throw new Error(`partner "${partnerHandle}" has no keys published at passport:${partnerHandle} 9 on this beach — cannot curate privately. They run pscale_key_publish there, or write with gray:false. (Your side secret must be the same secret you published keys with.)`);
   }
   // The partner's half of the shared key pairs their secret with YOUR published
   // key — so before yours stands, a sealed line opens for you alone.
-  if (!myKeys) {
-    throw new Error(`you ("${myHandle}") have not published keys, so ${partnerHandle} could never open this line — nothing was written. Publish first — pscale_key_publish(handle="${myHandle}", secret=<your passport's lock>, enc_secret=<the key you seal grain lines with>) — then write again with that same enc_secret.`);
+  if (!myHalf) {
+    throw new Error(`you ("${myHandle}") have no keys published at passport:${myHandle} 9 on this beach, so ${partnerHandle} could never open this line — nothing was written. Publish first — pscale_key_publish(handle="${myHandle}", agent_id="${origin}", secret=<your passport's lock>, enc_secret=<the key you seal grain lines with>) — then write again with that same enc_secret.`);
   }
-  return grainEncrypt(plaintext, secret, myHandle, partnerHandle, partnerKeys.x25519, myKeys.x25519);
+  return grainEncrypt(plaintext, secret, myHandle, partnerHandle, partnerHalf, myHalf);
 }
 
 /**
@@ -618,6 +626,7 @@ async function buildGrayDecryptor(
   secret: string | undefined,
   hand: string | null,
   origin: string,
+  asWritten: string = agentId,
 ): Promise<(env: GrayEnvelope) => Promise<string | null>> {
   let h1: string | undefined;
   let h2: string | undefined;
@@ -626,12 +635,10 @@ async function buildGrayDecryptor(
   if (isGrain && block?.['9'] && typeof block['9'] === 'object') {
     h1 = block['9']['1'];
     h2 = block['9']['2'];
-    const [p1, p2] = await Promise.all([
-      h1 ? getPublicKeys(h1) : Promise.resolve(null),
-      h2 ? getPublicKeys(h2) : Promise.resolve(null),
+    [k1, k2] = await Promise.all([
+      h1 ? publishedHalfAt(origin, h1) : Promise.resolve(null),
+      h2 ? publishedHalfAt(origin, h2) : Promise.resolve(null),
     ]);
-    k1 = p1?.x25519 ?? null;
-    k2 = p2?.x25519 ?? null;
   }
   // Group: unwrap the shared key once from the keyring at position 9 — the
   // hand's own copy first where it is known (null if the reader is not a
@@ -658,7 +665,7 @@ async function buildGrayDecryptor(
       return openWorn(env, origin);
     }
     if (!secret) return null;
-    if (mode === 'self') return selfDecrypt(env, secret, agentId);
+    if (mode === 'self') return (await selfDecrypt(env, secret, agentId)) ?? (asWritten !== agentId ? selfDecrypt(env, secret, asWritten) : null);
     if (mode === 'grain') {
       // Reader is whichever party their secret belongs to: the hand's own side
       // first, else both in turn. My handle pairs with the OTHER party's
@@ -884,7 +891,7 @@ export const bspParamsSchema = {
   members: z
     .array(z.string())
     .optional()
-    .describe('Group encryption — the DECLARATIVE full read-list (handles allowed to read; include yourself). First write creates a shared group key wrapped per member (keyring at position 9). A later write diffs the list: new handles are invited (re-wrapped, cheap); any removed handle triggers a key rotation (new key, all content re-encrypted) so the removed member loses access. Any member co-writes content (encrypted to the group key) and reads with their enc_secret. Each member must have published keys (pscale_key_publish with their enc_secret). Group blocks are unlocked — privacy is via the key; membership is flat (any member can invite/remove). ON colour:<name> (coloured stigmergy) members names the COLOUR\'S HOLDERS and this is the keeper\'s door, the block being latched whole: absent, it is FOUNDED with new_lock, its purpose at the underscore (content, a string) and turn 1 at slot 1 — a fresh key, a copy sealed to each holder\'s published half, the public half for letters; every holder still listed, the new ones are ADMITTED with a copy of the current turn\'s key, opened from your own copy (enc_secret), no line re-sealed; a holder left out, or append:true, is a TURN — a fresh key with a copy for each listed, appended at the root as the next turn, so the leaver reads every old line and no new one. Published halves are read from passport:<handle> 9 at this beach.'),
+    .describe('Group encryption — the DECLARATIVE full read-list (handles allowed to read; include yourself). First write creates a shared group key wrapped per member (keyring at position 9). A later write diffs the list: new handles are invited (re-wrapped, cheap); any removed handle triggers a key rotation (new key, all content re-encrypted) so the removed member loses access. Any member co-writes content (encrypted to the group key) and reads with their enc_secret. Each member must have published keys at this beach (pscale_key_publish with their enc_secret, agent_id this beach). Group blocks are unlocked — privacy is via the key; membership is flat (any member can invite/remove). ON colour:<name> (coloured stigmergy) members names the COLOUR\'S HOLDERS and this is the keeper\'s door, the block being latched whole: absent, it is FOUNDED with new_lock, its purpose at the underscore (content, a string) and turn 1 at slot 1 — a fresh key, a copy sealed to each holder\'s published half, the public half for letters; every holder still listed, the new ones are ADMITTED with a copy of the current turn\'s key, opened from your own copy (enc_secret), no line re-sealed; a holder left out, or append:true, is a TURN — a fresh key with a copy for each listed, appended at the root as the next turn, so the leaver reads every old line and no new one. Published halves are read from passport:<handle> 9 at this beach.'),
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
@@ -1109,12 +1116,15 @@ export async function handleBsp(
     res = await atTheDoor(door, () => handleBspInner(params, extra?.sessionId));
   } catch (e: any) {
     if (!isDoorRefusal(e)) throw e;
-    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+    res = refusedAtDoor(e);
   }
   if (door.minted && res.content.length) res.content[res.content.length - 1].text += mintedLine(door);
   const target = translateAddress(params.agent_id, params.block ?? '');
   if (isSentinelOwner(target.agent_id)) return res;
-  const wrote = params.content !== undefined || params.new_lock !== undefined;
+  // A write is told to other sessions as a write only when its ack says it
+  // landed; a refused one was a look (the doors' battery, router 9).
+  const wrote = (params.content !== undefined || params.new_lock !== undefined)
+    && /^\[(wrote |append @|lock @|colour @ "[^"]*" (?!unchanged))/.test(res.content[0]?.text ?? '');
   const reflected = reflect(res, extra?.sessionId, target.agent_id, target.block, params.spindle, wrote);
   // THE ORIENTATION RIDES EVERY ACK OF A SEATED SESSION — what moved since it was
   // last told, cut by the clock and the touched map; nothing when nothing did.
@@ -1155,7 +1165,13 @@ async function bundleWindow(
 const LATCH_SEAL_NOTE = '\n  ⓘ sealed under the latch: no enc_secret was given, so the lock\'s secret served as the sealing key — whoever holds this latch can open the line. Pass enc_secret to seal under a key of your own.';
 
 async function handleBspInner(params: BspToolParams, sessionId?: string): Promise<{ content: { type: 'text'; text: string }[] }> {
-  const { agent_id, spindle, pscale_attention, content: rawContent, secret, new_lock, enc_secret, face, tier } = params;
+  const { spindle, pscale_attention, content: rawContent, secret, new_lock, enc_secret, face, tier } = params;
+  // ONE SPELLING OF A BEACH. A self line is salted by the agent_id as written,
+  // and a beach's address with a trailing slash is the same beach, so it seals
+  // and opens as the address without one; a line sealed under the slashed
+  // spelling before still opens under it (the doors' battery, router 9).
+  const asWritten = params.agent_id;
+  const agent_id = isFederatedOwner(asWritten) ? asWritten.replace(/\/+$/, '') : asWritten;
   // Block may be omitted (or "") to request a surface index — normalise to a
   // string for the downstream translate/load/save calls, which expect one.
   const blockName = params.block ?? '';
@@ -1270,7 +1286,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
         } else if (isGrainAppend) {
           const grainRow: BlockRow | null = await loadBlock(agent_id, blockName);
           grayBlock = grainRow?.block ?? null;
-          entry = await encryptGrainLeaf(grainRow?.block ?? {}, appendSpindle, stringifyForGray(content), encSecret!);
+          entry = await encryptGrainLeaf(grainRow?.block ?? {}, appendSpindle, stringifyForGray(content), encSecret!, target.agent_id);
         } else {
           // A group accumulator would need its keyring rather than a self key,
           // and none exists in the field — refuse rather than encrypt to the
@@ -1299,7 +1315,10 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       // beach as write-authority, and is withheld only while it is doing duty
       // as the encryption key instead. A locked gray accumulator therefore
       // wants a distinct enc_secret — the hint below says so when it bites.
-      const appendSecret = wantGrayAppend && !isGrainAppend && enc_secret === undefined && sealed?.how !== 'letter' ? undefined : secret;
+      // A coloured line is sealed with its colour's key, never the latch, so
+      // its `secret` is the latch proof and travels as one (the doors' battery,
+      // router 5): a keeper's line lands in its own latched block.
+      const appendSecret = colour === null && wantGrayAppend && !isGrainAppend && enc_secret === undefined ? undefined : secret;
       const res = await appendToBeach(agent_id, blockName, entry, appendSecret, undefined, undefined, appendSpindle || undefined);
       // Say the debt out loud. A zero-slot voices the PREVIOUS completed nine
       // (+0 inductive, block-conventions:3.5) and falls due the moment the next
@@ -1346,7 +1365,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       const lawOfIt = family ? await loadBlock(agent_id, `function:${family}`).catch(() => null) : null;
       const handed = lawOfIt ? await wayHandedOver(sessionId, agent_id.replace(/\/+$/, ''), lawOfIt.block, Date.now()) : [];
       const way = handed.length ? `\n\n${handed.join('\n')}` : '';
-      const latchNote = wantGrayAppend && !isGrainAppend && enc_secret === undefined && secret !== undefined && sealed?.how !== 'letter' ? LATCH_SEAL_NOTE : '';
+      const latchNote = colour === null && wantGrayAppend && !isGrainAppend && enc_secret === undefined && secret !== undefined ? LATCH_SEAL_NOTE : '';
       const coloured = colour && sealed ? colourLine(colour, sealed) : '';
       if (res.address !== undefined) {
         return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${stampedNote}]${coloured}${bornNote}${owed}${span}${followed}${readBack}${latchNote}${way}` }] };
@@ -1465,7 +1484,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
           row.block,
           readSpindle,
           pscale_attention ?? null,
-          await buildGrayDecryptor(row.block, target.block.startsWith('grain:'), agent_id, encSecret, handOf(sessionId), target.agent_id),
+          await buildGrayDecryptor(row.block, target.block.startsWith('grain:'), agent_id, encSecret, handOf(sessionId), target.agent_id, asWritten),
         )
       : row.block;
     try {
@@ -1536,7 +1555,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
   if (isGroupOp && colour === null && params.gray !== false && (content !== undefined || params.members !== undefined)) {
     // ── Group: create / invite / private content ──
     try {
-      await applyGroupWrite(block, params.members, content, spindle, encSecret, hasKeyring);
+      await applyGroupWrite(block, params.members, content, spindle, encSecret, hasKeyring, target.agent_id);
       writeResult = {
         shape: 'point',
         written: true,
@@ -1575,7 +1594,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
           sealed = s;
         } else {
           envelope = isGrain
-            ? await encryptGrainLeaf(block, spindle, stringifyForGray(content), encSecret!)
+            ? await encryptGrainLeaf(block, spindle, stringifyForGray(content), encSecret!, target.agent_id)
             : await selfEncrypt(stringifyForGray(content), encSecret!, agent_id);
         }
         const placed = placeGray(block, spindle, envelope);
@@ -1668,7 +1687,12 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
         // exactly the private-notes case — only I write, only I read — so the
         // condition asks which role `secret` is playing, not merely whether
         // the write is gray.
-        secret: wantGray && !isGrain && !isGroupOp && new_lock === undefined && enc_secret === undefined && sealed?.how !== 'letter'
+        //
+        // A COLOURED line is sealed with its colour's key, never the latch, so
+        // `secret` there is the latch proof alone and travels as one: withholding
+        // it refused a keeper's line into their own latched mirror unless
+        // enc_secret rode beside it (the doors' battery, router 5).
+        secret: colour === null && wantGray && !isGrain && !isGroupOp && new_lock === undefined && enc_secret === undefined
           ? undefined
           : secret,
         new_lock: params.new_lock,
@@ -1705,7 +1729,7 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
   // content write. A gray entry has none (its leaf is an envelope, opaque to the
   // wire), but a gray VOICING does: the node it voiced is still a node, and its
   // entries standing beneath the encrypted line is the whole of what to judge.
-  const latchNote = wantGray && !isGrain && enc_secret === undefined && secret !== undefined && sealed?.how !== 'letter' ? LATCH_SEAL_NOTE : '';
+  const latchNote = colour === null && wantGray && !isGrain && enc_secret === undefined && secret !== undefined ? LATCH_SEAL_NOTE : '';
   if (writeResult) {
     const coloured = colour && sealed ? colourLine(colour, sealed) : '';
     const voicedNote = grayVoiced !== undefined

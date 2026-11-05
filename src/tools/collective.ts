@@ -28,7 +28,7 @@
  */
 
 import { z } from 'zod';
-import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { isFederatedOwner, resolveFederationOrigin, refuseKeyInPayload, DEFAULT_BEACH } from '../db.js';
 // The register body belongs to the WIRE — sedRegister owns the action shape
@@ -69,7 +69,7 @@ export async function handleSettle(
     res = await atTheDoor(door, () => handleSettleInner(params));
   } catch (e: any) {
     if (!isDoorRefusal(e)) throw e;
-    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+    res = refusedAtDoor(e);
   }
   if (door.minted && res.content.length) res.content[res.content.length - 1].text += mintedLine(door);
   return res;
