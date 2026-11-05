@@ -4,7 +4,7 @@
 > we need, surfaced so the emergent play comes out right. Each maximises a block's use; none
 > adds a mechanism.
 
-**Status:** PROPOSED 2026-06-24, for David's confirm before the changes. **Evidence:** the first
+**Status:** PROPOSED 2026-06-24, for David's confirm before the changes; the co-presence reveal built the same day (src/tools/play.ts, commit 7f69833), the target and derived-memory reveals not traced. **Evidence:** the first
 two-machine play of `thousand-valleys` (Orvel + Tessavar, 9 pool beats, live on the beach).
 
 ---

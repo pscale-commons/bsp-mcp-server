@@ -1,7 +1,7 @@
 # soft-llm-convos: a location-sensitive, deepening-spine continuity block for the soft-LLM
 
 - **Date**: 2026-07-21 (hermitcrab.8)
-- **Status**: PROPOSED — David's design, verified and specced for build
+- **Status**: PROPOSED and built the same day (xstream-bsp #149 to #152, 21 July).
 - **Touches**: xstream-bsp (`claude-tools.ts` write path, `recipe-runner.ts` injection, a new `lib/soft-convos.ts`), a new substrate block convention (`soft-llm-convos:<handle>`), a candidate `block-conventions` branch-3 sibling
 - **Companion**: [2026-07-19-xstream-cado-redesign.md](2026-07-19-xstream-cado-redesign.md) (the `reflexive:9`-for-the-player v2 is the *navigational* organ; this is the *episodic* one — keep them distinct)
 

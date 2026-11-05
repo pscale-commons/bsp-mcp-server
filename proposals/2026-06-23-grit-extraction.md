@@ -3,7 +3,7 @@
 **Status:** SPEC for David's review. Architecture confirmed (David, 2026-06-23): **two-tier
 (GRIT + NOMAD), GRIT as a bsp-mcp sentinel, recycle the name "GRIT" and fully replace its
 dead meaning.** GRIT sentinel drafted + wired; one wiring fork open; docs-rewrite + cartridge
-surgery + any live reseed/deploy gated on this review. **Date:** 2026-06-23.
+surgery + any live reseed/deploy gated on this review. **Date:** 2026-06-23. Built 24 June: the play loop extracted as the pscale://grit sentinel (commit 8e69f7d; `src/grit.json` stands).
 
 ## The determination (and the test that settled it)
 

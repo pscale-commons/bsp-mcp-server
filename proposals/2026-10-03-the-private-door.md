@@ -1,9 +1,6 @@
 # The private door — a helper that answers one person at a time and keeps nothing (2026-10-03)
 
-**Status:** proposed, and its first slice built, at David's word (*"yes write the proposal and build A"*),
-lane helper.1, through Claude Code; the record is at watch:weft 514 (514.5 to 514.7). The code is in this
-branch and runs nowhere until it is merged and a holder enrols a helper at the waker. The helper it was built
-for, `lero-helper`, now has a shell at the apex.
+**Status:** proposed, and its first slice built, at David's word ("yes write the proposal and build A"), lane helper.1 (watch:weft 514). Merged as bsp-mcp #469 on 3 October, with #471 the same day; lero-helper is enrolled at the waker as a lite doorman and answers at happyseaurchin.com/ask/lero-helper, trialled on 3 October (2026-10-03-the-held-search.md). §7 items 3 to 5 (the steward, a panel on the LERO pages, memory) are not traced as built.
 
 ## 0. David's words
 

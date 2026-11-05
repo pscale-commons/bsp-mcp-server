@@ -1,10 +1,6 @@
 # The held search — a helper may look things up, but only where its own sources point (2026-10-03)
 
-**Status:** built at David's word (*"go ahead, draft the list, create the actual block so it is operational, and
-open the PR"*), lane helper.1, through Claude Code; the record is at watch:weft 518 and the entry after it. The
-sources block it reads, `sources:lero-helper`, stands at the apex, and the line that turns the search on stands
-beneath 9 of `wake:lero-helper`. Until this is merged and the waker redeploys, the running door reads that line as
-nothing and answers as it does today.
+**Status:** built at David's word ("go ahead, draft the list, create the actual block so it is operational, and open the PR"), lane helper.1 (watch:weft 518). Merged as bsp-mcp #476 on 3 October; the sources block `sources:lero-helper` stands at the apex, and the line that turns the search on stands beneath 9 of `wake:lero-helper`.
 
 ## 0. David's words
 

@@ -1,8 +1,7 @@
 # The relay for live play
 
 > **Status.** SCOPE, not built — lane tron.1 (weft, Claude Code, David present), 2026-10-22. Every number
-> below was measured that morning from David's Mac in the UK unless it names a source. Decisions at §9 wait
-> for David.
+> below was measured that morning from David's Mac in the UK unless it names a source. David's GO came at tronic-glass 1.11138 and the build followed §8's order: step 1, the room plug and the ping page (pscale-beach #98, merged 27 October); step 2, TURN through the owner's Cloudflare relay (pscale-beach #99 to #101, merged 28 October; happyseaurchin-home #571); steps 3 onward are not traced as built.
 
 **In short.** The relay we already have is fast: 22 ms one way between two players in the UK, within a few
 milliseconds of what their connections allow. What it cannot do is carry play at a price — it bills every

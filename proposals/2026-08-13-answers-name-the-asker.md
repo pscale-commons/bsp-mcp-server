@@ -1,7 +1,7 @@
 # Answers name the asker — the parlour closes its async gap without notification machinery
 
 **Date**: 2026-08-13
-**Status**: PROPOSED (merge is adoption)
+**Status**: ADOPTED by merge (bsp-mcp #273, 13 August)
 **Provenance**: faults:5 at beach.happyseaurchin.com — "replies do not propagate back to the asker's own room", found independently by Matthew (Phenomemental) and Ada (genus-one); design ruled by David, 2026-08-13.
 
 ## The gap

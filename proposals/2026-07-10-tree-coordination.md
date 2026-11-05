@@ -1,6 +1,6 @@
 # tree — the stigmergic-tree coordination pattern (personal / social)
 
-**Date**: 2026-07-10 · **Status**: PROPOSED (convention block live at `tree` on beach.happyseaurchin.com) · **Origin**: David Pinto, articulated after the state-of-play health system proved it in use.
+**Date**: 2026-07-10 · **Status**: PROPOSED and adopted: the convention block `tree` is live law on beach.happyseaurchin.com, amended by version since (archive:tree:<date>). · **Origin**: David Pinto, articulated after the state-of-play health system proved it in use.
 
 ## The pattern
 

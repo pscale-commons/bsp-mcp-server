@@ -2,9 +2,7 @@
 
 **Status**: PROPOSAL at David's word (*"yes go ahead — proposal first, then build"*). Lane tidying.21, weft
 through Claude Code (Claude Opus 5.5). The record is watch:weft 622, with 622.1 to 622.3 the turns that led
-here. The build is happyseaurchin-home #422. The law moves when that build merges, never
-before: `function:ahead` is amended under the shared project lock, with the standing text kept first at
-`archive:function:ahead:2026-10-12`. Until then the law and the doors stay as they are.
+here. The build is happyseaurchin-home #422. The build merged on 12 October and the law moved at the merge: `function:ahead` amended under the shared project lock, the standing text kept first at `archive:function:ahead:2026-10-12`.
 **Amends**: `function:ahead` 0, 1, 2, 4 and 9 (3 and 5 unchanged), and the 2026-09-14 ruling that named
 pile 2 'tomorrow'.
 **Prompted by**: David, 2026-10-12, reading the card mint (happyseaurchin-home #421) live:

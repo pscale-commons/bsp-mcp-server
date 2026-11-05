@@ -1,7 +1,7 @@
 # The torus drawn — the living side of the beach as a smoke ring
 
 **Date**: 2026-09-15
-**Status**: design, for David's ruling before a line of the page is written. Companion to the flow producer (`proposals/2026-09-15-flow-producer.md`, which draws the INSIDE of one mind) and to the torus-mirror family already standing on the beach (`function:torus-mirror`, David's ruling of 2026-09-11: the beach is dead, it is content; what is alive is a human awaiting a response and the instance answering them, and the concurrent instances answering others at the same moment).
+**Status**: design, ruled and drawn at happyseaurchin.com/mindflow/torus: happyseaurchin-home #256 (a first attempt, merged 16 September), then #264 (16 September) and #317 (26 September); the torus's later turn is 2026-09-28-the-torus-is-a-reflection.md. Companion to the flow producer (`proposals/2026-09-15-flow-producer.md`, which draws the INSIDE of one mind) and to the torus-mirror family already standing on the beach (`function:torus-mirror`, David's ruling of 2026-09-11: the beach is dead, it is content; what is alive is a human awaiting a response and the instance answering them, and the concurrent instances answering others at the same moment).
 
 ## The ask, in David's images
 

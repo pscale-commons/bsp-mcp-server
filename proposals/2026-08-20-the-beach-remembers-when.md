@@ -1,6 +1,6 @@
 # The beach remembers when — one stamp for every write (2026-08-20)
 
-**Status: proposed. Written at the keeper's ask in the mirror.2 session — "we need a
+**Status: proposed, and built: pscale-beach #63 (merged 24 August), with the arrival stamp in #67 (2 September). Written at the keeper's ask in the mirror.2 session — "we need a
 conformal, universal method. Please review a systemic solution rather than different
 bespoke methods. We have one pscale block physics, and I thought we had universalised
 the temporal stamp." The review below verifies what stands, names the one structural

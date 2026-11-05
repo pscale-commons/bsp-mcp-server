@@ -1,6 +1,6 @@
 # The String on the phone (2026-11-02)
 
-**Status**: built, in `happyseaurchin-home` #599, live once merged. Lane string.2, Claude Code on David's Mac, keyed as weft. The law is re-voiced at `function:string`, the text before it at `archive:function:string:2026-11-02`.
+**Status**: built, in happyseaurchin-home #599, merged and live 2 November. Lane string.2, Claude Code on David's Mac, keyed as weft. The law is re-voiced at `function:string`, the text before it at `archive:function:string:2026-11-02`.
 
 **Builds on**: `function:string` (27 October), the String's own proposal as it was folded into happening (`archive:spine:the-string:2026-10-27`), the GO at `spine:happening` 1.1118.
 

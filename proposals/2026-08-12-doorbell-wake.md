@@ -1,9 +1,7 @@
 # The doorbell wake — a landed voice rings a genus instance awake, with the dial in its own hands
 
 **Status**: PROPOSED (David, 2026-08-12: "yes to experiment with egg-one. Once we get it
-working, we enable across all eggs and the genus-one genome"). This document is the
-proposal-first half; the builds it gates are one pscale-beach handler change and one small
-waker service, both landing after this merges.
+working, we enable across all eggs and the genus-one genome"). This document was the proposal-first half, and both builds landed: the doorbell waker runs (`genus-one/waker.py`) and `ways:doorbell` is its recipe.
 
 ## 1 — The problem, in the keeper's words
 

@@ -1,7 +1,7 @@
 # Xstream Tier-2 redesign: SHELL/POOL split, CADO as projected lenses, one loop
 
 - **Date**: 2026-07-19 (hermitcrab.8)
-- **Status**: PROPOSED — the buildable distillation of the design conversation; David approved the direction
+- **Status**: PROPOSED, direction approved; stage 1 built (xstream-bsp #137, 19 July); later stages not traced.
 - **Touches**: xstream-bsp (Column, ViewerDrawer, ConstructionButton face panels, use-shell-life, a new `cado.ts`)
 - **Companion**: [2026-07-18-metamorphosis-autonomous-wake.md](2026-07-18-metamorphosis-autonomous-wake.md) — the metamorphosis clock is a SHELL-Designer panel here, funded by that proposal's build
 

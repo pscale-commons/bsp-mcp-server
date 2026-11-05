@@ -1,8 +1,6 @@
 # The RPG as it stands — scope, the three portals, the four faces, and two plans (2026-09-11)
 
-**Status**: SCOPE for David's ruling (the rpg.1 window). Nothing built, no law block
-touched; one lane entry at `watch:weft` and one intake entry at `project:nomad-rpg` future
-(branch 2, appended) point at this file. Weft, Claude Code, keyed.
+**Status**: SCOPE for David's ruling (the rpg.1 window), ruled: two tracks, amended 14 September (bsp-mcp #357); track B is 2026-09-14-rpg-on-the-clock-second-track.md.
 
 **What was fired to write this** (the portal convention — record the instruments, not only
 the findings): the identity file; `orientation:weft` whole; `cook:weft`; the beach indices

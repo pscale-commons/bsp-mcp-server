@@ -1,6 +1,6 @@
 # The proposals list grows: out of the form's 8, into its own block (2026-10-25)
 
-**Status**: DECIDED by David on 25 October 2026, lane y-ray.1. This record comes before the law write. The new block stands, and the page change is happyseaurchin-home #534. The form's 7, 8 and 9 are rewritten once #534 is live. Merging this file redeploys nothing.
+**Status**: DECIDED by David on 25 October 2026, lane y-ray.1. This record came before the law write. The new block `proposals` stands, the page change is happyseaurchin-home #534 (merged 25 October), and the form's 7, 8 and 9 were rewritten the same day, its standing text at archive:function:proposal:2026-10-25. Merging this file redeploys nothing.
 
 ## The ask
 

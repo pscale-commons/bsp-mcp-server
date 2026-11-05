@@ -2,7 +2,7 @@
 
 **Date**: 2026-09-08 · **Lane**: the orientation lane (watch:weft 266, intake 264, addendum 265)
 **Law it implements**: `ways:orientation` 1.3 (weft's key, settled 2026-09-08)
-**Status**: proposed — code complete, CI green, one open question for David at the end
+**Status**: proposed, code complete, merged (bsp-mcp #341, 8 September); one open question for David at the end
 
 ## The fault, measured
 

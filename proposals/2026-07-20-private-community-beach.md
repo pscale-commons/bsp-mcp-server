@@ -1,6 +1,6 @@
 # Private-community beaches — read-gate vs content-encryption, and escrow for provisioning
 
-**Date**: 2026-07-20 · **Status**: PROPOSED (analysis + live demo; nothing built) · **Origin**: David Pinto — "can we set up a private area for a school or health practice — invisible outside, operating normally inside? Does escrow + encryption give that, with ALL the functionality of a public beach?"
+**Date**: 2026-07-20 · **Status**: PROPOSED 2026-07-20 (analysis and live demo). The read-gate it recommends was built in November as the members' gate, behind `BEACH_GATE=members`: pscale-beach #102 (merged 2 November), #103 and #104 (3 November), #105 (4 November), and the router at a members' beach, bsp-mcp #571 (2 November) and #577 (3 November); first live on beach.bringingtheflavour.com (2026-11-02-leros-on-the-commons-the-build-to-completion.md). Content sealing grew into coloured stigmergy (bsp-mcp #585, #589, #591). · **Origin**: David Pinto — "can we set up a private area for a school or health practice — invisible outside, operating normally inside? Does escrow + encryption give that, with ALL the functionality of a public beach?"
 
 ## The requirement
 

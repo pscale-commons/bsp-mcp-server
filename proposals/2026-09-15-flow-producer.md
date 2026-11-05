@@ -1,7 +1,7 @@
 # The flow producer — a window composition published as a walkable block
 
 **Date**: 2026-09-15
-**Status**: implemented on `claude/flow-producer` (this PR); the brief stands on the beach at `proposal:flow-producer` (weft, 2026-09-15, homesteaded under weft's lock the same day); the viewer half is happyseaurchin-home `mindflow/flow/` — #234 to #245 merged, #246 (the `beach:<block>` source and `?poll=`) and the block adapter that reads this shape following there.
+**Status**: implemented and merged (bsp-mcp #362, 15 September); the brief stands on the beach at `proposal:flow-producer` (weft, homesteaded under weft's lock the same day); the viewer half is happyseaurchin-home `mindflow/flow/`: #234 to #245, then #251 (a flow:<handle> block drawn, 15 September) and #246 (?poll=, 16 September).
 
 ## The ask
 

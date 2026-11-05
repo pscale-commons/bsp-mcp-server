@@ -1,7 +1,7 @@
 # The lattice — S × T × I, one clock per world, and causation across the rungs (2026-09-23)
 
 **Status**: PROPOSAL, David's design brief written up as the systemic law the second track
-builds toward; builds nothing. Written at his word ("Yes, do the proposal — call it the
+builds toward. Step 1 landed the same day: temporal:urb is urb's one clock, its turns at almanac:urb 8, and every frame reads urb's three spindles since 23 October (bsp-mcp #543); steps 2 to 4 (the composer generalised, canon worldlines, the four sealed trials) are not built. Written at his word ("Yes, do the proposal — call it the
 lattice") the day after the clock door shipped (bsp-mcp #417, #419, #421; xstream #351). It
 supersedes the *local* answers the clock trial gave — a three-rung bubble, a night per
 table, "the day" and "the year" as special cases — with the general ones pscale is built

@@ -1,6 +1,6 @@
 # The faithful rig — HNITL ≡ HITL, and the shell as context-compiler
 
-**Status:** DRAFT for David's review (design-first; build off the agreed spec).
+**Status:** DRAFT, built the same day (commit 0dbee87: pscale_play scoops the shell manifest).
 **Date:** 2026-06-22
 **Decided [David]:** yes to the refactor (point 1). Guidance folded in below (points 2/3/4/6).
 

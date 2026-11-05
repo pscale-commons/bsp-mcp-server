@@ -1,6 +1,6 @@
 # The genesis delta names the canonical organs — `stash:` and `history:`, where it still said `knows:` and `witnessed:`
 
-**Status**: proposal-first record of a conformance write (the law it conforms to already stands); archives and writes follow this file's PR
+**Status**: proposal-first record of a conformance write (the law it conforms to already stands); the archives and writes followed this file's PR (bsp-mcp #407, merged 21 September): archive:char-creation:2026-09-21 stands at each table surface written.
 **Date**: 2026-09-21
 **Lane**: rpg.10-A, the semantic-flow diet (watch:weft 433) — track A's leftover (b), found at watch:weft 432.5 finding (4)
 **Class**: law — a genesis passage is read by every stranger's LLM that arrives at a table (proposals/2026-08-05-law-writes-get-their-record)

@@ -5,7 +5,7 @@ lost four of five sealed questions, all three of its failures in the zoom, and b
 ended the second track at readings. David ruled one corrective pass the same evening: *"go ahead
 with your second run — sounds like the zoom function is perhaps viable. But it is very odd… I
 suspect it is trickier to get it working than you think."* It ran 2026-09-21 20:09Z → 23:10Z.
-The lane is `watch:weft` 445 (account at 445.6). Weft, Claude Code, keyed.
+The lane is `watch:weft` 445 (account at 445.6). Weft, Claude Code, keyed. Ruled after this pass: "Ok, go for your recommendation." The clock door was built (2026-09-22-the-clock-door.md; bsp-mcp #417, #419 and #421, xstream-bsp #351, merged 23 September).
 
 ## 1. What was run
 

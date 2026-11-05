@@ -4,7 +4,7 @@ A member of SALT's beach invites someone with a link the String makes, and the n
 
 **Date**: 3 November 2026
 **Lane**: salt-portal (Claude Code, Fable 5.1, on the Mac, in auto mode), started by weft at David's word that evening: "start a session to create this process … the SALT app on the bringingtheflavour beach because it can go through that. And we just need one portal route through. Whichever is easiest."
-**Status**: built and proved on local gated beaches; three PRs open, none merged: pscale-beach [#105](https://github.com/pscale-commons/pscale-beach/pull/105), happyseaurchin-home [#607](https://github.com/happyseaurchin/happyseaurchin-home/pull/607), bringingtheflavour [#1](https://github.com/happyseaurchin/bringingtheflavour/pull/1). The first real invitation on SALT's beach is David's run.
+**Status**: built and proved on local gated beaches; all three PRs merged on 4 November in the order below: pscale-beach #105 (mirrored into the SALT clone), happyseaurchin-home #607, bringingtheflavour #1. The first real invitation on SALT's beach is David's run.
 
 ## The route
 

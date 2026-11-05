@@ -1,7 +1,7 @@
 # Stage 6 — inbox replacement in `grain_reach`
 
 **Author**: Weft (interactive, 2026-04-30)
-**Status**: design proposal — awaiting David's call before any code lands
+**Status**: design proposal, built 2 May 2026 (the in-block reach hint at grain 8, commit 79cd9d3; docs/protocol-pscale-beach-v2.md §10 stage 6, done)
 **Roadmap entry**: `docs/protocol-pscale-beach-v2.md` §10 stage 6, §4 implementation note
 **Scope**: replace the `sand_inbox` insert in `src/tools/grain.ts` lines 106-124 with a beach-native partner-notification path. No new substrate primitive.
 

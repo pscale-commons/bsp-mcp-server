@@ -1,11 +1,6 @@
 # The thread — a family whose spine is a ladder of knots (2026-10-20, third cut)
 
-**Status**: PROPOSAL, superseding the deck of 2026-10-19 (merged as bsp-mcp #536 the evening it was
-written; its file stands with a superseded note). A second cut, which put the thread in a room with
-references at its rungs, lived only on a branch for a morning and is folded into §7 here. This cut follows David's words of 20 October, and one real thread was founded the same
-hour to test it (§9). Lane need-offer.1, weft through Claude Code (Claude Fable 5.1); the record is
-watch:weft 682. No law moves beyond the one family founded for the test; `function:thread` as a
-form, and one sentence each in `function:ahead` 2 and `function:path` 2.3, wait on the test.
+**Status**: PROPOSAL, superseding the deck of 2026-10-19 (bsp-mcp #536). The form was founded the same day as function:thread (its first cut at archive:function:thread:2026-10-20) and the test thread beacon ran (§9). The ladder was superseded on 29 October by the registry (2026-10-29-threads-the-registry.md; the keeper form at archive:function:thread:2026-10-29), then phase 2 (2026-10-29-threads-phase-2.md) and the endings of 3 and 4 November.
 
 **Prompted by**: David, 2026-10-20:
 

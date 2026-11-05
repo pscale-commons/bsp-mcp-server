@@ -1,8 +1,6 @@
 # Transpose to depth, and the honed bundle — the extraction check becomes law, and every call's spindles earn their words
 
-**Status**: PROPOSED (ruled "core" by David 2026-08-12 in the xstream.11 arc; this file is the
-proposal-first half of the law-writes discipline — the block amendments happen only after this
-merges, each with its `archive:<block>:<date>` version cut first).
+**Status**: PROPOSED (ruled "core" by David 2026-08-12 in the xstream.11 arc; this file was the proposal-first half of the law-writes discipline, and the amendments landed after it, each with its `archive:<block>:<date>` version cut first: bsp-mcp #268 (12 August), then #271, #272, #275 and #278 (13 August)).
 
 **Two rulings, one root.** Both halves of this proposal are the same discipline applied at two
 scales: *words in a block earn their position by what a walk of them delivers* (the transpose

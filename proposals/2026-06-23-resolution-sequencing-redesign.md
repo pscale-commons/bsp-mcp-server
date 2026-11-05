@@ -1,10 +1,9 @@
 # Resolution / synthesis sequencing redesign — exchange vs resolution, perceive-fold
 
-**Status:** PROPOSED 2026-06-23. Block-only (no code/deploy) for the core. Pending David's
-confirmation on the four forks (end of doc). Not yet built.
+**Status:** PROPOSED 2026-06-23 and implemented by 3 July (bsp-mcp #103). Block-only for the core.
 
 **Evidence:** the first two-machine HITL run of Thornwood — cyrus + anya on two claude.ai
-connectors, 2026-06-23 (passphrase thorn142). Co-presence-close **passed** (4/4 windows
+connectors, 2026-06-23 (passphrase [key removed 2026-11-05]). Co-presence-close **passed** (4/4 windows
 gathered, the characters met). But real play exposed four faults the faithful rig could not,
 because they are about *human tempo and feel*, not mechanics. Forensic timeline read live off
 the beach (`pool:` / `liquid:` / `witnessed:` snapshots).

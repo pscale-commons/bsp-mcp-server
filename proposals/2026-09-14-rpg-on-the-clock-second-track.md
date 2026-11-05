@@ -1,7 +1,6 @@
 # The RPG on the clock — the second track, and its sealed trial (2026-09-14)
 
-**Status**: PROPOSAL for David's ruling, with a trial designed and sealed here. Builds
-nothing. Written at David's word after the first track was brought to "one human round
+**Status**: PROPOSAL for David's ruling, with a trial designed and sealed here. The trial ran on 21 and 22 September (2026-09-21-clock-trial-first-pass.md, 2026-09-22-clock-trial-corrective-pass.md) and the clock door was built on 23 September (2026-09-22-the-clock-door.md). Written at David's word after the first track was brought to "one human round
 away" the same day (open tables founded, the mirror the browser door). Companions: the
 scope and its amendment (2026-09-11), the now-resolution capstone (2026-07-16), the
 stream-vs-pool sealed trial (2026-08-06, its method reused whole), the minimal structure

@@ -1,7 +1,7 @@
 # Presence carries the coordinate, not just the place
 
 **Date**: 2026-08-10
-**Status**: proposed
+**Status**: proposed and built (bsp-mcp #259, merged 10 August)
 **Touches**: `src/block-conventions.json` branch 4.6 (presence). Client side lands separately in xstream-bsp.
 **Precedes**: the write. Per the 2026-08-05 law-write discipline — a convention block is read by everyone, so it moves by proposal, not by quiet edit.
 

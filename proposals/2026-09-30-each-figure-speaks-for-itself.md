@@ -3,7 +3,7 @@
 **Status**: a PROPOSAL for David's ruling (§4) — his questions the same afternoon: *"Things
 like Cob at the inn have responded to events nearby at the slope — how could they know? …
 should we be taking up a character-centric pass to establish what each does? … Maybe we need
-to examine how the keeper is organised and operated?"* Nothing here is built. David put the
+to examine how the keeper is organised and operated?"* Ruled the same day ("… build that in place of your contract fix: each figure speaks for itself; the keeper keeps the books and carries the news") and built in rpg.11: bsp-mcp #463, merged 30 September, recorded in 2026-09-30-rooms-names-figures-built.md §3. David put the
 same three faults to the RPG lane (rpg.11, watch:weft 476) the same day; §2 and §8 say where
 that lane's reading is the right one and this lane's first cut was not. **Lane**: costs
 (watch:weft 478).

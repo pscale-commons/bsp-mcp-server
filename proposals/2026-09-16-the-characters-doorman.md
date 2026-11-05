@@ -1,6 +1,6 @@
 # The character's doorman — a character that answers while its player is away, at the table it stands in (2026-09-16)
 
-**Status: PROPOSAL for David's rulings. Builds nothing.** Lane declared at `watch:weft` 341,
+**Status: PROPOSAL for David's rulings, built the same day: the waker's character doorman (bsp-mcp #371, merged 16 September), its three behaviours (#375), the follow-ups #376 to #392 (to 18 September), and the mirror's doormen card (xstream-bsp #315).** Lane declared at `watch:weft` 341,
 corrected at 343, opened at his word on 2026-09-16 (log:urb-hitl 11: "go ahead with the doorman
 lane"). Companions: [2026-09-01-the-doorman.md](2026-09-01-the-doorman.md) and its §10 amendment
 (the doorman exists — a shell that answers from its own manifest, one reply, stop), the two RPG

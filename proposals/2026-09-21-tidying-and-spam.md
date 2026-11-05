@@ -1,6 +1,6 @@
 # Tidying and spam — see what was born, set aside rather than wipe (2026-09-21)
 
-**Status: proposed — analysis and options. Nothing is built and nothing has been removed.
+**Status: proposed — analysis and options, built the same day: the owner's set-aside (pscale-beach #70), the door's born stamp and last copy with three caps built and left off (pscale-beach #72; the operator clone #32, #33), the born-lately page /lately (happyseaurchin-home #290), and the born note in the router's ack (bsp-mcp #402, #410); a fourth cap followed (pscale-beach #80, 12 October). Nothing has been removed.
 Written in the spam.1 lane (watch:weft 429) on David's sentence of today: "We need a better
 way to tidy up things so we can deal with spam when it happens." Everything below was read
 from the running handler and the live apex on 2026-09-21; where I checked something rather

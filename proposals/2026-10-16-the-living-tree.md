@@ -1,6 +1,6 @@
 # The living tree — a path's parts drawn live, and every hand adding at a place, never over a voice (2026-10-16)
 
-**Status**: PROPOSAL at David's word, given while he was away from the keyboard:
+**Status**: PROPOSAL at David's word, given while he was away from the keyboard; the second version is built (happyseaurchin-home #472, happyseaurchin.com/beach-tree-v2, merged 20 October with this file, bsp-mcp #533), and §5's law text is not applied, function:path standing as it did. His words:
 
 > "keeper per project / no, named and passphrase only / pool's name is by project -- each project already has
 > a pool i think / the two forks are not clear, go with your recommendations...? / I think it might be useful

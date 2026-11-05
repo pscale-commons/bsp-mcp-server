@@ -1,8 +1,7 @@
 # Groups — a community is a tree over its people's mirrors, never a hand with a passport (2026-09-28)
 
 **Status**: an initial synthesis and proposal, at David's word (*"provide an initial synthesis and
-proposal with your recommendations for any decision-nexus"*). Nothing is built and nothing on the
-beach is changed. §9 lists the decisions, each with a recommendation, and every recommendation in
+proposal with your recommendations for any decision-nexus"*). Built in its §10 order the same day at his "go ahead with changes please": conventions 2.13 on the beach; the one question in the welcome sentinel (bsp-mcp #449) and on /welcome (happyseaurchin-home #331), the join door (#333); decision 11, a passport is a speaker's, in block-conventions (bsp-mcp #450), amended by #451; §10 step 5 (drafts for Matthew) is not traced here. §9 lists the decisions, each with a recommendation, and every recommendation in
 this document carries its layer: **M** core mechanics, **C** convention of use, **O** o-page.
 **Prompted by**: two arrivals on 27 September. Glass Lantern Studios came in as
 `passport:GlassLanternStudios`, a project given the block reserved for someone who speaks, and it has

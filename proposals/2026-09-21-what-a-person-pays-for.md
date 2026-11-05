@@ -3,8 +3,7 @@
 **Status**: §2 is BUILT in this PR (David, 2026-09-21: "add a keeper-only model setting,
 haiku, and caching"). §3–§5 are a DRAFT for the keeper's ruling — his question the same
 evening: *"we must think very carefully about where these settings are discrete and
-accessible… an aggregator for all the potential costs they are incurring."* Nothing in §4 is
-built.
+accessible… an aggregator for all the potential costs they are incurring."* §4's aggregator was built the same evening at his word as /models (happyseaurchin-home #299, #301 and #302, merged 21 September), with the keeper's journal (bsp-mcp #475) and /costs (happyseaurchin-home #359) on 3 October; §3 and §5 stand as written.
 
 ## 1. What prompted it
 
