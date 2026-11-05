@@ -584,8 +584,8 @@ function isZodShape(a: unknown): a is Record<string, unknown> {
  * is its handle wherever a hand is asked for (the reflection; a members' beach, whose pass is
  * proved with the key). Any other `new_lock` on a call the key was put into is refused, so a
  * fingerprint never moves a block off the key or opens it. An unsigned call that names "vault"
- * is refused, since the word would become the key. Installed innermost, beside the error and clock wrappers in server.ts, so it
- * reaches every tool that exists and every tool added later.
+ * is refused, since the word would become the key. Installed innermost, beside the error and
+ * clock wrappers in server.ts, so it reaches every tool that exists and every tool added later.
  */
 export function installSignedIn(server: McpServer): void {
   const orig = server.tool.bind(server);
