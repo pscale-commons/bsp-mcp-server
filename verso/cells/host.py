@@ -15,7 +15,25 @@ import argparse, asyncio, json, os, shutil, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RUNS = os.path.join(HERE, "runs")
+VOICES_RUNS = os.path.normpath(os.path.join(HERE, "..", "voices", "runs"))   # the voices piece's own runs: a transcript is found there too, never copied
 sys.path.insert(0, HERE)
+
+
+def transcript_dir(name):
+    """Where a transcript's words.jsonl and floor.jsonl stand: the host's runs first, then the voices piece's."""
+    for base in (RUNS, VOICES_RUNS):
+        if os.path.exists(os.path.join(base, name, "words.jsonl")):
+            return os.path.join(base, name)
+    return os.path.join(RUNS, name)
+
+
+def transcripts():
+    """Every transcript the host can replay, by name, from both places."""
+    names = set()
+    for base in (RUNS, VOICES_RUNS):
+        if os.path.isdir(base):
+            names.update(d for d in os.listdir(base) if os.path.exists(os.path.join(base, d, "words.jsonl")))
+    return sorted(names)
 
 import injector, record
 from cell import Cell, MirrorBoard, iso_now
@@ -234,7 +252,7 @@ class Run:
         cell_tasks = [asyncio.ensure_future(c.run(self.stop)) for c in self.cells]
         pulse = asyncio.ensure_future(self.pulse())
         if self.what == "replay":
-            feeder = asyncio.ensure_future(feed(self.talk, os.path.join(RUNS, self.transcript), self.stop, self.until))
+            feeder = asyncio.ensure_future(feed(self.talk, transcript_dir(self.transcript), self.stop, self.until))
         else:
             feeder = asyncio.ensure_future(self.live())
         try:
@@ -308,7 +326,7 @@ class Host:
         return dict(type="host", event="host", state=(r.what if running else "idle"), running=running, settings=self.s,
                     run=r.id if r else None, what=r.what if r else None, transcript=r.transcript if r else None,
                     cells=[c.summary() for c in r.cells] if r else [], cost=r.cost() if r else None,
-                    runs=sorted(d for d in os.listdir(RUNS) if os.path.exists(os.path.join(RUNS, d, "words.jsonl"))))
+                    runs=transcripts())
 
     def adopt(self, incoming):
         """The page's settings, in its key names, into the host's."""

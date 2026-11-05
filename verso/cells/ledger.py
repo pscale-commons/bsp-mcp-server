@@ -25,6 +25,17 @@ def jaccard(a, b):
     return len(a & b) / len(a | b) if (a or b) else 0.0
 
 
+def quoted(parent):
+    """The words a parent quotes — 'half of that never got done' — as phrases of three or more content words.
+    A re-release repeats the thought it answers by quoting the same words, whatever it says of them."""
+    out = set()
+    for span in re.findall(r"['‘’\"“”]([^'‘’\"“”]{6,120})['‘’\"“”]", parent or ""):
+        ws = re.findall(r"[a-z0-9']+", span.lower())   # every word: inside a quote the small words are part of what was said
+        if len(ws) >= 3:
+            out.add(" ".join(ws))
+    return out
+
+
 def layer_of(period):
     """The order of magnitude of a cell's period: under ten seconds fast, under a minute middle, above slow."""
     return "fast" if period < 10 else "middle" if period < 60 else "slow"
@@ -63,6 +74,8 @@ class Entry:
         self.origin = origin            # "line" or "walk"
         self.words = words_of(text)
         self.parent_words = words_of(parent)
+        self.quotes = quoted(parent)    # the words the parent quotes: a re-release of the same thought quotes them too
+        self.fresh = None               # the landing of the latest counted release: its urge stands whole through the next landing
 
     @property
     def live(self):
@@ -109,6 +122,11 @@ class Ledger:
         if tag and tag in self.entries and self.entries[tag].live:
             return self.entries[tag]
         tw, pw = words_of(text), words_of(parent)
+        q = quoted(parent)
+        if q:   # the same quoted words in the parent: the same thought, however the line puts it (the stand-in's h83, h88, h93 were one)
+            same = [e for e in self.entries.values() if e.live and e.quotes & q]
+            if same:
+                return max(same, key=lambda e: (bool(e.released), e.landing))
         best, score = None, 0.0
         for e in self.entries.values():
             if not e.live:
@@ -150,6 +168,7 @@ class Ledger:
             if counted:
                 e.released[layer] = dict(cell=cell, landing=n, t=round(t, 1))
                 e.urge += 1.0
+                e.fresh = n   # a release at the last words before a silence is the middle point itself: it is not aged by that landing
             e.releases.append(dict(cell=cell, layer=layer, landing=n, t=round(t, 1), counted=counted, saw_another=saw))
             e.say = text or e.say
             e.stop = line.get("stop", e.stop)
@@ -183,7 +202,8 @@ class Ledger:
         for e in list(self.entries.values()):
             if not e.live:
                 continue
-            e.urge *= decay
+            if e.fresh is None or e.fresh < n - 1:   # a release made since the last landing keeps its urge whole through this one
+                e.urge *= decay
             lived = n - e.landing
             own = e.words - e.parent_words
             if lived >= 1 and tw and len(tw & own) >= 2 and jaccard(tw, e.words) >= 0.2:
