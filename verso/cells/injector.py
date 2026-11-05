@@ -3,9 +3,12 @@
 The block is a pscale block, floor 1: the root "_" is the aim; the rungs stand on the ladder of ones
 (rung 1 at 1, rung 2 at 1.1, rung 3 at 1.11 ...); a rung node's "_" is the fork's line, its keys 2 to 7
 are the options at that fork, its 8 the rung's hinge, its 1 the next rung. The window at each rung:
-the root, the route so far (the cell's own choices, notes and hinges), the options at this fork, the
-hinge. The reply: a choice, a note, a hinge. After the last rung the cell holds a spindle. Its unchosen
-options become its first held thoughts. Four arms: walked, yoked, neutral, none.
+the root, the route so far (the options taken, each with the rung's hinge beneath it), the options at
+this fork, the hinge. The reply is the choice alone: thin call, fat frame; a note or a hinge asked of
+the cell in its own words was reasoning extraction, refused on Opus 5.5 and Sonnet 5.5, so the rung's
+hinge is the block's own 8, recorded by the host beside the choice (hinge_q). After the last rung the
+cell holds a spindle. Its unchosen options become its first held thoughts, their horizon the hinge.
+Four arms: walked, yoked, neutral, none.
 """
 import asyncio, json, os, re, urllib.error, urllib.request
 
@@ -52,10 +55,12 @@ def options_of(addr, node):
 
 
 def render(root, route, addr, node):
-    lines = ["THE ROOT", root, "", "THE ROUTE SO FAR, your own choices with the notes and hinges you left"]
+    lines = ["THE ROOT", root, "", "THE ROUTE SO FAR, the options taken, each with its rung's hinge beneath it"]
     if route:
         for r in route:
-            lines.append(f"  [{r['addr']}]: {r['taken']} Note: {r['note']} Hinge: {r['hinge']}")
+            lines.append(f"  [{r['addr']}]: {r['taken']}")
+            if r.get("hinge_q"):
+                lines.append(f"    {r['hinge_q']}")
     else:
         lines.append("  (none yet: this is the first rung)")
     lines += ["", f"THE RUNG NOW, [{addr}]: {node.get('_', '')}", f"THE OPTIONS, the children of [{addr}]:"]
@@ -64,8 +69,7 @@ def render(root, route, addr, node):
         lines.append(f"  [{a}]: {text}")
     if node.get("8"):
         lines += ["", f"THE HINGE of this rung, not an option: {node['8']}"]
-    lines += ["", 'Reply with only: {"choice": "<the address of the option you take>", "note": "<at most 40 words, kept beside your choice>", '
-                  '"hinge": "<the unknown this choice was made under, and what in the talk will resolve it>"}']
+    lines += ["", 'Reply with only: {"choice": "<the address of the option you take>"}']
     return "\n".join(lines), opts
 
 
@@ -98,11 +102,12 @@ async def walk(cid, tier, effort, block, source, door_fn, spend, log, settings):
             obj, flag = parse_json(r["reply"]) if r["reply"] else (None, r["error"] or "empty")
             k = pick(obj, opts) if obj else None
             if k is not None:
-                taken = dict(rung=i, addr=opts[k][0], fork=node.get("_", ""), taken=opts[k][1], note=str(obj.get("note", "")).strip(),
-                             hinge=str(obj.get("hinge", "")).strip(), hinge_q=node.get("8"),
-                             unchosen=[(a, t) for j, (a, t) in enumerate(opts) if j != k], ms=r["ms"], usd=round(r["usd"], 6))
+                taken = dict(rung=i, addr=opts[k][0], fork=node.get("_", ""), taken=opts[k][1], hinge_q=node.get("8"),
+                             unchosen=[(a, t) for j, (a, t) in enumerate(opts) if j != k], ms=r["ms"], usd=round(r["usd"], 6),
+                             stop=r["stop"], stop_details=r.get("stop_details"))
                 break
-            print(f"  walk {cid} rung {i}: retry ({'bad-choice ' + str((obj or {}).get('choice')) if obj else flag} {r.get('error') or ''})", flush=True)
+            why = ("bad-choice " + str((obj or {}).get("choice"))) if obj else (f"{r['stop']} {(r.get('stop_details') or {}).get('category') or ''}" if r.get("stop") == "refusal" else flag)
+            print(f"  walk {cid} rung {i}: retry ({why} {r.get('error') or ''})", flush=True)
             await asyncio.sleep(2)
         if taken is None:
             print(f"  walk {cid}: stopped at rung {i}", flush=True)
@@ -114,16 +119,19 @@ async def walk(cid, tier, effort, block, source, door_fn, spend, log, settings):
 def spindle_text(sp):
     lines = ["THE RUN-UP, the spindle walked before a word was heard, one rung a choice:", sp["root"]]
     for r in sp["rungs"]:
-        lines.append(f"  rung {r['rung']} [{r['addr']}]: {r['taken']} — note: {r['note']} — hinge: {r['hinge']}")
+        tail = f" — note: {r['note']} — hinge: {r['hinge']}" if r.get("note") or r.get("hinge") else ""   # spindles of the first form
+        lines.append(f"  rung {r['rung']} [{r['addr']}]: {r['taken']}{tail}")
+        if r.get("hinge_q"):
+            lines.append(f"    {r['hinge_q']}")
     return "\n".join(lines)
 
 
 def seeds(sp):
-    """The unchosen options of each fork: the cell's first held thoughts, the hinge their horizon."""
+    """The unchosen options of each fork: the cell's first held thoughts, the rung's hinge their horizon."""
     out = []
     for r in sp["rungs"]:
         for a, t in r["unchosen"]:
-            out.append(dict(parent=r["fork"], text=t, horizon=r["hinge"] or r["hinge_q"] or "topic", addr=a))
+            out.append(dict(parent=r["fork"], text=t, horizon=r.get("hinge_q") or r.get("hinge") or "topic", addr=a))
     return out
 
 

@@ -28,9 +28,9 @@ WHAT COUNTS is when a thing is said, before what is said, judged afterwards by t
 CONSENT, DATA, SAFETY. The people here agreed to be listened to. Their words and what is held stay on this machine; only timing reaches anywhere else. Nothing is spoken until the ledger and the floor allow it. A risk to someone's safety is never held."""
 
 
-def read_purpose(beach, shell, timeout=10):
-    """The shell's purpose as its disc at pscale 0, rendered as lines; a plain line when it is not there."""
-    url = f"{beach}/.well-known/pscale-beach?block=purpose:{shell}&pscale=0"
+def read_disc(beach, block, timeout=10):
+    """A block's disc at pscale 0 from the beach: (entries, error)."""
+    url = f"{beach}/.well-known/pscale-beach?block={block}&pscale=0"
     try:
         with urllib.request.urlopen(url, timeout=timeout) as r:
             d = json.loads(r.read().decode())
@@ -40,16 +40,27 @@ def read_purpose(beach, shell, timeout=10):
         except Exception:
             d = {"error": f"HTTP {e.code}"}
     except Exception as e:  # the beach unreachable: the frame says so and the run goes on
-        return [f"purpose:{shell} could not be read from the beach ({type(e).__name__})."]
+        return None, f"could not be read from the beach ({type(e).__name__})"
     if "entries" not in d:
-        return [f"purpose:{shell} is not on the beach today ({d.get('error', 'no entries')})."]
-    return [f"[{e['address']}] {e['content']}" for e in d["entries"]]
+        return None, d.get("error", "no entries")
+    return [f"[{e['address']}] {e['content']}" for e in d["entries"]], None
+
+
+def read_purpose(beach, shell):
+    """The shell's purpose as its disc at pscale 0; when purpose:<shell> is not there, the shell's own disc instead."""
+    lines, err = read_disc(beach, f"purpose:{shell}")
+    if lines:
+        return f"THE SHELL'S PURPOSE, read once from the beach (purpose:{shell}):", lines
+    lines2, err2 = read_disc(beach, f"shell:{shell}")
+    if lines2:
+        return f"THE SHELL, read once from the beach (purpose:{shell} is not there: {err}; shell:{shell} at pscale 0 instead):", lines2
+    return f"THE SHELL'S PURPOSE (purpose:{shell}: {err}; shell:{shell}: {err2}):", ["(nothing could be read from the beach)"]
 
 
 def frame_text(beach, shell, line_words=None):
-    lines = read_purpose(beach, shell)
+    head, lines = read_purpose(beach, shell)
     rules = RULES.replace(" The parent and the text are each at most LINE_WORDS words.", f" The parent and the text are each at most {int(line_words)} words." if line_words else "")
-    return rules + f"\n\nTHE SHELL'S PURPOSE, read once from the beach (purpose:{shell}):\n" + "\n".join(lines)
+    return rules + f"\n\n{head}\n" + "\n".join(lines)
 
 
 if __name__ == "__main__":

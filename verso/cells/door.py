@@ -127,8 +127,7 @@ async def dry_call(tier, effort, system_blocks, user_text, max_tokens=600, spend
     await asyncio.sleep(ms / 1000)
     if kind == "walk":
         m = re.findall(r"^\s+\[(\d[\d.]*)\]:", user_text.split("THE OPTIONS")[-1].split("THE HINGE")[0], re.M)
-        reply = json.dumps({"choice": random.choice(m) if m else "1.2", "note": f"dry note from a {tier} at {effort}",
-                            "hinge": "dry hinge: unknown until the first landing"})
+        reply = json.dumps({"choice": random.choice(m) if m else "1.2"})
     else:
         tags = re.findall(r"\[(h\d+)\]", user_text)
         act = "release" if random.random() < 0.25 else "hold"

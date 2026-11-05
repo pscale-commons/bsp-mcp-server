@@ -5,7 +5,7 @@ as held thoughts, every other mirror's latest line with its age, the live talk l
 line parsed, appended to its own mirror with the measured ms and usd. A cell is never told its tier
 or effort. Its period is measured; its layer is the order of magnitude of its period.
 """
-import collections, datetime, json, os, time
+import asyncio, collections, datetime, json, os, time
 
 from door import HardStop, parse_json
 from ledger import layer_of
@@ -40,8 +40,9 @@ class MirrorBoard:
 
 
 class Cell:
-    def __init__(self, cid, tier, effort, settings, head, spindle, ledger, board, talk, spend, run_dir, door_fn, emit):
+    def __init__(self, cid, tier, effort, settings, head, spindle, ledger, board, talk, spend, run_dir, door_fn, emit, layer=None):
         self.id, self.tier, self.effort = cid, tier, effort
+        self.assigned = layer           # a layer by design: its minimum period (settings.layers) is waited out between loops
         self.s, self.head, self.spindle = settings, head, spindle
         self.ledger, self.board, self.talk, self.spend = ledger, board, talk, spend
         self.run_dir, self.door, self.emit = run_dir, door_fn, emit
@@ -55,7 +56,10 @@ class Cell:
 
     @property
     def layer(self):
-        return layer_of(self.period) if self.period else "middle"
+        return self.assigned or (layer_of(self.period) if self.period else "middle")
+
+    def min_period(self):
+        return float((self.s.get("layers") or {}).get(self.assigned, 0)) if self.assigned else 0.0
 
     # ---- the window
 
@@ -104,7 +108,7 @@ class Cell:
                 stop.set()
                 break
             self.loops += 1
-            self.periods.append(time.time() - t0)
+            self.periods.append(max(time.time() - t0, self.min_period()))   # the period includes the wait that follows
             self.period = sum(self.periods) / len(self.periods)
             self.ledger.periods[self.id] = self.period
             for k in self.usage:
@@ -144,11 +148,15 @@ class Cell:
             self.emit("mirror", cell=self.id, line=line)
             self.emit("period", cell=self.id, s=round(self.period, 2), period=round(self.period, 2), layer=self.layer, loops=self.loops,
                       t=round(self.talk.now(), 1), tier=self.tier, effort=self.effort)
+            wait = self.min_period() - (time.time() - t0)
+            while wait > 0 and not stop.is_set():
+                await asyncio.sleep(min(0.5, wait))
+                wait = self.min_period() - (time.time() - t0)
 
     def summary(self):
         total_in = self.usage["in"] + self.usage["write"] + self.usage["read"]
         return dict(id=self.id, tier=self.tier, effort=self.effort, period=round(self.period, 2) if self.period else None,
-                    layer=self.layer if self.period else None, loops=self.loops, lines=self.lines, releases=self.releases,
+                    layer=self.layer if (self.period or self.assigned) else None, assigned=self.assigned, min_period=self.min_period(), loops=self.loops, lines=self.lines, releases=self.releases,
                     errors=self.errors, max_tokens_stops=self.max_tokens_stops, usage=dict(self.usage),
                     cache_read_share=round(self.usage["read"] / total_in, 3) if total_in else None, usd=round(self.usd, 4),
                     arm=None)

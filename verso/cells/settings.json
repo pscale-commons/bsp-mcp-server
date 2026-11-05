@@ -12,6 +12,11 @@
   "attention": 5,
   "attachment": 0.5,
   "cells": "osh9",
+  "layers": {
+    "fast": 0,
+    "middle": 20,
+    "slow": 90
+  },
   "labelling": "local",
   "shell": "keel",
   "injector": {

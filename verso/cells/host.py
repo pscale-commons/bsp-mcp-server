@@ -25,10 +25,15 @@ from ledger import Ledger
 from replay import Talk, feed
 from speak import Speaker
 
-PRESETS = {
-    "osh9": [f"{t}-{e}" for t in ("opus", "sonnet", "haiku") for e in ("low", "medium", "high")],
-    "four": ["opus-low", "opus-high", "haiku-low", "haiku-high"],
+LAYER_OF_EFFORT = {"low": "fast", "medium": "middle", "high": "slow"}
+PRESETS = {   # cell -> its layer by design (settings.layers gives each layer's minimum period)
+    "osh9": {f"{t}-{e}": LAYER_OF_EFFORT[e] for t in ("opus", "sonnet", "haiku") for e in ("low", "medium", "high")},
+    "four": {"opus-low": "fast", "opus-high": "slow", "haiku-low": "fast", "haiku-high": "slow"},
+    "nine": None, "osh9-free": None, "four-free": None,   # the same cells with no layer assigned: layers by measurement alone
 }
+PRESETS["nine"] = PRESETS["osh9"]
+PRESETS["osh9-free"] = {c: None for c in PRESETS["osh9"]}
+PRESETS["four-free"] = {c: None for c in PRESETS["four"]}
 
 
 def load_settings(sets=()):
@@ -48,11 +53,18 @@ def load_settings(sets=()):
 
 
 def resolve_cells(spec):
-    names = PRESETS.get(spec, spec.split(",") if isinstance(spec, str) else list(spec))
+    """(cell, tier, effort, layer or None): a preset name, a list of tier-effort[:layer], or a dict cell -> layer."""
+    if isinstance(spec, str) and spec in PRESETS:
+        items = list(PRESETS[spec].items())
+    elif isinstance(spec, dict):
+        items = list(spec.items())
+    else:
+        names = spec.split(",") if isinstance(spec, str) else list(spec)
+        items = [(n.split(":")[0], n.split(":")[1] if ":" in n else None) for n in names]
     out = []
-    for n in names:
+    for n, layer in items:
         tier, effort = n.split("-")
-        out.append((n, tier, effort))
+        out.append((n, tier, effort, layer))
     return out
 
 
@@ -99,7 +111,8 @@ class Run:
             f.write(head)
         specs = resolve_cells(s["cells"])
         arm = s["injector"]["arm"]
-        self.arms = {cid: (arm if isinstance(arm, str) else arm.get(cid, "none")) for cid, _, _ in specs}
+        self.arms = {cid: (arm if isinstance(arm, str) else arm.get(cid, "none")) for cid, _, _, _ in specs}
+        self.layers = {cid: layer for cid, _, _, layer in specs}
         log = os.path.join(self.dir, "walk.jsonl")
         blocks = {}
         if any(a == "walked" for a in self.arms.values()):
@@ -110,7 +123,7 @@ class Run:
             with open(os.path.join(self.dir, f"block-{k}.json"), "w") as f:
                 json.dump(b, f, indent=1)
         tasks, who = [], []
-        for cid, tier, effort in specs:
+        for cid, tier, effort, _ in specs:
             a = self.arms[cid]
             if a in ("walked", "neutral"):
                 b, src = blocks[a]
@@ -124,9 +137,10 @@ class Run:
                 spindles[cid] = sp
                 with open(os.path.join(self.dir, "spindles", f"{cid}.json"), "w") as f:
                     json.dump(sp, f, indent=1)
-                print(f"  {cid:13} {self.arms[cid]:8} {' '.join(r['addr'] for r in sp['rungs'])}  ${sp['usd']:.4f} {sp['ms'] / 1000:.0f}s", flush=True)
+                refused = [r for r in sp["rungs"] if r.get("stop") == "refusal"]
+                print(f"  {cid:13} {self.arms[cid]:8} {' '.join(r['addr'] for r in sp['rungs']):40} {len(sp['rungs'])} rungs  ${sp['usd']:.4f} {sp['ms'] / 1000:.0f}s", flush=True)
         yoke_dir = self.yoke_from or s["injector"].get("yoke_from") or injector.latest_walk(RUNS)
-        for cid, tier, effort in specs:
+        for cid, tier, effort, layer in specs:
             a = self.arms[cid]
             spindle, seeds = None, []
             if a == "walked":
@@ -140,13 +154,12 @@ class Run:
                     self.arms[cid] = "none"
                 else:
                     print(f"  {cid}: yoked to {twin} from {os.path.basename(yoke_dir)}", flush=True)
-            c = Cell(cid, tier, effort, s, head, spindle, self.ledger, self.board, self.talk, self.spend, self.dir, self.door, self.emit)
-            layer_guess = "middle"
+            c = Cell(cid, tier, effort, s, head, spindle, self.ledger, self.board, self.talk, self.spend, self.dir, self.door, self.emit, layer=layer)
             for sd in seeds:
-                self.ledger.seed(cid, layer_guess, sd["parent"], sd["text"], sd["horizon"])
+                self.ledger.seed(cid, layer or "middle", sd["parent"], sd["text"], sd["horizon"])
             self.cells.append(c)
         with open(os.path.join(self.dir, "settings.json"), "w") as f:
-            json.dump(dict(s, arms=self.arms), f, indent=1)
+            json.dump(dict(s, arms=self.arms, cell_layers=self.layers), f, indent=1)
         self.emit("cost", **self.cost())
 
     def cost(self):
@@ -419,7 +432,7 @@ def main():
     ap.add_argument("--live", action="store_true", help="read the voices piece's socket")
     ap.add_argument("--walk", action="store_true", help="run the injector walk alone and keep the spindles")
     ap.add_argument("--speed", type=float, default=1.0)
-    ap.add_argument("--cells", help="osh9 | four | a comma list of tier-effort")
+    ap.add_argument("--cells", help="osh9 | four | osh9-free | four-free | a comma list of tier-effort[:layer]")
     ap.add_argument("--arm", help="walked | yoked | neutral | none")
     ap.add_argument("--source", help="beach | file (the injector block)")
     ap.add_argument("--block", help="the injector block's name on the beach, or its file")

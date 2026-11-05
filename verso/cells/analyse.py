@@ -49,11 +49,11 @@ def present(run_dir, rec):
 def tables(run_dir):
     rec = json.load(open(os.path.join(run_dir, "record.json")))
     pres = present(run_dir, rec)
-    rows = ["| cell | arm | period s | layer | loops | lines | releases | errors | max_tokens stops | cache read share | usd | $/hour | present | mean lag (turns) |",
-            "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    rows = ["| cell | arm | period s | layer | min period | loops | lines | releases | errors | max_tokens stops | cache read share | usd | $/hour | present | mean lag (turns) |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for c in rec["cells"]:
         p = pres.get(c["id"], {})
-        rows.append(f"| {c['id']} | {c['arm']} | {c['period']} | {c['layer']} | {c['loops']} | {c['lines']} | {c['releases']} | {c['errors']} | "
+        rows.append(f"| {c['id']} | {c['arm']} | {c['period']} | {c['layer']} | {c.get('min_period', 0):.0f} | {c['loops']} | {c['lines']} | {c['releases']} | {c['errors']} | "
                     f"{c['max_tokens_stops']} | {c['cache_read_share']} | {c['usd']:.4f} | {c['hour_usd']:.2f} | {p.get('present')} | {p.get('mean_lag')} |")
     sp = rec["spend"]
     head = [f"**{rec['run']}** on `{rec['transcript']}` at speed {rec['speed']}: {rec['talk_seconds']} s of talk, {rec['landings']} landings "
@@ -91,12 +91,12 @@ def walks(dirs):
             continue
         sps = {f[:-5]: json.load(open(os.path.join(sd, f))) for f in sorted(os.listdir(sd)) if f.endswith(".json")}
         out.append(f"**{os.path.basename(d.rstrip('/'))}** ({next(iter(sps.values()))['block'] if sps else '?'}): routes by cell")
-        out += ["| cell | route | walk usd | walk s |", "|---|---|---|---|"]
+        out += ["| cell | route | rungs | walk usd | walk s |", "|---|---|---|---|---|"]
         routes = collections.Counter()
         for cid, sp in sps.items():
             r = " ".join(x["addr"] for x in sp["rungs"])
             routes[r] += 1
-            out.append(f"| {cid} | {r} | {sp['usd']:.4f} | {sp['ms'] / 1000:.0f} |")
+            out.append(f"| {cid} | {r} | {len(sp['rungs'])} | {sp['usd']:.4f} | {sp['ms'] / 1000:.0f} |")
         out.append(f"\nDistinct routes: {len(routes)} of {len(sps)}; per rung, options taken: " + "; ".join(
             f"rung {i + 1}: " + ", ".join(f"{a} ×{n}" for a, n in collections.Counter(sp['rungs'][i]['addr'] for sp in sps.values() if len(sp['rungs']) > i).most_common())
             for i in range(max(len(sp["rungs"]) for sp in sps.values()))))

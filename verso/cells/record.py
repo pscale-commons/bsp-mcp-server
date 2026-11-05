@@ -91,9 +91,9 @@ def tables(rec):
     out.append(f"spend: walk ${rec['spend']['walk']:.4f}, loop ${rec['spend']['loop']:.4f}, total ${rec['spend']['total']:.4f}; "
                f"the hour's price at this pace ${rec['spend']['hour_usd']:.2f}" + ("; HARD STOP" if rec['spend']['stopped'] else ""))
     out.append("")
-    out.append(f"  {'cell':14} {'arm':8} {'period':>7} {'layer':7} {'loops':>5} {'lines':>5} {'rel':>4} {'err':>4} {'maxtok':>6} {'cache':>6} {'usd':>8} {'$/hour':>7}")
+    out.append(f"  {'cell':14} {'arm':8} {'period':>7} {'layer':7} {'min':>4} {'loops':>5} {'lines':>5} {'rel':>4} {'err':>4} {'maxtok':>6} {'cache':>6} {'usd':>8} {'$/hour':>7}")
     for c in rec["cells"]:
-        out.append(f"  {c['id']:14} {str(c['arm']):8} {str(c['period']):>7} {str(c['layer']):7} {c['loops']:>5} {c['lines']:>5} {c['releases']:>4} "
+        out.append(f"  {c['id']:14} {str(c['arm']):8} {str(c['period']):>7} {str(c['layer']):7} {c.get('min_period', 0):>4.0f} {c['loops']:>5} {c['lines']:>5} {c['releases']:>4} "
                    f"{c['errors']:>4} {c['max_tokens_stops']:>6} {str(c['cache_read_share']):>6} {c['usd']:>8.4f} {c['hour_usd']:>7.2f}")
     out.append("")
     out.append("  thoughts: " + ", ".join(f"{k} {v}" for k, v in rec["counts"].items()) + f" (of {len(rec['entries'])})")

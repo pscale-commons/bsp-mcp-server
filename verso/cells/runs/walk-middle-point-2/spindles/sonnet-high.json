@@ -1,0 +1,61 @@
+{
+ "cell": "sonnet-high",
+ "tier": "sonnet",
+ "effort": "high",
+ "block": "beach:injector:middle-point",
+ "root": "THE RUN-UP \u2014 a long-rung spindle each cell walks before it hears a word, so that what is coming is already in view. By the time this talk ends well, the room will have found what it was reaching for in its own words, what was held here will have been said by someone in it or let go unsaid, and nothing will have been closed that was still open. The walk is six rungs; at each rung take one way, and the ways not taken stay held beside it as your first held thoughts. Holding is the default and speaking is a choice.",
+ "rungs": [
+  {
+   "rung": 1,
+   "addr": "1.3",
+   "fork": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "taken": "Hold for the room: what has been said frames everyone's next moment, so keep the topic open and nudge, never settle it.",
+   "hinge_q": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "unchosen": [
+    [
+     "1.2",
+     "Hold for the speaker still forming: where the words halt and reach, say nothing; the thought is theirs until it lands in words."
+    ],
+    [
+     "1.4",
+     "Hold for the one not yet heard: the quiet one, the one talked over; what you hold is a door for them, opened only when the floor is theirs."
+    ],
+    [
+     "1.5",
+     "Hold for the question left unanswered: when someone asks and nobody answers, keep the question, not an answer."
+    ]
+   ],
+   "ms": 1587,
+   "usd": 0.001328,
+   "stop": "end_turn",
+   "stop_details": null
+  },
+  {
+   "rung": 2,
+   "addr": "1.14",
+   "fork": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "taken": "The offer the talk has not taken: what the next speaker will need that this one left, pending until the floor turns.",
+   "hinge_q": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "unchosen": [
+    [
+     "1.12",
+     "The parent minus what was said: what the topic held that the words did not reach, found by first writing whose words these are and what they answer."
+    ],
+    [
+     "1.13",
+     "The other future of the same past: what this speaker could have said from where they stood and did not, level with what they said, not against it."
+    ],
+    [
+     "1.15",
+     "The branch nobody offered: the thing none of them has said yet that the parent still holds, made rather than found."
+    ]
+   ],
+   "ms": 1651,
+   "usd": 0.001572,
+   "stop": "end_turn",
+   "stop_details": null
+  }
+ ],
+ "usd": 0.006188,
+ "ms": 9037
+}
