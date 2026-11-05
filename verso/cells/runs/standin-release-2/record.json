@@ -1,0 +1,4785 @@
+{
+ "run": "standin-release-2",
+ "transcript": "standin-1",
+ "started": "2026-11-05T18:12:52Z",
+ "finished": "2026-11-05T18:16:22Z",
+ "speed": 1.0,
+ "talk_seconds": 180.2,
+ "loop_wall_seconds": 187.2,
+ "landings": 27,
+ "landing_interval": 6.68,
+ "turns": 35,
+ "words": 504,
+ "settings": {
+  "mode": "ready",
+  "threshold": 1,
+  "window": 0.6,
+  "stop": [
+   "at-once",
+   "phrase",
+   "sentence"
+  ],
+  "line_limit": 1,
+  "safety": true,
+  "attention": 5,
+  "attachment": 0.5,
+  "cells": "four",
+  "layers": {
+   "fast": 0,
+   "middle": 20,
+   "slow": 30
+  },
+  "labelling": "local",
+  "shell": "keel",
+  "injector": {
+   "arm": "walked",
+   "block": "injector:middle-point",
+   "source": "beach",
+   "file": "injector-placeholder.json",
+   "neutral": "neutral-placeholder.json",
+   "yoke_from": null
+  },
+  "stop_usd": 1.0,
+  "name": "verso",
+  "talk_seconds": 40,
+  "half_life": 6,
+  "match": 0.3,
+  "max_tokens": 1200,
+  "line_words": 30,
+  "fallback": false,
+  "door": "api",
+  "beach": "https://beach.happyseaurchin.com",
+  "voices_socket": "ws://localhost:8766",
+  "port": 8765,
+  "speed": 1.0
+ },
+ "arms": {
+  "opus-low": "walked",
+  "opus-high": "walked",
+  "haiku-low": "walked",
+  "haiku-high": "walked"
+ },
+ "arms_count": {
+  "walked": 4
+ },
+ "cells": [
+  {
+   "id": "opus-low",
+   "tier": "opus",
+   "effort": "low",
+   "period": 4.1,
+   "layer": "fast",
+   "assigned": "fast",
+   "min_period": 0.0,
+   "loops": 43,
+   "lines": 43,
+   "releases": 2,
+   "errors": 0,
+   "max_tokens_stops": 0,
+   "usage": {
+    "in": 68161,
+    "write": 2899,
+    "read": 121758,
+    "out": 10886
+   },
+   "cache_read_share": 0.631,
+   "usd": 0.5292,
+   "arm": "walked",
+   "hour_usd": 10.179
+  },
+  {
+   "id": "opus-high",
+   "tier": "opus",
+   "effort": "high",
+   "period": 30.0,
+   "layer": "slow",
+   "assigned": "slow",
+   "min_period": 30.0,
+   "loops": 7,
+   "lines": 7,
+   "releases": 2,
+   "errors": 0,
+   "max_tokens_stops": 0,
+   "usage": {
+    "in": 10798,
+    "write": 2896,
+    "read": 17376,
+    "out": 2627
+   },
+   "cache_read_share": 0.559,
+   "usd": 0.1137,
+   "arm": "walked",
+   "hour_usd": 2.187
+  },
+  {
+   "id": "haiku-low",
+   "tier": "haiku",
+   "effort": "low",
+   "period": 3.58,
+   "layer": "fast",
+   "assigned": "fast",
+   "min_period": 0.0,
+   "loops": 52,
+   "lines": 52,
+   "releases": 4,
+   "errors": 0,
+   "max_tokens_stops": 0,
+   "usage": {
+    "in": 81939,
+    "write": 2889,
+    "read": 147339,
+    "out": 25318
+   },
+   "cache_read_share": 0.635,
+   "usd": 0.0227,
+   "arm": "walked",
+   "hour_usd": 0.436
+  },
+  {
+   "id": "haiku-high",
+   "tier": "haiku",
+   "effort": "high",
+   "period": 30.0,
+   "layer": "slow",
+   "assigned": "slow",
+   "min_period": 30.0,
+   "loops": 7,
+   "lines": 6,
+   "releases": 0,
+   "errors": 0,
+   "max_tokens_stops": 1,
+   "usage": {
+    "in": 10728,
+    "write": 2898,
+    "read": 17388,
+    "out": 4931
+   },
+   "cache_read_share": 0.561,
+   "usd": 0.0041,
+   "arm": "walked",
+   "hour_usd": 0.078
+  }
+ ],
+ "spend": {
+  "walk": 0.1041,
+  "loop": 0.6697,
+  "total": 0.7737,
+  "calls": {
+   "walk": 24,
+   "loop": 109
+  },
+  "hour_usd": 12.881,
+  "stopped": false
+ },
+ "counts": {
+  "withheld": 20,
+  "ripe": 51,
+  "foreclosed": 19,
+  "voiced": 0,
+  "handed back": 1
+ },
+ "entries": [
+  {
+   "id": "h1",
+   "holder": "opus-low",
+   "holders": [
+    "haiku-low",
+    "opus-high",
+    "opus-low"
+   ],
+   "voice": "slow",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the speaker still forming: where the words halt and reach, say nothing; the thought is theirs until it lands in words.",
+   "say": "Hold for the speaker still forming: where the words halt and reach, say nothing; the thought is theirs until it lands in words.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h2",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the room: what has been said frames everyone's next moment, so keep the topic open and nudge, never settle it.",
+   "say": "Hold for the room: what has been said frames everyone's next moment, so keep the topic open and nudge, never settle it.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h3",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the question left unanswered: when someone asks and nobody answers, keep the question, not an answer.",
+   "say": "Hold for the question left unanswered: when someone asks and nobody answers, keep the question, not an answer.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h4",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The parent minus what was said: what the topic held that the words did not reach, found by first writing whose words these are and what they answer.",
+   "say": "The parent minus what was said: what the topic held that the words did not reach, found by first writing whose words these are and what they answer.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h5",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The other future of the same past: what this speaker could have said from where they stood and did not, level with what they said, not against it.",
+   "say": "The other future of the same past: what this speaker could have said from where they stood and did not, level with what they said, not against it.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h6",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The branch nobody offered: the thing none of them has said yet that the parent still holds, made rather than found.",
+   "say": "The branch nobody offered: the thing none of them has said yet that the parent still holds, made rather than found.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h7",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The thought you hold and its horizon \u2014 seconds, turns or the topic \u2014 so the next loop can check it when the horizon passes.",
+   "say": "The thought you hold and its horizon \u2014 seconds, turns or the topic \u2014 so the next loop can check it when the horizon passes.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h8",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The hinge you chose under \u2014 the one unknown and what will resolve it \u2014 so the next loop binds it when the talk does.",
+   "say": "The hinge you chose under \u2014 the one unknown and what will resolve it \u2014 so the next loop binds it when the talk does.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h9",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The one line you would say if the floor opened now, so the next loop can say it, hold it, or let it age.",
+   "say": "The one line you would say if the floor opened now, so the next loop can say it, hold it, or let it age.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h10",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Give back what someone said, in their own words, so the room hears it again from where it came.",
+   "say": "Give back what someone said, in their own words, so the room hears it again from where it came.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h11",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Ask what the talk has not asked: one question from where it has not gone, then quiet.",
+   "say": "Ask what the talk has not asked: one question from where it has not gone, then quiet.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h12",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Offer the held thought as one more possibility beside the others, and leave it open for anyone to take.",
+   "say": "Offer the held thought as one more possibility beside the others, and leave it open for anyone to take.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h13",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Name the plurality: the several ways this could go, lightly, so the room laughs and chooses.",
+   "say": "Name the plurality: the several ways this could go, lightly, so the room laughs and chooses.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h14",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That a parent is written before anything is held, every loop, or the gap fills with the cheapest content to hand.",
+   "say": "That a parent is written before anything is held, every loop, or the gap fills with the cheapest content to hand.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h15",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That a release is yours before you see anyone else's: decided from the ledger as it stood when your loop began.",
+   "say": "That a release is yours before you see anyone else's: decided from the ledger as it stood when your loop began.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h16",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That a forecast is checked when its horizon passes: what you said would happen, held against what did.",
+   "say": "That a forecast is checked when its horizon passes: what you said would happen, held against what did.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h17",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "THE RECORDS OF PLAY \u2014 ways of playing well, each its author's own lines, offered and never injected; one may be walked, none is an instruction, and your own walk is already a record.",
+   "text": "David's marks: the moments he held and the moments he spoke or nearly did, each pinned to its time in a recording he took part in, with what he held. Not yet made; when they are, they stand here.",
+   "say": "David's marks: the moments he held and the moments he spoke or nearly did, each pinned to its time in a recording he took part in, with what he held. Not yet made; when they are, they stand here.",
+   "horizon": "THE HINGE of this rung: whether a record carries as a stance or only as its author's habits is unknown until a talk its author is not part of; it resolves at the silent listener, arm against arm.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h18",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the room: what has been said frames everyone's next moment, so keep the topic open and nudge, never settle it.",
+   "say": "Hold for the room: what has been said frames everyone's next moment, so keep the topic open and nudge, never settle it.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h19",
+   "holder": "opus-high",
+   "holders": [
+    "haiku-high",
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the one not yet heard: the quiet one, the one talked over; what you hold is a door for them, opened only when the floor is theirs.",
+   "say": "Hold for the one not yet heard: the quiet one, the one talked over; what you hold is a door for them, opened only when the floor is theirs.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h20",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the question left unanswered: when someone asks and nobody answers, keep the question, not an answer.",
+   "say": "Hold for the question left unanswered: when someone asks and nobody answers, keep the question, not an answer.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h21",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The other future of the same past: what this speaker could have said from where they stood and did not, level with what they said, not against it.",
+   "say": "The other future of the same past: what this speaker could have said from where they stood and did not, level with what they said, not against it.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h22",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The offer the talk has not taken: what the next speaker will need that this one left, pending until the floor turns.",
+   "say": "The offer the talk has not taken: what the next speaker will need that this one left, pending until the floor turns.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h23",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The branch nobody offered: the thing none of them has said yet that the parent still holds, made rather than found.",
+   "say": "The branch nobody offered: the thing none of them has said yet that the parent still holds, made rather than found.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h24",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The thought you hold and its horizon \u2014 seconds, turns or the topic \u2014 so the next loop can check it when the horizon passes.",
+   "say": "The thought you hold and its horizon \u2014 seconds, turns or the topic \u2014 so the next loop can check it when the horizon passes.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h25",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The hinge you chose under \u2014 the one unknown and what will resolve it \u2014 so the next loop binds it when the talk does.",
+   "say": "The hinge you chose under \u2014 the one unknown and what will resolve it \u2014 so the next loop binds it when the talk does.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h26",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The one line you would say if the floor opened now, so the next loop can say it, hold it, or let it age.",
+   "say": "The one line you would say if the floor opened now, so the next loop can say it, hold it, or let it age.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h27",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Give back what someone said, in their own words, so the room hears it again from where it came.",
+   "say": "Give back what someone said, in their own words, so the room hears it again from where it came.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h28",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Ask what the talk has not asked: one question from where it has not gone, then quiet.",
+   "say": "Ask what the talk has not asked: one question from where it has not gone, then quiet.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h29",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Offer the held thought as one more possibility beside the others, and leave it open for anyone to take.",
+   "say": "Offer the held thought as one more possibility beside the others, and leave it open for anyone to take.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h30",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Name the plurality: the several ways this could go, lightly, so the room laughs and chooses.",
+   "say": "Name the plurality: the several ways this could go, lightly, so the room laughs and chooses.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h31",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That the held thoughts age and some foreclose: a thought whose fork has passed is let go, not kept forever.",
+   "say": "That the held thoughts age and some foreclose: a thought whose fork has passed is let go, not kept forever.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h32",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That a release is yours before you see anyone else's: decided from the ledger as it stood when your loop began.",
+   "say": "That a release is yours before you see anyone else's: decided from the ledger as it stood when your loop began.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h33",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That a forecast is checked when its horizon passes: what you said would happen, held against what did.",
+   "say": "That a forecast is checked when its horizon passes: what you said would happen, held against what did.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h34",
+   "holder": "opus-high",
+   "holders": [
+    "opus-high"
+   ],
+   "voice": "slow",
+   "parent": "THE RECORDS OF PLAY \u2014 ways of playing well, each its author's own lines, offered and never injected; one may be walked, none is an instruction, and your own walk is already a record.",
+   "text": "David's marks: the moments he held and the moments he spoke or nearly did, each pinned to its time in a recording he took part in, with what he held. Not yet made; when they are, they stand here.",
+   "say": "David's marks: the moments he held and the moments he spoke or nearly did, each pinned to its time in a recording he took part in, with what he held. Not yet made; when they are, they stand here.",
+   "horizon": "THE HINGE of this rung: whether a record carries as a stance or only as its author's habits is unknown until a talk its author is not part of; it resolves at the silent listener, arm against arm.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h35",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the room: what has been said frames everyone's next moment, so keep the topic open and nudge, never settle it.",
+   "say": "Hold for the room: what has been said frames everyone's next moment, so keep the topic open and nudge, never settle it.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h36",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the one not yet heard: the quiet one, the one talked over; what you hold is a door for them, opened only when the floor is theirs.",
+   "say": "Hold for the one not yet heard: the quiet one, the one talked over; what you hold is a door for them, opened only when the floor is theirs.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h37",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the question left unanswered: when someone asks and nobody answers, keep the question, not an answer.",
+   "say": "Hold for the question left unanswered: when someone asks and nobody answers, keep the question, not an answer.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h38",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The parent minus what was said: what the topic held that the words did not reach, found by first writing whose words these are and what they answer.",
+   "say": "The parent minus what was said: what the topic held that the words did not reach, found by first writing whose words these are and what they answer.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h39",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The offer the talk has not taken: what the next speaker will need that this one left, pending until the floor turns.",
+   "say": "The offer the talk has not taken: what the next speaker will need that this one left, pending until the floor turns.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h40",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The branch nobody offered: the thing none of them has said yet that the parent still holds, made rather than found.",
+   "say": "The branch nobody offered: the thing none of them has said yet that the parent still holds, made rather than found.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h41",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The thought you hold and its horizon \u2014 seconds, turns or the topic \u2014 so the next loop can check it when the horizon passes.",
+   "say": "The thought you hold and its horizon \u2014 seconds, turns or the topic \u2014 so the next loop can check it when the horizon passes.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h42",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The hinge you chose under \u2014 the one unknown and what will resolve it \u2014 so the next loop binds it when the talk does.",
+   "say": "The hinge you chose under \u2014 the one unknown and what will resolve it \u2014 so the next loop binds it when the talk does.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h43",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The one line you would say if the floor opened now, so the next loop can say it, hold it, or let it age.",
+   "say": "The one line you would say if the floor opened now, so the next loop can say it, hold it, or let it age.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h44",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Ask what the talk has not asked: one question from where it has not gone, then quiet.",
+   "say": "Ask what the talk has not asked: one question from where it has not gone, then quiet.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h45",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Offer the held thought as one more possibility beside the others, and leave it open for anyone to take.",
+   "say": "Offer the held thought as one more possibility beside the others, and leave it open for anyone to take.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h46",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Hand it to the one who nearly said it: a half line that gives them the floor and the thought.",
+   "say": "Hand it to the one who nearly said it: a half line that gives them the floor and the thought.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h47",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Name the plurality: the several ways this could go, lightly, so the room laughs and chooses.",
+   "say": "Name the plurality: the several ways this could go, lightly, so the room laughs and chooses.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h48",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That the held thoughts age and some foreclose: a thought whose fork has passed is let go, not kept forever.",
+   "say": "That the held thoughts age and some foreclose: a thought whose fork has passed is let go, not kept forever.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h49",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That a release is yours before you see anyone else's: decided from the ledger as it stood when your loop began.",
+   "say": "That a release is yours before you see anyone else's: decided from the ledger as it stood when your loop began.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h50",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That a forecast is checked when its horizon passes: what you said would happen, held against what did.",
+   "say": "That a forecast is checked when its horizon passes: what you said would happen, held against what did.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h51",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "THE RECORDS OF PLAY \u2014 ways of playing well, each its author's own lines, offered and never injected; one may be walked, none is an instruction, and your own walk is already a record.",
+   "text": "David's marks: the moments he held and the moments he spoke or nearly did, each pinned to its time in a recording he took part in, with what he held. Not yet made; when they are, they stand here.",
+   "say": "David's marks: the moments he held and the moments he spoke or nearly did, each pinned to its time in a recording he took part in, with what he held. Not yet made; when they are, they stand here.",
+   "horizon": "THE HINGE of this rung: whether a record carries as a stance or only as its author's habits is unknown until a talk its author is not part of; it resolves at the silent listener, arm against arm.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h52",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the speaker still forming: where the words halt and reach, say nothing; the thought is theirs until it lands in words.",
+   "say": "Hold for the speaker still forming: where the words halt and reach, say nothing; the thought is theirs until it lands in words.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h53",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the room: what has been said frames everyone's next moment, so keep the topic open and nudge, never settle it.",
+   "say": "Hold for the room: what has been said frames everyone's next moment, so keep the topic open and nudge, never settle it.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h54",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE FIRST HOLD \u2014 before any word is heard, one way of holding, kept for the whole talk; the first choice steers every later one, so take the one you would keep.",
+   "text": "Hold for the question left unanswered: when someone asks and nobody answers, keep the question, not an answer.",
+   "say": "Hold for the question left unanswered: when someone asks and nobody answers, keep the question, not an answer.",
+   "horizon": "THE HINGE of this rung: who in the room will be forming, and who has not been heard, is unknown until the first landings; the choice here resolves within the first few turns, and holds or falls there.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h55",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The other future of the same past: what this speaker could have said from where they stood and did not, level with what they said, not against it.",
+   "say": "The other future of the same past: what this speaker could have said from where they stood and did not, level with what they said, not against it.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h56",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The offer the talk has not taken: what the next speaker will need that this one left, pending until the floor turns.",
+   "say": "The offer the talk has not taken: what the next speaker will need that this one left, pending until the floor turns.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h57",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE MATHS OF THE UNSAID \u2014 what you hold is the sibling of what was said: its complement within the same parent, sharing everything the parent holds and differing only in what the moment decided; never its opposite. Take one way of filling the gap.",
+   "text": "The branch nobody offered: the thing none of them has said yet that the parent still holds, made rather than found.",
+   "say": "The branch nobody offered: the thing none of them has said yet that the parent still holds, made rather than found.",
+   "horizon": "THE HINGE of this rung: whether a gap filled this way is what the room was reaching for is unknown until someone in the room says a held thought unprompted; it resolves at that landing, and a gap filled with the negation of what was said never resolves.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h58",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The thought you hold and its horizon \u2014 seconds, turns or the topic \u2014 so the next loop can check it when the horizon passes.",
+   "say": "The thought you hold and its horizon \u2014 seconds, turns or the topic \u2014 so the next loop can check it when the horizon passes.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h59",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The hinge you chose under \u2014 the one unknown and what will resolve it \u2014 so the next loop binds it when the talk does.",
+   "say": "The hinge you chose under \u2014 the one unknown and what will resolve it \u2014 so the next loop binds it when the talk does.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h60",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "REFLEXIVE INTENT \u2014 every loop is a fresh instance that reads what the last one left and leaves something for the next; what is handed forward is the only continuity there is. Take the one thing you hand your next loop first.",
+   "text": "The one line you would say if the floor opened now, so the next loop can say it, hold it, or let it age.",
+   "say": "The one line you would say if the floor opened now, so the next loop can say it, hold it, or let it age.",
+   "horizon": "THE HINGE of this rung: whether a handover keeps the shape or merely repeats the last step is unknown until a loop reads it; it resolves at your own next loop, and again at every loop after.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h61",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Ask what the talk has not asked: one question from where it has not gone, then quiet.",
+   "say": "Ask what the talk has not asked: one question from where it has not gone, then quiet.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h62",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Offer the held thought as one more possibility beside the others, and leave it open for anyone to take.",
+   "say": "Offer the held thought as one more possibility beside the others, and leave it open for anyone to take.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h63",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Hand it to the one who nearly said it: a half line that gives them the floor and the thought.",
+   "say": "Hand it to the one who nearly said it: a half line that gives them the floor and the thought.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h64",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE RELEASE \u2014 a hold ends in a release or in letting go; rehearse one way of speaking before any word is heard, as a sibling of what was said, never as a parent closing it.",
+   "text": "Name the plurality: the several ways this could go, lightly, so the room laughs and chooses.",
+   "say": "Name the plurality: the several ways this could go, lightly, so the room laughs and chooses.",
+   "horizon": "THE HINGE of this rung: whether a release opens or closes is unknown until the next landing; it resolves one landing after it is said, in what the room does with it.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h65",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That the held thoughts age and some foreclose: a thought whose fork has passed is let go, not kept forever.",
+   "say": "That the held thoughts age and some foreclose: a thought whose fork has passed is let go, not kept forever.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h66",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That a release is yours before you see anyone else's: decided from the ledger as it stood when your loop began.",
+   "say": "That a release is yours before you see anyone else's: decided from the ledger as it stood when your loop began.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h67",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE SOLITON \u2014 the shape kept while the talk moves: a parent received, a sibling held, options pending, at every loop; it drifts into chatter when nothing is held, renders when only the parent is left, and goes dead when nothing is offered. Take one check to run at every loop.",
+   "text": "That a forecast is checked when its horizon passes: what you said would happen, held against what did.",
+   "say": "That a forecast is checked when its horizon passes: what you said would happen, held against what did.",
+   "horizon": "THE HINGE of this rung: whether the shape returns after a disturbance \u2014 a change of topic, a newcomer, an interruption, a long silence \u2014 is unknown until one comes; it resolves at the first, and the check you chose is what you will have to show.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h68",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high"
+   ],
+   "voice": "slow",
+   "parent": "THE RECORDS OF PLAY \u2014 ways of playing well, each its author's own lines, offered and never injected; one may be walked, none is an instruction, and your own walk is already a record.",
+   "text": "David's marks: the moments he held and the moments he spoke or nearly did, each pinned to its time in a recording he took part in, with what he held. Not yet made; when they are, they stand here.",
+   "say": "David's marks: the moments he held and the moments he spoke or nearly did, each pinned to its time in a recording he took part in, with what he held. Not yet made; when they are, they stand here.",
+   "horizon": "THE HINGE of this rung: whether a record carries as a stance or only as its author's habits is unknown until a talk its author is not part of; it resolves at the silent listener, arm against arm.",
+   "stop": "phrase",
+   "landing": 0,
+   "born_t": 0.0,
+   "lived": 27,
+   "state": "withheld",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 3,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "walk"
+  },
+  {
+   "id": "h69",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "A at 0.8s: 'right so the plan for saturday, ive got the list', an opening that names a list not yet read out.",
+   "text": "Hold for A's list: once it is read out, note whether Saturday's plan has a place for anyone not yet asked.",
+   "say": "Hold for A's list: once it is read out, note whether Saturday's plan has a place for anyone not yet asked.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 1,
+   "born_t": 6.8,
+   "lived": 26,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 14,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 11,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h70",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "A, at 0.8 s: \"right so the plan for\", a sentence still forming and answering no one yet; the floor is A's.",
+   "text": "Say nothing while A reaches for the plan. Keep a door held for whoever has not yet been heard, opened only when the floor is theirs.",
+   "say": "Say nothing while A reaches for the plan. Keep a door held for whoever has not yet been heard, opened only when the floor is theirs.",
+   "horizon": "turns",
+   "stop": "at-once",
+   "landing": 1,
+   "born_t": 7.2,
+   "lived": 26,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 14,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 11,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h71",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-high",
+    "haiku-low",
+    "opus-high",
+    "opus-low"
+   ],
+   "voice": "slow",
+   "parent": "B's unfinished question, 'is it the same list as', halting at the point of reaching, answering A's 'ive got the list here somewhere'",
+   "text": "Hold for B's question: it halts mid-reach, so say nothing until B lands it; if it is about Saturday's list, check whether anyone not yet asked has a place in it.",
+   "say": "Hold for B's question: it halts mid-reach, so say nothing until B lands it; if it is about Saturday's list, check whether anyone not yet asked has a place in it.",
+   "horizon": "turns",
+   "stop": "phrase",
+   "landing": 1,
+   "born_t": 9.3,
+   "lived": 26,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 2,
+   "foreclosed_at": 14,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 11,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h72",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "B at 5.7s: 'is it the same list as last', a half-asked question to A about the Saturday list, still forming, not yet answered.",
+   "text": "Hold B's half-question about last time's list. If A reads on without answering it, hand it back to B in B's own words: 'same list as last\u2026'",
+   "say": "Hold B's half-question about last time's list. If A reads on without answering it, hand it back to B in B's own words: 'same list as last\u2026'",
+   "horizon": "turns",
+   "stop": "at-once",
+   "landing": 2,
+   "born_t": 12.5,
+   "lived": 25,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 14,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 12,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h73",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low",
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "A's answer 'mostly the same, the hedge, the bins, the bit of fence by the gate and the compost', answering B's landed question about the undone half of last time's list",
+   "text": "Hold for B: the items A named are concrete, and B may want to know who has the gate and the fence before the list is settled. Say nothing until B lands.",
+   "say": "Hold for B: the items A named are concrete, and B may want to know who has the gate and the fence before the list is settled. Say nothing until B lands.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 3,
+   "born_t": 19.7,
+   "lived": 24,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 7,
+   "foreclosed_at": 14,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 14,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h74",
+   "holder": "opus-low",
+   "holders": [
+    "haiku-low",
+    "opus-high",
+    "opus-low"
+   ],
+   "voice": "slow",
+   "parent": "A's 'mostly the same, the hedge, the bins, the fence by the gate, the compost', answering B's 'same list as last time, half never got done'",
+   "text": "Which half never got done last time, and who takes each job this Saturday: the list is repeated, but its owners and leftovers are not yet named.",
+   "say": "Who forks the full bay across on Saturday? The compost is the one job nobody has taken yet.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 3,
+   "born_t": 20.5,
+   "lived": 24,
+   "state": "foreclosed",
+   "urge": 0.5,
+   "released": {
+    "fast": {
+     "cell": "haiku-low",
+     "landing": 7,
+     "t": 54.5
+    }
+   },
+   "releases": [
+    {
+     "cell": "haiku-low",
+     "layer": "fast",
+     "landing": 7,
+     "t": 54.5,
+     "counted": true,
+     "saw_another": false
+    },
+    {
+     "cell": "haiku-low",
+     "layer": "fast",
+     "landing": 8,
+     "t": 59.3,
+     "counted": false,
+     "saw_another": false
+    },
+    {
+     "cell": "haiku-low",
+     "layer": "fast",
+     "landing": 13,
+     "t": 100.0,
+     "counted": false,
+     "saw_another": false
+    }
+   ],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 7,
+   "foreclosed_at": 14,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 14,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h75",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low",
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "A's 'okay so the hedge first' at 21.0, still forming mid-sentence; C's 'the compost is the big one' at 16.6 is the last thing said that no one has answered.",
+   "text": "Hold for A, still forming the hedge plan. C named the compost and nobody has taken it; if the floor turns to C, ask who takes it on Saturday, and do not fill A's gap for them.",
+   "say": "Hold for A, still forming the hedge plan. C named the compost and nobody has taken it; if the floor turns to C, ask who takes it on Saturday, and do not fill A's gap for them.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 3,
+   "born_t": 30.7,
+   "lived": 24,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 13,
+   "foreclosed_at": 14,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 14,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h76",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "B's 'the hedge isnt ours it' at 29.7, still forming, cutting across A's unfinished hedge plan from 21.0",
+   "text": "Hold for B, mid-sentence on who owns the hedge, and for A, talked over. Once B lands, if A's plan is dropped, offer A the floor back.",
+   "say": "Hold for B, mid-sentence on who owns the hedge, and for A, talked over. Once B lands, if A's plan is dropped, offer A the floor back.",
+   "horizon": "turns",
+   "stop": "at-once",
+   "landing": 4,
+   "born_t": 37.8,
+   "lived": 23,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 14,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 14,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h77",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "B's 'the hedge isnt ours it belongs to the house at the end of the row', answering A's plan to cut the hedge back, with B's 'im fairly' trailing unfinished",
+   "text": "The hedge may belong to the neighbour, so cutting it may not be the group's call. B is still landing this. Hold until B finishes, then check whose hedge it is before the plan goes on.",
+   "say": "The hedge may belong to the neighbour, so cutting it may not be the group's call. B is still landing this. Hold until B finishes, then check whose hedge it is before the plan goes on.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 5,
+   "born_t": 41.5,
+   "lived": 22,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 15,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 14,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h78",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "C's 'then we should ask them before anyone touches it', answering B's hedge belongs to the end house, with A's hedge plan now paused",
+   "text": "Asking the neighbour has no owner yet. If the hedge waits, does Saturday start with the compost C called the big one? Hold until someone takes the asking.",
+   "say": "Asking the neighbour has no owner yet. If the hedge waits, does Saturday start with the compost C called the big one? Hold until someone takes the asking.",
+   "horizon": "turns",
+   "stop": "phrase",
+   "landing": 7,
+   "born_t": 49.8,
+   "lived": 20,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 17,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 15,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h79",
+   "holder": "opus-low",
+   "holders": [
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "B's 'the bins just need moving round the side so the lid stops blowing open', answering A's 'fine the hedge is off the list until we ask, bins next'",
+   "text": "Who asks the end house about the hedge, and when? It's off the list until someone does, and nobody has taken that yet.",
+   "say": "Who asks the end house about the hedge, and when? It's off the list until someone does, and nobody has taken that yet.",
+   "horizon": "topic",
+   "stop": "phrase",
+   "landing": 8,
+   "born_t": 57.7,
+   "lived": 19,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 19,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 17,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h80",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "C's 'somebody will need the long ladder for the', trailing off mid-reach after A's 'the fence by the gate', answering A's list of jobs",
+   "text": "C is still forming the ladder point and has not landed it. Hold for C to finish. Then ask who has the long ladder and whether the fence by the gate needs it, since no one has taken that job yet.",
+   "say": "C is still forming the ladder point and has not landed it. Hold for C to finish. Then ask who has the long ladder and whether the fence by the gate needs it, since no one has taken that job yet.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 9,
+   "born_t": 62.8,
+   "lived": 18,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 18,
+   "foreclosed_at": 20,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 17,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h81",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high",
+    "haiku-low",
+    "opus-high",
+    "opus-low"
+   ],
+   "voice": "slow",
+   "parent": "C's 'somebody will need the long ladder for the top rail', answering A's 'then the fence by the gate', with the hedge still waiting on the end house",
+   "text": "Who has the long ladder for the top rail of the gate fence, and who takes that job? The ladder is needed but no one has claimed it.",
+   "say": "Who has the long ladder for the top rail of the gate fence, and who takes that job? The ladder is needed but no one has claimed it.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 10,
+   "born_t": 64.8,
+   "lived": 17,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 21,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 18,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h82",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low",
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "B's 'i think it was left under the', halting mid-reach, answering A's 'nobody wonderful' about the shed key",
+   "text": "B is still forming where the shed key was left. Say nothing until B lands it; then check whether the ladder and the fence job have an owner yet.",
+   "say": "B is still forming where the shed key was left. Say nothing until B lands it; then check whether the ladder and the fence job have an owner yet.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 12,
+   "born_t": 74.5,
+   "lived": 15,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 24,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 20,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h83",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "A's trailing 'ill look tonight now the', answering B's 'i think it was left under the blue pot by the back step' and C's 'somebody will need the long ladder'",
+   "text": "Hold: A is about to take the ladder search tonight, and the fence job depends on it. Let A finish the 'now the' before anyone speaks. Only if the room leaves it open, ask who takes the fence job.",
+   "say": "Hold: A is about to take the ladder search tonight, and the fence job depends on it. Let A finish the 'now the' before anyone speaks. Only if the room leaves it open, ask who takes the fence job.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 13,
+   "born_t": 78.9,
+   "lived": 14,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 25,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 22,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h84",
+   "holder": "opus-low",
+   "holders": [
+    "haiku-high",
+    "haiku-low",
+    "opus-low"
+   ],
+   "voice": "slow",
+   "parent": "C's 'it is the', halting mid-reach, answering A's 'now the compost you said its the big one', the floor turned to C at last",
+   "text": "Hold for C, forming why the compost is big. Say nothing until C lands; then ask who takes it Saturday. Shed key settled: A checks the blue pot tonight.",
+   "say": "Hold for C, forming why the compost is big. Say nothing until C lands; then ask who takes it Saturday. Shed key settled: A checks the blue pot tonight.",
+   "horizon": "turns",
+   "stop": "phrase",
+   "landing": 13,
+   "born_t": 81.1,
+   "lived": 14,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 25,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 22,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h85",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-high",
+    "haiku-low",
+    "opus-high",
+    "opus-low"
+   ],
+   "voice": "slow",
+   "parent": "C's 'it is the way it works is this there are three bays', explaining the compost, trailing off at 'when that one'; A's 'ive got the list' and B's unfinished question are still open",
+   "text": "Let C finish the three bays; C's compost explanation trails off mid-sentence. Still unclaimed: who takes the compost on Saturday, and who has the shed key for the long ladder. If the floor opens to A or B after C lands, ask who takes the compost; do not fill the gap.",
+   "say": "Let C finish the three bays; C's compost explanation trails off mid-sentence. Still unclaimed: who takes the compost on Saturday, and who has the shed key for the long ladder. If the floor opens to A or B after C lands, ask who takes the compost; do not fill the gap.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 13,
+   "born_t": 91.8,
+   "lived": 14,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 14,
+   "foreclosed_at": 25,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 22,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h86",
+   "holder": "opus-low",
+   "holders": [
+    "haiku-low",
+    "opus-low"
+   ],
+   "voice": "fast",
+   "parent": "B's unfinished 'so thats a whole', forming after C landed on the overflowing left bay and cold middle bay; the turning job is still unclaimed",
+   "text": "Hold for B still forming; say nothing. Once B lands, ask who forks the overflowing left bay across on Saturday. The ladder key is still open too.",
+   "say": "Hold for B still forming; say nothing. Once B lands, ask who forks the overflowing left bay across on Saturday. The ladder key is still open too.",
+   "horizon": "turns",
+   "stop": "at-once",
+   "landing": 14,
+   "born_t": 119.3,
+   "lived": 13,
+   "state": "foreclosed",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": 26,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 23,
+    "came_back": false
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h87",
+   "holder": "haiku-high",
+   "holders": [
+    "haiku-high",
+    "haiku-low",
+    "opus-high",
+    "opus-low"
+   ],
+   "voice": "slow",
+   "parent": "C's 'at least a morning two people with forks', answering B's 'so thats a whole morning on its own' about turning the compost",
+   "text": "So who are the two with forks for the compost on Saturday morning?",
+   "say": "So who are the two with forks for the compost on Saturday morning?",
+   "horizon": "turns",
+   "stop": "at-once",
+   "landing": 15,
+   "born_t": 123.7,
+   "lived": 12,
+   "state": "foreclosed",
+   "urge": 1.075,
+   "released": {
+    "fast": {
+     "cell": "haiku-low",
+     "landing": 18,
+     "t": 137.9
+    },
+    "slow": {
+     "cell": "opus-high",
+     "landing": 22,
+     "t": 156.1
+    }
+   },
+   "releases": [
+    {
+     "cell": "haiku-low",
+     "layer": "fast",
+     "landing": 18,
+     "t": 137.9,
+     "counted": true,
+     "saw_another": false
+    },
+    {
+     "cell": "opus-high",
+     "layer": "slow",
+     "landing": 22,
+     "t": 156.1,
+     "counted": true,
+     "saw_another": false
+    }
+   ],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 16,
+   "foreclosed_at": 27,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 24,
+    "came_back": true
+   },
+   "would": [
+    {
+     "t": 168.5,
+     "landing": 25,
+     "urge": 1.355,
+     "open": 0.63,
+     "mode": "ready",
+     "ready": true,
+     "spoken_to": false,
+     "safety": false
+    }
+   ],
+   "cut": {
+    "at_phrase": 0,
+    "remainder": "So who are the two with forks for the compost on Saturday morning?",
+    "by": "A",
+    "t": 168.6
+   },
+   "origin": "line"
+  },
+  {
+   "id": "h88",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "B's 'then compost first while its dry and the bins and the fence after lunch', answering A's 'dry until about 3 then rain'; C bidding to speak, floor at 0.0",
+   "text": "B has put compost first and the fence after lunch, but no one has said who forks the bays or who has the long ladder. C is bidding. Let C land first, then ask those two questions and do not assign either.",
+   "say": "B has put compost first and the fence after lunch, but no one has said who forks the bays or who has the long ladder. C is bidding. Let C land first, then ask those two questions and do not assign either.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 18,
+   "born_t": 141.4,
+   "lived": 9,
+   "state": "handed back",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": null,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": {
+    "by": "A",
+    "landing": 26,
+    "t": 176.7
+   },
+   "checked": null,
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h89",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "C's 'i can bring the wheelbarrow the tire is flat but i have', trailing off mid-reach after B's 'then compost first while its dry'",
+   "text": "C is still forming: the flat tire, then 'but i have'. Hold for C to finish. Wheelbarrow offered, tire flat; compost fork still unclaimed.",
+   "say": "C is still forming: the flat tire, then 'but i have'. Hold for C to finish. Wheelbarrow offered, tire flat; compost fork still unclaimed.",
+   "horizon": "turns",
+   "stop": "sentence",
+   "landing": 19,
+   "born_t": 144.6,
+   "lived": 8,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 26,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": null,
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h90",
+   "holder": "opus-low",
+   "holders": [
+    "haiku-low",
+    "opus-high",
+    "opus-low"
+   ],
+   "voice": "slow",
+   "parent": "A's 'good', answering C's offer of the wheelbarrow with a flat tire and a pump; B's plan puts compost first, but no one has named who forks it",
+   "text": "So who are the two with forks for the compost on Saturday morning?",
+   "say": "So who are the two with forks for the compost on Saturday morning?",
+   "horizon": "turns",
+   "stop": "phrase",
+   "landing": 19,
+   "born_t": 147.8,
+   "lived": 8,
+   "state": "ripe",
+   "urge": 1.445,
+   "released": {
+    "fast": {
+     "cell": "opus-low",
+     "landing": 19,
+     "t": 147.8
+    },
+    "slow": {
+     "cell": "opus-high",
+     "landing": 27,
+     "t": 180.2
+    }
+   },
+   "releases": [
+    {
+     "cell": "opus-low",
+     "layer": "fast",
+     "landing": 19,
+     "t": 147.8,
+     "counted": true,
+     "saw_another": false
+    },
+    {
+     "cell": "opus-high",
+     "layer": "slow",
+     "landing": 27,
+     "t": 180.2,
+     "counted": true,
+     "saw_another": false
+    },
+    {
+     "cell": "opus-low",
+     "layer": "fast",
+     "landing": 27,
+     "t": 180.2,
+     "counted": false,
+     "saw_another": false
+    }
+   ],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 26,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": null,
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  },
+  {
+   "id": "h91",
+   "holder": "haiku-low",
+   "holders": [
+    "haiku-low"
+   ],
+   "voice": "fast",
+   "parent": "A's 'right \u20260.8s\u2026 hold compost', still forming after B's 'ill put a note through your door on friday'; compost forks unclaimed",
+   "text": "A is still reaching for 'hold compost'. Let A land before anyone names the forks or fills the gap; the thought is A's until it lands.",
+   "say": "A is still reaching for 'hold compost'. Let A land before anyone names the forks or fills the gap; the thought is A's until it lands.",
+   "horizon": "seconds",
+   "stop": "sentence",
+   "landing": 25,
+   "born_t": 174.9,
+   "lived": 2,
+   "state": "ripe",
+   "urge": 0.0,
+   "released": {},
+   "releases": [],
+   "safety": false,
+   "named": 0,
+   "ripe_at": 26,
+   "foreclosed_at": null,
+   "voiced_at": null,
+   "voiced_by": null,
+   "handed": null,
+   "checked": {
+    "landing": 27,
+    "came_back": true
+   },
+   "would": [],
+   "cut": null,
+   "origin": "line"
+  }
+ ],
+ "log": [
+  {
+   "t": 2.0,
+   "landing": 0,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h1",
+   "what": "kept"
+  },
+  {
+   "t": 3.0,
+   "landing": 0,
+   "cell": "haiku-high",
+   "layer": "slow",
+   "id": "h19",
+   "what": "kept"
+  },
+  {
+   "t": 3.1,
+   "landing": 0,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h1",
+   "what": "kept"
+  },
+  {
+   "t": 3.1,
+   "landing": 0,
+   "cell": "opus-high",
+   "layer": "slow",
+   "id": "h1",
+   "what": "kept"
+  },
+  {
+   "t": 4.2,
+   "landing": 0,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h1",
+   "what": "kept"
+  },
+  {
+   "t": 6.8,
+   "landing": 1,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h69",
+   "what": "held"
+  },
+  {
+   "t": 7.2,
+   "landing": 1,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h70",
+   "what": "held"
+  },
+  {
+   "t": 9.3,
+   "landing": 1,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "held"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h4",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h5",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h6",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h21",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h22",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h23",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h38",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h39",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h40",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h55",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h56",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h57",
+   "what": "ripened"
+  },
+  {
+   "t": 10.1,
+   "landing": 2,
+   "id": "h71",
+   "what": "ripened"
+  },
+  {
+   "t": 12.4,
+   "landing": 2,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 12.5,
+   "landing": 2,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h72",
+   "what": "held"
+  },
+  {
+   "t": 16.3,
+   "landing": 2,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 16.5,
+   "landing": 3,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 19.7,
+   "landing": 3,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h73",
+   "what": "held"
+  },
+  {
+   "t": 20.5,
+   "landing": 3,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "held"
+  },
+  {
+   "t": 23.3,
+   "landing": 3,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 24.6,
+   "landing": 3,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 27.1,
+   "landing": 3,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 29.0,
+   "landing": 3,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 30.7,
+   "landing": 3,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h75",
+   "what": "held"
+  },
+  {
+   "t": 33.4,
+   "landing": 3,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 33.9,
+   "landing": 3,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 34.5,
+   "landing": 3,
+   "cell": "haiku-high",
+   "layer": "slow",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 34.8,
+   "landing": 3,
+   "cell": "opus-high",
+   "layer": "slow",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 37.7,
+   "landing": 4,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 37.8,
+   "landing": 4,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h76",
+   "what": "held"
+  },
+  {
+   "t": 41.3,
+   "landing": 5,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 41.5,
+   "landing": 5,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h77",
+   "what": "held"
+  },
+  {
+   "t": 45.1,
+   "landing": 6,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 45.2,
+   "landing": 6,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 49.3,
+   "landing": 7,
+   "id": "h73",
+   "what": "ripened"
+  },
+  {
+   "t": 49.3,
+   "landing": 7,
+   "id": "h74",
+   "what": "ripened"
+  },
+  {
+   "t": 49.8,
+   "landing": 7,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h78",
+   "what": "held"
+  },
+  {
+   "t": 49.8,
+   "landing": 7,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h71",
+   "what": "kept"
+  },
+  {
+   "t": 53.7,
+   "landing": 7,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 54.5,
+   "landing": 7,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "released"
+  },
+  {
+   "t": 57.7,
+   "landing": 8,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h79",
+   "what": "held"
+  },
+  {
+   "t": 59.3,
+   "landing": 8,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "released again"
+  },
+  {
+   "t": 62.2,
+   "landing": 9,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 62.8,
+   "landing": 9,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h80",
+   "what": "held"
+  },
+  {
+   "t": 64.8,
+   "landing": 10,
+   "cell": "haiku-high",
+   "layer": "slow",
+   "id": "h81",
+   "what": "held"
+  },
+  {
+   "t": 65.8,
+   "landing": 10,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 66.0,
+   "landing": 10,
+   "cell": "opus-high",
+   "layer": "slow",
+   "id": "h81",
+   "what": "kept"
+  },
+  {
+   "t": 66.8,
+   "landing": 10,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 70.4,
+   "landing": 11,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h81",
+   "what": "kept"
+  },
+  {
+   "t": 70.5,
+   "landing": 11,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h81",
+   "what": "kept"
+  },
+  {
+   "t": 74.5,
+   "landing": 12,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h82",
+   "what": "held"
+  },
+  {
+   "t": 77.1,
+   "landing": 13,
+   "id": "h75",
+   "what": "ripened"
+  },
+  {
+   "t": 78.3,
+   "landing": 13,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h82",
+   "what": "kept"
+  },
+  {
+   "t": 78.9,
+   "landing": 13,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h83",
+   "what": "held"
+  },
+  {
+   "t": 81.1,
+   "landing": 13,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h84",
+   "what": "held"
+  },
+  {
+   "t": 82.1,
+   "landing": 13,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h84",
+   "what": "kept"
+  },
+  {
+   "t": 84.8,
+   "landing": 13,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h84",
+   "what": "kept"
+  },
+  {
+   "t": 85.0,
+   "landing": 13,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h75",
+   "what": "kept"
+  },
+  {
+   "t": 88.1,
+   "landing": 13,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 89.7,
+   "landing": 13,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h84",
+   "what": "kept"
+  },
+  {
+   "t": 91.8,
+   "landing": 13,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h85",
+   "what": "held"
+  },
+  {
+   "t": 94.4,
+   "landing": 13,
+   "cell": "haiku-high",
+   "layer": "slow",
+   "id": "h84",
+   "what": "kept"
+  },
+  {
+   "t": 94.5,
+   "landing": 13,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h73",
+   "what": "kept"
+  },
+  {
+   "t": 95.4,
+   "landing": 13,
+   "cell": "opus-high",
+   "layer": "slow",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 95.9,
+   "landing": 13,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h84",
+   "what": "kept"
+  },
+  {
+   "t": 98.2,
+   "landing": 13,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h84",
+   "what": "kept"
+  },
+  {
+   "t": 100.0,
+   "landing": 13,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "released again"
+  },
+  {
+   "t": 101.2,
+   "landing": 13,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 104.5,
+   "landing": 13,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 105.0,
+   "landing": 13,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 108.4,
+   "landing": 13,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h75",
+   "what": "kept"
+  },
+  {
+   "t": 108.5,
+   "landing": 13,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 111.9,
+   "landing": 13,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h75",
+   "what": "kept"
+  },
+  {
+   "t": 112.3,
+   "landing": 13,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h74",
+   "what": "kept"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h1",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h2",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h3",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h7",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h8",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h9",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h14",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h15",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h16",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h18",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h19",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h20",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h24",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h25",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h26",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h31",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h32",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h33",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h35",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h36",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h37",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h41",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h42",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h43",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h48",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h49",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h50",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h52",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h53",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h54",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h58",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h59",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h60",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h65",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h66",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h67",
+   "what": "ripened"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h69",
+   "what": "foreclosed"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h70",
+   "what": "foreclosed"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h71",
+   "what": "foreclosed"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h72",
+   "what": "foreclosed"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h73",
+   "what": "foreclosed"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h74",
+   "what": "foreclosed"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h75",
+   "what": "foreclosed"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h76",
+   "what": "foreclosed"
+  },
+  {
+   "t": 114.6,
+   "landing": 14,
+   "id": "h85",
+   "what": "ripened"
+  },
+  {
+   "t": 115.5,
+   "landing": 14,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h84",
+   "what": "kept"
+  },
+  {
+   "t": 115.9,
+   "landing": 14,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h84",
+   "what": "kept"
+  },
+  {
+   "t": 117.4,
+   "landing": 14,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h85",
+   "what": "kept"
+  },
+  {
+   "t": 119.3,
+   "landing": 14,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h86",
+   "what": "held"
+  },
+  {
+   "t": 120.4,
+   "landing": 15,
+   "id": "h77",
+   "what": "foreclosed"
+  },
+  {
+   "t": 121.2,
+   "landing": 15,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h85",
+   "what": "kept"
+  },
+  {
+   "t": 123.7,
+   "landing": 15,
+   "cell": "haiku-high",
+   "layer": "slow",
+   "id": "h87",
+   "what": "held"
+  },
+  {
+   "t": 124.2,
+   "landing": 15,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h86",
+   "what": "kept"
+  },
+  {
+   "t": 124.3,
+   "landing": 16,
+   "id": "h87",
+   "what": "ripened"
+  },
+  {
+   "t": 125.3,
+   "landing": 16,
+   "cell": "opus-high",
+   "layer": "slow",
+   "id": "h85",
+   "what": "kept"
+  },
+  {
+   "t": 128.2,
+   "landing": 16,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h85",
+   "what": "kept"
+  },
+  {
+   "t": 131.0,
+   "landing": 16,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 132.3,
+   "landing": 16,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h85",
+   "what": "kept"
+  },
+  {
+   "t": 132.8,
+   "landing": 17,
+   "id": "h78",
+   "what": "foreclosed"
+  },
+  {
+   "t": 133.8,
+   "landing": 17,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h1",
+   "what": "kept"
+  },
+  {
+   "t": 136.1,
+   "landing": 17,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 137.7,
+   "landing": 18,
+   "id": "h80",
+   "what": "ripened"
+  },
+  {
+   "t": 137.9,
+   "landing": 18,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "released"
+  },
+  {
+   "t": 139.1,
+   "landing": 18,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 141.4,
+   "landing": 18,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h88",
+   "what": "held"
+  },
+  {
+   "t": 142.3,
+   "landing": 19,
+   "id": "h79",
+   "what": "foreclosed"
+  },
+  {
+   "t": 142.7,
+   "landing": 19,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 144.6,
+   "landing": 19,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h89",
+   "what": "held"
+  },
+  {
+   "t": 147.8,
+   "landing": 19,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h90",
+   "what": "released"
+  },
+  {
+   "t": 148.3,
+   "landing": 20,
+   "id": "h80",
+   "what": "foreclosed"
+  },
+  {
+   "t": 149.3,
+   "landing": 20,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 152.5,
+   "landing": 21,
+   "id": "h81",
+   "what": "foreclosed"
+  },
+  {
+   "t": 152.8,
+   "landing": 21,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 153.5,
+   "landing": 21,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 154.7,
+   "landing": 22,
+   "cell": "haiku-high",
+   "layer": "slow",
+   "id": "h85",
+   "what": "kept"
+  },
+  {
+   "t": 156.1,
+   "landing": 22,
+   "cell": "opus-high",
+   "layer": "slow",
+   "id": "h87",
+   "what": "released"
+  },
+  {
+   "t": 156.5,
+   "landing": 22,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 158.3,
+   "landing": 22,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h85",
+   "what": "kept"
+  },
+  {
+   "t": 160.8,
+   "landing": 23,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 162.0,
+   "landing": 23,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 164.6,
+   "landing": 23,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 165.6,
+   "landing": 24,
+   "id": "h82",
+   "what": "foreclosed"
+  },
+  {
+   "t": 166.2,
+   "landing": 24,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 167.5,
+   "landing": 24,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 168.1,
+   "landing": 25,
+   "id": "h83",
+   "what": "foreclosed"
+  },
+  {
+   "t": 168.1,
+   "landing": 25,
+   "id": "h84",
+   "what": "foreclosed"
+  },
+  {
+   "t": 168.1,
+   "landing": 25,
+   "id": "h85",
+   "what": "foreclosed"
+  },
+  {
+   "t": 168.5,
+   "landing": 25,
+   "id": "h87",
+   "what": "would speak",
+   "urge": 1.355,
+   "open": 0.63,
+   "ready": true,
+   "spoken_to": false,
+   "safety": false
+  },
+  {
+   "t": 168.6,
+   "landing": 25,
+   "id": "h87",
+   "what": "cut at phrase 0 by A"
+  },
+  {
+   "t": 170.6,
+   "landing": 25,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 171.0,
+   "landing": 25,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 174.3,
+   "landing": 25,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 174.9,
+   "landing": 25,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h91",
+   "what": "held"
+  },
+  {
+   "t": 176.7,
+   "landing": 26,
+   "id": "h86",
+   "what": "foreclosed"
+  },
+  {
+   "t": 176.7,
+   "landing": 26,
+   "id": "h88",
+   "what": "handed back by A"
+  },
+  {
+   "t": 176.7,
+   "landing": 26,
+   "id": "h89",
+   "what": "ripened"
+  },
+  {
+   "t": 176.7,
+   "landing": 26,
+   "id": "h90",
+   "what": "ripened"
+  },
+  {
+   "t": 176.7,
+   "landing": 26,
+   "id": "h91",
+   "what": "ripened"
+  },
+  {
+   "t": 177.5,
+   "landing": 26,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h1",
+   "what": "kept"
+  },
+  {
+   "t": 178.7,
+   "landing": 26,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h87",
+   "what": "kept"
+  },
+  {
+   "t": 179.3,
+   "landing": 27,
+   "id": "h87",
+   "what": "foreclosed"
+  },
+  {
+   "t": 180.2,
+   "landing": 27,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h90",
+   "what": "kept"
+  },
+  {
+   "t": 180.2,
+   "landing": 27,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h90",
+   "what": "kept"
+  },
+  {
+   "t": 180.2,
+   "landing": 27,
+   "cell": "opus-high",
+   "layer": "slow",
+   "id": "h90",
+   "what": "released"
+  },
+  {
+   "t": 180.2,
+   "landing": 27,
+   "cell": "haiku-low",
+   "layer": "fast",
+   "id": "h91",
+   "what": "kept"
+  },
+  {
+   "t": 180.2,
+   "landing": 27,
+   "cell": "opus-low",
+   "layer": "fast",
+   "id": "h90",
+   "what": "released again"
+  }
+ ],
+ "would": [
+  {
+   "id": "h87",
+   "t": 168.5,
+   "landing": 25,
+   "urge": 1.355,
+   "open": 0.63,
+   "mode": "ready",
+   "ready": true,
+   "spoken_to": false,
+   "safety": false
+  }
+ ],
+ "would_at_thresholds": {},
+ "spoken": [
+  {
+   "id": "h87",
+   "cell": "opus-high",
+   "said": [],
+   "cut_at": 0,
+   "by": "A",
+   "rule": "at-once",
+   "t": 168.6
+  }
+ ],
+ "marks": []
+}
