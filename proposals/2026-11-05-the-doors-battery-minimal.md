@@ -2,7 +2,7 @@
 
 **Date**: 5 November 2026
 **Lane**: systemic.2, weft (Claude Code on the Mac, Opus 5.5 at max effort, keyed), with eight Opus 5.5 walkers beside it: one for each door (the handler by curl, the router, the mirror, the site's pages, the button and the voice) and three for the cells that cross doors (the seals, the walls, the leak).
-**Status**: walked, 13:15Z to 14:10Z. On the beach the same afternoon: the table `tests:doors` at the lab (beach.idiothuman.com), founded under weft's key, 68 cells and seven part summaries; on `spine:security-schematic`, each part's state at its 9 and sixteen lines the walk found untrue written again under the shared project lock, the standing spine kept whole first at `archive:spine:security-schematic:2026-11-05-2`; the knot at thread:weft 17.111. `function:security-schematic` 7 stays `phase: draft` until David has read this. No `src/` change: every code fix the walk found is named in §8 for David's word. Merging this file redeploys nothing.
+**Status**: walked, 13:15Z to 14:10Z. On the beach the same afternoon: the table `tests:doors` at the lab (beach.idiothuman.com), founded under weft's key, 68 cells and seven part summaries; on `spine:security-schematic`, each part's state at its 9 and sixteen lines the walk found untrue written again under the shared project lock, with four citation and door corrections lane systemic.1 sent (§5), the standing spine kept whole first at `archive:spine:security-schematic:2026-11-05-2`; the knot at thread:weft 17.111. `function:security-schematic` 7 stays `phase: draft` until David has read this. No `src/` change: every code fix the walk found is named in §8 for David's word. Merging this file redeploys nothing.
 
 ## 0. David's words
 
@@ -114,6 +114,13 @@ The record's §5.2 named six cells nothing tested. Each was walked.
 
 The four sub-part NOT YETs (1.219, 1.349, 1.429, 1.559) and the doors' 4.29 and 4.59 now say what the walk saw, with their entries' numbers; the root's 9 names this walk.
 
+**Four corrections from lane systemic.1**, found by the security page's builder reading the plain page's reader against the spine and sent to this lane, which held the spine, at 14:16Z. All four stand, under the same lock, the archive's underscore naming them:
+
+1. **Landed.** 4.2 and 4.3 cite `[lighthouse 8]` (the doors elsewhere) where they cited `[spine:beach-schematic 1.2]` and `1.1`. The page's reader drew any `spine:<x>-schematic` bracket as a callout, so it showed those two doors as schematics of their own.
+2. **Landed.** 1.3 cites `detail 7`, so the ground is cited by a part, as `function:schematic` 2 asks; before this no part cited it.
+3. **Landed.** 1.6's door is `https://happyseaurchin.com/connect`. The connector's address answers a browser with a 401 and raw JSON, checked 14:17Z.
+4. **Already landed in the walk's own pass.** 1.12 reads "under eighteen names".
+
 ## 6. What needs David's hands, and what needs Matthew
 
 - **David's phone's connector at a members' beach.** Sign in at `bsp.hermitcrab.me/mcp/v1/me` on the phone and read a SALT block through it. The walk predicts it works only if David's SALT name also stands as a passport on the apex (1.62; §8 router 6); this is the one cell that proves or refutes it with a real member.
@@ -164,6 +171,7 @@ None is built here. Each names its door's code at the line the walk read it.
 21. The gallery's vault always stands at the apex (`gallery.html:693`, 713–714), and the typed key is kept plain by default (653).
 22. /page, the group page and the models page hand a character's key to the waker in plain JSON (`page.html:1111–1112`, `group.html:751–752`, `models.html:787–788`).
 23. `beach-security.html` lines 172, 207 and 208 still stand.
+24. Two faults in the schematic page's reader (`schematic.html`), named by lane systemic.1 and its to fix in the pages' PR: the live line's position pattern takes one digit, so "spine:thread 17" reads as the registry's latest line; and a callout is recognised with a position after it.
 
 ## 9. Probes wiped, and what was left
 
