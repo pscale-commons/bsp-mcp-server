@@ -23,7 +23,7 @@
  */
 
 import { z } from 'zod';
-import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { isFederatedOwner, loadBlock, loadBeachIndex, resolveFederationOrigin, refuseKeyInPayload, DEFAULT_BEACH } from '../db.js';
 import { pairId, determineSide } from '../locks.js';
@@ -113,7 +113,7 @@ export async function handleGrainReach(
     res = await atTheDoor(door, () => handleGrainReachInner(params));
   } catch (e: any) {
     if (!isDoorRefusal(e)) throw e;
-    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+    res = refusedAtDoor(e);
   }
   if (door.minted && res.content.length) res.content[res.content.length - 1].text += mintedLine(door);
   return res;

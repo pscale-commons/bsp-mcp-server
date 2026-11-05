@@ -72,7 +72,7 @@
 
 import { z } from 'zod';
 import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
-import { loadBlock, saveBlock, loadBeachIndex, DEFAULT_BEACH, type BlockRow } from '../db.js';
+import { loadBlock, saveBlock, loadBeachIndex, guardStore, DEFAULT_BEACH, type BlockRow } from '../db.js';
 import { formatBorn, fullWidthAddress } from '../bsp-fn.js';
 import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR, readHumanTime, readHumanDay, readHumanSpan, SPAN_MAX_DAYS, spanInPlace, wallClock, wallDay, DAY_PARTS } from '../temporal.js';
 import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLOCK_FIELD } from './clock.js';
@@ -82,7 +82,7 @@ import { nameAtTheDoor, noteLook, reflect } from '../looks.js';
 import { rideOrientation } from '../orientation.js';
 import { followsOf, lensLaw, lensVoice, composeLensMedium } from './lens.js';
 import { raised, nodeAt, linesAt, dotted, type CrossLine } from '../cross.js';
-import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { colourBlockName, type GrayEnvelope } from '../keys.js';
 import { sealer, colourLine, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
@@ -774,7 +774,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
         : params.tier === 'hard' ? await composeClockHard(origin, params.at, handle, table)
         : await composeClockSoft(origin, params.at, handle, table);
       if (params.secret && !(composed as any).declined) {
-        const line = await publishPlay(wireStore(origin, handle, params.secret), handle, origin, composed, params.tier, Math.floor(Date.now() / 1000), params.secret);
+        const line = await publishPlay(guardStore(wireStore(origin, handle, params.secret), [params.secret]), handle, origin, composed, params.tier, Math.floor(Date.now() / 1000), params.secret);
         if (line.startsWith('failed')) console.error(`[flow] ${handle} ${params.tier} at ${CLOCK_FIELD}:${params.at}: ${line}`);
       }
       return out(composed.text);
@@ -1412,7 +1412,7 @@ export async function handleStreamEngage(params: StreamEngageParams, extra?: { s
     res = await atTheDoor(door, () => handleStreamEngageInner(params, extra));
   } catch (e: any) {
     if (!isDoorRefusal(e)) throw e;
-    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+    res = refusedAtDoor(e);
   }
   if (door.minted && (res as any)?.content?.length) (res as any).content[(res as any).content.length - 1].text += mintedLine(door);
   return res;

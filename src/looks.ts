@@ -167,7 +167,9 @@ export function lateralLine(
   for (const l of ring) {
     if (l.session === session || l.beach !== key) continue;
     const prev = latest.get(l.session);
-    if (!prev || l.ts > prev.ts) latest.set(l.session, l);
+    // The ring is in the order calls were served, so of two looks in one
+    // millisecond the later is the latest.
+    if (!prev || l.ts >= prev.ts) latest.set(l.session, l);
   }
   if (latest.size === 0) return '';
   const others = [...latest.values()].sort(

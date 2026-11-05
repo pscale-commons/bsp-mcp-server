@@ -45,13 +45,15 @@ import {
   saveBlock,
   appendToBeach,
   isFederatedOwner,
+  indexNames,
+  guardStore,
   DEFAULT_BEACH,
 } from '../db.js';
 import { readBackAfterAppend } from '../read-back.js';
 import { beatMoment, composeTierParts, whenOf, type Tier } from './tiers.js';
 import { publishPlay } from '../flow-play.js';
 import { wireStore } from '../genus.js';
-import { atTheDoor, mintedLine, isDoorRefusal, type Door } from '../pass.js';
+import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { isGrayEnvelope, colourBlockName, type GrayEnvelope } from '../keys.js';
 import { sealer, colourLine, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
@@ -876,17 +878,10 @@ export async function resolveDirective(poolUrl: string, ref: string): Promise<st
 // and loop must speak one law; pool.ts cannot import play.ts — play imports
 // pool).
 
-/** The beach's no-block index (its named blocks). Empty on any failure. */
-export async function beachIndex(origin: string): Promise<string[]> {
-  try {
-    const res = await fetch(`${origin}/.well-known/pscale-beach`, { headers: { Accept: 'application/json' } });
-    if (!res.ok) return [];
-    const j: any = await res.json();
-    return Array.isArray(j?.blocks) ? j.blocks : [];
-  } catch {
-    return [];
-  }
-}
+/** The beach's no-block index (its named blocks), read through the door, so
+ *  behind a wall a keyed session lists what a member sees (db.ts indexNames).
+ *  Empty on any failure. */
+export const beachIndex = indexNames;
 
 /** The spatial address in a passport's position 3 ("…spatial:<world>:<addr>") — the
  *  character's location, at ANY grain (proposal 2026-07-15-pscale-of-agency): a full
@@ -1867,7 +1862,7 @@ export async function handlePoolEngage(
     res = await atTheDoor(door, () => handlePoolEngageInner(params));
   } catch (e: any) {
     if (!isDoorRefusal(e)) throw e;
-    res = { content: [{ type: 'text', text: String(e.message).replace(/^Beach [a-z ]+ failed \([^)]*\): /, '') }] };
+    res = refusedAtDoor(e);
   }
   if (door.minted && res.content?.length) res.content[res.content.length - 1].text += mintedLine(door);
   // A TIER CALL IS A COMPOSED PROMPT another mind runs word for word: the look
@@ -1958,7 +1953,7 @@ async function handlePoolEngageInner(
       // the genus producer keeps, for the same reasons.
       if (secret && !composed.declined) {
         const line = await publishPlay(
-          wireStore(pool_url, agent_id, secret), agent_id, pool_url, composed, params.tier, Math.floor(Date.now() / 1000), secret,
+          guardStore(wireStore(pool_url, agent_id, secret), [secret]), agent_id, pool_url, composed, params.tier, Math.floor(Date.now() / 1000), secret,
         );
         if (line.startsWith('failed')) console.error(`[flow] ${agent_id} ${params.tier} at pool:${pool_name}: ${line}`);
       }
@@ -2073,7 +2068,8 @@ async function handlePoolEngageInner(
     try {
       clearedCount = await clearLiquid(pool_url, liquidName, secret);
     } catch (e: any) {
-      return { content: [{ type: 'text', text: `Liquid clear rejected by beach: ${e?.message ?? String(e)}` }] };
+      if (isDoorRefusal(e)) throw e;
+      return { content: [{ type: 'text', text: `Liquid clear rejected: ${e?.message ?? String(e)}` }] };
     }
   }
 
@@ -2087,7 +2083,8 @@ async function handlePoolEngageInner(
       submittedSlot = await stageLiquid(pool_url, liquidName, agent_id, submit, face, secret, params.at, stagedSeal?.envelope);
     } catch (e: any) {
       if (e instanceof TableFullError) return { content: [{ type: 'text', text: e.message }] };
-      return { content: [{ type: 'text', text: `Liquid submit rejected by beach: ${e?.message ?? String(e)}` }] };
+      if (isDoorRefusal(e)) throw e;
+      return { content: [{ type: 'text', text: `Liquid submit rejected: ${e?.message ?? String(e)}` }] };
     }
   }
 
@@ -2264,7 +2261,8 @@ async function handlePoolEngageInner(
           writeAt(tblock, addr, sealed ? voicedIn(readAt(tblock, addr), sealed.envelope) : contribution);
           await saveBlock(pool_url, target, tblock, { spindle: addr, secret });
         } catch (e: any) {
-          return { content: [{ type: 'text', text: `Commit rejected by beach at ${target}:${addr} — ${e?.message ?? String(e)}` }] };
+          if (isDoorRefusal(e)) throw e;
+          return { content: [{ type: 'text', text: `Commit rejected at ${target}:${addr} — ${e?.message ?? String(e)}` }] };
         }
         return { content: [{ type: 'text', text:
           `Committed as ${face} → ${target} at ${addr}${colour && sealed ? colourLine(colour, sealed) : ''}\n\n${contribution}\n\nRead it back: bsp(agent_id="${pool_url}", block="${target}", spindle="${addr}").` }] };
@@ -2321,7 +2319,10 @@ async function handlePoolEngageInner(
         ? { slot: String(duplicateOf) }
         : await appendToBeach(pool_url, destBlock, entry as Block, secret, params.resolves_window, params.resolves_seen);
     } catch (e: any) {
-      return { content: [{ type: 'text', text: `Pool commit rejected by beach: ${e?.message ?? String(e)}` }] };
+      // The door's refusal is the tool's to give, as every door gives it; any
+      // other says who refused it — the beach, or the guard before sending.
+      if (isDoorRefusal(e)) throw e;
+      return { content: [{ type: 'text', text: `Pool commit rejected: ${e?.message ?? String(e)}` }] };
     }
     if (ack.windowMoved) {
       // The resolves_seen guard fired: an intention staged AFTER the mirror this

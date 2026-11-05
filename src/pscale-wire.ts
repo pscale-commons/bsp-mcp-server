@@ -2,11 +2,11 @@
  * pscale-wire.ts — ONE implementation of the beach wire contract.
  *
  * CANONICAL HERE (bsp-mcp-server/src/pscale-wire.ts). The copy at
- * xstream-bsp/src/kernel/pscale-wire.ts is VENDORED BYTE-IDENTICAL — edit
- * only here, re-vendor there, and `smoke:wire` in each repo tripwires drift
- * (it runs the contract battery in pscale-wire-contract.ts; xstream's also
- * diffs its copy against this file's raw URL). Bump WIRE_VERSION on any
- * change.
+ * xstream-bsp/src/kernel/pscale-wire.ts is VENDORED from it byte for byte at
+ * a WIRE_VERSION — edit only here, bump WIRE_VERSION on any change, and
+ * re-vendor there. `smoke:wire` in each repo runs the contract battery in
+ * pscale-wire-contract.ts, and xstream's also diffs its copy against this
+ * file's raw URL, so a copy standing a version behind is seen.
  *
  * WHY ONE FILE. The seat and the router each hand-built these HTTP bodies,
  * and the drift between them cost real things: the grain side went out as a
@@ -48,7 +48,7 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Json = any;
 
-export const WIRE_VERSION = '0.2.0';
+export const WIRE_VERSION = '0.3.0';
 
 const DEFAULT_TIMEOUT_MS = 20_000;
 const RETRY_DELAY_MS = 1_500;
@@ -227,14 +227,27 @@ export async function readShape(origin: string, block: string, spindle: string |
   }
 }
 
+/** The index a members' beach serves a stranger: what its keepers mark beyond,
+ * its underscore opening with the wall. */
+export function strangersView(index: { _?: unknown } | null | undefined): boolean {
+  return typeof index?._ === 'string' && /is its members' beach/.test(index._);
+}
+
 /** The beach's derived surface index ({_, origin, blocks, bytes?}) — a GET
- * with no ?block=. null when unreachable or not index-shaped. */
+ * with no ?block=. null when unreachable or not index-shaped.
+ * A members' beach answers a stranger's index with a 200 listing only what
+ * is marked beyond, so no 401 ever reaches the door here: a call that stands
+ * with a key proves once, as it would at a refused block, and reads again
+ * as a member. */
 export async function surfaceIndex(origin: string, opts: WireOpts = {}): Promise<{ _?: string; origin?: string; blocks: string[]; bytes?: Record<string, number> } | null> {
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const read = () => retryTransient(() => rawGet(base(origin), timeoutMs), opts.retryDelayMs ?? RETRY_DELAY_MS);
   try {
-    const j = await retryTransient(
-      () => rawGet(base(origin), opts.timeoutMs ?? DEFAULT_TIMEOUT_MS),
-      opts.retryDelayMs ?? RETRY_DELAY_MS,
-    );
+    let j = await read();
+    if (doorHooks && strangersView(j)) {
+      doorHooks.forget(origin);
+      if (await doorHooks.prove(origin, timeoutMs)) j = await read();
+    }
     return j && typeof j === 'object' && Array.isArray(j.blocks) ? j : null;
   } catch {
     return null;

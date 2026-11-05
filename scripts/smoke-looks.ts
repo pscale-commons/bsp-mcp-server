@@ -86,6 +86,14 @@ check('a room engage names the session; an anon tab and a URL stay someone', /ha
 
 check('sharedPrefix ignores the decimal', sharedPrefix('4.26', '4.2') === 2 && sharedPrefix('4.26', '5') === 0 && sharedPrefix('', '4') === 0);
 
+// ── two looks in one millisecond: the later is the latest (the doors' battery, router 9) ──
+// A refused write on loopback can land in the millisecond of the look before it.
+resetLooks();
+noteLook('S', B, 'passport:ada', null, false, t0);
+noteLook('S', B, 'days:ada', '3', false, t0);
+const tie = lateralLine('L', B, 'days:ada', null, t0 + 1);
+check('of two looks in one millisecond, the later is the one told', /someone looked at 3 \(0s ago\)/.test(tie) && !/passport:ada/.test(tie), tie);
+
 // ── reflect() appends to the last text and never throws ──
 resetLooks();
 noteLook('X', B, 'pool:weft', null, false, Date.now());

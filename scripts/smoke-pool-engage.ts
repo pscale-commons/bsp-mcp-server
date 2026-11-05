@@ -602,6 +602,14 @@ console.log('\n=== liquid holds nine — through the router door, against an in-
     assert(!/rejected by beach/.test(refused), 'told plainly — nothing reached the beach, nothing is wrong with it');
     assert(JSON.stringify(store[LIQ]) === before, 'and nothing was written: all nine lines stand as they were');
 
+    // The doors' battery, router 9: the guard's refusal is the room tool's own, said as such.
+    const ROOM_KEY = 'garth-room-key-417';
+    const keyed = await engage({ agent_id: 'garth', contribution: `my key is ${ROOM_KEY}, keep it`, secret: ROOM_KEY });
+    assert(/^Pool commit rejected: refused before sending/.test(keyed) && !/by beach/.test(keyed) && !keyed.includes(ROOM_KEY), "a commit carrying its own key is refused before sending, and never said to be the beach's");
+    const keyedStage = await engage({ agent_id: 'garth', submit: `staged with ${ROOM_KEY}`, secret: ROOM_KEY });
+    assert(/^Liquid submit rejected: refused before sending/.test(keyedStage) && !/by beach/.test(keyedStage) && !keyedStage.includes(ROOM_KEY), '…and so is a stage');
+    assert(JSON.stringify(store[LIQ]) === before, 'and neither wrote anything');
+
     const passer = await engage({ agent_id: 'passer', submit: '' });
     assert(JSON.stringify(store[LIQ]) === before, 'a withdraw with no line to take back writes nothing');
     assert(!/every place at the table/.test(passer) && !/withdrawn: liquid slot/.test(passer), 'and claims neither a refusal nor a withdraw');
