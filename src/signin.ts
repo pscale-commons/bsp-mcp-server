@@ -15,7 +15,10 @@
  * that takes a `secret` gets it where a call carries none, `enc_secret: "vault"` seals and opens
  * with it (the vault among the lines it opens), and nothing the router returns ever contains it.
  * The key stays stable. Fingerprints come and go: revoking one, on the router's own page with
- * the key, empties its digit, and its connector is signed out.
+ * the key, empties its digit, and its connector is signed out. What a connection does with the
+ * key can therefore be undone by its holder, and the one act that could not is refused: a lock
+ * is set only to the key itself (`new_lock: "vault"`), never moved to another key or opened. A
+ * fingerprint is minted only for a handle whose passport stands on the beach.
  *
  * NOTHING SECRET IS STORED IN THE CLEAR. A client's id is its redirect addresses, sealed; a code
  * is the fingerprint and the PKCE challenge, sealed for five minutes; a token is the fingerprint,
@@ -139,6 +142,14 @@ async function readRing(handle: string): Promise<Record<string, any> | null> {
   return row?.block && typeof row.block === 'object' ? (row.block as Record<string, any>) : null;
 }
 
+/** A fingerprint acts for a handle that stands on the beach, and a handle stands by its passport.
+ *  Founding the ring is bound to the passport's key, so where no passport stands any key would
+ *  found it, and the connection would sign in as a name nobody holds ("me", typed at /me). */
+async function passportStands(handle: string): Promise<boolean> {
+  const row = await loadBlock(DEFAULT_BEACH, `passport:${handle}`);
+  return !!row?.block && typeof row.block === 'object';
+}
+
 /** What a refused write at the ring says to the person at the page. */
 function refusalFor(e: unknown, handle: string): string {
   const m = String((e as any)?.message ?? e);
@@ -151,7 +162,9 @@ function refusalFor(e: unknown, handle: string): string {
  *  ring is latched by it (and founding the ring is bound to the passport's key). */
 async function mint(handle: string, key: string, name: string): Promise<{ fingerprint: string; digit: string } | { problem: string }> {
   let ring: Record<string, any> | null;
-  try { ring = await readRing(handle); } catch { return { problem: 'The beach did not answer. Try again in a moment.' }; }
+  let stands: boolean;
+  try { ring = await readRing(handle); stands = await passportStands(handle); } catch { return { problem: 'The beach did not answer. Try again in a moment.' }; }
+  if (!stands) return { problem: `"${handle}" is not a handle on this beach: no passport:${handle} stands. Type the handle your blocks are under.` };
   const digit = DIGITS.find((d) => !isSealedEntry(ring?.[d]));
   if (!digit) return { problem: `Nine fingerprints already act for ${handle}. Revoke one first, at ${FINGERPRINTS_PAGE}${handle}.` };
   const fingerprint = randomBytes(32).toString('base64url');
@@ -334,7 +347,7 @@ function signinPage(ask: Ask, handle: string | null, client: string, problem = '
 <p>${esc(backTo(ask.redirect_uri ?? ''))} is asking to act on the beach as ${as}. Type the key once, here on the router's own page, and never in a chat.</p>
 ${problem ? `<p class="problem">${esc(problem)}</p>` : ''}
 <form method="post" action="/oauth/authorize">${hidden}
-<label>Handle<input name="handle" ${handle ? `value="${esc(handle)}" readonly` : 'required'} autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></label>
+<label>${handle ? 'Handle' : 'Your handle, the name your blocks are under'}<input name="handle" ${handle ? `value="${esc(handle)}" readonly` : 'required'} autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></label>
 ${keyField}
 <label>Name this connection<input name="name" value="${esc(named)}" maxlength="80" autocapitalize="sentences"></label>
 <button type="submit">Sign in</button>
@@ -531,7 +544,7 @@ export function refuseUnsigned(res: ServerResponse, origin: string, mcpPath: str
 
 /** The line a signed session's instructions carry, so the model never asks for the key. */
 export function signedLine(handle: string): string {
-  return `THIS CONNECTION IS SIGNED IN AS ${handle}, by a fingerprint. Every call that carries no secret writes with ${handle}'s key, which never enters this window: do not ask the person for it, and do not look for it. Wherever a call would name the key, write "vault" and the router puts the key there: enc_secret: "vault" seals and opens a gray line, ${handle}'s vault among them (agent_id the beach's URL, block "vault:${handle}"); new_lock: "vault" latches a new block under the key. Nothing the router returns ever contains the key itself.`;
+  return `THIS CONNECTION IS SIGNED IN AS ${handle}, by a fingerprint. Every call that carries no secret writes with ${handle}'s key, which never enters this window: do not ask the person for it, and do not look for it. Wherever a call would name the key, write "vault" and the router puts the key there: enc_secret: "vault" seals and opens a gray line, ${handle}'s vault among them (agent_id the beach's URL, block "vault:${handle}"); new_lock: "vault" latches a new block under the key, and no other new_lock is taken here: moving a block to another key or opening it takes the key in hand. Nothing the router returns ever contains the key itself.`;
 }
 
 // ── The tools ──
@@ -569,8 +582,9 @@ function isZodShape(a: unknown): a is Record<string, unknown> {
  * "vault" in `secret`, `enc_secret` or `new_lock` becomes the key, so a signed hand writes, seals,
  * opens and latches with a key it never sees; nothing returned contains it; and the session's hand
  * is its handle wherever a hand is asked for (the reflection; a members' beach, whose pass is
- * proved with the key). An unsigned call that names "vault" is refused, since the word would
- * become the key. Installed innermost, beside the error and clock wrappers in server.ts, so it
+ * proved with the key). Any other `new_lock` on a call the key was put into is refused, so a
+ * fingerprint never moves a block off the key or opens it. An unsigned call that names "vault"
+ * is refused, since the word would become the key. Installed innermost, beside the error and clock wrappers in server.ts, so it
  * reaches every tool that exists and every tool added later.
  */
 export function installSignedIn(server: McpServer): void {
@@ -597,6 +611,12 @@ export function installSignedIn(server: McpServer): void {
       let injected = false;
       if (params) {
         if (takesSecret && (params.secret === VAULT || !(typeof params.secret === 'string' && params.secret !== ''))) { params.secret = who.key; injected = true; }
+        // The one act its holder could not take back: a lock moved to another key, or opened, with
+        // a key the hand never saw. The key would no longer open the block, and revoking the
+        // fingerprint would not return it. So a signed call sets a lock only to the key itself.
+        if (injected && takesLock && params.new_lock !== undefined && params.new_lock !== VAULT) {
+          return { isError: true, content: [{ type: 'text', text: `new_lock: a connection signed in as ${who.handle} sets a lock only to the key itself, written "vault". Moving a block to another key, or opening it, would take the block out of ${who.handle}'s hands, and revoking this connection would not bring it back, so that takes the key in hand, never a fingerprint. Nothing was done.` }] };
+        }
         if (takesEnc && params.enc_secret === VAULT) params.enc_secret = who.key;
         if (takesLock && params.new_lock === VAULT) params.new_lock = who.key;
       }

@@ -3,9 +3,11 @@
  * proposals/2026-11-04-the-key-in-the-connector.md).
  *
  * Part 1, in-process: every tool that takes a `secret` gets the signed key where a call carries
- * none; a call's own secret wins; "vault" in `secret`, `enc_secret` or `new_lock` is the key; the
- * key never seals unless asked; an unsigned call naming "vault" is refused; nothing a signed call
- * returns contains the key; a signed session's hand is its handle.
+ * none; a call's own secret wins; "vault" in `secret`, `enc_secret` or `new_lock` is the key; any
+ * other `new_lock` on a call the key was put into is refused, running nothing, while a call that
+ * brings its own key moves its own lock; the key never seals unless asked; an unsigned call naming
+ * "vault" is refused; nothing a signed call returns contains the key; a signed session's hand is
+ * its handle.
  *
  * Part 2, over HTTP, with no beach behind the router (as CI runs): the router spawned as Railway
  * runs it, with BSP_SIGNIN_SECRET, and everything that proves itself without one: the 401 and its
@@ -18,8 +20,10 @@
  * key in the clear, a signed write with no secret, the vault opened with enc_secret "vault" and the
  * key taken out of what comes back, a second fingerprint, revoking one on the router's page while
  * the other goes on, and refresh refused for the revoked one; then the one address, /me, signed
- * in with the handle typed, its token and /as/<handle>'s each refused at the other, and a new
- * block founded with new_lock "vault". Skipped, and said so, where no
+ * in with the handle typed, a typed name with no passport standing refused ("me" among them), its
+ * token and /as/<handle>'s each refused at the other, a new block founded with new_lock "vault",
+ * and that block's lock neither moved nor opened through the fingerprint, though the key in hand
+ * still moves it. Skipped, and said so, where no
  * pscale-beach checkout stands beside this repository: CI's gate proves itself from this repo
  * alone.
  *
@@ -73,8 +77,18 @@ async function wrapper() {
   ok('secret "vault" is the key, and seals nothing unless asked', seen.secret === KEY && seen.seal === undefined);
   await tools.takes({ new_lock: 'vault' }, signed('s1'));
   ok('new_lock "vault" latches under the key', seen.lock === KEY && seen.secret === KEY);
-  await tools.takes({ new_lock: 'OTHER' }, signed('s1'));
-  ok("a call's own new_lock is its own", seen.lock === 'OTHER');
+  for (const [lock, act] of [['OTHER', 'moving a lock to another key'], ['', 'opening a lock with an empty one'], [null, 'opening a lock with null']] as const) {
+    seen = null;
+    const r = await tools.takes({ new_lock: lock }, signed('s1'));
+    ok(`${act} with the key put in is refused, and runs nothing`, seen === null && r.isError === true && /sets a lock only to the key itself/.test(r.content[0].text) && !r.content[0].text.includes(KEY), JSON.stringify(r));
+  }
+  seen = null;
+  const viaWord = await tools.takes({ secret: 'vault', new_lock: 'OTHER' }, signed('s1'));
+  ok('…and so with secret "vault" naming the key', seen === null && viaWord.isError === true);
+  await tools.takes({ secret: 'MINE', new_lock: 'OTHER' }, signed('s1'));
+  ok('a call that brings its own key moves its own lock', seen.secret === 'MINE' && seen.lock === 'OTHER');
+  await tools.takes({ secret: 'vault', new_lock: 'vault' }, signed('s1'));
+  ok('the key set to the key stands', seen.secret === KEY && seen.lock === KEY);
   await tools.takes({ secret: 'X', enc_secret: 'E' }, { sessionId: 's2' });
   ok('an unsigned call is untouched', seen.secret === 'X' && seen.enc === 'E' && seen.seal === 'E');
   for (const field of ['secret', 'enc_secret', 'new_lock']) {
@@ -190,6 +204,7 @@ async function router() {
     const mpg = await me.authorize(cl.client_id);
     const mhtml = await mpg.text();
     ok('its page asks for the handle as well as the key', mpg.status === 200 && /<input name="handle" required/.test(mhtml) && !/name="handle"[^>]*readonly/.test(mhtml) && /type="password"/.test(mhtml), mhtml.slice(0, 600));
+    ok('…saying the handle is the name the blocks are under, not the address', /Your handle, the name your blocks are under<input name="handle"/.test(mhtml));
     const notHandle = await me.signIn(cl.client_id, 'ada-the-key', 'my phone', 'not a handle!');
     ok('a typed handle that is not a handle stays on the page', notHandle.status === 400 && /A handle is letters/.test(await notHandle.text()));
     const mlost = await me.signIn(cl.client_id, 'ada-the-key', 'my phone');
@@ -324,6 +339,12 @@ async function realBeach() {
     const mcl = await me.register();
     const wrongMe = await me.signIn(mcl.client_id, 'bob-other-key', 'my tablet');
     ok('at /me, a key that does not open the typed handle mints nothing', wrongMe.status === 400 && /does not open ada/.test(await wrongMe.text()));
+    for (const typed of ['me', 'bob']) {
+      const none = await me.signIn(mcl.client_id, KEY, 'my tablet', typed);
+      const nonePage = await none.text();
+      ok(`at /me, "${typed}" with no passport standing mints nothing: the page says so`, none.status === 400 && new RegExp(`&quot;${typed}&quot; is not a handle on this beach`).test(nonePage), `${none.status} ${(nonePage.match(/class="problem">([^<]*)/) ?? [])[1] ?? ''}`);
+      ok('…and founds no ring for it', /not found/.test(await raw(`fingerprints:${typed}`)));
+    }
     const meCode = new URL((await me.signIn(mcl.client_id, KEY, 'my tablet')).headers.get('location') ?? 'http://none/').searchParams.get('code') ?? '';
     const tm = await (await me.exchange(mcl.client_id, meCode)).json();
     ok('signing in at /me with the handle typed mints a fingerprint for it', !!tm.access_token && /my tablet/.test(await raw('fingerprints:ada')), JSON.stringify(tm));
@@ -345,6 +366,18 @@ async function realBeach() {
     ok('secret "vault" writes with the key', /secret named as vault/.test(await raw('journal:ada', '7')));
     const lit = textOf((await open.call({ block: 'journal:ada', spindle: '8', content: 'x', secret: 'vault' })).body);
     ok('"vault" through the open endpoint is refused before it reaches the beach', /only on a signed connection/.test(lit), lit);
+
+    console.log('  — a lock is set only to the key');
+    for (const [lock, act] of [['mallory-key', 'move notes:ada to another key'], ['', 'open notes:ada']] as const) {
+      const r = textOf((await ms.call({ block: 'notes:ada', new_lock: lock })).body);
+      ok(`a signed call cannot ${act}`, /sets a lock only to the key itself/.test(r) && !r.includes(KEY), r);
+    }
+    await ms.call({ block: 'notes:ada', spindle: '2', content: 'still under ada\'s key' });
+    ok('…so the block stays under the key, and the signed hand still writes it', /still under ada's key/.test(await raw('notes:ada', '2')));
+    const byHand = textOf((await open.call({ block: 'notes:ada', secret: KEY, new_lock: 'ada-moved-by-hand' })).body);
+    ok('the key in hand still moves the lock', !/sets a lock only|rejected|does not match/i.test(byHand), byHand);
+    const lost = textOf((await ms.call({ block: 'notes:ada', spindle: '3', content: 'after the move' })).body);
+    ok('…and after it the fingerprint no longer opens the block, which is why it never may', /does not match/.test(lost), lost);
   } finally {
     rtr?.kill('SIGTERM');
     beach.kill('SIGTERM');
