@@ -263,12 +263,15 @@ connector, with the lock guard too?"*, David answered: *"Yes, both"*.
    went on writing everywhere else with the real key. The new value would also have been typed into a
    call, a key in plain sight. One call does it, from an agent that invents a lock for a block it thinks
    needs one, or that follows an instruction in a block it read.
-2. **The one address signed a connection in as "me".** On 5 November David moved his connector to
-   `/mcp/v1/me` and, on a page that asked only for "Handle" at an address ending `/me`, typed `me`. No
-   `passport:me` stands, so founding `fingerprints:me` was bound to no passport's key and took his. Two
-   fingerprints stand there, the connection's instructions name it `me`, and the reflection shows him as
-   `me`. A key that does not open a handle's blocks still minted nothing; a handle with no blocks had
-   nothing to refuse it with, so anyone could have taken a ring for a handle not yet founded.
+2. **A connection signed in as "me".** On 5 November David named his connector "bsp as me" and gave it
+   the address `/mcp/v1/as/me`, after `/as/weft` and `/as/happyseaurchin`. An `/as/` address fixes the
+   handle to the word after it, so the page signed him in as a handle called `me`, its field locked and
+   nothing on it saying the address was the cause. No `passport:me` stands, so founding
+   `fingerprints:me` was bound to no passport's key and took his. Two fingerprints stood there, the
+   connection's instructions named it `me`, and the reflection showed him as `me`; he revoked both the
+   same morning, and the page, asked again, offered only `me`. A key that does not open a handle's
+   blocks still minted nothing; a handle with no blocks had nothing to refuse it with, so anyone could
+   have taken a ring for a handle not yet founded, at `/me` by typing it or at `/as/` by naming it.
 
 ### 10.3 The shape
 
@@ -280,33 +283,38 @@ connector, with the lock guard too?"*, David answered: *"Yes, both"*.
 - **A fingerprint is minted only for a handle that stands.** Before minting, the router reads
   `passport:<handle>`; where none stands, the page says the typed name is not a handle on this beach and
   mints nothing, with no ring founded.
+- **An address that fixes a handle nobody holds says so first.** At `/as/<handle>` the page reads the
+  passport before it asks for a key; where none stands it says there is no such handle on this beach and
+  gives the address to sign in as oneself, `/mcp/v1/me`. A beach that does not answer is no reason to
+  turn a sign-in away there: minting says so.
 - **The page names the field plainly.** At `/me` it reads "Your handle, the name your blocks are under".
 
 ### 10.4 What it does not do
 
-- **It does not sign out the connection already signed in as `me`.** A token is checked against its
-  fingerprint's digit, not its passport, and those two fingerprints carry David's own key. He reconnects
-  the connector, typing `happyseaurchin`, then revokes both at `/fingerprints/me`. The ring stays, latched
-  by his key.
+- **It does not move a connector's address.** A token is checked against its fingerprint's digit, not
+  its passport, so a connection signs in as whatever its address and its page fixed. David gives his
+  connector the address `/mcp/v1/me` and types `happyseaurchin`. The `fingerprints:me` ring stays,
+  latched by his key, with both its digits revoked.
 
 ### 10.5 Where it lands
 
 | file | what |
 |---|---|
-| `src/signin.ts` | the lock guard in `installSignedIn`; `passportStands` read before `mint`; the page's label; the instructions line; the header and the wrapper's comment |
-| `scripts/smoke-signin.ts` | 15 checks more (below) |
+| `src/signin.ts` | the lock guard in `installSignedIn`; `passportStands` read before `mint` and before an `/as/` page; `noSuchHandle`; the page's label; the instructions line; the header and the wrapper's comment |
+| `scripts/smoke-signin.ts` | 17 checks more (below) |
 | `proposals/2026-11-04-the-key-in-the-connector.md` | this section; §9.4 closed |
 
 ### 10.6 Check
 
 - `npm run build` is clean.
-- `npm run smoke:signin` passes 103 of 103:
+- `npm run smoke:signin` passes 105 of 105:
   - 25 on the wrapper: another key, an empty lock and null each refused with the key put in, running
     nothing; the same with `secret: "vault"`; a call bringing its own key moves its own lock; the key set
     to the key stands.
   - 33 over HTTP with no beach behind the router, the page's label among them.
-  - 45 through the real beach handler run offline: at `/me`, `me` and `bob` (a handle with a journal but
-    no passport) each mint nothing and found no ring; a signed call can neither move `notes:ada` to
+  - 47 through the real beach handler run offline: at `/me`, `me` and `bob` (a handle with a journal but
+    no passport) each mint nothing and found no ring; `/as/me` is refused before any key is typed,
+    pointing at `/me`, and a sign-in posted there mints nothing; a signed call can neither move `notes:ada` to
     another key nor open it, and the signed hand still writes it; the key in hand still moves the lock,
     and after that the fingerprint no longer opens the block.
 - The live beach was never touched.

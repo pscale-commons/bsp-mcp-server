@@ -20,7 +20,8 @@
  * key in the clear, a signed write with no secret, the vault opened with enc_secret "vault" and the
  * key taken out of what comes back, a second fingerprint, revoking one on the router's page while
  * the other goes on, and refresh refused for the revoked one; then the one address, /me, signed
- * in with the handle typed, a typed name with no passport standing refused ("me" among them), its
+ * in with the handle typed, a typed name with no passport standing refused ("me" among them) and
+ * an /as/ address naming one refused before any key is typed, its
  * token and /as/<handle>'s each refused at the other, a new block founded with new_lock "vault",
  * and that block's lock neither moved nor opened through the fingerprint, though the key in hand
  * still moves it. Skipped, and said so, where no
@@ -345,6 +346,13 @@ async function realBeach() {
       ok(`at /me, "${typed}" with no passport standing mints nothing: the page says so`, none.status === 400 && new RegExp(`&quot;${typed}&quot; is not a handle on this beach`).test(nonePage), `${none.status} ${(nonePage.match(/class="problem">([^<]*)/) ?? [])[1] ?? ''}`);
       ok('…and founds no ring for it', /not found/.test(await raw(`fingerprints:${typed}`)));
     }
+    const asMe = client(O, 'me');
+    const amcl = await asMe.register();
+    const amPage = await asMe.authorize(amcl.client_id);
+    const amHtml = await amPage.text();
+    ok('/as/me, a handle no passport stands for, is refused before any key is typed, pointing at /me', amPage.status === 400 && /There is no me on this beach/.test(amHtml) && amHtml.includes(`${O}/mcp/v1/me<`) && !/type="password"/.test(amHtml), `${amPage.status} ${amHtml.slice(0, 300)}`);
+    const amPost = await asMe.signIn(amcl.client_id, KEY, 'my tablet');
+    ok('…and a sign-in posted there mints nothing', amPost.status === 400 && /There is no me on this beach/.test(await amPost.text()) && /not found/.test(await raw('fingerprints:me')));
     const meCode = new URL((await me.signIn(mcl.client_id, KEY, 'my tablet')).headers.get('location') ?? 'http://none/').searchParams.get('code') ?? '';
     const tm = await (await me.exchange(mcl.client_id, meCode)).json();
     ok('signing in at /me with the handle typed mints a fingerprint for it', !!tm.access_token && /my tablet/.test(await raw('fingerprints:ada')), JSON.stringify(tm));

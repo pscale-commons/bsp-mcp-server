@@ -146,6 +146,7 @@ async function readRing(handle: string): Promise<Record<string, any> | null> {
  *  Founding the ring is bound to the passport's key, so where no passport stands any key would
  *  found it, and the connection would sign in as a name nobody holds ("me", typed at /me). */
 async function passportStands(handle: string): Promise<boolean> {
+  if (!(await resolveFederationOrigin(DEFAULT_BEACH))) throw new Error(`no beach answered at ${DEFAULT_BEACH}`);
   const row = await loadBlock(DEFAULT_BEACH, `passport:${handle}`);
   return !!row?.block && typeof row.block === 'object';
 }
@@ -339,6 +340,14 @@ function backTo(redirectUri: string): string {
   }
 }
 
+/** An address that fixes a handle no passport stands for (/as/me, taken for /me on 5 November):
+ *  said before any key is typed, with the way to sign in as oneself. */
+function noSuchHandle(handle: string, origin: string, mcpPath: string): string {
+  return `<h1>There is no ${esc(handle)} on this beach</h1>
+<p>This connector's address ends in /as/${esc(handle)}, and an address like that signs in only as the handle after /as/. No passport:${esc(handle)} stands, so nobody can sign in here, and nothing was done.</p>
+<p>To sign in as yourself, give the connector the address <b>${esc(origin + addressOf(ANY, mcpPath))}</b> and type your handle on its page.</p>`;
+}
+
 function signinPage(ask: Ask, handle: string | null, client: string, problem = ''): string {
   const hidden = ASK_KEYS.filter((k) => ask[k] !== undefined).map((k) => `<input type="hidden" name="${k}" value="${esc(ask[k]!)}">`).join('');
   const as = handle ? `<b>${esc(handle)}</b>` : 'the handle you give here';
@@ -456,6 +465,8 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
       const checked = checkAsk(ask, origin, mcpPath);
       if ('problem' in checked) return page(res, 400, `<h1>This sign-in cannot go on</h1><p>${esc(checked.problem)}</p>`);
       if ('back' in checked) return redirect(res, checked.back);
+      // A beach that does not answer is no reason to turn a sign-in away here: minting says so.
+      if (checked.handle && !(await passportStands(checked.handle).catch(() => true))) return page(res, 400, noSuchHandle(checked.handle, origin, mcpPath));
       if (!posted) return page(res, 200, signinPage(ask, checked.handle, checked.client));
       const handle = checked.handle ?? (posted.handle ?? '').trim();
       if (!HANDLE.test(handle)) return page(res, 400, signinPage(ask, checked.handle, checked.client, 'A handle is letters, digits, - and _ only.'));
