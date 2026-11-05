@@ -1,0 +1,49 @@
+{
+  "_": "A WEEK IN A SHARED HOUSE: four people share a kitchen, a bathroom and a small garden, and the week goes well when the shopping is done once, the bins go out on time, and nobody is cooking at the same moment as anyone else. What this walk settles is how one housemate runs their part of the week.",
+  "1": {
+    "_": "THE SHOPPING: one trip a week for the shared things.",
+    "2": "Shop on saturday morning, early, before the shop is busy.",
+    "3": "Shop on wednesday evening, when the reductions are out.",
+    "4": "Order online on sunday for a monday delivery.",
+    "5": "Buy little and often on the way home each day.",
+    "8": "THE HINGE of this rung: whether the others keep the shared list up to date is unknown until the first week; it resolves at the first trip.",
+    "1": {
+      "_": "THE COOKING: who cooks the shared meal and when.",
+      "2": "A rota, one person a night, with sunday off.",
+      "3": "Whoever is home first cooks, and tells the others by six.",
+      "4": "Two cook together on alternate nights and the other two wash up.",
+      "5": "Everyone cooks for themselves and the shared meal is friday only.",
+      "8": "THE HINGE of this rung: whether work hours stay as they are is unknown until the month starts; it resolves when the shifts are posted.",
+      "1": {
+        "_": "THE BINS: the recycling goes out on tuesday night and the rest on thursday night.",
+        "2": "The person who cooked that night takes the bins out.",
+        "3": "One person owns the bins for the whole month.",
+        "4": "A note on the fridge with the day's name and whoever sees it does it.",
+        "5": "Set a reminder on everyone's phone at nine on those nights.",
+        "8": "THE HINGE of this rung: whether the council changes the collection day is unknown until the letter comes; it resolves when it does.",
+        "1": {
+          "_": "THE BATHROOM in the morning: four people, one bathroom, half an hour each would be two hours.",
+          "2": "Fixed slots of twenty minutes from half past six.",
+          "3": "Earliest leaver goes first and the rest follow in that order.",
+          "4": "Showers at night for two of the four, by agreement.",
+          "5": "A sign on the door and a kettle on the landing for whoever waits.",
+          "8": "THE HINGE of this rung: whether the boiler gives four hot showers in a row is unknown until it is tried; it resolves the first cold morning.",
+          "1": {
+            "_": "THE GARDEN: small, with a bench, a bin store and a strip of earth along the fence.",
+            "2": "Grow herbs along the fence and keep the rest as grass.",
+            "3": "Put a table out and eat there when it is dry.",
+            "4": "Leave it be and cut the grass once a fortnight.",
+            "5": "Give the strip to whoever wants to grow something and share what comes.",
+            "8": "THE HINGE of this rung: whether the landlord minds planting is unknown until asked; it resolves with the answer.",
+            "1": {
+              "_": "THE MONTH'S END: what to keep of this arrangement and what to change.",
+              "2": "Keep it all and review again in three months.",
+              "3": "Change the one thing that caused the most fuss, and keep the rest.",
+              "8": "THE HINGE of this rung: whether a new housemate arrives is unknown until the room is let; it resolves then."
+            }
+          }
+        }
+      }
+    }
+  }
+}

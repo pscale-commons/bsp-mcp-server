@@ -1,0 +1,46 @@
+{
+ "mode": "spoken-to",
+ "threshold": 3,
+ "window": 0.6,
+ "stop": [
+  "at-once",
+  "phrase",
+  "sentence"
+ ],
+ "line_limit": 1,
+ "safety": true,
+ "attention": 5,
+ "attachment": 0.5,
+ "cells": "osh9",
+ "labelling": "local",
+ "shell": "keel",
+ "injector": {
+  "arm": "walked",
+  "block": "injector:middle-point",
+  "source": "beach",
+  "file": "injector-placeholder.json",
+  "neutral": "neutral-placeholder.json",
+  "yoke_from": null
+ },
+ "stop_usd": 4.5,
+ "name": "verso",
+ "talk_seconds": 40,
+ "half_life": 6,
+ "max_tokens": 1200,
+ "door": "api",
+ "beach": "https://beach.happyseaurchin.com",
+ "voices_socket": "ws://localhost:8766",
+ "port": 8765,
+ "speed": 1.0,
+ "arms": {
+  "opus-low": "walked",
+  "opus-medium": "walked",
+  "opus-high": "walked",
+  "sonnet-low": "walked",
+  "sonnet-medium": "walked",
+  "sonnet-high": "walked",
+  "haiku-low": "walked",
+  "haiku-medium": "walked",
+  "haiku-high": "walked"
+ }
+}
