@@ -111,11 +111,11 @@ export const derivations = { count: 0 };
 const derived = new Map<string, Map<string, Promise<DerivedKeys>>>();
 const HELD = 64;
 
-/** Forget the pairs a session derived and the colours it wears — at the
- *  session's end, or all of them. */
+/** Forget the pairs and latches a session derived and the colours it wears —
+ *  at the session's end, or all of them. */
 export function forgetDerived(session?: string): void {
-  if (session === undefined) { derived.clear(); worn.clear(); }
-  else { derived.delete(session); worn.delete(session); }
+  if (session === undefined) { derived.clear(); worn.clear(); latched.clear(); }
+  else { derived.delete(session); worn.delete(session); latched.delete(session); }
 }
 
 /**
@@ -155,6 +155,43 @@ async function derive(secret: string, agentId: string): Promise<DerivedKeys> {
   const x25519 = nacl.box.keyPair.fromSecretKey(seed.slice(0, 32));
   const ed25519 = nacl.sign.keyPair.fromSeed(seed.slice(32, 64));
   return { x25519, ed25519 };
+}
+
+// THE LATCH ONE WORD DERIVES (proposals/2026-11-05-the-derived-latch.md §3; coloured
+// stigmergy §4.2). A beach checks a latch and keeps its hash, so what it is sent must open
+// nothing: the latch is derived from the word by another salt, 'latch:' + the handle, and
+// writes as the holder while every pair is derived under a different salt. Byte for byte the
+// beach's seal (pscale-beach button/seal.js latch()) and the shared vectors' latch_b64:
+// Argon2id as derive() runs it, 64 bytes out, the FIRST 32 in base64 — never a 32-byte
+// output, which Argon2id makes as different bytes. Held per session beside the pairs, by a
+// hash of the word and the salt, never by the word; counted apart from the pairs.
+export const LATCH_SALT = 'latch:';
+export const latchDerivations = { count: 0 };
+const latched = new Map<string, Map<string, Promise<string>>>();
+
+/** The latch a beach is sent for this word and handle, in place of the word. */
+export function deriveLatch(word: string, handle: string): Promise<string> {
+  const session = doorHere()?.session ?? '';
+  let held = latched.get(session);
+  if (!held) latched.set(session, (held = new Map()));
+  const salt = LATCH_SALT + handle;
+  const at = createHash('sha256').update(word).update('\0').update(salt).digest('hex');
+  const known = held.get(at);
+  if (known) return known;
+  latchDerivations.count++;
+  const latch = argon2id({
+    password: word,
+    salt: salt.length >= 8 ? salt : salt.padEnd(8, '\0'),
+    parallelism: 1,
+    iterations: 3,
+    memorySize: 65536,
+    hashLength: 64,
+    outputType: 'binary',
+  }).then((h) => toBase64(new Uint8Array(h).slice(0, 32)));
+  latch.catch(() => held!.delete(at));
+  if (held.size >= HELD) held.delete(held.keys().next().value!);
+  held.set(at, latch);
+  return latch;
 }
 
 /** Format public keys as base64 strings for storage/display. */

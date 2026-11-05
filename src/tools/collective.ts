@@ -34,6 +34,7 @@ import { isFederatedOwner, resolveFederationOrigin, refuseKeyInPayload, DEFAULT_
 // The register body belongs to the WIRE — sedRegister owns the action shape
 // and returns the handler's {position, address} verbatim.
 import { sedRegister } from '../pscale-wire.js';
+import { latchFor } from '../latch.js';
 
 // ── Schema ──
 
@@ -90,8 +91,10 @@ async function handleSettleInner(params: SettleParams): Promise<{ content: { typ
   if (!origin) {
     return { content: [{ type: 'text', text: `Federated registration failed: No beach at ${beach} (also tried beach.<host>). Site is not federated.` }] };
   }
-  refuseKeyInPayload({ declaration, shell_ref }, [passphrase]);
-  const result = await sedRegister(origin, { collective, declaration, passphrase, shellRef: shell_ref });
+  // The derived latch (src/latch.ts): a position's passphrase is the session's hand's word or a key of its own.
+  const latch = (await latchFor(origin, blockName, passphrase)).send;
+  refuseKeyInPayload({ declaration, shell_ref }, [passphrase, latch]);
+  const result = await sedRegister(origin, { collective, declaration, passphrase: latch, shellRef: shell_ref });
   if (!result.ok) {
     return { content: [{ type: 'text', text: `Federated registration rejected: ${result.error ?? 'unknown reason'}` }] };
   }

@@ -21,6 +21,7 @@
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { setDoorHooks } from './pscale-wire.js';
+import { proofForms, provedWith } from './latch.js';
 
 export interface Door {
   /** The transport's session — one per instance through the door. */
@@ -91,21 +92,26 @@ export async function proveAtDoor(origin: string, timeoutMs: number): Promise<st
   for (const h of d.handles) {
     if (typeof h !== 'string' || !h || tried.has(h) || /[\s:\/]/.test(h)) continue;
     tried.add(h);
-    try {
-      const r = await fetch(`${originKey(origin)}/.well-known/pscale-beach`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ block: `passport:${h}`, secret: d.secret }),
-        signal: AbortSignal.timeout(timeoutMs),
-      });
-      if (r.status !== 200) continue;
-      const j: any = await r.json().catch(() => null);
-      if (!j || typeof j.pass !== 'string') continue;
-      const exp = Date.parse(j.expires) || Date.now() + 11 * 60 * 60 * 1000;
-      passes.set(passKey(d.session, origin), { token: j.pass, exp, handle: h, expires: j.expires });
-      d.minted = { origin: originKey(origin), handle: h, expires: j.expires };
-      return j.pass;
-    } catch { /* this hand did not open it; try the next */ }
+    // THE DERIVED LATCH behind a wall (src/latch.ts): the passport cannot be read before the proof,
+    // so the hand proves in the form it last proved with here, else the derived latch first.
+    for (const { form, key } of await proofForms(origin, h, d.secret)) {
+      try {
+        const r = await fetch(`${originKey(origin)}/.well-known/pscale-beach`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ block: `passport:${h}`, secret: key }),
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+        if (r.status !== 200) continue;
+        const j: any = await r.json().catch(() => null);
+        if (!j || typeof j.pass !== 'string') continue;
+        provedWith(origin, h, form);
+        const exp = Date.parse(j.expires) || Date.now() + 11 * 60 * 60 * 1000;
+        passes.set(passKey(d.session, origin), { token: j.pass, exp, handle: h, expires: j.expires });
+        d.minted = { origin: originKey(origin), handle: h, expires: j.expires };
+        return j.pass;
+      } catch { /* this form did not open it; try the next */ }
+    }
   }
   (d.refused ??= new Set()).add(originKey(origin));
   return null;

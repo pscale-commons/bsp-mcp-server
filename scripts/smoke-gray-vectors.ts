@@ -18,7 +18,8 @@
  * that keeps its key at 9.2 and the turn at 9.3; a letter boxed to the turn's public half, the
  * writer's one-off half at 9.4). THE LATCH a door may derive from the same word, so the beach
  * holds nothing that opens a line (the design's §4.2): Argon2id(word, salt = 'latch:' + the
- * handle), first 32 bytes, base64. keys.ts has no latch yet; the vectors define it.
+ * handle), the first 32 of 64 bytes, base64: keys.ts derives it (deriveLatch) as seal.js does,
+ * and the vectors pin both (proposals/2026-11-05-the-derived-latch.md §3).
  *
  *   npm run smoke:gray-vectors            check every place against scripts/fixtures/gray-vectors.json
  *   npm run smoke:gray-vectors -- --make  regenerate the fixtures from keys.ts (fixed nonces; the
@@ -42,7 +43,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import nacl from 'tweetnacl';
 import { argon2id } from 'hash-wasm';
 import {
-  deriveKeypair, selfDecrypt, grainDecrypt, wrapGroupKey, unwrapGroupKeyFromKeyring, groupDecryptContent,
+  deriveKeypair, deriveLatch, selfDecrypt, grainDecrypt, wrapGroupKey, unwrapGroupKeyFromKeyring, groupDecryptContent,
   buildTurn, turnPublicHalf, colourLetter, colourOpen, colourNote, GRAY_NOTES, publicKeysToSpine,
 } from '../src/keys.js';
 import { sealedLine } from '../src/bsp-fn.js';
@@ -104,13 +105,6 @@ const ok = (label: string, cond: boolean, detail = '') => {
 const skip = (label: string, why: string) => console.log(`  · ${label} — ${why}`);
 const caught = async (label: string, fn: () => Promise<boolean>) => { try { ok(label, await fn()); } catch (e: any) { ok(label, false, e?.message ?? String(e)); } };
 
-/** THE LATCH, as the vectors define it: Argon2id(word, 'latch:' + handle), 32 bytes, base64. */
-async function latchOf(word: string, handle: string): Promise<string> {
-  const salt = 'latch:' + handle;
-  const h = await argon2id({ password: word, salt: salt.length >= 8 ? salt : salt.padEnd(8, '\0'), parallelism: 1, iterations: 3, memorySize: 65536, hashLength: 64, outputType: 'binary' });
-  return b64(new Uint8Array(h).slice(0, 32));
-}
-
 async function make(): Promise<Fixture> {
   const vectors: Vector[] = [];
   for (const v of INPUTS) {
@@ -122,7 +116,7 @@ async function make(): Promise<Fixture> {
       ...v,
       nonce_b64: b64(nonce), key_hex: hex(key), ciphertext_b64: b64(ct),
       x25519_pub_b64: b64(keys.x25519.publicKey), ed25519_pub_b64: b64(keys.ed25519.publicKey),
-      latch_b64: await latchOf(v.secret, v.salt),
+      latch_b64: await deriveLatch(v.secret, v.salt),
       envelope: { _: NOTE, '1': b64(ct), '2': b64(nonce), '9': { _: 'gray', '1': 'self' } },
     });
   }
@@ -173,7 +167,8 @@ async function checkKeys(f: Fixture) {
     ok(`${v.name}: seal with the fixed nonce`, b64(ct) === v.ciphertext_b64);
     ok(`${v.name}: open`, (await selfDecrypt(v.envelope as any, v.secret, v.salt)) === v.plaintext);
     ok(`${v.name}: published keys`, b64(keys.x25519.publicKey) === v.x25519_pub_b64 && b64(keys.ed25519.publicKey) === v.ed25519_pub_b64);
-    ok(`${v.name}: the latch from the same word`, (await latchOf(v.secret, v.salt)) === v.latch_b64);
+    ok(`${v.name}: the latch from the same word`, (await deriveLatch(v.secret, v.salt)) === v.latch_b64);
+    ok(`${v.name}: the latch is neither the word nor the pair's key`, v.latch_b64 !== v.secret && Buffer.from(v.latch_b64, 'base64').toString('hex') !== v.key_hex.slice(0, 64));
   }
   const g = f.grain, ka = await deriveKeypair(g.a.secret, g.a.handle), kb = await deriveKeypair(g.b.secret, g.b.handle);
   const shared = nacl.box.before(kb.x25519.publicKey, ka.x25519.secretKey);

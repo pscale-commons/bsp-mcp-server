@@ -57,6 +57,7 @@
     "smoke:colour": "tsx scripts/smoke-colour.ts",
     "smoke:private-room": "tsx scripts/smoke-private-room.ts",
     "smoke:pass": "tsx scripts/smoke-pass.ts",
+    "smoke:derived-latch": "tsx scripts/smoke-derived-latch.ts",
     "smoke:gray-guard": "tsx scripts/smoke-gray-guard.ts",
     "smoke:gray-append-live": "tsx scripts/smoke-gray-append-live.ts",
     "smoke:group": "tsx scripts/smoke-group.ts",
