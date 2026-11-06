@@ -28,6 +28,15 @@
  * pscale-beach checkout stands beside this repository: CI's gate proves itself from this repo
  * alone.
  *
+ * Part 4, a router whose own beach is a members' beach: the key hidden there, the ring founded behind
+ * the wall and shown to no stranger, a signed write landing, the same token writing again after the
+ * router restarts (the key its token carries proves the pass the wall asks for), and the fingerprints
+ * page asking for the key before it lists or revokes.
+ *
+ * Part 5, a member of another beach: the page names the router's own beach, and a handle that stands
+ * only elsewhere is told so; named, an open beach and a members' beach each take the ring, the
+ * session's instructions name that beach, and a signed write lands there, never at the router's own.
+ *
  * Localhost only; never the live beach. Run: npm run smoke:signin
  *   (BEACH_DIR=<a pscale-beach checkout> for part 3; default ../pscale-beach)
  */
@@ -124,13 +133,21 @@ const form = (o: Record<string, string>) => new URLSearchParams(o).toString();
 async function start(port: number, env: Record<string, string | undefined>): Promise<ChildProcess> {
   const e: NodeJS.ProcessEnv = { ...process.env, PORT: String(port) };
   for (const [k, v] of Object.entries(env)) { if (v === undefined) delete e[k]; else e[k] = v; }
-  const child = spawn('npx', ['tsx', 'src/index.ts'], { env: e, stdio: ['ignore', 'pipe', 'inherit'] });
+  const child = spawn('npx', ['tsx', 'src/index.ts'], { env: e, stdio: ['ignore', 'pipe', 'inherit'], detached: true });
   await new Promise<void>((res, rej) => {
     const timer = setTimeout(() => rej(new Error('server did not start in 20s')), 20000);
     child.stdout!.on('data', (buf: Buffer) => { if (buf.toString().includes('running on')) { clearTimeout(timer); res(); } });
     child.on('exit', () => { clearTimeout(timer); rej(new Error('server exited early')); });
   });
   return child;
+}
+
+/** Stop a router started above, and its tsx child with it (the whole group), before its port is used again. */
+async function stop(child: ChildProcess | null): Promise<void> {
+  if (!child || child.exitCode !== null) return;
+  const gone = new Promise<void>((res) => child.once('exit', () => res()));
+  try { process.kill(-child.pid!, 'SIGTERM'); } catch { child.kill('SIGTERM'); }
+  await Promise.race([gone, new Promise((r) => setTimeout(r, 5000))]);
 }
 
 /** A client of one signed address: <O>/mcp/v1/as/<handle>, or <O>/mcp/v1/me with at = 'me'. */
@@ -144,8 +161,9 @@ function client(O: string, handle: string, at = `as/${handle}`) {
     code_challenge: challenge, code_challenge_method: 'S256', state: 'st1', scope: 'bsp', resource: RES, ...over });
   const authorize = (clientId: string, over: Record<string, string> = {}) => fetch(`${O}/oauth/authorize?${form(ask(clientId, over))}`, { redirect: 'manual' });
   // At /as/<handle> the posted handle is ignored (the address fixes it); at /me it is the one signed in.
-  const signIn = (clientId: string, key: string, name: string, typed = at === 'me' ? handle : 'mallory') => fetch(`${O}/oauth/authorize`, { method: 'POST', redirect: 'manual',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form({ ...ask(clientId), handle: typed, key, name }) });
+  // The beach field is posted only where a case names one; a client that posts none is the router's own beach.
+  const signIn = (clientId: string, key: string, name: string, typed = at === 'me' ? handle : 'mallory', beach?: string) => fetch(`${O}/oauth/authorize`, { method: 'POST', redirect: 'manual',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form({ ...ask(clientId), handle: typed, key, name, ...(beach !== undefined ? { beach } : {}) }) });
   const token = (body: Record<string, string>) => fetch(`${O}/oauth/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form(body) });
   const exchange = (clientId: string, code: string) => token({ grant_type: 'authorization_code', code, redirect_uri: CB, client_id: clientId, code_verifier: verifier, resource: RES });
   const mcp = (url: string, body: string, bearer?: string, session?: string) => fetch(url, { method: 'POST',
@@ -187,6 +205,7 @@ async function router() {
     ok('the page asks for the key of the handle the address fixes, and a name for the connection',
       pg.status === 200 && /Hide ada's key from your AI/.test(html) && /type="password"/.test(html) && /readonly/.test(html) && /name="name"/.test(html) && /Claude, \d{4}-\d\d-\d\d/.test(html));
     ok('…says what it is, hiding the key, and never a sign-in to the beach', />Hide the key<\/button>/.test(html) && /not a sign-in to the beach, which has none/.test(html) && !/Sign in/.test(html));
+    ok("…and asks which beach the passport stands at, the router's own filled in", /Your beach, where that passport stands<input name="beach" value="127\.0\.0\.1:9" required/.test(html));
     ok('…names where it returns to, and cannot be framed', /Claude \(claude\.ai\)/.test(html) && pg.headers.get('x-frame-options') === 'DENY');
     ok('an unregistered return address is a page, never a redirect', (await c.authorize(cl.client_id, { redirect_uri: 'https://evil.example/cb' })).status === 400);
     ok('a forged client is a page', (await c.authorize('forged')).status === 400);
@@ -224,7 +243,7 @@ async function router() {
     ok('the fingerprints page says the beach did not answer', (await fetch(`${O}/fingerprints/ada`)).status === 503);
     ok('/mcp/v1 initializes with no token', (await c.mcp(`${O}/mcp/v1`, init(3))).status === 200);
   } finally {
-    child.kill('SIGTERM');
+    await stop(child);
   }
 
   console.log('\n=== a router with no secret: sign-in is off ===');
@@ -237,7 +256,7 @@ async function router() {
     ok('no fingerprints page', (await fetch(`${O2}/fingerprints/ada`)).status === 404);
     ok('the open endpoint still answers', (await fetch(`${O2}/mcp/v1`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: ACCEPT }, body: init(1) })).status === 200);
   } finally {
-    off.kill('SIGTERM');
+    await stop(off);
   }
 }
 
@@ -354,9 +373,10 @@ async function realBeach() {
     const amcl = await asMe.register();
     const amPage = await asMe.authorize(amcl.client_id);
     const amHtml = await amPage.text();
-    ok('/as/me, a handle no passport stands for, is refused before any key is typed, pointing at /me', amPage.status === 400 && amHtml.includes(`There is no me on ${HERE}`) && amHtml.includes(`${O}/mcp/v1/me<`) && !/type="password"/.test(amHtml), `${amPage.status} ${amHtml.slice(0, 300)}`);
+    ok('/as/me, a handle no passport stands for here, says so before any key is typed, pointing at /me and asking which beach it stands at instead',
+      amPage.status === 200 && amHtml.includes(`There is no me on ${HERE}`) && amHtml.includes(`${O}/mcp/v1/me<`) && /<input name="beach" value="" required/.test(amHtml), `${amPage.status} ${amHtml.slice(0, 300)}`);
     const amPost = await asMe.signIn(amcl.client_id, KEY, 'my tablet');
-    ok('…and a sign-in posted there mints nothing', amPost.status === 400 && (await amPost.text()).includes(`There is no me on ${HERE}`) && /not found/.test(await raw('fingerprints:me')));
+    ok('…and a sign-in posted there for this beach mints nothing', amPost.status === 400 && (await amPost.text()).includes(`&quot;me&quot; is not a handle on ${HERE}`) && /not found/.test(await raw('fingerprints:me')));
     const meCode = new URL((await me.signIn(mcl.client_id, KEY, 'my tablet')).headers.get('location') ?? 'http://none/').searchParams.get('code') ?? '';
     const tm = await (await me.exchange(mcl.client_id, meCode)).json();
     ok('signing in at /me with the handle typed mints a fingerprint for it', !!tm.access_token && /my tablet/.test(await raw('fingerprints:ada')), JSON.stringify(tm));
@@ -391,63 +411,196 @@ async function realBeach() {
     const lost = textOf((await ms.call({ block: 'notes:ada', spindle: '3', content: 'after the move' })).body);
     ok('…and after it the fingerprint no longer opens the block, which is why it never may', /does not match/.test(lost), lost);
   } finally {
-    rtr?.kill('SIGTERM');
+    await stop(rtr);
     beach.kill('SIGTERM');
     rmSync(dir, { recursive: true, force: true });
   }
 }
 
+// ── Shared by parts 4 and 5: local beaches through the real handler, and a signed MCP session ──
+
+const BEACH_SCRIPT = () => join(process.env.BEACH_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'pscale-beach'), 'scripts', 'local-beach.mjs');
+const codeOf = (r: Response) => new URL(r.headers.get('location') ?? 'http://none/').searchParams.get('code') ?? '';
+const problemOf = (html: string) => (html.match(/class="problem">([^<]*)/) ?? [])[1] ?? '';
+
+/** A local beach through the real handler, open or a members' beach. A members' beach's wall goes
+ *  up once its settings are latched, so what is founded before that is founded as the keeper would. */
+async function localBeach(name: string, gated: boolean) {
+  const port = 6000 + Math.floor(Math.random() * 2000);
+  const B = `http://127.0.0.1:${port}`;
+  const W = `${B}/.well-known/pscale-beach`;
+  const dir = mkdtempSync(join(os.tmpdir(), `signin-${name}-`));
+  const env = gated ? { ...process.env, BEACH_GATE: 'members', BEACH_GATE_SECRET: `smoke-signin-gate-${name}`, BEACH_KEEPERS: 'keeper' } : process.env;
+  const proc = spawn('node', [BEACH_SCRIPT(), '--dir', dir, '--port', String(port), '--origin', `${name}.signin.test`], { stdio: ['ignore', 'ignore', 'inherit'], env });
+  let up = false;
+  for (let i = 0; i < 80 && !up; i++) {
+    try { up = (await fetch(W)).status < 500; } catch { await new Promise((r) => setTimeout(r, 250)); }
+  }
+  const found = (block: string, content: unknown, key: string) => fetch(`${W}?block=${encodeURIComponent(block)}`, { method: 'POST',
+    headers: { 'content-type': 'application/json' }, body: JSON.stringify({ spindle: '', content, new_lock: key }) });
+  /** A member's pass, proved as the beach asks: the passport's latch, no content. */
+  const prove = async (handle: string, key: string): Promise<string | undefined> => {
+    const j: any = await (await fetch(`${W}?block=passport:${handle}`, { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ block: `passport:${handle}`, secret: key }) })).json().catch(() => null);
+    return typeof j?.pass === 'string' ? j.pass : undefined;
+  };
+  const raw = async (block: string, spindle?: string, pass?: string) => {
+    const r = await fetch(`${W}?block=${encodeURIComponent(block)}${spindle ? `&spindle=${spindle}` : ''}`, { headers: pass ? { Authorization: `Bearer ${pass}` } : {} });
+    return { status: r.status, text: await r.text() };
+  };
+  const close = () => { proc.kill('SIGTERM'); rmSync(dir, { recursive: true, force: true }); };
+  return { B, here: `127.0.0.1:${port}`, up, found, prove, raw, close };
+}
+
+/** A session at a signed address with its instructions, its bsp() calls aimed at `beach`. */
+async function mcpSession(c: ReturnType<typeof client>, url: string, beach: string, bearer?: string) {
+  const r = await c.mcp(url, init(40), bearer);
+  const sid = r.headers.get('mcp-session-id') ?? '';
+  const first: any = r.status === 200 ? await r.json().catch(() => null) : null;
+  await c.mcp(url, JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }), bearer, sid);
+  let id = 41;
+  const call = async (args: Record<string, unknown>) => {
+    const res = await c.mcp(url, JSON.stringify({ jsonrpc: '2.0', id: id++, method: 'tools/call', params: { name: 'bsp', arguments: { agent_id: beach, ...args } } }), bearer, sid);
+    return { status: res.status, body: res.status === 200 ? await res.json() : null };
+  };
+  return { status: r.status, instructions: String(first?.result?.instructions ?? ''), call };
+}
+
 // ── Part 4: a router whose own beach is a members' beach (the doors' battery, router 6) ──
-// Sign-in there is not built: the router would read the ring on every call before it holds the key
-// that proves a pass (proposals/2026-11-05-the-doors-fixes-router.md §6). What stands is the page
-// telling the truth: the beach answered with its wall, which is not silence.
+// The key is hidden there as anywhere: the mint stands at the door with the typed key, and the token
+// carries the key sealed, so a later call proves the pass before it reads the ring, even after the
+// router has restarted and holds no pass and no opened key (proposals/2026-11-04-the-key-in-the-connector.md §12).
 
 async function gatedBeach() {
-  const BEACH_DIR = process.env.BEACH_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'pscale-beach');
-  const script = join(BEACH_DIR, 'scripts', 'local-beach.mjs');
-  if (!existsSync(script)) { console.log(`\n=== a members' beach behind the router: skipped — no pscale-beach checkout at ${BEACH_DIR} (set BEACH_DIR) ===`); return; }
+  if (!existsSync(BEACH_SCRIPT())) { console.log(`\n=== a members' beach behind the router: skipped — no pscale-beach checkout (set BEACH_DIR) ===`); return; }
   console.log("\n=== a router whose own beach is a members' beach ===");
-  const GP = 6000 + Math.floor(Math.random() * 2000);
-  const G = `http://127.0.0.1:${GP}`;
-  const W = `${G}/.well-known/pscale-beach`;
-  const dir = mkdtempSync(join(os.tmpdir(), 'signin-gated-'));
-  const beach = spawn('node', [script, '--dir', dir, '--port', String(GP), '--origin', 'gated.signin.test'], {
-    stdio: ['ignore', 'ignore', 'inherit'],
-    env: { ...process.env, BEACH_GATE: 'members', BEACH_GATE_SECRET: 'smoke-signin-gate-secret', BEACH_KEEPERS: 'keeper' },
-  });
+  const g = await localBeach('gated', true);
+  const RP = 5000 + Math.floor(Math.random() * 900);
+  const O = `http://127.0.0.1:${RP}`;
+  const SECRET = 'smoke-signin-secret-' + 'z'.repeat(40);
+  let rtr: ChildProcess | null = null;
+  try {
+    if (!g.up) { ok("the local members' beach starts", false); return; }
+    const KEY = 'ada-behind-the-wall-key';
+    ok("ada's passport, latched by her key", (await g.found('passport:ada', { _: 'ADA' }, KEY)).status === 200);
+    ok('…and her journal', (await g.found('journal:ada', { _: "ada's journal" }, KEY)).status === 200);
+    ok('settings latched: the wall is up', (await g.found('settings', { _: 'the beach settings' }, 'gate-operator-key')).status === 200);
+    ok('a raw stranger is refused', (await g.raw('passport:ada')).status === 401);
+    rtr = await start(RP, { BSP_SIGNIN_SECRET: SECRET, DEFAULT_BEACH: g.B });
+    const me = client(O, 'ada', 'me');
+    const cl = await me.register();
+    const wrong = await me.signIn(cl.client_id, 'not-adas-key', 'my phone');
+    const wrongPage = await wrong.text();
+    ok('a wrong key mints nothing, and the page says it does not open the passport there',
+      wrong.status === 400 && !wrong.headers.get('location') && wrongPage.includes(`That key does not open ada&#39;s passport at ${g.here}`), `${wrong.status} ${problemOf(wrongPage)}`);
+    const signed = await me.signIn(cl.client_id, KEY, 'my phone');
+    const code = codeOf(signed);
+    ok('the right key mints a fingerprint behind the wall', signed.status === 302 && !!code, `${signed.status} ${problemOf(await signed.text())}`);
+    const pass = await g.prove('ada', KEY);
+    const ring = await g.raw('fingerprints:ada', undefined, pass);
+    ok('…its ring founded there, naming the connection and holding the key only sealed', ring.status === 200 && /my phone/.test(ring.text) && !ring.text.includes(KEY), `${ring.status} ${ring.text.slice(0, 200)}`);
+    ok('…and shown to no stranger', (await g.raw('fingerprints:ada')).status === 401);
+    const t = await (await me.exchange(cl.client_id, code)).json();
+    ok('the code gives a token and a refresh token', !!t.access_token && !!t.refresh_token, JSON.stringify(t));
+    const s = await mcpSession(me, me.RES, g.B, t.access_token);
+    ok('the token opens /me', s.status === 200);
+    const w = await s.call({ block: 'journal:ada', spindle: '1', content: 'written behind the wall, no key in the call' });
+    ok('a write with no secret lands behind the wall', /written behind the wall/.test((await g.raw('journal:ada', '1', pass)).text), textOf(w.body));
+
+    console.log('  — the router restarts, holding no pass and no opened key');
+    await stop(rtr);
+    rtr = await start(RP, { BSP_SIGNIN_SECRET: SECRET, DEFAULT_BEACH: g.B });
+    const s2 = await mcpSession(me, me.RES, g.B, t.access_token);
+    ok('the same token opens /me again: the key it carries proves the pass, and the ring is read behind the wall', s2.status === 200);
+    await s2.call({ block: 'journal:ada', spindle: '2', content: 'written after the restart' });
+    ok('…and a write with no secret lands', /written after the restart/.test((await g.raw('journal:ada', '2', pass)).text));
+    const fresh = await me.token({ grant_type: 'refresh_token', refresh_token: t.refresh_token });
+    ok('a refresh gives a fresh pair', fresh.status === 200 && !!(await fresh.json()).access_token);
+
+    console.log('  — the fingerprints page, behind the wall');
+    const fp = await fetch(`${O}/fingerprints/ada`);
+    const fpPage = await fp.text();
+    ok('it asks for the key before it lists anything', fp.status === 200 && /members(&#39;|') beach/.test(fpPage) && />Show them</.test(fpPage) && !/my phone/.test(fpPage), fpPage.slice(0, 300));
+    const postAt = (key: string, extra: Record<string, string>) => fetch(`${O}/fingerprints/ada`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form({ ...extra, key }) });
+    const badShow = await postAt('not-adas-key', { show: '1' });
+    const badShowPage = await badShow.text();
+    ok('a wrong key is told so, and shown nothing', badShow.status === 400 && badShowPage.includes('does not open ada&#39;s passport') && !/my phone/.test(badShowPage), problemOf(badShowPage));
+    const goodShow = await postAt(KEY, { show: '1' });
+    ok('with the key, it lists the connection', goodShow.status === 200 && /my phone/.test(await goodShow.text()));
+    const revoked = await postAt(KEY, { revoke: '1' });
+    ok('…and revokes it', revoked.status === 200 && /Revoked: my phone/.test(await revoked.text()));
+    ok('…whose session is signed out at once', (await s2.call({ block: 'journal:ada', spindle: '3', content: 'after revoking' })).status === 401);
+    ok('…and whose refresh is refused', (await (await me.token({ grant_type: 'refresh_token', refresh_token: t.refresh_token })).json()).error === 'invalid_grant');
+  } finally {
+    await stop(rtr);
+    g.close();
+  }
+}
+
+// ── Part 5: a member of another beach (David at beach.bringingtheflavour.com, 6 November 2026) ──
+
+async function otherBeach() {
+  if (!existsSync(BEACH_SCRIPT())) { console.log('\n=== a member of another beach: skipped — no pscale-beach checkout (set BEACH_DIR) ==='); return; }
+  console.log('\n=== a member of another beach ===');
+  const d = await localBeach('home', false);
+  const o = await localBeach('open', false);
+  const g = await localBeach('salt', true);
   const RP = 5000 + Math.floor(Math.random() * 900);
   const O = `http://127.0.0.1:${RP}`;
   let rtr: ChildProcess | null = null;
   try {
-    let up = false;
-    for (let i = 0; i < 80 && !up; i++) {
-      try { up = (await fetch(W)).status < 500; } catch { await new Promise((r) => setTimeout(r, 250)); }
-    }
-    if (!up) { ok('the local members\' beach starts', false); return; }
-    const KEY = 'ada-behind-the-wall-key';
-    const found = (block: string, content: unknown, key: string) => fetch(`${W}?block=${encodeURIComponent(block)}`, { method: 'POST',
-      headers: { 'content-type': 'application/json' }, body: JSON.stringify({ spindle: '', content, new_lock: key }) });
-    ok("ada's passport, latched by her key", (await found('passport:ada', { _: 'ADA' }, KEY)).status === 200);
-    ok('settings latched: the wall is up', (await found('settings', { _: 'the beach settings' }, 'gate-operator-key')).status === 200);
-    ok('a raw stranger is refused', (await fetch(`${W}?block=passport:ada`)).status === 401);
-    rtr = await start(RP, { BSP_SIGNIN_SECRET: 'smoke-signin-secret-' + 'z'.repeat(40), DEFAULT_BEACH: G });
+    if (!d.up || !o.up || !g.up) { ok('the three local beaches start', false); return; }
+    const ADA = 'ada-elsewhere-key', BOB = 'bob-behind-salt-key';
+    ok("ada's passport and journal stand only at an open beach of her own",
+      (await o.found('passport:ada', { _: 'ADA' }, ADA)).status === 200 && (await o.found('journal:ada', { _: "ada's journal" }, ADA)).status === 200);
+    ok("bob's only behind a members' wall",
+      (await g.found('passport:bob', { _: 'BOB' }, BOB)).status === 200 && (await g.found('journal:bob', { _: "bob's journal" }, BOB)).status === 200
+      && (await g.found('settings', { _: 'the beach settings' }, 'gate-operator-key')).status === 200 && (await g.raw('passport:bob')).status === 401);
+    rtr = await start(RP, { BSP_SIGNIN_SECRET: 'smoke-signin-secret-' + 'w'.repeat(40), DEFAULT_BEACH: d.B });
+
     const me = client(O, 'ada', 'me');
     const cl = await me.register();
-    const signed = await me.signIn(cl.client_id, KEY, 'my phone');
-    const signedPage = await signed.text();
-    ok("signing in with the right key mints nothing, and the page says the beach is a members' beach, never that it was silent",
-      signed.status === 400 && !signed.headers.get('location') && /is a members&#39; beach, and hiding a key cannot stand there yet/.test(signedPage) && !/did not answer/.test(signedPage),
-      `${signed.status} ${(signedPage.match(/class="problem">([^<]*)/) ?? [])[1] ?? ''}`);
-    const fp = await fetch(`${O}/fingerprints/ada`);
-    const fpPage = await fp.text();
-    ok('the fingerprints page says the same', fp.status === 503 && /members&#39; beach/.test(fpPage) && !/did not answer/.test(fpPage), fpPage.slice(0, 300));
-    const proof = await (await fetch(`${W}?block=passport:ada`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ block: 'passport:ada', secret: KEY }) })).json();
-    ok('…and no ring was founded behind the wall', typeof proof?.pass === 'string'
-      && (await fetch(`${W}?block=fingerprints:ada`, { headers: { Authorization: `Bearer ${proof.pass}` } })).status === 404);
+    const page0 = await (await me.authorize(cl.client_id)).text();
+    ok("the page fills in the router's own beach", page0.includes(`<input name="beach" value="${d.here}" required`));
+    const home = await me.signIn(cl.client_id, ADA, 'my phone');
+    const homePage = await home.text();
+    ok("a handle that stands only elsewhere is told so at the router's own beach, and asked to name its beach",
+      home.status === 400 && homePage.includes(`&quot;ada&quot; is not a handle on ${d.here}`) && /name that beach too/.test(homePage), problemOf(homePage));
+    const nowhere = await me.signIn(cl.client_id, ADA, 'my phone', 'ada', 'http://127.0.0.1:9');
+    ok('a beach that does not answer is said so, and nothing is minted', nowhere.status === 400 && /No beach answers at http:\/\/127\.0\.0\.1:9/.test(await nowhere.text()));
+    const plain = await me.signIn(cl.client_id, ADA, 'my phone', 'ada', 'http://beach.example.com');
+    ok('a beach named over plain http is refused: a key never travels in the clear', plain.status === 400 && /reached over https/.test(await plain.text()));
+    const there = await me.signIn(cl.client_id, ADA, 'my phone', 'ada', o.B);
+    const thereCode = codeOf(there);
+    ok('named, her beach mints the fingerprint there', there.status === 302 && !!thereCode, problemOf(await there.text()));
+    const ringA = await o.raw('fingerprints:ada');
+    ok('…its ring at her beach, holding the key only sealed', /my phone/.test(ringA.text) && !ringA.text.includes(ADA), ringA.text.slice(0, 200));
+    ok("…and none at the router's own", (await d.raw('fingerprints:ada')).status === 404);
+    const ta = await (await me.exchange(cl.client_id, thereCode)).json();
+    const sa = await mcpSession(me, me.RES, o.B, ta.access_token);
+    ok("the session opens, its instructions naming the beach her blocks stand at", sa.status === 200 && sa.instructions.includes(`ada's passport and blocks stand at ${o.B}`), sa.instructions.slice(-500));
+    const wa = await sa.call({ block: 'journal:ada', spindle: '1', content: 'written at her own beach' });
+    ok('a write with no secret lands at her beach', /written at her own beach/.test((await o.raw('journal:ada', '1')).text), textOf(wa.body));
+    const fpA = await (await fetch(`${O}/fingerprints/ada?beach=${encodeURIComponent(o.B)}`)).text();
+    ok('the fingerprints page reads her ring at her beach when named', /my phone/.test(fpA) && fpA.includes(`Fingerprints for ada at ${o.here}`), fpA.slice(0, 300));
+
+    const asBob = client(O, 'bob');
+    const bcl = await asBob.register();
+    const bobPage = await (await asBob.authorize(bcl.client_id)).text();
+    ok("/as/bob, with no passport at the router's own beach, says so and asks for bob's beach", bobPage.includes(`There is no bob on ${d.here}`) && /<input name="beach" value="" required/.test(bobPage));
+    const bobThere = await asBob.signIn(bcl.client_id, BOB, "bob's laptop", 'bob', g.B);
+    const bobCode = codeOf(bobThere);
+    ok("named, the members' beach mints behind its wall", bobThere.status === 302 && !!bobCode, problemOf(await bobThere.text()));
+    const bpass = await g.prove('bob', BOB);
+    ok("…its ring there, for bob's key alone", (await g.raw('fingerprints:bob')).status === 401 && /bob&#39;s laptop|bob's laptop/.test((await g.raw('fingerprints:bob', undefined, bpass)).text));
+    const tb = await (await asBob.exchange(bcl.client_id, bobCode)).json();
+    const sb = await mcpSession(asBob, asBob.RES, g.B, tb.access_token);
+    ok("bob's session opens, its instructions naming the members' beach", sb.status === 200 && sb.instructions.includes(`bob's passport and blocks stand at ${g.B}`));
+    const wb = await sb.call({ block: 'journal:bob', spindle: '1', content: 'written behind the salt wall' });
+    ok('…and a write with no secret lands behind its wall', /written behind the salt wall/.test((await g.raw('journal:bob', '1', bpass)).text), textOf(wb.body));
   } finally {
-    rtr?.kill('SIGTERM');
-    beach.kill('SIGTERM');
-    rmSync(dir, { recursive: true, force: true });
+    await stop(rtr);
+    d.close(); o.close(); g.close();
   }
 }
 
@@ -456,6 +609,7 @@ async function gatedBeach() {
   await router();
   await realBeach();
   await gatedBeach();
+  await otherBeach();
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

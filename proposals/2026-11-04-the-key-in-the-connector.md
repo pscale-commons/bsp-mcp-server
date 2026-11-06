@@ -4,7 +4,9 @@
 November), lane fingerprint.key, Claude Code (Opus 5.5) on David's Mac; the record is at watch:weft 816. Live the same day: bsp-mcp #582, merged 4 November. **Amended the same day, §9**: the one address, `/mcp/v1/me`,
 with the handle typed on the sign-in page, and "vault" standing for the key wherever a signed call would name it (bsp-mcp #594, merged 4 November). **Amended again on 5 November, §10**: a signed call sets a lock only to the key itself, and a
 fingerprint is minted only for a handle whose passport stands (bsp-mcp #597, merged 5 November). **Amended a third time on 5 November, §11**:
-the page says what it is, hiding the key from the AI, and never a sign-in to the beach, which has none.
+the page says what it is, hiding the key from the AI, and never a sign-in to the beach, which has none. **Amended a fourth time on
+6 November, §12**: the beach is the holder's — the page asks which beach the passport stands at, the fingerprint is minted
+there, a members' beach among them, and the token carries that beach (lane BSP-mcp.1).
 
 ## 0. David's words
 
@@ -355,3 +357,115 @@ beach under its own handle at `/mcp/v1/as/<handle>`.
 `npm run smoke:signin`: 113 passed. The checks that quoted the old refusal now quote the new one, and two
 are new: the /me page reads *Hide your key from your AI* with a *Hide my key* button, the /as/ page *Hide
 the key*, and neither says *Sign in* anywhere.
+
+## 12. Amendment: the beach is the holder's (6 November)
+
+**Status**: BUILT in one PR, not merged; lane BSP-mcp.1, weft (Claude Code in a cloud seat, keyed). Every `src/` file here
+redeploys the router when merged, and a redeploy ends every live MCP session, so David merges at a quiet moment. It answers
+`proposals/2026-11-05-the-doors-fixes-router.md` §6, which waited on his word.
+
+### 12.1 David's words
+
+At the start of lane BSP-mcp.1 (6 November, 02:30Z): *"I've just tried to connect my David M. Pinto account on the private
+beach at bringingtheflavor.com, and I couldn't, because when I connect up the BSP MCP, it automatically connects me to the
+Happy Sea Urchin Beach, where I can't register. So I need to have the target beach where I am, where my shell is in the BSP
+connector. Can you please check how it is piped so that that is possible? Otherwise it looks like the BSP MCP can only allow
+me to hide my key when my shell is on the Happy Sea Urchin Beach."*
+
+### 12.2 How it was piped
+
+1. **Every read and write the sign-in made was bound to the router's `DEFAULT_BEACH`** (beach.happyseaurchin.com), in
+   `src/signin.ts`: the passport read before minting (`passportStands`), the ring founded (`mint`), the ring read on every
+   call (`readRing`, under `openFingerprint`), and revoking. The page said so in its own words to anyone else: *a member of
+   another beach cannot hide a key at bsp-mcp yet*.
+2. **The key's use was never bound to a beach.** Once a fingerprint opens, the key goes into every call that carries no
+   secret, whatever beach the call names. What was missing was only where the ring stands and how it is read.
+3. **davidmpinto stands at beach.bringingtheflavour.com, a members' beach**, whose index shows a stranger its notice, its
+   pack and his passport, and nothing else. A ring there stands behind the wall: the router could read it only with a pass,
+   which only the key proves, and the key is only in the ring. That is the circle §6 of the doors' fixes drew.
+
+### 12.3 The shape
+
+- **The page asks for the beach**: *Your beach, where that passport stands*, filled in with the router's own. The person
+  names another as its address reads. A bare host is https, and http is taken only for a beach on the router's own machine,
+  since the key travels to the beach as its latch. A bare domain finds its `beach.<host>`, as every agent_id does.
+- **The fingerprint is minted there.** The passport is read there and the ring founded there under the key, the whole mint
+  standing at the door (`src/pass.ts`) with the typed key, so a members' beach proves the pass first. A refused proof is told
+  in the beach's own terms: no such passport there, the key does not open it, or too many wrong keys this hour.
+- **The token carries the beach** (`b`), and every later call opens the ring where it stands. A token minted before this
+  has none and means the router's own beach, so nothing already connected changes.
+- **At a members' beach the token also carries the key** (`k`), sealed with the rest of it under the router's secret. A
+  later call, after a restart with no pass and no opened key in memory, proves the pass with it, reads the ring behind the
+  wall, and opens the key from the fingerprint's digit, so revoking still signs the connection out at once. This is a third
+  way beside §6's two (a members' gate serving rings to strangers; the ring marked beyond in the holder's index). It changes
+  nothing a members' beach shows a stranger, nothing in the beach package, and nothing an operator mirrors by hand.
+- **A key a members' beach turns away** (rotated, or its passport gone) signs the connection out, and is not tried again
+  for an hour, so a stale token never runs up wrong keys against its holder's own passport.
+- **The fingerprints page takes `?beach=`.** At a members' beach it asks for the key before it lists anything, and keeps
+  no pass beyond the request.
+- **The session's instructions name the beach** where it is not the router's own: the handle's blocks stand there,
+  addressed with that beach's URL and entered with `pscale_play(world=<that beach>, …)`; a bare handle still goes to the
+  default beach.
+- **`/as/<handle>` with no passport at the router's own beach** still says so before any key is typed, and now asks which
+  beach the handle stands at instead of stopping.
+
+### 12.4 What it trades, and what it leaves
+
+- **A members' beach connection's token carries the key, sealed.** The strength is what it was: a token together with the
+  router's secret opened the key before (the fingerprint in the token opens the ring, which the commons shows anyone), and
+  together they open it now. A client still holds only a token it cannot open.
+- **It does not narrow where the key goes.** As before, a signed call carries the key to whatever beach it writes at, so a
+  connection whose key is hidden at SALT's beach sends that key to the commons when it writes there with no secret, where it
+  is refused unless it latches something. Binding the key to the token's beach is the next step, and is not built here: it
+  touches each tool's beach parameter, and wants David's word.
+- **It does not change a session's default beach.** A bare handle, `sed:` or `grain:` still goes to the router's
+  `DEFAULT_BEACH`; the session's instructions say which beach to name.
+- **A router whose own beach is a members' beach now hides keys** (§6's "signs nobody in" is answered).
+
+### 12.5 How David connects davidmpinto
+
+1. In Claude, **Customize → Connectors**, add a custom connector at `https://bsp.hermitcrab.me/mcp/v1/as/davidmpinto`. His
+   `/me` already acts as happyseaurchin, and Claude adds any one address once, so davidmpinto takes the `/as/` address.
+2. **Connect.** bsp-mcp's page fixes the handle as davidmpinto, says there is no davidmpinto on beach.happyseaurchin.com,
+   and asks for the beach: type `beach.bringingtheflavour.com`, the key, and a name for the connection.
+3. The ring stands at `fingerprints:davidmpinto` on SALT's beach, behind its wall. The connections are listed at
+   `https://bsp.hermitcrab.me/fingerprints/davidmpinto?beach=beach.bringingtheflavour.com`, which asks for the key first.
+4. In a chat with that connector, the AI writes as davidmpinto at SALT's beach and never sees the key.
+
+### 12.6 Where it lands
+
+| file | what |
+|---|---|
+| `src/signin.ts` | `beachNamed`; the beach field; the mint at the named beach, at the door; the ring read at the token's beach through a door of the connection's own; `b` and `k` in the code and tokens; `turnedAway`; the fingerprints page with `?beach=` and its key-first form; `signedLine(handle, beach)`; the page's words and the header |
+| `src/pass.ts` | `refusedWith`: the status a refused proof came back with, so the page says it in the beach's terms |
+| `src/index.ts`, `src/server.ts` | the signed beach handed to the session's instructions |
+| `scripts/smoke-signin.ts` | parts 4 and 5 (below); the routers it starts are stopped as a process group, so none is left running |
+
+### 12.7 Check
+
+- `npm run build` is clean.
+- `npm run smoke:signin` (with a pscale-beach checkout): **145 passed** (113 before):
+  - part 2: the page asks for the beach, the router's own filled in;
+  - part 3: `/as/me` says there is no me here, points at `/me` and asks for the beach (empty); a sign-in posted for this
+    beach mints nothing;
+  - part 4, a router whose own beach is a members' beach (the case §6 left open): a wrong key is told it does not open the
+    passport there; the right key mints behind the wall; the ring holds the key only sealed, and no stranger sees it; a write
+    with no secret lands; **the router restarts**, and the same token opens `/me` and writes again; a refresh gives a fresh
+    pair; the fingerprints page asks for the key, refuses a wrong one, lists and revokes with the right one; the session is
+    signed out at once and its refresh refused;
+  - part 5, a member of another beach: the page fills in the router's own beach; a handle standing only elsewhere is told so
+    and asked to name its beach; a beach that does not answer, and plain http to a remote host, are refused; an open beach and
+    a members' beach each mint there, with no ring at the router's own; each session's instructions name its beach; a write
+    with no secret lands there; the fingerprints page reads the ring at the beach named.
+- The whole offline suite, as the CI gate runs it (with a pscale-beach checkout beside it), passes: 43 suites, none failed.
+- Both pages were looked at in a browser, at phone width in the dark and wide in the light: `/me` with the beach filled in,
+  and `/as/davidmpinto` against a beach where no such passport stands, asking for the beach.
+- The live beaches were not touched.
+
+### 12.8 To go live
+
+1. David merges at a quiet moment: a `src/` merge redeploys the router and ends every live MCP session.
+2. happyseaurchin.com/connect says the same (happyseaurchin-home, the same lane): the beach field in the drawing, the
+   `?beach=` for connections elsewhere, and the new refusals.
+3. David connects davidmpinto as in 12.5. `spine:security-schematic` 1.62 and 1.69 are its keeper's to re-voice once this
+   is live.

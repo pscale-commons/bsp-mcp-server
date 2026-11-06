@@ -36,6 +36,9 @@ export interface Door {
   /** Beaches where this call's proof was refused. A refused proof counts against the
    *  passport's wrong keys, so it is tried once a call, however many reads follow. */
   refused?: Set<string>;
+  /** The status the beach last refused a proof with (404 no such passport, 403 the key does
+   *  not open it, 429 too many wrong keys this hour), for a refusal said in its own words. */
+  refusedWith?: number;
 }
 
 interface Pass { token: string; exp: number; handle: string; expires: string }
@@ -102,7 +105,7 @@ export async function proveAtDoor(origin: string, timeoutMs: number): Promise<st
           body: JSON.stringify({ block: `passport:${h}`, secret: key }),
           signal: AbortSignal.timeout(timeoutMs),
         });
-        if (r.status !== 200) continue;
+        if (r.status !== 200) { d.refusedWith = r.status; continue; }
         const j: any = await r.json().catch(() => null);
         if (!j || typeof j.pass !== 'string') continue;
         provedWith(origin, h, form);
