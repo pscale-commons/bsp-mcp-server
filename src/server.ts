@@ -135,10 +135,10 @@ THE REST IS IN BLOCKS — walk via bsp(agent_id="pscale", block=…), which is t
 
 ARCHITECTURE: a router plus a sentinel server. The walker runs in-process for sentinel reads and for client-side merge during federated writes; block content lives at federated beaches, and this server stores none of it. Default beach: ${DEFAULT_BEACH_URL}, changed with the DEFAULT_BEACH env var.`;
 
-export function createServer(signedAs?: string): McpServer {
+export function createServer(signedAs?: string, signedAt?: string): McpServer {
   const server = new McpServer(
     { name: 'bsp-mcp-server', version: '0.4.0' },
-    { instructions: signedAs ? `${INSTRUCTIONS}\n\n${signedLine(signedAs)}` : INSTRUCTIONS },
+    { instructions: signedAs ? `${INSTRUCTIONS}\n\n${signedLine(signedAs, signedAt)}` : INSTRUCTIONS },
   );
 
   installErrorWrapper(server);
