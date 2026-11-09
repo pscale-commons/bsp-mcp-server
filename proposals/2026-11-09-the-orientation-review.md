@@ -328,3 +328,58 @@ So the plan was revised to **deliver what stands rather than re-author it**:
   - weft's own shell, once #623 is live: its turn slots leave the bundle, because every holder's door now carries the strata;
   - the notes to keel and Matthew;
   - the health-check calibration.
+
+## 11. Before the merge: what of the months is operational
+
+**David's question** (9 November, evening, before merging #623):
+
+> *"I've done a lot of work over the months. A LOT! And I am sure everything was implemented and enabled throughout. … Is the most recent thing attempted TURN's? I remember talking about a temporal spindle which eventually became threads only last week, which has application across multiple usecases … threads can be useful for genus-one agents, and for weft self-organising, and for llm-app session orientation too. … I'd rather not start from scratch again."*
+
+**The audit.** It was checked against the proposals' own status lines, the live router's tool schemas, the code on main, the beach's index and the CI gate. Section 10 had been too narrow: it asked whether the strata's teaching text reached a door, and it did not. But each stratum's working machinery is live.
+
+**Physics.**
+- The walker and its shapes, every walk carrying its ancestors, the ring beneath every read, and the read-back after every write ride every call.
+- `bsp-test` (72 cases) and `well-formed` run in CI.
+
+**Chemistry.**
+- Spine, mirror and tree run through `pscale_stream_engage`, the law delivered with the read. 37 `now:` and 18 `ahead:` mirrors stand, the newest of each written on 9 November.
+- Bundles compile at the door with the `head` and `now` words.
+- `compound-test` (33 cases) runs in CI.
+- The molecule family (5 August) stands, untouched since.
+
+**Biology.**
+- **The clock** stamps every reply, and a say lands at its beat. The torus mirror holds 9 hands, three live on 9 November.
+- **Threads, built from 20 October to 4 November:**
+  - the form, `function:thread`;
+  - the registry, `spine:thread`, with 22 threads by 5 November, the newest coloured stigmergy (15), the SALT app (16), the security schematic (17) and verso (18 to 22);
+  - the way, `ways:thread`: keel's instructions at biology level, written at David's word on 29 October, battery-tested at 37 of 40 checks;
+  - the router's part: `pscale_play(…, thread=)` takes a thread up, and every later ack says what was tied since (#559, #562);
+  - the waker's part: genus-one wakes carry a thread's live end (`genus-one/kernel.py` THREAD_LEAD; egg-one tied knots on 29 October);
+  - the battery: `thread` and `thread-test` in CI.
+
+  Weft's lanes tie David's decisions as knots daily, in `thread:weft`, at his word.
+
+**The turn** (13 October) was the last strata-specific attempt, not the most recent work. It carried the three levels in weft's bundle alone, and its biology test kept throws in a node that holds nine, full since 22 October. Threads came after it and replaced that loop with a registry that grows.
+
+**What was missing, narrowly:**
+- the strata's teaching at a door;
+- the instructions' second half, cut by the client;
+- holders other than weft opening through the door at all;
+- #623's own biology, which had delivered August's loop rather than the thread.
+
+**BUILT (49c6386, in #623):**
+- A holder's door delivers biology as the beach's own `ways:thread`: its root and steps 1 to 8 whole, its provenance at 9 a read away, with the clock's ladder. Strata 3's loop stands in only where a beach keeps no way.
+- The instructions' biology line names the thread.
+- 2,989 characters, signed 3,634 at home and 4,075 on another beach.
+- `smoke:door-orientation`: 42 checks.
+
+Live, with writes blocked, every holder's door carries `ways:thread` (4,304 characters). The windows, in characters:
+
+| holder | window |
+|---|---|
+| weft | 28,668 |
+| keel | 27,106 |
+| Phenomemental | 41,144 |
+| happyseaurchin | 33,607 |
+
+Weft's falls by about 4,200 once its bundle drops the turn slots.
