@@ -14,7 +14,9 @@
  *   npm run smoke:door-orientation
  */
 import { INSTRUCTIONS, composeInstructions } from '../src/server.js';
-import { strataSection, STRATA_SPINDLES } from '../src/tools/play.js';
+import { strataSection, STRATA_SPINDLES, capMember, MEMBER_CAP } from '../src/tools/play.js';
+import { parseReference } from '../src/genus.js';
+import { parseBundleRef } from '../src/bundle.js';
 import { bspRead, formatRead } from '../src/bsp-fn.js';
 import { SENTINELS } from '../src/sentinels.js';
 
@@ -65,6 +67,27 @@ console.log('\nEVERY OTHER WALK CUTS AS BEFORE');
   ok('a plain walk still shows a long ancestor as its headline', usual.includes('the beach moves SEMANTICS betwee') && !usual.includes('it acts BY BEING READ'));
   const whole = formatRead(bspRead(strata, '21111', null), { onClock: false, wholeRungs: true });
   ok('the whole walk carries it in full', whole.includes('it acts BY BEING READ'));
+}
+
+console.log('\nWHAT A BUNDLE CAN NAME');
+{
+  for (const g of ['grain:4dcaf5f465d5ff31', 'grain:5cec3b320dcaee2a']) {
+    const r = parseReference(`${g}:0:-1`);
+    ok(`${g}, whose pair begins with a digit, is a reference`, r?.name === g && r.address === null && r.attention === -1, JSON.stringify(r));
+    ok(`and its head word reads in a bundle`, parseBundleRef(`${g}:head`)?.name === g);
+  }
+  ok('a clock address still reads as an address', parseReference('now:weft:2026422278:3')?.address === '2026422278');
+  ok('a time is never a reference', parseReference('10:30') === null);
+  ok('nor a date', parseReference('2026-11-09') === null);
+}
+
+console.log('\nA MEMBER PAST ITS CAP');
+{
+  const long = Array.from({ length: 400 }, (_, i) => `line ${i} ${'x'.repeat(40)}`).join('\n');
+  const cut = capMember(long, 'grain:bb519a2c294bc086:0:-1');
+  ok('it is cut at a line, inside the cap', cut.length < MEMBER_CAP + 200 && cut.split('\n').slice(0, -1).every((l) => long.includes(l)));
+  ok('and says how much was cut and where the rest is', /cut at [\d,]+ of [\d,]+ characters: the rest is a bsp read of grain:bb519a2c294bc086:0:-1 away/.test(cut), cut.slice(-160));
+  ok('a member inside the cap is untouched', capMember('short', 'x') === 'short');
 }
 
 console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);

@@ -127,6 +127,11 @@ def parse(number, flr):
 # --- reference (refer/star) -------------------------------------------------
 
 _NAME = re.compile(r"[A-Za-z][A-Za-z0-9_-]*$")
+# A name's later segments may begin with a digit so long as they are not a number:
+# most grain pair_ids are hex that starts with one (grain:4dcaf5f465d5ff31). The first
+# segment still starts with a letter, so a time or a date is never a reference.
+# (bsp-mcp proposals/2026-11-09-the-orientation-review.md 2.5; src/genus.ts parses the same way.)
+_NAME_TAIL = re.compile(r"(?=[A-Za-z0-9_-]*[A-Za-z_-])[A-Za-z0-9_-]+$")
 _ADDR = re.compile(r"\d+(\.\d+)?$")
 _ATT = re.compile(r"-?\d+$")
 
@@ -139,7 +144,7 @@ def parse_reference(leaf):
         return None
     parts = leaf.split(":")
     i, name_segs = 0, []
-    while i < len(parts) and _NAME.match(parts[i]):
+    while i < len(parts) and (_NAME if i == 0 else _NAME_TAIL).match(parts[i]):
         name_segs.append(parts[i])
         i += 1
     if not name_segs:

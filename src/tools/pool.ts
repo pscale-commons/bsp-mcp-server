@@ -427,8 +427,43 @@ export function foldContributions(
   block: Block,
   sincePosition: number,
   origin?: string,
-): { closed: FoldedContainer[]; open: PoolContribution[]; folded: boolean } {
+  opts: { spindle?: boolean } = {},
+): { closed: FoldedContainer[]; open: PoolContribution[]; folded: boolean; spindle?: boolean } {
   const floor = Math.max(floorDepth(block), 1);
+  // THE HEAD'S SPINDLE (proposals/2026-11-09-the-orientation-review.md 2.4; David,
+  // 9 November: "History should be one spindle … If we do more, then it gives the
+  // ring at pscale 0"). At a door, a room or an account read with no marker and
+  // grown past its first container arrives as an accumulator is read: the summaries on the
+  // one spindle to its newest entry, coarsest first, then that entry's container
+  // whole. Walking every container from the first stopped at 200 entries, so a
+  // grown room's open container was stale and its newest entries never arrived,
+  // and a line per closed container grew the fold without end.
+  if (opts.spindle && sincePosition === 0 && floor >= 2) {
+    const digits: string[] = [];
+    let cur: any = block;
+    while (digits.length < floor && cur && typeof cur === 'object') {
+      const ks = Object.keys(cur).filter((k) => /^[1-9]$/.test(k)).sort();
+      if (!ks.length) break;
+      digits.push(ks[ks.length - 1]);
+      cur = cur[ks[ks.length - 1]];
+    }
+    if (digits.length === floor) {
+      const closed: FoldedContainer[] = [];
+      for (let r = 1; r < floor; r++) {
+        // The zero slot at this rung voices the sibling before it (block-conventions 3.5):
+        // 340 the container 331-339, 300 the line 210-290.
+        const node = nodeAtPadded(block, digits.slice(0, r).join(''));
+        const u = node && typeof node === 'object' ? node._ : undefined;
+        const voicing = typeof u === 'string' && u !== '' ? u : readSeal(u, origin)?.text ?? null;
+        const prev = digits.slice(0, r - 1).join('') + String(Number(digits[r - 1]) - 1);
+        const zeros = '0'.repeat(floor - 1 - r);
+        closed.push({ container: prev, span: `${prev}1${zeros}-${prev}9${zeros}`, summary: voicing, entries: 9 });
+      }
+      const from = Number(digits.slice(0, floor - 1).join('') + '0');
+      const open = collectContributions(block, from, undefined, origin).contributions;
+      return { closed, open, folded: true, spindle: true };
+    }
+  }
   const { contributions } = collectContributions(block, sincePosition, undefined, origin);
   if (floor < 2 || contributions.length === 0) return { closed: [], open: contributions, folded: false };
 
@@ -487,7 +522,7 @@ export function foldContributions(
  * not yet folded is delivered the same way, never as its whole JSON.
  */
 export function foldedAccountText(block: Block, name: string, tailShown = 0): string | null {
-  const fold = foldContributions(block, 0);
+  const fold = foldContributions(block, 0, undefined, { spindle: true });
   if (!fold.folded && tailShown <= 0) return null;
   const total = fold.closed.reduce((n, c) => n + c.entries, 0) + fold.open.length;
   const shown = Math.min(Math.max(tailShown, 0), fold.open.length);
@@ -496,10 +531,15 @@ export function foldedAccountText(block: Block, name: string, tailShown = 0): st
     const line = t.replace(/\s+/g, ' ').trim();
     return line.length > 150 ? `${line.slice(0, 150).trimEnd()}…` : line;
   };
+  const head = fold.open.length ? fold.open[fold.open.length - 1].position : 0;
   const lines: string[] = [
-    shown
-      ? `(your account — ${total} entries: each closed span stands as its summary; the last ${shown} ride whole above, at "Your account"; the open span before them stands by its opening lines — a telling whole is a spindle read of ${name} at its position, never a whole-block one)`
-      : `(your account, folded — ${total} entries: each closed span stands as its summary, the open span is whole; an older telling is a spindle read of ${name}, never a whole-block one)`,
+    fold.spindle
+      ? shown
+        ? `(your account, through entry ${head}, read as one spindle to its newest entry: each summary stands for the span before it; the last ${shown} ride whole above, at "Your account", and the newest span before them stands by its opening lines — a telling whole is a spindle read of ${name} at its position, never a whole-block one)`
+        : `(your account, through entry ${head}, read as one spindle to its newest entry: each summary stands for the span before it, and the newest span is whole; an older telling is a spindle read of ${name}, never a whole-block one)`
+      : shown
+        ? `(your account — ${total} entries: each closed span stands as its summary; the last ${shown} ride whole above, at "Your account"; the open span before them stands by its opening lines — a telling whole is a spindle read of ${name} at its position, never a whole-block one)`
+        : `(your account, folded — ${total} entries: each closed span stands as its summary, the open span is whole; an older telling is a spindle read of ${name}, never a whole-block one)`,
   ];
   lines.push(...closedContainerLines(fold.closed));
   lines.push(!shown
@@ -2461,11 +2501,15 @@ async function handlePoolEngageInner(
   // alone too: its slice is narrow by construction and its containers are not
   // the fold's.
   const wantsFold = (params as any).fold === true && sincePosition === 0 && atAddress === undefined;
-  const fold = wantsFold ? foldContributions(row.block, sincePosition, pool_url) : null;
+  const fold = wantsFold ? foldContributions(row.block, sincePosition, pool_url, { spindle: true }) : null;
 
-  const markerNew = contributions.length > 0
-    ? contributions[contributions.length - 1].position
-    : sincePosition;
+  // A spindle fold reads the newest container, which a capped walk from the
+  // first entry may never reach: the marker is where the fold ended.
+  const markerNew = fold?.spindle && fold.open.length
+    ? fold.open[fold.open.length - 1].position
+    : contributions.length > 0
+      ? contributions[contributions.length - 1].position
+      : sincePosition;
 
   // Liquid mirror — co-present pending intentions, not yet committed. Fetched
   // when you submitted (you want to see the room) or when with_liquid is set.
@@ -2762,7 +2806,9 @@ async function handlePoolEngageInner(
     : '';
   const atView = params.at !== undefined ? ` at ${params.at} (located view — unlocated entries excluded; keep a marker per view${outsideNote})` : '';
   const foldNote = fold?.folded ? `, folded to ${fold.closed.length} + ${fold.open.length}` : '';
-  lines.push(`# Contributions since position ${sincePosition}${atView} (count: ${contributions.length}${foldNote}${more_available ? ', more available' : ''})`);
+  lines.push(fold?.spindle
+    ? `# Contributions since position ${sincePosition}${atView} (through slot ${markerNew}: the spindle's ${fold.closed.length} summaries + the newest container's ${fold.open.length})`
+    : `# Contributions since position ${sincePosition}${atView} (count: ${contributions.length}${foldNote}${more_available ? ', more available' : ''})`);
   if (shortNote) lines.push(`(${shortNote})`);
   if (arrival && sincePosition > 0) {
     lines.push(`(your account has told this room through slot ${sincePosition}, so the record rides from what it has not: the beats before stand in your account above, and in pool:${pool_name} at their slots)`);
@@ -2784,9 +2830,13 @@ async function handlePoolEngageInner(
   if (shut) lines.push(`(${shut} of these voices ${shut === 1 ? 'is' : 'are'} sealed in a colour you do not wear and ${shut === 1 ? 'stands' : 'stand'} as a grey line naming the colour and its turn: synthesise the open voices only, and say that ${shut} stayed sealed — a reader wearing the colour reads them as words)`);
   if (fold?.folded) {
     lines.push('');
-    lines.push(`# Before this — ${fold.closed.length} closed ${fold.closed.length === 1 ? 'container' : 'containers'}, each standing for its span`);
+    lines.push(fold.spindle
+      ? `# Before this — the room's spindle to its newest entry, coarsest first: each summary stands for the span before it`
+      : `# Before this — ${fold.closed.length} closed ${fold.closed.length === 1 ? 'container' : 'containers'}, each standing for its span`);
     lines.push(...closedContainerLines(fold.closed));
-    lines.push(`(the room is folded: closed spans stand as their summaries, the open one is whole below — pass since_position to read forward from your own marker instead)`);
+    lines.push(fold.spindle
+      ? `(the room is read as one spindle to its head and the ring there; any older span is a spindle read away — pass since_position to read forward from your own marker instead)`
+      : `(the room is folded: closed spans stand as their summaries, the open one is whole below — pass since_position to read forward from your own marker instead)`);
     lines.push('');
     lines.push(`# The open container (count: ${shown.length})`);
   }

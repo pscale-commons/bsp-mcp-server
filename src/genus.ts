@@ -266,6 +266,12 @@ export function parseAddr(number: string | number | null | undefined, flr: numbe
 }
 
 const NAME_RE = /^[A-Za-z][A-Za-z0-9_-]*$/;
+/** A name's LATER segments may begin with a digit, so long as they are not a
+ *  number: most grain pair_ids are hex that starts with one (grain:4dcaf5f465d5ff31),
+ *  and before this the whole reference failed to parse and never compiled
+ *  (proposals/2026-11-09-the-orientation-review.md, 2.5). The first segment still
+ *  starts with a letter, so a time or a date is never a reference. */
+const NAME_TAIL_RE = /^(?=[A-Za-z0-9_-]*[A-Za-z_-])[A-Za-z0-9_-]+$/;
 const ADDR_RE = /^\d+(\.\d+)?$/;
 const ATT_RE = /^-?\d+$/;
 
@@ -275,7 +281,7 @@ export function parseReference(leaf: PNode | undefined): { name: string; address
   const parts = leaf.split(':');
   let i = 0;
   const nameSegs: string[] = [];
-  while (i < parts.length && NAME_RE.test(parts[i])) {
+  while (i < parts.length && (i === 0 ? NAME_RE : NAME_TAIL_RE).test(parts[i])) {
     nameSegs.push(parts[i]);
     i++;
   }

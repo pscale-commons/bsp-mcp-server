@@ -123,5 +123,35 @@ console.log('\nTHE MARKER — read by one spindle to the head, never from the fi
   ok('an account with no slot for the room, or none at all, is 0', coveredThrough({ _: 'empty' } as Block, 'weft') === 0 && coveredThrough(null, 'weft') === 0);
 }
 
+console.log('\nTHE DOOR\'S FOLD — one spindle to the head and the ring there, never every container');
+{
+  // A room past 200 entries at floor 3, its summaries paid: the door's fold, read
+  // with no marker, walks the greatest digit at each rung and stops at the head.
+  let big: Block = { _: 'pool:probe' } as Block;
+  const at: string[] = [];
+  for (let i = 1; i <= 290; i++) {
+    const r = appendWithSupernest(big, { _: `beat ${i}`, 1: 'someone' });
+    big = r.block;
+    at.push(r.address);
+  }
+  const head = at[at.length - 1];
+  const old = foldContributions(big, 0);
+  ok('the walk from the first entry stops at 200, its open container stale', old.open[old.open.length - 1].position < Number(head), `${old.open[old.open.length - 1].position} vs head ${head}`);
+  const f = foldContributions(big, 0, undefined, { spindle: true });
+  ok('the door\'s fold is the spindle', f.spindle === true && f.folded === true);
+  ok('its open container ends at the head', f.open.length > 0 && f.open[f.open.length - 1].position === Number(head), `${f.open[f.open.length - 1]?.position} vs ${head}`);
+  ok('and holds only the head\'s container', f.open.every((c) => String(c.position).padStart(3, '0').slice(0, 2) === head.slice(0, 2)));
+  ok('one summary per rung above the floor, coarsest first', f.closed.length === 2 && f.closed[1].span.endsWith('9') && f.closed[0].span.endsWith('90'), JSON.stringify(f.closed.map((c) => c.span)));
+  ok('each names the span before it at its rung', f.closed[1].span === `${head.slice(0, 1)}${Number(head[1]) - 1}1-${head.slice(0, 1)}${Number(head[1]) - 1}9`, f.closed[1].span);
+
+  // A floor-2 room of 81: the eight containers' summaries no longer all ride.
+  let mid: Block = { _: 'pool:probe' } as Block;
+  for (let i = 1; i <= 81; i++) mid = appendWithSupernest(mid, { _: `beat ${i}`, 1: 'someone' }).block;
+  const m = foldContributions(mid, 0, undefined, { spindle: true });
+  ok('a floor-2 room folds to its last summary and its open container', m.spindle === true && m.closed.length === 1 && m.closed[0].span === '71-79' && m.open.length === 9, JSON.stringify({ closed: m.closed.map((c) => c.span), open: m.open.length }));
+  ok('where the old fold listed every closed container', foldContributions(mid, 0).closed.length === 8);
+  ok('with a marker, the reader reads forward as before', foldContributions(big, 150, undefined, { spindle: true }).spindle !== true);
+}
+
 console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);
 if (fail > 0) process.exit(1);
