@@ -3,7 +3,7 @@
  * Closed containers stand as their summary lines; the open container rides whole.
  *   npm run smoke:room-fold
  */
-import { foldContributions, foldedAccountText, collectContributions } from '../src/tools/pool.js';
+import { foldContributions, foldedAccountText, collectContributions, coveredThrough } from '../src/tools/pool.js';
 import { appendWithSupernest } from '../src/accumulator.js';
 import type { Block } from '../src/bsp.js';
 
@@ -83,6 +83,44 @@ console.log('\nTHE FOLD — a handle\'s account at the play door');
   ok('and says so, with where a telling whole is read', once.includes('the last 3 ride whole above') && once.includes('a spindle read of history:probe'));
   const youngOnce = foldedAccountText(young, 'history:probe', 3) ?? '';
   ok('an account too young to fold is delivered the same way, never as its JSON', youngOnce.includes('[1 · pool:211:1] telling 1') && youngOnce.includes('[2 · pool:211:2] telling 2') && !youngOnce.includes('telling 3'));
+}
+
+console.log('\nTHE MARKER — read by one spindle to the head, never from the first entry');
+{
+  // An account past 200 entries, as weft's was on 9 November 2026: the older
+  // tellings located at pool:weft:345, the newest at pool:weft:413. The walk
+  // from the first entry stopped at 200 and named 345.
+  let acct: Block = { _: 'history:weft' } as Block;
+  const at: string[] = [];
+  for (let i = 1; i <= 290; i++) {
+    const slot = i <= 150 ? 'pool:weft:345' : i >= 282 ? 'pool:weft:413' : null;
+    const r = appendWithSupernest(acct, { _: `lane ${i}`, 1: 'weft', ...(slot ? { 2: slot } : {}) });
+    acct = r.block;
+    at.push(r.address);
+  }
+  const head = at[at.length - 1];
+  const node = (b: Block, a: string) => a.split('').reduce((n: any, d) => n?.[d], b as any);
+  const ringOf = (a: string) => at.filter((x) => x.length === a.length && x.slice(0, -1) === a.slice(0, -1));
+  ok('the account stands past 200 entries, at floor 3', at.length > 200 && head.length === 3, head);
+  ok('the walk from the first entry would have named 345', collectContributions(acct, 0).contributions.length === 200
+    && collectContributions(acct, 0).contributions.every((c) => c.address !== 'pool:weft:413'));
+  ok('the newest telling names the slot: 413', coveredThrough(acct, 'weft') === 413, String(coveredThrough(acct, 'weft')));
+  ok('another room is not this one', coveredThrough(acct, 'keel') === 0);
+
+  const headless: Block = JSON.parse(JSON.stringify(acct));
+  delete node(headless, head)['2'];
+  ok('a head that names no slot is answered by its ring at pscale 0', coveredThrough(headless, 'weft') === 413);
+
+  const ringless: Block = JSON.parse(JSON.stringify(acct));
+  for (const a of ringOf(head)) delete node(ringless, a)['2'];
+  const before = at[at.indexOf(ringOf(head)[0]) - 1];
+  for (const a of ringOf(before)) node(ringless, a)['2'] = 'pool:weft:400';
+  ok('a ring that names none is passed for the ring before it', coveredThrough(ringless, 'weft') === 400, `${head} ${before} ${coveredThrough(ringless, 'weft')}`);
+
+  let small: Block = { _: 'history:probe' } as Block;
+  for (let i = 1; i <= 4; i++) small = appendWithSupernest(small, { _: `telling ${i}`, 1: 'probe', 2: `pool:211:${i}` }).block;
+  ok('a floor-1 account is its own ring', coveredThrough(small, '211') === 4);
+  ok('an account with no slot for the room, or none at all, is 0', coveredThrough({ _: 'empty' } as Block, 'weft') === 0 && coveredThrough(null, 'weft') === 0);
 }
 
 console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);
