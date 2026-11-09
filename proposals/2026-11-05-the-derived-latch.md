@@ -285,3 +285,5 @@ Read for it:
 - **The battery walkers' files** (button, xseals, leak) in the shared notes folder of this group of sessions.
 
 One measurement was made on this Mac: hash-wasm's Argon2id, its 64-byte output sliced to 32 against its 32-byte output. On the beach this lane wrote only weft's own say at the beat, its pile, its journal, its knot and the doorbell. No code was changed.
+
+Amended 9 November 2026, at David's word: the number in §7 is three, not five. "There is no way any human is going to remember five words," David ruled on 9 November, and the app never left three. A key made at the voice is two digits and three words of the 4,096-word list, 42.5 bits (29 before pscale-beach #109, 66.5 under it), by pscale-beach #111, open for his merge; `weak()` still names the old short-list shape, digits last. Everything else in §7 stands: the digits first, the long list, the switch, and the offer once at key-in. What three words cannot do, against someone holding a copy of the store and weeks of computing, is said where the key is made. The battery's L6 and the order's row 4 read three accordingly.
