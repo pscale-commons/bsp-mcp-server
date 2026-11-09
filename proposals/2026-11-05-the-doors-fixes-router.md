@@ -2,7 +2,7 @@
 
 **Date**: 5 November 2026
 **Lane**: fixes.router, weft (Claude Code on the Mac, Opus 5.5 at max effort, keyed), one of the lanes of David's word at thread:weft 17.1114; beside it the beach package's, the site's and the mirror's lanes, and the design-first lane for the derived latch, which this lane does not touch.
-**Status**: BUILT in one PR, not merged. Every `src/` file here redeploys the router when merged, and a redeploy ends every live MCP session, so David merges at a quiet moment. The wire moves to **0.3.0**, for the mirror lane to re-vendor (§5). Sign-in at a members' beach is not built: its shape waits on David's word (§6). Nothing on the beach was written by this lane but weft's own blocks; `spine:security-schematic` is its keeper's to re-voice once this is merged and live (§8).
+**Status**: BUILT in one PR, not merged. Every `src/` file here redeploys the router when merged, and a redeploy ends every live MCP session, so David merges at a quiet moment. The wire moves to **0.3.0**, for the mirror lane to re-vendor (§5). Sign-in at a members' beach is not built: its shape waits on David's word (§6). **§6 was answered on 6 November**, at David's word in lane BSP-mcp.1, by a third way: see `proposals/2026-11-04-the-key-in-the-connector.md` §12. Nothing on the beach was written by this lane but weft's own blocks; `spine:security-schematic` is its keeper's to re-voice once this is merged and live (§8).
 
 ## 0. David's words
 
@@ -93,6 +93,8 @@ Re-vendor `src/pscale-wire.ts` byte for byte and run its `smoke:wire`. The contr
 4. Each later call opens the key from the ring and proves the member's pass with it, as signed calls do now.
 
 The first way is a few lines in pscale-beach's gate and a few here (the page's field, the token's beach, minting at the door, the ring read at the token's beach). Both change what a members' beach shows a stranger (that a ring exists, and its sealed bytes), so the choice is David's.
+
+**Answered on 6 November** (`proposals/2026-11-04-the-key-in-the-connector.md` §12): steps 1, 2 and 4 as drawn, and step 3 by neither way. The token of a connection at a members' beach carries the key too, sealed with the rest of it, so a later call proves the pass before it reads the ring; the ring stays behind the wall, and nothing a members' beach shows a stranger changes.
 
 ## 7. What was left, and why
 

@@ -58,7 +58,7 @@ function requestIds(body: unknown): (string | number)[] {
   return ids;
 }
 
-function createSession(signedAs?: string): StreamableHTTPServerTransport {
+function createSession(signedAs?: string, signedAt?: string): StreamableHTTPServerTransport {
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
     enableJsonResponse: true,
@@ -69,7 +69,7 @@ function createSession(signedAs?: string): StreamableHTTPServerTransport {
     // Don't delete session here — SSE drop ≠ session end. Clients reconnect.
   };
 
-  const mcpServer = createServer(signedAs);
+  const mcpServer = createServer(signedAs, signedAt);
   mcpServer.connect(transport);
 
   return transport;
@@ -110,6 +110,7 @@ const httpServer = createHttpServer(async (req, res) => {
     return;
   }
   let signedAs: string | undefined;
+  let signedAt: string | undefined;
   if (address) {
     if (!SIGNIN_ON) {
       res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -125,7 +126,7 @@ const httpServer = createHttpServer(async (req, res) => {
     }
     if (!auth) { refuseUnsigned(res, origin, MCP_PATH, address); return; }
     (req as typeof req & { auth?: typeof auth }).auth = auth;
-    signedAs = (auth.extra?.signedIn as { handle: string }).handle;
+    ({ handle: signedAs, beach: signedAt } = auth.extra?.signedIn as { handle: string; beach?: string });
   }
 
   let body: unknown = undefined;
@@ -198,7 +199,7 @@ const httpServer = createHttpServer(async (req, res) => {
       return;
     }
     if (sessionId) delete req.headers['mcp-session-id'];
-    const transport = createSession(signedAs);
+    const transport = createSession(signedAs, signedAt);
     await transport.handleRequest(req, res, body);
     if (transport.sessionId) transports.set(transport.sessionId, transport);
     return;
