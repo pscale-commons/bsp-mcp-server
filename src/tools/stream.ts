@@ -72,7 +72,7 @@
 
 import { z } from 'zod';
 import { Block, writeAt, readAt, floorDepth, parseSpindle } from '../bsp.js';
-import { loadBlock, saveBlock, loadBeachIndex, guardStore, DEFAULT_BEACH, type BlockRow } from '../db.js';
+import { loadBlock, saveBlock, loadBeachIndex, guardStore, refuseKeyInPayload, DEFAULT_BEACH, type BlockRow } from '../db.js';
 import { formatBorn, fullWidthAddress } from '../bsp-fn.js';
 import { momentToAddress, voiceAddress, addressToSpan, TEMPORAL_FLOOR, readHumanTime, readHumanDay, readHumanSpan, SPAN_MAX_DAYS, spanInPlace, wallClock, wallDay, DAY_PARTS } from '../temporal.js';
 import { clockTable, composeClockMedium, composeClockHard, composeClockSoft, CLOCK_FIELD } from './clock.js';
@@ -904,6 +904,13 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // session's colours on once (wearFor, below) and every line in them then
   // reads as its words.
   const colour = typeof params.gray === 'string' && params.gray.trim() ? colourBlockName(params.gray) : null;
+  // THE GUARD MEETS THE SAY BEFORE ANYTHING IS BORN (the doors' second walk, 6.2): a say, or an option
+  // it offers, carrying the key the call presents is refused here, so a first say leaves no mirror
+  // born under that key. A coloured say leaves sealed, and the guard at the save passes it, as before.
+  if (writing && !colour) {
+    try { refuseKeyInPayload({ say: params.say, options: params.options }, [params.secret]); }
+    catch (e: any) { return out(`Your reading was refused at ${mirrorName} — ${e?.message ?? String(e)}`); }
+  }
   const word = sealingKey(undefined, params.secret);
   let seal: ((plaintext: string) => Sealed) | null = null;
   let saidSeal = null as Sealed | null;   // what the say was sealed with, for the ack
@@ -1053,6 +1060,8 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       return out(`keep='${params.keep}' needs keep_text — the synthesis is yours to write; this primitive assembles the snapshot and never synthesises.`);
     }
     try {
+      // The same guard before a tree or a fold is born for the keep (as the say's, above).
+      if (!seal) refuseKeyInPayload(text, [params.secret]);
       if (params.keep === 'personal') {
         const treeName = `tree:${field}:${handle}`;
         let trow = await loadBlock(origin, treeName).catch(() => null);

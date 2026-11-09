@@ -14,11 +14,12 @@
  * no hand's halves, so it is never derived and never moved.
  *
  * A HOST THAT LIES (§4.4). Once this process has seen a hand switched at a beach, a passport there
- * without the marker is a refusal, never a reason to send the word. Once the marker says swept, a
- * block that refuses the latch is a refusal naming the block: the word goes again only when the
- * holder runs the switch again (pscale_key_publish, latch: "derived"), which also moves the blocks
- * the session was refused at. While the switch is still running, a refusing block is moved on the
- * spot: its root probed with no key, rotated from the word to the latch, the write sent again.
+ * without the marker, read afresh, is a refusal, never a reason to send the word: a session's own
+ * read may be older than a switch made elsewhere, so it is read once more first. Once the marker
+ * says swept, a block that refuses the latch is a refusal naming the block: the word goes again only
+ * when the holder runs the switch again (pscale_key_publish, latch: "derived"), which also moves the
+ * blocks the session was refused at. While the switch is still running, a refusing block is moved on
+ * the spot: its root probed with no key, rotated from the word to the latch, the write sent again.
  *
  * The proof at a members' beach cannot read a passport before it proves, so src/pass.ts proves in
  * the form this process last proved with for that hand there, else the latch first (proofForms).
@@ -97,28 +98,35 @@ export interface Latch {
   hand?: string;
   word?: string;
   swept?: boolean;
+  /** Set where the string goes as it is: the same question asked once more, every passport read afresh. */
+  again?: () => Promise<Latch>;
 }
 
-/** What to send a beach in place of `s`, for a write to `block`. */
+/** What to send a beach in place of `s`, for a write to `block`.
+ *  A READ OLDER THAN A SWITCH MADE ELSEWHERE (§5.2, step 5; the doors' second walk, 6.1): the holder
+ *  switches at the voice, and this session read the passport before. Where this process has seen the
+ *  hand switched, the passport is read once more before the beach is taken for one that lies; where it
+ *  has not, the beach's refusal of the word says so, and sendUnder asks again (`again`). */
 export async function latchFor(origin: string, block: string, s: string | undefined | null, hands: Array<string | null | undefined> = []): Promise<Latch> {
   if (typeof s !== 'string' || s === '') return { send: s as any };
   const cands = [...new Set([...hands, ...(doorHere()?.handles ?? []), handleOf(block)])]
     .filter((h): h is string => typeof h === 'string' && NAME.test(h));
   for (const h of cands) {
-    const nine = await nineOf(origin, h);
-    if (nine === 'unread') continue;
     const k = `${at(origin)}|${h}`;
+    const kept = nines.has(`${session()}|${k}`);
+    let nine = await nineOf(origin, h);
+    if (nine === 'unread') continue;
+    const seen = switched.get(k);
+    const doubt = !isDerived(nine) && seen !== undefined && await derives(s, h, seen);
+    if (doubt && kept) { forgetNine(origin, h); nine = await nineOf(origin, h); }
     if (isDerived(nine)) {
       const halves = publicKeysFromSpine(nine);
       if (!halves) continue;
       switched.set(k, halves);
       if (await derives(s, h, halves)) return { send: await deriveLatch(s, h), hand: h, word: s, swept: isSwept(nine) };
-    } else {
-      const seen = switched.get(k);
-      if (seen && await derives(s, h, seen)) throw new Error(stripped(origin, h));
-    }
+    } else if (doubt) throw new Error(stripped(origin, h));
   }
-  return { send: s };
+  return { send: s, again: () => { for (const h of cands) forgetNine(origin, h); return latchFor(origin, block, s, hands); } };
 }
 
 function stripped(origin: string, h: string): string {
@@ -153,13 +161,16 @@ export async function moveOnTheSpot(origin: string, block: string, t: Latch): Pr
   return (await lockPost(origin, block, { secret: t.word, new_lock: t.send })).ok;
 }
 
-/** A write under the latch latchFor gave. Refused for its key while the switch runs, the block is
- *  moved on the spot and written again, and a position with a latch of its own is written with the
- *  word this once; refused after the sweep, it is a refusal naming the block. */
+/** A write under the latch latchFor gave. Refused for its key with no derived form known, the
+ *  passports are read once more, and a hand that has switched since takes the write once more in the
+ *  new form. Refused for its key while the switch runs, the block is moved on the spot and written
+ *  again, and a position with a latch of its own is written with the word this once; refused after
+ *  the sweep, it is a refusal naming the block. */
 export async function sendUnder<T extends { ok: boolean; status?: number; error?: string }>(
   origin: string, block: string, t: Latch, post: (secret: string | undefined) => Promise<T>,
 ): Promise<T> {
   let r = await post(t.send);
+  if (!t.hand && t.again && refusedForKey(r)) { t = await t.again(); if (t.hand) r = await post(t.send); }
   if (!t.hand || !refusedForKey(r)) return r;
   if (t.swept) throw sweptRefusal(origin, block, t.hand);
   if (await moveOnTheSpot(origin, block, t)) r = await post(t.send);
