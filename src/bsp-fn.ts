@@ -954,7 +954,10 @@ function beneathLine(r: BspReadResult): string {
  *  Keel's third sitting spent three of its twelve calls re-reading rungs the
  *  walk had cut (2026-10-06); the collapse is the other half of the same cost. */
 export const WHOLE_RUNG = 400;
-export function walkLines(entries: PathWalkEntry[], fl: ReturnType<typeof floorOf>, walked: ReturnType<typeof walkedDigits>, indent: string, onClock = true): string[] {
+/** `whole` lifts the cut for a walk delivered as teaching (the strata at the
+ *  holder's door), where an ancestor cut at its headline drops the sentence
+ *  the rungs beneath it depend on. */
+export function walkLines(entries: PathWalkEntry[], fl: ReturnType<typeof floorOf>, walked: ReturnType<typeof walkedDigits>, indent: string, onClock = true, whole = WHOLE_RUNG): string[] {
   const out: string[] = [];
   let run: PathWalkEntry[] = [];
   const label = (e: PathWalkEntry) => addrLabel(e.address, fl, e.pscale, walked, onClock);
@@ -975,7 +978,7 @@ export function walkLines(entries: PathWalkEntry[], fl: ReturnType<typeof floorO
     if (empty && !last) { run.push(e); continue; }
     flush();
     const content = empty ? '(no content)' : String(e.content);
-    const text = last || content.length <= WHOLE_RUNG ? content : truncate(content, 150);
+    const text = last || content.length <= whole ? content : truncate(content, 150);
     out.push(`${indent}d${e.depth} p${e.pscale} ${label(e)}: ${text}${stampSuffix(e.stamp)}`);
   }
   flush();
@@ -1085,7 +1088,7 @@ function greyWire(r: BspReadResult): BspReadResult {
   }
 }
 
-export function formatRead(r: BspReadResult, opts: { onClock?: boolean } = {}): string {
+export function formatRead(r: BspReadResult, opts: { onClock?: boolean; wholeRungs?: boolean } = {}): string {
   const onClock = opts.onClock !== false;
   r = greyWire(r);
   switch (r.shape) {
@@ -1099,7 +1102,7 @@ export function formatRead(r: BspReadResult, opts: { onClock?: boolean } = {}): 
       const entries = (r.entries as PathWalkEntry[]) ?? [];
       const fl = floorOf(r);
       const walked = walkedDigits(r, fl);
-      lines.push(...walkLines(entries, fl, walked, '  ', onClock));
+      lines.push(...walkLines(entries, fl, walked, '  ', onClock, opts.wholeRungs ? Infinity : WHOLE_RUNG));
       if (unframed(entries, fl ?? 0)) lines.push(UNFRAMED);
       if (r.beneath?.length) lines.push(beneathLine(r));
       return lines.join('\n');

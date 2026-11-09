@@ -47,6 +47,35 @@ import { SENTINELS } from '../sentinels.js';
 import { clockTable, composeClockDoor } from './clock.js';
 import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, membersOnlyLine, type Door } from '../pass.js';
 
+/** THE STRATA AT A HOLDER'S DOOR (proposals/2026-11-09-the-orientation-review.md;
+ *  David, 9 November: "a clear, effective, efficient way for an LLM to learn how
+ *  to read pscale blocks (physics), understand emergence from multiple blocks
+ *  (chemistry), and the sequential temporal placement (biology)"). The law has
+ *  stood whole at the strata sentinel since 12 August and no door delivered it.
+ *  Each level arrives as its operating spindle, every rung whole, and biology's
+ *  loop with the clock's ladder. Addresses only: the words are the sentinels'
+ *  own, read in-process, so every beach's door carries them at no cost. */
+export const STRATA_SPINDLES: { block: string; spindle: string }[] = [
+  { block: 'strata', spindle: '11111' }, // physics: one block → reading is aperture choice → the probe order
+  { block: 'strata', spindle: '21111' }, // chemistry: blocks in company → the two bonds → the fold
+  { block: 'strata', spindle: '311111' }, // biology: the loop → perceptual control → one edit and the fold
+  { block: 'sundial', spindle: '2' }, // the loop placed in time: pscale 0 the beat, the ladder above and below
+];
+
+export function strataSection(): string[] {
+  const out: string[] = [
+    '═══════════ THE STRATA — how to read all that follows: one block (physics), blocks in company (chemistry), a mind continuing through them in time (biology) ═══════════',
+    'Each level arrives as its operating spindle from bsp(agent_id="pscale", block="strata"), every rung whole; walk a level deeper when the work sits there. A walk prints each rung as d<depth> p<pscale> [address]: pscale = floor − depth, and the address is the number that reaches the rung.',
+  ];
+  for (const { block, spindle } of STRATA_SPINDLES) {
+    const s = SENTINELS.find((x) => x.name === block);
+    if (!s) continue;
+    out.push(`── ${block}:${spindle} ──`);
+    out.push(formatRead(bspRead(s.json, spindle, null), { onClock: false, wholeRungs: true }));
+  }
+  return out;
+}
+
 /** Loaders for compile() at this door. `load` is beach-scoped: sentinels first
  *  (the completion's shallow points live there), then named blocks at the
  *  world's beach, cached per call. Names are FULLY QUALIFIED ('purpose:anya',
@@ -885,6 +914,13 @@ async function handlePlayInner(
   }
   out.push(`PIN THIS BEACH. Every further call targets ${resolved} — pool_url for the room, agent_id="${resolved}" for reading your own blocks, agent_id="${handle}" for contributing. Never a bare handle, never the apex, never another world.`);
   out.push('');
+  // A holder wearing their own shell (room = the handle) reads the strata first,
+  // unless the shell's own bundle already dials them; a character at a table
+  // never meets the substrate's physics in its window.
+  if (roomName === handle && !own.some((o) => o.name.startsWith('strata:'))) {
+    out.push(...strataSection());
+    out.push('');
+  }
   out.push('Follow the operating directive below every turn. Render the scene to the player in second person, present tense — only what these reads return; invent nothing; name others only as you have earned their names.');
   out.push('');
   out.push('═══════════ THE ROOM — operating directive + live scene ═══════════');
