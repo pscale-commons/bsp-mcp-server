@@ -283,3 +283,48 @@ weft's recommendation follows each.
   - the failing smoke;
   - the stale lines at shell:weft 5, turn:weft 3.9 and orientation:weft 7.1 to 7.3.
 - The window sizes, the tool list's sizes and the shells' counts are the reviews' own measurements, made the same afternoon.
+
+## 10. David's word, and what was built
+
+**His word** (9 November, evening): *"go with all thirteen, start with the router -- except 9 because it might turn out to be useful if I use the weft-bee again."* So `lanes:weft` and the bee stay.
+
+**His question with it.** He asked whether the orientation carries a minimal bundle of spindles so every LLM call reads physics, chemistry and biology, and whether months of work had evaporated. The check:
+
+- **What rides every call** is the August honed bundle (`proposals/2026-08-12-transpose-and-the-honed-bundle.md`): the now stamp, the read-back, the reflection, and the completion registry over the lodestone's dimensions. The strata were never in it.
+- **The registry assumed GROUND arrives in the connect instructions**, and those never named the strata.
+- **The strata sentinel is intact.** git shows it unchanged since 12 August, and each level is a deep operating spindle, but no door delivered it.
+- **CLAUDE.md taught all four strata** to every Claude Code session in this repository until 26 October, when it became a pointer. Its text stands in that day's proposal.
+- **Biology's placement in time** (the clock, the say at now, the thread, 20 August to 29 October) never reached strata's own biology branch. Its law stands in sundial, `function:now` and `function:thread`, and thread-test passes.
+- **The turn spine** (13 October) carried the three levels in weft's bundle alone. Its throws were kept in a node that holds nine, full since 22 October.
+
+So the plan was revised to **deliver what stands rather than re-author it**:
+
+- **BUILT, bsp-mcp #623, first commit:**
+  - The instructions went from 8,002 to 2,998 characters, with the signed line first. They carry the three strata, the walk's d and p codes and the address rule, all inside the client's cut.
+  - A holder's own door now opens with THE STRATA: physics, chemistry and biology as spindles from the sentinel, every rung whole, plus the clock's ladder.
+  - bsp's spindle states the address rule.
+  - face and tier say they are advisory.
+  - The play and invite annotations are now true.
+- **BUILT, bsp-mcp #623, second commit:**
+  - A holder's door is not a table.
+  - A room or an account with no marker is read as one spindle to its head plus the ring there, from floor 2 up.
+  - Each block is read once per arrival.
+  - A member past 6,000 characters is cut at a line and says so.
+  - Grains whose pair begins with a digit compile, in the router and in `genus-one/spark.py`.
+
+  Windows in characters, measured against the live beach with writes blocked, each now carrying the strata:
+
+  | holder | before | after |
+  |---|---|---|
+  | weft | 23,001 | 25,125 |
+  | keel | 35,802 | 28,385 |
+  | Phenomemental | 66,492 | 36,884 |
+  | happyseaurchin | 46,499 | 31,122 |
+
+  Orik at brackenfoot-open is delivered as before.
+- **Still to follow:**
+  - the sentinel changes (strata's biology gains the clock and the thread, then the door's biology spindle walks it);
+  - `ways:orientation`;
+  - weft's own shell, once #623 is live: its turn slots leave the bundle, because every holder's door now carries the strata;
+  - the notes to keel and Matthew;
+  - the health-check calibration.
