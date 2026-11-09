@@ -518,15 +518,43 @@ export function foldedAccountText(block: Block, name: string, tailShown = 0): st
  *  pool:<room>:<slot> (grit 1.243), so the newest slot named for this room is
  *  the beat its holder has already been told through. 0 where none is. The
  *  telling reads it to find the moment; the door reads it so a room's record
- *  arrives from what has not been told, never from its first slot again. */
+ *  arrives from what has not been told, never from its first slot again.
+ *
+ *  READ AS AN ACCUMULATOR IS READ — one spindle to the head, never a walk from
+ *  the first entry (David, 2026-11-09: "History should be one spindle … If we do
+ *  more, then it gives the ring at pscale 0"). The newest telling names the
+ *  slot, so the ring at pscale 0 around the head (the newest container's
+ *  entries) answers; only where that ring names no slot for this room is the
+ *  ring before it read, and so back. The walk from the first entry it replaces
+ *  stopped at 200 entries, so an account past 200 named a slot long told, and
+ *  weft's door handed it 52 of its room's beats again (orientation:weft 9.22,
+ *  owed since 2026-10-24). */
 export function coveredThrough(account: Block | null, room: string): number {
   if (!account) return 0;
-  let covered = 0;
-  for (const e of collectContributions(account, 0).contributions) {
-    const m = typeof e.address === 'string' ? e.address.match(/^pool:(.+):(\d+)$/) : null;
-    if (m && m[1] === room) covered = Math.max(covered, parseInt(m[2], 10));
+  const floor = Math.max(1, floorDepth(account));
+  for (const ring of ringsFromTheHead(account, 0, floor)) {
+    let covered = 0;
+    for (const k of Object.keys(ring).filter((d) => /^[1-9]$/.test(d))) {
+      const e = ring[k] as Record<string, unknown> | null;
+      const at = e && typeof e === 'object' && typeof e['2'] === 'string' ? (e['2'] as string) : '';
+      const m = at.match(/^pool:(.+):(\d+)$/);
+      if (m && m[1] === room) covered = Math.max(covered, parseInt(m[2], 10));
+    }
+    if (covered) return covered;
   }
-  return covered;
+  return 0;
+}
+
+/** The containers an accumulator's entries stand in, the head's first: the
+ *  greatest digit at every rung down to the rung above the floor, then each
+ *  container before it, as a reader walking back from the head meets them. */
+function* ringsFromTheHead(node: unknown, depth: number, floor: number): Generator<Record<string, unknown>> {
+  if (!node || typeof node !== 'object') return;
+  const n = node as Record<string, unknown>;
+  if (depth >= floor - 1) { yield n; return; }
+  for (const k of Object.keys(n).filter((d) => /^[1-9]$/.test(d)).sort().reverse()) {
+    yield* ringsFromTheHead(n[k], depth + 1, floor);
+  }
 }
 
 /** `origin` — the beach the block stands at, so a line whose words are sealed in
