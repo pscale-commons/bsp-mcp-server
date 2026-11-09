@@ -80,6 +80,7 @@
     "smoke:temporal": "tsx scripts/smoke-temporal.ts",
     "smoke:temporal-envelope": "tsx scripts/smoke-temporal-envelope.ts",
     "smoke:temporal-address": "tsx scripts/smoke-temporal-address.ts",
+    "smoke:door-orientation": "tsx scripts/smoke-door-orientation.ts",
     "smoke:human-time": "tsx scripts/smoke-human-time.ts",
     "smoke:span": "tsx scripts/smoke-span.ts",
     "smoke:here": "tsx scripts/smoke-here.ts",

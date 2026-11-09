@@ -860,7 +860,7 @@ export const bspParamsSchema = {
     .string()
     .nullable()
     .optional()
-    .describe('Address path (S). Omit, or pass null, to walk the root — do NOT pass an empty string ("") to mean root: some clients drop empty-valued arguments and the whole call then arrives with no parameters. Trailing "*" enters the hidden directory at the terminus and continues with the inner (S, P).'),
+    .describe('Address path (S) — a NUMBER, not a path: at most ONE decimal point, anchored at the block\'s floor, so 4.26 is branch 4, then 2, then 6 (or write the comma-walk 4,2,6); an address with a second dot is refused. Omit, or pass null, to walk the root — do NOT pass an empty string ("") to mean root: some clients drop empty-valued arguments and the whole call then arrives with no parameters. Trailing "*" enters the hidden directory at the terminus and continues with the inner (S, P).'),
   pscale_attention: z
     .number()
     .int()
@@ -895,11 +895,11 @@ export const bspParamsSchema = {
   face: z
     .enum(['character', 'author', 'designer', 'observer'])
     .optional()
-    .describe('CADO access modifier. Validated against sed: collective membership. Advisory in v0.1; enforced in v0.2.'),
+    .describe('CADO face tag — advisory only: logged, never enforced and never checked against membership. A face is read off which member of a compound your writing lands in (grips 5), not declared here.'),
   tier: z
     .enum(['soft', 'medium', 'hard'])
     .optional()
-    .describe('SMH aperture modifier. Composes with face per the face-tier matrix. Advisory in v0.1; enforced in v0.2.'),
+    .describe('SMH aperture tag — advisory only: logged, never enforced. The aperture a read delivers is set by spindle and pscale_attention.'),
   append: z
     .boolean()
     .optional()

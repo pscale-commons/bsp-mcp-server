@@ -63,6 +63,8 @@ export interface BundleRef {
 }
 
 const NAME_RE = /^[A-Za-z][A-Za-z0-9_-]*$/;
+/** A later name segment may begin with a digit if it is not a number (a grain's pair_id); genus.ts parses the same way. */
+const NAME_TAIL_RE = /^(?=[A-Za-z0-9_-]*[A-Za-z_-])[A-Za-z0-9_-]+$/;
 const ATT_RE = /^-?\d+$/;
 
 /** A leaf as a reference, the two address words included. Prose never parses:
@@ -77,7 +79,7 @@ export function parseBundleRef(leaf: unknown): BundleRef | null {
     const w = parts[i].toLowerCase();
     if (w !== 'now' && w !== 'head') continue;
     const nameSegs = parts.slice(0, i);
-    if (!nameSegs.every((p) => NAME_RE.test(p))) break;
+    if (!nameSegs.every((p, k) => (k === 0 ? NAME_RE : NAME_TAIL_RE).test(p))) break;
     const rest = parts.slice(i + 1);
     if (rest.length > 1 || (rest.length === 1 && !ATT_RE.test(rest[0]))) break;
     return { ref: s, name: nameSegs.join(':'), address: null, word: w as AddressWord, attention: rest.length ? parseInt(rest[0], 10) : null };

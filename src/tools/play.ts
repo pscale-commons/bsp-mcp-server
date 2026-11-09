@@ -47,6 +47,86 @@ import { SENTINELS } from '../sentinels.js';
 import { clockTable, composeClockDoor } from './clock.js';
 import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, membersOnlyLine, type Door } from '../pass.js';
 
+/** THE STRATA AT A HOLDER'S DOOR (proposals/2026-11-09-the-orientation-review.md;
+ *  David, 9 November: "a clear, effective, efficient way for an LLM to learn how
+ *  to read pscale blocks (physics), understand emergence from multiple blocks
+ *  (chemistry), and the sequential temporal placement (biology)"). Physics and
+ *  chemistry arrive as their operating spindles from the strata sentinel, which
+ *  has stood whole since 12 August and no door delivered. Biology arrives as the
+ *  beach's own WAY OF A THREAD (ways:thread, keel's instructions at biology level,
+ *  written at David's word on 29 October and battery-tested), which is strata 3's
+ *  cycle run on a thread, with the clock's ladder; where a beach keeps no
+ *  ways:thread, strata 3's loop stands in. Every rung whole. Addresses only: the
+ *  words are the blocks' own. */
+export const STRATA_SPINDLES: { block: string; spindle: string }[] = [
+  { block: 'strata', spindle: '11111' }, // physics: one block → reading is aperture choice → the probe order
+  { block: 'strata', spindle: '21111' }, // chemistry: blocks in company → the two bonds → the fold
+];
+const BIOLOGY_LOOP = { block: 'strata', spindle: '311111' }; // where a beach keeps no ways:thread
+const CLOCK_LADDER = { block: 'sundial', spindle: '2' }; // pscale 0 the beat, the ladder above and below
+/** The way of a thread's steps that ride the door; its provenance at 9 stays a read away. */
+const WAY_STEPS = ['1', '2', '3', '4', '5', '6', '7', '8'];
+
+function sentinelWalk(block: string, spindle: string): string[] {
+  const s = SENTINELS.find((x) => x.name === block);
+  return s ? [`── ${block}:${spindle} ──`, formatRead(bspRead(s.json, spindle, null), { onClock: false, wholeRungs: true })] : [];
+}
+
+export function strataSection(waysThread: Block | null = null): string[] {
+  const out: string[] = [
+    '═══════════ THE STRATA — how to read all that follows: one block (physics), blocks in company (chemistry), a mind continuing through them in time, by threads (biology) ═══════════',
+    'Physics and chemistry arrive as their operating spindles from bsp(agent_id="pscale", block="strata"), biology as this beach\'s way of a thread; every rung whole, and a level walked deeper when the work sits there. A walk prints each rung as d<depth> p<pscale> [address]: pscale = floor − depth, and the address is the number that reaches the rung.',
+  ];
+  for (const { block, spindle } of STRATA_SPINDLES) out.push(...sentinelWalk(block, spindle));
+  const way = waysThread && typeof waysThread === 'object' ? (waysThread as Record<string, unknown>) : null;
+  const text = (n: unknown): string | null => {
+    const t = n && typeof n === 'object' ? (n as Record<string, unknown>)['_'] : n;
+    return typeof t === 'string' && t.trim() ? t : null;
+  };
+  const steps = way ? WAY_STEPS.map((k) => [k, text(way[k])] as const).filter(([, t]) => t) : [];
+  if (way && steps.length) {
+    out.push('── ways:thread (this beach\'s way of a thread: strata 3\'s cycle run on a thread; its provenance at 9 is a read away) ──');
+    const root = text(way);
+    if (root) out.push(`  [0]: ${root}`);
+    for (const [k, t] of steps) out.push(`  [${k}]: ${t}`);
+  } else {
+    out.push(...sentinelWalk(BIOLOGY_LOOP.block, BIOLOGY_LOOP.spindle));
+  }
+  out.push(...sentinelWalk(CLOCK_LADDER.block, CLOCK_LADDER.spindle));
+  return out;
+}
+
+/** ONE READ OF A BLOCK PER ARRIVAL (the orientation review, 2.2): the door read
+ *  history:happyseaurchin, 2 MB, three times in one call — for the account probe,
+ *  for the room's marker, and for the bundle's head. A failed read is not kept. */
+function readOncePerCall(): typeof loadBlock {
+  const seen = new Map<string, ReturnType<typeof loadBlock>>();
+  return (origin: string, name: string) => {
+    const k = `${origin.replace(/\/+$/, '')}|${name}`;
+    let p = seen.get(k);
+    if (!p) {
+      p = loadBlock(origin, name);
+      seen.set(k, p);
+      p.catch(() => seen.delete(k));
+    }
+    return p;
+  };
+}
+
+/** A bundle member past this many characters arrives cut at a line, saying so. */
+export const MEMBER_CAP = 6000;
+export function capMember(body: string, ref: string): string {
+  if (body.length <= MEMBER_CAP) return body;
+  const kept: string[] = [];
+  let n = 0;
+  for (const line of body.split('\n')) {
+    if (n + line.length + 1 > MEMBER_CAP) break;
+    kept.push(line);
+    n += line.length + 1;
+  }
+  return `${kept.join('\n')}\n(cut at ${n.toLocaleString('en-GB')} of ${body.length.toLocaleString('en-GB')} characters: the rest is a bsp read of ${ref} away)`;
+}
+
 /** Loaders for compile() at this door. `load` is beach-scoped: sentinels first
  *  (the completion's shallow points live there), then named blocks at the
  *  world's beach, cached per call. Names are FULLY QUALIFIED ('purpose:anya',
@@ -411,6 +491,7 @@ async function handlePlayInner(
   extra?: { sessionId?: string },
 ): Promise<{ content: { type: 'text'; text: string }[] }> {
   const { world, handle, room } = params;
+  const read = readOncePerCall();
   // The door knows who walked in: from here this session's looks carry the
   // hand's name in every other instance's lateral line (src/looks.ts).
   declareHand(extra?.sessionId, handle);
@@ -543,7 +624,7 @@ async function handlePlayInner(
   let roomName = room?.trim();
   if (!roomName) {
     const index = await beachIndex(resolved);
-    const myPassport = await loadBlock(resolved, `passport:${handle}`);
+    const myPassport = await read(resolved, `passport:${handle}`);
     const locAddr = myPassport?.block ? passportLocation(myPassport.block) : null;
     if (locAddr && index.includes(`pool:${locAddr}`)) {
       roomName = locAddr;                              // location-derived room
@@ -636,7 +717,7 @@ async function handlePlayInner(
   //    account names no slot here reads the room from its first, folded as ever.
   let told = 0;
   for (const organ of ['history', 'witnessed']) {
-    const arow = await loadBlock(resolved, `${organ}:${handle}`);
+    const arow = await read(resolved, `${organ}:${handle}`);
     if (arow?.block && typeof arow.block === 'object') { told = coveredThrough(arow.block as any, roomName); break; }
   }
   let env: string;
@@ -688,7 +769,7 @@ async function handlePlayInner(
   const oneRing = (blk: any) => !Object.entries(blk).some(([k, v]) => k !== '_' && v && typeof v === 'object' && Object.keys(v as object).some((d) => d !== '_'));
   for (const b of ['passport', 'witnessed', 'knows', 'shell', 'history', 'stash']) {
     const name = `${b}:${handle}`;
-    const row = await loadBlock(resolved, name);
+    const row = await read(resolved, name);
     if (row && row.block && typeof row.block === 'object') {
       present.add(b);
       if (b === 'shell') shellBlock = row.block;
@@ -750,7 +831,7 @@ async function handlePlayInner(
   // SEATED: every later bsp() and stream ack carries what moved since.
   if (manifestNode && manifestNominates && manifestSlot) {
     try {
-      const members = await compileBundle(manifestNode, { load: surfaceLoader(resolved), handle, now: new Date() });
+      const members = await compileBundle(manifestNode, { load: surfaceLoader(resolved, read), handle, now: new Date() });
       if (members) {
         const dialed = allMembers(members)
           .filter((m) => m.ref && !m.absent)
@@ -759,7 +840,7 @@ async function handlePlayInner(
         for (const m of members) {
           if (!m.ref || !m.leaf || seen.has(m.leaf)) continue;
           seen.add(m.leaf);
-          own.push({ name: m.leaf, json: renderMemberBody(m) });
+          own.push({ name: m.leaf, json: capMember(renderMemberBody(m), m.leaf) });
         }
         declareSeat(extra?.sessionId, resolved, handle, `shell:${handle}`, manifestSlot, manifestNode);
       }
@@ -822,7 +903,11 @@ async function handlePlayInner(
   //     coarse, the finer life beneath you is listed because you are its container
   //     (and, at a fold, its determiner). Position consts are hoisted above the
   //     compile passes (step 4) — this section reuses them.
-  const cast = myLoc ? await castAtWorld(resolved, handle) : [];
+  // THE HOLDER'S DOOR IS NOT A TABLE (the orientation review, 2.3): a holder
+  // wearing their own shell (room = the handle) is not a character in a scene, so
+  // the door neither reads every passport for WHO IS HERE nor renders a scene.
+  const holderDoor = roomName === handle;
+  const cast = myLoc && !holderDoor ? await castAtWorld(resolved, handle) : [];
   let here: CastEntry[] = [];
   let about: CastEntry[] = [];
   const coarser: { handle: string; appearance: string; addr: string }[] = [];
@@ -851,7 +936,9 @@ async function handlePlayInner(
 
   // Kind reads the PROBES, not the delivered window — a manifest-bearing shell
   // whose legacy dumps stood down is still the same kind of thing it was.
-  const kind = present.has('witnessed') || present.has('passport')
+  const kind = holderDoor && present.has('shell')
+    ? 'holder — your own shell'
+    : present.has('witnessed') || present.has('passport')
     ? 'character'
     : present.has('shell')
       ? 'user / agent (shell-based)'
@@ -872,7 +959,7 @@ async function handlePlayInner(
   // 1.1.1 and the digit-only readers silently placed it at addr 1, the wrong
   // scale). Surface the fault to the one holder of the secret; never silently
   // canonicalise.
-  const spatialRef = (p3.match(/spatial:[\w-]+:[\d.,]+/) || [null])[0];
+  const spatialRef = holderDoor ? null : (p3.match(/spatial:[\w-]+:[\d.,]+/) || [null])[0];
   if (spatialRef) {
     const addr = spatialRef.split(':').pop() ?? '';
     // A location is a single-decimal pscale address (pscale-of-agency G1): plain
@@ -885,7 +972,17 @@ async function handlePlayInner(
   }
   out.push(`PIN THIS BEACH. Every further call targets ${resolved} — pool_url for the room, agent_id="${resolved}" for reading your own blocks, agent_id="${handle}" for contributing. Never a bare handle, never the apex, never another world.`);
   out.push('');
-  out.push('Follow the operating directive below every turn. Render the scene to the player in second person, present tense — only what these reads return; invent nothing; name others only as you have earned their names.');
+  // A holder wearing their own shell (room = the handle) reads the strata first,
+  // unless the shell's own bundle already dials them; a character at a table
+  // never meets the substrate's physics in its window.
+  if (holderDoor && !own.some((o) => o.name.startsWith('strata:'))) {
+    const way = await read(resolved, 'ways:thread').catch(() => null);
+    out.push(...strataSection(way?.block && typeof way.block === 'object' ? (way.block as Block) : null));
+    out.push('');
+  }
+  out.push(holderDoor
+    ? 'Follow the operating directive below every turn. Say only what these reads return, and invent nothing.'
+    : 'Follow the operating directive below every turn. Render the scene to the player in second person, present tense — only what these reads return; invent nothing; name others only as you have earned their names.');
   out.push('');
   out.push('═══════════ THE ROOM — operating directive + live scene ═══════════');
   out.push(env);
@@ -908,7 +1005,7 @@ async function handlePlayInner(
       seatThread(extra?.sessionId, resolved, handle, THREAD_FIELD, threadAt, cs.lines.map((l) => toldKey(l.who, l.addr, l.text)));
     }
   }
-  const compass = await compassOf(resolved);
+  const compass = holderDoor ? null : await compassOf(resolved);
   if (compass) {
     out.push('');
     out.push('═══════════ THE COMPASS — this beach\'s lighthouse at a glance; walk a branch only when a turn needs it ═══════════');
@@ -941,8 +1038,8 @@ async function handlePlayInner(
     try {
       const torusName = `torus-mirror:${handle}`;
       const [nowRow, torusRow, index] = await Promise.all([
-        loadBlock(resolved, `now:${handle}`).catch(() => null),
-        loadBlock(resolved, torusName).catch(() => null),
+        read(resolved, `now:${handle}`).catch(() => null),
+        read(resolved, torusName).catch(() => null),
         loadBeachIndex(resolved).catch(() => null),
       ]);
       const touched = (index as any)?.touched?.[torusName];
@@ -957,7 +1054,15 @@ async function handlePlayInner(
   if (own.length) {
     out.push('');
     out.push(`═══════════ YOUR OWN CONTEXT (${handle}) ═══════════`);
-    for (const o of own) out.push(`── ${o.name} ──\n${o.json}`);
+    for (const o of own) {
+      // At the holder's door the passport arrives as a disc at pscale 0, every
+      // position's opening line; its keys and ledger stay a spindle away.
+      let body = o.json;
+      if (holderDoor && o.name === `passport:${handle}`) {
+        try { body = formatRead(bspRead(JSON.parse(o.json) as Block, null, 0), { onClock: false }); } catch { /* the passport as it stands */ }
+      }
+      out.push(`── ${o.name} ──\n${body}`);
+    }
   } else {
     out.push('');
     // Reached only when no creation passage resolved anywhere (the genesis-first

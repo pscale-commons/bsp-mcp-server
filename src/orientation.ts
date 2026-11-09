@@ -33,14 +33,14 @@ import { crossSection } from './cross.js';
 
 /** A loader over one surface: the bundled sentinels first (the teaching is the
  *  same at every beach), then the beach's named blocks, cached per call. */
-export function surfaceLoader(origin: string): BlockLoader {
+export function surfaceLoader(origin: string, read: typeof loadBlock = loadBlock): BlockLoader {
   const cache = new Map<string, Block | null>();
   const sentinels = new Set(listSentinelNames('pscale'));
   return async (name: string) => {
     if (cache.has(name)) return cache.get(name)!;
     const row = sentinels.has(name)
       ? await loadBlock('pscale', name).catch(() => null)
-      : await loadBlock(origin, name).catch(() => null);
+      : await read(origin, name).catch(() => null);
     const b = row?.block && typeof row.block === 'object' ? (row.block as Block) : null;
     cache.set(name, b);
     return b;
