@@ -2831,7 +2831,7 @@ async function handlePoolEngageInner(
   if (fold?.folded) {
     lines.push('');
     lines.push(fold.spindle
-      ? `# Before this — the room's spindle to its newest entry, coarsest first: each summary stands for the span before it`
+      ? `# Before this — ${fold.closed.length} closed ${fold.closed.length === 1 ? 'container' : 'containers'} on the spindle to the newest entry, coarsest first, each summary standing for the span before it`
       : `# Before this — ${fold.closed.length} closed ${fold.closed.length === 1 ? 'container' : 'containers'}, each standing for its span`);
     lines.push(...closedContainerLines(fold.closed));
     lines.push(fold.spindle
