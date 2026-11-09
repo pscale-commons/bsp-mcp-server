@@ -462,7 +462,7 @@ console.log('\n=== where, when, who — the world\'s three spindles in every fra
   const grpKeeper = beaches[TABLE]['keeper:scene'] as any;
   grpKeeper['5'] = 'WHEN: *:https://world.test:temporal:world:311200 — the second day, the present this table resumes at.';
   check('a table\'s keeper names its present at position 5, and its next beat starts at its first light',
-    (await beatMoment(TABLE, '120', ['mara', 'dorn'], null))?.stamp === '*:https://world.test:temporal:world:311211' && /^PLACING: \*:\S+:spatial:thornlea:120$/.test(grpKeeper['3']));
+    (await beatMoment(TABLE, '120', ['mara', 'dorn'], null))?.stamp === '*:https://world.test:temporal:world:311211.11' && /^PLACING: \*:\S+:spatial:thornlea:120$/.test(grpKeeper['3']));
   const named = section(await tier('medium', '120', 'dorn'), 'THE INPUT');
   check('and the frame walks the clock to that present', /The second day — a thin cold rain/.test(named) && /First light — grey, the fog lying on the water/.test(named) && !/the hour stands where/.test(named));
   delete grpKeeper['5'];
@@ -473,27 +473,46 @@ console.log('\n=== where, when, who — the world\'s three spindles in every fra
   check('a fresh table stands at its placing\'s moment: the clock walked from the season down to the part of the day',
     /The third season/.test(fresh) && /The harvest month/.test(fresh) && /The first day — low cloud/.test(fresh) && /Dusk — the light failing/.test(fresh) && !/the hour stands where/.test(fresh));
   check('the clock\'s root and its zero rungs say nothing the rungs below do not', !/THE CLOCK OF THE WORLD/.test(fresh));
-  check('THE HOURS AHEAD offer the rest of the day and the next day\'s, each with its address',
-    /\[THE HOURS AHEAD/.test(fresh) && /\[311161\] Dark — full night/.test(fresh) && /\[311171\] Deep night/.test(fresh) && /\[311211\] First light — grey, the fog lying on the water\. — the next day/.test(fresh) && !/\[311151\]/.test(fresh));
-  check('the resolution is told what WHEN is and how a WHEN line names an hour ahead',
-    /\[WHEN\] \(the world's own clock at this moment/.test(section(freshText.content[0].text, 'THE CALL')) && /end with a line WHEN <address>/.test(section(freshText.content[0].text, 'THE CALL')));
-  check('the first beat there carries the placing\'s moment', JSON.stringify(await beatMoment(FRESH, '120', ['sef'], null)) === JSON.stringify({ stamp: '*:https://world.test:temporal:world:311151', label: 'The first day, dusk' }));
+  check('THE HOURS AHEAD offer a breath first, then a minute on, a beat on, then hours — the rest of the day and the next day\'s — each step past a breath with its address',
+    /\[THE HOURS AHEAD/.test(fresh) && /\na breath — what is said, what is struck: no WHEN line\n\[311151\.21\] a minute or so on/.test(fresh) && /\[311152\.11\] a beat on/.test(fresh)
+      && /\nhours on — a wait, a sleep, a day's work, a long road:\n\[311161\.11\] Dark — full night/.test(fresh) && /\[311171\.11\] Deep night/.test(fresh) && /\[311211\.11\] First light — grey, the fog lying on the water\. — the next day/.test(fresh) && !/\[311151\.11\]/.test(fresh));
+  const call = section(freshText.content[0].text, 'THE CALL');
+  check('the resolution is told what WHEN is, and that its line comes before a WAY line and never inside one',
+    /\[WHEN\] \(the world's own clock at this moment/.test(call) && /at most two lines, each only when it is due: WHEN, then WAY/.test(call)
+      && /The line is the word WHEN, a space, and the digits exactly as they stand inside the brackets of THE HOURS AHEAD — never a guessed digit, and never in a WAY line/.test(call));
+  // TIME MOVES BY WHAT THE MOMENT HOLDS (David, 2026-10-23): a beat per line aged
+  // the world twenty minutes a sentence. Words and blows are breaths; the players'
+  // characters set the step and the place's people keep to it (grit 6.3) — played
+  // on the rig, a figure's stroll made a talk a minute until this was said.
+  check('and that the players\' characters set the step, words and blows are breaths, a going takes its way\'s time and a wait runs to its hour',
+    /TIME MOVES BY WHAT THE MOMENT HOLDS, never by how long it took to play, and the players' characters set it/.test(call)
+      && /words and blows are breaths: a moment where any of them speaks or strikes is a breath, however much is told around it/.test(call)
+      && /A going along one of THE WAYS takes the time of its way/.test(call) && /a wait runs to the hour it waits for/.test(call) && /In doubt, the nearer/.test(call));
+  check('the first beat there carries the placing\'s moment, at its first breath', JSON.stringify(await beatMoment(FRESH, '120', ['sef'], null)) === JSON.stringify({ stamp: '*:https://world.test:temporal:world:311151.11', label: 'The first day, dusk' }));
 
-  // A beat stamped: the clock stands where it left them, and moves one beat.
+  // A beat stamped: the clock stands where it left them, and moves one breath.
   const freshPool = beaches[FRESH]['pool:120'] as any;
   freshPool['1'] = { _: 'The carrier sets her frame down by the fire and asks for a bed; the alewife looks up from the trestle.', '1': 'sef', '2': '*:https://world.test:temporal:world:311151', '3': '2026-10-23T10:01:00.000Z', '5': 'sef' };
-  check('the next beat is one later', (await beatMoment(FRESH, '120', ['sef'], null))?.stamp === '*:https://world.test:temporal:world:311152');
-  check('a WHEN line naming an hour ahead moves the clock there', JSON.stringify(await beatMoment(FRESH, '120', ['sef'], '311211')) === JSON.stringify({ stamp: '*:https://world.test:temporal:world:311211', label: 'The second day, first light' }));
-  check('and never backwards', (await beatMoment(FRESH, '120', ['sef'], '311141'))?.stamp === '*:https://world.test:temporal:world:311152');
-  const { momentFrom } = await import('../src/tools/tiers.js');
+  check('the next exchange is one breath later', (await beatMoment(FRESH, '120', ['sef'], null))?.stamp === '*:https://world.test:temporal:world:311151.12');
+  check('a WHEN line naming a minute on moves the clock a minute', (await beatMoment(FRESH, '120', ['sef'], '311151.21'))?.stamp === '*:https://world.test:temporal:world:311151.21');
+  check('a WHEN line naming an hour ahead moves the clock there', JSON.stringify(await beatMoment(FRESH, '120', ['sef'], '311211')) === JSON.stringify({ stamp: '*:https://world.test:temporal:world:311211.11', label: 'The second day, first light' }));
+  check('and never backwards', (await beatMoment(FRESH, '120', ['sef'], '311141'))?.stamp === '*:https://world.test:temporal:world:311151.12');
+  const { momentFrom, momentLabel, clockStep, MINUTE, BEAT } = await import('../src/tools/tiers.js');
   const clockAt = (addr: string) => ({ ref: { origin: 'https://world.test', block: 'temporal:world', addr }, spine: beaches['https://world.test']['temporal:world'] as any, floor: 6 });
-  check('a placing that names a part of the day whole begins at its first beat, a day whole at its first light',
-    momentFrom(clockAt('311150'), []).next === '311151' && momentFrom(clockAt('311100'), []).next === '311111' && momentFrom(clockAt('311151'), []).next === '311151');
+  check('a placing that names a part of the day whole begins at its first beat and breath, a day whole at its first light',
+    momentFrom(clockAt('311150'), []).next === '311151.11' && momentFrom(clockAt('311100'), []).next === '311111.11' && momentFrom(clockAt('311151'), []).next === '311151.11');
+  check('nine breaths fill a minute, nine minutes a beat, and the last breath of deep night turns to the next first light',
+    clockStep('12000311311.19') === '12000311311.21' && clockStep('12000311311.99') === '12000311312.11' && clockStep('12000311379.99') === '12000311411.11');
+  check('a minute on and a beat on begin the rungs beneath them again',
+    clockStep('12000311311.15', MINUTE) === '12000311311.21' && clockStep('12000311311.15', BEAT) === '12000311312.11');
+  let talk = '311151.11';
+  for (let i = 0; i < 40; i++) talk = clockStep(talk);
+  check('forty exchanges of talk stay inside the same dusk', talk === '311151.55' && momentLabel(clockAt('311151'), talk) === 'The first day, dusk');
   const said = whenOf('They bed down by the fire and the night goes over them.\nWHEN 311211\nWAY 200');
   check('a WHEN line leaves the beat\'s text, and names its hour', said.jump === '311211' && said.text === 'They bed down by the fire and the night goes over them.\nWAY 200');
   const stamped = section((await handlePoolEngage({ pool_url: FRESH, pool_name: '120', agent_id: 'sef', tier: 'medium' } as any)).content[0].text, 'THE INPUT');
   check('a stamped beat is headed by its own moment in the story so far', /— at The Alehouse \[pool:120, slot 1\], The first day, dusk:/.test(stamped));
-  check('and the moment made now is the next beat of the same dusk', /Dusk — the light failing/.test(stamped) && /\[311161\] Dark/.test(stamped));
+  check('and the moment made now is the next breath of the same dusk', /Dusk — the light failing/.test(stamped) && /\[311151\.21\] a minute or so on/.test(stamped) && /\[311161\.11\] Dark/.test(stamped));
   const keeper = section((await handlePoolEngage({ pool_url: FRESH, pool_name: '120', agent_id: 'sef', tier: 'hard' } as any)).content[0].text, 'THE INPUT');
   const { KEEPER_TABLE_MARK, KEEPER_ROOM_MARK } = await import('../src/tools/tiers.js');
   check('the keeper holds the world\'s map above the table mark and the clock below the room mark',
