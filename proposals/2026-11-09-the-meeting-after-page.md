@@ -1,6 +1,6 @@
 # A meeting after the hour: one page per meeting, for the person you met (2026-11-09)
 
-**Status**: LIVE. The page merged at David's word ('Merge it'), happyseaurchin-home #638 squashed as 5ae6eac at 19:18Z, served at happyseaurchin.com/met/<name> 16 s later. Sam's meeting has stood live since his 'Yes, put it live' (19:08Z): `spine:sam-6-nov`, `function:sam-6-nov` and `sam-6-nov:happyseaurchin` are under his handle key, and `pool:sam-6-nov` is open. His link is happyseaurchin.com/met/sam-6-nov?plex=1. The standing law is copied to `archive:function:meeting:2026-11-09` (verified equal). The line at §3 is NOT yet written: `function:meeting` stands under the shared project lock, which weft's key does not open, and this session's auto mode refused the vault read for that key. It is owed by the next keyed lane.
+**Status**: LIVE. The page merged at David's word ('Merge it'), happyseaurchin-home #638 squashed as 5ae6eac at 19:18Z, served at happyseaurchin.com/met/<name> 16 s later. Sam's meeting has stood live since his 'Yes, put it live' (19:08Z): `spine:sam-6-nov`, `function:sam-6-nov` and `sam-6-nov:happyseaurchin` are under his handle key, and `pool:sam-6-nov` is open. His link is happyseaurchin.com/met/sam-6-nov?plex=1. The standing law is copied to `archive:function:meeting:2026-11-09` (verified equal). The line at §3 stands at `function:meeting` 2.3 since 19:23Z, written under the shared project lock (vault:weft 4) at David's 'Yes, read it', after auto mode had refused the first read; nothing else in the law moved.
 
 ## 0. David's words
 
@@ -43,7 +43,6 @@ The summary keeps the Beach Session's exclusions. The one claim from the convers
 
 ## 5. What waits
 
-1. **The law line** at `function:meeting` 2.3 (§3), under the shared project lock; the archive is in place.
-2. **Tom's transcript**: an export from Otter (Text), sent to the inbox as Sam's were; then the same sort and a page of its own.
-3. **The snazzy view**: a crafted page per meeting, its look drawn from what was said (as `function:proposal` 6 names a proposal's), once the plain page has been given to someone and seen in their hands.
-4. **Threads**: the page draws a meeting's threads where its own law names them (threads.js); none is named for Sam's, because none has started.
+1. **Tom's transcript**: an export from Otter (Text), sent to the inbox as Sam's were; then the same sort and a page of its own.
+2. **The snazzy view**: a crafted page per meeting, its look drawn from what was said (as `function:proposal` 6 names a proposal's), once the plain page has been given to someone and seen in their hands.
+3. **Threads**: the page draws a meeting's threads where its own law names them (threads.js); none is named for Sam's, because none has started.
