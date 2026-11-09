@@ -109,7 +109,8 @@ The phone's route: an https page cannot open `ws://` to the Mac (mixed content).
 | `cells` | which tiers and efforts run, and their layers: `osh9`, `four` (layers by design), `osh9-free`, `four-free` (by measurement), a list of `tier-effort[:layer]`, or a dict cell → layer | `osh9` |
 | `layers` | each layer's minimum loop period in seconds, waited out before the next window | fast 0, middle 20, slow 90 |
 | `labelling` | `local` or `service` (the voices piece's; a stub here) | `local` |
-| `shell` | whose purpose the frame reads (`purpose:<shell>` at pscale 0; when that is not on the beach, `shell:<shell>` at pscale 0 instead) | `keel` |
+| `shell` | whose window the frame carries: the shell's bundle (`shell:<shell>` at 3 by convention, or wherever its form stands; keel's at 5) compiled by the router exactly as the door compiles it when the shell's holder arrives, read once at the run's start; a shell with no bundle, or a router out of reach, leaves the shell's disc at pscale 0 instead, and the header says so | `keel` |
+| `router` | the bsp-mcp router that compiles the shell's bundle, one MCP call over http at the run's start | `https://bsp.hermitcrab.me/mcp/v1` |
 | `injector` | `arm`, `block`, `source` (`beach` or `file`), `file`, `neutral`, `yoke_from` | `walked`, `injector:middle-point`, `beach` |
 | `stop_usd` | the run's hard stop | 10 |
 | `name` | what a person says to name it | `verso` |
@@ -126,6 +127,6 @@ The phone's route: an https page cannot open `ws://` to the Mac (mixed content).
 
 ## Files
 
-`host.py` the socket, the run, the commands, the page over http · `cell.py` the loop and the window · `ledger.py` the ledger · `injector.py` the walk and the arms · `frame.py` the rules of the table and the shell's purpose (or its shell) read once · `door.py` the API door, prices, spend, the dry door · `replay.py` the talk and the feeder · `speak.py` phrases and the stop rule · `record.py` the record of play · `analyse.py` the tables · `synth.py` synthetic transcripts · `settings.json` · `injector-placeholder.json`, `neutral-placeholder.json` · `runs/`.
+`host.py` the socket, the run, the commands, the page over http · `cell.py` the loop and the window · `ledger.py` the ledger · `injector.py` the walk and the arms · `frame.py` the rules of the table and the shell's bundle compiled once through the router (its disc when it keeps none) · `door.py` the API door, prices, spend, the dry door · `replay.py` the talk and the feeder · `speak.py` phrases and the stop rule · `record.py` the record of play · `analyse.py` the tables · `synth.py` synthetic transcripts · `settings.json` · `injector-placeholder.json`, `neutral-placeholder.json` · `runs/`.
 
 Prices in `door.py` (per million tokens, Claude API, November 2026): Opus 5.5 $4 in, $5 cache write, $0.20 cache read, $20 out; Sonnet 5.5 $2, $2.50, $0.20, $10; Haiku 5.5 $0.10, $0.125, $0.01, $0.50. Thinking is adaptive and always on (no `thinking` parameter is sent); depth is `output_config.effort`; the head is cached with `cache_control` on its last block and the cache read share is measured from `usage.cache_read_input_tokens`.

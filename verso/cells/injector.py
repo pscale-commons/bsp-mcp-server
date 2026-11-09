@@ -31,7 +31,7 @@ def head_for(settings):
     """The walk's system blocks: the frame (cached) then 'Reply as asked.'; BARE when injector.head is 'bare'."""
     if settings.get("injector", {}).get("head") == "bare":
         return BARE
-    key = (settings["beach"], settings["shell"], settings.get("line_words"))
+    key = (settings["beach"], settings["shell"], settings.get("line_words"), settings.get("router"))
     if key not in _heads:
         _heads[key] = [{"type": "text", "text": frame_text(*key), "cache_control": {"type": "ephemeral"}},
                        {"type": "text", "text": "Reply as asked."}]

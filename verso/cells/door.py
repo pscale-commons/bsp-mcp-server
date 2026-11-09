@@ -144,7 +144,7 @@ async def dry_call(tier, effort, system_blocks, user_text, max_tokens=600, spend
     if log:
         with open(log, "a") as f:
             f.write(json.dumps(dict(at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), kind=kind, tier=tier, effort=effort,
-                                    requested=f"dry-{tier}", window=user_text, **(meta or {}), **out)) + "\n")
+                                    requested=f"dry-{tier}", system=[b["text"] for b in system_blocks], window=user_text, **(meta or {}), **out)) + "\n")
     return out
 
 

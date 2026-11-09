@@ -37,6 +37,7 @@
   "fallback": false,
   "door": "api",
   "beach": "https://beach.happyseaurchin.com",
+  "router": "https://bsp.hermitcrab.me/mcp/v1",
   "voices_socket": "ws://localhost:8766",
   "port": 8765
 }

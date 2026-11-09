@@ -124,7 +124,7 @@ class Run:
 
     async def enliven(self):
         s = self.s
-        head = frame_text(s["beach"], s["shell"], s.get("line_words"))
+        head = frame_text(s["beach"], s["shell"], s.get("line_words"), s.get("router"))
         import door as _door
         _door.FALLBACK["off"] = bool(s.get("fallback", False))
         with open(os.path.join(self.dir, "frame.txt"), "w") as f:

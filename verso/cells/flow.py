@@ -70,6 +70,13 @@ def cut(text, marks, cls, side):
 
 def shell_label(text):
     first = text.splitlines()[0] if text else ""
+    m = re.match(r"^THE SHELL — (shell:\S+?)(?: (\d))?[:,;]\s*(.*)$", first)
+    if m:
+        name, slot, rest = m.groups()
+        refs = re.search(r"— (\d+) references? compiled", text)
+        if "[bundle @" in text and refs:
+            return f"the shell — {name} {slot}, its bundle of {refs.group(1)} references compiled as the door compiles it"
+        return f"the shell — {name}{' ' + slot if slot else ''}: {rest.strip().rstrip(':')}"[:170]
     n = len(re.findall(r"(?m)^\[", text))
     m = re.search(r"\((purpose:[^\s)]+) is not there.*?; (shell:[^\s)]+) at pscale 0", first)
     if m:
@@ -210,16 +217,21 @@ def build(run_dir):
             if "sys:shell" in by:
                 notes.append("what stood in the shell slot: " + by["sys:shell"]["label"].split(" — ", 1)[-1])
             rows.append(dict(label=f"{cid} · {len(l)} loops at the {layer or '?'} layer — the window as the cell read it, call by call", notes=notes, moments=moments(l, "loop", block)))
+    if rows:    # the document's own notes ride the first row, since the page shows a row's notes under its header
+        rows[0]["notes"] = doc_notes(s, rec, inj) + rows[0]["notes"]
     cells = s.get("cells")
     title = f"verso · {os.path.basename(os.path.abspath(run_dir))} · {cells if isinstance(cells, str) else len(order)} cells on {rec.get('transcript') or 'live'}"
     return dict(flow=1, kind="verso", title=title,
-                meta=dict(source="verso/cells: the door's log of every call, the window as sent (runs/<id>/walk.jsonl and calls.jsonl)",
-                          notes=["Each window is the call as the door sent it: the system blocks, which are the cached head (the run-up the cell walked, then the table and the shell), and the one user message, the fresh tail (the ledger as this cell sees it, the other cells' latest lines, the talk, the now with the floor and the ask). Column heights are the measured prompt tokens, input, cache creation and cache read together; a span's share of the column is by characters. Click a span for its whole text.",
-                                 "The talk's words stand in these windows. The document is written beside the run on the machine that heard them and served by that machine's host alone; to publish it is its keeper's act.",
-                                 " · ".join(f"{k} {s[k]}" for k in ("mode", "threshold", "window", "cells", "shell", "line_words", "talk_seconds", "attention", "half_life", "stop_usd") if k in s)
-                                 + (f" · injector {inj.get('block')} ({inj.get('source')}), arm {inj.get('arm')}" if inj else "")]
-                          + ([f"the run: {rec.get('talk_seconds')} s of talk, {rec.get('landings')} landings, {rec.get('words')} words; thoughts " + ", ".join(f"{k} {v}" for k, v in (rec.get('counts') or {}).items()) + f"; ${(rec.get('spend') or {}).get('total', 0):.4f}"] if rec else [])),
+                meta=dict(source="verso/cells: the door's log of every call, the window as sent (runs/<id>/walk.jsonl and calls.jsonl)", notes=doc_notes(s, rec, inj)),
                 rows=rows)
+
+
+def doc_notes(s, rec, inj):
+    return (["Each window is the call as the door sent it: the system blocks, which are the cached head (the run-up the cell walked, then the table and the shell), and the one user message, the fresh tail (the ledger as this cell sees it, the other cells' latest lines, the talk, the now with the floor and the ask). Column heights are the measured prompt tokens, input, cache creation and cache read together; a span's share of the column is by characters. Click a span for its whole text.",
+             "The talk's words stand in these windows. The document is written beside the run on the machine that heard them and served by that machine's host alone; to publish it is its keeper's act.",
+             " · ".join(f"{k} {s[k]}" for k in ("mode", "threshold", "window", "cells", "shell", "line_words", "talk_seconds", "attention", "half_life", "stop_usd") if k in s)
+             + (f" · injector {inj.get('block')} ({inj.get('source')}), arm {inj.get('arm')}" if inj else "")]
+            + ([f"the run: {rec.get('talk_seconds')} s of talk, {rec.get('landings')} landings, {rec.get('words')} words; thoughts " + ", ".join(f"{k} {v}" for k, v in (rec.get('counts') or {}).items()) + f"; ${(rec.get('spend') or {}).get('total', 0):.4f}"] if rec else []))
 
 
 def write(run_dir):
