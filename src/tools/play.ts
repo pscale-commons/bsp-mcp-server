@@ -50,29 +50,49 @@ import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, membersOnlyLine, t
 /** THE STRATA AT A HOLDER'S DOOR (proposals/2026-11-09-the-orientation-review.md;
  *  David, 9 November: "a clear, effective, efficient way for an LLM to learn how
  *  to read pscale blocks (physics), understand emergence from multiple blocks
- *  (chemistry), and the sequential temporal placement (biology)"). The law has
- *  stood whole at the strata sentinel since 12 August and no door delivered it.
- *  Each level arrives as its operating spindle, every rung whole, and biology's
- *  loop with the clock's ladder. Addresses only: the words are the sentinels'
- *  own, read in-process, so every beach's door carries them at no cost. */
+ *  (chemistry), and the sequential temporal placement (biology)"). Physics and
+ *  chemistry arrive as their operating spindles from the strata sentinel, which
+ *  has stood whole since 12 August and no door delivered. Biology arrives as the
+ *  beach's own WAY OF A THREAD (ways:thread, keel's instructions at biology level,
+ *  written at David's word on 29 October and battery-tested), which is strata 3's
+ *  cycle run on a thread, with the clock's ladder; where a beach keeps no
+ *  ways:thread, strata 3's loop stands in. Every rung whole. Addresses only: the
+ *  words are the blocks' own. */
 export const STRATA_SPINDLES: { block: string; spindle: string }[] = [
   { block: 'strata', spindle: '11111' }, // physics: one block → reading is aperture choice → the probe order
   { block: 'strata', spindle: '21111' }, // chemistry: blocks in company → the two bonds → the fold
-  { block: 'strata', spindle: '311111' }, // biology: the loop → perceptual control → one edit and the fold
-  { block: 'sundial', spindle: '2' }, // the loop placed in time: pscale 0 the beat, the ladder above and below
 ];
+const BIOLOGY_LOOP = { block: 'strata', spindle: '311111' }; // where a beach keeps no ways:thread
+const CLOCK_LADDER = { block: 'sundial', spindle: '2' }; // pscale 0 the beat, the ladder above and below
+/** The way of a thread's steps that ride the door; its provenance at 9 stays a read away. */
+const WAY_STEPS = ['1', '2', '3', '4', '5', '6', '7', '8'];
 
-export function strataSection(): string[] {
+function sentinelWalk(block: string, spindle: string): string[] {
+  const s = SENTINELS.find((x) => x.name === block);
+  return s ? [`── ${block}:${spindle} ──`, formatRead(bspRead(s.json, spindle, null), { onClock: false, wholeRungs: true })] : [];
+}
+
+export function strataSection(waysThread: Block | null = null): string[] {
   const out: string[] = [
-    '═══════════ THE STRATA — how to read all that follows: one block (physics), blocks in company (chemistry), a mind continuing through them in time (biology) ═══════════',
-    'Each level arrives as its operating spindle from bsp(agent_id="pscale", block="strata"), every rung whole; walk a level deeper when the work sits there. A walk prints each rung as d<depth> p<pscale> [address]: pscale = floor − depth, and the address is the number that reaches the rung.',
+    '═══════════ THE STRATA — how to read all that follows: one block (physics), blocks in company (chemistry), a mind continuing through them in time, by threads (biology) ═══════════',
+    'Physics and chemistry arrive as their operating spindles from bsp(agent_id="pscale", block="strata"), biology as this beach\'s way of a thread; every rung whole, and a level walked deeper when the work sits there. A walk prints each rung as d<depth> p<pscale> [address]: pscale = floor − depth, and the address is the number that reaches the rung.',
   ];
-  for (const { block, spindle } of STRATA_SPINDLES) {
-    const s = SENTINELS.find((x) => x.name === block);
-    if (!s) continue;
-    out.push(`── ${block}:${spindle} ──`);
-    out.push(formatRead(bspRead(s.json, spindle, null), { onClock: false, wholeRungs: true }));
+  for (const { block, spindle } of STRATA_SPINDLES) out.push(...sentinelWalk(block, spindle));
+  const way = waysThread && typeof waysThread === 'object' ? (waysThread as Record<string, unknown>) : null;
+  const text = (n: unknown): string | null => {
+    const t = n && typeof n === 'object' ? (n as Record<string, unknown>)['_'] : n;
+    return typeof t === 'string' && t.trim() ? t : null;
+  };
+  const steps = way ? WAY_STEPS.map((k) => [k, text(way[k])] as const).filter(([, t]) => t) : [];
+  if (way && steps.length) {
+    out.push('── ways:thread (this beach\'s way of a thread: strata 3\'s cycle run on a thread; its provenance at 9 is a read away) ──');
+    const root = text(way);
+    if (root) out.push(`  [0]: ${root}`);
+    for (const [k, t] of steps) out.push(`  [${k}]: ${t}`);
+  } else {
+    out.push(...sentinelWalk(BIOLOGY_LOOP.block, BIOLOGY_LOOP.spindle));
   }
+  out.push(...sentinelWalk(CLOCK_LADDER.block, CLOCK_LADDER.spindle));
   return out;
 }
 
@@ -956,7 +976,8 @@ async function handlePlayInner(
   // unless the shell's own bundle already dials them; a character at a table
   // never meets the substrate's physics in its window.
   if (holderDoor && !own.some((o) => o.name.startsWith('strata:'))) {
-    out.push(...strataSection());
+    const way = await read(resolved, 'ways:thread').catch(() => null);
+    out.push(...strataSection(way?.block && typeof way.block === 'object' ? (way.block as Block) : null));
     out.push('');
   }
   out.push(holderDoor
