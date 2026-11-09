@@ -9,7 +9,9 @@
 
 Events from the host: words, floor, mirror, ledger, speak, stop, period, cost, done (and host, the status).
 Events from the page: start ("live" | "replay <run>"), stop, settings (a partial dict), mark, host.
-Nothing is written anywhere but runs/<id>/; a replay never touches the beach's live now.
+Nothing is written anywhere but runs/<id>/; a replay never touches the beach's live now. Beside the run stands its flow
+document — every window each cell read, call by call (flow.py) — served at /flow.json, a past run's at /runs/<id>/flow.json,
+for the page at happyseaurchin.com/mindflow/flow/.
 """
 import argparse, asyncio, json, os, shutil, sys, time
 
@@ -35,7 +37,7 @@ def transcripts():
             names.update(d for d in os.listdir(base) if os.path.exists(os.path.join(base, d, "words.jsonl")))
     return sorted(names)
 
-import injector, record
+import flow, injector, record
 from cell import Cell, MirrorBoard, iso_now
 from door import HardStop, Spend, call, dry_call
 from frame import frame_text
@@ -231,13 +233,23 @@ class Run:
             n += 1
             if n % 10 == 0:
                 self.emit("cost", **self.cost())
+                self.flow()
+
+    def flow(self, final=False):
+        """The flow document beside the run: rewritten when a call has landed since the last, and once more at the end."""
+        try:
+            flow.write(self.dir) if final else flow.write_if_grown(self.dir)
+        except Exception as e:     # a fault here never stops a run
+            print(f"  the flow document was not written ({type(e).__name__}: {e})", flush=True)
 
     # ---- the run
 
     async def go(self):
+        pulse = asyncio.ensure_future(self.pulse())    # from the first call: the walk's windows reach the flow document as they land
         try:
             await self.enliven()
         except (HardStop, RuntimeError) as e:
+            pulse.cancel()
             self.message = str(e)
             print(f"enlivening failed: {e}", flush=True)
             self.emit("done", run=self.id, message=self.message, reason=self.message)
@@ -250,7 +262,6 @@ class Run:
         self.talk.on_floor.append(self.on_floor)
         self.loop_start = time.time()
         cell_tasks = [asyncio.ensure_future(c.run(self.stop)) for c in self.cells]
-        pulse = asyncio.ensure_future(self.pulse())
         if self.what == "replay":
             feeder = asyncio.ensure_future(feed(self.talk, transcript_dir(self.transcript), self.stop, self.until))
         else:
@@ -270,6 +281,7 @@ class Run:
         pulse.cancel()
         self.loop_wall = time.time() - self.loop_start
         path, rec = record.write(self, self.cells, self.marks)
+        self.flow(final=True)
         self.emit("ledger", entries=rec["entries"], counts=rec["counts"], landing=self.talk.landing_count())
         self.emit("cost", **self.cost())
         self.emit("done", run=self.id, record=os.path.relpath(path, HERE), usd=round(self.spend.total, 4), message=self.message,
@@ -416,16 +428,30 @@ class Host:
         types = {".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml"}
 
         def process_request(connection, request):
-            """A plain http GET for a file of the page's folder; anything else is the WebSocket."""
-            if page_dir is None or "upgrade" in request.headers.get("Connection", "").lower():
+            """A plain http GET: the run's flow document at /flow.json (a past run's at /runs/<id>/flow.json), or a file of the
+            page's folder (a folder's / is its index.html, so mindflow/flow/ serves too); anything else is the WebSocket."""
+            if "upgrade" in request.headers.get("Connection", "").lower():
                 return None
             path = request.path.split("?")[0]
-            name = "verso.html" if path in ("/", "/verso", "/verso.html") else path.lstrip("/")
-            full = os.path.realpath(os.path.join(page_dir, name))
-            if not full.startswith(os.path.realpath(page_dir) + os.sep) or not os.path.isfile(full):
+            if path == "/flow.json":
+                full = os.path.join(self.run.dir, "flow.json") if self.run else ""
+            elif path.startswith("/runs/"):
+                full = os.path.realpath(os.path.join(RUNS, path[len("/runs/"):]))
+                if not full.startswith(os.path.realpath(RUNS) + os.sep):
+                    full = ""
+            elif page_dir is None:
+                return None
+            else:
+                name = "verso.html" if path in ("/", "/verso", "/verso.html") else path.lstrip("/") + ("index.html" if path.endswith("/") else "")
+                full = os.path.realpath(os.path.join(page_dir, name))
+                if not full.startswith(os.path.realpath(page_dir) + os.sep):
+                    full = ""
+            if not full or not os.path.isfile(full):
                 return Response(404, "Not Found", Headers([("Content-Type", "text/plain")]), b"not here\n")
             body = open(full, "rb").read()
-            return Response(200, "OK", Headers([("Content-Type", types.get(os.path.splitext(full)[1], "application/octet-stream")), ("Content-Length", str(len(body)))]), body)
+            headers = [("Content-Type", types.get(os.path.splitext(full)[1], "application/octet-stream")), ("Content-Length", str(len(body))),
+                       ("Cache-Control", "no-store"), ("Access-Control-Allow-Origin", "*")]   # the site's own mindflow/flow/ may read /flow.json from this Mac
+            return Response(200, "OK", Headers(headers), body)
 
         bind = "0.0.0.0" if page_dir else "localhost"
         async with websockets.serve(self.handler, bind, port, process_request=process_request):
@@ -459,7 +485,7 @@ def main():
     ap.add_argument("--id", help="the run's label under runs/")
     ap.add_argument("--yoke-from", help="runs/<walk run> whose spindles the yoked arm is handed")
     ap.add_argument("--until", type=float, help="replay only the first N seconds of the talk (for tests)")
-    ap.add_argument("--page", metavar="DIR", help="also serve verso.html (and theme.css, theme.js) from DIR over plain http on the same port, for the phone")
+    ap.add_argument("--page", metavar="DIR", help="also serve the page's folder from DIR over plain http on the same port, for the phone: verso.html, and mindflow/flow/ to see what each cell read")
     ap.add_argument("--set", action="append", default=[], metavar="KEY=JSON", help="any setting, e.g. threshold=2 or injector.arm=none")
     a = ap.parse_args()
     sets = list(a.set)
