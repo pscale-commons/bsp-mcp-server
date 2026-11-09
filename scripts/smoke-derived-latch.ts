@@ -2,7 +2,9 @@
  * smoke-derived-latch.ts — THE DERIVED LATCH AT THE ROUTER (proposals/2026-11-05-the-derived-latch.md
  * §9: the cells L3, L4, L5, L13, L14 and L15, and the proof behind a wall). One word, two keys: where a
  * hand's passport says "latch: derived" at 9.3 and the string derives its halves, the router sends the
- * beach the latch derived from the word (src/latch.ts), never the word.
+ * beach the latch derived from the word (src/latch.ts), never the word. Then the doors' second walk's two
+ * router faults (proposals/2026-11-09-the-doors-battery-second-walk.md 6.1, 6.2): a session that read a
+ * passport before its holder switched at the voice, and the key guard before a stream mirror is born.
  *
  * Runs the REAL beach handler offline — two local beaches from pscale-beach's scripts/local-beach.mjs,
  * one open with the wrong-key cap at three an hour and one a members' beach — and drives this tree's
@@ -53,6 +55,7 @@ function beach(port: number, base: string, env: Record<string, string>): { proc:
 
 // Throwaway words, made for this run.
 const W_ADA = 'rowan-pier-swallow-plover-41', W_BOB = 'flint-harbour-lotus-77', W_CY = 'cedar-lamp-quiet-river-12', W_DEE = 'birch-cove-ember-58';
+const W_EVE = 'heron-slate-meadow-33', W_FIN = 'kelp-orchard-lantern-64', W_GUS = 'moss-anvil-tide-29', W_HAL = 'quill-dune-harrow-85';
 const PROJECT = 'a-shared-project-lock-for-the-smoke', OTHER = 'a-delegated-latch-for-the-smoke';
 
 async function main() {
@@ -168,6 +171,91 @@ async function main() {
     ok('a later session proves at once in the form that worked', /a pass for cy/.test(t), t);
     t = await g('days:dee', W_DEE, 'g3');
     ok("an unswitched member proves with the word, after the derived latch is refused", /a pass for dee/.test(t) && /dee days/.test(t), t);
+
+    // ── the doors' second walk, 6.1: a session older than a switch made at the voice ──
+    // eve, fin and gus switch by the beach's own writes, as the voice's switch makes them: the marker
+    // under the word, the roots rotated onto the derived latch, the marker swept. No router switch runs,
+    // so no session here forgets its read of their passports. A tap on fetch counts what the router sends.
+    const { markerText } = await import('../src/latch.js');
+    const tap: Array<{ method: string; block: string; status: number; secret?: string }> = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: any, init: any = {}) => {
+      const r = await realFetch(input, init);
+      try {
+        let secret: string | undefined;
+        try { secret = JSON.parse(init.body ?? 'null')?.secret; } catch { /* not JSON */ }
+        tap.push({ method: String(init.method ?? 'GET').toUpperCase(), block: new URL(String(input)).searchParams.get('block') ?? '', status: r.status, secret });
+      } catch { /* not a beach call */ }
+      return r;
+    }) as typeof fetch;
+    const sent = (block: string, method: string) => tap.filter((x) => x.block === block && x.method === method);
+    const T = '2026-11-09T17:00:00Z';
+    const latchOf: Record<string, string> = {};
+    for (const [h, w] of [['eve', W_EVE], ['fin', W_FIN], ['gus', W_GUS]]) {
+      latchOf[h] = await deriveLatch(w, h);
+      await at(`passport:${h}`, { content: { _: h.toUpperCase(), 9: publicKeysToSpine(formatPublicKeys(await deriveKeypair(w, h))) }, new_lock: w });
+      await at(`now:${h}`, { content: { _: `${h} now` }, new_lock: w });
+    }
+    const atTheVoice = async (h: string, w: string) => [
+      await post(OPEN, `passport:${h}`, { spindle: '9.3', content: markerText(h, T), secret: w }),
+      await post(OPEN, `passport:${h}`, { secret: w, new_lock: latchOf[h] }),
+      await post(OPEN, `now:${h}`, { secret: w, new_lock: latchOf[h] }),
+      await post(OPEN, `passport:${h}`, { spindle: '9.3', content: markerText(h, T, T), secret: latchOf[h] }),
+    ].every((x) => x.status === 200);
+    const form = (xs: typeof tap, h: string, w: string) => xs.map((x) => `${x.status} ${x.secret === w ? 'word' : x.secret === latchOf[h] ? 'latch' : 'other'}`).join(', ');
+
+    console.log('\nL11 · a session that read the passport before a switch at the voice (the second walk, 6.1)');
+    t = await bsp({ block: 'now:eve', spindle: '1', content: 'before the switch', secret: W_EVE }, 'eve-old');
+    ok("eve-old writes with eve's word before any switch, reading her passport", (await get(OPEN, 'now:eve'))?.['1'] === 'before the switch', t);
+    ok('eve switches at the voice: the marker, the roots onto the derived latch, swept', await atTheVoice('eve', W_EVE));
+    tap.length = 0;
+    t = await bsp({ block: 'now:eve', spindle: '2', content: 'after a switch elsewhere', secret: W_EVE }, 'eve-old');
+    const ePosts = sent('now:eve', 'POST');
+    ok('eve-old sends the word once and meets one refusal', ePosts.length === 2 && ePosts[0].status === 403 && ePosts[0].secret === W_EVE, form(ePosts, 'eve', W_EVE));
+    ok('…reads the passport once more', sent('passport:eve', 'GET').length === 1, String(sent('passport:eve', 'GET').length));
+    ok('…and the write lands under the derived latch', ePosts[1]?.status === 200 && ePosts[1]?.secret === latchOf.eve && (await get(OPEN, 'now:eve'))?.['2'] === 'after a switch elsewhere', t);
+    ok('…with no word of a host that lies, and no key in the reply', !/no longer says/.test(t) && !t.includes(W_EVE) && !t.includes(latchOf.eve), t);
+    tap.length = 0;
+    t = await bsp({ block: 'now:eve', spindle: '3', content: 'and on', secret: W_EVE }, 'eve-old');
+    ok('its next write goes in the new form at once', form(sent('now:eve', 'POST'), 'eve', W_EVE) === '200 latch' && sent('passport:eve', 'GET').length === 0, form(sent('now:eve', 'POST'), 'eve', W_EVE));
+
+    console.log('\n…the same, once this process has seen the switch in another session');
+    t = await bsp({ block: 'now:fin', spindle: '1', content: 'before the switch', secret: W_FIN }, 'fin-old');
+    ok("fin-old writes with fin's word before any switch, reading his passport", (await get(OPEN, 'now:fin'))?.['1'] === 'before the switch', t);
+    ok('fin switches at the voice', await atTheVoice('fin', W_FIN));
+    t = await bsp({ block: 'now:fin', spindle: '2', content: 'a session after the switch', secret: W_FIN }, 'fin-new');
+    ok('a session that reads after the switch writes under the derived latch, so the process holds fin switched', (await get(OPEN, 'now:fin'))?.['2'] === 'a session after the switch', t);
+    tap.length = 0;
+    t = await bsp({ block: 'now:fin', spindle: '3', content: 'the older session again', secret: W_FIN }, 'fin-old');
+    ok('fin-old reads the passport once more before it doubts the beach', sent('passport:fin', 'GET').length === 1, String(sent('passport:fin', 'GET').length));
+    ok('…and its write lands under the derived latch, with no refusal and no word of a host that lies', form(sent('now:fin', 'POST'), 'fin', W_FIN) === '200 latch' && (await get(OPEN, 'now:fin'))?.['3'] === 'the older session again' && !/no longer says/.test(t), `${form(sent('now:fin', 'POST'), 'fin', W_FIN)} — ${t}`);
+
+    console.log('\n…and a fresh read that truly lacks the marker is still a host that lies (L15)');
+    await bsp({ block: 'now:gus', spindle: '1', content: 'before the switch', secret: W_GUS }, 'gus-old');
+    ok('gus switches at the voice', await atTheVoice('gus', W_GUS));
+    await bsp({ block: 'now:gus', spindle: '2', content: 'a session after the switch', secret: W_GUS }, 'gus-new');
+    ok('a session after the switch writes, so the process holds gus switched', (await get(OPEN, 'now:gus'))?.['2'] === 'a session after the switch');
+    ok("the host strips 9.3 from gus's passport", (await post(OPEN, 'passport:gus', { spindle: '9', content: publicKeysToSpine(formatPublicKeys(await deriveKeypair(W_GUS, 'gus'))), secret: latchOf.gus })).status === 200);
+    tap.length = 0;
+    t = await bsp({ block: 'now:gus', spindle: '3', content: 'told a lie', secret: W_GUS }, 'gus-old');
+    ok('gus-old reads the passport once more, finds no marker, and refuses with the words for a host that lies', sent('passport:gus', 'GET').length === 1 && /no longer says gus's key is derived/.test(t) && /nothing was sent/.test(t), t);
+    ok('…and nothing was sent', sent('now:gus', 'POST').length === 0 && (await get(OPEN, 'now:gus'))?.['3'] === undefined);
+    globalThis.fetch = realFetch;
+
+    // ── the doors' second walk, 6.2: the key guard before a mirror is born ──
+    console.log('\nthe key guard meets a say before its mirror is born (the second walk, 6.2)');
+    await at('spine:probe-say', { content: { _: 'a probe family for the guard', 1: 'one' } });
+    const { handleStreamEngage } = await import('../src/tools/stream.js');
+    const engage = async (p: any) => text(await handleStreamEngage({ field: 'probe-say', beach: OPEN, at: '1', handle: 'hal', secret: W_HAL, ...p } as any, { sessionId: 'hal' }));
+    t = await engage({ say: `my word is ${W_HAL}` });
+    ok('a say carrying its own key is refused before sending, and the refusal holds no key', /refused before sending/.test(t) && !t.includes(W_HAL), t);
+    ok("…and hal's mirror was never born", (await get(OPEN, 'probe-say:hal')) === null);
+    t = await engage({ say: 'a plain line', options: [`take ${W_HAL}`] });
+    ok('an option carrying it is refused the same way, and still no mirror', /refused before sending/.test(t) && (await get(OPEN, 'probe-say:hal')) === null, t);
+    t = await engage({ keep: 'personal', keep_text: `a fold naming ${W_HAL}` });
+    ok('a keep carrying it is refused, and no tree is born for it', /refused before sending/.test(t) && (await get(OPEN, 'tree:probe-say:hal')) === null, t);
+    t = await engage({ say: 'a plain line' });
+    ok("a clean say founds hal's mirror latched to the key, and lands", (await get(OPEN, 'probe-say:hal'))?.['1'] === 'a plain line' && (await post(OPEN, 'probe-say:hal', { spindle: '1', content: 'someone else' })).status === 403, t);
   } finally {
     for (const b of [open, gated]) { b.proc.kill(); rmSync(b.dir, { recursive: true, force: true }); }
   }
