@@ -1280,7 +1280,10 @@ addEventListener('pointerdown', (e) => {
 
 drawEmpty('reading the water…');
 refresh();
-if (!window.SHORE_SNAPSHOT) setInterval(refresh, REFRESH_MS);
+if (!window.SHORE_SNAPSHOT) {
+  setInterval(() => { if (!document.hidden) refresh(); }, REFRESH_MS);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+}
 </script>
 </body>
 </html>
