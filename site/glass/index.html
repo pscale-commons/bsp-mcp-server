@@ -533,7 +533,8 @@ async function readReflection() {
     document.getElementById('liveCount').textContent = 'the reflection is out of reach';
   }
 }
-readReflection(); setInterval(readReflection, 10000);
+readReflection(); setInterval(() => { if (!document.hidden) readReflection(); }, 10000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) readReflection(); });
 
 // ── the shell: passport, now, intention, the last wake ────────────────────
 async function readShell() {
@@ -826,8 +827,9 @@ async function openPerson(handle) {
 organs();
 readShell(); readIntention(); readLastWake();
 readClock(); readRoom(); readLiquid(); readShore();
-setInterval(() => { readRoom(); readLiquid(); }, 45000);
-setInterval(readClock, 120000);
+setInterval(() => { if (!document.hidden) { readRoom(); readLiquid(); } }, 45000);
+setInterval(() => { if (!document.hidden) readClock(); }, 120000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { readClock(); readRoom(); readLiquid(); } });
 })();
 </script>
 </body>
