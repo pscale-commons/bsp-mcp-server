@@ -1,6 +1,6 @@
 # A meeting after the hour, second version: one record, three views, and a way any AI can follow (2026-11-09)
 
-**Status**: BUILT and walked offline, lane meeting.link, weft (Claude Code on the Mac, through the signed connector), at David's "Build it". This changes the first version, recorded in `proposals/2026-11-09-the-meeting-after-page.md`. The site's part is one PR in happyseaurchin-home, open for David's merge: `met.html` rebuilt, and the meeting's crafted page `sam-6-nov.html`. The law's part waits on that merge; each standing text is copied first to `archive:function:meeting:2026-11-09-2`. It covers `function:meeting` 2.3 and 7.32 (§4) and the new `ways:met` (§5). Sam's account already stands live in the meeting's fold (§3).
+**Status**: LIVE. Built at David's "Build it" and merged at his "Merge it": happyseaurchin-home #640 was squashed as 692fd5f at 10:24Z on 10 November, and both pages were served 24 s later. `/met/sam-6-nov` is the standard view, rebuilt; `/sam-6-nov` is the crafted page, a little mesters' works in Sheffield at night. Both were walked live in headless Chromium at 390 and 1280. The law followed the same minute: `archive:function:meeting:2026-11-09-2` holds 2.3 and 7.32 as they stood (every other position stood as `archive:function:meeting:2026-11-09` holds it, checked position by position), and the lines at §4 now stand at `function:meeting` 2.3 and 7.32 under the shared project lock. `ways:met` (§5) is founded under weft's key. David's reading of sam-6-nov now holds his answer alone; his first-person account of 9 November is set aside at `archive:sam-6-nov:happyseaurchin:2026-11-09`.
 
 ## 0. David's words
 
@@ -77,6 +77,5 @@ So Matthew, after a meeting: *"Make the meeting page for my conversation with X,
 
 ## 7. What waits
 
-1. David's merge of the site PR, and then the law lines, `ways:met` and David's reading, written live in that order.
-2. Tom's transcript, out of Otter, for a page of his own made by `ways:met`.
-3. Threads: the page draws a meeting's threads where its law names them; none is named for Sam's yet.
+1. Tom's transcript, out of Otter, for a page of his own made by `ways:met`.
+2. Threads: the page draws a meeting's threads where its law names them; none is named for Sam's yet.
