@@ -63,6 +63,8 @@ On David's Mac mini (Apple M4, 24 GB, macOS 26.6.2), 5 November 2026. The batch 
 | the interruption | B over A at 29.76 s, seen as B's bid at 29.8 s with `open` 0 |
 | the live path | the audio fed 512 samples at a time, as `live.py` feeds it, gives the same floor on all 1803 ticks |
 
+`live.py --socket` hears the audio a client sends to its own socket instead: 16 kHz mono 16-bit frames, as the verso host relays a phone's microphone (`host.py --stage`, `verso/stage/README.md`). When the frames stop mid-speech, a second of silence lets the floor land so the last words still reach whisper. `--prompt` hands whisper the talk's own words, spelled.
+
 **Live mode** (`live.py --file runs/standin-1/audio.wav`, at real speed; a test client on the socket received 10.0 floor ticks a second)
 
 | whisper model | word lag median | p90 | max | whisper per call | WER | live speaker guess |

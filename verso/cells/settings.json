@@ -38,5 +38,9 @@
   "door": "api",
   "beach": "https://beach.happyseaurchin.com",
   "voices_socket": "ws://localhost:8766",
-  "port": 8765
+  "port": 8765,
+  "stage_usd": 1.0,
+  "stage_catalogue": "https://happyseaurchin.com/mindflow/live/catalogue.json",
+  "stage_port": 8767,
+  "stage_voices_socket": "ws://localhost:8768"
 }
