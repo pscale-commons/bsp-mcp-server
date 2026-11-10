@@ -11,6 +11,7 @@ The record that fixes the assembly, its seams and its settings is `proposals/202
 | voices | `verso/voices/` | whisper and pyannote on the Mac for words with their times and speakers; the floor from the audio (Silero VAD); a stand-in of scripted voices; a live mode from the microphone |
 | cells | `verso/cells/` | nine cells on direct API calls, the head cached and the live talk last; the ledger of the unsaid; the injector walk in four arms; the replay; the record of play; one WebSocket for the page |
 | page | `verso.html` in happyseaurchin-home | one button, the settings as sliders and toggles, the score, the judges' marks, the voice out as the group page's narrator; a demo with no host |
+| stage | `verso/stage/` | a talk given far from the Mac: the phone's ear through the tunnel to whisper, a chooser of films (keywords and Haiku), the screens at `mindflow/live` in happyseaurchin-home; no cells, nothing speaks |
 
 The seams are the JSONL shapes in the record's section 3: `words.jsonl` and `floor.jsonl` from the voices, `mirror-<cell>.jsonl` per cell, and the events over `ws://localhost:8765` between host and page.
 

@@ -34,15 +34,16 @@ def clean(text: str) -> list:
     return re.sub(r"[^\w\s]|_", " ", text).split()
 
 
-def transcribe(audio, model: str = MODEL, language: str | None = "en", offset: float = 0.0) -> list:
+def transcribe(audio, model: str = MODEL, language: str | None = "en", offset: float = 0.0, prompt: str | None = None) -> list:
     """[{"t0", "t1", "w"}] from whisper's word timestamps; a word whisper hyphenated
-    or spaced shares its span among its parts by length."""
+    or spaced shares its span among its parts by length. A prompt (the talk's own words, spelled) steers
+    whisper toward spellings it would not guess, such as pscale."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         import mlx_whisper
         r = mlx_whisper.transcribe(audio, path_or_hf_repo=model, language=language, word_timestamps=True,
                                    condition_on_previous_text=False, hallucination_silence_threshold=2.0,
-                                   verbose=None)
+                                   initial_prompt=prompt, verbose=None)
     out = []
     for seg in r["segments"]:
         for w in seg.get("words", []):

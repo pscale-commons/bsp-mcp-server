@@ -4,6 +4,8 @@
   python live.py                          the Mac's default microphone
   python live.py --device 1               another input (python -m sounddevice lists them)
   python live.py --file runs/x/audio.wav  a file fed at real speed, as if heard
+  python live.py --socket                 the audio sent to this socket: 16 kHz mono 16-bit frames, as
+                                          the verso host relays a phone's microphone (host.py --stage)
 
 Serves ws://localhost:8766. Every message is one JSON line in the shape of a
 floor.jsonl line ({"t", "open", "landed", "bid"}: ten a second, live) or of a
@@ -104,6 +106,7 @@ class Live:
         self.n_ticks = self.n_words = 0
         self.ready, self.done, self.halt = threading.Event(), threading.Event(), threading.Event()
         self.out = None
+        self.carry, self.heard_at = np.zeros(0, np.float32), None   # --socket: the part-block in hand, the last arrival
 
     # ---- the floor, frame by frame -------------------------------------------------
     def listen(self) -> None:
@@ -165,7 +168,7 @@ class Live:
                 t1, regs = nxt[1], regs + nxt[2]
             began = time.time()
             audio = self.ring.read(t0, t1)
-            words = label.snap(label.voiced(label.transcribe(audio, a.model, a.language, offset=t0), regs), regs)
+            words = label.snap(label.voiced(label.transcribe(audio, a.model, a.language, offset=t0, prompt=a.prompt), regs), regs)
             turns = []
             if who and words:
                 for x, y in merge(regs, 0.25):
@@ -248,6 +251,26 @@ class Live:
         return sd.InputStream(samplerate=SR, channels=1, dtype="float32", blocksize=HOP,
                               device=self.args.device, callback=heard)
 
+    def hear(self, data: bytes) -> None:
+        """--socket: a frame of 16-bit samples, cut into the floor's blocks; a part-block waits for the next frame."""
+        x = np.frombuffer(data[: len(data) // 2 * 2], "<i2").astype(np.float32) / 32768.0
+        self.carry = np.concatenate([self.carry, x])
+        n = len(self.carry) // HOP * HOP
+        for i in range(0, n, HOP):
+            self.blocks.put(self.carry[i:i + HOP])
+        self.carry = self.carry[n:]
+        self.heard_at = time.monotonic()
+
+    async def hush(self) -> None:
+        """--socket: when the frames stop mid-speech (the phone stopped, or its network did), a second of silence
+        lets the floor land, so the last words still reach whisper."""
+        while True:
+            await asyncio.sleep(0.5)
+            if self.heard_at and time.monotonic() - self.heard_at > 1.0 and self.stream.speaking:
+                self.heard_at = None
+                for _ in range(int(1.2 * SR / HOP)):
+                    self.blocks.put(np.zeros(HOP, np.float32))
+
     # ---- the whole ----------------------------------------------------------------
     async def serve(self) -> None:
         from websockets.asyncio.server import serve
@@ -255,10 +278,14 @@ class Live:
         async def handler(ws):
             self.clients.add(ws)
             try:
-                await ws.wait_closed()
+                async for msg in ws:                # only --socket listens to what a client sends
+                    if self.args.socket and isinstance(msg, bytes):
+                        self.hear(msg)
             finally:
                 self.clients.discard(ws)
         async with serve(handler, "localhost", self.args.port):
+            if self.args.socket:
+                asyncio.ensure_future(self.hush())
             await self.stopping
 
     def run(self) -> None:
@@ -283,6 +310,9 @@ class Live:
         if a.file:
             threading.Thread(target=self.feed_file, args=(a.file, a.speed), daemon=True).start()
             print(f"feeding {a.file} at {a.speed}x; ws://localhost:{a.port}", file=sys.stderr)
+        elif a.socket:
+            print(f"hearing the audio sent to ws://localhost:{a.port} (host.py --stage relays the phone); ctrl-c to stop",
+                  file=sys.stderr)
         else:
             mic = self.mic()
             mic.start()
@@ -326,9 +356,12 @@ def main() -> None:
     ap.add_argument("--file", type=Path, help="feed this audio at real speed instead of the microphone")
     ap.add_argument("--speed", type=float, default=1.0, help="with --file: faster than real time")
     ap.add_argument("--device", help="input device number or name (python -m sounddevice)")
+    ap.add_argument("--socket", action="store_true",
+                    help="hear the 16 kHz mono 16-bit frames sent to this socket (host.py --stage relays a phone's)")
     ap.add_argument("--port", type=int, default=PORT)
     ap.add_argument("--model", default=label.MODEL, help="e.g. mlx-community/whisper-small.en-mlx for less lag")
     ap.add_argument("--language", default="en")
+    ap.add_argument("--prompt", help="words whisper should expect, spelled, e.g. 'pscale, hermitcrab, stigmergy'")
     ap.add_argument("--stretch-s", type=float, default=STRETCH_S, help="longest stretch sent to whisper, s")
     ap.add_argument("--landing", type=float, default=floor.LANDING_S, help="pause that judges a turn ended, s")
     ap.add_argument("--open-s", type=float, default=floor.OPEN_S, help="pause that opens the floor fully, s")

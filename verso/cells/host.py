@@ -6,6 +6,11 @@
           [--stop-usd n] [--id label] [--door api|dry] [--yoke-from runs/<walk>] [--set key=json ...]
   host.py --no-page --live                  the voices piece's socket (settings.voices_socket), when it is up
   host.py --walk [--cells ...] [--source beach|file] [--block name] [--id label] [--door api|dry]
+  host.py --stage [--catalogue url|path]    a talk's stage: the phone's ear to live.py --socket, the films to the
+                                            screens, and no cells (stage.py)
+
+Through a tunnel (a request carrying Cloudflare's cf-connecting-ip) the host answers only in --stage: elsewhere a run's
+records and its start stay on this Mac.
 
 Events from the host: words, floor, mirror, ledger, speak, stop, period, cost, done (and host, the status).
 Events from the page: start ("live" | "replay <run>"), stop, settings (a partial dict), mark, host.
@@ -310,12 +315,18 @@ class Run:
         self.talk.done = True
 
 
+def remote(headers):
+    """A request that came through the Cloudflare tunnel, not from this Mac."""
+    return bool(headers.get("cf-connecting-ip") or headers.get("cf-ray"))
+
+
 class Host:
     def __init__(self, settings):
         self.s = settings
         self.conns = set()
         self.run = None
         self.task = None
+        self.stage = None
 
     def emit(self, event, **kw):
         if not self.conns:
@@ -372,15 +383,24 @@ class Host:
             self.run.stop.set()
 
     async def handler(self, ws):
+        if remote(ws.request.headers) and not self.stage:
+            await ws.close(1008, "this host answers through the tunnel only as a stage")
+            return
         self.conns.add(ws)
         try:
-            await ws.send(json.dumps(self.status(), default=str))
+            await ws.send(json.dumps(self.stage.hello() if self.stage else self.status(), default=str))
             async for raw in ws:
+                if self.stage and isinstance(raw, bytes):
+                    await self.stage.audio(ws, raw)
+                    continue
                 try:
                     m = json.loads(raw)
                 except Exception:
                     continue
                 ev = m.get("type") or m.get("event") or m.get("kind")
+                if self.stage:                       # a stage starts no run and takes no settings: nothing speaks
+                    await self.stage.on(ws, ev, m)
+                    continue
                 if ev == "start":
                     if "settings" in m and not (self.task and not self.task.done()):
                         self.adopt(m["settings"])
@@ -419,6 +439,8 @@ class Host:
                     await ws.send(json.dumps(self.status(), default=str))
         finally:
             self.conns.discard(ws)
+            if self.stage:
+                self.stage.gone(ws)
 
     async def serve(self, page_dir=None):
         import websockets
@@ -430,9 +452,15 @@ class Host:
         def process_request(connection, request):
             """A plain http GET: the run's flow document at /flow.json (a past run's at /runs/<id>/flow.json), or a file of the
             page's folder (a folder's / is its index.html, so mindflow/flow/ serves too); anything else is the WebSocket."""
+            if remote(request.headers) and not self.stage:
+                return Response(404, "Not Found", Headers([("Content-Type", "text/plain")]), b"not here\n")
             if "upgrade" in request.headers.get("Connection", "").lower():
                 return None
             path = request.path.split("?")[0]
+            if self.stage:                           # a stage serves its page and nothing of the runs
+                path = "/phone.html" if path == "/" else path
+                if path == "/flow.json" or path.startswith("/runs/"):
+                    path = "/not-here"
             if path == "/flow.json":
                 full = os.path.join(self.run.dir, "flow.json") if self.run else ""
             elif path.startswith("/runs/"):
@@ -453,7 +481,7 @@ class Host:
                        ("Cache-Control", "no-store"), ("Access-Control-Allow-Origin", "*")]   # the site's own mindflow/flow/ may read /flow.json from this Mac
             return Response(200, "OK", Headers(headers), body)
 
-        bind = "0.0.0.0" if page_dir else "localhost"
+        bind = "0.0.0.0" if page_dir and not self.stage else "localhost"   # a stage is reached through the tunnel
         async with websockets.serve(self.handler, bind, port, process_request=process_request):
             print(f"verso host at ws://{'<this mac>' if page_dir else 'localhost'}:{port}; waiting for the page's start"
                   + (f"; serving the page from {page_dir} over http on the same port" if page_dir else ""), flush=True)
@@ -487,6 +515,8 @@ def main():
     ap.add_argument("--until", type=float, help="replay only the first N seconds of the talk (for tests)")
     ap.add_argument("--page", metavar="DIR", help="also serve the page's folder from DIR over plain http on the same port, for the phone: verso.html, and mindflow/flow/ to see what each cell read")
     ap.add_argument("--set", action="append", default=[], metavar="KEY=JSON", help="any setting, e.g. threshold=2 or injector.arm=none")
+    ap.add_argument("--stage", action="store_true", help="a talk's stage: the phone's ear in, the films out, no cells (stage.py)")
+    ap.add_argument("--catalogue", help="with --stage: the screen's catalogue.json, a URL or a path")
     a = ap.parse_args()
     sets = list(a.set)
     if a.cells:
@@ -501,9 +531,20 @@ def main():
         sets.append(f"door={a.door}")
     if a.stop_usd is not None:
         sets.append(f"stop_usd={a.stop_usd}")
+    if a.catalogue:
+        sets.append(f"stage_catalogue={a.catalogue}")
     s = load_settings(sets)
     os.makedirs(RUNS, exist_ok=True)
-    if a.walk:
+    if a.stage:
+        from stage import Stage
+        s["port"], s["voices_socket"] = s["stage_port"], s["stage_voices_socket"]   # its own ports: a Verso run may hold the others
+        host = Host(s)
+
+        async def stage():
+            host.stage = Stage(host, s)
+            await asyncio.gather(host.serve(a.page or os.path.join(HERE, "..", "stage")), host.stage.run())
+        asyncio.run(stage())
+    elif a.walk:
         asyncio.run(walk_alone(s, a.id))
     elif a.replay or a.live:
         host = Host(s)

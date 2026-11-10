@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Verso stage</title>
+  <style>
+    :root { --bg: #0a0a0f; --panel: #12121c; --line: #2a2a3e; --ink: #d0d0e0; --dim: #8888a0; --live: #e04060; --ok: #7ebc8a; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, 'Helvetica Neue', sans-serif; padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); }
+    header { display: flex; justify-content: space-between; align-items: baseline; color: var(--dim); font-size: 13px; margin-bottom: 14px; }
+    header b { color: var(--ink); font-weight: 600; font-size: 15px; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #444455; margin-right: 6px; vertical-align: 1px; }
+    .dot.ok { background: var(--ok); } .dot.bad { background: var(--live); }
+    #go { display: block; width: 100%; min-height: 150px; border-radius: 18px; border: 2px solid var(--line); background: var(--panel); color: var(--ink);
+          font: 600 24px/1.2 -apple-system, sans-serif; margin-bottom: 10px; }
+    #go.live { border-color: var(--live); color: #fff; background: #2a1018; }
+    #go.paused { border-color: #f4c873; background: #2a2410; }
+    #go:disabled { opacity: 0.4; }
+    #go small { display: block; font-weight: 400; font-size: 14px; color: var(--dim); margin-top: 8px; }
+    #meter { height: 6px; border-radius: 3px; background: var(--panel); overflow: hidden; margin-bottom: 14px; }
+    #meter i { display: block; height: 100%; width: 0; background: var(--ok); transition: width 0.1s linear; }
+    .line { font-size: 14px; color: var(--dim); margin: 6px 0; min-height: 1.45em; }
+    .line span { color: var(--ink); }
+    #note { font-size: 13px; color: #c8a47b; margin: 10px 0 16px; }
+    h2 { font-size: 13px; font-weight: 600; color: var(--dim); letter-spacing: 0.04em; text-transform: uppercase; margin: 18px 0 8px; }
+    #films { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    #films button, .wide { min-height: 52px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 14px; padding: 6px 8px; }
+    #films button.picked { border-color: var(--ok); color: #fff; }
+    .wide { width: 100%; margin-top: 8px; }
+    #films button:disabled, .wide:disabled { opacity: 0.4; }
+    #word { display: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+    #word p { font-size: 14px; color: var(--dim); margin-bottom: 10px; }
+    #word input { width: 100%; font-size: 18px; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); margin-bottom: 10px; }
+    #word button { width: 100%; min-height: 46px; border-radius: 8px; border: 1px solid var(--ok); background: #14241a; color: var(--ink); font-size: 16px; }
+  </style>
+</head>
+<body>
+  <header><b>Verso stage</b><span><i class="dot" id="link"></i><span id="linktext">connecting</span></span></header>
+
+  <div id="word">
+    <p id="wordtext">This stage needs its word.</p>
+    <input id="wordin" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="stage word">
+    <button id="wordgo">Go</button>
+  </div>
+
+  <button id="go" disabled>Start listening<small>the Mac hears through this phone</small></button>
+  <div id="meter"><i></i></div>
+  <div class="line">Heard: <span id="heard">–</span></div>
+  <div class="line">Screen: <span id="screen">–</span></div>
+  <div class="line">Haiku: <span id="spend">–</span></div>
+  <div id="note">Keep this page in front and the screen on: an iPhone cuts the microphone when the page is in the background.</div>
+
+  <h2>Show a film now</h2>
+  <div id="films"></div>
+  <button class="wide" id="words" disabled>Words only</button>
+  <button class="wide" id="auto" disabled>Back to the chooser</button>
+
+<script>
+const $ = id => document.getElementById(id);
+const WORD_KEY = 'verso-stage-word';
+let ws = null, ok = false, delay = 1000;
+let stream = null, ctx = null, node = null, lock = null, listening = false;
+let films = {};
+
+// ── the socket ───────────────────────────────────────────
+
+function link(state, text) { $('link').className = 'dot ' + state; $('linktext').textContent = text; }
+
+function connect() {
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/');
+  ws.binaryType = 'arraybuffer';
+  ws.onopen = () => { delay = 1000; link('ok', 'connected'); const w = localStorage.getItem(WORD_KEY); if (w) prove(w); };
+  ws.onmessage = e => {
+    let m; try { m = JSON.parse(e.data); } catch (err) { return; }
+    const kind = m.type || m.event;
+    if (kind === 'stage') stage(m);
+    else if (kind === 'phone') proved(m);
+    else if (kind === 'heard') $('heard').textContent = m.text;
+    else if (kind === 'film') screen(m);
+    else if (kind === 'spend') $('spend').textContent = `$${m.usd.toFixed(3)} of $${m.cap.toFixed(2)}`;
+  };
+  ws.onclose = () => { ok = false; enable(); link('bad', 'reconnecting'); setTimeout(connect, delay); delay = Math.min(delay * 2, 8000); };
+  ws.onerror = () => ws.close();
+}
+
+function send(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
+
+function stage(m) {
+  films = m.films || films;
+  $('spend').textContent = `$${(m.usd || 0).toFixed(3)} of $${(m.cap || 1).toFixed(2)}`;
+  link(m.hearing ? 'ok' : 'bad', m.hearing ? 'connected, the Mac is hearing' : 'connected, but whisper is not up on the Mac');
+  if (!localStorage.getItem(WORD_KEY)) askWord(m.word_set ? 'This stage needs its word.' : 'Choose a word for this stage (four letters or more). The first phone sets it, and you type it again on any other phone.');
+  const box = $('films');
+  if (!box.children.length) {
+    for (const [name, title] of Object.entries(films)) {
+      const b = document.createElement('button');
+      b.textContent = title; b.dataset.film = name; b.disabled = !ok;
+      b.onclick = () => pick(name, b);
+      box.appendChild(b);
+    }
+  }
+}
+
+function prove(word) { send({ type: 'phone', word }); }
+
+function proved(m) {
+  ok = !!m.ok;
+  if (ok) { localStorage.setItem(WORD_KEY, $('wordin').value.trim() || localStorage.getItem(WORD_KEY)); $('word').style.display = 'none'; }
+  else { localStorage.removeItem(WORD_KEY); askWord('That is not this stage\'s word.'); }
+  enable();
+}
+
+function askWord(text) { $('wordtext').textContent = text; $('word').style.display = 'block'; }
+$('wordgo').onclick = () => { const w = $('wordin').value.trim(); if (w.length >= 4) prove(w); };
+
+function enable() {
+  $('go').disabled = !ok;
+  document.querySelectorAll('#films button, .wide').forEach(b => b.disabled = !ok);
+}
+
+function screen(m) {
+  const name = m.film || (m.films || [])[0];
+  if (m.why === 'manual') $('screen').textContent = name ? `picked: ${films[name] || name}` : 'picked: the words alone';
+  else if (m.why === 'release') $('screen').textContent = 'back to the chooser';
+  else $('screen').textContent = `${films[name] || name} (${m.why}${m.strong ? ', strong' : ''})`;
+}
+
+function pick(name, b) {
+  send({ type: 'pick', film: name });
+  document.querySelectorAll('#films button').forEach(x => x.classList.toggle('picked', x === b));
+}
+$('words').onclick = () => { send({ type: 'pick', film: null }); document.querySelectorAll('#films button').forEach(x => x.classList.remove('picked')); };
+$('auto').onclick = () => { send({ type: 'release' }); document.querySelectorAll('#films button').forEach(x => x.classList.remove('picked')); };
+
+// ── the microphone ───────────────────────────────────────
+
+async function start() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: true, autoGainControl: true } });
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    await ctx.audioWorklet.addModule('ear.js');
+    node = new AudioWorkletNode(ctx, 'ear');
+    node.port.onmessage = e => {
+      $('meter').firstElementChild.style.width = Math.min(100, Math.round(e.data.level * 260)) + '%';
+      if (ws && ws.readyState === 1 && ok && ws.bufferedAmount < 512 * 1024) ws.send(e.data.pcm);
+    };
+    const mute = ctx.createGain(); mute.gain.value = 0;
+    ctx.createMediaStreamSource(stream).connect(node);
+    node.connect(mute).connect(ctx.destination);   // a worklet runs only while it reaches the output
+    await ctx.resume();
+    stream.getAudioTracks().forEach(t => t.onended = () => { if (listening) paused(); });
+    listening = true;
+    awake();
+    go('live', 'Listening<small>tap to stop</small>');
+  } catch (err) {
+    stop();
+    go('', `Start listening<small>the microphone failed: ${err.name || err}</small>`);
+  }
+}
+
+function stop() {
+  listening = false;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (ctx) ctx.close().catch(() => {});
+  stream = ctx = node = null;
+  if (lock) { lock.release().catch(() => {}); lock = null; }
+  $('meter').firstElementChild.style.width = '0';
+  go('', 'Start listening<small>the Mac hears through this phone</small>');
+}
+
+function paused() { go('paused', 'Paused<small>tap to listen again</small>'); }
+
+function go(cls, html) { $('go').className = cls; $('go').innerHTML = html; }
+
+$('go').onclick = async () => {
+  if ($('go').className === 'paused') { stop(); await start(); return; }
+  if (listening) stop(); else await start();
+};
+
+async function awake() {
+  try { if ('wakeLock' in navigator && !lock) { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); } }
+  catch (err) { $('note').textContent = 'This phone would not stay awake on its own: set Auto-Lock to Never for the talk.'; }
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || !listening) return;
+  awake();
+  const ended = !stream || stream.getAudioTracks().some(t => t.readyState === 'ended');
+  if (!ended && ctx && ctx.state !== 'running') { try { await ctx.resume(); } catch (err) {} }
+  if (ended || !ctx || ctx.state !== 'running') paused();
+});
+
+connect();
+</script>
+</body>
+</html>
