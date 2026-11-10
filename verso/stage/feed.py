@@ -51,6 +51,7 @@ async def main(a):
                       f"feeding {len(pcm) / floor.SR:.1f} s of {a.audio}", flush=True)
                 break
         t0 = time.time()
+        print(f"the audio began at {t0:.3f} (epoch s): a word at t s in the recording was sent at that plus t", flush=True)
         for i in range(0, len(pcm), FRAME):
             delay = t0 + i / floor.SR - time.time()
             if delay > 0:
