@@ -97,6 +97,7 @@ class Stage:
         self.last = None                           # the last film message, for a screen that joins late
         self.composed = None                       # the last picture composed, for a screen that joins late
         self.composed_at = 0.0
+        self.theme = None                          # a ground the phone chose for every screen: "light" or "dark"
         self.sent = (None, None, 0.0)              # (film, strong, when) of the chooser's last message
         self.ticks = collections.deque(maxlen=3000)  # (stream t, wall t) from live.py's floor: when audio arrived
         self.spend = Spend(float(settings.get("stage_usd", 1.0)))
@@ -137,13 +138,14 @@ class Stage:
     def hello(self):
         return dict(type="stage", event="stage", films=self.chooser.titles, usd=round(self.spend.total, 4),
                     cap=self.spend.stop_usd, hearing=self.voices is not None, word_set=os.path.exists(WORD_FILE),
-                    screen="/mindflow/live/" if self.s.get("stage_site") else None)   # this stage serves the screen itself
+                    screen="/mindflow/live/" if self.s.get("stage_site") else None,   # this stage serves the screen itself
+                    theme=self.theme)
 
     async def on(self, ws, ev, m):
         """A text message from the page: a screen arriving, a phone proving itself, a pick."""
         if ev == "screen":
             self.screens.add(ws)
-            await ws.send(json.dumps(dict(type="state", recent=list(self.recent), film=self.last, compose=self.composed)))
+            await ws.send(json.dumps(dict(type="state", recent=list(self.recent), film=self.last, compose=self.composed, theme=self.theme)))
         elif ev == "phone":
             word = str(m.get("word") or "").strip().lower()   # a phone capitalises the first letter on its own
             h = hashlib.sha256(("verso-stage:" + word).encode()).hexdigest()
@@ -168,6 +170,16 @@ class Stage:
         elif ev == "release":
             self.host.emit("film", why="release")
             self.note(kind="release")
+        elif ev == "clear":                        # a clean screen everywhere: a screen that joins later starts clean too
+            self.recent.clear()
+            self.heard, self.said, self.composed, self.last = [], [], None, None
+            self.host.emit("clear")
+            self.note(kind="clear")
+            print("stage: the phone cleared the screens", flush=True)
+        elif ev == "theme":
+            self.theme = "light" if m.get("theme") == "light" else "dark"
+            self.host.emit("theme", theme=self.theme)
+            self.note(kind="theme", theme=self.theme)
 
     def gone(self, ws):
         self.phones.discard(ws)
@@ -225,6 +237,10 @@ class Stage:
         ws, self.words = self.words, []
         text = " ".join(w["w"].strip() for w in ws).strip()
         if not text:
+            return
+        toks = norm(text).split()
+        if len(toks) >= 8 and len(set(toks)) < 0.4 * len(toks):   # whisper's loop on noise ("ct ct ct ..."): not something said
+            self.note(kind="dropped", text=text[:240])
             return
         now = time.time()
         self.heard = [h for h in self.heard if now - h[0] <= WINDOW_S] + [(now, norm(text))]
