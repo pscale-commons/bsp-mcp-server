@@ -26,15 +26,17 @@ cd ~/Projects/bsp-mcp-server/verso/voices && .venv/bin/python live.py --socket -
 ```
 
 ```bash
-cd ~/Projects/bsp-mcp-server/verso/cells && .venv/bin/python -u host.py --stage
+cd ~/Projects/bsp-mcp-server/verso/cells && .venv/bin/python -u host.py --stage --site ~/Projects/happyseaurchin
 ```
+
+`--site` names a checkout of the site: the stage then serves the screen (`mindflow/live/`) and its films (`animations/`) from it too, so `https://verso.hermitcrab.uk/mindflow/live/?source=wss://verso.hermitcrab.uk` shows that checkout's screen before any deploy, and the phone page shows it under the microphone. Until happyseaurchin-home #644 merges, point `--site` and `--catalogue` at its worktree (`~/Projects/wt-live-stage`).
 
 The host prints `stage: hearing through ws://localhost:8768` once whisper is up. The tunnel needs nothing: the launch agents `com.cloudflare.tunnel` and `com.cloudflare.lm-studio-tunnel` run `cloudflared tunnel run lm-studio` at login, and `~/.cloudflared/config.yml` carries `verso.hermitcrab.uk → http://localhost:8767`.
 
 ## At the venue
 
-- **The phone:** https://verso.hermitcrab.uk. The first time, choose a stage word (four letters or more). The first phone sets it, and you type the same word on any other phone. Then press Start listening. Keep the page in front and the screen on: an iPhone cuts the microphone when the page goes to the background. If it does, the button turns amber; tap it to listen again.
-- **The screen:** https://happyseaurchin.com/mindflow/live/?source=wss://verso.hermitcrab.uk, then `f` for fullscreen. Add `&debug` to see why each film came up.
+- **The phone:** https://verso.hermitcrab.uk. The first time, choose a stage word (four letters or more). The first phone sets it, and you type the same word on any other phone. Then press Start listening. The phone shows what the Mac hears, a few seconds after it is said, and the screen itself beneath it. Keep the page in front and the screen on: an iPhone cuts the microphone when the page goes to the background, and the link to the Mac drops (the dot turns red, then green again). If the microphone stops, the button turns amber; tap it to listen again.
+- **The screen:** https://happyseaurchin.com/mindflow/live/?source=wss://verso.hermitcrab.uk, then `f` for fullscreen; or the same page from the Mac itself, https://verso.hermitcrab.uk/mindflow/live/?source=wss://verso.hermitcrab.uk (the phone's "open it on a laptop" link). Add `&debug` to see what the cloud holds, or why each film came up with `&mode=films`.
 - **If the Mac chain fails:** https://happyseaurchin.com/mindflow/live/?listen hears the room through the projector computer's own microphone, by keywords only.
 
 ## Rehearse it

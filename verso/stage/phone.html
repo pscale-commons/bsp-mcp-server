@@ -35,6 +35,16 @@
     #word p { font-size: 14px; color: var(--dim); margin-bottom: 10px; }
     #word input { width: 100%; font-size: 18px; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); margin-bottom: 10px; }
     #word button { width: 100%; min-height: 46px; border-radius: 8px; border: 1px solid var(--ok); background: #14241a; color: var(--ink); font-size: 16px; }
+    /* what the Mac hears, as it hears it */
+    #said { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 92px; max-height: 32vh; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: flex-end; margin-bottom: 4px; }
+    #said p { font-size: 16px; line-height: 1.4; color: var(--dim); margin: 2px 0; }
+    #said p.new { color: var(--ink); }
+    #said p.hint { font-size: 14px; }
+    /* the screen, here on the phone; or opened full on a laptop or projector */
+    #screenbox { display: none; }
+    #screenbox h2 a { float: right; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ok); text-decoration: none; }
+    #view { width: 100%; height: 56vh; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); display: block; }
   </style>
 </head>
 <body>
@@ -48,14 +58,19 @@
 
   <button id="go" disabled>Start listening<small>the Mac hears through this phone</small></button>
   <div id="meter"><i></i></div>
-  <div class="line">Heard: <span id="heard">–</span></div>
-  <div class="line">Screen: <span id="screen">–</span></div>
-  <div class="line">Haiku: <span id="spend">–</span></div>
+  <div id="said"><p class="hint">What the Mac hears appears here, a few seconds after you say it.</p></div>
   <div id="note">Keep this page in front and the screen on: an iPhone cuts the microphone when the page is in the background.</div>
 
-  <h2>Show a film now</h2>
+  <div id="screenbox">
+    <h2>The screen <a id="full" target="_blank" rel="noopener">open it on a laptop ↗</a></h2>
+    <iframe id="view" title="The screen" allow="fullscreen"></iframe>
+  </div>
+  <div class="line">Picture: <span id="picture">–</span></div>
+  <div class="line">Haiku: <span id="spend">–</span></div>
+
+  <h2>Show a film over the cloud now</h2>
   <div id="films"></div>
-  <button class="wide" id="words" disabled>Words only</button>
+  <button class="wide" id="words" disabled>Back to the cloud</button>
   <button class="wide" id="auto" disabled>Back to the chooser</button>
 
 <script>
@@ -78,7 +93,8 @@ function connect() {
     const kind = m.type || m.event;
     if (kind === 'stage') stage(m);
     else if (kind === 'phone') proved(m);
-    else if (kind === 'heard') $('heard').textContent = m.text;
+    else if (kind === 'heard') said(m.text);
+    else if (kind === 'compose') $('picture').textContent = (m.label ? m.label + ' · ' : '') + m.motifs.join(` ${m.relation || 'linked'} `);
     else if (kind === 'film') screen(m);
     else if (kind === 'spend') $('spend').textContent = `$${m.usd.toFixed(3)} of $${m.cap.toFixed(2)}`;
   };
@@ -90,6 +106,7 @@ function send(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
 
 function stage(m) {
   films = m.films || films;
+  showScreen(m.screen);
   $('spend').textContent = `$${(m.usd || 0).toFixed(3)} of $${(m.cap || 1).toFixed(2)}`;
   link(m.hearing ? 'ok' : 'bad', m.hearing ? 'connected, the Mac is hearing' : 'connected, but whisper is not up on the Mac');
   if (!localStorage.getItem(WORD_KEY)) askWord(m.word_set ? 'This stage needs its word.' : 'Choose a word for this stage (four letters or more). The first phone sets it, and you type it again on any other phone.');
@@ -102,6 +119,23 @@ function stage(m) {
       box.appendChild(b);
     }
   }
+}
+
+function said(text) {
+  const box = $('said');
+  box.querySelectorAll('.hint, p.new').forEach(p => p.classList.contains('hint') ? p.remove() : p.classList.remove('new'));
+  const p = document.createElement('p');
+  p.className = 'new'; p.textContent = text;
+  box.appendChild(p);
+  while (box.children.length > 7) box.firstChild.remove();
+}
+
+function showScreen(path) {            // the stage serves the screen itself: show it here, and say where to open it full
+  if (!path || $('view').src) return;
+  const url = path + '?source=' + (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+  $('view').src = url;
+  $('full').href = url;
+  $('screenbox').style.display = 'block';
 }
 
 function prove(word) { send({ type: 'phone', word }); }
@@ -121,11 +155,10 @@ function enable() {
   document.querySelectorAll('#films button, .wide').forEach(b => b.disabled = !ok);
 }
 
-function screen(m) {
+function screen(m) {                   // the cloud ignores the chooser's films; a pick shows its film over it
   const name = m.film || (m.films || [])[0];
-  if (m.why === 'manual') $('screen').textContent = name ? `picked: ${films[name] || name}` : 'picked: the words alone';
-  else if (m.why === 'release') $('screen').textContent = 'back to the chooser';
-  else $('screen').textContent = `${films[name] || name} (${m.why}${m.strong ? ', strong' : ''})`;
+  if (m.why === 'manual') $('picture').textContent = name ? `the film ${films[name] || name}, picked here` : 'the cloud';
+  else if (m.why === 'release') $('picture').textContent = 'the cloud';
 }
 
 function pick(name, b) {

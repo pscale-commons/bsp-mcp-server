@@ -136,7 +136,8 @@ class Stage:
 
     def hello(self):
         return dict(type="stage", event="stage", films=self.chooser.titles, usd=round(self.spend.total, 4),
-                    cap=self.spend.stop_usd, hearing=self.voices is not None, word_set=os.path.exists(WORD_FILE))
+                    cap=self.spend.stop_usd, hearing=self.voices is not None, word_set=os.path.exists(WORD_FILE),
+                    screen="/mindflow/live/" if self.s.get("stage_site") else None)   # this stage serves the screen itself
 
     async def on(self, ws, ev, m):
         """A text message from the page: a screen arriving, a phone proving itself, a pick."""

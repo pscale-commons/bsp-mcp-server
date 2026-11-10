@@ -447,7 +447,9 @@ class Host:
         from websockets.http11 import Response
         from websockets.datastructures import Headers
         port = int(self.s.get("port", 8765))
-        types = {".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml"}
+        types = {".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml",
+                 ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif", ".woff2": "font/woff2", ".mp3": "audio/mpeg", ".mp4": "video/mp4"}
+        site = self.s.get("stage_site") if self.stage else None
 
         def process_request(connection, request):
             """A plain http GET: the run's flow document at /flow.json (a past run's at /runs/<id>/flow.json), or a file of the
@@ -461,7 +463,12 @@ class Host:
                 path = "/phone.html" if path == "/" else path
                 if path == "/flow.json" or path.startswith("/runs/"):
                     path = "/not-here"
-            if path == "/flow.json":
+            if site and (path.startswith("/mindflow/live") or path.startswith("/animations/")):   # the screen and its films, from the site's checkout
+                name = path.lstrip("/") + ("index.html" if path.endswith("/") else "/index.html" if path == "/mindflow/live" else "")
+                full = os.path.realpath(os.path.join(site, name))
+                if not any(full.startswith(os.path.realpath(os.path.join(site, d)) + os.sep) for d in ("mindflow/live", "animations")):
+                    full = ""
+            elif path == "/flow.json":
                 full = os.path.join(self.run.dir, "flow.json") if self.run else ""
             elif path.startswith("/runs/"):
                 full = os.path.realpath(os.path.join(RUNS, path[len("/runs/"):]))
@@ -517,6 +524,8 @@ def main():
     ap.add_argument("--set", action="append", default=[], metavar="KEY=JSON", help="any setting, e.g. threshold=2 or injector.arm=none")
     ap.add_argument("--stage", action="store_true", help="a talk's stage: the phone's ear in, the films out, no cells (stage.py)")
     ap.add_argument("--catalogue", help="with --stage: the screen's catalogue.json, a URL or a path")
+    ap.add_argument("--site", help="with --stage: a checkout of the site; the stage also serves the screen (mindflow/live/) and its films "
+                                   "(animations/) from it, so <the stage>/mindflow/live/ shows that checkout's screen before any deploy")
     a = ap.parse_args()
     sets = list(a.set)
     if a.cells:
@@ -534,6 +543,8 @@ def main():
     if a.catalogue:
         sets.append(f"stage_catalogue={a.catalogue}")
     s = load_settings(sets)
+    if a.site:
+        s["stage_site"] = os.path.abspath(os.path.expanduser(a.site))
     os.makedirs(RUNS, exist_ok=True)
     if a.stage:
         from stage import Stage
