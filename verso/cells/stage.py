@@ -11,6 +11,10 @@ and each choice, {type: film, films, phrase, why, strong}. The screen keeps itse
 least 30 s unless a match is strong. A pick from the phone goes to every screen at once and overrides the
 chooser there. The talking cells stay off, and nothing here speaks.
 
+When the catalogue has motifs (the image cloud's small live drawings, name → what each shows), the same Haiku
+call also composes a picture of what was just said: one to three motifs, how they relate (inside, linked,
+turning) and a label, sent to every screen as {type: compose, motifs, relation, label, phrase}.
+
 The phone proves itself with a stage word. The first phone to connect chooses the word; only its hash is kept,
 at ~/.config/verso/stage-word, so the word itself is never written down anywhere. Screens need no word: they
 only listen. Delete that file to choose a new word. What was heard, and why each film was chosen, is logged
@@ -53,8 +57,9 @@ class Chooser:
         self.concepts = [dict(idea=c.get("idea", ""), films=c["films"],
                               words=[(float(k), re.compile(r"(^| )" + " ?".join(map(re.escape, norm(w).split())) + r"(s|es)?(?= |$)"))
                                      for w, k in c["words"].items()])
-                         for c in cat.get("concepts", [])]
+                         for c in cat.get("concepts", []) if c.get("films")]   # an idea with no film is the cloud's alone
         self.titles = cat.get("films", {})
+        self.motifs = cat.get("motifs", {})     # the cloud's motifs: name → what it shows
 
     def best(self, heard, now):
         """(concept index, score, strong) of the idea most heard lately, when the latest phrase names it too; else None."""
@@ -90,6 +95,8 @@ class Stage:
         self.n_phrases = self.asked = 0
         self.words, self.flush = [], None
         self.last = None                           # the last film message, for a screen that joins late
+        self.composed = None                       # the last picture composed, for a screen that joins late
+        self.composed_at = 0.0
         self.sent = (None, None, 0.0)              # (film, strong, when) of the chooser's last message
         self.ticks = collections.deque(maxlen=3000)  # (stream t, wall t) from live.py's floor: when audio arrived
         self.spend = Spend(float(settings.get("stage_usd", 1.0)))
@@ -99,13 +106,31 @@ class Stage:
         self.calls = os.path.join(self.dir, "calls.jsonl")
         self.log = open(os.path.join(self.dir, "stage.jsonl"), "a", buffering=1)
         ideas = "\n".join(f"{i + 1}. {c['idea']}" for i, c in enumerate(self.chooser.concepts))
+        motifs = "\n".join(f"{n}: {a}" for n, a in self.chooser.motifs.items())
         self.system = [{"type": "text", "text": (
             "You watch a live talk and choose the film shown behind the speaker. These are the ideas a film can show, "
             f"each with its number:\n{ideas}\n\n"
             "Judge by meaning, not by matching words: the same idea said in other words counts, and a word from an idea "
             "used in passing does not. Weigh the latest words most. Reply with one JSON object and nothing else: "
             '{"idea": <the number of the idea being talked about now, or 0 when none fits>, '
-            '"strong": <true only when that idea is clearly what the speaker is on now>}')}]
+            '"strong": <true only when that idea is clearly what the speaker is on now>}') if not motifs else (
+            "You watch a live talk and do two things for the screen behind the speaker.\n\n"
+            f"First, choose the film. These are the ideas a film can show, each with its number:\n{ideas}\n"
+            "Judge by meaning, not by matching words: the same idea said in other words counts, and a word from an idea "
+            "used in passing does not. Weigh the latest words most.\n\n"
+            "Second, compose a picture of what the speaker is saying now, from these motifs (small live drawings, "
+            f"each with what it shows):\n{motifs}\n"
+            "This picture stands apart from the film: make one whenever any motif fits what was just said, even when "
+            "no film's idea does. Choose the motifs whose meanings together picture the latest words, and how they "
+            'relate: "inside" (the first holds the next inside it), "linked" (they are joined, side by side) or '
+            '"turning" (the first turns into the next). Two or three motifs in a relation that says how the ideas '
+            "connect is the aim; one alone only when the words hold a single idea. Name the picture in three to six "
+            "words, in the speaker's own terms. Give no motifs only when nothing said is pictured by any of them.\n\n"
+            "Reply with one JSON object and nothing else: "
+            '{"idea": <the number of the idea being talked about now, or 0 when none fits>, '
+            '"strong": <true only when that idea is clearly what the speaker is on now>, '
+            '"motifs": [<motif names, or none>], "relation": "inside" | "linked" | "turning", '
+            '"label": "<the picture\'s name>"}')}]
 
     # ---- the socket's parties ---------------------------------------------------------------------------
 
@@ -117,7 +142,7 @@ class Stage:
         """A text message from the page: a screen arriving, a phone proving itself, a pick."""
         if ev == "screen":
             self.screens.add(ws)
-            await ws.send(json.dumps(dict(type="state", recent=list(self.recent), film=self.last)))
+            await ws.send(json.dumps(dict(type="state", recent=list(self.recent), film=self.last, compose=self.composed)))
         elif ev == "phone":
             word = str(m.get("word") or "").strip().lower()   # a phone capitalises the first letter on its own
             h = hashlib.sha256(("verso-stage:" + word).encode()).hexdigest()
@@ -247,7 +272,7 @@ class Stage:
                 continue
             try:
                 r = await self.door("haiku", "low", self.system, f"The last 30 seconds of the talk, oldest first:\n{talk}",
-                               max_tokens=400, spend=self.spend, kind="loop", log=self.calls)
+                               max_tokens=1000, spend=self.spend, kind="loop", log=self.calls)
             except Exception as e:      # the cap reached between the check and the call: keywords carry on
                 print(f"stage: haiku: {e}", flush=True)
                 continue
@@ -263,8 +288,25 @@ class Stage:
             self.note(kind="haiku", idea=i, strong=bool((j or {}).get("strong")), ms=r["ms"], usd=r["usd"], total=round(self.spend.total, 4))
             if 1 <= i <= len(self.chooser.concepts):
                 self.propose(i - 1, bool(j.get("strong")), "haiku", self.said[-1][1] if self.said else "", at=None)
+            self.compose(j or {})
             if self.spend.stopped:
                 print(f"stage: Haiku stops here, at ${self.spend.total:.2f} of ${self.spend.stop_usd:.2f}; keywords carry on", flush=True)
+
+    def compose(self, j):
+        """Haiku's picture of what was just said, to every screen: the same picture again within 30 s says nothing new."""
+        ms = j.get("motifs") if isinstance(j.get("motifs"), list) else []
+        ms = list(dict.fromkeys(str(m).strip().lower() for m in ms if str(m).strip().lower() in self.chooser.motifs))[:3]
+        if not ms:
+            return
+        rel = j.get("relation") if j.get("relation") in ("inside", "linked", "turning") else "linked"
+        label = re.sub(r"\s+", " ", str(j.get("label") or "")).strip()[:60]
+        now = time.time()
+        if self.composed and self.composed["motifs"] == ms and self.composed["relation"] == rel and now - self.composed_at < 30:
+            return
+        self.composed, self.composed_at = dict(motifs=ms, relation=rel, label=label, phrase=(self.said[-1][1] if self.said else "")[-240:]), now
+        self.host.emit("compose", **self.composed)
+        self.note(kind="compose", motifs=ms, relation=rel, label=label)
+        print(f"stage: compose {' '.join(ms)} ({rel}) \"{label}\"", flush=True)
 
     def note(self, **kw):
         self.log.write(json.dumps(dict(at=round(time.time(), 3), **kw)) + "\n")
