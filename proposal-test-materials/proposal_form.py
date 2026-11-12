@@ -726,7 +726,7 @@ def check_threads(f):
                 continue
             f.threads.append(th)
             if th["registry"]:
-                if not isinstance(f.s.get("spine:thread"), dict) or node_at(f.s.get("spine:thread"), th["registry"]) is None:
+                if not isinstance(f.s.get("spine:thread"), dict) or walk(f.s.get("spine:thread"), th["registry"]) is None:
                     add("FAULT", "STANDS", at, f"thread {th['registry']} has no line in the registry, spine:thread")
             elif f"spine:{th['name']}" not in names:
                 add("WARN", "STANDS", at, f"'{th['name']}' has no spine:{th['name']} and is not a registry thread (thread:<number>), so the page draws it empty")
@@ -743,9 +743,12 @@ def check_threads(f):
         return
     reg = f.s.get("spine:thread")
     mirrors = {n[len("thread:"):]: f.s.get(n) for n in f.s.names() if n.startswith("thread:") and n.count(":") == 1}
-    view = tf.View(reg, {h: m for h, m in mirrors.items() if isinstance(m, dict)}, f.s.names())
+    # the registry is read at its own floor, each mirror raised to it, as thread_form's live mode reads them:
+    # past nine threads the registry stands at floor 2, where thread 28 is 2,8 and thread 5 is 0,5
+    floor = max(1, tf.floor_of(reg))
+    view = tf.View(reg, {h: tf.raised(m, floor) for h, m in mirrors.items() if isinstance(m, dict)}, f.s.names(), floor)
     for n in registry:
-        if node_at(reg, n) is None:
+        if walk(reg, n) is None:
             continue
         found = tf.check(view, n)[0]
         for x in found:

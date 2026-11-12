@@ -54,7 +54,7 @@ A live pass looks for the lines it follows in the site's files and prints `reade
 | `proposal_form.py` | The checker. |
 | `fixtures/harbour-bell.json`, `.html` | A family that passes every case: floor 2 room with a paid summary and a reply, a registry thread and a ladder, a maker's look at their yes, a map pin, a crafted page. Nothing stands on the beach by this name. |
 | `mutation.py` | The planted faults, one at a time. Those marked "as found" stand verbatim as the first sweep met them. |
-| `run-proposal-tests.py` | The CI pass: the clean family, the planted faults, and the block against the code. |
+| `run-proposal-tests.py` | The CI pass: the clean family, again as it would stand once the registry has passed nine threads (floor 2, where the threads battery reads it as `thread_form.py` does), the planted faults, and the block against the code. |
 
 ## Adding a case
 
