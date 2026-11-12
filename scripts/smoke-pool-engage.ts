@@ -750,5 +750,49 @@ console.log('\n=== a located read at a horizon — through the router door (2026
   }
 }
 
+console.log('\n=== the decision box — a voice from a grain the reader holds (2026-11-12) ===');
+{
+  // Bob's parlour holds three asks. ann shares an accepted grain with bob, cal's
+  // reach to bob is still pending, and zed shares nothing. Read as bob, only ann's
+  // voice is marked and the hint rides once; read as zed, nothing is marked.
+  const { pairId } = await import('../src/locks.js');
+  const { DECISION_BOX_HINT } = await import('../src/tools/pool.js');
+  const ORIGIN = 'https://parlour.test';
+  const TS = '2026-11-12T16:00:00.000Z';
+  const store: Record<string, any> = {
+    'pool:parlour': {
+      _: "Bob's parlour — say the thing itself.",
+      '1': { _: 'Bob, please decide whether the map goes ahead.', '1': 'ann', '2': '', '3': TS },
+      '2': { _: 'Bob, decide this for me now.', '1': 'zed', '2': '', '3': TS },
+      '3': { _: 'Bob, here is a reach you have not accepted.', '1': 'cal', '2': '', '3': TS },
+    },
+    [`grain:${pairId('ann', 'bob')}`]: { _: 'ann and bob', '1': { _: 'side one' }, '2': { _: 'side two' }, '9': { '1': 'ann', '2': 'bob' } },
+    [`grain:${pairId('bob', 'cal')}`]: { _: 'bob and cal', '8': { _: 'reach pending…', '1': 'cal', '2': pairId('bob', 'cal') }, '9': { '1': 'bob', '2': 'cal' } },
+  };
+  const answer = (v: unknown, status = 200) =>
+    new Response(JSON.stringify(v), { status, headers: { 'Content-Type': 'application/json' } });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: any, init?: any) => {
+    const url = new URL(typeof input === 'string' ? input : input.url);
+    if (url.origin !== ORIGIN || (init?.method ?? 'GET') !== 'GET') return answer({ error: 'a read-only fixture' }, 404);
+    const name = url.searchParams.get('block');
+    if (!name) return answer({ _: 'fixture beach', origin: ORIGIN, blocks: Object.keys(store) });
+    return name in store ? answer(store[name]) : answer({ error: 'not found' }, 404);
+  }) as typeof fetch;
+  const engage = async (reader: string) =>
+    (await handlePoolEngage({ pool_url: ORIGIN, pool_name: 'parlour', agent_id: reader, with_liquid: false } as any)).content.map((c) => c.text).join('\n');
+  try {
+    const bob = await engage('bob');
+    assert(/## slot 1 — ann · grain /.test(bob), "ann's voice is marked: she and bob both accepted their grain");
+    assert(/## slot 2 — zed 2026/.test(bob) && /## slot 3 — cal 2026/.test(bob), "zed's and cal's are not: no grain, and a reach not yet accepted");
+    assert(bob.split(DECISION_BOX_HINT).length === 2, 'the decision box hint rides once');
+    assert(bob.indexOf(DECISION_BOX_HINT) < bob.indexOf('## slot 1'), 'and before the voices it is about');
+    const zed = await engage('zed');
+    assert(!zed.includes(DECISION_BOX_HINT) && !/· grain/.test(zed), 'read as zed, who holds no grain, nothing is marked and no hint rides');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
+
 console.log(`\n=== summary (located engagement) ===\n  pass: ${pass}\n  fail: ${fail}`);
 process.exit(fail > 0 ? 1 : 0);

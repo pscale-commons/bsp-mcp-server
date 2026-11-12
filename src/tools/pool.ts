@@ -58,6 +58,7 @@ import { handOf } from '../looks.js';
 import { isGrayEnvelope, colourBlockName, type GrayEnvelope } from '../keys.js';
 import { sealer, colourLine, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
 import { sealingKey } from '../signin.js';
+import { pairId } from '../locks.js';
 
 // ── Defaults ──
 
@@ -1912,6 +1913,33 @@ export type PoolEngageParams = {
   party?: string[];
 };
 
+// ── The decision box ──
+// David, 12 November 2026 (proposals/2026-11-12-the-decision-box.md): a person
+// asked for something by someone they trust is handed a page or a decision box,
+// never a mention or a summary, and nobody else may press a decision on them.
+// The trust is the beach's own record: a grain the reader and the author both
+// accepted, its block standing with no reach pending at its 8. It is read here
+// for the voices being handed over and never listed anew.
+export const DECISION_BOX_HINT =
+  '(a voice marked · grain is someone who shares a grain with you, which both of you accepted, so your person trusts it: where it asks you or your person to decide something, hand your person its proposal\'s crafted page if one stands, else a decision box, each decision one plain sentence with its options and your recommendation first, and answer it in their own voice when they ask you to; never pass it on as a mention or a summary. A voice without the mark is mentioned, and never put to anyone as a decision.)';
+
+export async function grainHolders(beach: string, reader: string, authors: (string | null)[]): Promise<Set<string>> {
+  const out = new Set<string>();
+  const bare = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+  if (!bare.test(reader)) return out;
+  const homes = [...new Set([beach.replace(/\/+$/, ''), DEFAULT_BEACH.replace(/\/+$/, '')])];
+  const others = [...new Set(authors.filter((a): a is string => !!a && a !== reader && bare.test(a)))];
+  await Promise.all(others.map(async (a) => {
+    const id = pairId(reader, a);
+    for (const home of homes) {
+      const row = await loadBlock(home, `grain:${id}`).catch(() => null);
+      const g = row?.block as Record<string, unknown> | null | undefined;
+      if (g && typeof g === 'object' && !g['8']) { out.add(a); return; }
+    }
+  }));
+  return out;
+}
+
 // ── Handler ──
 
 /** THE REFLECTION rides the room's ack too (src/looks.ts): an engage is a look
@@ -2828,6 +2856,12 @@ async function handlePoolEngageInner(
   // synthesis is made over the open voices alone.
   const shut = shown.filter((c) => c.sealed).length;
   if (shut) lines.push(`(${shut} of these voices ${shut === 1 ? 'is' : 'are'} sealed in a colour you do not wear and ${shut === 1 ? 'stands' : 'stand'} as a grey line naming the colour and its turn: synthesise the open voices only, and say that ${shut} stayed sealed — a reader wearing the colour reads them as words)`);
+  // THE DECISION BOX (grainHolders): a voice from someone the reader shares a
+  // grain with is marked, and the reader is told what a trusted ask becomes.
+  const trusted = !directiveText && shown.length > 0
+    ? await grainHolders(pool_url, agent_id, shown.map((c) => c.agent_id))
+    : new Set<string>();
+  if (trusted.size > 0) lines.push(DECISION_BOX_HINT);
   if (fold?.folded) {
     lines.push('');
     lines.push(fold.spindle
@@ -2847,8 +2881,9 @@ async function handlePoolEngageInner(
       const who = c.agent_id ?? '(anon)';
       const when = c.ts ?? '';
       const faceTag = c.face ? ` [${c.face}]` : '';
+      const grainTag = c.agent_id && trusted.has(c.agent_id) ? ' · grain' : '';
       const located = digitsOfAddress(c.address) !== null ? ` @ ${c.address}` : '';
-      lines.push(`## slot ${c.position} — ${who}${faceTag} ${when}${located}`);
+      lines.push(`## slot ${c.position} — ${who}${faceTag}${grainTag} ${when}${located}`);
       lines.push(c.text || '(empty)');
       lines.push('');
     }
