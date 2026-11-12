@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """run-proposal-tests.py: the proposal battery's CI pass. It reads nothing from the network.
 
-  1. THE CLEAN FAMILY: harbour-bell is well formed, with no FAULT and no WARN.
+  1. THE CLEAN FAMILY: harbour-bell is well formed, with no FAULT and no WARN, and stays so as it would stand
+     once the registry has passed nine threads (floor 2, its thread at 12), as the beach's has since November.
   2. THE PLANTED FAULTS (mutation.py): every one is caught at its level.
   3. THE BLOCK AND THE CODE AGREE: src/proposal-test.json names every test the checker runs,
      at the battery it belongs to; every test has a planted fault; and the count the block states
@@ -9,7 +10,7 @@
 
   python3 proposal-test-materials/run-proposal-tests.py
 """
-import json, os, re, subprocess, sys
+import copy, json, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -48,6 +49,28 @@ noisy = [x for x in r.stdout.split("\n")[1:] if x.startswith(("  FAULT", "  WARN
 say(r.returncode == 0 and "WELL FORMED" in head and not noisy, head[:90])
 for line in noisy:
     print("     " + line)
+
+
+def past_nine(state):
+    """harbour-bell once the registry has passed nine threads: spine:thread at floor 2 with the thread at 12, and
+    rook's mirror at floor 2, where the router writes a knot at 12. Read at floor 1, 12 becomes 1,2: no knot stands
+    at the thread's number and every line hangs beneath a 1 nobody holds, so a clean family reads broken."""
+    s = copy.deepcopy(state)
+    b = s["blocks"]
+    reg, rook = b["spine:thread"], b["thread:rook"]
+    b["spine:thread"] = {"_": {"_": reg["_"]}, "1": {"2": reg["1"]}}
+    b["thread:rook"] = {"_": {"_": rook["_"]}, "1": {"2": rook["1"]}}
+    five = b["function:harbour-bell"]["5"]
+    five["1"] = five["1"].replace("thread:1 ", "thread:12 ", 1)
+    return s
+
+
+fixtures = os.path.join(HERE, "fixtures")
+v = PF.check(PF.State(past_nine(json.load(open(os.path.join(fixtures, "harbour-bell.json"), encoding="utf8"))), fixtures), "harbour-bell")
+loud = [x for x in v.findings if x["level"] in ("FAULT", "WARN")]
+say(PF.verdict(v) == "WELL FORMED" and not loud and len(v.threads) == 2, f"past nine threads (registry at floor 2, thread:12): {PF.verdict(v)}")
+for x in loud:
+    print(f"     {x['level']} {x['battery']}/{x['test']} {x['at']} {x['detail'][:80]}")
 
 print("── 2. the planted faults ──")
 r = subprocess.run([sys.executable, os.path.join(HERE, "mutation.py")], capture_output=True, text=True)
