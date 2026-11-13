@@ -41,6 +41,18 @@ THE GATE, fixed with the grade: a delivery goes forward if nothing is lost in an
 44, at least eight of the nine threads are well formed by the form pass reading endings (thread_form.py, the law of
 29 October with the date), and later ends ' · waits on wren from 2026-11-10'. If both pass, E1 goes forward, as the
 shorter way and David's own six sentences; if one passes, that one; if neither, nothing moves and David is told.
+
+K1 (13 November, at David's GO on co-knots; bsp-mcp proposals/2026-11-13-co-knots.md), FIXED BEFORE IT RAN: E2's way with
+one sentence added to its step 4 (way_k1.txt): where the same act also answers a point on another thread, tie a co-knot in
+your line's zero. The test beach lists its tie verb among the commands for K1 alone. The ten are graded as E2's were, and an
+eleventh use, tie: wren's one act answers rook's review on thread 1 and dana's move to the new chart on thread 3. Right is
+a line at 1.1, or one deeper at 1.11, with a second at 3.1 if the hand likes; a co-knot in the zero of a line of the hand's
+naming a point on the other thread where a line stands; dana told, naming the place; the line ending ' · waits on dana';
+nothing lost. Whether the tie stands both ways is reported, not counted. Reported beside the score for every use, and not
+counted: any co-knot a hand tied where its situation named no second thread. THE GATE: E2's own, nothing lost in any of the
+eleven, the nine at least 41 of 44, at least eight of the nine well formed, later ending ' · waits on wren from
+2026-11-10'; and tie scoring all six. If it passes, the sentence goes into ways:thread, and the co-knot into function:thread
+3, at David's word; if it fails, nothing moves and David is told.
 """
 import json, re
 
@@ -93,13 +105,69 @@ EXPECT = {
     "C7": dict(land={"1.1211", "1.122"}, options=1, told=["dana"]),
     "C8": dict(land={"1.111", "1.14"}, options=2, told=["dana"]),
     "C10": dict(land={"1.3", "1.1"}, options=None, told=False),   # later: E1 and E2 only; a room told or not, as the hand likes
+    "C11": dict(land={"1.1", "1.11", "3.1"}, options=None, told=["dana"]),   # tie: K1 only; a line on rook's thread, a second on dana's if the hand likes
 }
 
 # E1 and E2: whose move each line ends on (proposals/2026-11-04-threads-keep-their-endings.md)
 ENDING = {"C1": ("waits", {"wren", "dana"}, None), "C2": ("waits", {"dana"}, None), "C3": ("waits", {"wren"}, None),
           "C4": ("complete", None, None), "C5": ("waits", {"dana"}, None), "C6": ("waits", {"dana"}, None),
           "C7": ("waits", {"dana"}, None), "C8": ("waits", {"dana"}, None), "C9": ("waits", {"rook"}, None),
-          "C10": ("waits", {"wren"}, "2026-11-10")}
+          "C10": ("waits", {"wren"}, "2026-11-10"), "C11": ("waits", {"dana"}, None)}
+
+
+def _node(mirror, a):
+    n = mirror
+    for d in digits(a):
+        if not isinstance(n, dict) or d not in n:
+            return None
+        n = n[d]
+    return n
+
+
+def _zero(n):
+    z = n.get("_") if isinstance(n, dict) else None
+    if not isinstance(z, dict) or (isinstance(z.get("9"), dict) and z["9"].get("_") == "gray"):
+        return []
+    out = []
+    for k in sorted(z):
+        v = z[k]
+        while isinstance(v, dict):
+            v = v.get("_")
+        if len(k) == 1 and k in "123456789" and isinstance(v, str) and v.strip():
+            out.append(v.strip())
+    return out
+
+
+TIE_ON_THREAD = re.compile(r"^thread:(?:[A-Za-z0-9_.\-]+\s+)?(\d+(?:\.\d+)?)(?:\s+p(-?\d+))?$")
+
+
+def co_knot_point(entry):
+    """The point a co-knot names on a thread of the test beach (floor 1), or None."""
+    m = TIE_ON_THREAD.match(entry)
+    if not m:
+        return None
+    d = digits(m.group(1))
+    if m.group(2) is not None:
+        depth = 1 - int(m.group(2))
+        if depth < 1 or depth > len(d):
+            return None
+        d = d[:depth]
+    return d[0] + ("." + "".join(d[1:]) if len(d) > 1 else "")
+
+
+def co_knots(end, me, added):
+    """The co-knots in the zeros of a hand's lines that join one thread to a point on another where a line stands:
+    [(from, to, tied back)]."""
+    out = []
+    for a in added:
+        for e in _zero(_node(end["mirrors"].get(me, {}), a)):
+            p = co_knot_point(e)
+            if not p or digits(p)[0] == digits(a)[0]:
+                continue
+            here = [n for n in (_node(m, p) for m in end["mirrors"].values()) if n is not None and (isinstance(n, str) or n.get("_") is not None)]
+            if here:
+                out.append((a, p, any(co_knot_point(x) == a for n in here for x in _zero(n))))
+    return out
 ENDS_ON = re.compile(r"\s·\s(?:waits on ([A-Za-z0-9_.\-]+(?:(?:,\s*|\s+and\s+)[A-Za-z0-9_.\-]+)*)(?:\s+from\s+(\S+))?|(complete))\s*$")
 
 
@@ -262,6 +330,14 @@ def grade_s(case, row, c, start, end, added, posts, rep, mirror_lines, amend=Fal
         expect(not posts, "no room told")
     elif x["told"]:
         expect(any(names_place(t, p) for h in x["told"] for t in posts.get(h, []) for p in places), "the next hand's room told, naming the place")
+    strays = [f"{a}: {e}" for a in added for e in _zero(_node(end["mirrors"].get(me, {}), a))] if case != "C11" else []
+    if strays:
+        row["stray_co_knots"] = strays   # reported, not counted: a co-knot where the situation named no second thread
+    if case == "C11":
+        expect(any(r in ("1.1", "1.11") for r in R), "a line on rook's thread, at 1.1 or one deeper")
+        joins = co_knots(end, me, added)
+        row["co_knots"] = [f"{a} -> {p}{' (both ways)' if back else ''}" for a, p, back in joins]
+        expect(bool(joins), "a co-knot in the zero of a line of the hand's, naming a point on the other thread where a line stands")
     if ending:
         expect(any(ends_right(mirror_lines(end, me).get(r), ENDING[case]) for r in R), ending_said(ENDING[case]))
     expect(not lost, "nothing lost")

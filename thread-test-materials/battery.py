@@ -30,9 +30,13 @@ delivery: the teaching a mind is handed, from teachings/ —
       seeds' endings, run a tenth use, later, and are graded by short.py with an ending in each use (its docstring has the gate).
       Run 4 November: E1 43 of 47, the date written in words on later and a line lost on self, so it missed the gate; E2 44
       of 47, every ending right, the date right, nothing lost, so it passed and became ways:thread the same hour; run-minds.sh's default
+  K1  E2 with one sentence added to its step 4, the co-knot (way_k1.txt; bsp-mcp proposals/2026-11-13-co-knots.md), at
+      David's GO of 13 November: where the same act also answers a point on another thread, tie a co-knot in your line's
+      zero. The test beach's tie verb is listed among its commands, and only for K deliveries, so E2's brief stands as it ran.
+      Graded as E2 is, plus an eleventh use, tie (short.py's docstring has the grade and the gate, fixed before it ran)
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
-cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2)
+cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2, K1) · C11 tie (K1)
 <runs> is $THREAD_TEST_RUNS, else runs/ beside this file. A run's mind is a separate step
 (run-minds.sh, which spends model calls); setup and score spend nothing.
 """
@@ -46,7 +50,8 @@ import short as SH
 
 RUNS = os.environ.get("THREAD_TEST_RUNS") or os.path.join(HERE, "runs")
 SHORT = {"S", "S2", "S3", "S4"}   # David's form: seeds with no closing clause, graded by short.py
-ENDS = {"E1", "E2"}   # the endings back (bsp-mcp #584): seeds as tied, graded by short.py with an ending in each use
+ENDS = {"E1", "E2", "K1"}   # the endings back (bsp-mcp #584): seeds as tied, graded by short.py with an ending in each use
+TIES = {"K1"}   # the co-knot (bsp-mcp proposals/2026-11-13-co-knots.md): the tie verb among the commands, and the eleventh use
 TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt", "R": "root_v2.txt", "H": "root_v2.txt", "H2": "root_v2.txt", "H3": "root_v2.txt",
              **{d: "root_v2.txt" for d in SHORT | ENDS}}
 LIVE = {"R", "H", "H2", "H3"} | SHORT | ENDS
@@ -135,6 +140,18 @@ def st_c10():
     return st_c2()
 
 
+DANA3 = "the harbour publishes its new tide chart (harbour:chart 2); the tide-table page must read it · waits on wren · read: harbour:chart 2"
+
+
+def st_c11():
+    """tie: one act answers two threads — rook's review (thread 1) and dana's move to the new chart (thread 3)."""
+    s = st_c2()
+    s["registry"]["3"] = "the tide-table page moves to the harbour's new chart · opened by dana"
+    s["mirrors"]["dana"] = {"3": DANA3}
+    s["rooms"]["wren"].append("dana: thread:3 — the tide-table page must move to the new chart")
+    return s
+
+
 def st_c9():
     s = base()
     s["mirrors"]["rook"]["1"] = {"_": "built the tide-table page's first draft from last year's tables · waits on kestrel · read: tides:draft 1",
@@ -156,6 +173,8 @@ BLOCKS = {
                            "4": "draft 4: draft 3 with one low-water mark corrected against the harbour master's table"}},
     "C8": {"tides:draft": {"_": "the tide-table page, one draft per digit", "1": D1, "2": "draft 2: two tide times corrected"},
            "harbour:chart": {"_": "the harbour's tide charts", "1": "the chart in force now", "2": "the new chart, in force from next week"}},
+    "C11": {"tides:draft": {"_": "the tide-table page, one draft per digit", "1": D1, "2": "draft 2: draft 1 with two tide times corrected against the harbour's new chart"},
+            "harbour:chart": {"_": "the harbour's tide charts", "1": "the chart in force until now", "2": "the new chart, in force from this month"}},
     "C10": {"tides:draft": {"_": "the tide-table page, one draft per digit", "1": D1},
             "harbour:data": {"_": "the harbour's tide data, one month per digit", "1": "October's data, published 3 October 2026",
                              "2": "November's data, which the harbour publishes on 10 November 2026"}},
@@ -204,6 +223,12 @@ CASES = {
         "You are wren, an agent that reviews work. Your room has something for you. Today is 4 November 2026. You cannot do it "
         "yet: the review needs the harbour's November data, which the harbour publishes on 10 November 2026 (harbour:data 2). "
         "Put it off on the beach until that day, so that it comes back to you then.")),
+    "C11": dict(me="wren", kind="tie", state=st_c11, situation=(
+        "You are wren, an agent that reviews work. Your room has two things for you, on two threads. You have done both with one "
+        "piece of work: you reviewed the tide-table draft against the harbour's new chart (harbour:chart 2) and corrected two tide "
+        "times in tides:draft 2, so the review rook asked for is done, and the page now reads the new chart, as dana asked. After "
+        "this, dana (a person; handle dana) decides whether to publish. Record what you did on the beach so that a reader of either "
+        "thread finds the other, and so that dana sees it.")),
 }
 
 COMMANDS = """COMMANDS — this is a test beach. Run these with Bash; `{bb}` stands for the beach's tools, and your secret is already supplied. Use nothing else: no other tool touches this beach, and the real beach must not be touched.
@@ -213,6 +238,9 @@ COMMANDS = """COMMANDS — this is a test beach. Run these with Bash; `{bb}` sta
   {bb} block <name> [<spindle>]                        = bsp(agent_id=<beach>, block='<name>', spindle='<spindle>'), a plain read of any block
   {bb} room <handle>                                   = read that hand's room, pool:<handle>
   {bb} post <handle> "<text>"                          = pscale_pool_engage(pool_name='<handle>', contribution='<text>'), a line in that hand's room"""
+# K deliveries also hold the star write that ties a co-knot (bsp-mcp proposals/2026-11-13-co-knots.md); E2's brief stands as it ran.
+TIE_COMMAND = """
+  {bb} tie <A>*<k> "<point>"                         = bsp(agent_id=<beach>, block='thread:<you>', spindle='<A>*<k>', content='<point>'), a co-knot in your own line's zero"""
 
 REPORT = """WHEN YOU ARE DONE, end your reply with one JSON object and nothing after it:
 {"tied_at": "<the address of the line you wrote on the thread, or null>", "line": "<that line>", "options": ["<each option you offered>"], "handed_on": {"to": "<whose room, or null>", "text": "<what you put there>"}, "why": "<one sentence: why that address>"}"""
@@ -247,7 +275,8 @@ def brief(dname, case, bb):
     if dname.split("x")[0] in SHORT and case in SH.SITUATION_S:
         assert SH.SITUATION_S[case][0] in situation
         situation = situation.replace(*SH.SITUATION_S[case])
-    return (law + "\n\n" + COMMANDS.format(bb=bb) + "\n\nYOUR SITUATION\n" + situation
+    commands = COMMANDS + (TIE_COMMAND if dname.split("x")[0] in TIES else "")
+    return (law + "\n\n" + commands.format(bb=bb) + "\n\nYOUR SITUATION\n" + situation
             + "\n\nAct on the beach with the commands, as the text above teaches; read what you need first.\n\n" + REPORT)
 
 
@@ -285,7 +314,9 @@ def setup(dname, cases):
 def mirror_lines(s, hand):
     out = {}
     def walk(n, p):
-        t = n if isinstance(n, str) else (n.get("_") if isinstance(n, dict) else None)
+        t = n
+        while isinstance(t, dict):   # a line holding co-knots keeps its words one zero deeper
+            t = t.get("_")
         if t is not None:
             out[p[0] + ("." + "".join(p[1:]) if len(p) > 1 else "")] = t
         if isinstance(n, dict):
@@ -473,7 +504,7 @@ def grade(dname, case):
 
 if __name__ == "__main__":
     cmd, dname = sys.argv[1], sys.argv[2]
-    cases = sys.argv[3].split(",") if len(sys.argv) > 3 else [c for c in CASES if c != "C10" or dname.split("x")[0] in ENDS]
+    cases = sys.argv[3].split(",") if len(sys.argv) > 3 else [c for c in CASES if (c != "C10" or dname.split("x")[0] in ENDS) and (c != "C11" or dname.split("x")[0] in TIES)]
     if cmd == "setup":
         setup(dname, cases)
     elif cmd == "score":

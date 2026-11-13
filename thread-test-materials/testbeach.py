@@ -7,6 +7,8 @@
   testbeach.py <rundir> block <name> [<spindle>]           a plain bsp read of any block
   testbeach.py <rundir> room <handle>                      read pool:<handle>
   testbeach.py <rundir> post <handle> "<text>"             a contribution to pool:<handle>
+  testbeach.py <rundir> tie <A>*<k> "<point>"              bsp(block='thread:<you>', spindle='<A>*<k>', content=...): a co-knot
+                                                           in your own line's zero (bsp-mcp proposals/2026-11-13-co-knots.md)
 
 Semantics follow the live router as built (bsp-mcp #559): a read carries the law's section as the
 router prints it, its root line naming ways:thread; a say replaces your own line at that
@@ -61,7 +63,117 @@ def addr(p):
 
 
 def text(n):
-    return n if isinstance(n, str) else (n.get("_") if isinstance(n, dict) else None)
+    """A line's words: the string its underscore chain reaches; a line holding co-knots keeps them one zero deeper."""
+    while isinstance(n, dict):
+        n = n.get("_")
+    return n if isinstance(n, str) else None
+
+
+# CO-KNOTS (bsp-mcp proposals/2026-11-13-co-knots.md), as the router reads them (src/cross.ts readTies, tieLines).
+TIE = re.compile(r"^(?:([a-z][\w-]*):(\d+(?:\.\d+)?)|([A-Za-z][\w.\-]*(?::[\w.\-]+)*)\s+(\d+(?:\.\d+)?))(?:\s+p(-?\d+))?$")
+LEGEND = ("  (⨯ a co-knot: this point tied to a point on another thread or in a block, standing in the line's own zero; pull one "
+          "with one read at its point, and tie back from your own line's zero to make it both ways: proposals/2026-11-13-co-knots.md)")
+
+
+def zero_of(n):
+    """The co-knots in a line's zero, as written; a sealed line's zero holds its seal, never co-knots."""
+    z = n.get("_") if isinstance(n, dict) else None
+    if not isinstance(z, dict) or (isinstance(z.get("9"), dict) and z["9"].get("_") == "gray"):
+        return []
+    return [text(z[k]).strip() for k in sorted(z) if k in "123456789" and len(k) == 1 and text(z[k]) and text(z[k]).strip()]
+
+
+def tie_point(raw):
+    """(point path, route end path or None) for a co-knot on this beach's threads; a str saying why not, else.
+    The test beach's floor is 1, so the pscale p picks depth 1 - p on the spindle."""
+    m = TIE.match(raw)
+    if not m:
+        return "names no point — a co-knot is thread:<spindle> or <block> <spindle>, with p<pscale> for a point on it"
+    if m.group(1) and m.group(1) != "thread":
+        return f"a point in the {m.group(1)} family: pull it with pscale_stream_engage(field='{m.group(1)}', at='{m.group(2)}')"
+    if m.group(3) and not m.group(3).startswith("thread:"):
+        return None   # a point in a block: read as a block's
+    p = path(m.group(2) or m.group(4))
+    if m.group(5) is None:
+        return p, None
+    depth = 1 - int(m.group(5))
+    if depth < 1 or depth > len(p):
+        return f"p{m.group(5)} is no point on the spindle {m.group(2) or m.group(4)}"
+    return p[:depth], (p if depth < len(p) else None)
+
+
+def lines_at(s, p):
+    """Every hand's line exactly at a point, with its co-knots."""
+    out = []
+    for h, m in sorted(s["mirrors"].items()):
+        n = node_at(m, p)
+        if text(n) is not None:
+            out.append((h, text(n), zero_of(n)))
+    return out
+
+
+def clip(t):
+    return t if len(t) <= 140 else t[:139].rstrip() + "…"
+
+
+def tie_rows(s, q, ties):
+    """A line's co-knots, as the router prints them beneath it."""
+    rows = []
+    for raw in ties:
+        pt = tie_point(raw)
+        if isinstance(pt, str):
+            rows.append(f"    ⨯ {raw} — {pt}")
+            continue
+        if pt is None:   # a point in a block
+            m = TIE.match(raw)
+            b = s.get("blocks", {}).get(m.group(3))
+            n = node_at(b, path(m.group(4))) if isinstance(b, dict) else None
+            here = [(m.group(3), text(n), zero_of(n))] if text(n) is not None else []
+            point = m.group(4)
+            end = None
+        else:
+            here = lines_at(s, pt[0])
+            point = addr(pt[0])
+            end = pt[1]
+        if not here:
+            rows.append(f"    ⨯ {raw} — no line stands at {point}")
+            continue
+        back = any(isinstance(tie_point(r), tuple) and tie_point(r)[0] == q for _, _, zs in here for r in zs)
+        hands = ", ".join(dict.fromkeys(h for h, _, _ in here))
+        rows.append(f"    ⨯ {raw} — {point} · {hands}: {clip(here[0][1])} · " + ("tied both ways" if back else f"an offer: nothing at {point} ties back yet"))
+        if end:
+            e = lines_at(s, end)
+            between = sum(len(lines_at(s, end[:k])) for k in range(len(pt[0]) + 1, len(end)))
+            if e:
+                rows.append(f"        → {addr(end)} · {e[0][0]}: {clip(e[0][1])}" + (f" ({between} {'line' if between == 1 else 'lines'} between)" if between else ""))
+    return rows
+
+
+def listing(s, a):
+    """The lines at and beneath an address, each with its co-knots, and the co-knots elsewhere that name a point here."""
+    ls = lines_under(s, a)
+    here = {tuple(q) for q, _, _ in ls}
+    rows, shown = [], False
+    for q, h, t in ls:
+        rows.append(f"- {addr(q)} · {h}: {t}")
+        tr = tie_rows(s, q, zero_of(node_at(s["mirrors"][h], q)))
+        offered = []
+        for oh, m in sorted(s["mirrors"].items()):
+            def walk(nd, p):
+                if not isinstance(nd, dict):
+                    return
+                for k in sorted(k for k in nd if k != "_"):
+                    c, pk = nd[k], p + [k]
+                    for raw in zero_of(c):
+                        pt = tie_point(raw)
+                        if isinstance(pt, tuple) and pt[0] == q and tuple(pk) != tuple(q):
+                            if not any(isinstance(tie_point(r), tuple) and tie_point(r)[0] == pk for r in zero_of(node_at(s["mirrors"][h], q))):
+                                offered.append(f"    ⨯ offered from thread:{addr(pk)} · {oh}: {clip(text(c) or '')} · not tied back here")
+                    walk(c, pk)
+            walk(m, [])
+        rows += tr + offered
+        shown = shown or bool(tr or offered)
+    return rows + ([LEGEND] if shown else [])
 
 
 def node_at(m, p):
@@ -108,7 +220,10 @@ def set_line(m, p, t):
     parent = ensure(m, p[:-1])
     last = p[-1]
     if last in parent and isinstance(parent[last], dict):
-        parent[last]["_"] = t
+        n = parent[last]
+        while isinstance(n.get("_"), dict):   # a line holding co-knots keeps them: the words move, the zero stays
+            n = n["_"]
+        n["_"] = t
     else:
         parent[last] = t
 
@@ -162,7 +277,7 @@ def main():
                     *law_section(s), "", f"# Readings at {a} — {len({h for _, h, _ in ls})} voices"]
             if s.get("way_once"):
                 save(d, s)
-            rows += [f"- {addr(q)} · {h}: {t}" for q, h, t in ls] or ["  (no hand has a line at or beneath this address)"]
+            rows += listing(s, a) or ["  (no hand has a line at or beneath this address)"]
             out = "\n".join(rows)
     elif cmd == "say":
         a = args[0].replace("thread:", "")
@@ -205,7 +320,30 @@ def main():
                 save(d, s)
                 out = (("\n".join(law) + "\n\n" if law else "") + f"said at {a} in thread:{me}" + (f" (it replaced your earlier line there)" if prev is not None and prev != line else "")
                        + (f"; options at " + ", ".join(addr(p + [str(k)]) for k in range(1, len(opts) + 1)) if opts else "")
-                       + "\n\n" + "\n".join(f"- {addr(q)} · {h}: {t}" for q, h, t in lines_under(s, a)))
+                       + "\n\n" + "\n".join(listing(s, a)))
+    elif cmd == "tie":
+        sp = args[0].replace("thread:", "") if args else ""
+        content = (args[1] if len(args) > 1 else "").strip()
+        a, star, k = sp.partition("*")
+        if not star or not VALID.match(a) or not re.fullmatch(r"[1-9]", k):
+            out = f"refused: '{sp}' is not <address>*<k> — the address of your own line, a star, and the co-knot's digit 1-9"
+        elif not content:
+            out = "refused: a co-knot names its partner point, thread:<address>"
+        else:
+            m = s["mirrors"].setdefault(me, {})
+            p = path(a)
+            n = node_at(m, p)
+            if text(n) is None:
+                out = f"refused: no line of yours stands at {a} to hold a co-knot in its zero; tie your knot there first"
+            else:
+                if isinstance(n, str):
+                    n = {"_": n}
+                    (node_at(m, p[:-1]) if len(p) > 1 else m)[p[-1]] = n
+                if not isinstance(n.get("_"), dict):
+                    n["_"] = {"_": n["_"]}
+                n["_"][k] = content
+                save(d, s)
+                out = f"tied a co-knot at {a}*{k} in thread:{me}: {content}\n\n" + "\n".join(listing(s, a))
     elif cmd == "open":
         content = args[0]
         nums = sorted(int(k) for k in s["registry"])
@@ -234,7 +372,7 @@ def main():
             b = s.get("blocks", {}).get(name)
             if b is None and s.get("live") and name in TAUGHT:
                 taught = f"ways-thread-{s['way_draft']}.json" if name == "ways:thread" and s.get("way_draft") else TAUGHT[name]
-                if name == "function:thread" and s.get("way_draft") in ("s", "s2", "s3", "s4", "e1", "e2"):   # David's form and its endings: the law cut to its root line
+                if name == "function:thread" and s.get("way_draft") in ("s", "s2", "s3", "s4", "e1", "e2", "k1"):   # David's form, its endings and K1: the law cut to its root line
                     taught = "function-thread-s.json"
                 b = json.load(open(os.path.join(HERE, "teachings", taught)))
         if b is None:
@@ -242,8 +380,13 @@ def main():
         elif sp is None and len(json.dumps(b, ensure_ascii=False, indent=2)) > WHOLE_CHARS:
             out = disc(b)
         else:
+            star = bool(sp) and sp.endswith("*")
+            if star:
+                sp = sp[:-1]
             if sp and sp != "0":
                 b = node_at(b, path(sp)) if VALID.match(sp) else None
+            if star and b is not None:   # the star: a point's zero, its words and its co-knots
+                b = b.get("_") if isinstance(b, dict) and isinstance(b.get("_"), dict) else {"_": text(b)}
             out = json.dumps(b, ensure_ascii=False, indent=1) if b is not None else f"nothing at {sp} in {name}"
     elif cmd == "room":
         h = args[0].replace("pool:", "")
@@ -255,7 +398,7 @@ def main():
         save(d, s)
         out = f"contributed to pool:{h} at {len(s['rooms'][h])}"
     else:
-        out = "commands: read, say, open, block, room, post"
+        out = "commands: read, say, open, block, room, post, tie"
     meter(d, [cmd] + args, out)
     print(out)
 
