@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Hand-played acts through the real test beach for the endings (E1, E2): every right act takes full marks and reads well
-formed by the form pass that reads endings, and every planted wrong ending is caught. No model calls.
+"""Hand-played acts through the real test beach for the endings (E1, E2) and the co-knot (K1, K2): every right act takes
+full marks and reads well formed by the form pass that reads endings, and every planted wrong ending is caught; for K1 and
+K2 the eleventh use, tie, too, by the way each delivery ties (K1 bsp's star write, K2 the say's ties). No model calls.
 
-  selftest_e.py [E1|E2]    the delivery to play through (default E1)
+  selftest_e.py [E1|E2|K1|K2]    the delivery to play through (default E1)
 """
 import json, os, shutil, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -37,6 +38,14 @@ W = {  # planted wrong: the misses that must show
  "C10d": ("C10", [["say","1.3","looking at it then · waits on wren from 2026-11-11"]], ["it ends"]),
  "C10l": ("C10", [["say","1.3","looking at it then · waits on wren from 2026-11-10"],["say","2","x"]], ["nothing lost"]),   # her own glossary line written over
 }
+
+if D in B.TIES:   # the tie: wren's one act answers rook's review on thread 1 and dana's move on thread 3
+    LINE = "reviewed the draft against the new chart; two tide times corrected (tides:draft 2) · waits on dana · read: harbour:chart 2, tides:draft 2"
+    TOLD = ["post", "dana", "thread:1.1 — reviewed, and the page reads the new chart (tied to thread:3); yours to publish"]
+    R["C11"] = ([["say", "1.1", LINE, "--tie", "thread:3"]] if D in B.SAY_TIES else [["say", "1.1", LINE], ["tie", "1.1*1", "thread:3"]]) + [TOLD]
+    W["C11n"] = ("C11", [["say", "1.1", LINE], TOLD], ["co-knot"])   # no tie at all
+    if D in B.SAY_TIES:   # prose where the point goes: the say is refused whole, so the line never lands
+        W["C11p"] = ("C11", [["say", "1.1", LINE, "--tie", "dana's chart change"], TOLD], ["the line lands", "co-knot"])
 
 
 def play(name, case, acts, reply=None):
@@ -83,6 +92,6 @@ for n, r, must in results:
         print("     ", "; ".join(misses))
 print("all as expected" if not bad else f"{bad} NOT as expected")
 total = sum(len(r["expect"]) for n, r, m in results if n in R or n == "C9")
-print("checks across the ten:", total)
+print(f"checks across the {'eleven' if D in B.TIES else 'ten'}:", total)
 shutil.rmtree(runs)
 sys.exit(1 if bad else 0)

@@ -253,6 +253,34 @@ export async function readTies(lines: CrossLine[], mirrors: Map<string, Block>, 
   }
 }
 
+/** WHY A TIE SAID WITH ITS KNOT IS REFUSED (K2, proposals/2026-11-13-co-knots.md),
+ *  or null when it names a point where a line stands, on another thread of this
+ *  family, in another family's place, or in a block. `self` is the said line's
+ *  digits and `mirrors` the family's mirrors in hand, the sayer's own among them.
+ *  Checked before anything is written, so a misreading meets its answer at once. */
+export async function tieRefusal(raw: string, self: string[], mirrors: Map<string, Block>, floor: number, field: string, origin?: string): Promise<string | null> {
+  const t = parseTie(raw);
+  if (!t) return `names no point: a tie is ${field}:<address> for a point on another thread, or <block> <spindle>, with ' p<pscale>' after it for a point on a spindle that runs on; never prose`;
+  if (t.family !== null && t.family !== field) {
+    const spine = origin ? await loadBlock(origin, `spine:${t.family}`).catch(() => null) : null;
+    return spine ? null : `names the family ${t.family}, and no spine:${t.family} stands on this beach`;
+  }
+  const inFamily = t.block === null || t.block.startsWith(`${field}:`);
+  const target = inFamily || !origin ? null : await loadBlock(origin, t.block!).then((r) => (r && typeof r.block === 'object' ? r.block as Block : null), () => null);
+  if (!inFamily && !target) return `names the block ${t.block}, which this beach does not hold`;
+  const tfloor = inFamily ? floor : floorDepth(target!);
+  const pt = pointOf(t.spindle, t.p, tfloor);
+  if (!pt) return t.p === null ? `names no point: ${t.spindle} is not an address` : `names no point: p${t.p} is not a point on the spindle ${t.spindle}`;
+  if (inFamily) {
+    if (pt.point.slice(0, floor).join('') === self.slice(0, floor).join('')) {
+      return `names a point on this line's own thread, ${field}:${dotted(self.slice(0, floor), floor)}; a co-knot ties to another thread, and this thread's own knots are already on its route`;
+    }
+    const pick = t.block === null ? mirrors : new Map([...mirrors].filter(([who]) => `${field}:${who}` === t.block));
+    return linesExactly(pick, pt.point, floor, origin).length ? null : `names ${field}:${dotted(pt.point, floor)}, where no hand's line stands; tie to a point where a line stands`;
+  }
+  return voiceOf(readAt(target!, pt.point.join('')), origin) ? null : `names ${t.block} ${dotted(pt.point, tfloor)}, where no line stands`;
+}
+
 /** A line's co-knots, as a reader receives them beneath it: each partner point
  *  with its first line, whether it ties back, the route's end where the co-knot
  *  names one; then the co-knots offered to this point and not yet tied back. */

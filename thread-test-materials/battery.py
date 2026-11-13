@@ -33,10 +33,15 @@ delivery: the teaching a mind is handed, from teachings/ —
   K1  E2 with one sentence added to its step 4, the co-knot (way_k1.txt; bsp-mcp proposals/2026-11-13-co-knots.md), at
       David's GO of 13 November: where the same act also answers a point on another thread, tie a co-knot in your line's
       zero. The test beach's tie verb is listed among its commands, and only for K deliveries, so E2's brief stands as it ran.
-      Graded as E2 is, plus an eleventh use, tie (short.py's docstring has the grade and the gate, fixed before it ran)
+      Graded as E2 is, plus an eleventh use, tie (short.py's docstring has the grade and the gate, fixed before it ran).
+      Run 13 November: 49 of 53, the nine 40 of 44, so it missed its gate
+  K2  E2 with one sentence added to its step 4, the co-knot said with its knot (way_k2.txt), at David's GO on K2 of
+      13 November (thread 33.11): where the same act also answers a point on another thread, name that point in the same
+      call, ties=['thread:<that point>']. The test beach's say takes --tie for K2 alone, as the router's say takes ties;
+      no tie verb is listed. Graded as K1 is, under K1's gate (short.py's docstring, fixed before it ran)
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
-cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2, K1) · C11 tie (K1)
+cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2, K1, K2) · C11 tie (K1, K2)
 <runs> is $THREAD_TEST_RUNS, else runs/ beside this file. A run's mind is a separate step
 (run-minds.sh, which spends model calls); setup and score spend nothing.
 """
@@ -50,8 +55,9 @@ import short as SH
 
 RUNS = os.environ.get("THREAD_TEST_RUNS") or os.path.join(HERE, "runs")
 SHORT = {"S", "S2", "S3", "S4"}   # David's form: seeds with no closing clause, graded by short.py
-ENDS = {"E1", "E2", "K1"}   # the endings back (bsp-mcp #584): seeds as tied, graded by short.py with an ending in each use
-TIES = {"K1"}   # the co-knot (bsp-mcp proposals/2026-11-13-co-knots.md): the tie verb among the commands, and the eleventh use
+ENDS = {"E1", "E2", "K1", "K2"}   # the endings back (bsp-mcp #584): seeds as tied, graded by short.py with an ending in each use
+TIES = {"K1", "K2"}   # the co-knot (bsp-mcp proposals/2026-11-13-co-knots.md): the eleventh use, and a way to tie among the commands
+SAY_TIES = {"K2"}   # K2: the co-knot said with its knot, the say's --tie (ties=); K1 had bsp's star write, the tie verb
 TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt", "R": "root_v2.txt", "H": "root_v2.txt", "H2": "root_v2.txt", "H3": "root_v2.txt",
              **{d: "root_v2.txt" for d in SHORT | ENDS}}
 LIVE = {"R", "H", "H2", "H3"} | SHORT | ENDS
@@ -241,6 +247,9 @@ COMMANDS = """COMMANDS — this is a test beach. Run these with Bash; `{bb}` sta
 # K deliveries also hold the star write that ties a co-knot (bsp-mcp proposals/2026-11-13-co-knots.md); E2's brief stands as it ran.
 TIE_COMMAND = """
   {bb} tie <A>*<k> "<point>"                         = bsp(agent_id=<beach>, block='thread:<you>', spindle='<A>*<k>', content='<point>'), a co-knot in your own line's zero"""
+# K2 says the co-knot with its knot instead: the router's ties on the say (src/tools/stream.ts).
+SAY_TIE_COMMAND = """
+  {bb} say <A> "<line>" --tie "<point>"                = pscale_stream_engage(field='thread', handle=<you>, at='<A>', say='<line>', ties=['<point>']) (ties are optional; --option and --tie go in the same call)"""
 
 REPORT = """WHEN YOU ARE DONE, end your reply with one JSON object and nothing after it:
 {"tied_at": "<the address of the line you wrote on the thread, or null>", "line": "<that line>", "options": ["<each option you offered>"], "handed_on": {"to": "<whose room, or null>", "text": "<what you put there>"}, "why": "<one sentence: why that address>"}"""
@@ -275,7 +284,7 @@ def brief(dname, case, bb):
     if dname.split("x")[0] in SHORT and case in SH.SITUATION_S:
         assert SH.SITUATION_S[case][0] in situation
         situation = situation.replace(*SH.SITUATION_S[case])
-    commands = COMMANDS + (TIE_COMMAND if dname.split("x")[0] in TIES else "")
+    commands = COMMANDS + (SAY_TIE_COMMAND if dname.split("x")[0] in SAY_TIES else TIE_COMMAND if dname.split("x")[0] in TIES else "")
     return (law + "\n\n" + commands.format(bb=bb) + "\n\nYOUR SITUATION\n" + situation
             + "\n\nAct on the beach with the commands, as the text above teaches; read what you need first.\n\n" + REPORT)
 
@@ -299,6 +308,8 @@ def setup(dname, cases):
             s["way_once"] = True
         if dname.split("x")[0] in DRAFTS:
             s["way_draft"] = DRAFTS[dname.split("x")[0]]
+        if dname.split("x")[0] in SAY_TIES:
+            s["say_ties"] = True
         json.dump(s, open(os.path.join(d, "state.json"), "w"), indent=1, ensure_ascii=False)
         json.dump(s, open(os.path.join(d, "start.json"), "w"), indent=1, ensure_ascii=False)
         bb = os.path.join(d, "bb")

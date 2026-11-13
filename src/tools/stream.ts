@@ -81,7 +81,7 @@ import { wireStore } from '../genus.js';
 import { nameAtTheDoor, noteLook, reflect } from '../looks.js';
 import { rideOrientation } from '../orientation.js';
 import { followsOf, lensLaw, lensVoice, composeLensMedium } from './lens.js';
-import { raised, nodeAt, linesAt, dotted, readTies, tieLines, TIE_LEGEND, type CrossLine } from '../cross.js';
+import { raised, nodeAt, linesAt, dotted, readTies, tieLines, tiesOf, tieRefusal, TIE_LEGEND, type CrossLine } from '../cross.js';
 import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { colourBlockName, isGrayEnvelope, type GrayEnvelope } from '../keys.js';
@@ -669,6 +669,11 @@ export const streamEngageParamsSchema = {
     .max(9)
     .optional()
     .describe("With `say`, on a family that is not on the clock: the choices your line offers, each landing in your own mirror at its digit beneath your line — option 1 at <at>.1, option 2 at <at>.2 — so whoever takes one says at its address, and every option nobody takes stays readable as a strand not taken (function:thread 2). An option keeps its digit once offered: one another hand has taken cannot be reworded or dropped."),
+  ties: z
+    .array(z.string())
+    .max(9)
+    .optional()
+    .describe("With `say`, on a family that is not on the clock: the points on OTHER threads that this same act also answers, each 'thread:<address>' (a point on another thread of this family), or '<block> <spindle>' for a point in any block, with ' p<pscale>' after it for a point on a spindle that runs on. Each stands as a co-knot in your line's own zero, at the next digit free there, so a reader of either thread finds the other; whoever holds that point ties back from theirs. What stands in the zero is kept, a tie already standing is not repeated, and saying the line again keeps them. A tie that names no point, a point where no line stands, or a point on the line's own thread is refused with the reason, and nothing is written (proposals/2026-11-13-co-knots.md)."),
   keep: z
     .enum(['personal', 'collective'])
     .optional()
@@ -701,6 +706,7 @@ export interface StreamEngageParams {
   at?: string;
   say?: string;
   options?: string[];
+  ties?: string[];
   keep?: 'personal' | 'collective';
   keep_text?: string;
   gray?: string;
@@ -900,6 +906,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   let mintedMirror = null as string | null;   // this say brought <field>:<handle> into being
   let spanSaid = null as { touched: number; cleared: boolean } | null;   // a span's say: beats written, or cleared (set inside the line below)
   let optionsSaid = 0;                         // the options a say off the clock offered beneath its line
+  const tiedSaid: { at: string; raw: string; fresh: boolean }[] = [];   // the co-knots a say off the clock stood in its line's zero
   let replacedLine = null as string | null;    // the caller's own line a say off the clock replaced
   // One hand's says to one mirror land one after another (oneAtATime); a say
   // that waited for another reads the mirror afresh.
@@ -912,11 +919,19 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // session's colours on once (wearFor, below) and every line in them then
   // reads as its words.
   const colour = typeof params.gray === 'string' && params.gray.trim() ? colourBlockName(params.gray) : null;
+  // CO-KNOTS SAID WITH THEIR KNOT (K2, proposals/2026-11-13-co-knots.md): a tie rides
+  // a say off the clock, in an open line, whose zero holds it.
+  const tying = (params.ties ?? []).map((t) => t.trim()).filter(Boolean);
+  if (tying.length) {
+    if (!writing || (params.say ?? '').trim() === '') return out(`Nothing was written: ties ride a say. Name the points in the same call as the line they belong to, say='<line>', ties=['thread:<that point>'].`);
+    if (spineFloor === TEMPORAL_FLOOR || span) return out(`Nothing was written: ties stand only off the clock, in a family such as thread; the ${field} spine is on the clock.`);
+    if (colour) return out(`Nothing was written: a coloured line's zero holds its seal, so a coloured say takes no ties. Say the line, then tie from an open line.`);
+  }
   // THE GUARD MEETS THE SAY BEFORE ANYTHING IS BORN (the doors' second walk, 6.2): a say, or an option
   // it offers, carrying the key the call presents is refused here, so a first say leaves no mirror
   // born under that key. A coloured say leaves sealed, and the guard at the save passes it, as before.
   if (writing && !colour) {
-    try { refuseKeyInPayload({ say: params.say, options: params.options }, [params.secret]); }
+    try { refuseKeyInPayload({ say: params.say, options: params.options, ties: params.ties }, [params.secret]); }
     catch (e: any) { return out(`Your reading was refused at ${mirrorName} — ${e?.message ?? String(e)}`); }
   }
   const word = sealingKey(undefined, params.secret);
@@ -950,6 +965,17 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       spanSaid = { touched, cleared: true };
     } else if (params.say !== undefined && params.say.trim() !== '') {
       let mrow = await mirrorNow();
+      if (tying.length) {
+        // Every tie is checked before anything is written, against the family's
+        // mirrors in hand and the caller's own, so the knot never lands without them.
+        const held = new Map<string, Block>();
+        for (const [n, p] of othersP) { const b = await p; if (b) held.set(n.slice(field.length + 1), b); }
+        if (mrow && typeof mrow.block === 'object' && mrow.block !== null) held.set(handle, mrow.block as Block);
+        for (const t of tying) {
+          const why = await tieRefusal(t, digits, held, spineFloor, field, origin);
+          if (why) return out(`Nothing was written: the tie '${t}' ${why}.`);
+        }
+      }
       if (!mrow || typeof mrow.block !== 'object' || mrow.block === null) {
         mintedMirror = mirrorName;
         const born = mirrorBorn(handle, field, spineName);
@@ -1045,6 +1071,25 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
             });
             value = node;
             optionsSaid = offered.length;
+          }
+          if (tying.length) {
+            // Each tie stands in the line's zero at the next digit free there;
+            // what stands is kept, and a tie already standing is not repeated.
+            const node: Record<string, unknown> = value && typeof value === 'object' ? { ...(value as Record<string, unknown>) } : { _: value };
+            const z = node._;
+            const zero: Record<string, unknown> = z && typeof z === 'object' && !Array.isArray(z) ? { ...(z as Record<string, unknown>) } : { _: z };
+            const here = dotted(digits, spineFloor);
+            const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            for (const t of tying) {
+              const standingAt = DIGITS.find((k) => tiesOf({ _: { [k]: zero[k] } })[0] === t);
+              if (standingAt) { tiedSaid.push({ at: `${here}*${standingAt}`, raw: t, fresh: false }); continue; }
+              const free = DIGITS.find((k) => zero[k] === undefined);
+              if (!free) return out(`Nothing was written: the zero of your line at ${here} holds nine co-knots already.`);
+              zero[free] = t;
+              tiedSaid.push({ at: `${here}*${free}`, raw: t, fresh: true });
+            }
+            node._ = zero;
+            value = node;
           }
           writeAt(mblock, mAddr, value);
           await saveBlock(origin, mirrorName, mblock, { spindle: mAddr, secret: params.secret });
@@ -1394,6 +1439,9 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     } else if (saidAt) {
       lines.push(`✓ your reading landed at ${saidAt}${colour && saidSeal ? colourLine(colour, saidSeal) : ''}${mintedMirror ? formatBorn(mintedMirror) : ''}`);
       if (optionsSaid) lines.push(`✓ ${optionsSaid} ${optionsSaid === 1 ? 'option' : 'options'} beneath it, at ${Array.from({ length: optionsSaid }, (_, i) => dotted(digits.concat(String(i + 1)), spineFloor)).join(', ')} — whoever takes one says at its address`);
+      for (const t of tiedSaid) lines.push(t.fresh
+        ? `✓ co-knot at ${t.at} → ${t.raw}, in your line's zero; whoever holds that point ties back from theirs`
+        : `✓ co-knot ${t.raw} already stands at ${t.at}, kept`);
       if (replacedLine) lines.push(`  it replaced your own line there: '${clip(replacedLine, 160)}' — if another instance of you wrote that, say it back, and tie yours at a digit no one holds (function:thread 3)`);
     }
     if (keptTo) lines.push(`✓ fold kept at ${keptTo}${colour && keptSeal ? colourLine(colour, keptSeal) : ''}`);

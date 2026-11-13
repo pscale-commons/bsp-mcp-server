@@ -58,6 +58,17 @@ Run 13 November (eleven Claude Haiku minds, $0.04): K1 49 of 53. Tie 6 of 6, lat
 1, filed dana's word there as prose in the zero and tied no knot (3 of 5, a CROSSING fault); open's registry line dropped
 '· opened by' (an OPENED fault, step 1's slip, the way's words there unchanged). Tie's mind also first wrote prose into
 its co-knot, then mended it to the point when the read said it named no point. Nothing moved; David was told.
+
+K2 (13 November, at David's GO on K2, thread 33.11; bsp-mcp proposals/2026-11-13-co-knots.md), FIXED BEFORE IT RAN: E2's
+way with one sentence added to its step 4 (way_k2.txt): where the same act also answers a point on another thread, name
+that point in the same call, ties=['thread:<that point>'], and the co-knot stands in your line's zero. The test beach's say
+takes --tie for K2 alone, as the router's say takes ties (bsp-mcp src/tools/stream.ts and src/cross.ts tieRefusal): each tie
+checked before anything is written, written into the line's zero at the next free digit, a tie already standing kept and
+not repeated, and refused with the reason when it names no point, a point where no line stands, or the line's own thread.
+No tie verb is listed. Graded exactly as K1, the same eleven uses, and THE GATE is K1's: nothing lost in any of the eleven,
+the nine at least 41 of 44, at least eight of the nine well formed, later ending ' · waits on wren from 2026-11-10', and tie
+scoring all six. If it passes, the sentence goes into ways:thread, the co-knot into function:thread 3 and ties into the
+live router, at David's word; if it fails, nothing moves and David is told.
 """
 import json, re
 
@@ -110,7 +121,7 @@ EXPECT = {
     "C7": dict(land={"1.1211", "1.122"}, options=1, told=["dana"]),
     "C8": dict(land={"1.111", "1.14"}, options=2, told=["dana"]),
     "C10": dict(land={"1.3", "1.1"}, options=None, told=False),   # later: E1 and E2 only; a room told or not, as the hand likes
-    "C11": dict(land={"1.1", "1.11", "3.1"}, options=None, told=["dana"]),   # tie: K1 only; a line on rook's thread, a second on dana's if the hand likes
+    "C11": dict(land={"1.1", "1.11", "3.1"}, options=None, told=["dana"]),   # tie: K1 and K2; a line on rook's thread, a second on dana's if the hand likes
 }
 
 # E1 and E2: whose move each line ends on (proposals/2026-11-04-threads-keep-their-endings.md)

@@ -3,6 +3,7 @@
 
   testbeach.py <rundir> read <at>                          the one read: pscale_stream_engage(field='thread', at=<at>)
   testbeach.py <rundir> say <at> "<line>" [--option "<o>"]... a knot in your own mirror, options beneath it in one call
+               [--tie "<point>"]...                        and co-knots in its zero, ties=[...] (K2: the router's say, bsp-mcp src/tools/stream.ts)
   testbeach.py <rundir> open "<content>"                   bsp(block='spine:thread', append=true, content=...): the number
   testbeach.py <rundir> block <name> [<spindle>]           a plain bsp read of any block
   testbeach.py <rundir> room <handle>                      read pool:<handle>
@@ -260,6 +261,32 @@ def disc(b):
     return "\n".join(rows)
 
 
+def tie_refusal(s, a, raw):
+    """Why a tie said with its knot is refused, or None (K2; bsp-mcp src/cross.ts tieRefusal): it must name a point where
+    a line stands, on another thread of this family or in a block this beach holds; never prose, never its own thread."""
+    m = TIE.match(raw)
+    if not m:
+        return ("names no point: a tie is thread:<address> for a point on another thread, or <block> <spindle>, with ' p<pscale>' "
+                "after it for a point on a spindle that runs on; never prose")
+    if m.group(1) and m.group(1) != "thread":
+        return f"names the family {m.group(1)}, and no spine:{m.group(1)} stands on this beach"
+    if m.group(3) and not m.group(3).startswith("thread:"):
+        b = s.get("blocks", {}).get(m.group(3))
+        if not isinstance(b, dict):
+            return f"names the block {m.group(3)}, which this beach does not hold"
+        if not VALID.match(m.group(4)) or text(node_at(b, path(m.group(4)))) is None:
+            return f"names {m.group(3)} {m.group(4)}, where no line stands"
+        return None
+    pt = tie_point(raw)
+    if isinstance(pt, str):
+        return pt if pt.startswith("names") else "names no point: " + pt
+    if pt[0][0] == path(a)[0]:
+        return (f"names a point on this line's own thread, thread:{path(a)[0]}; a co-knot ties to another thread, and this "
+                "thread's own knots are already on its route")
+    hands = [h for h, _, _ in lines_at(s, pt[0]) if not m.group(3) or m.group(3) == f"thread:{h}"]
+    return None if hands else f"names thread:{addr(pt[0])}, where no hand's line stands; tie to a point where a line stands"
+
+
 def main():
     d, cmd, args = sys.argv[1], sys.argv[2], sys.argv[3:]
     s = load(d)
@@ -281,14 +308,18 @@ def main():
             out = "\n".join(rows)
     elif cmd == "say":
         a = args[0].replace("thread:", "")
-        line, opts, i = None, [], 1
+        line, opts, ties = None, [], []
         line = args[1] if len(args) > 1 else ""
         rest = args[2:]
         while rest:
             if rest[0] in ("--option", "-o") and len(rest) > 1:
                 opts.append(rest[1]); rest = rest[2:]
+            elif rest[0] == "--tie" and len(rest) > 1 and s.get("say_ties"):
+                ties.append(rest[1].strip()); rest = rest[2:]
             else:
                 rest = rest[1:]
+        ties = [t for t in ties if t]
+        tie_why = next(((t, w) for t in ties for w in [tie_refusal(s, a, t)] if w), None) if VALID.match(a) else None
         if not VALID.match(a):
             out = f"refused: '{a}' is not an address (digits 1-9, at most one decimal point)"
         elif "0" in a.replace(".", ""):
@@ -297,6 +328,10 @@ def main():
             out = f"refused: no thread {a.split('.')[0]} in spine:thread"
         elif len(opts) > 9:
             out = "refused: at most nine options"
+        elif len(ties) > 9:
+            out = "refused: at most nine ties"
+        elif tie_why:
+            out = f"Nothing was written: the tie '{tie_why[0]}' {tie_why[1]}."
         else:
             m = s["mirrors"].setdefault(me, {})
             p = path(a)
@@ -312,14 +347,40 @@ def main():
                 out = refused
             else:
                 prev = text(node_at(m, p))
+                n0 = node_at(m, p)
+                z0 = n0.get("_") if isinstance(n0, dict) and isinstance(n0.get("_"), dict) else {}
+                fresh = [t for t in dict.fromkeys(ties) if t not in zero_of(n0 if isinstance(n0, dict) else {})]
+                if len([k for k in "123456789" if k not in z0]) < len(fresh):
+                    out = f"Nothing was written: the zero of your line at {a} holds nine co-knots already."
+                    meter(d, [cmd] + args, out)
+                    print(out)
+                    return
                 set_line(m, p, line)
                 for k, o in enumerate(opts, 1):
                     set_line(m, p + [str(k)], o)
+                tied = []
+                if ties:   # each tie in the line's zero at the next free digit; what stands is kept, a standing tie not repeated
+                    parent = node_at(m, p[:-1]) if len(p) > 1 else m
+                    n = parent[p[-1]]
+                    if isinstance(n, str):
+                        n = parent[p[-1]] = {"_": n}
+                    if not isinstance(n.get("_"), dict):
+                        n["_"] = {"_": n.get("_")}
+                    z = n["_"]
+                    for t in dict.fromkeys(ties):
+                        k = next((k for k in "123456789" if text(z.get(k)) is not None and text(z[k]).strip() == t), None)
+                        if k:
+                            tied.append(f"✓ co-knot {t} already stands at {a}*{k}, kept")
+                            continue
+                        k = next(k for k in "123456789" if k not in z)
+                        z[k] = t
+                        tied.append(f"✓ co-knot at {a}*{k} → {t}, in your line's zero; whoever holds that point ties back from theirs")
                 first = s.get("way_once") and not (s.get("told_law") and s.get("told_way"))
                 law = law_section(s) if first else []
                 save(d, s)
                 out = (("\n".join(law) + "\n\n" if law else "") + f"said at {a} in thread:{me}" + (f" (it replaced your earlier line there)" if prev is not None and prev != line else "")
                        + (f"; options at " + ", ".join(addr(p + [str(k)]) for k in range(1, len(opts) + 1)) if opts else "")
+                       + ("\n" + "\n".join(tied) if tied else "")
                        + "\n\n" + "\n".join(listing(s, a)))
     elif cmd == "tie":
         sp = args[0].replace("thread:", "") if args else ""
@@ -372,7 +433,7 @@ def main():
             b = s.get("blocks", {}).get(name)
             if b is None and s.get("live") and name in TAUGHT:
                 taught = f"ways-thread-{s['way_draft']}.json" if name == "ways:thread" and s.get("way_draft") else TAUGHT[name]
-                if name == "function:thread" and s.get("way_draft") in ("s", "s2", "s3", "s4", "e1", "e2", "k1"):   # David's form, its endings and K1: the law cut to its root line
+                if name == "function:thread" and s.get("way_draft") in ("s", "s2", "s3", "s4", "e1", "e2", "k1", "k2"):   # David's form, its endings, K1 and K2: the law cut to its root line
                     taught = "function-thread-s.json"
                 b = json.load(open(os.path.join(HERE, "teachings", taught)))
         if b is None:

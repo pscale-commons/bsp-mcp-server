@@ -45,7 +45,7 @@ S to S4 are graded by where each line lands and whether anything is lost, not by
 
 K1 adds an eleventh use, tie (6 checks): wren's one act answers rook's review on thread 1 and dana's move to the new chart on thread 3, and a co-knot in the zero of her line must name a point on the other thread where a line stands (bsp-mcp `proposals/2026-11-13-co-knots.md`). Its run scored tie 6 of 6, but word read the star-and-digit spelling `1*2` as option 2 of knot 1, filed dana's word there as prose and tied no knot (3 of 5), so the nine scored 40 of 44 and seven of nine were well formed, under the gate.
 
-4. It plays the short form's right and wrong acts by hand through the test beach (`selftest_s.py` for S, S2, S3 and S4, `selftest_e.py` for E1 and E2, whose planted wrong acts are wrong endings and dates). Each delivery's words must reach the mind at all four handings, the strict spelling must read six written places as it should, every right act must take full marks, and every planted wrong act must be caught.
+4. It plays the short form's right and wrong acts by hand through the test beach (`selftest_s.py` for S, S2, S3 and S4, `selftest_e.py` for E1, E2, K1 and K2, whose planted wrong acts are wrong endings and dates, and for K1 and K2 a tie left out and, for K2, prose where the point goes). Each delivery's words must reach the mind at all four handings, the strict spelling must read six written places as it should, every right act must take full marks, and every planted wrong act must be caught.
 
 The runs are copied to a scratch directory first, so a pass writes nothing here.
 
@@ -82,6 +82,7 @@ The teachings are in `teachings/`:
 | E1 | `root_v2.txt` | S3 with one sentence more, 'End your line with whose move is next: …' (`way_e1.txt`, `ways-thread-e1.json`). Missed its gate |
 | E2 | `root_v2.txt` | #570's way with ' from <date>', written 2026-11-07, added to its step 4 (`way_e2.txt`, `ways-thread-e2.json`), `ways:thread` since 4 November and `run-minds.sh`'s default. E1 and E2 keep the seeds' endings and run a tenth use, later |
 | K1 | `root_v2.txt` | E2's way with one sentence added to its step 4, the co-knot (`way_k1.txt`, `ways-thread-k1.json`), and the test beach's `tie` verb among the commands for K deliveries alone; an eleventh use, tie. Missed its gate |
+| K2 | `root_v2.txt` | E2's way with one sentence added to its step 4, the co-knot said with its knot, `ties=['thread:<that point>']` (`way_k2.txt`, `ways-thread-k2.json`), and the test beach's say taking `--tie` for K2 alone, as the router's say takes `ties`; no `tie` verb listed. The same eleven uses, under K1's gate |
 | S4 | `root_v2.txt` | S3, where a hand already holds a line it begins with that line's words in place of going one deeper: David's one knot (`way_s4.txt`). S3 and S4 are graded alike, and a line kept inside the one that replaced it counts as nothing lost |
 
 Each is made from its beach block the way keel made `law_v1.txt`: the heading line, then the root, then 1 to 8. The same transform rebuilds `law_v1.txt` byte for byte from `archive:function:thread:2026-10-29-2`.

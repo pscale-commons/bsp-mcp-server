@@ -14,7 +14,7 @@
      gives the totals reported (pool:threads 11, 14, 15, 16, 17 and 18, and for S to S4
      proposals/2026-11-03-threads-without-the-keyword.md), so a change to the checker or
      the grading that moves a verdict is seen.
-  4. THE SHORT FORM'S HAND-PLAYED ACTS (selftest_s.py, and selftest_e.py for E1 and E2), for S to E2: each
+  4. THE SHORT FORM'S HAND-PLAYED ACTS (selftest_s.py, and selftest_e.py for E1, E2, K1 and K2), for S to K2: each
      delivery's words reach the mind at all four handings, the strict spelling reads six
      written places as it should, every right act takes full marks, and every planted
      wrong act is caught.
@@ -76,7 +76,7 @@ for dname, (want, of, v1, p2) in EXPECT.items():
         + ("" if (got, total, wf1, wf2) == (want, of, v1, p2) else f" (reported {want}/{of}, {v1} and {p2})"))
 
 print("── 4. the short form's hand-played acts ──")
-for script, dname in [("selftest_s.py", d) for d in ("S", "S2", "S3", "S4")] + [("selftest_e.py", d) for d in ("E1", "E2")]:
+for script, dname in [("selftest_s.py", d) for d in ("S", "S2", "S3", "S4")] + [("selftest_e.py", d) for d in ("E1", "E2", "K1", "K2")]:
     r = subprocess.run(py + [os.path.join(HERE, script), dname], capture_output=True, text=True, env=env)
     lines = r.stdout.strip().split("\n") or [""]
     say(r.returncode == 0, f"{lines[0]}; {lines[-2] if len(lines) > 1 else 'selftest_s.py gave nothing'}")

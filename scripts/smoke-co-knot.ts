@@ -213,6 +213,37 @@ try {
   ok(r.includes('⨯ see the meld — names no point'), 'a zero entry that names no point says so');
   ok(r.includes("⨯ tranche:1.18 — a point in the tranche family: pull it with pscale_stream_engage(field='tranche', at='1.18')"), 'a point in another family is named with the read that pulls it');
   await dump('planted.json');
+
+  // ── K2: the co-knot said with its knot, ties= on the say ──
+  const K = locks['thread:keel'];
+  const K51 = 'keel carried thread five on, and the same act answers 31 · waits on happyseaurchin';
+  r = await engage({ handle: 'keel', at: '5.1', say: K51, ties: ['thread:31'], secret: K });
+  show('keel says at 5.1 with ties=[thread:31]', r);
+  let keel = await B('thread:keel');
+  ok(readAt(keel, '051')?._?._ === K51 && readAt(keel, '051')?._?.['1'] === 'thread:31', 'a say with ties lands the knot and its co-knot in one call, the tie in the line\'s zero at 5.1*1');
+  ok(r.includes('✓ co-knot at 5.1*1 → thread:31'), 'and the answer names where the co-knot stands');
+  ok(r.includes(`⨯ thread:31 — 31 · happyseaurchin: ${D31.slice(0, 30)}`), 'and the snapshot shows it under the knot, with the partner point\'s own line');
+  r = await engage({ handle: 'keel', at: '5.1', say: K51, ties: ['thread:31', 'systemic-kernel 5'], secret: K });
+  keel = await B('thread:keel');
+  ok(readAt(keel, '051')?._?.['1'] === 'thread:31' && readAt(keel, '051')?._?.['2'] === 'systemic-kernel 5' && readAt(keel, '051')?._?.['3'] === undefined, 'said again, a tie already standing is kept and not repeated, and a new one takes the next free digit');
+  ok(r.includes('✓ co-knot thread:31 already stands at 5.1*1, kept') && r.includes('✓ co-knot at 5.1*2 → systemic-kernel 5'), 'and the answer says which stood and which is new');
+  const refusedTie = async (tie: string, why: RegExp, m: string) => {
+    const before = JSON.stringify(await B('thread:keel'));
+    const rr = await engage({ handle: 'keel', at: '5.1', say: 'keel tried a tie that should not stand · complete', ties: [tie], secret: K });
+    ok(why.test(rr) && /Nothing was written/.test(rr) && JSON.stringify(await B('thread:keel')) === before, m);
+  };
+  await refusedTie('rook asked for this', /names no point/, 'a tie that is prose is refused, and nothing is written');
+  await refusedTie('thread:5', /own thread/, 'a tie to the line\'s own thread is refused, and nothing is written');
+  await refusedTie('thread:23.99', /no hand's line stands/, 'a tie to a point where no line stands is refused, and nothing is written');
+  await refusedTie('no-such-block 3', /does not hold/, 'a tie to a block the beach does not hold is refused, and nothing is written');
+  r = await engage({ handle: 'keel', at: '5.1', ties: ['thread:31'], secret: K });
+  ok(/ties ride a say/.test(r), 'ties without a say are refused');
+  r = await engage({ handle: 'wren', at: '5.1', say: 'wren had no mirror before this · complete', ties: ['thread:23.99'] });
+  const wren = await B('thread:wren');
+  ok(/Nothing was written/.test(r) && !(wren && typeof wren === 'object' && '_' in wren), 'a refused tie leaves no mirror born for a hand that had none');
+  await engage({ handle: 'keel', at: '5.1', say: 'keel carried thread five on, said again with no ties · waits on happyseaurchin', secret: K });
+  keel = await B('thread:keel');
+  ok(readAt(keel, '051')?._?.['1'] === 'thread:31' && readAt(keel, '051')?._?.['2'] === 'systemic-kernel 5', 'a line said again with no ties keeps the co-knots its zero holds');
 } finally {
   if (proc) proc.kill();
   if (scratch) rmSync(scratch, { recursive: true, force: true });
