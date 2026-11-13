@@ -14,3 +14,8 @@ scripts/.vectors-cache/
 # relay test: raw chooser logs, kept compressed beside the results
 scripts/relay/runs/*.jsonl
 scripts/relay/__pycache__/
+# the test batteries' bytecode, written whenever a battery runs
+bsp-test-materials/__pycache__/
+compound-test-materials/__pycache__/
+proposal-test-materials/__pycache__/
+thread-test-materials/__pycache__/
