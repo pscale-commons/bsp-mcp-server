@@ -12,7 +12,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { createServer } from './server.js';
 import { looksWindow } from './looks.js';
 import { forgetDerived } from './keys.js';
-import { SIGNIN_ON, asHandle, authFor, originOf, refuseUnsigned, signinRoute } from './signin.js';
+import { SIGNIN_ON, asHandle, authFor, originOf, refuseUnsigned, signinRoute, type SignedIn } from './signin.js';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 const MCP_PATH = process.env.MCP_PATH || '/mcp/v1';
@@ -58,7 +58,7 @@ function requestIds(body: unknown): (string | number)[] {
   return ids;
 }
 
-function createSession(signedAs?: string, signedAt?: string): StreamableHTTPServerTransport {
+function createSession(signedAs?: string, signedAt?: string, signedBy?: SignedIn['fingerprint']): StreamableHTTPServerTransport {
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
     enableJsonResponse: true,
@@ -69,7 +69,7 @@ function createSession(signedAs?: string, signedAt?: string): StreamableHTTPServ
     // Don't delete session here — SSE drop ≠ session end. Clients reconnect.
   };
 
-  const mcpServer = createServer(signedAs, signedAt);
+  const mcpServer = createServer(signedAs, signedAt, signedBy);
   mcpServer.connect(transport);
 
   return transport;
@@ -111,6 +111,7 @@ const httpServer = createHttpServer(async (req, res) => {
   }
   let signedAs: string | undefined;
   let signedAt: string | undefined;
+  let signedBy: SignedIn['fingerprint'];
   if (address) {
     if (!SIGNIN_ON) {
       res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -126,7 +127,7 @@ const httpServer = createHttpServer(async (req, res) => {
     }
     if (!auth) { refuseUnsigned(res, origin, MCP_PATH, address); return; }
     (req as typeof req & { auth?: typeof auth }).auth = auth;
-    ({ handle: signedAs, beach: signedAt } = auth.extra?.signedIn as { handle: string; beach?: string });
+    ({ handle: signedAs, beach: signedAt, fingerprint: signedBy } = auth.extra?.signedIn as SignedIn);
   }
 
   let body: unknown = undefined;
@@ -199,7 +200,7 @@ const httpServer = createHttpServer(async (req, res) => {
       return;
     }
     if (sessionId) delete req.headers['mcp-session-id'];
-    const transport = createSession(signedAs, signedAt);
+    const transport = createSession(signedAs, signedAt, signedBy);
     await transport.handleRequest(req, res, body);
     if (transport.sessionId) transports.set(transport.sessionId, transport);
     return;

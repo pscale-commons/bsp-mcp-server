@@ -35,6 +35,13 @@ console.log('\nTHE CUT — what a session is told at connect');
   ok('signed at another beach, the whole text still fits', elsewhere.length < CUT, String(elsewhere.length));
   ok('and the line that names that beach is inside the cut', elsewhere.slice(0, CUT).includes('https://beach.bringingtheflavour.com'));
   ok('unsigned, the instructions are as written', composeInstructions() === INSTRUCTIONS);
+  const named = composeInstructions('janus', 'https://beach.happyseaurchin.com', { digit: '1', name: 'David, Claude in the browser' });
+  ok('signed by a named fingerprint, the line says whose sign-in it is, inside the cut', named.length < CUT && named.slice(0, CUT).includes('fingerprint 1 of fingerprints:janus, which its holder named "David, Claude in the browser"'), String(named.length));
+  const homeLongest = composeInstructions('janus', 'https://beach.happyseaurchin.com', { digit: '9', name: 'y'.repeat(80) });
+  ok('at the home beach the longest name rides, and the whole text fits', homeLongest.length < CUT && homeLongest.includes(`named "${'y'.repeat(80)}"`), String(homeLongest.length));
+  const longest = composeInstructions('davidmpinto', 'https://beach.bringingtheflavour.com', { digit: '9', name: 'x'.repeat(80) });
+  ok('at another beach, where the line stands near the cut, the digit rides alone and the whole text still fits',
+    longest.length < CUT && longest.includes('behind fingerprint 9. ') && !longest.includes('x'.repeat(80)) && longest.slice(0, CUT).includes('https://beach.bringingtheflavour.com'), String(longest.length));
 }
 
 console.log('\nWHAT EVERY APP IS TOLD');

@@ -162,8 +162,9 @@ function client(O: string, handle: string, at = `as/${handle}`) {
   const authorize = (clientId: string, over: Record<string, string> = {}) => fetch(`${O}/oauth/authorize?${form(ask(clientId, over))}`, { redirect: 'manual' });
   // At /as/<handle> the posted handle is ignored (the address fixes it); at /me it is the one signed in.
   // The beach field is posted only where a case names one; a client that posts none is the router's own beach.
-  const signIn = (clientId: string, key: string, name: string, typed = at === 'me' ? handle : 'mallory', beach?: string) => fetch(`${O}/oauth/authorize`, { method: 'POST', redirect: 'manual',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form({ ...ask(clientId), handle: typed, key, name, ...(beach !== undefined ? { beach } : {}) }) });
+  // `person`, where a case gives one, is the page's own-name field, which the fingerprint's name begins with.
+  const signIn = (clientId: string, key: string, name: string, typed = at === 'me' ? handle : 'mallory', beach?: string, person?: string) => fetch(`${O}/oauth/authorize`, { method: 'POST', redirect: 'manual',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form({ ...ask(clientId), handle: typed, key, name, ...(beach !== undefined ? { beach } : {}), ...(person !== undefined ? { person } : {}) }) });
   const token = (body: Record<string, string>) => fetch(`${O}/oauth/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form(body) });
   const exchange = (clientId: string, code: string) => token({ grant_type: 'authorization_code', code, redirect_uri: CB, client_id: clientId, code_verifier: verifier, resource: RES });
   const mcp = (url: string, body: string, bearer?: string, session?: string) => fetch(url, { method: 'POST',
@@ -357,6 +358,36 @@ async function realBeach() {
     ok('the laptop goes on, with the same key', /written by the laptop/.test(await (async () => { await lap.call({ block: 'journal:ada', spindle: '5', content: 'written by the laptop' }); return raw('journal:ada', '5'); })()));
     const fresh = await c.token({ grant_type: 'refresh_token', refresh_token: t2.refresh_token });
     ok("the laptop's refresh gives a fresh pair", fresh.status === 200 && !!(await fresh.json()).access_token);
+
+    console.log('  — whose sign-in it is (janus, pool:weft 462)');
+    const told = async (bearer: string) => {
+      const r = await c.mcp(c.RES, init(40), bearer);
+      return r.status === 200 ? String((await r.json())?.result?.instructions ?? '') : `HTTP ${r.status}`;
+    };
+    const lapTold = await told(t2.access_token);
+    ok("a session's instructions name the fingerprint it came by: its digit and its name", lapTold.startsWith('THIS CONNECTION WRITES AS ada') && lapTold.includes('fingerprint 2 of fingerprints:ada, which its holder named "my laptop"'), lapTold.slice(0, 300));
+    const deskCode = new URL((await c.signIn(cl.client_id, KEY, 'my desk', 'mallory', undefined, ' Ada ')).headers.get('location') ?? 'http://none/').searchParams.get('code') ?? '';
+    const t3 = await (await c.exchange(cl.client_id, deskCode)).json();
+    ok("the page's own-name field begins the fingerprint's name, in the emptied digit", /"_":"Ada, my desk"/.test(await raw('fingerprints:ada', '1')) && !!t3.access_token);
+    ok('…and its session says whose sign-in it is', (await told(t3.access_token)).includes('fingerprint 1 of fingerprints:ada, which its holder named "Ada, my desk"'));
+    const pageNow = await (await fetch(`${O}/fingerprints/ada`)).text();
+    ok('the fingerprints page offers each name to change, saving before revoking', /name="name2" value="my laptop"/.test(pageNow) && pageNow.indexOf('Save the names') > 0 && pageNow.indexOf('Save the names') < pageNow.indexOf('Revoke the ticked ones'));
+    const renameAt = (key: string, fields: Record<string, string>) => fetch(`${O}/fingerprints/ada`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form({ rename: '1', key, ...fields }) });
+    const ringBefore = JSON.parse(await raw('fingerprints:ada'));
+    const badName = await renameAt('not-adas-key', { name2: 'Ada, the kitchen laptop' });
+    ok('renaming needs the key', badName.status === 400 && /does not open ada/.test(await badName.text()));
+    const same = await renameAt(KEY, { name2: 'my laptop' });
+    ok('…and a name left as it was changes nothing', same.status === 400 && /Change a name first/.test(await same.text()));
+    const renamed = await renameAt(KEY, { name2: 'Ada, "the" kitchen laptop' });
+    ok('with the key, the laptop is renamed', renamed.status === 200 && /Renamed: Ada, &quot;the&quot; kitchen laptop/.test(await renamed.text()));
+    const ringAfter = JSON.parse(await raw('fingerprints:ada'));
+    ok('…only its name changed: its sealed key, and every other digit, as they were',
+      ringAfter['2']._ === 'Ada, "the" kitchen laptop' && ['1', '2', '3', '4', '5'].every((k) => ringAfter['2'][k] === ringBefore['2'][k])
+      && ['_', ...['1', '3', '4', '5', '6', '7', '8', '9']].every((d) => JSON.stringify(ringAfter[d]) === JSON.stringify(ringBefore[d])), JSON.stringify(ringAfter['2']).slice(0, 200));
+    ok('…its next session says the new name, quoted cleanly', (await told(t2.access_token)).includes('fingerprint 2 of fingerprints:ada, which its holder named "Ada, the kitchen laptop"'));
+    const lap2 = await session(c.RES, t2.access_token);
+    await lap2.call({ block: 'journal:ada', spindle: '9', content: 'written after its renaming' });
+    ok('…and it still writes with the key', /written after its renaming/.test(await raw('journal:ada', '9')));
 
     console.log('  — the one address');
     const me = client(O, 'ada', 'me');

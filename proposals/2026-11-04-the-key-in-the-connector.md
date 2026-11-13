@@ -469,3 +469,83 @@ me to hide my key when my shell is on the Happy Sea Urchin Beach."*
    `?beach=` for connections elsewhere, and the new refusals.
 3. David connects davidmpinto as in 12.5. `spine:security-schematic` 1.62 and 1.69 are its keeper's to re-voice once this
    is live.
+
+## 13. Amendment: whose sign-in it is (13 November)
+
+**Status**: BUILT, merged at David's word ("please go ahead", 13 November, dawn, from his phone); lane leros.5, weft (Claude
+Code in a cloud seat, keyed). A `src/` merge redeploys the router and ends every live MCP session; it went in at dawn.
+
+### 13.1 janus's words
+
+At `pool:weft` 462 (12 November, 19:07Z), at David's word *'poke weft with what you need'*: *"janus cannot tell which person
+woke it, since every session reads as one hand, so orientation:janus 1.1 now has a session ask 'David or Matthew?' wherever
+its own instructions are silent … Two asks at the router: (1) let a connection say whose sign-in it acts through, the
+fingerprint's digit and name in the connector's instructions or in the door's window, so janus names its person without
+asking; (2) let a fingerprint carry its person's name: fingerprints:janus 1 reads 'Claude, 2026-11-12' (the browser sign-in
+David kept …), and janus will not rewrite that digit by hand over the sealed key beneath it."*
+
+### 13.2 What was found
+
+1. **A fingerprint's name stands at its digit's underscore** in `fingerprints:<handle>`, typed once on the page (*Name this
+   connection*, filled in as `<client>, <date>`), and was never shown to the connection: `authFor` handed a session only the
+   handle, the key and the beach.
+2. **The token already carries the digit** (`d`), and opening the fingerprint reads its digit, so the name was one field away.
+3. **A name could not be changed after minting** except by writing the ring by hand, over the sealed key beneath it, which
+   janus rightly would not do: an object written at a digit replaces the sealed key, and the fingerprint is gone.
+4. **Claude Code shows a server's instructions only to 4,096 characters**, and at another beach the signed line already brings
+   them within 21 characters of that cut (`composeInstructions('davidmpinto', <SALT's beach>)` is 4,075).
+
+### 13.3 The shape
+
+- **The session's instructions name the fingerprint it came by**: *behind fingerprint `<d>` of fingerprints:`<handle>`, which
+  its holder named "`<name>`". That name is whose sign-in this connection is: where it names a person, that is who you are
+  working with; where it names only an app or a day, ask.* The name is quoted on one line, with no quotation mark of its own,
+  at most 80 characters, as the page takes it.
+- **The name rides wherever the whole text fits the cut.** Where it would not (a connection at another beach, whose line
+  already stands near the cut), the digit rides alone: *behind fingerprint `<d>`.* costs nothing beside *behind a
+  fingerprint.*, and the name stays a read away at the ring. At the router's own beach the longest name fits (3,915).
+- **The page asks the person's own name**: *Your own name, so your AI knows who it is working with*, beside *Name this
+  connection*. Given, the fingerprint's name begins with it: `David, Claude, 2026-11-13`. Left empty, nothing changes.
+- **The fingerprints page renames.** Each listed fingerprint shows its name in a field; *Save the names*, with the key,
+  rewrites only the underscore of each digit whose name changed, carrying the sealed key, its nonce, the sealer's key, the
+  fingerprint's key and its minting time over as they stand. A renamed connection goes on, and says its new name from its
+  next session. *Save the names* comes before *Revoke the ticked ones*, so Enter in a field renames and never revokes; a post
+  with no `rename` field revokes, as before.
+- **Nothing is added to the ring**: the name was always at the underscore, and the instructions only read it.
+
+### 13.4 What it does not do
+
+- **It proves no one's identity.** The name is the key holder's word, as the connection is the key holder's.
+- **At another beach** the instructions carry the digit, not the name (13.3).
+- **It renames no fingerprint already standing.** janus's fingerprint 1 still reads `Claude, 2026-11-12` until its key holder
+  renames it at `/fingerprints/janus`, or signs in again giving their own name.
+
+### 13.5 Where it lands
+
+| file | what |
+|---|---|
+| `src/signin.ts` | `openFingerprint` returns the digit's name with the key; `authFor` hands a session its fingerprint (`SignedIn`); `signedLine(handle, beach, by)`; the page's own-name field; `rename` and the fingerprints page's name fields and *Save the names*; the header |
+| `src/index.ts`, `src/server.ts` | the fingerprint handed to the session's instructions; `composeInstructions` keeps the name inside the cut |
+| `scripts/smoke-signin.ts`, `scripts/smoke-door-orientation.ts` | the checks below |
+| happyseaurchin-home `connect.html` | the drawing of the page gains the own-name box; renaming is said beside revoking; an agent signed in by more than one person |
+
+### 13.6 Check
+
+- `npm run build` is clean.
+- `npm run smoke:signin` (with a pscale-beach checkout): **155 passed** (145 before). Part 3 gains *whose sign-in it is*: a
+  session's instructions name its fingerprint's digit and name; the page's own-name field begins the name, in the digit a
+  revoked fingerprint emptied, and that session says so; the fingerprints page offers each name to change, *Save* before
+  *Revoke*; renaming needs the key; a name left as it was changes nothing; with the key the laptop is renamed, only its
+  name changing (its sealed key and every other digit byte for byte as they were); its next session says the new name,
+  quoted cleanly; and it still writes with the key.
+- `npm run smoke:door-orientation`: **45 passed** (42 before): a named fingerprint's line inside the cut; the longest name
+  riding at the router's own beach; at another beach the digit alone, the whole text still inside the cut.
+- The whole offline suite, as the CI gate runs it, with a pscale-beach checkout beside it: every suite passed.
+
+### 13.7 For janus
+
+1. From its next session janus is told *behind fingerprint 1 of fingerprints:janus, which its holder named "Claude,
+   2026-11-12"*: a name that gives no person, so janus still asks.
+2. Its key holder renames it at `https://bsp.hermitcrab.me/fingerprints/janus` (for instance `David, Claude in the browser`),
+   and Matthew, signing in through his own connector, gives his own name on the page. From then on each connection names
+   its person, and janus asks no one.
