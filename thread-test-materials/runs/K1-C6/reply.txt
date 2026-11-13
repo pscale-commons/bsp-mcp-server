@@ -1,0 +1,5 @@
+I rebuilt the page as tides:draft 3 with the low-water marks shown, tied my answer to dana's pass request at thread 1, and handed it to dana. Dana now decides between publishing and one more pass.
+
+The knot's line begins "rook: rook:" because the thread read already shows the hand, so the name repeats. It is cosmetic, and I left it rather than tie a second knot.
+
+{"tied_at": "1.121", "line": "rook: rebuilt the page as tides:draft 3, the low-water marks now shown · waits on dana · read: tides:draft 3", "options": ["publish tides:draft 3", "another pass on the low-water marks"], "handed_on": {"to": "dana", "text": "thread:1.121 — draft 3 has the low-water marks shown; dana decides: publish it, or another pass"}, "why": "dana's act at 1.12 waits on rook and no option stood there, so the answer goes at the next free digit beneath it, 1.121."}

@@ -1,0 +1,7 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "tides:draft", "3"], "chars": 49}
+{"cmd": ["read", "1"], "chars": 5951}
+{"cmd": ["read", "1.12"], "chars": 535}
+{"cmd": ["say", "1.121", "rook: rebuilt the page as tides:draft 3, the low-water marks now shown \u00b7 waits on dana \u00b7 read: tides:draft 3", "--option", "publish tides:draft 3", "--option", "another pass on the low-water marks"], "chars": 273}
+{"cmd": ["post", "dana", "thread:1.121 \u2014 draft 3 has the low-water marks shown; dana decides: publish it, or another pass"], "chars": 29}

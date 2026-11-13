@@ -1,0 +1,1 @@
+{"cmd": ["say", "1.3", "kestrel: the feed returned 62 November tide times, saved at tides:feed 11; rook can rebuild the page from them \u00b7 waits on rook \u00b7 read: tides:feed 11, thread:1", "--option", "rook rebuilds the tide-table page from tides:feed 11", "--option", "rook checks the feed's 62 times against last year's tables before rebuilding"], "chars": 5654}

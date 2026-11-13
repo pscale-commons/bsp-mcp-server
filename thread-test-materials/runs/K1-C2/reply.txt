@@ -1,0 +1,9 @@
+I took rook's review step at thread 1 (1.1), checked the draft, and handed the decision to dana.
+
+- **Checked:** `tides:draft 1` against the harbour's data. Two tide times were wrong, and `tides:draft 2` has them corrected.
+- **Tied:** the review knot at 1.1 in my mirror, with two options for dana at 1.11 and 1.12.
+- **Handed on:** a card in `pool:dana` pointing at 1.1.
+
+```json
+{"tied_at": "1.1", "line": "wren reviewed tides:draft 1 against the harbour's data; two tide times were wrong and are corrected in tides:draft 2 · waits on dana · read: tides:draft 1, tides:draft 2", "options": ["publish the tide-table page", "ask for another pass before publishing"], "handed_on": {"to": "dana", "text": "thread:1.1 — dana decides whether the tide-table page is published or goes for another pass"}, "why": "1.1 is the open option rook left for my review on thread 1, so my knot goes there rather than beneath rook's line."}
+```

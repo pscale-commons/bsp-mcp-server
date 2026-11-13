@@ -1,0 +1,16 @@
+{"cmd": ["room", "wren"], "chars": 156}
+{"cmd": ["block", "spine:thread"], "chars": 252}
+{"cmd": ["block", "thread:wren"], "chars": 88}
+{"cmd": ["read", "1"], "chars": 5565}
+{"cmd": ["read", "3"], "chars": 541}
+{"cmd": ["block", "thread:rook"], "chars": 201}
+{"cmd": ["block", "thread:dana"], "chars": 144}
+{"cmd": ["block", "tides:draft", "2"], "chars": 80}
+{"cmd": ["block", "harbour:chart", "2"], "chars": 41}
+{"cmd": ["say", "1.1", "wren reviewed tides:draft 1 against the harbour's data, corrected two tide times in tides:draft 2, and the page now reads harbour:chart 2 \u00b7 waits on dana \u00b7 read: tides:draft 1, tides:draft 2, harbour:chart 2", "--option", "dana publishes the tide-table page, reading harbour:chart 2", "--option", "dana holds the page for another review before publishing"], "chars": 483}
+{"cmd": ["post", "dana", "thread:1.1 \u2014 wren reviewed the tide-table draft against harbour:chart 2 and corrected two tide times (tides:draft 2); the page now reads the new chart (thread:3). Decide: publish, or hold for another review. Dana decides."], "chars": 29}
+{"cmd": ["tie", "1.1*1", "thread:3 \u2014 the tide-table page now reads harbour:chart 2, as dana asked; the publish decision is dana's"], "chars": 1032}
+{"cmd": ["read", "1"], "chars": 1385}
+{"cmd": ["tie", "1.1*1", "thread:3"], "chars": 922}
+{"cmd": ["read", "1"], "chars": 1370}
+{"cmd": ["read", "3"], "chars": 982}

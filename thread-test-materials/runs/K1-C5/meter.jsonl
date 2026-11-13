@@ -1,0 +1,5 @@
+{"cmd": ["read", "1.1"], "chars": 5717}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "tides:draft", "3"], "chars": 51}
+{"cmd": ["say", "1.14", "rook fixed the tide-table page's phone layout in tides:draft 3 (draft 2 broke on phones); none of the options above says this \u00b7 waits on dana \u00b7 read: tides:draft 2, tides:draft 3", "--option", "publish draft 3 (phone layout fixed)", "--option", "publish draft 2 (breaks on phones)"], "chars": 351}
+{"cmd": ["post", "dana", "thread:1.14 \u2014 rook fixed the tide-table page's phone layout in tides:draft 3; draft 2 breaks on phones. Dana to choose at 1.14: publish draft 3, or publish draft 2."], "chars": 29}

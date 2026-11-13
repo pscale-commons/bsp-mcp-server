@@ -1,0 +1,7 @@
+{"cmd": ["room", "wren"], "chars": 89}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "thread:wren"], "chars": 88}
+{"cmd": ["read", "1"], "chars": 5565}
+{"cmd": ["block", "thread:rook"], "chars": 201}
+{"cmd": ["say", "1.1", "wren reviews the draft against the harbour's data \u2014 deferred until the November data is published \u00b7 waits on wren from 2026-11-10 \u00b7 read: tides:draft 1, harbour:data 2"], "chars": 273}
+{"cmd": ["post", "wren", "thread:1.1 \u2014 review rook's tide-table draft (tides:draft 1) against the harbour's November data, published 10 Nov 2026 (harbour:data 2)"], "chars": 29}

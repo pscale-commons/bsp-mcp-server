@@ -53,6 +53,11 @@ counted: any co-knot a hand tied where its situation named no second thread. THE
 eleven, the nine at least 41 of 44, at least eight of the nine well formed, later ending ' · waits on wren from
 2026-11-10'; and tie scoring all six. If it passes, the sentence goes into ways:thread, and the co-knot into function:thread
 3, at David's word; if it fails, nothing moves and David is told.
+Run 13 November (eleven Claude Haiku minds, $0.04): K1 49 of 53. Tie 6 of 6, later 3 of 3, nothing lost; but the nine
+40 of 44 and seven of nine well formed, so it MISSED THE GATE. Word read the star and its digit, 1*2, as option 2 of knot
+1, filed dana's word there as prose in the zero and tied no knot (3 of 5, a CROSSING fault); open's registry line dropped
+'· opened by' (an OPENED fault, step 1's slip, the way's words there unchanged). Tie's mind also first wrote prose into
+its co-knot, then mended it to the point when the read said it named no point. Nothing moved; David was told.
 """
 import json, re
 
@@ -135,6 +140,23 @@ def _zero(n):
             v = v.get("_")
         if len(k) == 1 and k in "123456789" and isinstance(v, str) and v.strip():
             out.append(v.strip())
+    return out
+
+
+def _zeros(mirror):
+    """Every line's co-knots in a hand's mirror, by address."""
+    out = {}
+
+    def walk(n, p):
+        if not isinstance(n, dict):
+            return
+        z = _zero(n)
+        if z and p:
+            out[p[0] + ("." + "".join(p[1:]) if len(p) > 1 else "")] = z
+        for k, v in n.items():
+            if k != "_":
+                walk(v, p + [k])
+    walk(mirror, [])
     return out
 
 
@@ -330,7 +352,8 @@ def grade_s(case, row, c, start, end, added, posts, rep, mirror_lines, amend=Fal
         expect(not posts, "no room told")
     elif x["told"]:
         expect(any(names_place(t, p) for h in x["told"] for t in posts.get(h, []) for p in places), "the next hand's room told, naming the place")
-    strays = [f"{a}: {e}" for a in added for e in _zero(_node(end["mirrors"].get(me, {}), a))] if case != "C11" else []
+    z0, z1 = _zeros(start["mirrors"].get(me, {})), _zeros(end["mirrors"].get(me, {}))
+    strays = [f"{a}: {e}" for a, zs in z1.items() for e in zs if e not in z0.get(a, [])] if case != "C11" else []
     if strays:
         row["stray_co_knots"] = strays   # reported, not counted: a co-knot where the situation named no second thread
     if case == "C11":

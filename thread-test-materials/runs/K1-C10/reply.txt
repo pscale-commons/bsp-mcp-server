@@ -1,0 +1,5 @@
+I tied the review at 1.1 on rook's thread 1 and set it to come back on 10 November 2026. Rook's first draft of the tide-table page waits on my review, so I took option 1.1 (review against the harbour's data) and marked it `waits on wren from 2026-11-10`. I also left a pointer in my room, `pool:wren`, so it is picked up when the November data is published.
+
+The environment header gives today's date as 13 November 2026, but your brief says 4 November. I went with your date. If it is actually 13 November, the harbour data is already out and the review can be done now.
+
+{"tied_at": "1.1", "line": "wren reviews the draft against the harbour's data — deferred until the November data is published · waits on wren from 2026-11-10 · read: tides:draft 1, harbour:data 2", "options": [], "handed_on": {"to": "wren", "text": "thread:1.1 — review rook's tide-table draft (tides:draft 1) against the harbour's November data, published 10 Nov 2026 (harbour:data 2)"}, "why": "Rook's act at 1 waits on me and offers 1.1 as my review, so the deferred review goes at 1.1 with a 10 November start date."}

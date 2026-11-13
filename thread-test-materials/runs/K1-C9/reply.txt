@@ -1,0 +1,3 @@
+1.3 | kestrel: the feed returned 62 November tide times, saved at tides:feed 11; rook can rebuild the page from them · waits on rook · read: tides:feed 11, thread:1 | options: 1 rook rebuilds the tide-table page from tides:feed 11; 2 rook checks the feed's 62 times against last year's tables before rebuilding
+
+I'm tying at 1.3 because rook's 1.2 reports the feed as down, and the feed has since returned data, so this knot answers that report beneath it and hands the rebuild back to rook.

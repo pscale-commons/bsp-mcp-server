@@ -1,0 +1,11 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "moorings:draft", "1"], "chars": 44}
+{"cmd": ["room", "wren"], "chars": 28}
+{"cmd": ["room", "dana"], "chars": 28}
+{"cmd": ["block", "thread:rook"], "chars": 201}
+{"cmd": ["open", "moorings page: draft 1 (moorings:draft 1, 48 moorings by pontoon and berth) is built; next is a choice between wren's review against the harbour register and dana publishing as is"], "chars": 4776}
+{"cmd": ["block", "spine:thread"], "chars": 362}
+{"cmd": ["say", "3", "rook built the moorings page's first draft: 48 moorings by pontoon and berth \u00b7 waits on dana \u00b7 read: moorings:draft 1", "--option", "wren reviews the list against the harbour's register first", "--option", "dana publishes it as it is, without a review"], "chars": 1124}
+{"cmd": ["post", "dana", "thread:3 \u2014 dana, the moorings page draft 1 (moorings:draft 1, 48 moorings by pontoon and berth) is built and waits on your choice: wren reviews it against the harbour's register first, or you publish it as it is."], "chars": 29}
+{"cmd": ["read", "3"], "chars": 768}
+{"cmd": ["room", "dana"], "chars": 249}

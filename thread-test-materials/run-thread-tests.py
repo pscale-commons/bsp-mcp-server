@@ -33,7 +33,9 @@ EXPECT = {"L": (36, 40, 8, 3), "W1": (31, 40, 9, 9), "Lx2": (35, 40, 8, 5), "W2"
           # David's form: no seed carries the closing clause, so the form pass's WAITS fails every thread by design
           "S": (34, 35, 0, 0), "S2": (30, 35, 0, 0), "S3": (33, 35, 0, 0), "S4": (31, 35, 0, 0),
           # the endings back, 4 November: ten uses each (later the tenth), the law as it stands reading endings again
-          "E1": (43, 47, 10, 9), "E2": (44, 47, 10, 10)}
+          "E1": (43, 47, 10, 9), "E2": (44, 47, 10, 10),
+          # the co-knot, 13 November: E2's way with one sentence more, eleven uses (tie the eleventh); missed its gate
+          "K1": (49, 53, 9, 9)}
 
 failed = []
 
