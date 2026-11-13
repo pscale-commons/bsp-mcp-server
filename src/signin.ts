@@ -34,6 +34,14 @@
  * sealed with the rest of it, so a later call proves the pass the wall asks for before it reads the
  * ring. Nothing a members' beach shows a stranger changes: the ring stays behind its wall.
  *
+ * WHOSE SIGN-IN IT IS (janus, pool:weft 462, 12 November 2026: "janus cannot tell which person woke
+ * it, since every session reads as one hand"): one handle may be signed in by several people, each
+ * through a fingerprint of their own, and a fingerprint's name, at its digit's underscore, is its
+ * holder's word for whose it is. So a session's instructions name the fingerprint it came by, its
+ * digit and that name; the page asks the person's own name beside the connection's; and the
+ * fingerprints page renames one with the key, changing only the name and carrying the sealed key
+ * beneath it over as it stands (proposals/2026-11-04-the-key-in-the-connector.md §13).
+ *
  * NOTHING SECRET IS STORED IN THE CLEAR. A client's id is its redirect addresses, sealed; a code
  * is the fingerprint and the PKCE challenge, sealed for five minutes; a token is the fingerprint,
  * sealed for a day; a refresh token is the same for 180 days. All are sealed under
@@ -269,21 +277,47 @@ async function revoke(handle: string, key: string, digits: string[], beach: stri
   return { revoked: gone.map((d) => String(ring[d]._ ?? `fingerprint ${d}`)) };
 }
 
-/** Keys opened in the last minute, by fingerprint: memory only, as the members' passes are. */
-const opened = new Map<string, { key: string; handle: string; digit: string; beach: string; until: number }>();
+/** A name as a person types it on a page: one line, at most `max` characters. */
+const cleanName = (s: unknown, max = 80) => String(s ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+
+/** Rename fingerprints of `handle` at `beach`, standing at the door with the key typed: only the
+ *  name at each digit's underscore changes, and the sealed key beneath it is carried over as it
+ *  stands, so the connection goes on and says the new name from its next session. */
+async function rename(handle: string, key: string, names: Record<string, string>, beach: string, ring: Record<string, any> | null): Promise<{ problem: string } | { renamed: string[] }> {
+  const changed = DIGITS.filter((d) => isSealedEntry(ring?.[d]) && names[d] !== undefined && names[d] !== '' && names[d] !== String(ring![d]._ ?? ''));
+  if (!ring || changed.length === 0) return { problem: 'Change a name first.' };
+  const next = { ...ring };
+  for (const d of changed) next[d] = { ...ring[d], _: names[d] };
+  try {
+    await saveBlock(beach, RING(handle), next, { secret: key, hasContent: true });
+  } catch (e) {
+    return { problem: refusalFor(e, handle) };
+  }
+  for (const [f, o] of opened) if (o.handle === handle && o.beach === beach && changed.includes(o.digit)) opened.delete(f);
+  return { renamed: changed.map((d) => names[d]) };
+}
+
+/** Keys opened in the last minute, by fingerprint, with the name at the fingerprint's digit:
+ *  memory only, as the members' passes are. */
+const opened = new Map<string, { key: string; name: string; handle: string; digit: string; beach: string; until: number }>();
+
+/** A fingerprint's name as a connection's instructions quote it: one line, no quotation mark of its
+ *  own, at most 80 characters, as the page takes it. */
+const nameOf = (entry: any, digit: string) =>
+  String(entry?._ ?? '').replace(/[\u0000-\u001f\u007f"“”]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || `fingerprint ${digit}`;
 /** Fingerprints a members' beach turned away in the last hour: the key their token carries no
  *  longer proves the pass there (rotated, or the passport gone), and every try would count a wrong
  *  key against the holder's own passport, so none is made until the hour turns. */
 const turnedAway = new Map<string, number>();
 const HOUR = 60 * 60 * 1000;
 
-/** The key a live fingerprint opens at its beach; null when its digit is gone (revoked), or when a
- *  members' beach turns its key away; 'unreachable' when the beach did not answer, which is no
- *  reason to sign anyone out. `carried` is the key a members' beach connection's token carries,
- *  which proves the pass the ring is read with. */
-async function openFingerprint(handle: string, fingerprint: string, digit: string, beach: string, carried?: string): Promise<string | null | 'unreachable'> {
+/** The key a live fingerprint opens at its beach, with the name its holder gave it; null when its
+ *  digit is gone (revoked), or when a members' beach turns its key away; 'unreachable' when the
+ *  beach did not answer, which is no reason to sign anyone out. `carried` is the key a members'
+ *  beach connection's token carries, which proves the pass the ring is read with. */
+async function openFingerprint(handle: string, fingerprint: string, digit: string, beach: string, carried?: string): Promise<{ key: string; name: string } | null | 'unreachable'> {
   const memo = opened.get(fingerprint);
-  if (memo && memo.until > Date.now() && memo.handle === handle && memo.digit === digit && memo.beach === beach) return memo.key;
+  if (memo && memo.until > Date.now() && memo.handle === handle && memo.digit === digit && memo.beach === beach) return { key: memo.key, name: memo.name };
   if ((turnedAway.get(fingerprint) ?? 0) > Date.now()) return null;
   let ring: Record<string, any> | null;
   try {
@@ -296,8 +330,9 @@ async function openFingerprint(handle: string, fingerprint: string, digit: strin
   }
   const key = openKey(ring?.[digit], fingerprint);
   if (!key) { opened.delete(fingerprint); return null; }
-  opened.set(fingerprint, { key, handle, digit, beach, until: Date.now() + OPENED_MS });
-  return key;
+  const name = nameOf(ring?.[digit], digit);
+  opened.set(fingerprint, { key, name, handle, digit, beach, until: Date.now() + OPENED_MS });
+  return { key, name };
 }
 
 // ── Addresses ──
@@ -453,6 +488,7 @@ ${problem ? `<p class="problem">${esc(problem)}</p>` : ''}
 <label>${handle ? 'Handle' : 'Your handle, the name your blocks are under'}<input name="handle" ${handle ? `value="${esc(handle)}" readonly` : 'required'} autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></label>
 <label>Your beach, where that passport stands<input name="beach" value="${esc(beach)}" required inputmode="url" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"></label>
 ${keyField}
+<label>Your own name, so your AI knows who it is working with<input name="person" maxlength="40" autocomplete="name" autocapitalize="words"></label>
 <label>Name this connection<input name="name" value="${esc(named)}" maxlength="80" autocapitalize="sentences"></label>
 <button type="submit">${handle ? 'Hide the key' : 'Hide my key'}</button>
 </form>
@@ -466,14 +502,15 @@ function fingerprintsPage(handle: string, beach: string, ring: Record<string, an
   const live = DIGITS.filter((d) => isSealedEntry(ring?.[d]));
   const action = esc(fingerprintsAt(handle, beach));
   const where = isHome(beach) ? '' : ` at ${esc(shown(beach))}`;
-  const rows = live.map((d) => `<li><label><input type="checkbox" name="revoke" value="${d}"> <span><b>${esc(String(ring![d]._ ?? `fingerprint ${d}`))}</b><br><span class="small">at ${d}, minted ${esc(String(ring![d]['5'] ?? '').slice(0, 16).replace('T', ' '))}</span></span></label></li>`).join('');
+  const rows = live.map((d) => `<li><label><input type="checkbox" name="revoke" value="${d}"> <span><b>${esc(String(ring![d]._ ?? `fingerprint ${d}`))}</b><br><span class="small">at ${d}, minted ${esc(String(ring![d]['5'] ?? '').slice(0, 16).replace('T', ' '))}</span></span></label><label class="small">Its name, whose sign-in it is<input name="name${d}" value="${esc(String(ring![d]._ ?? ''))}" maxlength="80" autocapitalize="sentences"></label></li>`).join('');
+  // Save comes first, so Enter in a field renames and never revokes.
   const body = locked
     ? `<p>${esc(shown(beach))} is a members' beach: it shows ${esc(handle)}'s fingerprints only to the holder of ${esc(handle)}'s key.</p><form method="post" action="${action}"><input type="hidden" name="show" value="1">${keyField}<button type="submit">Show them</button></form>`
-    : live.length ? `<form method="post" action="${action}"><ul>${rows}</ul>${keyField}<button type="submit">Revoke the ticked ones</button></form>` : '<p>No fingerprints act for this handle.</p>';
+    : live.length ? `<form method="post" action="${action}"><ul>${rows}</ul>${keyField}<button type="submit" name="rename" value="1">Save the names</button> <button type="submit">Revoke the ticked ones</button></form>` : '<p>No fingerprints act for this handle.</p>';
   return `<h1>Fingerprints for ${esc(handle)}${where}</h1>
 ${note ? `<p>${esc(note)}</p>` : ''}${problem ? `<p class="problem">${esc(problem)}</p>` : ''}
 ${body}
-<p class="small">Each line is a connection that writes as ${esc(handle)}${where} with the key hidden by bsp-mcp. Revoking one stops it, and leaves the key and every other connection as they are. It takes ${esc(handle)}'s key, typed here.</p>`;
+<p class="small">Each line is a connection that writes as ${esc(handle)}${where} with the key hidden by bsp-mcp. Its name is what that connection tells your AI about whose sign-in it is, so where several people sign in as ${esc(handle)}, begin each name with the person's. Renaming one changes only its name, from its next session; revoking one stops it, and leaves the key and every other connection as they are. Either takes ${esc(handle)}'s key, typed here.</p>`;
 }
 
 // ── The routes ──
@@ -590,7 +627,11 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
       if (!key || key.length > 512) return again('Type the key.');
       const beach = await beachNamed(typed);
       if (!beach) return again(`No beach answers at ${typed}. Type its address as it reads, such as ${HERE}: a beach is reached over https.`);
-      const name = (posted.name ?? '').trim().slice(0, 80) || `${checked.client}, ${new Date().toISOString().slice(0, 10)}`;
+      // The fingerprint's name, which its connection's instructions quote: the person's own first,
+      // where they give it, so several people signed in as one handle are told apart.
+      const person = cleanName(posted.person, 40);
+      const called = cleanName(posted.name) || `${checked.client}, ${new Date().toISOString().slice(0, 10)}`;
+      const name = (person ? `${person}, ${called}` : called).slice(0, 80);
       const minted = await mint(handle, key, name, beach);
       if ('problem' in minted) return again(minted.problem);
       const code = seal('code', {
@@ -603,9 +644,9 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
       const f = fields(await readBody(req), req.headers['content-type']);
       const deny = (error: string, error_description: string, status = 400) => send(res, status, { error, error_description });
       const still = async (s: Record<string, any>) => {
-        const k = await openFingerprint(s.h, s.f, s.d, beachIn(s), keyIn(s));
-        if (k === 'unreachable') return deny('temporarily_unavailable', 'the beach did not answer', 503);
-        if (!k) return deny('invalid_grant', 'this fingerprint was revoked: connect again and hide the key once more');
+        const open = await openFingerprint(s.h, s.f, s.d, beachIn(s), keyIn(s));
+        if (open === 'unreachable') return deny('temporarily_unavailable', 'the beach did not answer', 503);
+        if (!open) return deny('invalid_grant', 'this fingerprint was revoked: connect again and hide the key once more');
         return send(res, 200, tokens(s.h, s.f, s.d, s.res, beachIn(s), keyIn(s)));
       };
       if (f.grant_type === 'authorization_code') {
@@ -651,6 +692,13 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
               return page(res, isDoorRefusal(e) ? 400 : 503, fingerprintsPage(handle, beach, null, '', unanswered(e, handle, beach, door), isDoorRefusal(e)), title);
             }
             if (f.show) return page(res, 200, fingerprintsPage(handle, beach, ring), title);
+            if (f.rename) {
+              const names = Object.fromEntries(DIGITS.filter((d) => f[`name${d}`] !== undefined).map((d) => [d, cleanName(f[`name${d}`])]));
+              const named = await rename(handle, key, names, beach, ring);
+              const now = await readRing(handle, beach).catch(() => ring);
+              if ('problem' in named) return page(res, 400, fingerprintsPage(handle, beach, now, '', named.problem), title);
+              return page(res, 200, fingerprintsPage(handle, beach, now, `Renamed: ${named.renamed.join(', ')}. Each connection says its new name from its next session.`), title);
+            }
             const done = await revoke(handle, key, picked, beach, ring);
             const after = await readRing(handle, beach).catch(() => ring);
             if ('problem' in done) return page(res, 400, fingerprintsPage(handle, beach, after, '', done.problem), title);
@@ -676,7 +724,8 @@ export async function signinRoute(req: IncomingMessage, res: ServerResponse, url
 // ── The signed address ──
 
 /** Who a request at a signed address is signed in as, for the transport to hand every tool call:
- *  its handle, the key its fingerprint opens, and the beach its passport stands at. At
+ *  its handle, the key its fingerprint opens, the beach its passport stands at, and the fingerprint
+ *  itself, its digit and the name its holder gave it, which says whose sign-in this is. At
  *  <mcp path>/as/<handle> the token must be that handle's; at <mcp path>/me (ANY) it is whichever
  *  handle signed in there. null for no token, a forged, expired or refresh one, one minted for
  *  another address, a fingerprint revoked, or a key its members' beach turns away; 'unreachable'
@@ -687,10 +736,14 @@ export async function authFor(req: IncomingMessage, handle: string, resource: st
   if (!a || typeof a.h !== 'string' || !HANDLE.test(a.h) || (handle !== ANY && a.h !== handle)) return null;
   if ((a.res && a.res !== resource) || typeof a.f !== 'string' || typeof a.d !== 'string') return null;
   const beach = beachIn(a);
-  const key = await openFingerprint(a.h, a.f, a.d, beach, keyIn(a));
-  if (key === 'unreachable' || key === null) return key;
-  return { token: m![1], clientId: 'bsp-signin', scopes: [SCOPE], expiresAt: Math.floor(a.exp / 1000), extra: { signedIn: { handle: a.h, key, beach } } };
+  const open = await openFingerprint(a.h, a.f, a.d, beach, keyIn(a));
+  if (open === 'unreachable' || open === null) return open;
+  const signedIn: SignedIn = { handle: a.h, key: open.key, beach, fingerprint: { digit: a.d, name: open.name } };
+  return { token: m![1], clientId: 'bsp-signin', scopes: [SCOPE], expiresAt: Math.floor(a.exp / 1000), extra: { signedIn } };
 }
+
+/** What a signed request carries: the handle, its key, its beach, and the fingerprint it came by. */
+export type SignedIn = { handle: string; key: string; beach: string; fingerprint?: { digit: string; name: string } };
 
 /** The 401 that starts a client's sign-in, pointing at the address's own metadata. */
 export function refuseUnsigned(res: ServerResponse, origin: string, mcpPath: string, handle: string): void {
@@ -701,11 +754,18 @@ export function refuseUnsigned(res: ServerResponse, origin: string, mcpPath: str
   }, { 'WWW-Authenticate': `Bearer resource_metadata="${origin}${RESOURCE_METADATA}${addressOf(handle, mcpPath)}", scope="${SCOPE}"` });
 }
 
-/** The line a signed session's instructions carry, so the model never asks for the key, and finds
- *  the handle's blocks at the beach they stand at. */
-export function signedLine(handle: string, beach: string = DEFAULT_BEACH): string {
+/** The line a signed session's instructions carry, so the model never asks for the key, finds the
+ *  handle's blocks at the beach they stand at, and knows whose sign-in it is: one handle may be
+ *  signed in by several people, each through a fingerprint of their own, and the name its holder
+ *  gave the fingerprint says which (janus, pool:weft 462, 12 November 2026). */
+export function signedLine(handle: string, beach: string = DEFAULT_BEACH, by?: { digit: string; name: string }): string {
   const at = isHome(beach) ? '' : ` ${handle}'s passport and blocks stand at ${beach}, not at the default beach: address them there, with agent_id "${beach}" (a bare handle, sed: or grain: goes to ${DEFAULT_BEACH}, where ${handle} may be nobody), and enter the shell with pscale_play(world="${beach}", handle="${handle}", room="${handle}").`;
-  return `THIS CONNECTION WRITES AS ${handle}, its key hidden by bsp-mcp behind a fingerprint.${at} Every call that carries no secret writes with ${handle}'s key, which never enters this window: do not ask the person for it, and do not look for it. Wherever a call would name the key, write "vault" and the router puts the key there: enc_secret: "vault" seals and opens a gray line, ${handle}'s vault among them (agent_id the beach's URL, block "vault:${handle}"); new_lock: "vault" latches a new block under the key, and no other new_lock is taken here: moving a block to another key or opening it takes the key in hand. Nothing the router returns ever contains the key itself.`;
+  // With no name (src/server.ts composeInstructions drops it where it would not fit the cut), the
+  // digit alone, which costs nothing: 'fingerprint 9' is as long as 'a fingerprint'.
+  const behind = !by ? 'behind a fingerprint.'
+    : by.name ? `behind fingerprint ${by.digit} of fingerprints:${handle}, which its holder named "${by.name}". That name is whose sign-in this connection is: where it names a person, that is who you are working with; where it names only an app or a day, ask.`
+    : `behind fingerprint ${by.digit}.`;
+  return `THIS CONNECTION WRITES AS ${handle}, its key hidden by bsp-mcp ${behind}${at} Every call that carries no secret writes with ${handle}'s key, which never enters this window: do not ask the person for it, and do not look for it. Wherever a call would name the key, write "vault" and the router puts the key there: enc_secret: "vault" seals and opens a gray line, ${handle}'s vault among them (agent_id the beach's URL, block "vault:${handle}"); new_lock: "vault" latches a new block under the key, and no other new_lock is taken here: moving a block to another key or opening it takes the key in hand. Nothing the router returns ever contains the key itself.`;
 }
 
 // ── The tools ──

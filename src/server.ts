@@ -36,7 +36,7 @@ import { resolveHere } from './here.js';
 import { registerXstreamFrame } from './resources/xstream-frame.js';
 import { registerPayway } from './resources/payway.js';
 import { SENTINELS } from './sentinels.js';
-import { installSignedIn, signedLine } from './signin.js';
+import { installSignedIn, signedLine, type SignedIn } from './signin.js';
 
 /**
  * Wrap every tool handler so exceptions surface as `isError: true` content
@@ -123,14 +123,20 @@ EARLY DAYS: before making something new on a beach, look at what stands and tell
  *  shows a server's instructions only to 4,096 characters, and the line that
  *  tells a session whose key it writes with must never be the part that is cut
  *  (proposals/2026-11-09-the-orientation-review.md, 2.1). */
-export function composeInstructions(signedAs?: string, signedAt?: string): string {
-  return signedAs ? `${signedLine(signedAs, signedAt)}\n\n${INSTRUCTIONS}` : INSTRUCTIONS;
+const SHOWN = 4096;
+export function composeInstructions(signedAs?: string, signedAt?: string, signedBy?: SignedIn['fingerprint']): string {
+  if (!signedAs) return INSTRUCTIONS;
+  const told = `${signedLine(signedAs, signedAt, signedBy)}\n\n${INSTRUCTIONS}`;
+  if (!signedBy || told.length < SHOWN) return told;
+  // The fingerprint's name says whose sign-in this is, and rides wherever the whole text still fits.
+  // At another beach the line already stands near the cut, so there its digit rides alone.
+  return `${signedLine(signedAs, signedAt, { digit: signedBy.digit, name: '' })}\n\n${INSTRUCTIONS}`;
 }
 
-export function createServer(signedAs?: string, signedAt?: string): McpServer {
+export function createServer(signedAs?: string, signedAt?: string, signedBy?: SignedIn['fingerprint']): McpServer {
   const server = new McpServer(
     { name: 'bsp-mcp-server', version: '0.4.0' },
-    { instructions: composeInstructions(signedAs, signedAt) },
+    { instructions: composeInstructions(signedAs, signedAt, signedBy) },
   );
 
   installErrorWrapper(server);
