@@ -81,10 +81,10 @@ import { wireStore } from '../genus.js';
 import { nameAtTheDoor, noteLook, reflect } from '../looks.js';
 import { rideOrientation } from '../orientation.js';
 import { followsOf, lensLaw, lensVoice, composeLensMedium } from './lens.js';
-import { raised, nodeAt, linesAt, dotted, type CrossLine } from '../cross.js';
+import { raised, nodeAt, linesAt, dotted, readTies, tieLines, TIE_LEGEND, type CrossLine } from '../cross.js';
 import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
-import { colourBlockName, type GrayEnvelope } from '../keys.js';
+import { colourBlockName, isGrayEnvelope, type GrayEnvelope } from '../keys.js';
 import { sealer, colourLine, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
 import { sealingKey } from '../signin.js';
 
@@ -259,11 +259,19 @@ export function namedRungAddress(word: string, when: Date): string | null {
  *  takes a bare string, so a family with no substructure is untouched. Only a node
  *  that is already an object merges, and only its `_` moves. bsp.ts is not
  *  involved — walker, parser and address invariant are exactly as they were; this
- *  is composition at the caller. */
+ *  is composition at the caller.
+ *
+ *  A LINE'S ZERO KEEPS WHAT STANDS IN IT (proposals/2026-11-13-co-knots.md):
+ *  where the words stand one zero deeper beside the line's co-knots, saying
+ *  again moves the words and keeps the co-knots. A seal is replaced whole, as
+ *  it always was. */
 export function voicedValue(existing: unknown, text: string): unknown {
-  return (existing && typeof existing === 'object' && !Array.isArray(existing))
-    ? { ...(existing as Record<string, unknown>), _: text }
-    : text;
+  if (!(existing && typeof existing === 'object' && !Array.isArray(existing))) return text;
+  const zero = (existing as Record<string, unknown>)._;
+  if (zero && typeof zero === 'object' && !Array.isArray(zero) && !isGrayEnvelope(zero)) {
+    return { ...(existing as Record<string, unknown>), _: voicedValue(zero, text) };
+  }
+  return { ...(existing as Record<string, unknown>), _: text };
 }
 
 /** THE LANE — a hand that runs several sessions at once keeps ONE mirror, and
@@ -1204,6 +1212,14 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   }
   readings.sort((a, b) => a.who.localeCompare(b.who) || (b.ms ?? 0) - (a.ms ?? 0));
   silent.sort();
+  // CO-KNOTS (proposals/2026-11-13-co-knots.md): each line's co-knots with the
+  // lines at their partner points, and the co-knots elsewhere in the family that
+  // name a point here, read from the mirrors already in hand.
+  if (crossed.length) {
+    const held = new Map<string, Block>();
+    for (const [name, mb] of mirrors) if (mb) held.set(name.slice(field.length + 1), mb);
+    await readTies(crossed, held, spineFloor, field, origin);
+  }
 
   // ── The operator's law — THE OPERATOR IS THE CENTRAL BLOCK OF ITS FAMILY.
   // It is found at function:<field>, and it names its own parts: which spine
@@ -1325,9 +1341,10 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
       // order, each with the hand that holds it (src/cross.ts).
       for (const c of crossed.slice(0, CROSS_MAX)) {
         const mine = c.who === handle && saidAt !== null && c.addr === dotted(digits, spineFloor);
-        lines.push(`- ${c.addr} · ${c.who}${mine ? ' (you)' : ''}: ${c.text}`);
+        lines.push(`- ${c.addr} · ${c.who}${mine ? ' (you)' : ''}: ${c.text}`, ...tieLines(c));
       }
       if (crossed.length > CROSS_MAX) lines.push(`  (+${crossed.length - CROSS_MAX} more beneath — read a deeper address for them)`);
+      if (crossed.slice(0, CROSS_MAX).some((c) => c.tieReads?.length || c.offered?.length)) lines.push(`  ${TIE_LEGEND}`);
     } else if (readings.length === 0) {
       lines.push('  (nobody has read this address yet — say yours and it becomes the first)');
     } else {

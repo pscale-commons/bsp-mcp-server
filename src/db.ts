@@ -599,8 +599,11 @@ async function saveBlockToBeach(
     throw new Error(`No beach at ${ownerId} (also tried beach.<host>). Site is not federated; cannot write.`);
   }
   const userSpindle = opts.spindle;
-  const isWholeBlock = !userSpindle || userSpindle === '' || userSpindle === '*';
-  const cleanedSpindle = isWholeBlock ? '' : userSpindle.replace(/\*$/, '');
+  // A star write saves its terminus whole — the words lifted one zero deeper,
+  // the hidden directory and the children beneath — so 31*1 sends the node at 31
+  // (proposals/2026-11-13-co-knots.md); a star at the root saves the block.
+  const isWholeBlock = !userSpindle || userSpindle === '' || userSpindle.startsWith('*');
+  const cleanedSpindle = isWholeBlock ? '' : userSpindle.replace(/\*.*$/, '');
   const value = isWholeBlock ? block : deriveSurgicalValue(block, cleanedSpindle, opts.hasContent === true);
   // THE DERIVED LATCH (src/latch.ts): where the hand's passport says its latch is derived and the
   // string derives its halves, the beach is sent the latch derived from the word, never the word.

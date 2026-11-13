@@ -22,7 +22,7 @@ jobs:
       - name: Build (tsc)
         run: npm run build
       # The beach package, for the smokes that run against its real handler on a
-      # scratch folder (smoke:colour, smoke:private-room, smoke:derived-latch; smoke:signin's third part): one checkout, one
+      # scratch folder (smoke:colour, smoke:private-room, smoke:derived-latch, smoke:co-knot; smoke:signin's third part): one checkout, one
       # install, no beach on the network.
       - uses: actions/checkout@v4
         with:
@@ -37,7 +37,7 @@ jobs:
           FAILED=""
           for s in parser unit floor dots sentinel session wellknown wire-bsp \
                    read-gate pool-engage reference-table networking gray gray-guard group genus play-split \
-                   author-door room-fold stream-born-locked stream-map thread \
+                   author-door room-fold stream-born-locked stream-map thread co-knot \
                    grain-address grain-case grit-tree temporal temporal-envelope human-time wellformed compile compound thread-test proposal-test envelope gateway key-guard seal-price signin colour private-room pass looks derived-latch door-orientation; do
             echo "── smoke:$s ──"
             if ! npm run --silent "smoke:$s"; then FAILED="$FAILED $s"; fi

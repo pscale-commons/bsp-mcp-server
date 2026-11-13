@@ -75,11 +75,46 @@ def get_index():
 
 
 def text_of(node):
-    if isinstance(node, str):
-        return node
-    if isinstance(node, dict) and isinstance(node.get("_"), str):
-        return node["_"]
-    return None
+    """A line's words: the string its underscore chain reaches. A line holding co-knots keeps its words one
+    zero deeper, beside them (bsp-mcp proposals/2026-11-13-co-knots.md)."""
+    while isinstance(node, dict):
+        node = node.get("_")
+    return node if isinstance(node, str) else None
+
+
+# A CO-KNOT — a point tied to a point, standing in the line's own zero: the words one zero deeper and each
+# co-knot at a digit beside them. It names its partner in bsp's own coordinates: thread:<spindle> for a point
+# on a thread, <block> <spindle> for a point in any block, and ' p<pscale>' for the point on that spindle where
+# it runs on past it (bsp-mcp proposals/2026-11-13-co-knots.md).
+TIE = re.compile(r"^(?:([a-z][\w-]*):(\d+(?:\.\d+)?)|([A-Za-z][\w.\-]*(?::[\w.\-]+)*)\s+(\d+(?:\.\d+)?))(?:\s+p(-?\d+))?$")
+
+
+def zero_of(node):
+    """The co-knots in a line's zero, as written; a sealed line's zero holds its seal, never co-knots."""
+    z = node.get("_") if isinstance(node, dict) else None
+    if not isinstance(z, dict) or (isinstance(z.get("9"), dict) and z["9"].get("_") == "gray"):
+        return []
+    return [text_of(z[k]).strip() for k in sorted(z) if DIGIT.match(k) and text_of(z[k]) and text_of(z[k]).strip()]
+
+
+def co_point(entry, floor):
+    """('thread', address) for a point on a thread, ('family', name) for another family's place, ('block',
+    name, address) for a point in a block; None for an entry that names no point."""
+    m = TIE.match(entry)
+    if not m:
+        return None
+    if m.group(1) and m.group(1) != "thread":
+        return ("family", m.group(1))
+    block, spindle, p = (None, m.group(2), m.group(5)) if m.group(1) else (m.group(3), m.group(4), m.group(5))
+    if block is not None and not block.startswith("thread:"):
+        return ("block", block, spindle)
+    path = to_path(spindle, floor)
+    if p is not None:
+        depth = floor - int(p)
+        if depth < 1 or depth > len(path):
+            return None
+        path = path[:depth]
+    return ("thread", addr(path, floor))
 
 
 def addr(path, floor):
@@ -228,6 +263,32 @@ class View:
         n = a.split(".")[0][: self.floor] if self.floor > 1 else a.split(".")[0]
         ls, _ = self.lines(n)
         return any(x[0] == a for x in ls)
+
+    def ties(self, n):
+        """Every co-knot standing in a line's zero at thread n and beneath it: (address, hand, entry)."""
+        out = []
+        for hand, m in sorted(self.mirrors.items()):
+            node = m
+            for d in to_path(n, self.floor):
+                node = step(node, d)
+                if node is None:
+                    break
+            if node is None:
+                continue
+
+            def walk(nd, path):
+                out.extend((addr(path, self.floor), hand, e) for e in zero_of(nd))
+                if isinstance(nd, dict):
+                    for k, v in nd.items():
+                        if k != "_" and DIGIT.match(k):
+                            walk(v, path + [k])
+            walk(node, to_path(n, self.floor))
+        return out
+
+    def ties_back(self, target, a):
+        """Whether a line at the point `target` holds a co-knot naming the point `a`."""
+        n = target.split(".")[0][: self.floor] if self.floor > 1 else target.split(".")[0]
+        return any(t == target and co_point(e, self.floor) == ("thread", a) for t, _, e in self.ties(n))
 
 
 def body(t):
@@ -400,6 +461,20 @@ def _check(view, n, phase2):
                     g = g.rstrip(".,;:")
                     if g.lower() not in {"it", "the", "a", "an", "whoever", "anyone", "nobody", "no"} and g not in view.handles:
                         f("WARN", "ROUTES", a, hand, f"waits on '{g}', which is not a handle on this beach; a waker can ring only a handle")
+
+    # co-knots: every one names a point that stands; one the partner does not tie back is an offer
+    for a, hand, e in view.ties(n):
+        cp = co_point(e, view.floor)
+        if cp is None:
+            f("FAULT", "CROSSING", a, hand, f"the line's zero holds '{e}', which names no point: a co-knot is thread:<spindle> or <block> <spindle>, with p<pscale> for a point on it")
+        elif cp[0] == "thread" and not view.place_resolves(cp[1]):
+            f("FAULT", "CROSSING", a, hand, f"a co-knot names thread:{cp[1]}, where no hand has a line")
+        elif cp[0] == "thread" and not view.ties_back(cp[1], a):
+            f("NOTE", "CROSSING", a, hand, f"a co-knot to thread:{cp[1]}, which ties nothing back yet: an offer, not yet a tie")
+        elif cp[0] == "family":
+            f("NOTE", "CROSSING", a, hand, f"a co-knot to '{e}', a point in the {cp[1]} family, not read here")
+        elif cp[0] == "block" and cp[1] not in view.names:
+            f("WARN", "RESOLVES", a, hand, f"a co-knot names '{cp[1]}', which the beach does not hold")
 
     # taken, truly: an act stands here, or anything stands beneath
     def taken(a):

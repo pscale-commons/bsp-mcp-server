@@ -271,7 +271,7 @@ import { sealingKey, signedSealNote } from '../signin.js';
  */
 export function lockPositionOf(blockName: string, spindle: string | null | undefined, block: Block | null): string {
   if (!spindle) return '_';
-  const cleaned = String(spindle).replace(/\*$/, '');
+  const cleaned = String(spindle).replace(/\*.*$/, '');
   if (blockName.startsWith('sed:') || blockName.startsWith('grain:')) {
     const first = cleaned.split('.')[0];
     return !first || first === '0' ? '_' : first;
@@ -312,11 +312,19 @@ function stringifyForGray(content: any): string {
  */
 export function grayCrossing(block: Block, address: string): string | null {
   const floor = floorDepth(block);
-  const { digits } = parseSpindle(address, floor);
+  // A star write lands in its terminus's zero (31*1), so the walk is the
+  // terminus's, and a sealed line there is crossed too: its zero holds its seal
+  // (proposals/2026-11-13-co-knots.md).
+  const { pre, hasStar } = splitStar(address);
+  const { digits } = parseSpindle(hasStar ? (pre ?? '') : address, floor);
   let node: any = block;
   for (let i = 0; i < digits.length - 1; i++) {
     node = node?.[digits[i] === '0' ? '_' : digits[i]];
     if (isGrayEnvelope(node)) return nodeAddress(digits.slice(0, i + 1), floor);
+  }
+  if (hasStar && digits.length) {
+    const t = node?.[digits[digits.length - 1] === '0' ? '_' : digits[digits.length - 1]];
+    if (isGrayEnvelope(t) || (t && typeof t === 'object' && isGrayEnvelope(t._))) return nodeAddress(digits, floor);
   }
   return null;
 }

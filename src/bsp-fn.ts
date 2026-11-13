@@ -607,11 +607,41 @@ export function bspWrite(
   content: any,
 ): BspWriteResult {
   const floor = floorDepth(block);
-  const { digits, hasStar } = parseSpindleCanonical(spindle, floor);
+  // The star is split first, as the read splits it: the walker's parser takes
+  // only a trailing '*', and the digits are the terminus's, before the star.
+  const { pre, post, hasStar } = splitStar(spindle);
+  const { digits } = parseSpindleCanonical(hasStar ? pre : spindle, floor);
 
   if (hasStar) {
-    // Star write: walk to terminus, enter hidden directory, write inside.
-    const { terminal } = walkLegacy(block, digits);
+    // Star write: walk to terminus, enter hidden directory, write inside — at the
+    // spindle that follows the star where one does (31*1 is the first co-knot of
+    // the point 31; proposals/2026-11-13-co-knots.md), else at its root as before.
+    // A block's root zero is its floor — an object there is a supernest — so an
+    // entry is written into a point's zero, never the root's.
+    if (post && !digits.length) {
+      throw new Error(`Star write: "${spindle}" names an entry in the root's zero, which is the block's floor; a co-knot stands in a point's zero (proposals/2026-11-13-co-knots.md)`);
+    }
+    let terminal: any;
+    if (post) {
+      // An entry goes into the zero of a point that stands, walked exactly, so it
+      // never lands in an ancestor's zero; a bare line — a knot with nothing
+      // beneath it, a string — becomes its node, {_: line}, in place.
+      let parent: any = null, key: string | null = null, node: any = block;
+      for (const d of digits) {
+        const k = d === '0' ? '_' : d;
+        if (!node || typeof node !== 'object' || node[k] === undefined) {
+          throw new Error(`Star write: nothing stands at "${pre}" to hold "${post}" in its zero`);
+        }
+        parent = node; key = k; node = node[k];
+      }
+      if (key === '_' && typeof node === 'string') {
+        throw new Error(`Star write: "${pre}" is a container's voice, not a point; a co-knot stands in a point's zero`);
+      }
+      if (typeof node === 'string') { node = { _: node }; parent[key!] = node; }
+      terminal = node;
+    } else {
+      terminal = walkLegacy(block, digits).terminal;
+    }
     if (!terminal || typeof terminal !== 'object') {
       throw new Error(`Star write: terminus at "${spindle}" is not an object`);
     }
@@ -620,7 +650,7 @@ export function bspWrite(
       (terminal as any)._ = { _: oldUnderscore };
     }
     const innerBlock: Block = (terminal as any)._;
-    bspWriteInPlace(innerBlock, '', pscaleAttention, content);
+    bspWriteInPlace(innerBlock, post ?? '', pscaleAttention, content);
     return {
       shape: 'star',
       written: true,

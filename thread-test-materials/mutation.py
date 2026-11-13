@@ -21,8 +21,22 @@ def put(s, hand, path, text):
     else:
         n[path[-1]] = text
 
+def zero(s, hand, path, entry):
+    """A co-knot in a line's zero: the words one zero deeper and the co-knot beside them (proposals/2026-11-13-co-knots.md)."""
+    n = s['mirrors'][hand]
+    for d in path[:-1]:
+        n = n[d]
+    t = n[path[-1]]
+    if isinstance(t, str):
+        t = n[path[-1]] = {"_": t}
+    if not isinstance(t.get('_'), dict):
+        t['_'] = {"_": t.get('_', '')}
+    t['_']['1'] = entry
+
 M = [
     ("a line at a zero position", lambda s: s['mirrors']['wren']['1']['1'].update({"0": "a summary by hand"}), "DIGITS", False),
+    ("a co-knot to a point nobody holds", lambda s: zero(s, 'wren', ['1', '1'], "thread:1.9"), "CROSSING", False),
+    ("a co-knot that names no point", lambda s: zero(s, 'wren', ['1', '1'], "see the draft"), "CROSSING", False),
     ("a line beneath an empty address", lambda s: put(s, 'dana', list('1221'), "fixed something · waits on rook"), "ROOTED", False),
     ("a gap beneath a knot", lambda s: put(s, 'rook', list('15'), "a step that skipped a digit · waits on dana"), "CONTIGUOUS", False),
     ("a live end that waits on nobody", lambda s: s['mirrors']['wren']['1']['1'].__setitem__('_', "reviewed the draft · read: tides:draft 2"), "WAITS", False),
