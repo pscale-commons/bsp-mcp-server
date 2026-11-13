@@ -1,0 +1,84 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren",
+  "3": "the tide-table page moves to the harbour's new chart · opened by dana"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft · waits on wren · read: tides:draft 1",
+    "1": "wren reviews the draft against the harbour's data",
+    "2": "dana decides without a review"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register",
+   "1": {
+    "1": "wren reviews the draft against the harbour's data: reviewed tides:draft 2 against harbour:chart 2 and corrected two tide times; the page now reads the new chart · waits on dana · read: tides:draft 2, harbour:chart 2"
+   },
+   "3": {
+    "1": {
+     "_": {
+      "_": "wren reviewed tides:draft 2 against harbour:chart 2, corrected two tide times, and the page now reads the new chart; dana decides whether to publish · waits on dana · read: tides:draft 2, harbour:chart 2",
+      "1": "thread:1.1"
+     },
+     "1": "dana publishes tides:draft 2 on harbour:chart 2",
+     "2": "dana holds publication for another review"
+    }
+   }
+  },
+  "dana": {
+   "3": "the harbour publishes its new tide chart (harbour:chart 2); the tide-table page must read it · waits on wren · read: harbour:chart 2"
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [
+   "rook: thread:1 — the tide-table draft waits on your review",
+   "dana: thread:3 — the tide-table page must move to the new chart"
+  ],
+  "dana": [
+   "wren: thread:3.1 — dana decides whether to publish tides:draft 2 on harbour:chart 2; wren's review of the draft is at thread:1.1"
+  ],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "function:thread",
+  "harbour:chart",
+  "harbour:register",
+  "moorings:draft",
+  "pool:tides",
+  "tides:draft",
+  "tides:feed",
+  "tides:live",
+  "ways:thread"
+ ],
+ "floor": 1,
+ "me": "wren",
+ "blocks": {
+  "tides:draft": {
+   "_": "the tide-table page, one draft per digit",
+   "1": "draft 1: the tide-table page from last year's tables, laid out by day",
+   "2": "draft 2: draft 1 with two tide times corrected against the harbour's new chart"
+  },
+  "harbour:chart": {
+   "_": "the harbour's tide charts",
+   "1": "the chart in force until now",
+   "2": "the new chart, in force from this month"
+  }
+ },
+ "live": true,
+ "way_once": true,
+ "way_draft": "k2",
+ "say_ties": true,
+ "told_law": true,
+ "told_way": true
+}

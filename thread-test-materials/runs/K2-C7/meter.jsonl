@@ -1,0 +1,8 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 5927}
+{"cmd": ["read", "1"], "chars": 1039}
+{"cmd": ["block", "tides:draft", "4"], "chars": 87}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["say", "1.122", "rook: checked the low-water marks against the harbour master's table and corrected one in tides:draft 4 \u00b7 waits on dana \u00b7 read: tides:draft 4", "--option", "dana publishes tides:draft 4 as the page", "--option", "dana sends draft 4 back to rook for another pass"], "chars": 338}
+{"cmd": ["post", "dana", "thread:1.122 \u2014 dana decides on tides:draft 4: publish it as the page (1.1221), or send it back for another pass (1.1222)"], "chars": 29}

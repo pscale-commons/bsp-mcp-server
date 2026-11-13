@@ -1,0 +1,69 @@
+{
+ "registry": {
+  "1": "the tide-table page · opened by rook",
+  "2": "the harbour glossary · opened by wren"
+ },
+ "mirrors": {
+  "rook": {
+   "1": {
+    "_": "built the tide-table page's first draft from last year's tables · waits on kestrel · read: tides:draft 1",
+    "1": "kestrel fetches this month's tide times from the harbour feed",
+    "2": "kestrel reports the feed is down"
+   }
+  },
+  "wren": {
+   "2": "began the glossary with forty terms · waits on dana · read: harbour:register"
+  },
+  "kestrel": {
+   "1": {
+    "3": {
+     "_": "kestrel: fetched November's 62 tide times from the harbour feed (saved at tides:feed 11) for rook to rebuild the tide-table page · waits on rook · read: tides:feed 11, thread:1",
+     "1": "rook rebuilds the tide-table page from tides:feed 11",
+     "2": "rook checks the feed's 62 times against the draft before rebuilding"
+    }
+   }
+  }
+ },
+ "rooms": {
+  "rook": [],
+  "wren": [],
+  "dana": [],
+  "kestrel": [],
+  "tides": []
+ },
+ "hands": [
+  "rook",
+  "wren",
+  "dana",
+  "kestrel"
+ ],
+ "names": [
+  "function:thread",
+  "harbour:chart",
+  "harbour:register",
+  "moorings:draft",
+  "pool:tides",
+  "tides:draft",
+  "tides:feed",
+  "tides:live",
+  "ways:thread"
+ ],
+ "floor": 1,
+ "me": "kestrel",
+ "blocks": {
+  "tides:draft": {
+   "_": "the tide-table page, one draft per digit",
+   "1": "draft 1: the tide-table page from last year's tables, laid out by day"
+  },
+  "tides:feed": {
+   "_": "what the harbour feed returned, by fetch",
+   "11": "62 tide times for November"
+  }
+ },
+ "live": true,
+ "way_once": true,
+ "way_draft": "k2",
+ "say_ties": true,
+ "told_law": true,
+ "told_way": true
+}

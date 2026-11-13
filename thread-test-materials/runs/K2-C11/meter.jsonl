@@ -1,0 +1,9 @@
+{"cmd": ["room", "wren"], "chars": 156}
+{"cmd": ["block", "spine:thread"], "chars": 252}
+{"cmd": ["block", "harbour:chart"], "chars": 124}
+{"cmd": ["block", "tides:draft"], "chars": 219}
+{"cmd": ["read", "1"], "chars": 5449}
+{"cmd": ["read", "3"], "chars": 541}
+{"cmd": ["say", "1.1", "wren reviews the draft against the harbour's data: reviewed tides:draft 2 against harbour:chart 2 and corrected two tide times; the page now reads the new chart \u00b7 waits on dana \u00b7 read: tides:draft 2, harbour:chart 2"], "chars": 321}
+{"cmd": ["say", "3.1", "wren reviewed tides:draft 2 against harbour:chart 2, corrected two tide times, and the page now reads the new chart; dana decides whether to publish \u00b7 waits on dana \u00b7 read: tides:draft 2, harbour:chart 2", "--option", "dana publishes tides:draft 2 on harbour:chart 2", "--option", "dana holds publication for another review", "--tie", "thread:1.1"], "chars": 858}
+{"cmd": ["post", "dana", "thread:3.1 \u2014 dana decides whether to publish tides:draft 2 on harbour:chart 2; wren's review of the draft is at thread:1.1"], "chars": 29}

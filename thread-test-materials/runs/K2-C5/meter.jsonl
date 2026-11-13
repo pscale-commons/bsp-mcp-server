@@ -1,0 +1,4 @@
+{"cmd": ["read", "1.1"], "chars": 5601}
+{"cmd": ["block", "tides:draft"], "chars": 233}
+{"cmd": ["say", "1.14", "rook fixed a phone break the options miss: draft 3 lays the tables out for phones, draft 2 does not \u00b7 waits on dana \u00b7 read: tides:draft 2, tides:draft 3", "--option", "dana publishes draft 3, the phone layout fixed", "--option", "dana publishes draft 2, as it was"], "chars": 334}
+{"cmd": ["post", "dana", "thread:1.14 \u2014 dana to choose which draft publishes: draft 3 (phone layout fixed) or draft 2 (breaks on phones)"], "chars": 29}

@@ -1,0 +1,5 @@
+I put the choice to dana again on the tide-table thread, at 1.111 beneath her earlier publish act at 1.11, and handed it to her room.
+
+The knot offers her the two options you specified, at 1.1111 and 1.1112. Dana's room now holds the card (contribution 2).
+
+{"tied_at": "1.111", "line": "wren puts the publish choice to dana again: the harbour changes its tide chart next week (harbour:chart 2) · waits on dana · read: thread:1, harbour:chart 2", "options": ["publish now and update the page after the chart changes", "wait a week and publish on the new chart"], "handed_on": {"to": "dana", "text": "thread:1.111 — dana chooses again, now that the harbour changes its tide chart next week: publish now and update the page after the chart changes, or wait a week and publish on the new chart"}, "why": "1.11 is dana's answered publish act with nothing beneath it, so the new choice is asked as a fresh knot beneath that answer, at the next free digit."}

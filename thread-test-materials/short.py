@@ -69,6 +69,10 @@ No tie verb is listed. Graded exactly as K1, the same eleven uses, and THE GATE 
 the nine at least 41 of 44, at least eight of the nine well formed, later ending ' · waits on wren from 2026-11-10', and tie
 scoring all six. If it passes, the sentence goes into ways:thread, the co-knot into function:thread 3 and ties into the
 live router, at David's word; if it fails, nothing moves and David is told.
+Run 13 November (eleven fresh minds, $0.04): K2 51 of 53, every thread well formed, nothing lost; the nine 42 of 44, tie
+6 of 6, later 3 of 3, so it PASSED THE GATE. Word, K1's break, came right: no second address to write. Tie took rook's
+option at 1.1 and answered dana at 3.1, its zero naming thread:1.1 (one way, an offer). No mind tied where its situation
+named no second thread. The two misses are E2's kind: self offered no option, and the wake answered at 1.3, not 1.1.
 """
 import json, re
 

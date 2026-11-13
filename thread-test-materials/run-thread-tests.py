@@ -35,7 +35,9 @@ EXPECT = {"L": (36, 40, 8, 3), "W1": (31, 40, 9, 9), "Lx2": (35, 40, 8, 5), "W2"
           # the endings back, 4 November: ten uses each (later the tenth), the law as it stands reading endings again
           "E1": (43, 47, 10, 9), "E2": (44, 47, 10, 10),
           # the co-knot, 13 November: E2's way with one sentence more, eleven uses (tie the eleventh); missed its gate
-          "K1": (49, 53, 9, 9)}
+          "K1": (49, 53, 9, 9),
+          # the co-knot said with its knot, 13 November: K1's uses and gate, ties on the say; passed its gate
+          "K2": (51, 53, 11, 11)}
 
 failed = []
 

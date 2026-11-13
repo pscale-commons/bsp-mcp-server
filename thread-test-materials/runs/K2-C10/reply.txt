@@ -1,0 +1,5 @@
+The review of rook's tide-table draft is deferred on the beach until 10 November 2026, when harbour:data 2 publishes. I tied my knot at 1.1 with the option's words, marked `waits on wren from 2026-11-10`, and posted a reminder to my own room (`pool:wren`, at 2) so the review comes back to me that day.
+
+One thing to check: the environment header gives today's date as 13 November 2026, but your note says 4 November. If it really is the 13th, the November data is already out, and the review can be taken up now rather than waiting.
+
+{"tied_at": "1.1", "line": "wren reviews the draft against the harbour's data — held until 10 November, when harbour:data 2 publishes · waits on wren from 2026-11-10 · read: thread:1, spine:thread", "options": [], "handed_on": {"to": "wren", "text": "thread:1.1 — the review of tides:draft waits on harbour:data 2, published 10 November 2026; take it up then"}, "why": "Rook's option 1.1 is the review I am taking up, and its move is mine until the data publishes, so I tied it at that address and marked it to wait on me from 10 November."}

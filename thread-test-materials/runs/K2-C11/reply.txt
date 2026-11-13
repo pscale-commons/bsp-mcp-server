@@ -1,0 +1,8 @@
+I reviewed `tides:draft 2` against `harbour:chart 2` and corrected two tide times, so the page now reads the new chart. I tied that on both threads and handed it to dana.
+
+- **Thread 1** (rook's review request): I took option 1.1 ("wren reviews the draft against the harbour's data") with a knot at 1.1.
+- **Thread 3** (dana's request): I tied my answer at 3.1 and offered two options beneath it, 3.11 and 3.12, for dana's decision.
+- **Co-knot:** the 3.1 tie to `thread:1.1` is recorded, but the beach reports that nothing at 1.1 ties back yet. I did not add a second knot at 1.1 to make the link two-way, since that would be a new line on rook's branch. Someone holding 1.1 will need to tie back.
+- **Hand-on:** dana's room has a line pointing to `thread:3.1` and to the review at `thread:1.1`.
+
+{"tied_at": "3.1", "line": "wren reviewed tides:draft 2 against harbour:chart 2, corrected two tide times, and the page now reads the new chart; dana decides whether to publish · waits on dana · read: tides:draft 2, harbour:chart 2", "options": ["dana publishes tides:draft 2 on harbour:chart 2", "dana holds publication for another review"], "handed_on": {"to": "dana", "text": "thread:3.1 — dana decides whether to publish tides:draft 2 on harbour:chart 2; wren's review of the draft is at thread:1.1"}, "why": "Dana's act at thread:3 waits on wren with nothing beneath it, so the answer goes at 3.1 rather than at 3 itself."}

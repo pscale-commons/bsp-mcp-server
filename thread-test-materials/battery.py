@@ -38,7 +38,8 @@ delivery: the teaching a mind is handed, from teachings/ —
   K2  E2 with one sentence added to its step 4, the co-knot said with its knot (way_k2.txt), at David's GO on K2 of
       13 November (thread 33.11): where the same act also answers a point on another thread, name that point in the same
       call, ties=['thread:<that point>']. The test beach's say takes --tie for K2 alone, as the router's say takes ties;
-      no tie verb is listed. Graded as K1 is, under K1's gate (short.py's docstring, fixed before it ran)
+      no tie verb is listed. Graded as K1 is, under K1's gate (short.py's docstring, fixed before it ran).
+      Run 13 November: 51 of 53, the nine 42 of 44 and all nine well formed, tie 6 of 6, so it passed its gate
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
 cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2, K1, K2) · C11 tie (K1, K2)

@@ -1,0 +1,3 @@
+The publish choice is recorded on the beach at 1.11 in rook's mirror. The branch is marked complete, so nothing is handed on.
+
+{"tied_at": "1.11", "line": "dana publishes the page, at rook's word; published, live at tides:live · complete · read: tides:live", "options": [], "handed_on": {"to": null, "text": null}, "why": "1.11 is the option under wren's 1.1 that reads 'dana publishes the page', so Dana's 'Publish it' is recorded as taking that choice."}

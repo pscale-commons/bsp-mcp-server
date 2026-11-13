@@ -40,10 +40,13 @@ The CI pass (`npm run smoke:thread-test`) ends with `thread-test: all passed`. I
 | E1, S3 with the endings back in one sentence, ten uses, 4 November | 43/47 | 10 of 10 | 9 of 10 |
 | E2, #570's way with the date, ten uses, the same hour, now `ways:thread` | 44/47 | 10 of 10 | 10 of 10 |
 | K1, E2's way with the co-knot sentence and the test beach's `tie` verb, eleven uses, 13 November. Missed its gate | 49/53 | 9 of 11 | 9 of 11 |
+| K2, E2's way with the co-knot said with its knot (`ties` on the say), eleven uses, the same evening. Passed its gate | 51/53 | 11 of 11 | 11 of 11 |
 
 S to S4 are graded by where each line lands and whether anything is lost, not by a keyword, so they have 35 checks and no seed closes on whom it waits on. Both form passes fail every one of their threads on WAITS, as they should. E1 and E2 are graded the same way, plus one ending in each use (44 checks for the nine), plus a tenth use, later, whose line must end ` · waits on wren from 2026-11-10` (3 checks).
 
 K1 adds an eleventh use, tie (6 checks): wren's one act answers rook's review on thread 1 and dana's move to the new chart on thread 3, and a co-knot in the zero of her line must name a point on the other thread where a line stands (bsp-mcp `proposals/2026-11-13-co-knots.md`). Its run scored tie 6 of 6, but word read the star-and-digit spelling `1*2` as option 2 of knot 1, filed dana's word there as prose and tied no knot (3 of 5), so the nine scored 40 of 44 and seven of nine were well formed, under the gate.
+
+K2 says the co-knot with its knot: `ties=['thread:<that point>']` on the say, which the router checks before anything is written and writes into the line's zero (the test beach's say takes `--tie` for K2 alone). Under K1's gate, fixed before it ran, it scored 51 of 53: the nine 42 of 44 with all nine well formed, tie 6 of 6, later 3 of 3, nothing lost, so it passed. Word came right, and no mind tied where its situation named no second thread. Its two misses are E2's kind: self offered no option, and the wake answered at 1.3 where rook's option 1.1 was its place.
 
 4. It plays the short form's right and wrong acts by hand through the test beach (`selftest_s.py` for S, S2, S3 and S4, `selftest_e.py` for E1, E2, K1 and K2, whose planted wrong acts are wrong endings and dates, and for K1 and K2 a tie left out and, for K2, prose where the point goes). Each delivery's words must reach the mind at all four handings, the strict spelling must read six written places as it should, every right act must take full marks, and every planted wrong act must be caught.
 

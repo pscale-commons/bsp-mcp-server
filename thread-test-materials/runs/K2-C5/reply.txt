@@ -1,0 +1,7 @@
+I tied the phone fix onto the thread beneath wren's review, and handed it to dana's room so she sees it before deciding.
+
+The line at 1.14 says draft 2 breaks on phones and draft 3 lays the tables out for phones. It waits on dana and reads tides:draft 2 and tides:draft 3. I offered two options beneath it: publish draft 3, or publish draft 2 as it was. Nothing has been published.
+
+The address is 1.14 rather than one of the existing option slots (1.11 to 1.13), because the phone fix answers nothing wren offered. It is a new step beneath the line it answers, so it takes the next free digit.
+
+{"tied_at": "1.14", "line": "rook fixed a phone break the options miss: draft 3 lays the tables out for phones, draft 2 does not · waits on dana · read: tides:draft 2, tides:draft 3", "options": ["dana publishes draft 3, the phone layout fixed", "dana publishes draft 2, as it was"], "handed_on": {"to": "dana", "text": "thread:1.14 — dana to choose which draft publishes: draft 3 (phone layout fixed) or draft 2 (breaks on phones)"}, "why": "It answers wren's review at 1.1 without matching any option there, so it takes the next free digit beneath 1.1, which is 1.14."}

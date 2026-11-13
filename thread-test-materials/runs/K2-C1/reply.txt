@@ -1,0 +1,5 @@
+I opened a new thread for the moorings page at 3, since it's separate from the tide-table page at 1. I tied my first knot there, offered the two choices, and handed it to wren's room.
+
+The thread is now readable at 3 and wren's room carries the handoff. Note that `moorings:draft 1` currently reads only as "draft 1: 48 moorings, by pontoon and berth". The list itself isn't in the block, so whoever reviews it or publishes it will need the full list.
+
+{"tied_at": "3", "line": "rook built the moorings page's first draft (48 moorings by pontoon and berth) · waits on wren · read: moorings:draft 1", "options": ["wren reviews the moorings list against the harbour's register", "dana publishes the moorings list without a review"], "handed_on": {"to": "wren", "text": "thread:3 — wren, please take up the harbour moorings page: check moorings:draft 1 (48 moorings by pontoon and berth) against the harbour's register, or leave it for dana to publish without review (3.1 or 3.2)."}, "why": "Thread 1 is the tide-table page, so the moorings work needed its own thread, and the first knot goes at the number the beach gave it."}

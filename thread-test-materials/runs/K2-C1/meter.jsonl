@@ -1,0 +1,16 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["block", "moorings:draft", "1"], "chars": 44}
+{"cmd": ["room", "rook"], "chars": 28}
+{"cmd": ["room", "wren"], "chars": 28}
+{"cmd": ["block", "moorings:draft"], "chars": 102}
+{"cmd": ["block", "thread:rook"], "chars": 201}
+{"cmd": ["read", "1"], "chars": 5449}
+{"cmd": ["read", "2"], "chars": 453}
+{"cmd": ["block", "register"], "chars": 23}
+{"cmd": ["open", "the harbour moorings page (moorings list, draft 1: 48 moorings by pontoon and berth) \u00b7 opened by rook"], "chars": 132}
+{"cmd": ["block", "spine:thread"], "chars": 284}
+{"cmd": ["read", "3"], "chars": 478}
+{"cmd": ["say", "3", "rook built the moorings page's first draft (48 moorings by pontoon and berth) \u00b7 waits on wren \u00b7 read: moorings:draft 1", "--option", "wren reviews the moorings list against the harbour's register", "--option", "dana publishes the moorings list without a review"], "chars": 317}
+{"cmd": ["read", "3"], "chars": 699}
+{"cmd": ["post", "wren", "thread:3 \u2014 wren, please take up the harbour moorings page: check moorings:draft 1 (48 moorings by pontoon and berth) against the harbour's register, or leave it for dana to publish without review (3.1 or 3.2)."], "chars": 29}
+{"cmd": ["room", "wren"], "chars": 246}
