@@ -40,7 +40,7 @@ READERS = {
     "proposal.html": [
         """var TOK = "[A-Z][A-Z’']*(?: [A-Z][A-Z’']*)*";""",
         """if (!L.page && (m = /\\bpage:\\s*(https?:\\/\\/\\S+)/i.exec(p[1]))) L.page = m[1].replace(/[.,;)]+$/, '');""",
-        """if (!L.phase && (m = /^phase:\\s*(proposal|project|set aside)\\b/i.exec(p[1]))) L.phase = m[1].toLowerCase();""",
+        """if (!L.phase && (m = /^phase:\\s*(proposal|project|complete|set aside)\\b/i.exec(p[1]))) L.phase = m[1].toLowerCase();""",
         """while (node != null && out.length < 12) {""",
         """var m = new RegExp('^(' + words + ')\\\\b\\\\s*[—–:,-]?\\\\s*([\\\\s\\\\S]*)$', 'i').exec(String(t || '').trim());""",
     ],
@@ -351,7 +351,7 @@ def law_of(law, name):
             m = re.search(r"\blook:\s*([a-z][\w-]*)\s*$", t, re.I)
             if m and not L["look"] and m.group(1).lower() not in ("accent", "page"):
                 L["look"] = m.group(1)
-            m = re.match(r"^phase:\s*(proposal|project|set aside)\b", t, re.I)
+            m = re.match(r"^phase:\s*(proposal|project|complete|set aside)\b", t, re.I)
             if m and not L["phase"]:
                 L["phase"] = m.group(1).lower()
     L["room"] = L["room"] or name
@@ -732,8 +732,8 @@ def check_threads(f):
                 add("WARN", "STANDS", at, f"'{th['name']}' has no spine:{th['name']} and is not a registry thread (thread:<number>), so the page draws it empty")
             if th["step"] and th["step"] not in steps:
                 add("FAULT", "STEP", at, f"it serves step {th['step']}, which is not a step of this spine, so no step draws it")
-    if f.L["phase"] == "project" and not f.threads:
-        add("WARN", "TIED", "5", "phase: project, and no thread is tied, so the page's trail is empty")
+    if f.L["phase"] in ("project", "complete") and not f.threads:
+        add("WARN", "TIED", "5", f"phase: {f.L['phase']}, and no thread is tied, so the page's trail is empty")
     registry = [t["registry"] for t in f.threads if t["registry"]]
     if not registry:
         return
@@ -780,7 +780,7 @@ def check_page(f):
         if f.entry is None:
             add("FAULT", "PHASE", "7", "no 'phase:' line and not on the list, so the page says this is not a proposal")
         elif t7:
-            add("FAULT", "PHASE", "7", f"the law's 7 opens '{t7[:30]}', not 'phase: proposal', 'phase: project' or 'phase: set aside'")
+            add("FAULT", "PHASE", "7", f"the law's 7 opens '{t7[:30]}', not 'phase: proposal', 'phase: project', 'phase: complete' or 'phase: set aside'")
     elif not re.match(r"^phase:", t7, re.I):
         add("WARN", "PHASE", "7", "the phase is read from another line of the law; it stands at 7")
     said = re.search(r"\bpage:\s*(\S+)?", t6, re.I)
