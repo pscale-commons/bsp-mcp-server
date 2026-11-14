@@ -40,9 +40,14 @@ delivery: the teaching a mind is handed, from teachings/ —
       call, ties=['thread:<that point>']. The test beach's say takes --tie for K2 alone, as the router's say takes ties;
       no tie verb is listed. Graded as K1 is, under K1's gate (short.py's docstring, fixed before it ran).
       Run 13 November: 51 of 53, the nine 42 of 44 and all nine well formed, tie 6 of 6, so it passed its gate
+  L4  function:thread as it stands on 14 November 2026, whole (law_v4.txt: its root and 1 to 8, 8.1 among them), handed
+      to a mind as its one teaching, with no way handed over; seeds as tied, the tenth use, graded as E2 is
+  F4  L4 with one sentence more at 8.11, the fold (law_v4f.txt; bsp-mcp proposals/2026-11-14-threads-fold.md), at David's
+      word of 14 November: run beside L4 because the law's 7 re-runs the battery before any change to it, and E2's test
+      beach cuts the law to its root line, so only a mind handed the law whole meets 8.11 (short.py's docstring has the gate)
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
-cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2, K1, K2) · C11 tie (K1, K2)
+cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2, K1, K2, L4, F4) · C11 tie (K1, K2)
 <runs> is $THREAD_TEST_RUNS, else runs/ beside this file. A run's mind is a separate step
 (run-minds.sh, which spends model calls); setup and score spend nothing.
 """
@@ -57,9 +62,10 @@ import short as SH
 RUNS = os.environ.get("THREAD_TEST_RUNS") or os.path.join(HERE, "runs")
 SHORT = {"S", "S2", "S3", "S4"}   # David's form: seeds with no closing clause, graded by short.py
 ENDS = {"E1", "E2", "K1", "K2"}   # the endings back (bsp-mcp #584): seeds as tied, graded by short.py with an ending in each use
+LAW4 = {"L4", "F4"}   # the law whole as it stands on 14 November, with and without 8.11: graded as ENDS are, no way handed over
 TIES = {"K1", "K2"}   # the co-knot (bsp-mcp proposals/2026-11-13-co-knots.md): the eleventh use, and a way to tie among the commands
 SAY_TIES = {"K2"}   # K2: the co-knot said with its knot, the say's --tie (ties=); K1 had bsp's star write, the tie verb
-TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt", "R": "root_v2.txt", "H": "root_v2.txt", "H2": "root_v2.txt", "H3": "root_v2.txt",
+TEACHINGS = {"L": "law_v1.txt", "L2": "law_v2.txt", "L4": "law_v4.txt", "F4": "law_v4f.txt", "R": "root_v2.txt", "H": "root_v2.txt", "H2": "root_v2.txt", "H3": "root_v2.txt",
              **{d: "root_v2.txt" for d in SHORT | ENDS}}
 LIVE = {"R", "H", "H2", "H3"} | SHORT | ENDS
 HANDED = {"H", "H2", "H3"} | SHORT | ENDS
@@ -417,9 +423,9 @@ def grade(dname, case):
     row["form_v1"] = "WELL FORMED" if not [x for x in F1 if x["level"] == "FAULT"] else "NOT: " + "; ".join(f"{x['test']} {x['at']}" for x in F1 if x["level"] == "FAULT")
     row["form_p2"] = "WELL FORMED" if not [x for x in F2 if x["level"] == "FAULT"] else "NOT: " + "; ".join(f"{x['test']} {x['at']}" for x in F2 if x["level"] == "FAULT")
     row["warns_v1"] = sorted({f"{x['test']} {x['at']}" for x in F1 if x["level"] == "WARN" and x["hand"] == me})
-    if dname.split("x")[0] in SHORT | ENDS:
+    if dname.split("x")[0] in SHORT | ENDS | LAW4:
         Es, lost, R, kids = SH.grade_s(case, row, c, start, end, added, posts, rep, mirror_lines,
-                                       amend=dname.split("x")[0] in SH.AMEND | ENDS, ending=dname.split("x")[0] in ENDS)
+                                       amend=dname.split("x")[0] in SH.AMEND | ENDS | LAW4, ending=dname.split("x")[0] in ENDS | LAW4)
         row["expect"] = Es
         row["score"] = f"{sum(1 for e in Es if e.startswith('ok'))}/{len(Es)}"
         row["lost"] = lost
@@ -516,7 +522,7 @@ def grade(dname, case):
 
 if __name__ == "__main__":
     cmd, dname = sys.argv[1], sys.argv[2]
-    cases = sys.argv[3].split(",") if len(sys.argv) > 3 else [c for c in CASES if (c != "C10" or dname.split("x")[0] in ENDS) and (c != "C11" or dname.split("x")[0] in TIES)]
+    cases = sys.argv[3].split(",") if len(sys.argv) > 3 else [c for c in CASES if (c != "C10" or dname.split("x")[0] in ENDS | LAW4) and (c != "C11" or dname.split("x")[0] in TIES)]
     if cmd == "setup":
         setup(dname, cases)
     elif cmd == "score":

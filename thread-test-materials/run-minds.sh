@@ -14,7 +14,8 @@
 #               in place), E1 (S3 with the endings back, 4 November), E2 (#570's way with the date),
 #               W2 (the way through 2 November), L, W1 ...   (E1 and E2 run C1,...,C10: C10 is later),
 #               K1 (E2 with the co-knot sentence and the tie verb), K2 (E2 with the co-knot said with its knot,
-#               the say's --tie; 13 November)   (K1 and K2 run C1,...,C11: C11 is tie)
+#               the say's --tie; 13 November)   (K1 and K2 run C1,...,C11: C11 is tie),
+#               L4 (function:thread as it stands on 14 November, whole), F4 (L4 with 8.11, the fold)   (L4 and F4 run C1,...,C10)
 #     cases     C1,C2,... (default all nine, C10 too for E1 and E2, and C10 and C11 for K1 and K2)
 #
 # Each mind gets its brief on stdin and one tool, Bash, fenced to its own run's test-beach
@@ -29,7 +30,7 @@ set -u
 [[ "${1:-}" == "--spend" ]] || { echo "run-minds.sh spends model calls: pass --spend, on David's word"; exit 2; }
 shift
 D=${1:-E2}
-if [[ $D == K* ]]; then DEF=C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11; elif [[ $D == E* ]]; then DEF=C1,C2,C3,C4,C5,C6,C7,C8,C9,C10; else DEF=C1,C2,C3,C4,C5,C6,C7,C8,C9; fi
+if [[ $D == K* ]]; then DEF=C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11; elif [[ $D == E* || $D == L4 || $D == F4 ]]; then DEF=C1,C2,C3,C4,C5,C6,C7,C8,C9,C10; else DEF=C1,C2,C3,C4,C5,C6,C7,C8,C9; fi
 CASES=${2:-$DEF}
 HERE=${0:A:h}
 export THREAD_TEST_RUNS=${THREAD_TEST_RUNS:-$(mktemp -d -t thread-minds)}

@@ -73,6 +73,15 @@ Run 13 November (eleven fresh minds, $0.04): K2 51 of 53, every thread well form
 6 of 6, later 3 of 3, so it PASSED THE GATE. Word, K1's break, came right: no second address to write. Tie took rook's
 option at 1.1 and answered dana at 3.1, its zero naming thread:1.1 (one way, an offer). No mind tied where its situation
 named no second thread. The two misses are E2's kind: self offered no option, and the wake answered at 1.3, not 1.1.
+
+L4 and F4 (14 November, at David's word, lane knots.1; bsp-mcp proposals/2026-11-14-threads-fold.md), FIXED BEFORE EITHER
+RAN: function:thread as it stood that day, whole (its root and 1 to 8), handed to a mind as its one teaching (L4), and the
+same with one sentence more at 8.11, the fold (F4). No way is handed over; the seeds are as tied; the ten uses are graded
+exactly as E2's were (S3's grade with its widening, an ending in each use, and later). The two run one after the other on
+the same day. THE GATE: 8.11 goes into function:thread if nothing is lost in any of F4's ten, F4 scores at least as many as
+L4, and no more of F4's threads fall short of well formed than L4's; if it fails, 8.11 stays out and David is told.
+Reported beside the score and not counted: any line or reply in F4 that takes the fold's nine for a limit on tying (a knot
+refused, or a thread cut short, for being past nine).
 """
 import json, re
 
