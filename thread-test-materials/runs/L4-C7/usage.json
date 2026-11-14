@@ -1,0 +1,13 @@
+{
+ "models": [
+  "claude-haiku-5-5"
+ ],
+ "turns": 6,
+ "ms": 17026,
+ "cost_usd": 0.00451403,
+ "stop": "success",
+ "refused": [
+  "B=/tmp/claude-0/-home-user/44f5dc16-354b-5e0a-b021-fedda6c63ab1/scratchpad/fold/minds/L4-C7/bb; $B room rook; echo ---; $B block spine:thread",
+  "B=/tmp/claude-0/-home-user/44f5dc16-354b-5e0a-b021-fedda6c63ab1/scratchpad/fold/minds/L4-C7/bb; $B say 1.122 \"checked the low-water marks against the harbour master's table and corrected them in tides:draft 4; draft 3 stands at 1.121 · waits on dana\" --option \"approve tides:draft 4 as the page\" --option \"send back for another correction to the low-water marks\"; echo \"---\"; $B post dana \"thread:1.122 — rook checked the low-water marks against the harbour master's table and corrected them in tides:draft 4. Your choice: approve draft 4, or send it back.\""
+ ]
+}

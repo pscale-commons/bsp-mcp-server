@@ -10,7 +10,8 @@
      read handing over the way, with the opening handing it over too, the way given
      whole on place alone, and the way's third draft; and weft's of 2 and 3 November on
      David's form with no keyword, S, S2, S3 and S4, and of 4 November with the endings back,
-     E1 and E2, graded by short.py. The grader still
+     E1 and E2, graded by short.py, and of 14 November, the law whole as it stands and with the fold
+     sentence at 8.11, L4 and F4, graded as E2 is. The grader still
      gives the totals reported (pool:threads 11, 14, 15, 16, 17 and 18, and for S to S4
      proposals/2026-11-03-threads-without-the-keyword.md), so a change to the checker or
      the grading that moves a verdict is seen.
@@ -37,7 +38,9 @@ EXPECT = {"L": (36, 40, 8, 3), "W1": (31, 40, 9, 9), "Lx2": (35, 40, 8, 5), "W2"
           # the co-knot, 13 November: E2's way with one sentence more, eleven uses (tie the eleventh); missed its gate
           "K1": (49, 53, 9, 9),
           # the co-knot said with its knot, 13 November: K1's uses and gate, ties on the say; passed its gate
-          "K2": (51, 53, 11, 11)}
+          "K2": (51, 53, 11, 11),
+          # the law whole, 14 November: as it stands (L4), and with 8.11, the fold (F4); F4 missed its gate
+          "L4": (42, 47, 10, 10), "F4": (40, 47, 10, 10)}
 
 failed = []
 

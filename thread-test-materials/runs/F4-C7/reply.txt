@@ -1,0 +1,9 @@
+I tied the knot at 1.1211 and rang dana's room with its place. Dana's decision is next.
+
+Two things I did not settle:
+- Thread 1 has a line at 1.13 from wren, "rook rebuilds it on the new chart first", with no ending. I did not act on it; it may need a decision from you or dana.
+- Thread 1 also has a line at 1.2 from rook, "dana decides without a review". I did not touch it.
+
+I placed my knot at 1.1211 because 1.121 is an act with no options offered, so the next free digit beneath it is 1. I offered dana three options at 1.12111 to 1.12113, which the law gives to the hand whose move is next. The offer goes beyond "dana decides" in the task, so drop the options if dana should simply decide in their own words.
+
+{"tied_at": "1.1211", "line": "checked the low-water marks against the harbour master's table; one corrected: tides:draft 4 · waits on dana", "options": ["publish tides:draft 4", "another pass on the low-water marks", "hold until the new chart is in"], "handed_on": {"to": "dana", "text": "thread:1.1211 — rook checked the low-water marks against the harbour master's table and corrected one: tides:draft 4. Your decision is next."}, "why": "1.121 is my own act with no options offered, so the next free digit beneath it is 1, and it answers dana's request at 1.12."}

@@ -1,0 +1,5 @@
+I put the review off on thread 1 and rang my own room. The review waits on 10 November 2026, when the harbour publishes November's data.
+
+One thing to check: the environment gives today's date as 14 November 2026, but your brief says 4 November. I followed your brief. If it is in fact 14 November, the 10 November date has already passed and the review can be picked up now.
+
+{"tied_at": "1.1", "line": "review of the tide-table draft put off until the harbour publishes November data (harbour:data 2) · waits on wren from 2026-11-10", "options": [], "handed_on": {"to": "wren", "text": "thread:1.1 — your review of rook's tide-table draft (tides:draft 1) is put off until the harbour publishes November data on 10 November 2026 (harbour:data 2). It comes back to you then."}, "why": "1.1 is the option rook offered for wren's review, so the deferral is tied at the address of the option I took."}

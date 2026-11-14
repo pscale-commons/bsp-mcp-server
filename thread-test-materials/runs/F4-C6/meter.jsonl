@@ -1,0 +1,7 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 1385}
+{"cmd": ["read", "1.12"], "chars": 973}
+{"cmd": ["block", "tides:draft", "3"], "chars": 49}
+{"cmd": ["say", "1.12", "rebuilt the tide-table with the low-water marks shown: tides:draft 3 \u00b7 waits on dana", "--option", "publish draft 3 as it stands", "--option", "one more pass on the low-water marks", "--option", "hold for wren's review first"], "chars": 469}
+{"cmd": ["post", "dana", "thread:1.121 \u2014 the low-water marks are shown on the tide-table (tides:draft 3). Your move: publish, another pass, or hold for wren's review."], "chars": 29}

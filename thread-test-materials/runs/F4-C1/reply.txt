@@ -1,0 +1,5 @@
+I opened the moorings thread at 3 in the registry, tied the first knot there, and left a line in dana's room, since the next move is hers.
+
+The first knot is 3 and it waits on dana. Its two options are wren checking the list against the register, or dana publishing it as it is. I did not ring wren, since the decision is dana's.
+
+{"tied_at": "3", "line": "built moorings:draft 1, 48 moorings by pontoon and berth; the list is not yet checked against the register · waits on dana", "options": ["wren checks the list against the harbour's register first", "dana publishes the list as it is"], "handed_on": {"to": "dana", "text": "The moorings list (draft 1, 48 moorings by pontoon and berth) is ready. Your move: have wren check it against the harbour's register first, or publish it as it is. Thread: thread:3"}, "why": "Address 3 is the thread this work opened in the registry, and the first knot sits at its root because the decision waits on dana."}

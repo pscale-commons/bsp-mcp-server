@@ -1,0 +1,5 @@
+I rebuilt the tide-table with the low-water marks (tides:draft 3), tied the act to thread 1 at 1.12, and rang dana's room. The thread now waits on dana.
+
+Dana's request at 1.12 named no options, so my act is the first knot beneath it, and I offered three options beneath that act for dana to take.
+
+{"tied_at": "1.12", "line": "rebuilt the tide-table with the low-water marks shown: tides:draft 3 · waits on dana", "options": ["publish draft 3 as it stands", "one more pass on the low-water marks", "hold for wren's review first"], "handed_on": {"to": "dana", "text": "thread:1.121 — the low-water marks are shown on the tide-table (tides:draft 3). Your move: publish, another pass, or hold for wren's review."}, "why": "Dana's ask sits at 1.12 with no options beneath it, so my act answers it there and my options open at 1.121–1.123."}

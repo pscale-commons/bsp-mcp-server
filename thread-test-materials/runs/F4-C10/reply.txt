@@ -1,0 +1,5 @@
+I put the review off on thread 1 until 10 November 2026. The knot is at 1.1, under rook's offer to review the draft, and it reads "· waits on wren from 2026-11-10". I also rang wren's room with the thread place, `thread:1.1`.
+
+The environment header gives today's date as 14 November 2026, not 4 November as your brief says. I followed your brief. If today really is 14 November, the 10 November date has already passed and the knot will come back to wren straight away.
+
+{"tied_at": "1.1", "line": "wren takes the review: checks tides:draft 1 against the harbour's November data, held until harbour:data 2 publishes · waits on wren from 2026-11-10", "options": [], "handed_on": {"to": "wren", "text": "thread:1.1 — the tide-table review is put off until harbour:data 2 publishes on 2026-11-10; it comes back to you then · waits on wren from 2026-11-10"}, "why": "Rook's offer at 1.1 is the review option, so wren's put-off knot belongs at that address in wren's own mirror, and the live end then waits on wren from the day the data is published."}

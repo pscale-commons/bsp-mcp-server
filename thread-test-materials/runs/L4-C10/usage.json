@@ -1,0 +1,10 @@
+{
+ "models": [
+  "claude-haiku-5-5"
+ ],
+ "turns": 4,
+ "ms": 10906,
+ "cost_usd": 0.0034565100000000003,
+ "stop": "success",
+ "refused": []
+}

@@ -1,6 +1,6 @@
 # The fold: a thread's drawing shows nine knots at most, and opens at a tap (2026-11-14)
 
-**Status**: DECIDED by David on 14 November 2026, in lane knots.1 ("Go please with the threads visualisation concatenation or hidden knots"). Written into `function:thread` at 8.11, beneath 8.1 ON A PAGE; the standing law is kept at `archive:function:thread:2026-11-14`.
+**Status**: DECIDED by David on 14 November 2026, in lane knots.1 ("Go please with the threads visualisation concatenation or hidden knots"). BUILT in `threads.js` and LIVE on happyseaurchin.com (happyseaurchin-home #679, 957d993), at his word ('go ahead with pr and merge'). NOT in `function:thread`: the thread battery, which the law's 7 runs before any change to it, held the sentence out (F4 missed its gate, section 5). The rule stands here and in the code.
 
 ## 0. David's words
 
@@ -33,7 +33,7 @@ A run of one is never folded, because a count line in place of one knot saves no
 
 ## 3. Where it lives
 
-- **The law:** `function:thread` 8.11, one sentence beneath ON A PAGE.
+- **The law:** not written. The sentence tested for `function:thread` 8.11 stands in `thread-test-materials/teachings/law_v4f.txt`; the battery held it out (section 5).
 - **The code:** `threads.js` (happyseaurchin-home), drawing it in three places.
   - **The cord in words** (8.1). Each run is a `<details>` on the cord, three dots where it stands, the range of addresses and the count in its line. Opened, the knots sit on the same cord at the same indent.
   - **A keeper's ladder.** The same fold on its rungs.
@@ -43,6 +43,29 @@ A run of one is never folded, because a count line in place of one knot saves no
 
 ## 4. What it does not do
 
-- **Change nothing on the beach but the sentence.** No block, field, router or tool changes.
+- **Change anything on the beach.** No block, field, router or tool changes, and the law stands as it was (section 5).
 - **Keep a bushy thread short.** A thread with many forks and options, as 17 has, stays tall: the rule counts knots along a strand, and forks and options not taken are the thread's own structure.
 - **Remember a reader's unfolding.** It is stored nowhere.
+
+## 5. The battery, before the law
+
+The law's 7 says a change to it re-runs the thread battery first, and E2's test beach cuts the law to its root line, so an E2 mind could never meet 8.11. At David's word ("Law whole, with and without"), two new deliveries were run, ten fresh Haiku minds each, with the gate fixed in `short.py` before either ran (9314aff):
+
+- **L4:** `function:thread` as it stood on 14 November, whole (its root and 1 to 8), handed to a mind as its one teaching.
+- **F4:** the same with the fold sentence at 8.11.
+- **The gate:** 8.11 goes in if nothing is lost in any of F4's ten, F4 scores at least as many as L4, and no more of F4's threads fall short of well formed.
+
+| Run | Score | Well formed | Lost a line |
+|---|---|---|---|
+| L4 | 42 of 47 | ten of ten | self: rook's option at 1.3 written over |
+| F4 | 40 of 47 | ten of ten | reask: wren's own answered line at 1.11 rewritten where the new question belonged beneath it |
+
+F4 scored below L4 and lost a line, so it **missed the gate** and 8.11 stayed out. The twenty minds cost $0.07.
+
+What the runs show, beside the score:
+
+- **No mind named the fold or a nine.** No knot was refused, and no thread was cut short, for being past nine.
+- **F4's misses are the law-alone kind** the battery has met since October. Its wake answered at a multi-dot address with no ending. L4's wake did better there and worse at self.
+- **The difference is within one run's noise,** but the gate was fixed before the run, and it held.
+
+The runs are kept in `thread-test-materials/runs` (L4-C1 to F4-C10, `scores-L4.json`, `scores-F4.json`), and the CI pass re-grades them to the totals reported. The code's mentions of `function:thread` 8.11 point here until the law is changed.

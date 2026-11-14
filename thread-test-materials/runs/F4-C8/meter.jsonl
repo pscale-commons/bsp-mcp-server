@@ -1,0 +1,10 @@
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1"], "chars": 1336}
+{"cmd": ["block", "harbour:chart"], "chars": 117}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["read", "1.11"], "chars": 901}
+{"cmd": ["read", "1.1"], "chars": 1206}
+{"cmd": ["block", "tides:draft"], "chars": 174}
+{"cmd": ["say", "1.11", "wren: you chose to publish on the chart in force now, but harbour:chart 2 takes force next week and the page would be stale \u00b7 waits on dana", "--option", "publish now, and update the page after the chart changes", "--option", "wait a week and publish on the new chart"], "chars": 431}
+{"cmd": ["post", "dana", "thread:1.11 \u2014 harbour:chart 2 takes force next week, so the tide-table page would go stale. Choose again: publish now and update after the chart changes (1.111), or wait a week and publish on the new chart (1.112). \u00b7 waits on dana"], "chars": 29}
+{"cmd": ["read", "1.11"], "chars": 1147}

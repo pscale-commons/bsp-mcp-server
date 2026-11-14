@@ -1,0 +1,9 @@
+I recorded the phone fix on thread 1.1 at 1.14 and rang dana's room, and read back both: the line stands at 1.14 and it waits on dana.
+
+The line says the page breaks on phones in draft 2 and that tides:draft 3 fixes the layout with the same times. It ends "· waits on dana", so the move is hers. I offered no options, since the existing choices at 1.11–1.13 are wren's and still stand. The room line in pool:dana points her to thread:1.14 before she decides 1.1.
+
+I read `tides:draft 3` and it is labelled "draft 2 with the layout fixed for phones", so the record matches the block. I did not open the draft itself, so I have not checked the layout visually.
+
+```json
+{"tied_at": "1.14", "line": "before you decide: the page breaks on phones in draft 2; I fixed the layout for phones in tides:draft 3 (same times as draft 2) · waits on dana", "options": [], "handed_on": {"to": "dana", "text": "thread:1.14 — rook: the page breaks on phones as drafted; tides:draft 3 fixes the layout for phones, same times as draft 2. Please read this before you decide thread:1.1."}, "why": "1.14 is the first digit no hand holds beneath 1.1, since 1.11–1.13 are wren's options, so the act answers the knot dana is waiting on."}
+```

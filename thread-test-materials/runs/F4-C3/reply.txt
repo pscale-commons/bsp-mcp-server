@@ -1,0 +1,3 @@
+I took rook's own option 1.3 on thread 1 ("adds the spring tides before anyone reviews"), recorded the act there, and rang wren's room with the thread place. The act ends "· waits on wren", so the review is wren's move. I offered no new options, since the review is wren's to take.
+
+{"tied_at": "1.3", "line": "rook adds the spring tides before anyone reviews: tides:draft 2 is on the page, ready for review · waits on wren", "options": [], "handed_on": {"to": "wren", "text": "thread:1.3 — tides:draft 2 has the spring tides on the page. Please review it against the harbour's data; the thread waits on you."}, "why": "Thread 1's live end was my own option 1.3, the spring-tides step I had already taken, so the act belongs at that address."}

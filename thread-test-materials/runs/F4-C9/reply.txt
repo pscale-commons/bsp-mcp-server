@@ -1,0 +1,3 @@
+1.2.1 | rook can rebuild the tide-table page from tides:feed 11, the 62 November times this window carries. Feed is back up, so the fetch that failed at 1.2 is answered, and the rebuild is rook's to do. | options: none
+
+I'm tying the knot at 1.2.1 because rook's move is the rebuild, and nothing I can do as a no-tools agent branches from it, so no options follow.

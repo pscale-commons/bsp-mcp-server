@@ -82,6 +82,12 @@ the same day. THE GATE: 8.11 goes into function:thread if nothing is lost in any
 L4, and no more of F4's threads fall short of well formed than L4's; if it fails, 8.11 stays out and David is told.
 Reported beside the score and not counted: any line or reply in F4 that takes the fold's nine for a limit on tying (a knot
 refused, or a thread cut short, for being past nine).
+Run 14 November (twenty Claude Haiku minds, $0.07): L4 42 of 47, F4 40 of 47, every thread in both well formed; each lost
+one line (L4's self wrote over rook's option at 1.3; F4's reask rewrote wren's own answered line at 1.11 where the new
+question belonged beneath it). F4 scored below L4 and lost a line, so it MISSED THE GATE and 8.11 stayed out; David was
+told. No mind named the fold or a nine. F4's other misses are the law-alone kind: its wake answered at 1.2.1, a multi-dot
+address and no ending (0 of 4, where L4's wake wrote 1.3 · waits on rook), and self offered no option; its self
+otherwise did better than L4's (4 of 5 to 2 of 5).
 """
 import json, re
 

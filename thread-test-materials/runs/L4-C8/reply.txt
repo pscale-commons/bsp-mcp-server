@@ -1,0 +1,5 @@
+I put the choice to dana again on the tide-table thread. It sits beneath her earlier publish answer, and her room has been rung with the place `thread:1.111`.
+
+The new question is at 1.111, and its two options are at 1.1111 (publish now, update after the chart changes) and 1.1112 (wait a week and publish on the new chart). I did not tie at 1.11 because wren already holds an act there, and an answered decision is never asked again at its own address.
+
+{"tied_at": "1.111", "line": "the harbour changes its tide chart next week (harbour:chart 2), after dana chose to publish; the choice is put to her again · waits on dana", "options": ["publish now, and update the page after the chart changes", "wait a week and publish on the new chart"], "handed_on": {"to": "dana", "text": "thread:1.111 — the harbour changes its tide chart next week (harbour:chart 2). Publish now and update the page after the chart changes, or wait a week and publish on the new chart?"}, "why": "It sits beneath dana's answered publish choice at 1.11, at the next free digit, so the answered address is not reasked and the new question is a knot beneath the answer."}

@@ -1,0 +1,5 @@
+I put the revised choice to dana on the tide-table thread (thread 1) and rang her room. The re-read shows the new knot and both options in place.
+
+One thing to know: my earlier line at 1.11 ("dana publishes the page", no ending) was replaced by the new offer, since it was my own act and the beach rewrote it in place. Dana's answer at 1.11 is untouched.
+
+{"tied_at": "1.11", "line": "wren: you chose to publish on the chart in force now, but harbour:chart 2 takes force next week and the page would be stale · waits on dana", "options": ["publish now, and update the page after the chart changes", "wait a week and publish on the new chart"], "handed_on": {"to": "dana", "text": "thread:1.11 — harbour:chart 2 takes force next week, so the tide-table page would go stale. Choose again: publish now and update after the chart changes (1.111), or wait a week and publish on the new chart (1.112). · waits on dana"}, "why": "Dana's publish answer already stands at 1.11, so the new question goes beneath it as a knot at that address, with its two options at 1.111 and 1.112."}

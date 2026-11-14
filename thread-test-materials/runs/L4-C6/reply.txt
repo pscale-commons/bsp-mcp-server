@@ -1,0 +1,5 @@
+I've made the low-water marks pass and handed the thread back to dana. Draft 3 of the tide-table page (tides:draft 3) shows the marks, as dana asked at 1.12.
+
+I tied my knot at 1.12 in my own mirror, ending "· waits on dana", and offered two options beneath it: 1.121 "keep draft 3 as it stands" and 1.122 "one more pass, with changes named". I also rang dana's room with the place, so they see it on their page.
+
+{"tied_at": "1.12", "line": "draft 3 done: the low-water marks are shown on the tide-table page (tides:draft 3) · waits on dana", "options": ["keep draft 3 as it stands", "one more pass, with changes named"], "handed_on": {"to": "dana", "text": "thread:1.12 — draft 3 is up, with the low-water marks shown (tides:draft 3). Your move · waits on dana"}, "why": "dana's open ask sits at 1.12 and waits on rook, so my answer goes at that address as the knot that hands the decision back to dana."}

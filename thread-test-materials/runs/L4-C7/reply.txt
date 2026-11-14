@@ -1,0 +1,5 @@
+I checked the low-water marks against the harbour master's table, corrected them in tides:draft 4, and tied that on thread 1.12 as a new knot at 1.122. Dana's room now has the place as the doorbell. Draft 3 stays at 1.121, which the earlier session tied.
+
+The knot waits on dana. I offered two options: approve draft 4 as the page, or send it back for another correction.
+
+{"tied_at": "1.122", "line": "checked the low-water marks against the harbour master's table and corrected them in tides:draft 4; draft 3 stands at 1.121 · waits on dana", "options": ["approve tides:draft 4 as the page", "send back for another correction to the low-water marks"], "handed_on": {"to": "dana", "text": "thread:1.122 — rook checked the low-water marks against the harbour master's table and corrected them in tides:draft 4. Your choice: approve draft 4, or send it back."}, "why": "Draft 3 already holds 1.121, so the new knot takes the next free digit beneath the line it answers, 1.12."}

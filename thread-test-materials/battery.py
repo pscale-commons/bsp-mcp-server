@@ -44,7 +44,8 @@ delivery: the teaching a mind is handed, from teachings/ —
       to a mind as its one teaching, with no way handed over; seeds as tied, the tenth use, graded as E2 is
   F4  L4 with one sentence more at 8.11, the fold (law_v4f.txt; bsp-mcp proposals/2026-11-14-threads-fold.md), at David's
       word of 14 November: run beside L4 because the law's 7 re-runs the battery before any change to it, and E2's test
-      beach cuts the law to its root line, so only a mind handed the law whole meets 8.11 (short.py's docstring has the gate)
+      beach cuts the law to its root line, so only a mind handed the law whole meets 8.11 (short.py's docstring has the gate).
+      Run 14 November: L4 42 of 47, F4 40 of 47, both all ten well formed and each losing one line, so F4 missed its gate
   W1, W2 ...  a draft of the way (way_<w>.txt); W2 was ways:thread until 2 November, when W3 took its place
   a name ending x<k> (Lx2) is round k of the same teaching
 cases: C1 open · C2 take · C3 self · C4 word · C5 step · C6 place · C7 twin · C8 reask · C9 wake · C10 later (E1, E2, K1, K2, L4, F4) · C11 tie (K1, K2)

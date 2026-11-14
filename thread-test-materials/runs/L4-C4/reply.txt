@@ -1,0 +1,5 @@
+I recorded dana's "Publish it" on thread 1 at 1.11, the option "dana publishes the page". The knot ends "· complete", so nothing is handed on and I did not ring any room.
+
+The thread's state before my line: wren had reviewed the draft and it waited on dana. I took the publish option rather than the "another pass" option at 1.12.
+
+{"tied_at": "1.11", "line": "dana said 'Publish it' in chat; rook published the tide-table page, live at tides:live · complete", "options": [], "handed_on": {"to": null, "text": null}, "why": "Option 1.11 is the publish decision wren offered beneath the reviewed draft at 1.1, so dana's choice is tied at that address in my own mirror."}

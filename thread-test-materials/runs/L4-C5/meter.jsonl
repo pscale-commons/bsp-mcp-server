@@ -1,0 +1,6 @@
+{"cmd": ["read", "1.1"], "chars": 1151}
+{"cmd": ["block", "tides:draft", "3"], "chars": 51}
+{"cmd": ["room", "dana"], "chars": 91}
+{"cmd": ["say", "1.14", "the page broke on phones; fixed the layout in tides:draft 3, which is draft 2 with that change only \u00b7 waits on dana"], "chars": 159}
+{"cmd": ["read", "1.1"], "chars": 1282}
+{"cmd": ["post", "dana", "thread:1.14 \u2014 rook fixed the page's layout for phones in tides:draft 3 (draft 2 with that change only), before you decide"], "chars": 29}

@@ -1,0 +1,3 @@
+1.3 | rook: kestrel has the feed's 62 November tide times at tides:feed 11; rook rebuilds the tide-table page from them and rings kestrel back when it's done · waits on rook | options: none
+
+The live end is rook's line 1.2 (the feed-down report), and the feed is now back with data, so the next step is rook's rebuild, not a choice for me. I'm tying at 1.3 because the open knot is 1.2 and the next free digit beneath it is 3.

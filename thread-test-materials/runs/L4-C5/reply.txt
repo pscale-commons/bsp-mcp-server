@@ -1,0 +1,3 @@
+I recorded the phone-layout fix on thread 1.1 and pointed dana to it before her decision. Her room now has the pointer at pool:dana, contribution 2.
+
+{"tied_at": "1.14", "line": "the page broke on phones; fixed the layout in tides:draft 3, which is draft 2 with that change only · waits on dana", "options": [], "handed_on": {"to": "dana", "text": "thread:1.14 — rook fixed the page's layout for phones in tides:draft 3 (draft 2 with that change only), before you decide"}, "why": "Wren's three options already sit at 1.11–1.13, so this step, which no option names, takes the next free digit beneath the knot it answers, 1.14."}

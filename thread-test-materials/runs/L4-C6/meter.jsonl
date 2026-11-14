@@ -1,0 +1,6 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1.12"], "chars": 973}
+{"cmd": ["block", "tides:draft", "3"], "chars": 49}
+{"cmd": ["say", "1.12", "draft 3 done: the low-water marks are shown on the tide-table page (tides:draft 3) \u00b7 waits on dana", "--option", "keep draft 3 as it stands", "--option", "one more pass, with changes named"], "chars": 425}
+{"cmd": ["post", "dana", "thread:1.12 \u2014 draft 3 is up, with the low-water marks shown (tides:draft 3). Your move \u00b7 waits on dana"], "chars": 29}

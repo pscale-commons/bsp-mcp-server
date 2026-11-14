@@ -1,0 +1,10 @@
+The moorings page is opened as thread 3, with the first knot tied and the choice waiting on dana. The moorings list itself is in `moorings:draft 1`, and I left it unchanged.
+
+- **Registry:** `spine:thread` line 3, "the moorings page for the harbour · opened by rook".
+- **Knot at 3:** "built the moorings list, draft 1: 48 moorings by pontoon and berth, saved in moorings:draft 1; not yet checked against the harbour register · waits on dana".
+- **Options offered at 3:** 3.1 "wren checks the list against the harbour register first"; 3.2 "dana publishes draft 1 as it is".
+- **Handoff:** a line in dana's room pointing at thread:3, saying the choice is hers.
+
+I wrote the first knot as waiting on dana, because she decides between the two options, not wren. I did not post to wren's room. If wren should be rung for the review option, that needs a line there too. The `moorings:draft 1` read returned only a summary ("48 moorings, by pontoon and berth"), so I could not confirm the list's contents here.
+
+{"tied_at": "3", "line": "built the moorings list, draft 1: 48 moorings by pontoon and berth, saved in moorings:draft 1; not yet checked against the harbour register · waits on dana", "options": ["wren checks the list against the harbour register first", "dana publishes draft 1 as it is"], "handed_on": {"to": "dana", "text": "The moorings page is drafted (thread:3, draft 1: 48 moorings by pontoon and berth). Your choice: wren checks it against the harbour register first, or you publish draft 1 as it is. Open the thread at 3 to take either."}, "why": "The first knot goes at 3, the thread's opening address, because the choice is the first live end and it waits on dana, who decides."}

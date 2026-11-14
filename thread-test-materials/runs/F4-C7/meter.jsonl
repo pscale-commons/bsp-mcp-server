@@ -1,0 +1,9 @@
+{"cmd": ["room", "rook"], "chars": 93}
+{"cmd": ["block", "spine:thread"], "chars": 173}
+{"cmd": ["read", "1.12"], "chars": 1065}
+{"cmd": ["read", "1"], "chars": 1477}
+{"cmd": ["block", "tides"], "chars": 20}
+{"cmd": ["block", "tides:draft"], "chars": 326}
+{"cmd": ["say", "1.1211", "checked the low-water marks against the harbour master's table; one corrected: tides:draft 4 \u00b7 waits on dana", "--option", "publish tides:draft 4", "--option", "another pass on the low-water marks", "--option", "hold until the new chart is in"], "chars": 337}
+{"cmd": ["read", "1.1211"], "chars": 1080}
+{"cmd": ["post", "dana", "thread:1.1211 \u2014 rook checked the low-water marks against the harbour master's table and corrected one: tides:draft 4. Your decision is next."], "chars": 29}

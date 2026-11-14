@@ -1,0 +1,12 @@
+{
+ "models": [
+  "claude-haiku-5-5"
+ ],
+ "turns": 6,
+ "ms": 13124,
+ "cost_usd": 0.00378843,
+ "stop": "success",
+ "refused": [
+  "B=/tmp/claude-0/-home-user/44f5dc16-354b-5e0a-b021-fedda6c63ab1/scratchpad/fold/minds/L4-C1/bb; $B block spine:thread; echo ---; $B block moorings:draft 1; echo ---; $B room wren; echo ---; $B room dana"
+ ]
+}
