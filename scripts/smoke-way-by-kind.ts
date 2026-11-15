@@ -29,7 +29,7 @@ const beaches: Record<string, Record<string, any>> = {
     'ways:recipe': recipe,
     'ways:own': { _: 'THE WAY OF ITS OWN — of this smoke.', '1': 'DO IT THIS FAMILY’S WAY.' },
     // a proposal: phase form names no way, the mode's form does
-    'spine:alpha': { _: 'alpha, a proposal', '1': 'the first step' },
+    'spine:alpha': { _: 'alpha, a proposal', '1': { _: 'the first step', '1': { _: 'the second step', '8': 'DECIDE — the second? Asked of ada.' } } },
     'function:alpha': { _: 'Operator for alpha: a proposal read as a document.', '1': 'mode: document', '7': 'phase: proposal — the decisions are open.' },
     // a recipe: the phase's way before the mode's
     'spine:beta': { _: 'beta, a recipe', '1': 'the first step' },
@@ -107,6 +107,10 @@ ok(after === before, 'and the forms are not asked again in that session');
 
 r = await engage('s4', 'alpha');
 ok(r.includes(given('ways:reader')) && r.includes('1 FIND THE FAMILY.'), 'a new session is given it whole again');
+
+// ── off the clock the ladder says each rung as it is answered at: 1.18, never 118 ──
+r = (await handleStreamEngage({ field: 'alpha', handle: 'cy', beach: FAMILY, at: '1.18' } as any, { sessionId: 's5' })).content.map((c: any) => c.text).join('\n');
+ok(r.includes('[1.18]') && r.includes('[1.1]') && !/\[118\]|\[11\]/.test(r), 'the ladder says 1.1 and 1.18 with their decimal point, as the header does');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

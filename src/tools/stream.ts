@@ -643,9 +643,13 @@ export function ladderLines(
 ): string[] {
   const out: string[] = [];
   let run: { pscale: number; addr: string; text: string | null }[] = [];
+  // a rung is shown as it is answered at: the full-width beat on the clock, and off it the
+  // address with its one decimal point at the floor (1.118, never 1118), as the header and
+  // the readings already say it — two fresh readers took the bare digits for the address
+  const shown = (addr: string) => spineFloor === TEMPORAL_FLOOR || /\D/.test(addr) ? addr : dotted(addr.split(''), spineFloor);
   const head = (r: { pscale: number; addr: string }, kept: boolean) => {
     const when = clockVoice(r.addr, spineFloor);
-    return `  p${r.pscale} [${r.addr}]${kept ? ' FOLDED' : ''}${when ? ` ${when} —` : ''}`;
+    return `  p${r.pscale} [${shown(r.addr)}]${kept ? ' FOLDED' : ''}${when ? ` ${when} —` : ''}`;
   };
   const flush = () => {
     if (!run.length) return;
@@ -653,7 +657,7 @@ export function ladderLines(
     else {
       const a = run[0], b = run[run.length - 1];
       const wa = clockVoice(a.addr, spineFloor), wb = clockVoice(b.addr, spineFloor);
-      out.push(`  p${a.pscale}–p${b.pscale} [${a.addr} … ${b.addr}]${wa && wb ? ` ${wa} … ${wb} —` : ''} (unvoiced on the spine, ${run.length} rungs)`);
+      out.push(`  p${a.pscale}–p${b.pscale} [${shown(a.addr)} … ${shown(b.addr)}]${wa && wb ? ` ${wa} … ${wb} —` : ''} (unvoiced on the spine, ${run.length} rungs)`);
     }
     run = [];
   };
