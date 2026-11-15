@@ -534,7 +534,7 @@ export function standingBrief(key: string | null, lawText: string, nowMs: number
   return false;
 }
 /** For tests: forget what was given. */
-export function resetStanding(): void { standing.clear(); }
+export function resetStanding(): void { standing.clear(); kindWays.clear(); }
 
 /** THE WAY A LAW NAMES IS HANDED OVER, ONCE (proposals/2026-11-02-the-read-hands-
  *  over-the-way). A mind told where a family's way stands mostly does not go: of
@@ -553,10 +553,51 @@ export function wayText(way: Block): string {
     .map(([d, t]) => `${d} ${t}`);
   return [voiceOf(way) ?? '', ...steps].filter(Boolean).join('\n\n');
 }
+/** THE WAY HANDED OVER BY KIND (proposals/2026-11-15-the-way-by-kind.md; spine:o-page-unit
+ *  1.11111). A law that names no way of its own still says its kind: its 7 the phase and its
+ *  1 the mode, each the name of a form (function:<phase>, function:<mode>). The first form
+ *  whose root closes 'is ways:<name>.' gives the way — the phase's before the mode's, so a
+ *  recipe is handed the recipe's way and every other document the reader's. A form is looked
+ *  for at the family's own beach, then at the default beach. A session asks once: what the
+ *  forms answered is kept beside what was given, for as long as that is. */
+const kindWays = new Map<string, { name: string | null; from: string; at: number }>();
+function kindOf(law: unknown, pos: '1' | '7', word: 'mode' | 'phase'): string | null {
+  const line = voiceOf((law as Record<string, unknown> | null | undefined)?.[pos]) ?? '';
+  return new RegExp(`^\\s*${word}:\\s*([a-z][a-z0-9-]*)`, 'i').exec(line)?.[1]?.toLowerCase() ?? null;
+}
+async function wayOfKind(session: string | null | undefined, origin: string, law: unknown, nowMs: number): Promise<{ name: string; from: string } | null> {
+  const forms = [kindOf(law, '7', 'phase'), kindOf(law, '1', 'mode')].filter((f, i, a): f is string => !!f && a.indexOf(f) === i);
+  if (!forms.length) return null;
+  const key = session ? `${session}|${origin}|${forms.join('|')}` : null;
+  const prior = key ? kindWays.get(key) : undefined;
+  if (prior && nowMs - prior.at < STANDING_REFRESH_MS) return prior.name ? { name: prior.name, from: prior.from } : null;
+  let found: { name: string; from: string } | null = null;
+  const beaches = origin === DEFAULT_BEACH ? [origin] : [origin, DEFAULT_BEACH];
+  for (const form of forms) {
+    for (const beach of beaches) {
+      const row = await loadBlock(beach, `function:${form}`).catch(() => null);
+      if (!row?.block) continue;
+      const name = LAW_NAMES_ITS_WAY.exec(voiceOf(row.block) ?? '')?.[1];
+      if (name) found = { name, from: beach };
+      break; // the form stands here: its answer is this beach's, whether or not it names a way
+    }
+    if (found) break;
+  }
+  if (key) {
+    kindWays.set(key, { name: found?.name ?? null, from: found?.from ?? origin, at: nowMs });
+    if (kindWays.size > 2000) {
+      const cut = nowMs - STANDING_REFRESH_MS;
+      for (const [k, v] of kindWays) if (v.at < cut) kindWays.delete(k);
+    }
+  }
+  return found;
+}
 export async function wayHandedOver(session: string | null | undefined, origin: string, law: unknown, nowMs: number): Promise<string[]> {
-  const name = LAW_NAMES_ITS_WAY.exec(voiceOf(law) ?? '')?.[1];
+  const own = LAW_NAMES_ITS_WAY.exec(voiceOf(law) ?? '')?.[1];
+  const kind = own ? null : await wayOfKind(session, origin, law, nowMs);
+  const name = own ?? kind?.name;
   if (!name) return [];
-  const row = await loadBlock(origin, name).catch(() => null);
+  const row = await loadBlock(kind?.from ?? origin, name).catch(() => null);
   if (!row || !row.block || typeof row.block !== 'object') return [];
   const text = wayText(row.block as Block);
   return standingBrief(session ? `${session}|${origin}|${name}` : null, text, nowMs)
