@@ -21,7 +21,7 @@ A proposal is combined, so the battery is. Each of the five runs alone, and they
 
 | Battery | What it checks | Tests |
 |---|---|---|
-| `family` | the spine and law stand, their positions, the list | STANDS SHAPE FLOOR TITLE ROOT STEPS TITLES STATE MODE POSITIONS LISTED NOTATION RESOLVES COMPOUND |
+| `family` | the spine and law stand, their positions, the list | STANDS SHAPE FLOOR TITLE ROOT STEPS TITLES STATE MODE POSITIONS LISTED NOTATION RESOLVES COMPOUND POINT REACH |
 | `decisions` | each decision reads as its maker wrote it, each answer as an answer | OPENS SPELT PLACED QUESTION WHO WORDS HOLD SHORT ANSWERS NAMED |
 | `room` | the welcome and its link, the entries, the earlier responses nested beneath it | STANDS SHAPE NAMED WELCOME LINK ENDS ENTRIES SUMMARIES REPLIES |
 | `threads` | the law's 5 names what stands; each registry thread through `thread_form.py` | HEADED LINE STANDS STEP FORM TIED |

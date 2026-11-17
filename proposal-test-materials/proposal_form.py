@@ -503,6 +503,17 @@ class Family:
 
 NOTED = re.compile(r"(?<![\w.:-])((?:spine|function|ways|pool|look|files|history):[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*)(?![\w:<-])(?:\s+(\d+(?:\.\d+)?)(?![\w.]))?")
 MULTIDOT = re.compile(r"(?<![\w.#/-])\d\.\d(?:\.\d)+(?![\w/-])")
+# REACH and POINT (spine:navigator 1.11 and 1.11111): one act at any place stays small enough for a small mind,
+# however large the family grows. Counted as Gemma 4 counts this beach's prose, about four characters a token
+# (3.94 over every line of the 46 families listed on 16 November 2026, stash:weft 115), so no tokenizer is needed.
+# An act holds the navigator's own words, the chat's frame, the ask, room for a reply and the way's opening and
+# step (about 900 together), the law's opening line, the path down as titles, the place itself, and up to nine
+# lines beneath it as titles.
+CHARS_PER_TOKEN = 4
+REACH_FIXED = 900
+POINT_TOKENS = 600
+REACH_WARN = 2048
+REACH_FAULT = 4096
 
 
 def check_family(f):
@@ -599,6 +610,40 @@ def check_family(f):
         if x["predicate"] == "law":
             continue  # STANDS says so
         add("FAULT", "COMPOUND", f"{x['block']} {x['at']}", f"{x['predicate']}: {x['fault']}")
+
+    # one act at each place: the path as titles, the place, its ring as titles, the law's opening line
+    law_root = voice(f.law) if isinstance(f.law, dict) else ""
+    tokens = lambda t: (len(t) + CHARS_PER_TOKEN - 1) // CHARS_PER_TOKEN
+
+    def head(t):
+        t = " ".join(str(t).split())
+        i = t.find(" — ")
+        return t[:i] if 0 < i and not re.search(r"[a-z]", t[:i]) else " ".join(t.split()[:12])
+
+    worst, places = [0, ""], [0]
+
+    def visit(node, addr, path):
+        for k in "123456789":
+            if not isinstance(node, dict) or k not in node:
+                continue
+            child, at = node[k], addr + k
+            here, where = voice(child), at[0] + ("." + at[1:] if len(at) > 1 else "")
+            ring = [voice(child[j]) for j in "123456789" if isinstance(child, dict) and j in child]
+            act = REACH_FIXED + tokens(law_root) + sum(tokens(head(x)) for x in path) + tokens(here) + sum(tokens(head(x)) for x in ring)
+            places[0] += 1
+            if tokens(here) > POINT_TOKENS:
+                add("WARN", "POINT", where, f"one line of about {tokens(here)} tokens: a small mind reads a place whole, so a place stays a place; nest the rest beneath it (spine:navigator 1.11)")
+            if act > worst[0]:
+                worst[:] = [act, where]
+            visit(child, at, path + [here])
+
+    visit(f.spine, "", [voice(f.spine)])
+    if worst[0] > REACH_FAULT:
+        add("FAULT", "REACH", worst[1], f"one act here needs about {worst[0]} tokens, past a small model's whole window of {REACH_FAULT}: shorten the line or nest it")
+    elif worst[0] > REACH_WARN:
+        add("WARN", "REACH", worst[1], f"one act here needs about {worst[0]} tokens, more than half a small window of {REACH_FAULT}")
+    elif places[0]:
+        add("NOTE", "REACH", worst[1], f"the largest act at any of its {places[0]} places needs about {worst[0]} tokens, within a small window")
 
 
 # ── decisions: each reads as its maker wrote it, each answer as an answer ─
