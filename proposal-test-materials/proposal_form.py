@@ -32,6 +32,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DIGITS = "123456789"
 BATTERIES = ("family", "decisions", "room", "threads", "page")
 MAX_STEPS = 12       # proposal.html stepsOf stops here
+FORM_PHASES = ("proposal", "project", "complete", "set aside", "inquiry")   # the form's own; any other word is another kind (function:proposal 6)
 QUESTION_MAX = 300   # 'a tap and a line' (function:proposal 3)
 
 # The lines the port below follows, as they stand in the pages. A live pass looks for each one
@@ -40,7 +41,7 @@ READERS = {
     "proposal.html": [
         """var TOK = "[A-Z][A-Z’']*(?: [A-Z][A-Z’']*)*";""",
         """if (!L.page && (m = /\\bpage:\\s*(https?:\\/\\/\\S+)/i.exec(p[1]))) L.page = m[1].replace(/[.,;)]+$/, '');""",
-        """if (!L.phase && (m = /^phase:\\s*(proposal|project|complete|set aside)\\b/i.exec(p[1]))) L.phase = m[1].toLowerCase();""",
+        """if (!L.phase && (m = /^phase:\\s*(set aside|[a-z]+)\\b\\s*[—–:,-]?\\s*([\\s\\S]*)$/i.exec(p[1]))) { L.phase = m[1].toLowerCase(); L.phaseSay = m[2].trim(); }""",
         """while (node != null && out.length < 12) {""",
         """var m = new RegExp('^(' + words + ')\\\\b\\\\s*[—–:,-]?\\\\s*([\\\\s\\\\S]*)$', 'i').exec(String(t || '').trim());""",
     ],
@@ -351,7 +352,7 @@ def law_of(law, name):
             m = re.search(r"\blook:\s*([a-z][\w-]*)\s*$", t, re.I)
             if m and not L["look"] and m.group(1).lower() not in ("accent", "page"):
                 L["look"] = m.group(1)
-            m = re.match(r"^phase:\s*(proposal|project|complete|set aside)\b", t, re.I)
+            m = re.match(r"^phase:\s*(set aside|[a-z]+)\b", t, re.I)   # any kind, as the page reads it (function:proposal 6)
             if m and not L["phase"]:
                 L["phase"] = m.group(1).lower()
     L["room"] = L["room"] or name
@@ -780,7 +781,9 @@ def check_page(f):
         if f.entry is None:
             add("FAULT", "PHASE", "7", "no 'phase:' line and not on the list, so the page says this is not a proposal")
         elif t7:
-            add("FAULT", "PHASE", "7", f"the law's 7 opens '{t7[:30]}', not 'phase: proposal', 'phase: project', 'phase: complete' or 'phase: set aside'")
+            add("FAULT", "PHASE", "7", f"the law's 7 opens '{t7[:30]}', not 'phase: <its kind>' (proposal, project, complete, set aside, inquiry, or another kind, a walk, a recipe, an explainer)")
+    elif f.L["phase"] not in FORM_PHASES and f.entry is None:
+        add("FAULT", "PHASE", "7", f"'phase: {f.L['phase']}' names another kind, and it is not on the list, so the page says this is not a proposal")
     elif not re.match(r"^phase:", t7, re.I):
         add("WARN", "PHASE", "7", "the phase is read from another line of the law; it stands at 7")
     said = re.search(r"\bpage:\s*(\S+)?", t6, re.I)
