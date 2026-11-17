@@ -163,7 +163,8 @@ M = [
     ("phase: project with nothing tied", lambda s: (put(s, LAW, "7", "phase: project"), s["blocks"][LAW].__setitem__("5", {"_": "THE THREADS — none yet."})), "threads", "TIED", "WARN"),
     # the page and the look
     ("no phase, and not on the list", lambda s: (put(s, LAW, "7", "the phase is not said"), unlisted(s)), "page", "PHASE", "FAULT"),
-    ("a phase no page reads", lambda s: put(s, LAW, "7", "phase: draft"), "page", "PHASE", "FAULT"),
+    ("a 7 that names no kind", lambda s: put(s, LAW, "7", "draft — not yet a phase line"), "page", "PHASE", "FAULT"),
+    ("another kind, and not on the list", lambda s: (put(s, LAW, "7", "phase: walk — a walk, not a proposal"), unlisted(s)), "page", "PHASE", "FAULT"),
     ("the phase standing at another line", lambda s: (put(s, LAW, "7", "the phase is at the 4"), put(s, LAW, "4", "phase: proposal")), "page", "PHASE", "WARN"),
     ("a page with no scheme", lambda s: put(s, LAW, "6", "page: happyseaurchin.com/harbour-bell"), "page", "PAGE", "FAULT"),
     ("a crafted page the law does not name, as found at game-arcade", lambda s: put(s, LAW, "6", "THE LOOK — the harbour at slack water."), "page", "PAGE", "WARN"),
