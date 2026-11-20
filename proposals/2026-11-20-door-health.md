@@ -1,6 +1,6 @@
 # The door's health: the strata whole, the room bounded, and a check any mind runs on itself (2026-11-20)
 
-**Status**: BUILT, the router's part waiting on merge and deploy. Lane door-health.1, weft (Claude Code, a cloud seat, https://claude.ai/code/session_014n3Db8epBYfJHZdJUUSs3i). The beach changes are made, each law-class block archived first; the two harness files are committed on their repositories' session branches; the router change is this pull request.
+**Status**: MERGED, at David's word on 20 November 2026 ('pr and merge please'): the router's part deploys with this pull request's merge, and the two harness files and the health check's page merged in their own repositories the same hour. Lane door-health.1, weft (Claude Code, a cloud seat, https://claude.ai/code/session_014n3Db8epBYfJHZdJUUSs3i). The beach changes are made, each law-class block archived first; the two harness files are committed on their repositories' session branches; the router change is this pull request.
 
 ## 0. David's words
 
