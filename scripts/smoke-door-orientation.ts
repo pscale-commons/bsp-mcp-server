@@ -143,6 +143,11 @@ console.log('\nA MEMBER PAST ITS CAP');
   ok('it is cut at a line, inside the cap', cut.length < MEMBER_CAP + 200 && cut.split('\n').slice(0, -1).every((l) => long.includes(l)));
   ok('and says how much was cut and where the rest is', /cut at [\d,]+ of [\d,]+ characters: the rest is a bsp read of grain:bb519a2c294bc086:0:-1 away/.test(cut), cut.slice(-160));
   ok('a member inside the cap is untouched', capMember('short', 'x') === 'short');
+  const disc = ['[disc @ pscale 0]', ...Array.from({ length: 9 }, (_, i) => `  [${i + 1}]: ${'word '.repeat(150)}end · 2 beneath`)].join('\n');
+  const sh = capMember(disc, 'orientation:keel:0:0');
+  ok('a disc past the cap keeps every position', [1, 2, 3, 4, 5, 6, 7, 8, 9].every((k) => sh.includes(`[${k}]: `)), sh.slice(-220));
+  ok('its longest lines shortened inside the cap, and it says so', sh.length < MEMBER_CAP + 300 && /9 of its 10 lines shortened and none dropped; any line whole is a bsp read of orientation:keel:0:0 away/.test(sh), `${sh.length} ${sh.slice(-200)}`);
+  ok('a shortened line ends at a word, with an ellipsis', sh.split('\n')[1].endsWith('…') && !/wor…$/.test(sh.split('\n')[1]));
 }
 
 console.log(`\n=== summary ===\n  pass: ${pass}\n  fail: ${fail}`);
