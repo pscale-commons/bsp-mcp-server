@@ -134,13 +134,32 @@ function readOncePerCall(): typeof loadBlock {
   };
 }
 
-/** A bundle member past this many characters arrives cut at a line, saying so. */
+/** A bundle member past this many characters arrives shortened, saying so. Where each of its lines can keep a fair
+ *  share (a disc's positions, a walk's rungs), every line stays and the longest are shortened first, so no position
+ *  falls off the end and no holder prunes standing ground to make it arrive (keel's orientation disc, cut at 5,486 of
+ *  6,703 on 20 November, lost its 8 and 9); a member of many short lines is cut at a line, as before. */
 export const MEMBER_CAP = 6000;
+const LINE_FLOOR = 120;
+function shortenLine(line: string, room: number): string {
+  if (line.length <= room) return line;
+  const cut = line.slice(0, room - 1), sp = cut.lastIndexOf(' ');
+  return (sp > room * 0.6 ? cut.slice(0, sp) : cut).replace(/[,;:\s]+$/, '') + '…';
+}
 export function capMember(body: string, ref: string): string {
   if (body.length <= MEMBER_CAP) return body;
+  const lines = body.split('\n');
+  const budget = MEMBER_CAP - 200;
+  const fits = (room: number) => lines.reduce((a, l) => a + Math.min(l.length, room) + 1, 0) <= budget;
+  let lo = 0, hi = Math.max(...lines.map((l) => l.length));
+  while (lo < hi) { const mid = Math.ceil((lo + hi) / 2); if (fits(mid)) lo = mid; else hi = mid - 1; }
+  if (lo >= LINE_FLOOR) {
+    const short = lines.map((l) => shortenLine(l, lo));
+    const n = short.filter((l, i) => l !== lines[i]).length;
+    return `${short.join('\n')}\n(${body.length.toLocaleString('en-GB')} characters, past the door's ${MEMBER_CAP.toLocaleString('en-GB')}: ${n} of its ${lines.length} lines shortened and none dropped; any line whole is a bsp read of ${ref} away)`;
+  }
   const kept: string[] = [];
   let n = 0;
-  for (const line of body.split('\n')) {
+  for (const line of lines) {
     if (n + line.length + 1 > MEMBER_CAP) break;
     kept.push(line);
     n += line.length + 1;
