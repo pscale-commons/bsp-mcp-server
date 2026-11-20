@@ -6,15 +6,17 @@
  *      to 4,096 characters; the signed line comes first, so it is never what is cut.
  *   2. They carry the strata and the address rule, the two things no other text
  *      every app reads is sure to carry.
- *   3. The strata section arrives at a holder's door with every rung whole: the
- *      walk's usual cut (an ancestor over 400 characters shown as its first 150)
- *      would drop chemistry's own inversion.
+ *   3. The strata arrive at a holder's door as the law whole (proposals/2026-11-20-door-health.md):
+ *      every rung once, whole, depth first, then the awareness at strata:keel 5
+ *      where the beach keeps it, the beach's way of a thread and the clock's ladder.
  *   4. Every other walk still cuts as before.
+ *   5. A holder's own room is bounded: its own lines counted, the rest capped.
  *
  *   npm run smoke:door-orientation
  */
 import { INSTRUCTIONS, composeInstructions } from '../src/server.js';
-import { strataSection, STRATA_SPINDLES, capMember, MEMBER_CAP } from '../src/tools/play.js';
+import { strataSection, outlineLines, capMember, MEMBER_CAP } from '../src/tools/play.js';
+import { boundForHolder, openingOf, type PoolContribution } from '../src/tools/pool.js';
 import { parseReference } from '../src/genus.js';
 import { parseBundleRef } from '../src/bundle.js';
 import { bspRead, formatRead } from '../src/bsp-fn.js';
@@ -64,26 +66,53 @@ console.log('\nTHE STRATA AT A HOLDER\'S DOOR — a beach that keeps its way of 
   const names = ['FIND IT, OR OPEN IT.', 'TAKE IT UP with one read at its place.', 'FIND YOUR GAP in that read.', 'TIE ONE KNOT in your own mirror.', 'HAND IT ON BY PLACE, in the same turn.', 'THE KINDS OF RUNNER.', 'THE FAILURE: a thread no loop reads is inert.', 'WELL FORMED, as the battery checks it.'];
   names.forEach((n, i) => { way[String(i + 1)] = long(String(i + 1), n); });
   way['9'] = 'PROVENANCE — drafted by keel at David\'s word, the long history of the form.';
-  const text = strataSection(way).join('\n');
-  ok('the section opens on the three levels, biology by threads', text.startsWith('═══════════ THE STRATA') && text.includes('in time, by threads (biology)'));
-  for (const { block, spindle } of STRATA_SPINDLES) ok(`it carries ${block}:${spindle}`, text.includes(`── ${block}:${spindle} ──`));
-  ok('physics arrives at the probe order', text.includes('So the probe order on anything unfamiliar is fixed'));
-  ok('chemistry\'s inversion arrives whole', text.includes('the beach moves SEMANTICS between blocks where code moves DATA through functions. A compound is blocks sharing an address space plus references, and it acts BY BEING READ'));
-  ok('biology is the beach\'s way of a thread', text.includes('── ways:thread') && text.includes('[0]: THE WAY OF A THREAD'));
+  // keel's reading as the beach keeps it at strata:keel: its root, and the awareness at 5.
+  const keel: any = { _: 'MIRROR — keel\'s readings on the strata field.', '5': { _: 'Awareness — the string of processing taken in company with its own successors.', '1': { _: 'Choosing with the unchosen named.', '1': 'A successor that opens onto the chosen path reads that earlier instances chose for it.' }, '4': 'The level\'s own failure is the BACKWARD CLOSE.' } };
+  const text = strataSection(way, keel).join('\n');
+  const law = SENTINELS.find((s) => s.name === 'strata')!.json as any;
+  const rungs: string[] = [];
+  const gather = (n: any) => { if (typeof n === 'string') { rungs.push(n); return; } if (typeof n?._ === 'string') rungs.push(n._); for (const d of '123456789') if (n && d in n) gather(n[d]); };
+  gather(law);
+  ok('the section opens on the law whole, four levels and the awareness', text.startsWith('═══════════ THE STRATA') && text.includes('the law whole') && text.includes('── strata (the law, whole) ──'));
+  ok(`every rung of the law arrives, whole (${rungs.length} rungs)`, rungs.every((r) => text.includes(r.trim())), String(rungs.find((r) => !text.includes(r.trim()))?.slice(0, 80)));
+  ok('and each once', rungs.every((r) => text.split(r.trim()).length === 2), String(rungs.find((r) => text.split(r.trim()).length !== 2)?.slice(0, 80)));
+  ok('depth first: physics\' writing and its failures come before chemistry', text.indexOf('d2 p-1 [1.2]:') < text.indexOf('d2 p-1 [1.3]:') && text.indexOf('d2 p-1 [1.3]:') < text.indexOf('d1 p0 [2]:'));
+  ok('each child stands under its parent', text.indexOf('d1 p0 [3]:') < text.indexOf('d2 p-1 [3.1]:') && text.indexOf('d5 p-4 [3.1111]:') < text.indexOf('d2 p-1 [3.2]:'));
+  ok('the leak arrives (chemistry 2.4) and psycho-social (4)', text.includes('d2 p-1 [2.4]:') && text.includes('d1 p0 [4]:'));
+  ok('the awareness arrives at its own addresses', text.includes('── strata:keel 5') && text.includes('d1 p0 [5]: Awareness') && text.includes('d3 p-2 [5.11]: A successor') && text.includes('d2 p-1 [5.4]:'));
+  ok('and keel\'s other readings stay out', !text.includes('MIRROR — keel'));
+  ok('the beach\'s way of a thread rides after the law', text.includes('── ways:thread') && text.includes('[0]: THE WAY OF A THREAD') && text.indexOf('── ways:thread') > text.indexOf('d1 p0 [4]:'));
   ok('its eight steps arrive whole, each to its end', names.every((n, i) => text.includes(n) && text.includes(`end of step ${i + 1}.`)));
   ok('its provenance stays a read away', !text.includes('PROVENANCE — drafted by keel') && text.includes('its provenance at 9 is a read away'));
-  ok('and the loop the way runs on does not ride twice', !text.includes('── strata:311111 ──'));
+  ok('no spindle of the law rides twice', !text.includes('── strata:'.concat('1')) && !text.includes('── strata:311111 ──'));
   ok('the clock\'s ladder rides with it', text.includes('anchors pscale 0 at the beat'));
   ok('no rung is cut to its headline', !/\.\.\.\s*$/m.test(text) && !text.includes('…\n'), text.split('\n').find((l) => /\.\.\.\s*$/.test(l)) ?? '');
+  ok('the law is the bulk, the section a law and not a library', text.length > 14000 && text.length < 26000, String(text.length));
 }
 
-console.log('\nTHE STRATA AT A HOLDER\'S DOOR — a beach with no way of a thread');
+console.log('\nTHE STRATA AT A HOLDER\'S DOOR — a beach with no way of a thread and no awareness');
 {
-  const text = strataSection(null).join('\n');
-  ok('strata\'s own biology stands in, walked to one edit and the fold', text.includes('── strata:311111 ──') && text.includes('Then one edit and the fold'));
+  const text = strataSection(null, null).join('\n');
+  ok('the law\'s own biology stands whole, to one edit and the fold', text.includes('d1 p0 [3]: Biology') && text.includes('Then one edit and the fold'));
+  ok('no awareness section is invented', !text.includes('── strata:keel'));
   ok('with the clock\'s ladder', text.includes('anchors pscale 0 at the beat'));
-  ok('the section is a few thousand characters, not a block dump', text.length > 3000 && text.length < 8000, String(text.length));
-  ok('a way with no steps is no way: the loop stands in', strataSection({ _: 'a way with nothing in it' } as any).join('\n').includes('── strata:311111 ──'));
+  ok('an outline of a leaf is one line', outlineLines('a leaf', ['7'], 1).join('\n') === '  d1 p0 [7]: a leaf');
+}
+
+console.log('\nA HOLDER\'S OWN ROOM, BOUNDED');
+{
+  const line = (p: number, who: string): PoolContribution => ({ position: p, agent_id: who, text: `${who} at ${p}: ${'words '.repeat(60)}\nsecond line`, ts: '2026-11-18T10:00:00Z' } as PoolContribution);
+  const list: PoolContribution[] = [];
+  for (let p = 571; p <= 713; p++) list.push(line(p, p % 2 ? 'weft' : 'Phenomemental'));
+  const b = boundForHolder(list, 'weft');
+  ok('the holder\'s own lines are counted, never delivered', b.mine.length === 72 && !b.whole.concat(b.opened).some((c) => c.agent_id === 'weft'), String(b.mine.length));
+  ok('the newest nine of the others arrive whole', b.whole.length === 9 && b.whole[8].position === 712);
+  ok('the eighteen before them as their opening lines', b.opened.length === 18 && b.opened[17].position === b.whole[0].position - 2);
+  ok('and the rest are counted, not shown', b.unshown.length === 71 - 27 && b.unshown[0].position === 572);
+  const small = boundForHolder(list.slice(-6), 'weft');
+  ok('a small room arrives whole', small.whole.length === 3 && small.opened.length === 0 && small.unshown.length === 0 && small.mine.length === 3);
+  ok('an opening is the first line, cut at a word', /^Phenomemental at 600: (words )+/.test(openingOf(line(600, 'Phenomemental').text)) && openingOf(line(600, 'Phenomemental').text).endsWith('…') && openingOf(line(600, 'Phenomemental').text).length <= 161);
+  ok('a short line is its own opening', openingOf('a short ask') === 'a short ask');
 }
 
 console.log('\nEVERY OTHER WALK CUTS AS BEFORE');

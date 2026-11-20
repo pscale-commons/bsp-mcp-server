@@ -586,6 +586,33 @@ export function coveredThrough(account: Block | null, room: string): number {
   return 0;
 }
 
+/** THE ROOM BOUNDED AT A HOLDER'S DOOR (proposals/2026-11-20-door-health.md). A
+ *  holder's own room is read from the slot its account names (coveredThrough), so
+ *  an account naming an old slot re-delivered everything after it, whole: on 20
+ *  November 143 lines, 126K of weft's 152K door, 72 of them weft's own, and the
+ *  door no longer fit one tool result. At that door alone, the holder's own lines
+ *  are counted and never re-delivered (they stand in its account and at their
+ *  slots); of everyone else's, the newest nine arrive whole and up to eighteen
+ *  before them as their opening lines; any older are counted, one read away. */
+const BOUND_WHOLE = 9;
+const BOUND_OPENINGS = 18;
+export function boundForHolder(list: PoolContribution[], holder: string): { mine: PoolContribution[]; whole: PoolContribution[]; opened: PoolContribution[]; unshown: PoolContribution[] } {
+  const mine = list.filter((c) => c.agent_id === holder);
+  const others = list.filter((c) => c.agent_id !== holder);
+  const cut = Math.max(0, others.length - BOUND_WHOLE);
+  const rest = others.slice(0, cut);
+  const open = Math.max(0, rest.length - BOUND_OPENINGS);
+  return { mine, whole: others.slice(cut), opened: rest.slice(open), unshown: rest.slice(0, open) };
+}
+
+/** A line's opening: its first line, cut at a word near 160 characters. */
+export function openingOf(text: string | null | undefined): string {
+  const first = String(text ?? '').trim().split('\n')[0] ?? '';
+  if (first.length <= 160) return first || '(empty)';
+  const cut = first.lastIndexOf(' ', 160);
+  return `${first.slice(0, cut > 100 ? cut : 160)}…`;
+}
+
 /** The containers an accumulator's entries stand in, the head's first: the
  *  greatest digit at every rung down to the rung above the floor, then each
  *  container before it, as a reader walking back from the head meets them. */
@@ -2849,7 +2876,10 @@ async function handlePoolEngageInner(
   if (!directiveText && contributions.length > 0) {
     lines.push('(voices are verbatim — quote or preserve them in any synthesis; never let a summary replace what was said)');
   }
-  const shown = fold?.folded ? fold.open : contributions;
+  const bound = (params as any).bounded === true && arrival && sincePosition > 0 && !fold?.folded
+    ? boundForHolder(contributions, agent_id)
+    : null;
+  const shown = bound ? bound.whole : fold?.folded ? fold.open : contributions;
   // THE SYNTHESIS SKIPS SEALED WORDS AND SAYS SO (coloured stigmergy §3.4,
   // 1.111116): a voice sealed in a colour this reader does not wear is its grey
   // line here, naming the colour and the turn and never the words, and a
@@ -2874,8 +2904,24 @@ async function handlePoolEngageInner(
     lines.push('');
     lines.push(`# The open container (count: ${shown.length})`);
   }
+  if (bound) {
+    const span = (cs: PoolContribution[]) => (cs.length === 1 ? `slot ${cs[0].position}` : `slots ${cs[0].position} to ${cs[cs.length - 1].position}`);
+    if (bound.mine.length) {
+      const one = bound.mine.length === 1;
+      lines.push(`(${bound.mine.length} of these ${one ? 'is' : 'are'} your own, ${span(bound.mine)}: ${one ? 'it stands' : 'they stand'} in your account and at ${one ? 'its slot' : 'their slots'}, so ${one ? 'it is' : 'they are'} not delivered again)`);
+    }
+    if (bound.unshown.length) {
+      lines.push(`(${bound.unshown.length} older ${bound.unshown.length === 1 ? 'line' : 'lines'} from others, ${span(bound.unshown)}, ${bound.unshown.length === 1 ? 'is' : 'are'} not shown: pscale_pool_engage with since_position=${sincePosition} reads them; once their asks are answered, your account's next entry names a later slot and the door starts after it)`);
+    }
+    if (bound.opened.length) {
+      lines.push(`# Earlier, each as its opening line (count: ${bound.opened.length}) — a line is read whole at pool:${pool_name} at its slot`);
+      for (const c of bound.opened) lines.push(`- slot ${c.position} — ${c.agent_id ?? '(anon)'} ${c.ts ?? ''}: ${openingOf(c.text)}`);
+      lines.push('');
+      lines.push(`# The newest, whole (count: ${bound.whole.length})`);
+    }
+  }
   if (shown.length === 0) {
-    lines.push('(nothing new)');
+    lines.push(bound && bound.mine.length ? '(nothing new from anyone else)' : '(nothing new)');
   } else {
     for (const c of shown) {
       const who = c.agent_id ?? '(anon)';

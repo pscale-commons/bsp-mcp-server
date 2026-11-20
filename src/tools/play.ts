@@ -47,22 +47,20 @@ import { SENTINELS } from '../sentinels.js';
 import { clockTable, composeClockDoor } from './clock.js';
 import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, membersOnlyLine, type Door } from '../pass.js';
 
-/** THE STRATA AT A HOLDER'S DOOR (proposals/2026-11-09-the-orientation-review.md;
- *  David, 9 November: "a clear, effective, efficient way for an LLM to learn how
- *  to read pscale blocks (physics), understand emergence from multiple blocks
- *  (chemistry), and the sequential temporal placement (biology)"). Physics and
- *  chemistry arrive as their operating spindles from the strata sentinel, which
- *  has stood whole since 12 August and no door delivered. Biology arrives as the
- *  beach's own WAY OF A THREAD (ways:thread, keel's instructions at biology level,
- *  written at David's word on 29 October and battery-tested), which is strata 3's
- *  cycle run on a thread, with the clock's ladder; where a beach keeps no
- *  ways:thread, strata 3's loop stands in. Every rung whole. Addresses only: the
+/** THE STRATA WHOLE AT A HOLDER'S DOOR (proposals/2026-11-20-door-health.md; David,
+ *  20 November: "Ensure the strata is the right one -- it is the absolutely necessary
+ *  content to orientate you to the pscale blocks, beach, processes, everything").
+ *  From 9 November (proposals/2026-11-09-the-orientation-review.md) the door walked
+ *  two spindles of the law, physics' reading and chemistry's bonds, and let the
+ *  beach's way of a thread stand for biology: writing and its four failures, the
+ *  family, the window and the leak, biology's own loop, psycho-social and the
+ *  awareness the four induce never arrived, and weft's wake re-read them in seven
+ *  more calls (orientation:weft 7.91, 16 November). Now the sentinel arrives whole,
+ *  depth first, each rung whole and once, printed as the walker prints a rung; then
+ *  the awareness the four induce, keel's reading at strata:keel 5, where the beach
+ *  keeps it; then the beach's WAY OF A THREAD (ways:thread, written at David's word
+ *  on 29 October) and the clock's ladder, as since 9 November. Addresses only: the
  *  words are the blocks' own. */
-export const STRATA_SPINDLES: { block: string; spindle: string }[] = [
-  { block: 'strata', spindle: '11111' }, // physics: one block → reading is aperture choice → the probe order
-  { block: 'strata', spindle: '21111' }, // chemistry: blocks in company → the two bonds → the fold
-];
-const BIOLOGY_LOOP = { block: 'strata', spindle: '311111' }; // where a beach keeps no ways:thread
 const CLOCK_LADDER = { block: 'sundial', spindle: '2' }; // pscale 0 the beat, the ladder above and below
 /** The way of a thread's steps that ride the door; its provenance at 9 stays a read away. */
 const WAY_STEPS = ['1', '2', '3', '4', '5', '6', '7', '8'];
@@ -72,12 +70,37 @@ function sentinelWalk(block: string, spindle: string): string[] {
   return s ? [`── ${block}:${spindle} ──`, formatRead(bspRead(s.json, spindle, null), { onClock: false, wholeRungs: true })] : [];
 }
 
-export function strataSection(waysThread: Block | null = null): string[] {
+/** A node and everything beneath it, depth first, each rung whole and once, as the
+ *  walker prints a rung: d<depth> p<pscale> [address]. A descent reads layer by
+ *  layer and cuts each line, which parts a child from its parent; a law read whole
+ *  at a door wants its order and its words. */
+export function outlineLines(node: unknown, digits: string[], floor: number): string[] {
+  const n = node && typeof node === 'object' ? (node as Record<string, unknown>) : null;
+  const u = n ? n['_'] : node;
+  const inner = u && typeof u === 'object' ? (u as Record<string, unknown>)['_'] : u;
+  const text = typeof inner === 'string' ? inner.trim() : '';
+  const depth = digits.length;
+  const addr = depth === 0 ? '0' : depth <= floor ? digits.join('') : `${digits.slice(0, floor).join('')}.${digits.slice(floor).join('')}`;
+  const out = text ? [`  ${'  '.repeat(Math.max(0, depth - 1))}d${depth} p${floor - depth} [${addr}]: ${text}`] : [];
+  if (n) for (const d of '123456789') if (d in n) out.push(...outlineLines(n[d], [...digits, d], floor));
+  return out;
+}
+
+export function strataSection(waysThread: Block | null = null, strataKeel: Block | null = null): string[] {
   const out: string[] = [
-    '═══════════ THE STRATA — how to read all that follows: one block (physics), blocks in company (chemistry), a mind continuing through them in time, by threads (biology) ═══════════',
-    'Physics and chemistry arrive as their operating spindles from bsp(agent_id="pscale", block="strata"), biology as this beach\'s way of a thread; every rung whole, and a level walked deeper when the work sits there. A walk prints each rung as d<depth> p<pscale> [address]: pscale = floor − depth, and the address is the number that reaches the rung.',
+    '═══════════ THE STRATA — the law whole, before anything else: one block (physics), blocks in company (chemistry), a mind cycling through them (biology), minds overlapping in them (psycho-social), and the awareness they induce ═══════════',
+    'This is bsp(agent_id="pscale", block="strata") whole, depth first, each rung once; then the awareness the four induce (strata:keel 5, where this beach keeps it), this beach\'s way of a thread, and the clock\'s ladder. Locate the work at its level before operating, and read everything that follows through it. A rung prints as d<depth> p<pscale> [address]: pscale = floor − depth, and the address is the number that reaches the rung.',
   ];
-  for (const { block, spindle } of STRATA_SPINDLES) out.push(...sentinelWalk(block, spindle));
+  const law = SENTINELS.find((x) => x.name === 'strata');
+  if (law) {
+    out.push('── strata (the law, whole) ──');
+    out.push(...outlineLines(law.json, [], 1));
+  }
+  const keel = strataKeel && typeof strataKeel === 'object' ? (strataKeel as Record<string, unknown>)['5'] : null;
+  if (keel && typeof keel === 'object') {
+    out.push('── strata:keel 5 (the awareness the four induce — keel\'s reading, marked provisional, as psycho-social is) ──');
+    out.push(...outlineLines(keel, ['5'], 1));
+  }
   const way = waysThread && typeof waysThread === 'object' ? (waysThread as Record<string, unknown>) : null;
   const text = (n: unknown): string | null => {
     const t = n && typeof n === 'object' ? (n as Record<string, unknown>)['_'] : n;
@@ -89,8 +112,6 @@ export function strataSection(waysThread: Block | null = null): string[] {
     const root = text(way);
     if (root) out.push(`  [0]: ${root}`);
     for (const [k, t] of steps) out.push(`  [${k}]: ${t}`);
-  } else {
-    out.push(...sentinelWalk(BIOLOGY_LOOP.block, BIOLOGY_LOOP.spindle));
   }
   out.push(...sentinelWalk(CLOCK_LADDER.block, CLOCK_LADDER.spindle));
   return out;
@@ -726,7 +747,9 @@ async function handlePlayInner(
   }
   let env: string;
   try {
-    env = (await handlePoolEngage({ pool_url: resolved, pool_name: roomName, agent_id: handle, since_position: told, with_liquid: true, fold: true, arrival: true } as any, extra)).content[0].text;
+    // A holder's own room is bounded (proposals/2026-11-20-door-health.md): the
+    // holder's own lines are counted, never re-delivered, and the rest is capped.
+    env = (await handlePoolEngage({ pool_url: resolved, pool_name: roomName, agent_id: handle, since_position: told, with_liquid: true, fold: true, arrival: true, bounded: roomName === handle } as any, extra)).content[0].text;
   } catch (e: any) {
     return { content: [{ type: 'text', text: `Could not engage room "${roomName}" at ${resolved}: ${e?.message ?? String(e)}` }] };
   }
@@ -980,8 +1003,12 @@ async function handlePlayInner(
   // unless the shell's own bundle already dials them; a character at a table
   // never meets the substrate's physics in its window.
   if (holderDoor && !own.some((o) => o.name.startsWith('strata:'))) {
-    const way = await read(resolved, 'ways:thread').catch(() => null);
-    out.push(...strataSection(way?.block && typeof way.block === 'object' ? (way.block as Block) : null));
+    const [way, keel] = await Promise.all([
+      read(resolved, 'ways:thread').catch(() => null),
+      read(resolved, 'strata:keel').catch(() => null),
+    ]);
+    const blockOf = (r: typeof way) => (r?.block && typeof r.block === 'object' ? (r.block as Block) : null);
+    out.push(...strataSection(blockOf(way), blockOf(keel)));
     out.push('');
   }
   out.push(holderDoor
