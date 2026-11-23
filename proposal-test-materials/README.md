@@ -33,9 +33,11 @@ What a program can't decide is at branch 6 of the block: reading it as a strange
 
 ## Why it reads as the pages read
 
-A decision that parses wrongly loses a button in silence. So the checker carries a port of the pages' own readers (`decisionOf`, `stateOf`, `stepsOf`, `lawOf`, `pageOf`, `parseAnswer`, `shelfOf`, `entries` from `proposal.html`, and `parseThread`, `threadsNode` from `threads.js`).
+A decision that parses wrongly loses a button in silence. So the checker carries a port of the pages' own readers (`decisionOf`, `stateOf`, `stepsOf`, `roomsOf`, `decisionsOf`, `lawOf`, `pageOf`, `parseAnswer`, `shelfOf`, `entries` from `proposal.html`, and `parseThread`, `threadsNode` from `threads.js`).
 
 The port was proved against the JavaScript itself on 2 November 2026, by running both over every listed family and comparing: 28 families, 173 steps, 149 decisions, 254 answers, 17 threads, 173 room lines, 0 differences.
+
+`roomsOf` and the rooms half of `decisionsOf` were ported on 23 November 2026. Since 21 November `function:proposal` 3 lets a room around the proposal, the root's 2 to 7, carry a decision at its 8, for a question asked beside the steps rather than on one of them. The standard view draws it in that room and counts it with the rest, and so does the battery: it checks the decision like any other, and PLACED stays a fault anywhere else. The port was proved the same way: 65 families, 419 steps, 153 rooms around a proposal, 375 decisions, 0 differences.
 
 A live pass looks for the lines it follows in the site's files and prints `reader moved` if one has changed. If the page's reader is widened (to let a word hold a digit, say), the port and case 2.4 follow it.
 
@@ -58,7 +60,7 @@ The rest of the battery reads the keeper's line alone, as the proposal's own pag
 | Path | What it is |
 |---|---|
 | `proposal_form.py` | The checker. |
-| `fixtures/harbour-bell.json`, `.html` | A family that passes every case: floor 2 room with a paid summary and a reply, a registry thread and a ladder, a maker's look at their yes, a map pin, a crafted page. Nothing stands on the beach by this name. |
+| `fixtures/harbour-bell.json`, `.html` | A family that passes every case: floor 2 room with a paid summary and a reply, a decision in a room around the proposal (4.8, answered in dana's mirror), a registry thread and a ladder, a maker's look at their yes, a map pin, a crafted page. Nothing stands on the beach by this name. |
 | `mutation.py` | The planted faults, one at a time. Those marked "as found" stand verbatim as the first sweep met them. |
 | `run-proposal-tests.py` | The CI pass: the clean family, again as it would stand once the registry has passed nine threads (floor 2, where the threads battery reads it as `thread_form.py` does), and again as its maker alone has listed it, in `proposed:<handle>`, read from the fixture and by the live reader with its reads stubbed; the planted faults; and the block against the code. |
 

@@ -133,6 +133,9 @@ M = [
     ("a step's 8 opening another word", lambda s: put(s, SPINE, "1.8", "SAY — Would you hang it? Anyone."), "decisions", "OPENS", "WARN"),
     ("DECIDE spelt with a colon", lambda s: put(s, SPINE, "1.8", "DECIDE: Do we hang a bell at all? David and rook."), "decisions", "SPELT", "WARN"),
     ("a decision where no page reads one", lambda s: put(s, SPINE, "1.3", {"_": "THE SIDE — a room.", "1": "DECIDE — Is this read? David."}), "decisions", "PLACED", "FAULT"),
+    # a room around the proposal, the root's 2 to 7, carries a decision at its 8 (function:proposal 3, 21 November 2026);
+    # the root's own 8 is no room, and no page reads a decision there
+    ("a question beside the steps at the root's own 8", lambda s: put(s, SPINE, "8", "DECIDE — Do we hang it before the winter? David. GO, NOT YET or CHANGE."), "decisions", "PLACED", "FAULT"),
     ("a statement, as the first exemplars ask", lambda s: put(s, SPINE, "1.8", "DECIDE — hang the bell. David. GO, NOT YET or CHANGE."), "decisions", "QUESTION", "WARN"),
     ("two questions on one card", lambda s: put(s, SPINE, "1.8", "DECIDE — Do we hang it, and where? And who pays? David. GO, NOT YET or CHANGE."), "decisions", "QUESTION", "WARN"),
     ("nobody named", lambda s: put(s, SPINE, "1.8", "DECIDE — Do we hang a bell at all?"), "decisions", "WHO", "FAULT"),
@@ -141,6 +144,9 @@ M = [
     ("glosses, as found at loom 1.118", lambda s: put(s, SPINE, "1.8", "DECIDE — Where do his comments land? David. ROUTED (where each thing already takes words, with loom:happyseaurchin for what has none), ONE MIRROR (everything in loom:happyseaurchin at the address it is about), BOTH or NOT YET."), "decisions", "WORDS", "FAULT"),
     ("glosses, as found at loom 1.111128", lambda s: put(s, SPINE, "1.8", "DECIDE — Where does it live? David. NEW PAGE (happyseaurchin.com/loom), LANES (grown inside /lanes/weft) or NOT YET."), "decisions", "WORDS", "FAULT"),
     ("words of its own with no hold, as found at game-arcade 1.1168", lambda s: put(s, SPINE, "1.8", "DECIDE — What does it charge? David. FIVE POUNDS, FREE FOR NOW or CHANGE."), "decisions", "HOLD", "FAULT"),
+    # a room's decision is checked as any other is: read before 23 November only as PLACED, this one was found on the first
+    # pass that read it
+    ("words of its own with no hold in a room around the proposal, as found at power-with 4.8", lambda s: put(s, SPINE, "4.8", "DECIDE — What does this remind you of that is not here, from your own field, your own language or your own practice? Asked of anyone reading. SEEN, NOT SO, ADD or TEST."), "decisions", "HOLD", "FAULT"),
     ("a question past a tap and a line", lambda s: put(s, SPINE, "1.8", LONG), "decisions", "SHORT", "WARN"),
     ("an answer outside the words, as found at leros-phase-two 1.1111118", lambda s: put(s, f"{N}:dana", "1.118", "YES — the trust pays half."), "decisions", "ANSWERS", "WARN"),
     ("the law's 2 naming a decision that is gone", lambda s: put(s, LAW, "2", "THE DECISIONS — 1.8 the bell; 1.18 what rings it; 1.118 who pays; 1.1118 the rope."), "decisions", "NAMED", "WARN"),
