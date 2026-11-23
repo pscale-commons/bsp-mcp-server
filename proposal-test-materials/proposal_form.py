@@ -44,6 +44,13 @@ READERS = {
         """if (!L.phase && (m = /^phase:\\s*(set aside|[a-z]+)\\b\\s*[—–:,-]?\\s*([\\s\\S]*)$/i.exec(p[1]))) { L.phase = m[1].toLowerCase(); L.phaseSay = m[2].trim(); }""",
         """while (node != null && out.length < 12) {""",
         """var m = new RegExp('^(' + words + ')\\\\b\\\\s*[—–:,-]?\\\\s*([\\\\s\\\\S]*)$', 'i').exec(String(t || '').trim());""",
+        # roomsOf and the rooms half of decisionsOf: a room around the proposal, the root's 2 to 7, carries a decision
+        # at its 8, counted with the rest (function:proposal 3, 21 November 2026). The range is followed with the line
+        # after it, since stepsOf's side-rooms open their loop with the same line.
+        """for (var k = 2; k <= 7; k++) {\n      var r = spine && spine[String(k)]; if (r == null) continue;""",
+        """decision: /^DECIDE\\b/i.test(d8) ? decisionOf(under(String(k), '8'), d8, s.title) : null });""",
+        """(rooms || []).forEach(function (r) { if (r.decision) out.push(r.decision); });""",
+        """STEPS = stepsOf(SPINE); ROOMS = roomsOf(SPINE); DECS = decisionsOf(STEPS, ROOMS);""",
     ],
     "threads.js": [
         """var m = /^\\s*(thread:\\d+|[a-z0-9][a-z0-9-]*)\\s*(?:[—–]\\s*([\\s\\S]*))?$/i.exec(String(t || ''));""",
@@ -337,12 +344,29 @@ def steps_of(spine):
     return out, node is not None and len(out) == MAX_STEPS
 
 
-def decisions_of(steps):
+def rooms_of(spine):
+    """proposal.html roomsOf: the rooms around the proposal, the root's 2 to 7, each read as a side-room is. One that asks
+    a question beside the steps rather than on one of them carries it at its 8, which the standard view draws as a card in
+    that room and counts with the rest (function:proposal 3; spine:determinacy 4.8, at David's word on 21 November 2026)."""
+    out = []
+    for k in "234567":
+        r = spine.get(k) if isinstance(spine, dict) else None
+        if r is None:
+            continue
+        title = split(voice(r))[0]
+        d8 = voice(r.get("8")) if isinstance(r, dict) else ""
+        out.append({"at": k, "title": title, "decision": decision_of(under(k, "8"), d8, title) if is_decide(d8) else None})
+    return out
+
+
+def decisions_of(steps, rooms=()):
+    """proposal.html decisionsOf: each step's decision and its side-rooms', step by step, then the rooms' around it."""
     out = []
     for s in steps:
         if s["decision"]:
             out.append(s["decision"])
         out += [r["decision"] for r in s["sides"] if r["decision"]]
+    out += [r["decision"] for r in rooms if r["decision"]]
     return out
 
 
@@ -511,7 +535,8 @@ class Family:
         self.spine, self.law = surface.get(f"spine:{name}"), surface.get(f"function:{name}")
         self.L = law_of(self.law, name)
         self.steps, self.more = steps_of(self.spine) if isinstance(self.spine, dict) else ([], False)
-        self.decisions = decisions_of(self.steps)
+        self.rooms = rooms_of(self.spine)
+        self.decisions = decisions_of(self.steps, self.rooms)
         # the keeper's line, as the proposal's own page reads it for its phase and its snazzy page (proposal.html);
         # the LISTED case reads every maker's list beside it (check_family)
         self.entry = next((x for x in shelf_of(surface.get("proposals")) if x["name"] == name.lower()), None)
@@ -658,7 +683,7 @@ def check_decisions(f):
         add("WARN", "OPENS", ", ".join(at[:6]), f"{len(at)} step 8{'s open' if len(at) > 1 else ' opens'} '{word}', not 'DECIDE — '; the standard page draws no card there")
     for at, t in texts(f.spine):
         if is_decide(t) and at not in read:
-            add("FAULT", "PLACED", at, "a decision where no page reads one; it stands at a step's 8 or a side-room's 8")
+            add("FAULT", "PLACED", at, "a decision where no page reads one; it stands at a step's 8, a side-room's 8, or the 8 of a room around the proposal, the root's 2 to 7")
     for d in f.decisions:
         at, q = d["at"], d["q"]
         if not d["text"].startswith("DECIDE — "):
@@ -960,7 +985,7 @@ def drifted(surface):
         if status != 200:
             out.append(f"{page} answered {status}, so the port could not be checked against it")
             continue
-        out += [f"{page} no longer holds: {w[:70]}" for w in wanted if w not in html]
+        out += [f"{page} no longer holds: {' '.join(w.split())[:70]}" for w in wanted if w not in html]   # a passage of two lines, said on one
     return out
 
 

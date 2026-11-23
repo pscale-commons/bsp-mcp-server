@@ -23,12 +23,17 @@
       },
       "2": "THE PAGE — https://happyseaurchin.com/harbour-bell draws the bell and the tide; the family is drawn from its blocks alone at https://happyseaurchin.com/proposal/harbour-bell.",
       "3": "WHERE IT CAME FROM — rook's note beside spine:tide-table, read on 2 November 2026.",
+      "4": {
+        "_": "THE GULLS — the gulls nest on the stretch of wall where the bell will hang: a question beside the steps rather than on any one of them.",
+        "1": "WHAT THE WARDEN SAYS — the bird warden asks for a month's notice before anything rings on the wall in the nesting season.",
+        "8": "DECIDE — Do we ask the bird warden before the bell is hung? dana. GO, NOT YET or CHANGE."
+      },
       "9": "PROVENANCE — a fixture for the proposal battery, made by weft on 2 November 2026; a family that passes every case, and nothing stands on the beach by this name."
     },
     "function:harbour-bell": {
       "_": "Operator for harbour-bell: a proposal read as a document, the shared law at function:document and the proposal form at function:proposal.",
       "1": "mode: document",
-      "2": "THE DECISIONS — each step's 8 asks one: 1.8 the bell; 1.18 what rings it; 1.118 who pays; the side-room's 1.28 the metal.",
+      "2": "THE DECISIONS — each step's 8 asks one: 1.8 the bell; 1.18 what rings it; 1.118 who pays; the side-room's 1.28 the metal; and the room around it, 4.8 the gulls.",
       "3": "THE ROOM — pool:harbour-bell, open, for talk that is not a decision.",
       "4": "SET ASIDE — once the decisions stand and the work lives in its threads, keep the spine at archive:spine:harbour-bell:<date>.",
       "5": {
@@ -77,7 +82,8 @@
       "_": "MIRROR — dana's readings on the harbour bell.",
       "1": {
         "1": { "1": { "8": "CHANGE — the trust pays half." } }
-      }
+      },
+      "4": { "8": "GO — the warden is a friend of the trust; I will ask her this week." }
     },
     "proposals": {
       "_": "THE LIST — the proposals shared on this beach.",
