@@ -7,7 +7,7 @@ public GET, or a fixture's state, against function:proposal and against the way 
 it, so what it reports is what a reader would lose. A proposal is combined, so the battery is:
 five smaller batteries, each able to run alone, and together the whole pass.
 
-  family     the spine and law stand, their positions, the list   (function:proposal 1, 2, 7, 8)
+  family     the spine and law stand, their positions, the lists  (function:proposal 1, 2, 7, 8)
   decisions  each decision reads as its maker wrote it, each answer as an answer       (3)
   room       the welcome and its link, the entries, the spans folded beneath it        (1, 7)
   threads    the law's 5 names what stands; registry threads through thread_form.py    (5)
@@ -55,7 +55,7 @@ READERS = {
 
 class Surface:
     def __init__(self, beach=BEACH, net=True):
-        self.beach, self.net, self.blocks, self.pages, self._names = beach.rstrip("/"), net, {}, {}, None
+        self.beach, self.net, self.blocks, self.pages, self._names, self._ix = beach.rstrip("/"), net, {}, {}, None, None
 
     def _read(self, query):
         url = f"{self.beach}/.well-known/pscale-beach{query}"
@@ -80,11 +80,21 @@ class Surface:
             self.blocks[name] = None if isinstance(body, dict) and body.get("code") == "not_found" else body
         return self.blocks[name]
 
+    def index(self):
+        """The beach's index, read once: the blocks it holds, and when each was born."""
+        if self._ix is None:
+            ix = self._read("") or {}
+            self._ix = ix.get("ix", ix)
+        return self._ix
+
     def names(self):
         if self._names is None:
-            ix = self._read("") or {}
-            self._names = [x if isinstance(x, str) else x.get("name", "") for x in ix.get("ix", ix).get("blocks", [])]
+            self._names = [x if isinstance(x, str) else x.get("name", "") for x in self.index().get("blocks", [])]
         return self._names
+
+    def born(self, name):
+        """When a block was born, as the index stamps it, or '' where it does not say."""
+        return str((self.index().get("born") or {}).get(name) or "")
 
     def walks(self, name, address):
         """Whether an address walks to anything, by the beach's own walker."""
@@ -116,7 +126,7 @@ class Surface:
 
 
 class State(Surface):
-    """A fixture: {name, blocks: {<block>: ...}, pages: {<url>: status | html | {file}}}."""
+    """A fixture: {name, blocks: {<block>: ...}, pages: {<url>: status | html | {file}}, born: {<block>: stamp}}."""
 
     def __init__(self, state, base=HERE):
         self.state, self.base, self.net = state, base, True
@@ -128,6 +138,9 @@ class State(Surface):
 
     def names(self):
         return sorted(self.blocks)
+
+    def born(self, name):
+        return str(self.state.get("born", {}).get(name) or "")
 
     def walks(self, name, address):
         return walk(self.blocks.get(name), address) is not None
@@ -379,10 +392,24 @@ def listed(b):
     return out
 
 
+# A list's line, '<name> — what it is · its page' (proposal.html shelfOf, listed.js parse). The lists are two kinds of
+# block read as one (function:proposal 8): the keeper's, proposals, and each maker's own, proposed:<handle>.
+LINE = re.compile(r"^\s*([a-z0-9][a-z0-9-]*)\s*—\s*([\s\S]*?)(?:\s*·\s*(\S+))?\s*$", re.I)
+MAKERS = "proposed"
+
+
+def lists_of(surface):
+    """Every list, in the order listed.js reads them: the keeper's first, then each maker's own, a block named
+    proposed:<handle> with exactly one colon, the earliest born first. Each as (block, its body or None)."""
+    makers = [n for n in surface.names() if n.startswith(MAKERS + ":") and n.count(":") == 1 and n != MAKERS + ":"]
+    makers.sort(key=lambda n: (surface.born(n), n))
+    return [(n, surface.get(n)) for n in ["proposals"] + makers]
+
+
 def shelf_of(lst):
     shelf = []
     for t in listed(lst) if isinstance(lst, dict) else []:
-        m = re.match(r"^\s*([a-z0-9][a-z0-9-]*)\s*—\s*([\s\S]*?)(?:\s*·\s*(\S+))?\s*$", t, re.I)
+        m = LINE.match(t)
         if m:
             page = m.group(3) or ""
             shelf.append({"name": m.group(1).lower(), "what": m.group(2).strip(), "line": t,
@@ -485,6 +512,8 @@ class Family:
         self.L = law_of(self.law, name)
         self.steps, self.more = steps_of(self.spine) if isinstance(self.spine, dict) else ([], False)
         self.decisions = decisions_of(self.steps)
+        # the keeper's line, as the proposal's own page reads it for its phase and its snazzy page (proposal.html);
+        # the LISTED case reads every maker's list beside it (check_family)
         self.entry = next((x for x in shelf_of(surface.get("proposals")) if x["name"] == name.lower()), None)
         self.page = page_of(self.L, self.spine, self.entry)
         self.crafted = self.page if self.page and not is_plain(self.page) else ""
@@ -548,14 +577,24 @@ def check_family(f):
         for k, what in (("2", "the decisions"), ("3", "the room"), ("4", "setting aside"), ("5", "the threads"), ("6", "the page and its look"), ("7", "the phase"), ("9", "provenance")):
             if not voice(f.law.get(k)):
                 add("WARN", "POSITIONS", k, f"the law's {k} is silent; it holds {what}")
-    if f.entry is None:
-        lines = [t for t in (listed(f.s.get("proposals")) if isinstance(f.s.get("proposals"), dict) else []) if re.match(rf"^\s*{re.escape(f.name)}\b", t, re.I)]
+    # the list is the keeper's and every maker's own, read as one, a proposal counted where it is first listed
+    # (function:proposal 7 and 8; David, 23 November 2026: 'Go with the non-permission method')
+    lists = lists_of(f.s)
+    found = next(((nm, x) for nm, lst in lists for x in shelf_of(lst) if x["name"] == f.name.lower()), None)
+    if found is None:
+        # a line opening with the name that no page reads; one that reads as another name's (<name>-more — …) is that one's
+        lines = [(nm, t) for nm, lst in lists if isinstance(lst, dict) for t in listed(lst)
+                 if re.match(rf"^\s*{re.escape(f.name)}\b", t, re.I) and not LINE.match(t)]
         if lines:
-            add("FAULT", "LISTED", "proposals", f"its line does not read '<name> — what it is · its page': '{lines[0][:60]}'")
+            add("FAULT", "LISTED", lines[0][0], f"its line does not read '<name> — what it is · its page': '{lines[0][1][:60]}'")
         else:
-            add("NOTE", "LISTED", "proposals", "not on the list yet; list it once this passes (function:proposal 7)")
-    elif not f.entry["page"]:
-        add("WARN", "LISTED", "proposals", "its line names no page after ' · '")
+            add("NOTE", "LISTED", "", "not on the list yet; list it in your own proposed:<handle> once this passes (function:proposal 7)")
+    elif not found[1]["page"]:
+        add("WARN", "LISTED", found[0], "its line names no page after ' · '")
+    elif found[0] == "proposals":
+        add("NOTE", "LISTED", found[0], "listed on the keeper's list")
+    else:
+        add("NOTE", "LISTED", found[0], f"listed in {found[0][len(MAKERS) + 1:]}'s own list; happyseaurchin.com/proposal shows it once its blocks pass the page's check, naming its first fault there until then (function:proposal 8)")
     for nm, block in ((f"spine:{f.name}", f.spine), (f"function:{f.name}", f.law), (f"pool:{f.L['room']}", voice(f.room))):
         dots = [(at, m) for at, t in texts(block) for m in MULTIDOT.findall(t)]
         if dots:

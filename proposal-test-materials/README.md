@@ -9,7 +9,7 @@ The cases live in [`../src/proposal-test.json`](../src/proposal-test.json), the 
 ```bash
 python3 proposal-test-materials/proposal_form.py live <name>                     # one family, by public GET
 python3 proposal-test-materials/proposal_form.py live <name> --only decisions,room   # the smaller batteries you name
-python3 proposal-test-materials/proposal_form.py live --all                      # every proposal on the list
+python3 proposal-test-materials/proposal_form.py live --all                      # every proposal on the keeper's list, proposals
 python3 proposal-test-materials/run-proposal-tests.py                            # the CI pass: reads nothing from the network
 ```
 
@@ -21,7 +21,7 @@ A proposal is combined, so the battery is. Each of the five runs alone, and they
 
 | Battery | What it checks | Tests |
 |---|---|---|
-| `family` | the spine and law stand, their positions, the list | STANDS SHAPE FLOOR TITLE ROOT STEPS TITLES STATE MODE POSITIONS LISTED NOTATION RESOLVES COMPOUND |
+| `family` | the spine and law stand, their positions, the list (the keeper's and every maker's own) | STANDS SHAPE FLOOR TITLE ROOT STEPS TITLES STATE MODE POSITIONS LISTED NOTATION RESOLVES COMPOUND |
 | `decisions` | each decision reads as its maker wrote it, each answer as an answer | OPENS SPELT PLACED QUESTION WHO WORDS HOLD SHORT ANSWERS NAMED |
 | `room` | the welcome and its link, the entries, the earlier responses nested beneath it | STANDS SHAPE NAMED WELCOME LINK ENDS ENTRIES SUMMARIES REPLIES |
 | `threads` | the law's 5 names what stands; each registry thread through `thread_form.py` | HEADED LINE STANDS STEP FORM TIED |
@@ -39,6 +39,12 @@ The port was proved against the JavaScript itself on 2 November 2026, by running
 
 A live pass looks for the lines it follows in the site's files and prints `reader moved` if one has changed. If the page's reader is widened (to let a word hold a digit, say), the port and case 2.4 follow it.
 
+## The list, two kinds of block
+
+Since 23 November 2026 anyone lists a proposal they made with nobody's permission: one line, `<name> — what it is · its page`, in their own block, `proposed:<handle>`, under their own key, beside the keeper's list, `proposals` (`function:proposal` 7 and 8). The pages read both through `listed.js`: the keeper's first, then each maker's, the earliest born first, a proposal counted where it is first listed. LISTED reads them the same way, finding the makers' lists in the beach's index (each `proposed:<handle>` with exactly one colon), and its NOTE names the list that holds the line.
+
+The rest of the battery reads the keeper's line alone, as the proposal's own page does (`proposal.html`): whether a family that names another kind at its law's 7 is drawn at all, and whether an off-site page gets its Snazzy button there.
+
 ## The first sweep
 
 2 November 2026, all 28 proposals on the list: 18 well formed, 10 not, 17 faults, 157 warnings, 24 notes. Nine of the newest ten were well formed. Branch 8 of the block has them by name. The most costly:
@@ -54,7 +60,7 @@ A live pass looks for the lines it follows in the site's files and prints `reade
 | `proposal_form.py` | The checker. |
 | `fixtures/harbour-bell.json`, `.html` | A family that passes every case: floor 2 room with a paid summary and a reply, a registry thread and a ladder, a maker's look at their yes, a map pin, a crafted page. Nothing stands on the beach by this name. |
 | `mutation.py` | The planted faults, one at a time. Those marked "as found" stand verbatim as the first sweep met them. |
-| `run-proposal-tests.py` | The CI pass: the clean family, again as it would stand once the registry has passed nine threads (floor 2, where the threads battery reads it as `thread_form.py` does), the planted faults, and the block against the code. |
+| `run-proposal-tests.py` | The CI pass: the clean family, again as it would stand once the registry has passed nine threads (floor 2, where the threads battery reads it as `thread_form.py` does), and again as its maker alone has listed it, in `proposed:<handle>`, read from the fixture and by the live reader with its reads stubbed; the planted faults; and the block against the code. |
 
 ## Adding a case
 
