@@ -51,6 +51,11 @@ READERS = {
         """decision: /^DECIDE\\b/i.test(d8) ? decisionOf(under(String(k), '8'), d8, s.title) : null });""",
         """(rooms || []).forEach(function (r) { if (r.decision) out.push(r.decision); });""",
         """STEPS = stepsOf(SPINE); ROOMS = roomsOf(SPINE); DECS = decisionsOf(STEPS, ROOMS);""",
+        # its line on the list: the keeper's, else the first maker's own (happyseaurchin-home #780), read by Family
+        """return kept || !window.beachListed ? kept : beachListed.lineOf(FAM);""",
+    ],
+    "listed.js": [
+        """return makersLines(got, {}).filter(function (s) { return s.name === String(name).toLowerCase(); })[0] || null;""",
     ],
     "threads.js": [
         """var m = /^\\s*(thread:\\d+|[a-z0-9][a-z0-9-]*)\\s*(?:[—–]\\s*([\\s\\S]*))?$/i.exec(String(t || ''));""",
@@ -537,9 +542,10 @@ class Family:
         self.steps, self.more = steps_of(self.spine) if isinstance(self.spine, dict) else ([], False)
         self.rooms = rooms_of(self.spine)
         self.decisions = decisions_of(self.steps, self.rooms)
-        # the keeper's line, as the proposal's own page reads it for its phase and its snazzy page (proposal.html);
-        # the LISTED case reads every maker's list beside it (check_family)
-        self.entry = next((x for x in shelf_of(surface.get("proposals")) if x["name"] == name.lower()), None)
+        # its line on the list, and the list that holds it, as the proposal's own page reads them for its phase and its
+        # snazzy page (proposal.html, through listed.js lineOf, since happyseaurchin-home #780): the first line that names
+        # it in every list, the keeper's first, then each maker's own, the earliest born first, as LISTED reads them
+        self.listed_in, self.entry = next(((nm, x) for nm, lst in lists_of(surface) for x in shelf_of(lst) if x["name"] == name.lower()), (None, None))
         self.page = page_of(self.L, self.spine, self.entry)
         self.crafted = self.page if self.page and not is_plain(self.page) else ""
         self.room = surface.get(f"pool:{self.L['room']}")
@@ -866,7 +872,7 @@ def check_page(f):
     if len({re.sub(r"^https?://(?:www\.)?", "", u).rstrip("/") for _, u in crafted}) > 1:
         add("WARN", "AGREE", "6", "the page's addresses differ: " + "; ".join(f"{w} {u}" for w, u in crafted))
     if f.crafted and listed_page and is_plain(listed_page):
-        add("WARN", "AGREE", "proposals", f"the list points at the standard page, and the page is {f.crafted}")
+        add("WARN", "AGREE", f.listed_in, f"the list points at the standard page, and the page is {f.crafted}")
     check_look(f, add, t6)
     check_map(f, add, voice(law.get("8")))
     if not f.crafted:
