@@ -85,7 +85,7 @@ import { raised, nodeAt, linesAt, dotted, type CrossLine } from '../cross.js';
 import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { colourBlockName, type GrayEnvelope } from '../keys.js';
-import { sealer, colourLine, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
+import { sealer, colourLine, colourOfLaw, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
 import { sealingKey } from '../signin.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
@@ -715,9 +715,9 @@ export const streamEngageParamsSchema = {
     .optional()
     .describe("The synthesis to persist, required by `keep`. Yours to write: this primitive assembles the snapshot and delivers the law, and never synthesises anything itself."),
   gray: z
-    .string()
+    .union([z.string(), z.literal(false)])
     .optional()
-    .describe("THE PRIVATE ROOM at a mirror (coloured stigmergy): the colour your `say` — and the fold you `keep` in the same call — is sealed in: 'colour:<name>' or its bare name, a colour its keeper founded at this beach. The address stays open, and that you said something there; the WORDS are sealed one zero deeper, at the line's underscore, with the colour's current turn's key, and the options beneath a coloured say are sealed with it. The key is opened from your own copy by `secret` as the sealing word (a member meets one word) and WORN by this session from then on; a session already wearing the colour needs no key; holding no copy, the line lands as a LETTER to the colour, which every holder reads and you cannot read back — the ack says which. ON READ (every engage) a line in a colour you wear opens as if open; one you do not reads as one grey line naming its colour and turn, never its ciphertext, and the snapshot says how many stayed sealed, so a fold is made over the open lines alone; `secret` on a read puts the glasses on the same way, once a session. A colour that wants a fold keeps its own, sealed in its colour: keep with this set."),
+    .describe("THE PRIVATE ROOM at a mirror (coloured stigmergy): the colour your `say` — and the fold you `keep` in the same call — is sealed in: 'colour:<name>' or its bare name, a colour its keeper founded at this beach. A FAMILY THAT NAMES ITS COLOUR SEALS BY DEFAULT: where a line of its law (function:<field>, at its root or any digit) opens 'SEALED IN colour:<name>', every say and keep in it is sealed in that colour with no `gray` passed, and the ack says the law named it; gray=false writes a line open. The address stays open, and that you said something there; the WORDS are sealed one zero deeper, at the line's underscore, with the colour's current turn's key, and the options beneath a coloured say are sealed with it. The key is opened from your own copy by `secret` as the sealing word (a member meets one word) and WORN by this session from then on; a session already wearing the colour needs no key; holding no copy, the line lands as a LETTER to the colour, which every holder reads and you cannot read back — the ack says which. ON READ (every engage) a line in a colour you wear opens as if open; one you do not reads as one grey line naming its colour and turn, never its ciphertext, and the snapshot says how many stayed sealed, so a fold is made over the open lines alone; `secret` on a read puts the glasses on the same way, once a session. A colour that wants a fold keeps its own, sealed in its colour: keep with this set."),
   beach: z
     .string()
     .optional()
@@ -740,7 +740,7 @@ export interface StreamEngageParams {
   options?: string[];
   keep?: 'personal' | 'collective';
   keep_text?: string;
-  gray?: string;
+  gray?: string | false;
   beach?: string;
   secret?: string;
   tier?: 'soft' | 'medium' | 'hard';
@@ -948,7 +948,19 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // writer's door seals before the line leaves; the reader's door puts the
   // session's colours on once (wearFor, below) and every line in them then
   // reads as its words.
-  const colour = typeof params.gray === 'string' && params.gray.trim() ? colourBlockName(params.gray) : null;
+  let colour = typeof params.gray === 'string' && params.gray.trim() ? colourBlockName(params.gray) : null;
+  // A FAMILY THAT NAMES ITS COLOUR SEALS BY DEFAULT (colourOfLaw; proposals/
+  // 2026-11-23-a-law-names-its-colour.md): with no `gray` passed, a say or a
+  // keep is sealed in the colour the family's own law names, read from the
+  // operator already in flight; gray=false writes the line open.
+  let lawColour: string | null = null;
+  if (params.gray === undefined && (saying || (params.keep && (params.keep_text ?? '').trim()))) {
+    lawColour = colourOfLaw((await (opP ?? loadBlock(origin, opName).catch(() => null)))?.block ?? null);
+    if (lawColour) colour = lawColour;
+  }
+  const lawNote = lawColour
+    ? `\n  ⓘ ${opName} names ${lawColour} as this family's colour, so its lines are sealed with no gray passed; gray=false writes one open.`
+    : '';
   // THE GUARD MEETS THE SAY BEFORE ANYTHING IS BORN (the doors' second walk, 6.2): a say, or an option
   // it offers, carrying the key the call presents is refused here, so a first say leaves no mirror
   // born under that key. A coloured say leaves sealed, and the guard at the save passes it, as before.
@@ -964,7 +976,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     try {
       seal = await sealer(origin, colour, word, handle);
     } catch (e: any) {
-      return out(`Nothing was written: ${e?.message ?? String(e)}`);
+      return out(`Nothing was written${lawColour ? ` (${opName} seals this family in ${lawColour})` : ''}: ${e?.message ?? String(e)}`);
     }
   }
   const refused = !writing ? null : await oneAtATime(`${origin}|${mirrorName}`, async (waited) => {
@@ -1420,11 +1432,11 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
         ? (n ? `✓ cleared ${n} ${n === 1 ? 'line' : 'lines'} of yours across the span at ${mirrorName}` : `nothing of yours stood across the span at ${mirrorName} — nothing to clear`)
         : `✓ your line landed at ${mirrorName} on ${n} ${n === 1 ? 'beat' : 'beats'}, ${span.beats[0]} … ${span.beats[span.beats.length - 1]} (${spanExtent})${mintedMirror ? formatBorn(mintedMirror) : ''}`);
     } else if (saidAt) {
-      lines.push(`✓ your reading landed at ${saidAt}${colour && saidSeal ? colourLine(colour, saidSeal) : ''}${mintedMirror ? formatBorn(mintedMirror) : ''}`);
+      lines.push(`✓ your reading landed at ${saidAt}${colour && saidSeal ? colourLine(colour, saidSeal) + lawNote : ''}${mintedMirror ? formatBorn(mintedMirror) : ''}`);
       if (optionsSaid) lines.push(`✓ ${optionsSaid} ${optionsSaid === 1 ? 'option' : 'options'} beneath it, at ${Array.from({ length: optionsSaid }, (_, i) => dotted(digits.concat(String(i + 1)), spineFloor)).join(', ')} — whoever takes one says at its address`);
       if (replacedLine) lines.push(`  it replaced your own line there: '${clip(replacedLine, 160)}' — if another instance of you wrote that, say it back, and tie yours at a digit no one holds (function:thread 3)`);
     }
-    if (keptTo) lines.push(`✓ fold kept at ${keptTo}${colour && keptSeal ? colourLine(colour, keptSeal) : ''}`);
+    if (keptTo) lines.push(`✓ fold kept at ${keptTo}${colour && keptSeal ? colourLine(colour, keptSeal) + (saidSeal ? '' : lawNote) : ''}`);
     // A holder saying in a family that keeps a standing word is handed theirs
     // back, so a calendar synced by their AI meets it at every line it says.
     const ownWord = standing && saidBlock && !spanSaid?.cleared ? standingWordOf(saidBlock, mirrorName, field, spineName, origin) : null;

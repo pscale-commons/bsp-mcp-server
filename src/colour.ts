@@ -106,6 +106,31 @@ export async function sealer(origin: string, colour: string, encSecret: string |
     : { envelope: colourLetter(plaintext, colour, current.address, current.node['2']), how: 'letter', turn: current.address };
 }
 
+/** A LAW NAMES ITS COLOUR (step 1 of the coloured dashboards, David's 'Go ahead
+ *  with step 1', 23 November 2026; proposals/2026-11-23-a-law-names-its-colour.md).
+ *  A family's operator, or a room's purpose, seals every line said in it by a
+ *  line that OPENS 'SEALED IN colour:<name>' — at the law's root or at any of its
+ *  digits — as a law mounts a recipe with a line opening THE RECIPE MOUNTED
+ *  (lens.ts). The law names its own parts, so the reference runs law → colour
+ *  and never back, no digit is reserved, and a family that names none writes
+ *  open, exactly as before. The colour's block name, or null. */
+const SEALED_IN = /^\s*SEALED IN (colour:[A-Za-z0-9][\w-]*(?:\.[\w-]+)*)/i;
+export function colourOfLaw(law: unknown): string | null {
+  const said = (n: unknown): string => {
+    let u: unknown = n;
+    while (u && typeof u === 'object' && !Array.isArray(u)) u = (u as Record<string, unknown>)['_'];
+    return typeof u === 'string' ? u : '';
+  };
+  const lines = law && typeof law === 'object'
+    ? [law, ...'123456789'.split('').map((k) => (law as Record<string, unknown>)[k])]
+    : [law];
+  for (const n of lines) {
+    const m = SEALED_IN.exec(said(n));
+    if (m) return m[1];
+  }
+  return null;
+}
+
 /** One line sealed in a colour (bsp()'s write and append). */
 export async function sealInColour(origin: string, colour: string, plaintext: string, encSecret: string | undefined, hand: string | null): Promise<Sealed> {
   return (await sealer(origin, colour, encSecret, hand))(plaintext);
