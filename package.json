@@ -57,6 +57,7 @@
     "smoke:seal-price": "tsx scripts/smoke-seal-price.ts",
     "smoke:colour": "tsx scripts/smoke-colour.ts",
     "smoke:private-room": "tsx scripts/smoke-private-room.ts",
+    "smoke:colour-default": "tsx scripts/smoke-colour-default.ts",
     "smoke:pass": "tsx scripts/smoke-pass.ts",
     "smoke:derived-latch": "tsx scripts/smoke-derived-latch.ts",
     "smoke:gray-guard": "tsx scripts/smoke-gray-guard.ts",

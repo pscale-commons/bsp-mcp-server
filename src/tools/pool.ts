@@ -56,7 +56,7 @@ import { wireStore } from '../genus.js';
 import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '../pass.js';
 import { handOf } from '../looks.js';
 import { isGrayEnvelope, colourBlockName, type GrayEnvelope } from '../keys.js';
-import { sealer, colourLine, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
+import { sealer, colourLine, colourOfLaw, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
 import { sealingKey } from '../signin.js';
 import { pairId } from '../locks.js';
 
@@ -1877,9 +1877,9 @@ export const poolEngageParamsSchema = {
     .optional()
     .describe("Optional, applies to `contribution`. Where the commit lands: 'pool' (default — the shared spool everyone pulls) or a block name such as 'solid:<name>' for a shared committed artifact. The deposit is a dumb atomic append; the primitive never synthesises. This is the objective dial. Structured per-subject spine writes (the RPG subjective case) are the resolver's bsp() job, NOT this param — point destination only at accumulator-shaped blocks."),
   gray: z
-    .string()
+    .union([z.string(), z.literal(false)])
     .optional()
-    .describe("THE PRIVATE ROOM (coloured stigmergy): the colour this line is sealed in — 'colour:<name>' or its bare name, a colour its keeper founded at this beach. ON COMMIT and ON SUBMIT the WORDS are sealed one zero deeper, at the contribution's underscore, with the colour's current turn's key: the author, the address, the stamp and the face stay open, so the room's slots, its presence and its located views stand as they do for any line. The key is opened from your own copy by `secret` as the sealing word (a member meets one word) and WORN by this session from then on; a session already wearing the colour needs no key; holding no copy, the line lands as a LETTER to the colour, which every holder reads and you cannot read back — the ack says which. ON READ (every engage, with or without this) a line in a colour you wear opens as if open; one you do not reads as one grey line naming its colour and turn, never its ciphertext, and the envelope says how many stayed sealed, so a synthesis is made over the open voices alone; `secret` on a read puts the glasses on the same way, once a session."),
+    .describe("THE PRIVATE ROOM (coloured stigmergy): the colour this line is sealed in — 'colour:<name>' or its bare name, a colour its keeper founded at this beach. A ROOM THAT NAMES ITS COLOUR SEALS BY DEFAULT: where the room's purpose opens 'SEALED IN colour:<name>', or the law its purpose mounts has a line opening so, every commit and stage there is sealed in that colour with no `gray` passed, and the ack says the law named it; gray=false writes a line open. ON COMMIT and ON SUBMIT the WORDS are sealed one zero deeper, at the contribution's underscore, with the colour's current turn's key: the author, the address, the stamp and the face stay open, so the room's slots, its presence and its located views stand as they do for any line. The key is opened from your own copy by `secret` as the sealing word (a member meets one word) and WORN by this session from then on; a session already wearing the colour needs no key; holding no copy, the line lands as a LETTER to the colour, which every holder reads and you cannot read back — the ack says which. ON READ (every engage, with or without this) a line in a colour you wear opens as if open; one you do not reads as one grey line naming its colour and turn, never its ciphertext, and the envelope says how many stayed sealed, so a synthesis is made over the open voices alone; `secret` on a read puts the glasses on the same way, once a session."),
   resolves_window: z
     .string()
     .optional()
@@ -1933,7 +1933,7 @@ export type PoolEngageParams = {
   since_position?: number;
   secret?: string;
   purpose?: string;
-  gray?: string;
+  gray?: string | false;
   resolves_window?: string;
   resolves_seen?: string;
   tier?: Tier;
@@ -2036,7 +2036,7 @@ async function handlePoolEngageInner(
   // sign-in supplied (src/signin.ts). The writer's door seals before the line
   // leaves; the reader's door puts the session's colours on once (wearFor) and
   // every line in them then reads as its words, wherever it stands.
-  const colour = typeof params.gray === 'string' && params.gray.trim() ? colourBlockName(params.gray) : null;
+  let colour = typeof params.gray === 'string' && params.gray.trim() ? colourBlockName(params.gray) : null;
   const word = sealingKey(undefined, secret);
   let seal: ((plaintext: string) => Sealed) | null = null;
   if (colour && ((contribution !== undefined && contribution.trim() !== '') || (submit !== undefined && submit.trim() !== ''))) {
@@ -2165,6 +2165,33 @@ async function handlePoolEngageInner(
       }],
     };
   }
+
+  // A ROOM THAT NAMES ITS COLOUR SEALS BY DEFAULT (colourOfLaw; proposals/
+  // 2026-11-23-a-law-names-its-colour.md): with no `gray` passed, a commit or a
+  // stage is sealed in the colour the room's law names — its purpose opening
+  // SEALED IN colour:<name>, or the law that purpose mounts naming it so. Never
+  // a digit of the room itself: every digit of a pool is a contribution.
+  // gray=false writes the line open.
+  let lawColour: string | null = null;
+  if (params.gray === undefined && !seal && ((contribution ?? '').trim() !== '' || (submit ?? '').trim() !== '')) {
+    const purpose = floorUnderscore(row.block as Block);
+    lawColour = colourOfLaw(purpose);
+    if (!lawColour && isDirectiveRef(purpose) && !purpose.trim().startsWith('pscale:')) {
+      const mounted = await loadBlock(pool_url, purpose.trim().split('/')[0]).catch(() => null);
+      lawColour = mounted ? colourOfLaw(mounted.block) : null;
+    }
+    if (lawColour) {
+      try {
+        seal = await sealer(pool_url, lawColour, word, agent_id);
+        colour = lawColour;
+      } catch (e: any) {
+        return { content: [{ type: 'text', text: `Nothing was written (pool:${pool_name}'s law seals its lines in ${lawColour}): ${e?.message ?? String(e)}` }] };
+      }
+    }
+  }
+  const lawNote = lawColour
+    ? `\n  ⓘ the room's law names ${lawColour} as its colour, so its lines are sealed with no gray passed; gray=false writes one open.`
+    : '';
 
   // ── Optional: SUBMIT — stage to the pre-commit liquid buffer ──
   // Liquid (block-conventions:4.5) is one slot per author, OVERWRITING: your
@@ -2388,7 +2415,7 @@ async function handlePoolEngageInner(
           return { content: [{ type: 'text', text: `Commit rejected at ${target}:${addr} — ${e?.message ?? String(e)}` }] };
         }
         return { content: [{ type: 'text', text:
-          `Committed as ${face} → ${target} at ${addr}${colour && sealed ? colourLine(colour, sealed) : ''}\n\n${contribution}\n\nRead it back: bsp(agent_id="${pool_url}", block="${target}", spindle="${addr}").` }] };
+          `Committed as ${face} → ${target} at ${addr}${colour && sealed ? colourLine(colour, sealed) + lawNote : ''}\n\n${contribution}\n\nRead it back: bsp(agent_id="${pool_url}", block="${target}", spindle="${addr}").` }] };
       }
     }
 
@@ -2622,7 +2649,7 @@ async function handlePoolEngageInner(
   }
   if (submittedSlot !== null) {
     lines.push(submit && submit.trim() !== ''
-      ? `submitted: liquid slot ${submittedSlot} (your pending intention — staged, not yet committed; liquid slots are per-author and count separately from pool slots, and this one overwrites on every submit until a commit or withdraw clears it)${colour && stagedSeal ? colourLine(colour, stagedSeal).trim().replace(/^/, ' — ') : ''}`
+      ? `submitted: liquid slot ${submittedSlot} (your pending intention — staged, not yet committed; liquid slots are per-author and count separately from pool slots, and this one overwrites on every submit until a commit or withdraw clears it)${colour && stagedSeal ? colourLine(colour, stagedSeal).trim().replace(/^/, ' — ') + lawNote : ''}`
       : `withdrawn: liquid slot ${submittedSlot} cleared`);
     lines.push('');
   }
@@ -2638,7 +2665,7 @@ async function handlePoolEngageInner(
     if (duplicateOf !== null) {
       lines.push(`ALREADY LANDED at slot ${postedPosition} → ${where} — this exact beat from you is already in the record, so nothing was appended a second time. A timeout is not a failure here: the write lands and only the reply is lost. Read the slot before rewording and retrying.`);
     } else {
-      lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}${stagedConsumed ? ' — your staged intention graduated into this entry, so your liquid slot cleared itself' : ''}${postedMoment ? ` — on the world's clock: ${postedMoment}` : ''}${colour && sealed ? colourLine(colour, sealed).trim().replace(/^/, ' — ') : ''}`);
+      lines.push(`committed: slot ${postedPosition} → ${where}${postedSupernested ? ' (floor grew — supernested)' : ''}${claimed}${stagedConsumed ? ' — your staged intention graduated into this entry, so your liquid slot cleared itself' : ''}${postedMoment ? ` — on the world's clock: ${postedMoment}` : ''}${colour && sealed ? colourLine(colour, sealed).trim().replace(/^/, ' — ') + (stagedSeal ? '' : lawNote) : ''}`);
       // THE MUSCLE BEHIND, at the door: the commit walks back to its landed slot
       // as the next reader receives it — the containers above it in view, an
       // unvoiced one showing as the debt it is (src/read-back.ts). A sealed
