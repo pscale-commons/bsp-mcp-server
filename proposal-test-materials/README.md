@@ -45,7 +45,7 @@ A live pass looks for the lines it follows in the site's files and prints `reade
 
 Since 23 November 2026 anyone lists a proposal they made with nobody's permission: one line, `<name> — what it is · its page`, in their own block, `proposed:<handle>`, under their own key, beside the keeper's list, `proposals` (`function:proposal` 7 and 8). The pages read both through `listed.js`: the keeper's first, then each maker's, the earliest born first, a proposal counted where it is first listed. LISTED reads them the same way, finding the makers' lists in the beach's index (each `proposed:<handle>` with exactly one colon), and its NOTE names the list that holds the line.
 
-The rest of the battery reads the keeper's line alone, as the proposal's own page does (`proposal.html`): whether a family that names another kind at its law's 7 is drawn at all, and whether an off-site page gets its Snazzy button there.
+The rest of the battery reads the proposal's line from the same lists in the same order, as its own page does since happyseaurchin-home #780 (`proposal.html`, through `listed.js` `lineOf`): the first line that names it decides whether a family that names another kind at its law's 7 is drawn at all, whether an off-site page gets its Snazzy button there, and which page the line offers where the law and the spine name none. AGREE names the list that line stands in.
 
 ## The first sweep
 
@@ -62,7 +62,7 @@ The rest of the battery reads the keeper's line alone, as the proposal's own pag
 | `proposal_form.py` | The checker. |
 | `fixtures/harbour-bell.json`, `.html` | A family that passes every case: floor 2 room with a paid summary and a reply, a decision in a room around the proposal (4.8, answered in dana's mirror), a registry thread and a ladder, a maker's look at their yes, a map pin, a crafted page. Nothing stands on the beach by this name. |
 | `mutation.py` | The planted faults, one at a time. Those marked "as found" stand verbatim as the first sweep met them. |
-| `run-proposal-tests.py` | The CI pass: the clean family, again as it would stand once the registry has passed nine threads (floor 2, where the threads battery reads it as `thread_form.py` does), and again as its maker alone has listed it, in `proposed:<handle>`, read from the fixture and by the live reader with its reads stubbed; the planted faults; and the block against the code. |
+| `run-proposal-tests.py` | The CI pass: the clean family, again as it would stand once the registry has passed nine threads (floor 2, where the threads battery reads it as `thread_form.py` does), and again as its maker alone has listed it, in `proposed:<handle>`, read from the fixture and by the live reader with its reads stubbed, where another kind has no PHASE fault, an off-site page no OFFSITE note and a line pointing at the standard page an AGREE in that list, while on no list another kind still faults PHASE; the planted faults; and the block against the code. |
 
 ## Adding a case
 

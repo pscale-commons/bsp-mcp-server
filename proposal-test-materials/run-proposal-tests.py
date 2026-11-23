@@ -4,7 +4,9 @@
   1. THE CLEAN FAMILY: harbour-bell is well formed, with no FAULT and no WARN, and stays so as it would stand
      once the registry has passed nine threads (floor 2, its thread at 12), as the beach's has since November,
      and as it would stand listed by its maker alone, in proposed:<handle> (function:proposal 7 and 8), read
-     from a fixture and again by the live reader with its reads stubbed.
+     from a fixture and again by the live reader with its reads stubbed. So listed, the page counts the
+     maker's line as its listing too: another kind has no PHASE fault and an off-site page no OFFSITE note,
+     while on no list another kind still faults PHASE.
   2. THE PLANTED FAULTS (mutation.py): every one is caught at its level.
   3. THE BLOCK AND THE CODE AGREE: src/proposal-test.json names every test the checker runs,
      at the battery it belongs to; every test has a planted fault; and the count the block states
@@ -130,6 +132,47 @@ for lists, want in ((["proposed:dana", "proposed:rook"], [("NOTE", "proposed:roo
     named = want != [("NOTE", "")] or "list it in your own proposed:<handle>" in hint[0]
     say(PF.verdict(v) == "WELL FORMED" and not loud and the_listed(v) == want and named and "" in beach.asked,
         f"read live with its reads stubbed, listed in {', '.join(lists)}: LISTED {want[0][1] or 'not on the list yet'}")
+    for x in loud:
+        print(f"     {x['level']} {x['battery']}/{x['test']} {x['at']} {x['detail'][:80]}")
+# Listed by its maker alone, the proposal's own page counts the maker's line as its listing too (proposal.html, through
+# listed.js lineOf, since happyseaurchin-home #780): another kind is drawn as its kind, and a crafted page its maker hosts
+# off this site gets its button, while on no list at all another kind is still not drawn. A line pointing at the standard
+# page is named in the list it stands in.
+EXPLAINER = "phase: explainer — the bell explained, with nothing to decide."
+
+
+def law_says(s, k, text):
+    s["blocks"]["function:harbour-bell"][k] = text
+    return s
+
+
+def page_by_its_maker(s, url):
+    """The crafted page on its maker's own site, named by the law's 6, the spine's 2, the room and the maker's line."""
+    b = s["blocks"]
+    law_says(s, "6", f"page: {url} — the crafted page, in tester's hand")
+    b["spine:harbour-bell"]["2"] = f"THE PAGE — {url}."
+    b["pool:harbour-bell"]["_"]["_"] = "THE ROOM of harbour-bell, open to anyone, for talk that is not a decision. The page: " + url
+    b["proposed:tester"]["2"]["_"] = f"harbour-bell — a bell on the harbour wall · {url}"
+    s["pages"][url] = "<!doctype html><title>harbour-bell, in tester's hand</title>"
+    return s
+
+
+def line_says(s, text):
+    s["blocks"]["proposed:tester"]["2"]["_"] = text
+    return s
+
+
+for what, state, test, want in (
+        ("an explainer listed only in proposed:tester", law_says(listed_in(["proposed:tester"]), "7", EXPLAINER), "PHASE", []),
+        ("the same explainer on no list", law_says(listed_in([]), "7", EXPLAINER), "PHASE", [("FAULT", "7")]),
+        ("listed only in proposed:tester, its law's 6 naming a page off this site",
+         page_by_its_maker(listed_in(["proposed:tester"]), "https://tester.github.io/harbour.html"), "OFFSITE", []),
+        ("listed only in proposed:tester, its line pointing at the standard page",
+         line_says(listed_in(["proposed:tester"]), "harbour-bell — a bell · happyseaurchin.com/proposal/harbour-bell"), "AGREE", [("WARN", "proposed:tester")])):
+    v = PF.check(PF.State(state, fixtures), "harbour-bell")
+    got = [(x["level"], x["at"]) for x in v.findings if x["test"] == test]
+    loud = [x for x in v.findings if x["level"] in ("FAULT", "WARN") and x["test"] != test]
+    say(got == want and not loud, f"{what}: {test} {' '.join(got[0]) if got else 'none'}")
     for x in loud:
         print(f"     {x['level']} {x['battery']}/{x['test']} {x['at']} {x['detail'][:80]}")
 
