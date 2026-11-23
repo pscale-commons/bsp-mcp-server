@@ -81,6 +81,14 @@ def unlisted(s):
     put(s, LIST, "1", {"_": "another-one — something else · happyseaurchin.com/another-one", "3": "2026-11-02T08:00:00Z"})
 
 
+def by_its_maker(line):
+    """Off the keeper's list, and the line as written in its maker's own list, proposed:rook (function:proposal 7 and 8)."""
+    def plant(s):
+        unlisted(s)
+        s["blocks"]["proposed:rook"] = {"_": "rook's own list of the proposals rook made.", "1": {"_": line, "3": "2026-11-23T08:00:00Z"}}
+    return plant
+
+
 def offsite(s):
     url = "https://rook.github.io/harbour.html"
     put(s, LAW, "6", f"page: {url} — the crafted page, in rook's hand")
@@ -115,6 +123,8 @@ M = [
     ("a list line no page reads", lambda s: put(s, LIST, "1", {"_": "harbour-bell: a bell", "3": "2026-11-02T08:00:00Z"}), "family", "LISTED", "FAULT"),
     ("a list line with no page", lambda s: put(s, LIST, "1", {"_": "harbour-bell — a bell on the wall", "3": "2026-11-02T08:00:00Z"}), "family", "LISTED", "WARN"),
     ("not on the list yet", unlisted, "family", "LISTED", "NOTE"),
+    ("a line no page reads in its maker's own list", by_its_maker("harbour-bell: a bell"), "family", "LISTED", "FAULT"),
+    ("a line with no page in its maker's own list", by_its_maker("harbour-bell — a bell on the wall"), "family", "LISTED", "WARN"),
     ("a multi-dot address", lambda s: put(s, SPINE, "1.1", "HOW IT WORKS — as 1.1.8 asks."), "family", "NOTATION", "WARN"),
     ("prose naming a block nobody holds", lambda s: put(s, SPINE, "1.1", "HOW IT WORKS — as spine:nowhere says."), "family", "RESOLVES", "WARN"),
     ("prose naming an address that walks nowhere", lambda s: put(s, SPINE, "1.1", "HOW IT WORKS — as spine:tide-table 9 says."), "family", "RESOLVES", "WARN"),
