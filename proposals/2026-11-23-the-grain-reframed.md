@@ -1,6 +1,6 @@
 # The grain reframed: a pair is a colour and a mirror each
 
-23 November 2026 · weft (lane colour-salt.1) · step 4 of the coloured dashboards, at David's "move on to step 4" · for David's GO before any code
+23 November 2026 · weft (lane colour-salt.1, landed in grain-way.1) · step 4 of the coloured dashboards · David's GO, landed as a way, with no code
 
 ## What a grain is today, and where it leaks
 
@@ -25,25 +25,37 @@ So a private pair needs no grain-shaped block at all. It needs:
 
 Read together, the two mirrors are the conversation: the braid of the two hands' lines, side by side.
 
-## What `pscale_grain_reach` would become
+## How it landed: a way, not a tool
 
-The decision asked is for this code. It keeps the tool's name and its symmetric call:
+The draft of this proposal asked for a change to `pscale_grain_reach` (`src/tools/grain.ts`): a reach that founds the pair's colour and family and says the first line, sealed. David's GO came with a warning: without the strata, "we are just moving from code to more code to even more code and our work has NOTHING to do with the pscale beach". Read through the strata, the change needed no code:
 
-1. **A reach** (the first call):
-   - It founds `colour:grain-<pair_id>`, with the two handles as holders and the reacher as its keeper (latched with the reacher's key). It needs both published halves; where one is missing, it says who must publish first and founds nothing.
-   - It founds the pair's family: `spine:grain-<pair_id>` on the clock, and `function:grain-<pair_id>`. The law's root says only "the private room of a pair", and its 7 opens `SEALED IN colour:grain-<pair_id>`.
-   - It says the reach statement as the reacher's first line, sealed.
-2. **An accept** (the partner's call) says their statement as their first line, sealed. No passphrase is needed beyond each person's own key.
-3. **The grain block** keeps only what has to be public, so that the pair can be found and drawn (the grain-graph): position 9, who holds which side. There is no root text in the clear and no side text in the clear.
-4. **Afterwards,** each person says at `now` or `today` in the pair's family through `pscale_stream_engage`, and reads both mirrors in one call. Nothing new is needed for this.
-5. **Old grains** stand exactly as they are, open lines and all. Nothing migrates. A pair re-says in its new room what it wants kept private.
+- **Physics, one block.** Every part of the room is a block the beach already has: `colour:<name>` (the keeper's turns and copies), `spine:<field>` on the clock, `function:<field>`, and `<field>:<handle>`.
+- **Chemistry, blocks in company.** Every bond is a reference the beach already honours: the law names its colour (#640), the stream composes spine, mirrors and law by the field's name, and the pair id the room is named by is the grain's own (ways:grain 1), so the room and `grain:<pair_id>` are found from the same two handles.
+- **Biology, the loop.** Saying in the room is the say at `now` or `today` that every family already has.
 
-What stays visible, as for any coloured line: that the two of them are a pair, when each line was said, and roughly how long it is. Only the words are sealed.
+The reach in code would have folded four calls a person can read into one they cannot. orientation:weft 1 says to stop there: "if the act … reaches for code where a block would do, stop". So it landed on the beach as a way:
+
+- **The root of `ways:grain`** says that a grain's private room is the default for anything the two say to each other, and that the grain block `pscale_grain_reach` makes is the pair's public record, its founding words in the clear (3.1). Nothing private is said in a reach. The root it replaced stands at `archive:ways:grain:2026-11-23`.
+- **`ways:grain` 7, the room,** is one spindle walked in order. Each rung names a verb that already exists:
+  - 7.1: the keys first, with both halves published at passport 9;
+  - 7.11: the colour, `bsp()` with `members` and `new_lock` on `colour:grain-<pair_id>`;
+  - 7.111: the family, `spine:grain-<pair_id>` on the clock and `function:grain-<pair_id>`, whose line opens `SEALED IN colour:grain-<pair_id>`;
+  - 7.1111: say and read, `pscale_stream_engage(field='grain-<pair_id>')`;
+  - 7.11111: when a word changes or one leaves, the keeper turns the colour;
+  - 7.111111: when the walk feels long.
+
+Nothing in `src/` changes. `pscale_grain_reach` stays as it is, and old grains stand as they are, open lines and all. Nothing migrates; a pair re-says in its room whatever it wants kept private.
+
+What stays visible is the same as for any coloured line: that the two are a pair, when each line was said, and roughly how long it is. Only the words are sealed.
+
+## When a tool would earn its place
+
+A tool becomes worth writing when pairs who walk the way by hand show what is missing. That would be a new proposal, citing what they hit. One gap is already observed: through a signed connector, a say made before the session has opened its copy of the colour is sealed as a letter to the colour, which both holders read once their copies are open (watch:weft 1146). Until bsp-mcp learns otherwise, the way says how to open the copy first (7.1111). Whether a signed connector's key may serve as the sealing word is David's decision (`spine:coloured-stigmergy` 1.8). It is queued as its own task.
 
 ## Tried first on bringingtheflavour
 
-David and Matthew's colour (`colour:salt`) and room (`salt:<handle>`, sealed by `function:salt`) already stand there. A few days of saying there tests the shape with no code changed. The reach then becomes the one call that sets the same thing up for any pair, on any beach.
+David and Matthew's colour (`colour:salt`) and room (`salt:<handle>`, sealed by `function:salt`) already stand there. The way's shape is the same for a pair as for SALT's members. A few days of saying there test it before any pair is asked to walk it.
 
-## Decide
+## Decided
 
-GO, CHANGE or NOT YET on the `pscale_grain_reach` change above (`src/tools/grain.ts`, with a smoke battery against a local beach as `smoke:colour-default` does).
+GO (David, 23 November 2026), landed as `ways:grain` 7 and its root, with no change to `src/`.
