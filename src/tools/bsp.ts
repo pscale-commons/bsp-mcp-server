@@ -87,42 +87,12 @@ export function probeInsteadOfWhole(block: Block, spindle: string | null | undef
   return `${discText}\n  [the whole block is ${wholeText.length} characters: both coordinates omitted gives this probe, the disc at pscale 0. To take it whole, name the root — spindle='0' with no attention; or walk a spindle for the part you need.]`;
 }
 
-/** THE OWED SPAN RIDES THE ACK. A summary is dense with the span's own
- *  handles, and the span is here — the entries a container is owed over, by
- *  their opening lines, from the block as it stands — so the summary is paid
- *  from the ack and never from nine reads (a session read stash:keel 121-129
- *  one by one to pay 130, 2026-10-06). */
-export function spanLines(block: Block, dues: { slot: string; over: string }[]): string {
-  const out: string[] = [];
-  for (const d of dues) {
-    const m = /^(\d+)-(\d+)$/.exec(String(d.over));
-    if (!m) continue;
-    const a = parseInt(m[1], 10), b = parseInt(m[2], 10);
-    if (!(b >= a && b - a < 12)) continue;
-    const width = m[1].length;
-    const rows: string[] = [];
-    for (let k = a; k <= b; k++) {
-      if (k % 10 === 0) continue;   // a zero slot is a summary, never an entry
-      const addr = String(k).padStart(width, '0');
-      let text = '';
-      try {
-        const r: any = bspRead(block, addr, null);
-        const es: any[] = r?.entries ?? [];
-        const last = es[es.length - 1];
-        text = typeof last?.content === 'string' ? last.content : '';
-      } catch { text = ''; }
-      if (text.trim()) rows.push(`      ${addr} ${text.replace(/\s+/g, ' ').slice(0, 140)}`);
-    }
-    if (rows.length) out.push(`    the span of ${d.slot}, by its opening lines:`, ...rows);
-  }
-  return out.length ? '\n' + out.join('\n') : '';
-}
-
 /** THE FRAME RIDES THE ACK (David's 'go ahead', 2026-10-08; the finding at
  *  watch:weft 571). A write at a rung of a clock mirror is answered with the
  *  rung above it and the ring beneath that rung by their opening lines, so
  *  the week is re-voiced from the ack in the sitting that voiced the day —
- *  the owed span of an append, applied to the clock. The rule placed at
+ *  as an append's ack carried the owed span until 2026-11-24, applied to the
+ *  clock. The rule placed at
  *  wake:weft 6.8 on 2026-10-06 ('the rungs above the day are paid at the
  *  day's close') did not fire on its first two chances: a rule has to be
  *  remembered, an ack is read. Empty when the block is not on the clock
@@ -1337,21 +1307,17 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       // a container's underscore, so the block as loaded answers for it — unless
       // this append supernested, which re-pads every address; then trust the beach.
       const dues = (res.owed ?? []).filter(d => !(grayBlock && !res.supernested && paidInGray(grayBlock, d.slot)));
+      // The debt is said in one line, and its span is left to the one who
+      // pays it. Until 24 November 2026 every owed span's opening lines rode
+      // here too, handed to every appender whether it paid or not (4,497 of
+      // the 10,418 characters a lane's record came back with, and every line
+      // said in a room with dues); the payer now reads the span once, in one
+      // call, as the line says (proposals/2026-11-24-the-owed-line-stands-alone.md).
       const owed = dues.length
         ? `\n  ⓘ summary owed: ${dues.slice(0, 3).map(d => `${d.slot} over ${d.over}`).join(', ')}`
           + `${dues.length > 3 ? ` (+${dues.length - 3} older)` : ''}`
-          + ` — one line written at that address, in the open or gray, voices the container and leaves its entries untouched.`
+          + ` — one line written at that address, in the open or gray, voices the container and leaves its entries untouched; its span is one read of the container with its descent, never entry by entry.`
         : '';
-      // The span the summary is owed over rides the ack — one block read,
-      // only when a container is owed, so the summary is paid without
-      // reading the entries one by one.
-      let span = '';
-      if (dues.length && !wantGrayAppend) {
-        try {
-          const row = await loadBlock(agent_id, blockName);
-          if (row?.block) span = spanLines(row.block as Block, dues.slice(0, 3));
-        } catch { /* the owed line stands alone */ }
-      }
       const landedAt = res.address ?? (res.slot !== undefined && res.slot !== null ? String(res.slot) : '');
       const followed = params.secret && landedAt
         ? await bundleFollowsAppend(target.agent_id, target.block, landedAt, params.secret)
@@ -1371,10 +1337,10 @@ async function handleBspInner(params: BspToolParams, sessionId?: string): Promis
       const latchNote = colour === null && wantGrayAppend && !isGrainAppend && enc_secret === undefined && secret !== undefined ? LATCH_SEAL_NOTE : '';
       const coloured = colour && sealed ? colourLine(colour, sealed) : '';
       if (res.address !== undefined) {
-        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${stampedNote}]${coloured}${bornNote}${owed}${span}${followed}${readBack}${latchNote}${way}` }] };
+        return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → ${res.address} (slot ${res.slot ?? '?'} beneath node ${res.node ?? appendSpindle})${stampedNote}]${coloured}${bornNote}${owed}${followed}${readBack}${latchNote}${way}` }] };
       }
       const grew = res.supernested ? `  ⤴ supernested → floor ${res.floor}` : '';
-      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${coloured}${bornNote}${owed}${span}${followed}${readBack}${latchNote}${way}` }] };
+      return { content: [{ type: 'text', text: `[append @ "${target.agent_id}/${target.block}" → slot ${res.slot ?? '?'}${grew}${stampedNote}]${coloured}${bornNote}${owed}${followed}${readBack}${latchNote}${way}` }] };
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       // The one refusal this change can newly provoke, named rather than left
