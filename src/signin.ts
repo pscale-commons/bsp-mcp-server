@@ -773,7 +773,10 @@ export function signedLine(handle: string, beach: string = DEFAULT_BEACH, by?: {
 const fromSignIn = new AsyncLocalStorage<true>();
 
 /** The key that seals, opens or signs for this call: its enc_secret, else its secret, unless that
- *  secret came from the sign-in, which seals nothing unless asked (enc_secret: "vault"). */
+ *  secret came from the sign-in, which seals nothing unless asked (enc_secret: "vault"). The stream
+ *  and room doors have no enc_secret to ask with and do not come here: there the call's secret, the
+ *  sign-in's key among them, opens the holder's own copy of a colour, whose law or gray has already
+ *  decided that the line is sealed (proposals/2026-11-24-the-signed-key-opens-the-copy.md). */
 export function sealingKey(encSecret: string | undefined, secret: string | undefined): string | undefined {
   return encSecret ?? (fromSignIn.getStore() ? undefined : secret);
 }

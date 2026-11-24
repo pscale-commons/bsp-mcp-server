@@ -86,7 +86,6 @@ import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '
 import { handOf } from '../looks.js';
 import { colourBlockName, type GrayEnvelope } from '../keys.js';
 import { sealer, colourLine, colourOfLaw, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
-import { sealingKey } from '../signin.js';
 
 // ── Helpers (local by intent — importing pool.ts for three small functions
 //    would tie this clean surface to the one it exists to stand beside) ──
@@ -944,7 +943,10 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
   // THE PRIVATE ROOM AT A MIRROR (coloured stigmergy, step 3; §2.3, §3.4, §4.1):
   // the colour the say and the kept fold are sealed in, and the one word a
   // member meets — `secret`, doing duty as the sealing word that opens their
-  // own copy of the colour's key, never a word the sign-in supplied. The
+  // own copy of the colour's key, the key a signed connection rides in with
+  // among them (proposals/2026-11-24-the-signed-key-opens-the-copy.md): the law
+  // or `gray` decides whether a line is sealed, the word only whether its holder
+  // reads it, and a hand the ring does not name still writes a letter. The
   // writer's door seals before the line leaves; the reader's door puts the
   // session's colours on once (wearFor, below) and every line in them then
   // reads as its words.
@@ -968,7 +970,7 @@ async function streamEngage(params: StreamEngageParams, session: string | undefi
     try { refuseKeyInPayload({ say: params.say, options: params.options }, [params.secret]); }
     catch (e: any) { return out(`Your reading was refused at ${mirrorName} — ${e?.message ?? String(e)}`); }
   }
-  const word = sealingKey(undefined, params.secret);
+  const word = params.secret;
   let seal: ((plaintext: string) => Sealed) | null = null;
   let saidSeal = null as Sealed | null;   // what the say was sealed with, for the ack
   let keptSeal = null as Sealed | null;   // what the kept fold was sealed with
