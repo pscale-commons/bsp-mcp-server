@@ -57,7 +57,6 @@ import { atTheDoor, mintedLine, isDoorRefusal, refusedAtDoor, type Door } from '
 import { handOf } from '../looks.js';
 import { isGrayEnvelope, colourBlockName, type GrayEnvelope } from '../keys.js';
 import { sealer, colourLine, colourOfLaw, voicedIn, wearFor, readSeal, type Sealed } from '../colour.js';
-import { sealingKey } from '../signin.js';
 import { pairId } from '../locks.js';
 
 // ── Defaults ──
@@ -2032,12 +2031,15 @@ async function handlePoolEngageInner(
   // THE PRIVATE ROOM (coloured stigmergy, step 3; proposals/2026-11-03-coloured-
   // stigmergy-the-design.md §2.3, §3.4, §4.1): the colour a commit or a stage is
   // sealed in, and the one word a member meets — `secret`, doing duty as the
-  // sealing word that opens their own copy of the colour's key, never a word the
-  // sign-in supplied (src/signin.ts). The writer's door seals before the line
+  // sealing word that opens their own copy of the colour's key, the key a signed
+  // connection rides in with among them (src/signin.ts; proposals/2026-11-24-the-
+  // signed-key-opens-the-copy.md): the purpose or `gray` decides whether a line
+  // is sealed, the word only whether its holder reads it, and a hand the ring
+  // does not name still writes a letter. The writer's door seals before the line
   // leaves; the reader's door puts the session's colours on once (wearFor) and
   // every line in them then reads as its words, wherever it stands.
   let colour = typeof params.gray === 'string' && params.gray.trim() ? colourBlockName(params.gray) : null;
-  const word = sealingKey(undefined, secret);
+  const word = secret;
   let seal: ((plaintext: string) => Sealed) | null = null;
   if (colour && ((contribution !== undefined && contribution.trim() !== '') || (submit !== undefined && submit.trim() !== ''))) {
     try {

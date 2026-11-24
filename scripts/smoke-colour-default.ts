@@ -7,6 +7,12 @@
  * every say, keep, commit and stage there is sealed in it; gray=false writes a
  * line open; a family or room that names no colour writes open, as before.
  *
+ * Through a signed connector (src/signin.ts) the key the connection rides in
+ * with opens the holder's own copy at both doors, so a holder's say is sealed
+ * with it and their read opens, with nothing opened first through bsp(); a hand
+ * holding no copy still writes a letter (proposals/2026-11-24-the-signed-key-
+ * opens-the-copy.md).
+ *
  * colourOfLaw is checked with no beach; the doors against ONE real beach with
  * throwaway words: the package's own handler spawned on a scratch folder
  * (pscale-beach's scripts/local-beach.mjs; BEACH_DIR names the checkout, default
@@ -26,8 +32,9 @@ import { isGrayEnvelope, grayMode } from '../src/keys.js';
 import { colourOfLaw } from '../src/colour.js';
 import { handleBsp } from '../src/tools/bsp.js';
 import { handleKeyPublish } from '../src/tools/keys.js';
-import { handlePoolEngage } from '../src/tools/pool.js';
-import { handleStreamEngage } from '../src/tools/stream.js';
+import { handlePoolEngage, poolEngageParamsSchema } from '../src/tools/pool.js';
+import { handleStreamEngage, streamEngageParamsSchema } from '../src/tools/stream.js';
+import { installSignedIn } from '../src/signin.js';
 import { declareHand, resetLooks } from '../src/looks.js';
 import { loadBlock } from '../src/db.js';
 
@@ -170,6 +177,43 @@ async function main(): Promise<void> {
     const aMount = await room(MOUNT, a, { purpose: `function:${FIELD}`, contribution: 'a line in a room that mounts the law', secret: a.word });
     founded.push([`pool:${MOUNT}`, undefined]);
     check('a room whose purpose mounts a law that names the colour seals by it', new RegExp(`sealed in ${COLOUR}, turn 1`).test(aMount) && inColour(sealOf((await raw(`pool:${MOUNT}`))?.['1'])), aMount);
+
+    // ── 4. through a signed connector ──
+    console.log("\n4. through a signed connector: the connection's key opens the holder's copy at a mirror and in a room, each in a session that opened nothing first; a hand with no copy still writes a letter");
+    // The two doors behind the sign-in's wrapper, as src/server.ts installs it: a call with no
+    // secret is handed the key the connection signed in with, which is this smoke's one word.
+    const doors: Record<string, (...x: any[]) => Promise<any>> = {};
+    const stub: any = { tool: (...x: any[]) => { doors[x[0]] = x[x.length - 1]; } };
+    installSignedIn(stub);
+    stub.tool('pscale_stream_engage', 'the stream', streamEngageParamsSchema, {}, handleStreamEngage);
+    stub.tool('pscale_pool_engage', 'the room', poolEngageParamsSchema, {}, handlePoolEngage);
+    const signedIn = (who: { handle: string; word: string }, session: string) =>
+      ({ sessionId: session, authInfo: { token: 't', clientId: 'c', scopes: ['bsp'], extra: { signedIn: { handle: who.handle, key: who.word } } } });
+    const said = (r: any): string => r.content.map((x: any) => x.text).join('\n');
+    const signedMirror = async (who: { handle: string; word: string }, session: string, p: Record<string, unknown>) =>
+      said(await doors.pscale_stream_engage({ field: FIELD, handle: who.handle, beach: BEACH, ...p }, signedIn(who, session)));
+    const signedRoom = async (who: { handle: string; word: string }, session: string, p: Record<string, unknown>) =>
+      said(await doors.pscale_pool_engage({ agent_id: who.handle, pool_url: BEACH, pool_name: ROOM, ...p }, signedIn(who, session)));
+    const grey = /sealed in a colour you do not wear/;
+    const letter = new RegExp(`sealed as a letter to ${COLOUR}, turn 1`);
+
+    const sSay = await signedMirror(a, `s-a-signed-say-${stamp}`, { at: '4', say: 'a line through a signed connection' });
+    check("a holder's say with no secret is sealed with their own copy, not as a letter", sealedIn(sSay) && !letter.test(sSay) && inColour(sealOf((await raw(`${FIELD}:${a.handle}`))?.['4'])), sSay);
+    check('…and reads back as words in the same session', sSay.includes('a line through a signed connection') && !grey.test(sSay), sSay);
+    const sRead = await signedMirror(a, `s-a-signed-read-${stamp}`, { at: '1' });
+    check("a holder's read with no secret opens the colour's lines", sRead.includes('a line the law seals') && !grey.test(sRead), sRead);
+    const sNone = await signedMirror(b, `s-b-signed-say-${stamp}`, { at: '5', say: 'a line from a signed hand holding no copy' });
+    check('a signed hand holding no copy still writes a letter', letter.test(sNone) && inColour(sealOf((await raw(`${FIELD}:${b.handle}`))?.['5'])), sNone);
+    const sNoneRead = await signedMirror(b, `s-b-signed-read-${stamp}`, { at: '1' });
+    check("…and reads the holders' lines as grey lines", !sNoneRead.includes('a line the law seals') && grey.test(sNoneRead), sNoneRead);
+    const sCommit = await signedRoom(a, `s-a-signed-commit-${stamp}`, { contribution: 'a room line through a signed connection' });
+    const slot = /committed: slot (\d+)/.exec(sCommit)?.[1] ?? '';
+    check("a holder's commit with no secret is sealed with their own copy", new RegExp(`sealed in ${COLOUR}, turn 1\\.`).test(sCommit) && !letter.test(sCommit) && inColour(sealOf((await raw(`pool:${ROOM}`))?.[slot])), sCommit);
+    const sRoomRead = await signedRoom(a, `s-a-signed-room-${stamp}`, {});
+    check("a holder's read of the room with no secret opens its lines", sRoomRead.includes('a room line the purpose seals') && !grey.test(sRoomRead), sRoomRead);
+    const sRoomNone = await signedRoom(b, `s-b-signed-commit-${stamp}`, { contribution: 'a signed room line from a hand holding no copy' });
+    check('a signed hand holding no copy still writes a letter in the room', letter.test(sRoomNone), sRoomNone);
+    check('nothing a signed call returns carries its key', [sSay, sRead, sCommit, sRoomRead].every((t) => !t.includes(a.word)) && [sNone, sNoneRead, sRoomNone].every((t) => !t.includes(b.word)));
   } finally {
     const wiped: string[] = [];
     for (const [name, secret] of founded) { try { if (await wipe(name, secret)) wiped.push(name); } catch { /* left standing */ } }
