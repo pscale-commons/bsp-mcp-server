@@ -1,7 +1,8 @@
-/** smoke:shapes — the four shapes of 2026-10-06, pure: a read a window cannot
- *  carry is refused with the shape named; the owed span rides an append's
- *  ack; a manifest ref follows a landing; unvoiced containers collapse. */
-import { tooLarge, spanLines, nextRef, WINDOW_CHARS, probeInsteadOfWhole, WHOLE_CHARS, frameLines } from '../src/tools/bsp';
+/** smoke:shapes — the shapes of 2026-10-06, pure: a read a window cannot
+ *  carry is refused with the shape named; a manifest ref follows a landing;
+ *  unvoiced containers collapse. (The owed span that rode an append's ack
+ *  left it on 2026-11-24: the owed line stands alone.) */
+import { tooLarge, nextRef, WINDOW_CHARS, probeInsteadOfWhole, WHOLE_CHARS, frameLines } from '../src/tools/bsp';
 import { ladderLines } from '../src/tools/stream';
 import { noteLook, lateralLine, declareHand, resetLooks } from '../src/looks';
 import { closedContainerLines } from '../src/tools/pool';
@@ -24,12 +25,8 @@ check('a refusal names the live head, not the first full ring', !!mixed && /spin
 const whole = tooLarge({ shape: 'block' }, 'x'.repeat(WINDOW_CHARS + 1));
 check('a whole block too large is refused with a spindle or a coarser disc named', !!whole && /Walk a spindle/.test(whole) && /pscale_attention=1/.test(whole), whole);
 
-// the owed span, from a floor-3 accumulator
 // a floor-3 accumulator: the root's underscore chain is three deep, 541 is 5 → 4 → 1
 const block: any = { _: { _: { _: 'the pile' } }, 5: { _: '', 4: { _: '', 1: { _: 'bobble.1, continued — the road', 3: 'ts' }, 2: 'fix.1 — the mirror pane', 3: 'cards.1 — a clock per card', 9: 'animations.1 builds the first path' } } };
-const span = spanLines(block, [{ slot: '550', over: '541-549' }]);
-check('the owed span lists the entries by their opening lines, zero slots skipped', /the span of 550/.test(span) && /541 bobble\.1/.test(span) && /549 animations\.1/.test(span) && !/540/.test(span), span);
-check('no span when the range is not a span', spanLines(block, [{ slot: '550', over: 'x' }]) === '');
 
 // the bundle follows the record
 check('a ref to the same block moves to the landing', nextRef('history:happyseaurchin:296:0', 'history:happyseaurchin', '299') === 'history:happyseaurchin:299:0');
