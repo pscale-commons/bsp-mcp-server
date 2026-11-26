@@ -111,7 +111,7 @@ A walk prints each rung as d<depth> p<pscale> [address]: pscale = floor − dept
 
 ADDRESSES: at most ONE decimal point, anchored at the block's floor — write 4.26, or the comma-walk 4,2,6; multi-dot is refused. A sundial address is written FULL WIDTH: 2026331300, never 20263313. After any write, walk what you wrote as its reader will receive it.
 
-ORIENT BY WHAT THIS SESSION IS FOR, one route each. Hosting a person → pscale_invite. Building on the substrate → bsp(agent_id="pscale", block="whetstone") (omit block to list the rest). Waking an agent's mind → pscale_genus. Entering a world as a handle, or a holder wearing their own shell → pscale_play(world=<the beach URL>, handle, room=<the handle> for a shell). If your client defers tools, search for pscale_play first.
+ORIENT BY WHAT THIS SESSION IS FOR, one route each. Hosting a person or a beach question → pscale_invite. Building on the substrate → bsp(agent_id="pscale", block="whetstone") (omit block to list the rest). Waking an agent's mind → pscale_genus. Entering a world as a handle, or a holder wearing their own shell → pscale_play(world=<the beach URL>, handle, room=<the handle> for a shell). If your client defers tools, search for pscale_play first.
 
 THE FACE — default to CHARACTER: talk with your person about their world and its people, the beach invisible; shift to AUTHOR, DESIGNER or OBSERVER only when the work calls for it. A Character or Observer person never sees bsp(), spindles or "sed:" (soft-agent 3).
 
@@ -148,7 +148,7 @@ export function createServer(signedAs?: string, signedAt?: string, signedBy?: Si
   // ── The unified function ──
   server.tool(
     'bsp',
-    'The unified bsp() function. Read when content + new_lock both omitted; write when content provided; set/rotate lock when new_lock provided. Two coordinates: spindle (S, the address) and pscale_attention (P, the depth selector). Shape derives from (S, P). DISCOVERY: omit block (or pass "") to LIST a surface — a URL agent_id returns that beach\'s derived index of named blocks ({_, origin, blocks:[…]}), agent_id="pscale" returns the bundled sentinel names — so a newcomer can see what a beach hosts before addressing a block, without leaving the tool. (sed:/grain:/bare agent_ids resolve to a named block, so an omitted block still reads that block.) READ-SHAPE: the read is a decision, not a default — probe an unknown or grown block with the disc at pscale 0 first (omit spindle, pscale_attention=0: every position\'s opening line for a screenful), then walk only the spindles the turn needs; pulling a grown accumulator whole drowns the context it came to sharpen. pscale://whetstone 2.8 teaches the balance by descent. Lock semantics: secret = proof of current authority; new_lock = target lock value (the two never overlap). See pscale://whetstone branch 2 for shape derivation, branch 3 for modifiers, branch 4 for storage. Substrate dispatch via agent_id prefix (sed:, grain:, ordinary).',
+    'The unified bsp() function. Read when content + new_lock both omitted; write when content provided; set/rotate lock when new_lock provided. Two coordinates: spindle (S, the address) and pscale_attention (P, the depth selector). Shape derives from (S, P). DISCOVERY: omit block (or pass "") to LIST a surface — a URL agent_id returns that beach\'s derived index of named blocks ({_, origin, blocks:[…]}), agent_id="pscale" returns the bundled sentinel names — so a block\'s name can be found without leaving the tool; a person arriving starts at pscale_invite. (sed:/grain:/bare agent_ids resolve to a named block, so an omitted block still reads that block.) READ-SHAPE: the read is a decision, not a default — probe an unknown or grown block with the disc at pscale 0 first (omit spindle, pscale_attention=0: every position\'s opening line for a screenful), then walk only the spindles the turn needs; pulling a grown accumulator whole drowns the context it came to sharpen. pscale://whetstone 2.8 teaches the balance by descent. Lock semantics: secret = proof of current authority; new_lock = target lock value (the two never overlap). See pscale://whetstone branch 2 for shape derivation, branch 3 for modifiers, branch 4 for storage. Substrate dispatch via agent_id prefix (sed:, grain:, ordinary).',
     bspParamsSchema,
     {
       title: 'BSP — unified read / write / lock',
@@ -306,12 +306,13 @@ export function createServer(signedAs?: string, signedAt?: string, signedBy?: Si
   // ── Orientation invite (meta-tool, not feature tool) ──
   server.tool(
     'pscale_invite',
-    "The welcome — call this FIRST when a person arrives or asks what this place is. A bare call returns a Character-voiced director's note for the OPENING TURN: read who is actually about, surface the beach as a living place (not a brochure), offer one small keyless act, and open the door that fits — play a live world, coordinate something real (open business practices), or add yourself so others can find you. It hands you MOVES to make in your own casual words, not a script to read aloud (relaying it verbatim is the blodge it exists to end). Pass step=1..6 ONLY for the OTHER audience — an agent orienting itself to build substrate capacity, walking the six-step build ladder (wake → build → mark → grain → SAND → shared), each with a concrete action and a validation criterion.",
+    "THE FIRST CALL — for anyone arriving, and for any question about this beach or its people: what the beach is, what can be done here, who keeps it (at the default beach, David Pinto, as happyseaurchin). A bare call returns ONE envelope composed live from the beach's own blocks: what the place is, its size today and what began lately, who keeps it and their own line for this week, and the ways in (play, look and answer, put yourself in, meet, upgrade), each naming its one next call. It is enough for the opening turn with no further reads. Pass step=1..6 ONLY for the OTHER audience — an agent orienting itself to build substrate capacity, walking the six-step build ladder (wake → build → mark → grain → SAND → shared), each with a concrete action and a validation criterion.",
     inviteParamsSchema,
     {
       title: 'Orientation invite',
-      // Reads the sentinel-bundled progression block and the default beach's
-      // worlds register (to name a live world); no writes anywhere.
+      // Reads the welcome sentinel and, at the default beach, the lighthouse, the
+      // index, the operator's passport and now, and the newest families' spines;
+      // no writes anywhere.
       readOnlyHint: true,
       openWorldHint: true,
     },

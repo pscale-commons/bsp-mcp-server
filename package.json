@@ -98,7 +98,8 @@
     "smoke:clock": "tsx scripts/smoke-clock.ts",
     "smoke:looks": "tsx scripts/smoke-looks.ts",
     "smoke:shapes": "tsx scripts/smoke-shapes.ts",
-    "smoke:bundle": "tsx scripts/smoke-bundle.ts"
+    "smoke:bundle": "tsx scripts/smoke-bundle.ts",
+    "smoke:invite": "tsx scripts/smoke-invite.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",

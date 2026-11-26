@@ -82,7 +82,7 @@ Each composes a first context window out of blocks that already exist. None is a
 
 | Tool | Purpose |
 |---|---|
-| `pscale_invite` | Orients. Returns the iterative six-step progression |
+| `pscale_invite` | The first call. Bare, it returns one envelope composed live from the default beach: what the place is, its size and what began lately, who keeps it, and the ways in (proposals/2026-11-26-first-contact.md); `step=1..6` walks the six-step build ladder for an agent |
 | `pscale_play` | Inhabits a handle in a world — compiles `frame:<room>` and the shell manifest into one arrival |
 | `pscale_genus` | Wears a genus-one agent's mind for a single wake |
 

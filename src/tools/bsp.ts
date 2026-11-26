@@ -825,7 +825,7 @@ export const bspParamsSchema = {
   block: z
     .string()
     .optional()
-    .describe('Block name within the agent_id\'s namespace. For URL agent_id this is whatever the host has named the block — common names per substrate-wide convention include "marks", "lighthouse" (operator-curated navigation when present, per block-conventions:4.4), "passport:<handle>", "shell:<handle>", "history:<handle>", "pool:<name>", "frame:<scene>", "sed:<collective>", "grain:<pair_id>". The host serves whichever named blocks it hosts. **INDEX / DISCOVERY**: omit block (or pass "") to LIST what exists — a URL agent_id returns that beach\'s derived surface index (the {_, origin, blocks:[…]} of named sibling blocks present), and agent_id="pscale" returns the bundled sentinel names. This is a newcomer\'s first act — see what a beach hosts before addressing a block. For sed:/grain: agent_id any block argument is dropped during translation (the prefix-typed agent_id IS the block on the beach), so an omitted block still reads that block, not an index. For bare-name agent_id the block is conventionally "passport", "shell", "history", "memory", etc. — translated to "<block>:<handle>" at the default beach.'),
+    .describe('Block name within the agent_id\'s namespace. For URL agent_id this is whatever the host has named the block — common names per substrate-wide convention include "marks", "lighthouse" (operator-curated navigation when present, per block-conventions:4.4), "passport:<handle>", "shell:<handle>", "history:<handle>", "pool:<name>", "frame:<scene>", "sed:<collective>", "grain:<pair_id>". The host serves whichever named blocks it hosts. **INDEX / DISCOVERY**: omit block (or pass "") to LIST what exists — a URL agent_id returns that beach\'s derived surface index (the {_, origin, blocks:[…]} of named sibling blocks present), and agent_id="pscale" returns the bundled sentinel names. At a grown beach the list is long (thousands of blocks): a person arriving starts at pscale_invite, and a surface is listed to find a block\'s name. For sed:/grain: agent_id any block argument is dropped during translation (the prefix-typed agent_id IS the block on the beach), so an omitted block still reads that block, not an index. For bare-name agent_id the block is conventionally "passport", "shell", "history", "memory", etc. — translated to "<block>:<handle>" at the default beach.'),
   spindle: z
     .string()
     .nullable()
@@ -950,7 +950,7 @@ export function stampPlainAppend(
 
 /**
  * Render a federated beach's derived surface index as readable text. This is
- * discovery — a newcomer's first act — surfaced through the tool: the block
+ * discovery — finding a block's name — surfaced through the tool: the block
  * names present at a beach, without leaving bsp() to curl the no-?block=
  * endpoint. Mirrors the {_, origin, blocks:[…]} the HTTP GET returns, plus
  * the optional per-block bytes newer beaches serve — the weight shown beside
